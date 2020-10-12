@@ -107,6 +107,9 @@ public:
 		return std::move(inputLabels);
 	}
 
+	/// Implementation method, which performs the merging of two pipeline states.
+	void combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState);
+
 protected:
 
 	/// \brief Is called when a RefTarget referenced by this object has generated an event.

@@ -87,7 +87,7 @@ void ParticleFrameData::generateBondPeriodicImageProperty()
 * This function is called by the system from the main thread after the
 * asynchronous loading task has finished.
 ******************************************************************************/
-OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
+OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	// Start with a fresh data collection that will be populated.
 	OORef<DataCollection> output = new DataCollection(fileSource->dataset());

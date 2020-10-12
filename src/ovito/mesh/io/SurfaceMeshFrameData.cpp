@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
-#include <ovito/mesh/tri/TriMeshVis.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/io/FileSource.h>
-#include "TriMeshFrameData.h"
+#include "SurfaceMeshFrameData.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -35,28 +35,29 @@ namespace Ovito { namespace Mesh {
 * This function is called by the system from the main thread after the
 * asynchronous loading task has finished.
 ******************************************************************************/
-OORef<DataCollection> TriMeshFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
+OORef<DataCollection> SurfaceMeshFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	OORef<DataCollection> output = new DataCollection(fileSource->dataset());
 
-	// Create a TriMeshObject or clone the existing one.
-	OORef<TriMeshObject> triMeshObj;
-	if(const TriMeshObject* existingMeshObj = existing ? existing->getObject<TriMeshObject>() : nullptr) {
-		triMeshObj = cloneHelper.cloneObject(existingMeshObj, false);
-		output->addObject(triMeshObj);
+	QString identifier = identifierPrefix.isEmpty() ? QStringLiteral("surface") : identifierPrefix;
+
+	OORef<SurfaceMesh> surfaceObj;
+	if(const SurfaceMesh* existingSurfaceObj = existing ? static_object_cast<SurfaceMesh>(existing->getLeafObject(SurfaceMesh::OOClass(), identifier)) : nullptr) {
+		surfaceObj = cloneHelper.cloneObject(existingSurfaceObj, false);
+		output->addObject(surfaceObj);
 	}
 	else {
-		triMeshObj = output->createObject<TriMeshObject>(fileSource);
-
-		// Assign a TriMeshVis to the TriMeshObject.
-		OORef<TriMeshVis> triMeshVis = new TriMeshVis(fileSource->dataset());
+		surfaceObj = output->createObject<SurfaceMesh>(fileSource, identifierPrefix.isEmpty() ? QStringLiteral("Surface mesh") : QStringLiteral("Mesh: %1").arg(identifierPrefix));
+		surfaceObj->setIdentifier(identifier);
+		OORef<SurfaceMeshVis> vis = new SurfaceMeshVis(fileSource->dataset());
+		vis->setSurfaceIsClosed(false);
+		if(!identifierPrefix.isEmpty())
+			vis->setTitle(QStringLiteral("Surface mesh: %1").arg(identifierPrefix));
 		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			triMeshVis->loadUserDefaults();
-		triMeshObj->setVisElement(triMeshVis);
+			vis->loadUserDefaults();
+		surfaceObj->setVisElement(vis);
 	}
-
-	// Hand over the loaded mesh data.
-	triMeshObj->setMesh(_mesh);
+	mesh().transferTo(surfaceObj);
 
 	return output;
 }

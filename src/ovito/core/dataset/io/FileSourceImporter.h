@@ -98,7 +98,7 @@ public:
 		/// Transfers the loaded data into a data collection.
 		/// This function is called by the system from the main thread after the asynchronous loading task
 		/// has finished. An implementation of this method should try to re-use any existing data objects from the provided data collection.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) = 0;
+		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) = 0;
 
 		/// Returns the status of the load operation.
 		const PipelineStatus& status() const { return _status; }
@@ -231,6 +231,9 @@ public:
 
 	/// \brief Sends a request to the FileSource owning this importer to refresh the animation frame sequence.
 	void requestFramesUpdate(bool refetchCurrentFile = false);
+
+	/// Loads the data for the given frame from the external file.
+	virtual Future<FrameDataPtr> loadFrame(const Frame& frame, const FileHandle& file);
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file) = 0;

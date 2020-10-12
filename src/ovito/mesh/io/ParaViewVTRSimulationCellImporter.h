@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,105 +23,88 @@
 #pragma once
 
 
-#include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
-#include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
+#include <ovito/mesh/Mesh.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+#include <QXmlStreamReader>
+
+namespace Ovito { namespace Mesh {
 
 /**
- * \brief Importer for data files written by the ParaDiS discrete dislocation simulation code.
+ * \brief File parser for reading the simulation cell geometry from a ParaView VTR (RectilinearGrid) file.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT ParaDiSImporter : public ParticleImporter
+class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImporter
 {
 	/// Defines a metaclass specialization for this importer type.
-	class OOMetaClass : public ParticleImporter::OOMetaClass
+	class OOMetaClass : public FileSourceImporter::OOMetaClass
 	{
 	public:
+
 		/// Inherit standard constructor from base meta class.
-		using ParticleImporter::OOMetaClass::OOMetaClass;
+		using FileSourceImporter::OOMetaClass::OOMetaClass;
 
 		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*"); }
+		virtual QString fileFilter() const override { return QStringLiteral("*.vtr"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaDiS Data Files"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView VTR RectilinearGrid File"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};
 
-	OVITO_CLASS_META(ParaDiSImporter, OOMetaClass)
+	OVITO_CLASS_META(ParaViewVTRSimulationCellImporter, OOMetaClass)
 	Q_OBJECT
 
 public:
 
-	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ParaDiSImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	/// \brief Constructor.
+	Q_INVOKABLE ParaViewVTRSimulationCellImporter(DataSet *dataset) : FileSourceImporter(dataset) {}
 
 	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("ParaDiS File"); }
+	virtual QString objectTitle() const override { return tr("VTR"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
 		return std::make_shared<FrameLoader>(frame, file);
 	}
 
-protected:
+private:
 
-	/// The format-specific data holder.
-	class DislocFrameData : public ParticleFrameData
+	class RectilinearGridFrameData : public FileSourceImporter::FrameData
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Inserts the loaded data into the provided pipeline state structure. This function is
+		/// Inserts the loaded loaded into the provided pipeline state structure. This function is
 		/// called by the system from the main thread after the asynchronous loading task has finished.
 		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
 
-		/// Returns the loaded microstructure.
-		const MicrostructureData& microstructure() const { return _microstructure; }
+		/// Returns the current simulation cell matrix.
+		const SimulationCell& simulationCell() const { return _simulationCell; }
 
-		/// Returns the microstructure being loaded.
-		MicrostructureData& microstructure() { return _microstructure; }
+		/// Returns a reference to the simulation cell.
+		SimulationCell& simulationCell() { return _simulationCell; }
 
-		/// Returns the type of crystal structure.
-		ParticleType::PredefinedStructureType latticeStructure() const { return _latticeStructure; }
+	private:
 
-		/// Sets the type of crystal ("fcc", "bcc", etc.)
-		void setLatticeStructure(ParticleType::PredefinedStructureType latticeStructure) {
-			_latticeStructure = latticeStructure;
-		}
-
-	protected:
-
-		/// The loaded microstructure.
-		MicrostructureData _microstructure;
-
-		/// The type of crystal ("fcc", "bcc", etc.)
-		ParticleType::PredefinedStructureType _latticeStructure = ParticleType::PredefinedStructureType::OTHER;
+		/// The simulation cell geometry.
+		SimulationCell _simulationCell;
 	};
 
-	/// The format-specific task object that is responsible for reading an input file in a worker thread.
+	/// The format-specific task object that is responsible for reading an input file in a separate thread.
 	class FrameLoader : public FileSourceImporter::FrameLoader
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
+		/// Constructor.
+		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
+			: FileSourceImporter::FrameLoader(frame, file) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
 		virtual FrameDataPtr loadFile() override;
-
-    private:
-
-        /// Parses a control parameter from the ParaDiS file.
-        static std::pair<QString, QVariant> parseControlParameter(CompressedTextReader& stream);
 	};
 };
 

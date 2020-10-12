@@ -348,6 +348,19 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 }
 
 /******************************************************************************
+* Loads the data for the given frame from the external file.
+******************************************************************************/
+Future<FileSourceImporter::FrameDataPtr> FileSourceImporter::loadFrame(const Frame& frame, const FileHandle& file)
+{
+	// Create the frame loader for the requested frame.
+	FrameLoaderPtr frameLoader = createFrameLoader(frame, file);
+	OVITO_ASSERT(frameLoader);
+
+	// Execute the loader in a background thread.
+	return dataset()->taskManager().runTaskAsync(std::move(frameLoader));
+}
+
+/******************************************************************************
 * Scans the source URL for input frames.
 ******************************************************************************/
 void FileSourceImporter::FrameFinder::perform()

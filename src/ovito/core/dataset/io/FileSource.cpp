@@ -505,13 +505,8 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					TimeInterval interval = frameTimeInterval(frame);
 					const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
-					// Create the frame loader for the requested frame.
-					FileSourceImporter::FrameLoaderPtr frameLoader = importer()->createFrameLoader(frameInfo, fileHandle);
-					OVITO_ASSERT(frameLoader);
-
-					// Execute the loader in a background thread.
-					// Collect results from the loader in the UI thread once it has finished running.
-					auto future = dataset()->taskManager().runTaskAsync(frameLoader)
+					// Load the frame data and process results in the UI thread.
+					auto future = importer()->loadFrame(frameInfo, fileHandle)
 						.then(executor(), [this, frame, frameInfo, interval](FileSourceImporter::FrameDataPtr&& frameData) {
 							OVITO_ASSERT_MSG(frameData, "FileSource::requestFrameInternal()", "File importer did not return a FrameData object.");
 

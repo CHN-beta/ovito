@@ -116,6 +116,7 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 ******************************************************************************/
 OORef<OvitoObject> OvitoClass::createInstance(DataSet* dataset) const
 {
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {

@@ -293,7 +293,7 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
 * This function is called by the system from the main thread after the
 * asynchronous loading operation has finished.
 ******************************************************************************/
-OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
+OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	// Insert simulation cell.
 	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);

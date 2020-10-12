@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,15 +24,15 @@
 
 
 #include <ovito/mesh/Mesh.h>
+#include <ovito/mesh/surface/SUrfaceMeshData.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
 
 namespace Ovito { namespace Mesh {
 
 /**
- * \brief COntainer for a triangle mesh read from a file by a file importer.
+ * \brief Container for a surface mesh read from a file by a file importer.
  */
-class TriMeshFrameData : public FileSourceImporter::FrameData
+class SurfaceMeshFrameData : public FileSourceImporter::FrameData
 {
 public:
 
@@ -40,16 +40,16 @@ public:
 	/// called by the system from the main thread after the asynchronous loading task has finished.
 	virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
 
-	/// Returns the triangle mesh data structure.
-	const TriMesh& mesh() const { return *_mesh; }
+	/// Returns the surface mesh data structure.
+	const SurfaceMeshData& mesh() const { return _mesh; }
 
-	/// Returns a reference to the triangle mesh data structure.
-	TriMesh& mesh() { return *_mesh; }
+	/// Returns a reference to the surface mesh data structure.
+	SurfaceMeshData& mesh() { return _mesh; }
 
 private:
 
-	/// The triangle mesh.
-	TriMeshPtr _mesh = std::make_shared<TriMesh>();
+	/// The surface mesh data.
+	SurfaceMeshData _mesh;
 };
 
 }	// End of namespace

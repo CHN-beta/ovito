@@ -61,6 +61,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 ******************************************************************************/
 OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file)
 {
+	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
 			if(importerClass->checkFileFormat(file)) {

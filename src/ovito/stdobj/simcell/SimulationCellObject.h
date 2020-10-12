@@ -106,6 +106,11 @@ public:
 		return SimulationCell(cellMatrix(), pbcFlags(), is2D());
 	}
 
+	/// Indicates that the simulation cell geometry has been specified and is non-degenerate. 
+	bool isValid() const { 
+		return cellMatrix() != AffineTransformation::Zero();
+	}
+
 	/// Returns inverse of the simulation cell matrix.
 	/// This matrix maps the simulation cell to the unit cube ([0,1]^3).
 	AffineTransformation reciprocalCellMatrix() const {

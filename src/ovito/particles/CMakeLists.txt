@@ -87,6 +87,7 @@ SET(SourceFiles
 	import/cif/mmCIFImporter.cpp
 	import/gromacs/GroImporter.cpp
 	import/gromacs/XTCImporter.cpp
+	import/vtk/VTPFileParticleImporter.cpp
 	export/ParticleExporter.cpp
 	export/FileColumnParticleExporter.cpp
 	export/vasp/POSCARExporter.cpp
@@ -123,6 +124,7 @@ OVITO_STANDARD_PLUGIN(Particles
 	PRIVATE_LIB_DEPENDENCIES VoroPlusPlus OpenGLRenderer PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Particles.h
+	LIB_DEPENDENCIES Qt5::Xml
 )
 
 # Build corresponding GUI plugin.
