@@ -24,7 +24,7 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/surface/SUrfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 namespace Ovito { namespace Mesh {
