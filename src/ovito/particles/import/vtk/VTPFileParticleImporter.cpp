@@ -192,6 +192,12 @@ PropertyStorage* VTPFileParticleImporter::FrameLoader::createParticlePropertyFor
 	else if(QStringRef::compare(name, "density", Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return container.addProperty(std::make_shared<PropertyStorage>(particleCount, PropertyStorage::Float, 1, 0, QStringLiteral("Density"), false));
 	}
+	else if(QStringRef::compare(name, "tensor", Qt::CaseInsensitive) == 0 && numComponents == 9) {
+		return container.addProperty(std::make_shared<PropertyStorage>(particleCount, PropertyStorage::Float, 9, 0, QStringLiteral("Tensor"), false));
+	}
+	else {
+		return container.addProperty(std::make_shared<PropertyStorage>(particleCount, PropertyStorage::Float, numComponents, 0, name.toString(), false));
+	}
 	return nullptr;
 }
 

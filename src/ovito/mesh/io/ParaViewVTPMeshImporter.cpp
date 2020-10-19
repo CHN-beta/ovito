@@ -87,6 +87,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	size_t numberOfPolys = 0;
 	size_t numberOfCells = 0;
 	SurfaceMeshData::vertex_index vertexBaseIndex = HalfEdgeMesh::InvalidIndex;
+	std::vector<PropertyPtr> cellDataArrays;
 
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
@@ -167,7 +168,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 				break;
 			}
 
-			// Go thorugh the connectivity and the offsets array and create corresponding faces in the output mesh.
+			// Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
 			ConstPropertyAccess<SurfaceMeshData::vertex_index> vertexIndices(connectivityArray);
 			int previousOffset = 0;
 			for(int offset : ConstPropertyAccess<int>(offsetsArray)) {
@@ -183,7 +184,21 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 
 			xml.skipCurrentElement();
 		}
-		else if(xml.name() == "CellData" || xml.name() == "Verts" || xml.name() == "Lines" || xml.name() == "Strips") {
+		else if(xml.name() == "CellData") {
+			// Parse <DataArray> child elements.
+			while(xml.readNextStartElement() && !isCanceled()) {
+				if(xml.name() == "DataArray") {
+					if(PropertyPtr property = parseDataArray(xml))
+						cellDataArrays.push_back(std::move(property));
+					else
+						break;
+				}
+				else {
+					xml.skipCurrentElement();
+				}
+			}
+		}
+		else if(xml.name() == "Verts" || xml.name() == "Lines" || xml.name() == "Strips") {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}
@@ -196,6 +211,13 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	if(xml.hasError()) {
 		throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
+	}
+
+	// Add cell data arrays to mesh.
+	if(numberOfPolys == numberOfCells) {
+		for(auto& property : cellDataArrays) {
+			mesh.addFaceProperty(std::move(property));
+		}
 	}
 
 	// Report number of vertices and faces to the user.
