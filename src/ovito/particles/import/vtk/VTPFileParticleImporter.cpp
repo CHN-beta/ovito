@@ -130,7 +130,7 @@ FileSourceImporter::FrameDataPtr VTPFileParticleImporter::FrameLoader::loadFile(
 						xml.skipCurrentElement();
 				}
 				else {
-					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name()));
+					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 				}
 			}
 		}
@@ -139,7 +139,7 @@ FileSourceImporter::FrameDataPtr VTPFileParticleImporter::FrameLoader::loadFile(
 			xml.skipCurrentElement();
 		}
 		else {
-			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name()));
+			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 		}
 	}
 
@@ -209,7 +209,7 @@ void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyStorage* prope
 	// Check value of the 'format' attribute.
 	QString format = xml.attributes().value("format").toString();
 	if(format.isEmpty()) {
-		xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name()));
+		xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name().toString()));
 		return;
 	}
 	if(format != "binary") {

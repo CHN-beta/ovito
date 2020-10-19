@@ -104,7 +104,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTRSimulationCellImporter::FrameLoader:
 					xml.skipCurrentElement();
 				}
 				else {
-					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name()));
+					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 				}
 			}
 			break;
@@ -114,7 +114,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTRSimulationCellImporter::FrameLoader:
 			xml.skipCurrentElement();
 		}
 		else {
-			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name()));
+			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 		}
 	}
 

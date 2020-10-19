@@ -203,7 +203,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			xml.skipCurrentElement();
 		}
 		else {
-			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name()));
+			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 		}
 	}
 
@@ -236,14 +236,14 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 {
 	// Make sure it is really an <DataArray>.
 	if(xml.name() != "DataArray") {
-		xml.raiseError(tr("Expected <DataArray> element but found <%1> element.").arg(xml.name()));
+		xml.raiseError(tr("Expected <DataArray> element but found <%1> element.").arg(xml.name().toString()));
 		return {};
 	}
 
 	// Check value of the 'format' attribute.
 	QString format = xml.attributes().value("format").toString();
 	if(format.isEmpty()) {
-		xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name()));
+		xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name().toString()));
 		return {};
 	}
 	if(format != "binary") {
