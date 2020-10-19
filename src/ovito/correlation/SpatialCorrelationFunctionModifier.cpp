@@ -244,7 +244,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				}
 			}
 		}
-		else if(property->dataType() == PropertyStorage::Float) {
+		else if(property->dataType() == PropertyObject::Float) {
 			ConstPropertyAccess<FloatType,true> propertyArray(*property);
 			const Point3* pos = positionsArray.cbegin();
 			for(FloatType v : propertyArray.componentRange(vecComponent)) {
@@ -270,7 +270,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				++pos;
 			}
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			ConstPropertyAccess<int,true> propertyArray(*property);
 			const Point3* pos = positionsArray.cbegin();
 			for(int v : propertyArray.componentRange(vecComponent)) {
@@ -294,7 +294,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				++pos;
 			}
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			ConstPropertyAccess<qlonglong,true> propertyArray(*property);
 			const Point3* pos = positionsArray.cbegin();
 			for(qlonglong v : propertyArray.componentRange(vecComponent)) {
@@ -460,7 +460,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Averaged reciprocal space correlation function.
-	_reciprocalSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfWavevectorBins, PropertyStorage::Float, 1, 0, tr("C(q)"), true, DataTable::YProperty);
+	_reciprocalSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfWavevectorBins, PropertyObject::Float, 1, 0, tr("C(q)"), true, DataTable::YProperty);
 	_reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
 	std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -541,9 +541,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
 	// Radially averaged real space correlation function.
-	_realSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyStorage::Float, 1, 0, tr("C(r)"), true, DataTable::YProperty);
+	_realSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("C(r)"), true, DataTable::YProperty);
 	_realSpaceCorrelationRange = minCellFaceDistance / 2;
-	_realSpaceRDF = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyStorage::Float, 1, 0, tr("g(r)"), true, DataTable::YProperty);
+	_realSpaceRDF = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("g(r)"), true, DataTable::YProperty);
 
 	numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
 	PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -606,27 +606,27 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	ConstPropertyAccess<int,true> intData2;
 	ConstPropertyAccess<qlonglong,true> int64Data1;
 	ConstPropertyAccess<qlonglong,true> int64Data2;
-	if(sourceProperty1()->dataType() == PropertyStorage::Float) {
+	if(sourceProperty1()->dataType() == PropertyObject::Float) {
 		floatData1 = sourceProperty1();
 	}
-	else if(sourceProperty1()->dataType() == PropertyStorage::Int) {
+	else if(sourceProperty1()->dataType() == PropertyObject::Int) {
 		intData1 = sourceProperty1();
 	}
-	else if(sourceProperty1()->dataType() == PropertyStorage::Int64) {
+	else if(sourceProperty1()->dataType() == PropertyObject::Int64) {
 		int64Data1 = sourceProperty1();
 	}
-	if(sourceProperty2()->dataType() == PropertyStorage::Float) {
+	if(sourceProperty2()->dataType() == PropertyObject::Float) {
 		floatData2 = sourceProperty2();
 	}
-	else if(sourceProperty2()->dataType() == PropertyStorage::Int) {
+	else if(sourceProperty2()->dataType() == PropertyObject::Int) {
 		intData2 = sourceProperty2();
 	}
-	else if(sourceProperty2()->dataType() == PropertyStorage::Int64) {
+	else if(sourceProperty2()->dataType() == PropertyObject::Int64) {
 		int64Data2 = sourceProperty2();
 	}
 
 	// Allocate neighbor RDF.
-	_neighRDF = std::make_shared<PropertyStorage>(neighCorrelation()->size(), PropertyStorage::Float, 1, 0, tr("Neighbor g(r)"), true, DataTable::YProperty);
+	_neighRDF = std::make_shared<PropertyStorage>(neighCorrelation()->size(), PropertyObject::Float, 1, 0, tr("Neighbor g(r)"), true, DataTable::YProperty);
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
@@ -709,22 +709,22 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimit
 	ConstPropertyAccess<int,true> intData2;
 	ConstPropertyAccess<qlonglong,true> int64Data1;
 	ConstPropertyAccess<qlonglong,true> int64Data2;
-	if(sourceProperty1()->dataType() == PropertyStorage::Float) {
+	if(sourceProperty1()->dataType() == PropertyObject::Float) {
 		floatData1 = sourceProperty1();
 	}
-	else if(sourceProperty1()->dataType() == PropertyStorage::Int) {
+	else if(sourceProperty1()->dataType() == PropertyObject::Int) {
 		intData1 = sourceProperty1();
 	}
-	else if(sourceProperty1()->dataType() == PropertyStorage::Int64) {
+	else if(sourceProperty1()->dataType() == PropertyObject::Int64) {
 		int64Data1 = sourceProperty1();
 	}
-	if(sourceProperty2()->dataType() == PropertyStorage::Float) {
+	if(sourceProperty2()->dataType() == PropertyObject::Float) {
 		floatData2 = sourceProperty2();
 	}
-	else if(sourceProperty2()->dataType() == PropertyStorage::Int) {
+	else if(sourceProperty2()->dataType() == PropertyObject::Int) {
 		intData2 = sourceProperty2();
 	}
-	else if(sourceProperty2()->dataType() == PropertyStorage::Int64) {
+	else if(sourceProperty2()->dataType() == PropertyObject::Int64) {
 		int64Data2 = sourceProperty2();
 	}
 

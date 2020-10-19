@@ -83,13 +83,14 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<ComputePolyhedraEngine>(
-			posProperty->storage(),
-			selectionProperty->storage(),
-			typeProperty ? typeProperty->storage() : nullptr,
-			identifierProperty ? identifierProperty->storage() : nullptr,
-			topologyProperty->storage(),
-			bondPeriodicImagesProperty ? bondPeriodicImagesProperty->storage() : nullptr,
-			simCell->data());
+			dataset(),
+			posProperty,
+			selectionProperty,
+			typeProperty,
+			identifierProperty,
+			topologyProperty,
+			bondPeriodicImagesProperty,
+			simCell);
 }
 
 /******************************************************************************
@@ -119,9 +120,9 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 		for(BondWithIndex bond : bondMap.bondsOfParticle(i)) {
 			if(bond.index2 < _positions->size()) {
 				Vector3 delta = positionsArray[bond.index2] - p1;
-				if(bond.pbcShift.x()) delta += cell().matrix().column(0) * (FloatType)bond.pbcShift.x();
-				if(bond.pbcShift.y()) delta += cell().matrix().column(1) * (FloatType)bond.pbcShift.y();
-				if(bond.pbcShift.z()) delta += cell().matrix().column(2) * (FloatType)bond.pbcShift.z();
+				if(bond.pbcShift.x()) delta += cell()->matrix().column(0) * (FloatType)bond.pbcShift.x();
+				if(bond.pbcShift.y()) delta += cell()->matrix().column(1) * (FloatType)bond.pbcShift.y();
+				if(bond.pbcShift.z()) delta += cell()->matrix().column(2) * (FloatType)bond.pbcShift.z();
 				bondVectors.push_back(p1 + delta);
 			}
 		}
@@ -137,7 +138,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 	}
 
 	// Create the "Center particle" region property, which indicates the ID of the particle that is at the center of each coordination polyhedron.
-	PropertyAccess<qlonglong> centerProperty = mesh().createRegionProperty(PropertyStorage::Int64, 1, 0, QStringLiteral("Center Particle"), false);
+	PropertyAccess<qlonglong> centerProperty = mesh().createRegionProperty(PropertyObject::Int64, 1, 0, QStringLiteral("Center Particle"), false);
 	ConstPropertyAccess<qlonglong> particleIdentifiersArray(_particleIdentifiers);
 	auto centerParticle = centerProperty.begin();
 	for(size_t i = 0; i < positionsArray.size(); i++) {

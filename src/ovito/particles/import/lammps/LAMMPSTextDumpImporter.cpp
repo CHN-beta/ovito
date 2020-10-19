@@ -492,7 +492,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
 		else if(name == "c_shape[3]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
 		else if(name == "selection") columnMapping.mapStandardColumn(i, ParticlesObject::SelectionProperty, 0);
 		else {
-			columnMapping.mapCustomColumn(i, name, PropertyStorage::Float);
+			columnMapping.mapCustomColumn(i, name, PropertyObject::Float);
 		}
 	}
 	return columnMapping;

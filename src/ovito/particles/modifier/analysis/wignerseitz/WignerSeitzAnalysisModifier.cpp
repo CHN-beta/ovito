@@ -109,9 +109,9 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	// Create output properties:
 	if(outputCurrentConfig()) {
 		if(referenceIdentifierProperty)
-			engine->setSiteIdentifiers(std::make_shared<PropertyStorage>(posProperty->size(), PropertyStorage::Int64, 1, 0, tr("Site Identifier"), false));
-		engine->setSiteTypes(std::make_shared<PropertyStorage>(posProperty->size(), PropertyStorage::Int, 1, 0, tr("Site Type"), false));
-		engine->setSiteIndices(std::make_shared<PropertyStorage>(posProperty->size(), PropertyStorage::Int64, 1, 0, tr("Site Index"), false));
+			engine->setSiteIdentifiers(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Identifier"), false));
+		engine->setSiteTypes(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int, 1, 0, tr("Site Type"), false));
+		engine->setSiteIndices(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Index"), false));
 	}
 
 	return engine;
@@ -200,7 +200,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 	// Create output storage.
 	setOccupancyNumbers(std::make_shared<PropertyStorage>(
 		siteTypes() ? positions()->size() : refPositions()->size(),
-		PropertyStorage::Int, ncomponents, 0, tr("Occupancy"), false));
+		PropertyObject::Int, ncomponents, 0, tr("Occupancy"), false));
 	if(ncomponents > 1 && typemin != 1) {
 		QStringList componentNames;
 		for(int i = typemin; i <= typemax; i++)

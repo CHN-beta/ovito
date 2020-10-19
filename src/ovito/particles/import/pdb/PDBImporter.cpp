@@ -467,7 +467,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(natoms, PropertyStorage::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {

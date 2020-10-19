@@ -82,18 +82,25 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx])) {
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
-			SimulationCell cell = voxelGrid->domain()->data();
-			if(cell.is2D())
-				continue;
 
 			// Verify consistency of input property container.
 			voxelGrid->verifyIntegrity();
 
-			// Construct cross section mesh using a special version of the marching cubes algorithm.
-			SurfaceMeshData mesh(cell);
+			// Get the simulation cell.
+			DataOORef<const SimulationCellObject> cell = voxelGrid->domain();
+			OVITO_ASSERT(cell);
+			if(cell->is2D())
+				continue;
 
 			// The slice plane does NOT exist in a periodic domain.
-			mesh.cell().setPbcFlags(false, false, false);
+			if(cell->hasPbc()) {
+				DataOORef<SimulationCellObject> nonPeriodicCell = std::move(cell).makeMutable();
+				nonPeriodicCell->setPbcFlags(false, false, false);
+				cell = std::move(nonPeriodicCell);
+			}
+
+			// Construct cross section mesh using a special version of the marching cubes algorithm.
+			SurfaceMeshData mesh(dataset(), cell);
 
 			// The level of subdivision.
 			const int resolution = 2;
@@ -104,7 +111,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 				planeGridSpace = (Matrix3(
 					gridShape[0]*resolution, 0, 0,
 					0, gridShape[1]*resolution, 0,
-					0, 0, gridShape[2]*resolution) * cell.inverseMatrix()) * planes[pidx];
+					0, 0, gridShape[2]*resolution) * cell->inverseMatrix()) * planes[pidx];
 
 				// Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
 				auto getFieldValue = [&](int i, int j, int k) {
@@ -136,14 +143,14 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			// Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices.
 			std::vector<ConstPropertyPtr> fieldProperties;
 			for(const PropertyObject* property : voxelGrid->properties())
-				fieldProperties.push_back(property->storage());
+				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
 			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager());
 			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, cell, gridShape);
 
 			// Transform mesh vertices from orthogonal grid space to world space.
-			const AffineTransformation tm = cell.matrix() * Matrix3(
+			const AffineTransformation tm = cell->matrix() * Matrix3(
 				FloatType(1) / gridShape[0], 0, 0,
 				0, FloatType(1) / gridShape[1], 0,
 				0, 0, FloatType(1) / gridShape[2]) *

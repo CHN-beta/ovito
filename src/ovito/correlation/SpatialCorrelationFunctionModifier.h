@@ -117,7 +117,7 @@ private:
 			_simCell(simCell), _fftGridSpacing(fftGridSpacing),
 			_applyWindow(applyWindow), _neighCutoff(neighCutoff),
 			_averagingDirection(averagingDirection),
-			_neighCorrelation(doComputeNeighCorrelation ? std::make_shared<PropertyStorage>(numberOfNeighBins, PropertyStorage::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
+			_neighCorrelation(doComputeNeighCorrelation ? std::make_shared<PropertyStorage>(numberOfNeighBins, PropertyObject::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;

@@ -163,20 +163,24 @@ void DataObject::setDataSource(PipelineObject* dataSource)
 ******************************************************************************/
 bool DataObject::isSafeToModify() const
 {
+	// Note: This method is not thread-safe. Must be called from the main thread only.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 	OVITO_CHECK_OBJECT_POINTER(this);
-	if(dependents().empty()) {
-		return _referringFlowStates <= 1;
-	}
-	else if(dependents().size() == 1) {
-		// Recursively determine if the container of this data object is safe to modify as well.
-		// Only if the entire hierarchy of objects is safe to modify, we can safely modify
-		// the leaf object.
-		if(DataObject* owner = dynamic_object_cast<DataObject>(dependents().front())) {
-			return owner->isSafeToModify();
+	if(_dataReferenceCount.loadRelaxed() <= 1) {
+		if(dependents().empty()) {
+			return true;
 		}
-		else return true;
+		else if(dependents().size() == 1) {
+			// Recursively determine if the container of this data object is safe to modify as well.
+			// Only if the entire hierarchy of objects is safe to modify, we can safely modify
+			// the leaf object.
+			if(DataObject* owner = dynamic_object_cast<DataObject>(dependents().front())) {
+				return owner->isSafeToModify();
+			}
+			else return true;
+		}
 	}
-	else return false;
+	return false;
 }
 
 /******************************************************************************
@@ -187,6 +191,8 @@ bool DataObject::isSafeToModify() const
 ******************************************************************************/
 DataObject* DataObject::makeMutable(const DataObject* subObject)
 {
+	// Note: This method is not thread-safe. Must only be called from the main thread.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 	OVITO_CHECK_OBJECT_POINTER(this);
 	OVITO_ASSERT(subObject);
 	OVITO_ASSERT(hasReferenceTo(subObject));

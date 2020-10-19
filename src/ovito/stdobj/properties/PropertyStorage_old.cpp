@@ -144,12 +144,12 @@ void PropertyStorage::loadFromStream(LoadStream& stream)
 	stream.closeChunk();
 
 	// Do floating-point precision conversion from single to double precision.
-	if(_dataType == qMetaTypeId<float>() && PropertyStorage::Float == qMetaTypeId<double>()) {
+	if(_dataType == qMetaTypeId<float>() && PropertyObject::Float == qMetaTypeId<double>()) {
 		OVITO_ASSERT(sizeof(FloatType) == sizeof(double));
 		OVITO_ASSERT(_dataTypeSize == sizeof(float));
 		_stride *= sizeof(double) / sizeof(float);
 		_dataTypeSize = sizeof(double);
-		_dataType = PropertyStorage::Float;
+		_dataType = PropertyObject::Float;
 		std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[_stride * _numElements]);
 		double* dst = reinterpret_cast<double*>(newBuffer.get());
 		const float* src = reinterpret_cast<const float*>(_data.get());
@@ -159,12 +159,12 @@ void PropertyStorage::loadFromStream(LoadStream& stream)
 	}
 
 	// Do floating-point precision conversion from double to single precision.
-	if(_dataType == qMetaTypeId<double>() && PropertyStorage::Float == qMetaTypeId<float>()) {
+	if(_dataType == qMetaTypeId<double>() && PropertyObject::Float == qMetaTypeId<float>()) {
 		OVITO_ASSERT(sizeof(FloatType) == sizeof(float));
 		OVITO_ASSERT(_dataTypeSize == sizeof(double));
 		_stride /= sizeof(double) / sizeof(float);
 		_dataTypeSize = sizeof(float);
-		_dataType = PropertyStorage::Float;
+		_dataType = PropertyObject::Float;
 		std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[_stride * _numElements]);
 		float* dst = reinterpret_cast<float*>(newBuffer.get());
 		const double* src = reinterpret_cast<const double*>(_data.get());
@@ -219,7 +219,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 	size_t s = size();
 
 	// Optimize filter operation for the most common property types.
-	if(dataType() == PropertyStorage::Float && stride() == sizeof(FloatType)) {
+	if(dataType() == PropertyObject::Float && stride() == sizeof(FloatType)) {
 		// Single float
 		auto src = reinterpret_cast<const FloatType*>(cbuffer());
 		auto dst = reinterpret_cast<FloatType*>(buffer());
@@ -228,7 +228,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 		}
 		resize(dst - reinterpret_cast<FloatType*>(buffer()), true);
 	}
-	else if(dataType() == PropertyStorage::Int && stride() == sizeof(int)) {
+	else if(dataType() == PropertyObject::Int && stride() == sizeof(int)) {
 		// Single integer
 		auto src = reinterpret_cast<const int*>(cbuffer());
 		auto dst = reinterpret_cast<int*>(buffer());
@@ -237,7 +237,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 		}
 		resize(dst - reinterpret_cast<int*>(buffer()), true);
 	}
-	else if(dataType() == PropertyStorage::Int64 && stride() == sizeof(qlonglong)) {
+	else if(dataType() == PropertyObject::Int64 && stride() == sizeof(qlonglong)) {
 		// Single 64-bit integer
 		auto src = reinterpret_cast<const qlonglong*>(cbuffer());
 		auto dst = reinterpret_cast<qlonglong*>(buffer());
@@ -246,7 +246,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 		}
 		resize(dst - reinterpret_cast<qlonglong*>(buffer()), true);
 	}
-	else if(dataType() == PropertyStorage::Float && stride() == sizeof(Point3)) {
+	else if(dataType() == PropertyObject::Float && stride() == sizeof(Point3)) {
 		// Triple float (may actually be four floats when SSE instructions are enabled).
 		auto src = reinterpret_cast<const Point3*>(cbuffer());
 		auto dst = reinterpret_cast<Point3*>(buffer());
@@ -255,7 +255,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 		}
 		resize(dst - reinterpret_cast<Point3*>(buffer()), true);
 	}
-	else if(dataType() == PropertyStorage::Float && stride() == sizeof(Color)) {
+	else if(dataType() == PropertyObject::Float && stride() == sizeof(Color)) {
 		// Triple float
 		auto src = reinterpret_cast<const Color*>(cbuffer());
 		auto dst = reinterpret_cast<Color*>(buffer());
@@ -264,7 +264,7 @@ void PropertyStorage::filterResize(const boost::dynamic_bitset<>& mask)
 		}
 		resize(dst - reinterpret_cast<Color*>(buffer()), true);
 	}
-	else if(dataType() == PropertyStorage::Int && stride() == sizeof(Point3I)) {
+	else if(dataType() == PropertyObject::Int && stride() == sizeof(Point3I)) {
 		// Triple int.
 		auto src = reinterpret_cast<const Point3I*>(cbuffer());
 		auto dst = reinterpret_cast<Point3I*>(buffer());
@@ -301,7 +301,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 	std::shared_ptr<PropertyStorage> copy = std::make_shared<PropertyStorage>(newSize, dataType(), componentCount(), stride(), name(), false, type(), componentNames());
 
 	// Optimize filter operation for the most common property types.
-	if(dataType() == PropertyStorage::Float && stride() == sizeof(FloatType)) {
+	if(dataType() == PropertyObject::Float && stride() == sizeof(FloatType)) {
 		// Single float
 		auto src = reinterpret_cast<const FloatType*>(cbuffer());
 		auto dst = reinterpret_cast<FloatType*>(copy->buffer());
@@ -310,7 +310,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 		}
 		OVITO_ASSERT(dst == reinterpret_cast<FloatType*>(copy->buffer()) + newSize);
 	}
-	else if(dataType() == PropertyStorage::Int && stride() == sizeof(int)) {
+	else if(dataType() == PropertyObject::Int && stride() == sizeof(int)) {
 		// Single integer
 		auto src = reinterpret_cast<const int*>(cbuffer());
 		auto dst = reinterpret_cast<int*>(copy->buffer());
@@ -319,7 +319,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 		}
 		OVITO_ASSERT(dst == reinterpret_cast<int*>(copy->buffer()) + newSize);
 	}
-	else if(dataType() == PropertyStorage::Int64 && stride() == sizeof(qlonglong)) {
+	else if(dataType() == PropertyObject::Int64 && stride() == sizeof(qlonglong)) {
 		// Single 64-bit integer
 		auto src = reinterpret_cast<const qlonglong*>(cbuffer());
 		auto dst = reinterpret_cast<qlonglong*>(copy->buffer());
@@ -328,7 +328,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 		}
 		OVITO_ASSERT(dst == reinterpret_cast<qlonglong*>(copy->buffer()) + newSize);
 	}
-	else if(dataType() == PropertyStorage::Float && stride() == sizeof(Point3)) {
+	else if(dataType() == PropertyObject::Float && stride() == sizeof(Point3)) {
 		// Triple float (may actually be four floats when SSE instructions are enabled).
 		auto src = reinterpret_cast<const Point3*>(cbuffer());
 		auto dst = reinterpret_cast<Point3*>(copy->buffer());
@@ -337,7 +337,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 		}
 		OVITO_ASSERT(dst == reinterpret_cast<Point3*>(copy->buffer()) + newSize);
 	}
-	else if(dataType() == PropertyStorage::Float && stride() == sizeof(Color)) {
+	else if(dataType() == PropertyObject::Float && stride() == sizeof(Color)) {
 		// Triple float
 		auto src = reinterpret_cast<const Color*>(cbuffer());
 		auto dst = reinterpret_cast<Color*>(copy->buffer());
@@ -346,7 +346,7 @@ std::shared_ptr<PropertyStorage> PropertyStorage::filterCopy(const boost::dynami
 		}
 		OVITO_ASSERT(dst == reinterpret_cast<Color*>(copy->buffer()) + newSize);
 	}
-	else if(dataType() == PropertyStorage::Int && stride() == sizeof(Point3I)) {
+	else if(dataType() == PropertyObject::Int && stride() == sizeof(Point3I)) {
 		// Triple int.
 		auto src = reinterpret_cast<const Point3I*>(cbuffer());
 		auto dst = reinterpret_cast<Point3I*>(copy->buffer());

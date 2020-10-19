@@ -41,15 +41,15 @@ void TrajectoryObject::OOMetaClass::initialize()
 
 	const QStringList emptyList;
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
-	registerStandardProperty(PositionProperty, tr("Position"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyStorage::Int64, emptyList);
+	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList);
+	registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList);
 }
 
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr TrajectoryObject::OOMetaClass::createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -57,22 +57,22 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardStorage(size_t elementC
 
 	switch(type) {
 	case PositionProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = sizeof(Point3);
 		break;
 	case SampleTimeProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case ParticleIdentifierProperty:
-		dataType = PropertyStorage::Int64;
+		dataType = PropertyObject::Int64;
 		componentCount = 1;
 		stride = sizeof(qlonglong);
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "TrajectoryObject::createStandardStorage()", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "TrajectoryObject::createStandardProperty()", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard property type: %1").arg(type));
 	}
 
@@ -81,7 +81,7 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardStorage(size_t elementC
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return std::make_shared<PropertyStorage>(elementCount, dataType, componentCount, stride,
+	return PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride,
 								propertyName, initializeMemory, type, componentNames);
 }
 

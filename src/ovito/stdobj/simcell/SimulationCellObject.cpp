@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,6 +47,41 @@ void SimulationCellObject::init(DataSet* dataset)
 {
 	// Attach a visualization element for rendering the simulation box.
 	addVisElement(new SimulationCellVis(dataset));
+}
+
+/******************************************************************************
+* Computes the inverse of the cell matrix.
+******************************************************************************/
+void SimulationCellObject::computeInverseMatrix() const
+{
+	if(!is2D()) {
+		cellMatrix().inverse(_reciprocalSimulationCell);
+	}
+	else {
+		_reciprocalSimulationCell.setIdentity();
+		FloatType det = cellMatrix()(0,0) * cellMatrix()(1,1) - cellMatrix()(0,1) * cellMatrix()(1,0);
+		bool isValid = (std::abs(det) > FLOATTYPE_EPSILON);
+		if(isValid) {
+			_reciprocalSimulationCell(0,0) = cellMatrix()(1,1) / det;
+			_reciprocalSimulationCell(1,0) = -cellMatrix()(1,0) / det;
+			_reciprocalSimulationCell(0,1) = -cellMatrix()(0,1) / det;
+			_reciprocalSimulationCell(1,1) = cellMatrix()(0,0) / det;
+			_reciprocalSimulationCell.translation().x() = -(_reciprocalSimulationCell(0,0) * cellMatrix().translation().x() + _reciprocalSimulationCell(0,1) * cellMatrix().translation().y());
+			_reciprocalSimulationCell.translation().y() = -(_reciprocalSimulationCell(1,0) * cellMatrix().translation().x() + _reciprocalSimulationCell(1,1) * cellMatrix().translation().y());
+		}
+	}
+	_isReciprocalMatrixValid = true;
+}
+
+/******************************************************************************
+* Is called when the value of a non-animatable field of this object changes.
+******************************************************************************/
+void SimulationCellObject::propertyChanged(const PropertyFieldDescriptor& field)
+{
+	if(field == PROPERTY_FIELD(cellMatrix) || field == PROPERTY_FIELD(is2D)) {
+		invalidateReciprocalCellMatrix();
+	}
+	DataObject::propertyChanged(field);
 }
 
 /******************************************************************************

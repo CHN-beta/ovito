@@ -162,7 +162,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
 	if(!property2) return;
 	if(property2->elementTypes().empty()) return;
 	if(property1->componentCount() != 1 || property2->componentCount() != 1) return;
-	if(property1->dataType() != PropertyStorage::Int || property2->dataType() != PropertyStorage::Int) return;
+	if(property1->dataType() != PropertyObject::Int || property2->dataType() != PropertyObject::Int) return;
 
 	std::map<int,int> typeMap;
 	for(const ElementType* type2 : property2->elementTypes()) {

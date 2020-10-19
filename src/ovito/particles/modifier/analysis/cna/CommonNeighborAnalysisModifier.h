@@ -198,7 +198,7 @@ private:
 			CNAEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_cnaIndices(std::make_shared<PropertyStorage>(_bondTopology->size(), PropertyStorage::Int, 3, 0, tr("CNA Indices"), false)) {}
+			_cnaIndices(std::make_shared<PropertyStorage>(_bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

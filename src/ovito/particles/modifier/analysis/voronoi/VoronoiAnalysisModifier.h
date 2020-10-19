@@ -92,9 +92,9 @@ private:
 			_relativeFaceThreshold(relativeFaceThreshold),
 			_computeBonds(computeBonds),
 			_computePolyhedra(computePolyhedra),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
-			_atomicVolumes(std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyStorage::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
-			_maxFaceOrders(computeIndices ? std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyStorage::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
+			_atomicVolumes(std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
+			_maxFaceOrders(computeIndices ? std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
 			_polyhedraMesh(simCell) {}
 

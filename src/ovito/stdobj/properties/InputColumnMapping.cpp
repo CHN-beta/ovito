@@ -34,7 +34,7 @@ namespace Ovito { namespace StdObj {
 bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorComponent) 
 {
 	OVITO_ASSERT(column >= 0 && column < this->size());
-	OVITO_ASSERT(typeId != PropertyStorage::GenericUserProperty);
+	OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
 	OVITO_ASSERT(containerClass());
 
 	// Check if there is another file column already mapped to the same target property.
@@ -59,7 +59,7 @@ bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName
 
 	// Check if there is another file column already mapped to the same target property.
 	for(const InputColumnInfo& columnInfo : *this) {
-		if(columnInfo.property.type() == PropertyStorage::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponent() == vectorComponent)
+		if(columnInfo.property.type() == PropertyObject::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponent() == vectorComponent)
 			return false;
 	}
 
@@ -105,11 +105,11 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
 			stream >> propertyName;
 			stream >> col.dataType;
 			if(col.dataType == qMetaTypeId<float>() || col.dataType == qMetaTypeId<double>())
-				col.dataType = PropertyStorage::Float;
+				col.dataType = PropertyObject::Float;
 			int vectorComponent;
 			stream >> vectorComponent;
 			if(col.dataType != QMetaType::Void) {
-				if(propertyType == PropertyStorage::GenericUserProperty)
+				if(propertyType == PropertyObject::GenericUserProperty)
 					col.property = PropertyReference(m.containerClass(), propertyName, vectorComponent);
 				else
 					col.property = PropertyReference(m.containerClass(), propertyType, vectorComponent);
@@ -124,7 +124,7 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
 			stream >> col.columnName;
 			stream >> col.dataType;
 			if(col.dataType == qMetaTypeId<float>() || col.dataType == qMetaTypeId<double>())
-				col.dataType = PropertyStorage::Float;
+				col.dataType = PropertyObject::Float;
 		}
 	}
 	stream.closeChunk();
@@ -187,7 +187,7 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount)
+InputColumnReader::InputColumnReader(DataSet* dataset, const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount)
 	: _mapping(mapping), _destination(destination)
 {
 	mapping.validate();
@@ -204,10 +204,10 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 		TargetPropertyRecord rec;
 
 		if(dataType != QMetaType::Void) {
-			if(dataType != PropertyStorage::Int && dataType != PropertyStorage::Int64 && dataType != PropertyStorage::Float)
+			if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
 				throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
-			if(pref.type() != PropertyStorage::GenericUserProperty) {
+			if(pref.type() != PropertyObject::GenericUserProperty) {
 				// Look for existing standard property.
 				for(const auto& p : destination.properties()) {
 					if(p->type() == pref.type()) {
@@ -217,7 +217,7 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 				}
 				if(!property) {
 					// Create standard property.
-					property = pref.containerClass()->createStandardStorage(elementCount, pref.type(), true);
+					property = pref.containerClass()->createStandardProperty(dataset, elementCount, pref.type(), true);
 					destination.addProperty(property);
 
 					// Also create a type list if it is a typed property.
@@ -242,7 +242,7 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 				}
 				if(!property) {
 					// Create a new user-defined property for the column.
-					property = std::make_shared<PropertyStorage>(elementCount, dataType, vectorComponent + 1, 0, pref.name(), true);
+					property = pref.containerClass()->createUserProperty(dataset, elementCount, dataType, vectorComponent + 1, 0, pref.name(), true);
 					destination.addProperty(property);
 					if(oldProperty) {
 						// We need to replace all old properties (with lower vector component count) with this one.
@@ -385,11 +385,11 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 	if(elementIndex >= prec.count)
 		throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
 
-	if(prec.dataType == PropertyStorage::Float) {
+	if(prec.dataType == PropertyObject::Float) {
 		if(!parseFloatType(token, token_end, *reinterpret_cast<FloatType*>(prec.data + elementIndex * prec.stride)))
 			throw Exception(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 	}
-	else if(prec.dataType == PropertyStorage::Int) {
+	else if(prec.dataType == PropertyObject::Int) {
 		int& d = *reinterpret_cast<int*>(prec.data + elementIndex * prec.stride);
 		bool ok = parseInt(token, token_end, d);
 		if(prec.typeList == nullptr) {
@@ -411,7 +411,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			prec.lastTypeId = d;
 		}
 	}
-	else if(prec.dataType == PropertyStorage::Int64) {
+	else if(prec.dataType == PropertyObject::Int64) {
 		qlonglong& d = *reinterpret_cast<qlonglong*>(prec.data + elementIndex * prec.stride);
 		if(!parseInt64(token, token_end, d))
 			throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
@@ -438,10 +438,10 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 			throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec->count));
 
 		if(prec->data) {
-			if(prec->dataType == PropertyStorage::Float) {
+			if(prec->dataType == PropertyObject::Float) {
 				*reinterpret_cast<FloatType*>(prec->data + elementIndex * prec->stride) = (FloatType)*token;
 			}
-			else if(prec->dataType == PropertyStorage::Int) {
+			else if(prec->dataType == PropertyObject::Int) {
 				int ival = (int)*token;
 				if(prec->typeList) {
 					// Automatically register a new element type if a new type identifier is encountered.
@@ -449,7 +449,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 				}
 				*reinterpret_cast<int*>(prec->data + elementIndex * prec->stride) = ival;
 			}
-			else if(prec->dataType == PropertyStorage::Int64) {
+			else if(prec->dataType == PropertyObject::Int64) {
 				*reinterpret_cast<qlonglong*>(prec->data + elementIndex * prec->stride) = (qlonglong)*token;
 			}
 		}

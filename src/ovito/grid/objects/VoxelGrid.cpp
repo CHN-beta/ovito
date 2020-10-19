@@ -49,13 +49,13 @@ void VoxelGrid::OOMetaClass::initialize()
 	const QStringList emptyList;
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Voxel colors"));
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Voxel colors"));
 }
 
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardStorage(size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -63,7 +63,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardStorage(size_t voxelCount, int
 
 	switch(type) {
 	case ColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
@@ -77,7 +77,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardStorage(size_t voxelCount, int
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(voxelCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, voxelCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {
@@ -136,9 +136,11 @@ void VoxelGrid::verifyIntegrity() const
 	PropertyContainer::verifyIntegrity();
 
 	size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
-	if(elementCount() != expectedElementCount) {
+	if(elementCount() != expectedElementCount)
 		throwException(tr("Property arrays in voxel grid object have wrong length. Array length %1 does not match the number of grid elements %2.").arg(elementCount()).arg(expectedElementCount));
-	}
+
+	if(!domain())
+		throwException(tr("Voxel grid has no simulation cell assigned."));
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -79,8 +79,8 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(fingerprint, positions, simCell, typesToIdentify, selection),
+        ChillPlusEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
+            StructureIdentificationEngine(dataset, fingerprint, positions, simCell, typesToIdentify, selection),
             _cutoff(cutoff) {}
 
         /// Computes the modifier's results.

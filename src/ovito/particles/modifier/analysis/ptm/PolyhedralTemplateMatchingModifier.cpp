@@ -248,7 +248,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
 	// Determine histogram bin size based on maximum RMSD value.
 	const size_t numHistogramBins = 100;
-	_rmsdHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	_rmsdHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
 	FloatType rmsdHistogramBinSize = (rmsdArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(rmsdArray) / numHistogramBins) : 0;
 	if(rmsdHistogramBinSize <= 0) rmsdHistogramBinSize = 1;
 	_rmsdHistogramRange = rmsdHistogramBinSize * numHistogramBins;

@@ -91,7 +91,7 @@ private:
 			_computePartialRdfs(particleTypes),
 			_particleTypes(std::move(particleTypes)),
 			_uniqueTypeIds(std::move(uniqueTypeIds)),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
 			_inputFingerprint(std::move(fingerprint))
 		{
 			size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
@@ -104,7 +104,7 @@ private:
 					}
 				}
 			}
-			_rdfY = std::make_shared<PropertyStorage>(rdfSampleCount, PropertyStorage::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
+			_rdfY = std::make_shared<PropertyStorage>(rdfSampleCount, PropertyObject::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
 		}
 
 		/// Computes the modifier's results.

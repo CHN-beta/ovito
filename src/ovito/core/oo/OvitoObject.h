@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ namespace Ovito {
 /**
  * \brief Universal base class for most objects in OVITO.
  *
- * The OvitoObject class implements a simple reference counting mechanism to manage the
+ * The OvitoObject class offers a reference counting mechanism to manage the
  * the lifetime of object instances. User code should make use of the OORef
  * smart-pointer class, which automatically increments and decrements the reference counter
  * of an OvitoObject when it holds a pointer to it.
@@ -91,7 +91,7 @@ public:
 	/// \brief Returns the current value of the object's reference counter.
 	/// \return The reference count for this object, i.e. the number of references
 	///         pointing to this object.
-	int objectReferenceCount() const noexcept { return _referenceCount; }
+	const QAtomicInt& objectReferenceCount() const noexcept { return _referenceCount; }
 
 #ifdef OVITO_DEBUG
 	/// \brief Returns whether this object has not been deleted yet.
@@ -109,19 +109,19 @@ public:
 
 	/// \brief Internal method that calls this object's aboutToBeDeleted() routine.
 	/// It is automatically called when the object's reference counter reaches zero.
-	void deleteObjectInternal() {
+	void deleteObjectInternal() noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT(_referenceCount == 0);
+		OVITO_ASSERT(_referenceCount.loadAcquire() == 0);
 
 		// Set the reference counter to a positive value to prevent the object
 		// from being deleted a second time during the call to aboutToBeDeleted().
-		_referenceCount = INVALID_REFERENCE_COUNT;
+		_referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
 		aboutToBeDeleted();
 
 		// After returning from aboutToBeDeleted(), the reference count should be back at the
 		// original value (no new references).
-		OVITO_ASSERT(_referenceCount == INVALID_REFERENCE_COUNT);
-		_referenceCount = 0;
+		OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
+		_referenceCount.storeRelease(0);
 	}
 
 protected:
@@ -173,38 +173,35 @@ protected:
 
 private:
 
-	/// The current number of references to this object.
-	int _referenceCount = 0;
+	/// The current number of references to this object that keep it alive.
+	mutable QAtomicInt _referenceCount{0};
 
 	/// This is the special value the reference count of the object is set to while it is being deleted:
-	constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<decltype(_referenceCount)>::max() / 2;
+	constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<int>::max() / 2;
 
 	/// \brief Increments the reference count by one.
-	void incrementReferenceCount() Q_DECL_NOTHROW {
+	void incrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "OvitoObject::incrementReferenceCount()", "OORef class may only be used in main thread.");
-		++_referenceCount;
+		_referenceCount.ref();
 	}
 
 	/// \brief Decrements the reference count by one.
 	///
 	/// When the reference count becomes zero, then the object deletes itself automatically.
-	void decrementReferenceCount() {
+	void decrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "OvitoObject::decrementReferenceCount()", "OORef class may only be used in main thread.");
-		OVITO_ASSERT_MSG(_referenceCount > 0, "OvitoObject::decrementReferenceCount()", "Reference count became negative.");
-		if(--_referenceCount == 0) {
-			deleteObjectInternal();
-			delete this;
+		if(!_referenceCount.deref()) {
+			const_cast<OvitoObject*>(this)->deleteObjectInternal();
+			const_cast<OvitoObject*>(this)->deleteLater();
 		}
 	}
 
 	/// Returns the name of the plugin class this object is an instance of. 
-	/// This method is an implementation detail required for the Q_PROPERTY macro above.
+	/// This method is an implementation detail required by the Q_PROPERTY macro above.
 	const QString& className() const { return getOOClass().name(); }
 
 	/// Returns the idenitifier of the plugin module this object belongs to. 
-	/// This method is an implementation detail required for the Q_PROPERTY macro above.
+	/// This method is an implementation detail required by the Q_PROPERTY macro above.
 	QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 
 #ifdef OVITO_DEBUG
@@ -214,11 +211,11 @@ private:
 	quint32 _magicAliveCode = 0x87ABCDEF;
 #endif
 
-	// Give OORef smart pointer access to the internal reference count.
+	// Give OORef smart-pointer class access to the internal reference counter.
 	template<class T> friend class OORef;
 
 	// These classes also require direct access to the reference counter since they
-	// don't make use of the OORef smart pointer class.
+	// don't make use of the OORef smart-pointer class.
 	friend class VectorReferenceFieldBase;
 	friend class SingleReferenceFieldBase;
 

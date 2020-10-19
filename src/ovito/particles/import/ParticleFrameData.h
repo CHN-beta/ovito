@@ -26,7 +26,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/PropertyContainerImportData.h>
 
 namespace Ovito { namespace Particles {
@@ -46,10 +45,10 @@ public:
 	virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) override;
 
 	/// Returns the current simulation cell matrix.
-	const SimulationCell& simulationCell() const { return _simulationCell; }
+	const AffineTransformation& simulationCell() const { return _simulationCell; }
 
-	/// Returns a reference to the simulation cell.
-	SimulationCell& simulationCell() { return _simulationCell; }
+	/// Returns a reference to the simulation cell matrix.
+	AffineTransformation& simulationCell() { return _simulationCell; }
 
 	/// Returns the per-particle data.
 	PropertyContainerImportData& particles() { return _particleData; }
@@ -103,8 +102,11 @@ public:
 
 private:
 
-	/// The simulation cell.
-	SimulationCell _simulationCell;
+	/// The simulation cell matrix.
+	AffineTransformation _simulationCell = AffineTransformation::Zero();
+
+	/// The simulation cell boundary conditions.
+	std::array<bool, 3> _pbcFlags{{false, false, false}};
 
 	/// Particle properties.
 	PropertyContainerImportData _particleData;

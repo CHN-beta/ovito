@@ -53,7 +53,7 @@ public:
 	DataTablePlotWidget(QWidget* parent = nullptr);
 
 	/// Returns the data table object currently being plotted.
-	const DataTable* table() const { return _table; }
+	const DataOORef<const DataTable>& table() const { return _table; }
 
 	/// Sets the data table to be plotted.
 	void setTable(const DataTable* table);
@@ -127,7 +127,7 @@ private:
 private:
 
 	/// Reference to the current data table shown in the plot widget.
-	OORef<DataTable> _table;
+	DataOORef<const DataTable> _table;
 
 	/// The plot item(s) for standard line charts.
     std::vector<QwtPlotCurve*> _curves;

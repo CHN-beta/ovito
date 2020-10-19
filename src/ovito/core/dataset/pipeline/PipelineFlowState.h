@@ -416,7 +416,7 @@ public:
 private:
 
 	/// The payload data.
-	StrongDataObjectRef<DataCollection> _data;
+	DataOORef<DataCollection> _data;
 
 	/// Contains the validity interval for this pipeline flow state.
 	TimeInterval _stateValidity = TimeInterval::empty();

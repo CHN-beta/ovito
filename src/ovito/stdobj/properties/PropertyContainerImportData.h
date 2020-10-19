@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 
 namespace Ovito { namespace StdObj {
@@ -189,7 +189,7 @@ public:
 
 	/// Returns a standard property if already defined.
 	PropertyPtr findStandardProperty(int which) const {
-		OVITO_ASSERT(which != PropertyStorage::GenericUserProperty);
+		OVITO_ASSERT(which != PropertyObject::GenericUserProperty);
 		for(const auto& prop : _properties)
 			if(prop->type() == which)
 				return prop;
@@ -205,15 +205,15 @@ public:
 	}
 
 	/// Adds a new property.
-	PropertyStorage* addProperty(PropertyPtr property) {
+	PropertyObject* addProperty(PropertyPtr property) {
 		_properties.push_back(std::move(property));
 		return _properties.back().get();
 	}
 
 	/// Create a standard property.
 	template<class ContainerClass>
-	PropertyStorage* createStandardProperty(size_t elementCount, int typeId, bool initializeMemory) {
-		return addProperty(ContainerClass::OOClass().createStandardStorage(elementCount, typeId, initializeMemory));
+	PropertyObject* createStandardProperty(size_t elementCount, int typeId, bool initializeMemory) {
+		return addProperty(ContainerClass::OOClass().createStandardProperty(elementCount, typeId, initializeMemory));
 	}
 
 	/// Removes a property from the list.
@@ -232,7 +232,7 @@ public:
 	}
 
 	/// Returns the list of types defined for a property.
-	TypeList* propertyTypesList(const PropertyStorage* property) {
+	TypeList* propertyTypesList(const PropertyObject* property) {
 		auto typeList = _typeLists.find(property);
 		if(typeList == _typeLists.end())
 			return nullptr;
@@ -250,7 +250,7 @@ public:
 	}
 
 	/// Creates a types list for a property.
-	TypeList* createPropertyTypesList(const PropertyStorage* property, const OvitoClass& elementClass) {
+	TypeList* createPropertyTypesList(const PropertyObject* property, const OvitoClass& elementClass) {
 		auto typeList = _typeLists.find(property);
 		if(typeList == _typeLists.end())
 			typeList = _typeLists.emplace(property, std::make_unique<TypeList>(elementClass)).first;
@@ -268,7 +268,7 @@ public:
 	}	
 
 	/// Sets the list of types defined for a property.
-	void setPropertyTypesList(const PropertyStorage* property, std::unique_ptr<TypeList> list) {
+	void setPropertyTypesList(const PropertyObject* property, std::unique_ptr<TypeList> list) {
 		_typeLists.emplace(property, std::move(list));
 	}
 
@@ -295,7 +295,7 @@ public:
 private:
 
 	/// Inserts the stored element types into the given property object.
-	void insertTypes(PropertyObject* propertyObj, TypeList* typeList, bool isNewFile) const;
+	void insertTypes(PropertyObject* propertyObj, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile) const;
 
 private:
 
@@ -310,7 +310,7 @@ private:
 #endif
 
 	/// Stores the lists of types for typed properties (particle/bond/angle/dihedral/improper properties).
-	std::map<const PropertyStorage*, std::unique_ptr<TypeList>> _typeLists;
+	std::map<const PropertyObject*, std::unique_ptr<TypeList>> _typeLists;
 
 	/// The type of visual element to create for rendering the data elements.
 	OvitoClassPtr _visElementClass = {};

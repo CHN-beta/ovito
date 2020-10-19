@@ -37,7 +37,7 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 	OVITO_ASSERT_MSG(typeId > 0, "PropertyContainerClass::registerStandardProperty", "Invalid standard property type ID");
 	OVITO_ASSERT_MSG(_standardPropertyIds.find(name) == _standardPropertyIds.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property name");
 	OVITO_ASSERT_MSG(_standardPropertyNames.find(typeId) == _standardPropertyNames.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property type ID");
-	OVITO_ASSERT_MSG(dataType == PropertyStorage::Int || dataType == PropertyStorage::Int64 || dataType == PropertyStorage::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
+	OVITO_ASSERT_MSG(dataType == PropertyObject::Int || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
 	OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
 	_standardPropertyList.push_back(typeId);
@@ -52,14 +52,16 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 }
 
 /******************************************************************************
-* Factory function that creates a property object based on an existing storage.
+* Creates a new property object for a standard property of this container class.
 ******************************************************************************/
-OORef<PropertyObject> PropertyContainerClass::createFromStorage(DataSet* dataset, PropertyPtr storage) const
+PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const 
 {
-	OORef<PropertyObject> property = new PropertyObject(dataset, std::move(storage));
-	if(property->type() != 0)
-		property->setTitle(standardPropertyTitle(property->type()));
-	prepareNewProperty(property);
+	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, initializeMemory, containerPath);
+	if(property) {
+		if(property->type() != 0)
+			property->setTitle(standardPropertyTitle(property->type()));
+		prepareNewProperty(property);
+	}
 	return property;
 }
 

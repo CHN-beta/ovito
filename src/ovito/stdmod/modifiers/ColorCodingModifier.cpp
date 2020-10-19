@@ -23,7 +23,6 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
@@ -174,10 +173,9 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
 	const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
 	// Look up the selected property.
-	const PropertyObject* propertyObj = sourceProperty().findInContainer(container);
-	if(!propertyObj)
+	const PropertyObject* property = sourceProperty().findInContainer(container);
+	if(!property)
 		return false;
-	const PropertyStorage* property = propertyObj->storage().get();
 
 	// Verify input property.
 	if(sourceProperty().vectorComponent() >= (int)property->componentCount())
@@ -309,19 +307,18 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 	// Make sure input data structure is ok.
 	container->verifyIntegrity();
 
-	const PropertyObject* propertyObj = sourceProperty.findInContainer(container);
-	if(!propertyObj)
+	ConstPropertyPtr property = sourceProperty.findInContainer(container);
+	if(!property)
 		throwException(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
-	ConstPropertyPtr property = propertyObj->storage();
 	if(sourceProperty.vectorComponent() >= (int)property->componentCount())
 		throwException(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
 	vecComponent = std::max(0, sourceProperty.vectorComponent());
 
 	// Get the selection property if enabled by the user.
-	ConstPropertyAccessAndRef<int> selProperty;
-	if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
-		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyStorage::GenericSelectionProperty)) {
-			selProperty = selPropertyObj;
+	ConstPropertyPtr selectionProperty;
+	if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+			selectionProperty = selPropertyObj;
 
 			// Clear selection if requested.
 			if(!mod->keepSelection()) {
@@ -331,7 +328,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 	}
 
 	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, objectPath);
+    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, objectPath);
 
 	// Get modifier's parameter values.
 	FloatType startValue = 0, endValue = 0;
@@ -342,8 +339,9 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 	if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
 	if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
+	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
 	bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
-		if(selProperty && !selProperty[i])
+		if(selection && !selection[i])
 			return;
 
 		// Compute linear interpolation.

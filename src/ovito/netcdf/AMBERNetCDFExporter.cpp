@@ -245,9 +245,9 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 
 			// Create the NetCDF variable for the property.
 			nc_type ncDataType;
-			if(prop->dataType() == PropertyStorage::Int) ncDataType = NC_INT;
-			else if(prop->dataType() == PropertyStorage::Int64) ncDataType = NC_INT64;
-			else if(prop->dataType() == PropertyStorage::Float) ncDataType = NC_OVITO_FLOATTYPE;
+			if(prop->dataType() == PropertyObject::Int) ncDataType = NC_INT;
+			else if(prop->dataType() == PropertyObject::Int64) ncDataType = NC_INT64;
+			else if(prop->dataType() == PropertyObject::Float) ncDataType = NC_OVITO_FLOATTYPE;
 			else continue;
 			// For scalar OVITO properties we define a NetCDF variable with 2 dimensions.
 			// For vector OVITO properties we define a NetCDF variable with 3 dimensions.
@@ -345,13 +345,13 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 
 		// Write property data to file.
 		count[2] = outColumn.componentCount;
-		if(outColumn.dataType == PropertyStorage::Int) {
+		if(outColumn.dataType == PropertyObject::Int) {
 			NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<int,true>(prop).cbegin()));
 		}
-		else if(outColumn.dataType == PropertyStorage::Int64) {
+		else if(outColumn.dataType == PropertyObject::Int64) {
 			NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<qlonglong,true>(prop).cbegin()));
 		}
-		else if(outColumn.dataType == PropertyStorage::Float) {
+		else if(outColumn.dataType == PropertyObject::Float) {
 #ifdef FLOATTYPE_FLOAT
 			NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<FloatType,true>(prop).cbegin()));
 #else

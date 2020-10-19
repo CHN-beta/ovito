@@ -102,7 +102,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 		periodicImageBondProperty = PropertyStorage::makeMutable(particles->bonds()->getPropertyStorage(BondsObject::PeriodicImageProperty));
 		// If no PBC vectors are present, create ad-hoc vectors initialized to zero.
 		if(!periodicImageBondProperty)
-			periodicImageBondProperty = BondsObject::OOClass().createStandardStorage(particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true);
+			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true);
 	}
 
 	// Get particle masses, needed for center-of-mass calculation.
@@ -117,7 +117,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
 			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
-				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardStorage(particles->elementCount(), ParticlesObject::MassProperty, false));
+				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::MassProperty, false));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
 					if(iter != massMap.end()) return iter->second;
@@ -280,7 +280,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 	}
 
 	// Determine cluster sizes.
-	_clusterSizes = std::make_shared<PropertyStorage>(numClusters(), PropertyStorage::Int64, 1, 0, QStringLiteral("Cluster Size"), true, DataTable::YProperty);
+	_clusterSizes = std::make_shared<PropertyStorage>(numClusters(), PropertyObject::Int64, 1, 0, QStringLiteral("Cluster Size"), true, DataTable::YProperty);
 	PropertyAccess<qlonglong> clusterSizeArray(_clusterSizes);
 	for(auto id : ConstPropertyAccess<qlonglong>(particleClusters())) {
 		if(id != 0) clusterSizeArray[id-1]++;
@@ -289,7 +289,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 		return;
 
 	// Create custer ID property.
-	_clusterIds =  std::make_shared<PropertyStorage>(numClusters(), PropertyStorage::Int64, 1, 0, QStringLiteral("Cluster Identifier"), false, DataTable::XProperty);
+	_clusterIds =  std::make_shared<PropertyStorage>(numClusters(), PropertyObject::Int64, 1, 0, QStringLiteral("Cluster Identifier"), false, DataTable::XProperty);
 	boost::algorithm::iota_n(PropertyAccess<qlonglong>(_clusterIds).begin(), size_t(1), _clusterIds->size());
 
 	// Sort clusters by size.

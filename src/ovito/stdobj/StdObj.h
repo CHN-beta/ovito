@@ -33,19 +33,17 @@ namespace Ovito {
 	namespace StdObj {
 
         class PropertyObject;
-        class PropertyStorage;
         class PropertyContainer;
         class PropertyContainerClass;
         using PropertyContainerClassPtr = const PropertyContainerClass*;
-        using PropertyPtr = std::shared_ptr<PropertyStorage>;
-        using ConstPropertyPtr = std::shared_ptr<const PropertyStorage>;
+        using PropertyPtr = DataOORef<PropertyObject>;
+        using ConstPropertyPtr = DataOORef<const PropertyObject>;
         class PropertyReference;
         template<class PropertyContainerType> class TypedPropertyReference;
         class InputColumnMapping;
         template<class PropertyContainerType> class TypedInputColumnMapping;
         class InputColumnReader;
         class PropertyContainerImportData;
-        class SimulationCell;
         class SimulationCellObject;
         class SimulationCellVis;
         class DataTable;

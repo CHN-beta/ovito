@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
 #include "PropertyContainerClass.h"
 
@@ -96,13 +97,6 @@ public:
 		return nullptr;
 	}
 
-	/// Looks up the storage array for the standard property with the given ID.
-	ConstPropertyPtr getPropertyStorage(int typeId) const {
-		if(const PropertyObject* property = getProperty(typeId))
-			return property->storage();
-		return nullptr;
-	}
-
 	/// Returns the given standard property.
 	/// If it does not exist, an exception is thrown.
 	const PropertyObject* expectProperty(int typeId) const;
@@ -130,8 +124,8 @@ public:
 	/// In case the property already exists, it is made sure that it's safe to modify it.
 	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory = false, QStringList componentNames = QStringList());
 
-	/// Creates a property and adds it to the container.
-	PropertyObject* createProperty(PropertyPtr storage);
+	/// Adds a property object to the container, replacing any preexisting property in the container with the same type. 
+	void createProperty(const PropertyObject* property);
 
 	/// Sets the current number of data elements stored in the container.
 	/// The lengths of the property arrays will be adjusted accordingly.
@@ -140,10 +134,6 @@ public:
 	/// Deletes those data elements for which the bit is set in the given bitmask array.
 	/// Returns the number of deleted elements.
 	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask);
-
-	/// Replaces the property arrays in this property container with a new set of properties.
-	/// Existing element types of typed properties will be preserved by the method. 
-	void setContent(size_t newElementCount, const std::vector<PropertyPtr>& newProperties);
 
 	/// Replaces the property arrays in this property container with a new set of properties.
 	/// Existing element types of typed properties will be preserved by the method. 
@@ -169,7 +159,7 @@ private:
 	/// Holds the list of properties.
 	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(PropertyObject, properties, setProperties);
 
-	/// Keeps track of the number of elements stored in this property container.
+	/// Keeps track of the number of data elements this property container contains.
 	DECLARE_PROPERTY_FIELD(size_t, elementCount);
 
 	/// The assigned title of the data object, which is displayed in the user interface.

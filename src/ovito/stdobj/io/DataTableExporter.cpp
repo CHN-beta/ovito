@@ -81,8 +81,8 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	ConstPropertyPtr xstorage = table->getXStorage();
-	ConstPropertyPtr ystorage = table->getYStorage();
+	ConstPropertyPtr xstorage = table->getXValues();
+	ConstPropertyPtr ystorage = table->getY();
 	const PropertyObject* xprop = table->getX();
 	const PropertyObject* yprop = table->getY();
 	if(!ystorage || !yprop)
@@ -92,9 +92,9 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	int xDataType = xstorage ? xstorage->dataType() : 0;
 	int yDataType = ystorage->dataType();
 
-	ConstPropertyAccess<int, true> xaccessInt(xDataType == PropertyStorage::Int ? xstorage : nullptr);
-	ConstPropertyAccess<qlonglong, true> xaccessInt64(xDataType == PropertyStorage::Int64 ? xstorage : nullptr);
-	ConstPropertyAccess<FloatType, true> xaccessFloat(xDataType == PropertyStorage::Float ? xstorage : nullptr);
+	ConstPropertyAccess<int, true> xaccessInt(xDataType == PropertyObject::Int ? xstorage : nullptr);
+	ConstPropertyAccess<qlonglong, true> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
+	ConstPropertyAccess<FloatType, true> xaccessFloat(xDataType == PropertyObject::Float ? xstorage : nullptr);
 
 	if(!table->title().isEmpty())
 		textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
@@ -119,7 +119,7 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	for(const PropertyObject* propObj : table->properties()) {
 		if(propObj->type() == DataTable::XProperty) continue;
 		if(propObj->type() == DataTable::YProperty) continue;
-		outputProperties.emplace_back(propObj->storage());
+		outputProperties.emplace_back(propObj);
 		if(propObj->componentNames().size() == propObj->componentCount()) {
 			for(size_t col = 0; col < propObj->componentCount(); col++) {
 				textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(propObj->name()).arg(propObj->componentNames()[col]));
@@ -155,11 +155,11 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 		// Write the Y column(s).
 		for(const ConstPropertyAccess<void,true>& array : outputProperties) {
 			for(size_t col = 0; col < array.componentCount(); col++) {
-				if(array.storage()->dataType() == PropertyStorage::Int)
+				if(array.storage()->dataType() == PropertyObject::Int)
 					textStream() << *reinterpret_cast<const int*>(array.cdata(row, col)) << " ";
-				else if(array.storage()->dataType() == PropertyStorage::Int64)
+				else if(array.storage()->dataType() == PropertyObject::Int64)
 					textStream() << *reinterpret_cast<const qlonglong*>(array.cdata(row, col)) << " ";
-				else if(array.storage()->dataType() == PropertyStorage::Float)
+				else if(array.storage()->dataType() == PropertyObject::Float)
 					textStream() << *reinterpret_cast<const FloatType*>(array.cdata(row, col)) << " ";
 				else
 					textStream() << "<?> ";

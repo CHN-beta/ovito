@@ -44,13 +44,11 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 	// Build list of properties that will be made available as expression variables.
 	std::vector<ConstPropertyPtr> inputProperties;
 	for(const PropertyObject* property : container->properties())
-		inputProperties.push_back(property->storage());
+		inputProperties.push_back(property);
 	_elementDescriptionName = container->getOOMetaClass().elementDescriptionName();
 
 	// Get simulation cell information.
-	SimulationCell simCell;
-	const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>();
-	if(simCellObj) simCell = simCellObj->data();
+	const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();
 
 	// Determine number of input elements.
 	_elementCount = container->elementCount();
@@ -58,7 +56,7 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 	OVITO_ASSERT(inputProperties.empty() || _elementCount == inputProperties.front()->size());
 
 	// Create list of input variables.
-	createInputVariables(inputProperties, simCellObj ? &simCell : nullptr, state.buildAttributesMap(), animationFrame);
+	createInputVariables(inputProperties, simCell, state.buildAttributesMap(), animationFrame);
 
 	// Copy expression strings into internal array.
 	_expressions.resize(expressions.size());
@@ -68,7 +66,7 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 /******************************************************************************
 * Initializes the list of input variables from the given input state.
 ******************************************************************************/
-void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame)
+void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame)
 {
 	// Register the list of expression variables that refer to input properties.
 	registerPropertyVariables(inputProperties, 0);
@@ -99,7 +97,7 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 
 	if(simCell) {
 		// Store simulation cell data.
-		_simCell = *simCell;
+		_simCell = simCell;
 
 		// Cell volume
 		registerGlobalParameter("CellVolume", simCell->volume3D(), tr("simulation cell volume"));
@@ -124,15 +122,14 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
 		ExpressionVariable v;
 
 		// Properties with custom data type are not supported by this modifier.
-		if(property->dataType() == PropertyStorage::Int)
+		if(property->dataType() == PropertyObject::Int)
 			v.type = INT_PROPERTY;
-		else if(property->dataType() == PropertyStorage::Int64)
+		else if(property->dataType() == PropertyObject::Int64)
 			v.type = INT64_PROPERTY;
-		else if(property->dataType() == PropertyStorage::Float)
+		else if(property->dataType() == PropertyObject::Float)
 			v.type = FLOAT_PROPERTY;
 		else
 			continue;
-		v.property = property;
 		v.variableClass = variableClass;
 		v.propertyArray = property;
 
@@ -379,15 +376,15 @@ void PropertyExpressionEvaluator::ExpressionVariable::updateValue(size_t element
 
 	switch(type) {
 	case FLOAT_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const FloatType*>(dataPointer + stride * elementIndex);
 		break;
 	case INT_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const int*>(dataPointer + stride * elementIndex);
 		break;
 	case INT64_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const qlonglong*>(dataPointer + stride * elementIndex);
 		break;
 	case ELEMENT_INDEX:

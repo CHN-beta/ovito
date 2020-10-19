@@ -31,7 +31,7 @@ namespace Ovito { namespace Grid {
 ******************************************************************************/
 MarchingCubes::MarchingCubes(SurfaceMeshData& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain) :
     _outputMesh(outputMesh),
-    _pbcFlags(outputMesh.cell().pbcFlags()),
+    _pbcFlags(outputMesh.cell()->pbcFlags()),
     _infiniteDomain(infiniteDomain),
     _size_x(size_x + (_pbcFlags[0] ? 0 : 1)),
     _size_y(size_y + (_pbcFlags[1] ? 0 : 1)),
@@ -40,6 +40,7 @@ MarchingCubes::MarchingCubes(SurfaceMeshData& outputMesh, int size_x, int size_y
     _cubeVerts(_size_x * _size_y * _size_z * 3, HalfEdgeMesh::InvalidIndex),
     _lowerIsSolid(lowerIsSolid)
 {
+    OVITO_ASSERT(outputMesh.cell());
     OVITO_ASSERT(outputMesh.regionCount() == 0);
     OVITO_ASSERT(outputMesh.spaceFillingRegion() == HalfEdgeMesh::InvalidIndex);
 }

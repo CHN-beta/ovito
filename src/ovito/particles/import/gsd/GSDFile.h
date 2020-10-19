@@ -111,14 +111,14 @@ public:
 			case GSD_TYPE_INT16:
 			case GSD_TYPE_UINT16:
 			case GSD_TYPE_INT32:
-				return { PropertyStorage::Int, chunk->M };
+				return { PropertyObject::Int, chunk->M };
 			case GSD_TYPE_UINT32: // Note: We map unsigned int32 to the signed int64 in OVITO to avoid overflows.
 			case GSD_TYPE_INT64:
 			case GSD_TYPE_UINT64:
-				return { PropertyStorage::Int64, chunk->M };
+				return { PropertyObject::Int64, chunk->M };
 			case GSD_TYPE_FLOAT:
 			case GSD_TYPE_DOUBLE:
-				return { PropertyStorage::Float, chunk->M };
+				return { PropertyObject::Float, chunk->M };
 			default:
 				throw Exception(GSDImporter::tr("GSD file I/O error. Unknown chunk data type."));
 		}

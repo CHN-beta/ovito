@@ -64,6 +64,7 @@ namespace Ovito {
 	class OvitoObject;
 	class OvitoClass;
 	using OvitoClassPtr = const OvitoClass*;
+	template<class T> class OORef;
 	class CloneHelper;
 	class RefMaker;
 	class RefMakerClass;
@@ -86,6 +87,7 @@ namespace Ovito {
 	class DataObjectReference;
 	class ConstDataObjectPath;
 	class DataObjectPath;
+	template<class T> class DataOORef;
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;

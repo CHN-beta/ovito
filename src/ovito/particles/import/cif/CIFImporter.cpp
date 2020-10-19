@@ -149,7 +149,7 @@ FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(sites.size(), PropertyStorage::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(sites.size(), PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::SmallStructure::Site& site : sites) {
 				*occupancyIter++ = site.occ;

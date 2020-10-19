@@ -84,7 +84,7 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& cell, VoxelGrid::GridDimensions gridShape);
+	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject* cell, VoxelGrid::GridDimensions gridShape);
 
 protected:
 
@@ -99,14 +99,15 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, const SimulationCell& simCell, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties) :
+		ComputeIsosurfaceEngine(const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, const SimulationCellObject* simCell, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties) :
 			Engine(validityInterval),
 			_gridShape(gridShape),
 			_property(std::move(property)),
 			_vectorComponent(std::max(vectorComponent, 0)),
-			_mesh(simCell),
+			_mesh(property->dataset(), simCell),
 			_isolevel(isolevel),
-			_auxiliaryProperties(std::move(auxiliaryProperties)) {}
+			_auxiliaryProperties(std::move(auxiliaryProperties)),
+			_histogram(DataTable::OOClass().createUserProperty(property->dataset(), 64, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty)) {}
 			
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -127,7 +128,7 @@ private:
 		SurfaceMeshData& mesh() { return _mesh; }
 
 		/// Returns the simulation cell geometry.
-		const SimulationCell& cell() { return _mesh.cell(); }
+		const SimulationCellObject* cell() { return _mesh.cell(); }
 
 		/// Adjust the min/max values to include the given value.
 		void updateMinMax(FloatType val) {
@@ -161,7 +162,7 @@ private:
 		FloatType _maxValue = -FLOATTYPE_MAX;
 
 		/// The computed histogram of the input field values.
-		PropertyPtr _histogram = std::make_shared<PropertyStorage>(64, PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+		PropertyPtr _histogram;
 
 		/// The list of grid properties to copy over to the generated isosurface mesh.
 		std::vector<ConstPropertyPtr> _auxiliaryProperties;

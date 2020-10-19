@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
@@ -74,7 +74,7 @@ public:
 	virtual QString inputVariableTable() const;
 
 	/// Returns the stored simulation cell information.
-	const SimulationCell& simCell() const { return _simCell; }
+	const SimulationCellObject* simCell() const { return _simCell; }
 
 	/// Sets the name of the variable that provides the index of the current element.
 	void setIndexVarName(QString name) { _indexVarName = std::move(name); }
@@ -166,10 +166,8 @@ protected:
 		QString description;
 		/// A function that computes the variable's value for each data element.
 		std::function<double(size_t)> function;
-		/// Reference the original property that contains the data.
-		ConstPropertyPtr property;
-		/// Mmeory buffer containing the property values.
-		ConstPropertyAccess<void,true> propertyArray;
+		/// Array with the property values.
+		ConstPropertyAccessAndRef<void,true> propertyArray;
 		/// Indicates whether this variable is a caller-defined element variable.
 		int variableClass = 0;
 
@@ -240,7 +238,7 @@ public:
 protected:
 
 	/// Initializes the list of input variables from the given input state.
-	virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame);
+	virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame);
 
 	/// Updates the stored value of variables that depends on the current element index.
 	virtual void updateVariables(Worker& worker, size_t elementIndex) {
@@ -275,7 +273,7 @@ protected:
 	QString _elementDescriptionName;
 
 	/// The simulation cell information.
-	SimulationCell _simCell;
+	DataOORef<const SimulationCellObject> _simCell;
 };
 
 }	// End of namespace

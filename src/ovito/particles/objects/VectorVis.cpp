@@ -85,7 +85,7 @@ Box3 VectorVis::boundingBox(TimePoint time, const std::vector<const DataObject*>
 	if(!particles) return {};
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-	if(vectorProperty && (vectorProperty->dataType() != PropertyStorage::Float || vectorProperty->componentCount() != 3))
+	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
 
 	// The key type used for caching the computed bounding box:
@@ -122,7 +122,7 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Pro
 		return Box3();
 
 	OVITO_ASSERT(positionProperty->type() == ParticlesObject::PositionProperty);
-	OVITO_ASSERT(vectorProperty->dataType() == PropertyStorage::Float);
+	OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float);
 	OVITO_ASSERT(vectorProperty->componentCount() == 3);
 
 	// Compute bounding box of particle positions (only those with non-zero vector).
@@ -168,7 +168,7 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 	if(!particles) return;
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-	if(vectorProperty && (vectorProperty->dataType() != PropertyStorage::Float || vectorProperty->componentCount() != 3))
+	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
 	const PropertyObject* vectorColorProperty = particles->getProperty(ParticlesObject::VectorColorProperty);
 

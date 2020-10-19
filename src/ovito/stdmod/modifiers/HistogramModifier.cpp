@@ -146,17 +146,17 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 
 	// Get the input selection if filtering was enabled by the user.
 	ConstPropertyAccess<int> inputSelection;
-	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
-		inputSelection = container->expectProperty(PropertyStorage::GenericSelectionProperty);
+	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+		inputSelection = container->expectProperty(PropertyObject::GenericSelectionProperty);
 	}
 
 	// Create storage for output selection.
 	PropertyAccess<int> outputSelection;
-	if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
+	if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyStorage::GenericSelectionProperty);
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
 	}
 
 	// Create selection property for output.
@@ -169,12 +169,12 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	FloatType intervalEnd = xAxisRangeEnd();
 
 	// Allocate output data array.
-	PropertyAccessAndRef<qlonglong> histogram = std::make_shared<PropertyStorage>(std::max(1, numberOfBins()), PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(dataset(), std::max(1, numberOfBins()), PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
 	qlonglong* histogramData = histogram.begin();
 	int histogramSizeMin1 = histogram.size() - 1;
 
 	if(property->size() > 0) {
-		if(property->dataType() == PropertyStorage::Float) {
+		if(property->dataType() == PropertyObject::Float) {
 			ConstPropertyAccess<FloatType,true> array(property);
 			// Determine value range.
 			if(!fixXAxisRange()) {
@@ -217,7 +217,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 				}
 			}
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			ConstPropertyAccess<int,true> array(property);
 			// Determine value range.
 			if(!fixXAxisRange()) {
@@ -260,7 +260,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 				}
 			}
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			ConstPropertyAccess<qlonglong,true> array(property);
 			// Determine value range.
 			if(!fixXAxisRange()) {
@@ -315,7 +315,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	DataTable* table = state.createObject<DataTable>(
 		QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
 		modApp, DataTable::Histogram, sourceProperty().nameWithComponent(), 
-		histogram.takeStorage());
+		histogram.take());
 	table->setAxisLabelX(sourceProperty().nameWithComponent());
 	table->setIntervalStart(intervalStart);
 	table->setIntervalEnd(intervalEnd);

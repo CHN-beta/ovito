@@ -69,12 +69,12 @@ private:
 				QVector<bool> typesToIdentify, ConstPropertyPtr selection,
 				bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 			StructureIdentificationEngine(std::move(fingerprint), positions, simCell, std::move(typesToIdentify), std::move(selection)),
-			_rmsd(std::make_shared<PropertyStorage>(positions->size(), PropertyStorage::Float, 1, 0, tr("RMSD"), false)),
-			_interatomicDistances(outputInteratomicDistance ? std::make_shared<PropertyStorage>(positions->size(), PropertyStorage::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
-			_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardStorage(positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),
-			_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardStorage(positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true) : nullptr),
-			_orderingTypes(particleTypes ? std::make_shared<PropertyStorage>(positions->size(), PropertyStorage::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
-			_correspondences(outputOrientation ? std::make_shared<PropertyStorage>(positions->size(), PropertyStorage::Int64, 1, 0, tr("Correspondences"), true) : nullptr)	// only output correspondences if orientations are selected
+			_rmsd(std::make_shared<PropertyStorage>(positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
+			_interatomicDistances(outputInteratomicDistance ? std::make_shared<PropertyStorage>(positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
+			_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),
+			_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true) : nullptr),
+			_orderingTypes(particleTypes ? std::make_shared<PropertyStorage>(positions->size(), PropertyObject::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
+			_correspondences(outputOrientation ? std::make_shared<PropertyStorage>(positions->size(), PropertyObject::Int64, 1, 0, tr("Correspondences"), true) : nullptr)	// only output correspondences if orientations are selected
 			{
 				_algorithm.emplace();
 				_algorithm->setCalculateDefGradient(outputDeformationGradient);

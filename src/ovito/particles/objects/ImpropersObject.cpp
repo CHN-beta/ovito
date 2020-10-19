@@ -40,7 +40,7 @@ ImpropersObject::ImpropersObject(DataSet* dataset) : PropertyContainer(dataset)
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr ImpropersObject::OOMetaClass::createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr ImpropersObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -48,12 +48,12 @@ PropertyPtr ImpropersObject::OOMetaClass::createStandardStorage(size_t elementCo
 
 	switch(type) {
 	case TypeProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case TopologyProperty:
-		dataType = PropertyStorage::Int64;
+		dataType = PropertyObject::Int64;
 		componentCount = 4;
 		stride = componentCount * sizeof(qlonglong);
 		break;
@@ -66,7 +66,7 @@ PropertyPtr ImpropersObject::OOMetaClass::createStandardStorage(size_t elementCo
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(elementCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {
@@ -91,8 +91,8 @@ void ImpropersObject::OOMetaClass::initialize()
 	const QStringList emptyList;
 	const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-	registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyStorage::Int, emptyList, &ElementType::OOClass(), tr("Improper types"));
-	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyStorage::Int64, abcdList);
+	registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Improper types"));
+	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 
 }	// End of namespace

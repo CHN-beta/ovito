@@ -253,7 +253,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 			if(!str.isEmpty()) str += QStringLiteral(" | ");
 			str += property->name();
 			str += QStringLiteral(" ");
-			if(property->dataType() == PropertyStorage::Int) {
+			if(property->dataType() == PropertyObject::Int) {
 				ConstPropertyAccess<int, true> data(property);
 				for(size_t component = 0; component < data.componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");
@@ -266,14 +266,14 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 					}
 				}
 			}
-			else if(property->dataType() == PropertyStorage::Int64) {
+			else if(property->dataType() == PropertyObject::Int64) {
 				ConstPropertyAccess<qlonglong, true> data(property);
 				for(size_t component = 0; component < property->componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");
 					str += QString::number(data.get(facetIndex, component));
 				}
 			}
-			else if(property->dataType() == PropertyStorage::Float) {
+			else if(property->dataType() == PropertyObject::Float) {
 				ConstPropertyAccess<FloatType, true> data(property);
 				for(size_t component = 0; component < property->componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");
@@ -298,7 +298,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 					str += QStringLiteral(" | ");
 					str += property->name();
 					str += QStringLiteral(" ");
-					if(property->dataType() == PropertyStorage::Int) {
+					if(property->dataType() == PropertyObject::Int) {
 						ConstPropertyAccess<int, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
@@ -311,14 +311,14 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 							}
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Int64) {
+					else if(property->dataType() == PropertyObject::Int64) {
 						ConstPropertyAccess<qlonglong, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
 							str += QString::number(data.get(regionIndex, component));
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Float) {
+					else if(property->dataType() == PropertyObject::Float) {
 						ConstPropertyAccess<FloatType, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
@@ -392,7 +392,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 
 	if(_generateCapPolygons) {
 		nextProgressSubStep();
-		buildCapTriangleMesh();
+		if(cell())
+			buildCapTriangleMesh();
 	}
 
 	setResult(
@@ -492,7 +493,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 ******************************************************************************/
 bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 {
-	if(cell().is2D())
+	if(cell() && cell()->is2D())
 		throw Exception(tr("Cannot generate surface triangle mesh when domain is two-dimensional."));
 
 	beginProgressSubStepsWithWeights({1,1,1,1,1,1});
@@ -519,18 +520,19 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 
 	// Convert vertex positions to reduced coordinates and transfer them to the output mesh.
 	OVITO_ASSERT(_surfaceMesh.vertices().size() == _inputMesh.vertexCount());
-	if(cell().isValid()) {
+	if(cell()) {
 		SurfaceMeshData::vertex_index vidx = 0;
 		for(Point3& p : _surfaceMesh.vertices()) {
-			p = cell().absoluteToReduced(_inputMesh.vertexPosition(vidx++));
+			p = cell()->absoluteToReduced(_inputMesh.vertexPosition(vidx++));
 			OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
 		}
 	}
 
+#if 0
 	// Subdivide quadrilaterals, formed by pairs of adjacent triangles, into four smaller triangles 
 	// in order to obtain a more symmetric interpolation of vertex colors. This is needed for 
 	// correct visualization of voxel grid cross sections.
-	if(_surfaceMesh.hasVertexColors() && false) {
+	if(_surfaceMesh.hasVertexColors() && cell()) {
 		auto originalTriangleCount = _surfaceMesh.faceCount();
 		for(int triangleIndex = 1; triangleIndex < originalTriangleCount; triangleIndex++) {
 
@@ -555,7 +557,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 			p += FloatType(0.5) * edgeVector;
 
 			// Create additional vertex in the output mesh.
-			int newVertex = _surfaceMesh.addVertex(cell().absoluteToReduced(p));
+			int newVertex = _surfaceMesh.addVertex(cell()->absoluteToReduced(p));
 
 			// Compute color of new vertex via interpolation.
 			int v1 = face1.vertex(0);
@@ -610,12 +612,13 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 				return false;
 		}
 	}
+#endif
 
 	nextProgressSubStep();
 
 	// Wrap mesh at periodic boundaries.
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(!cell().isValid() || cell().hasPbc(dim) == false) continue;
+		if(!cell() || cell()->hasPbc(dim) == false) continue;
 
 		if(isCanceled())
 			return false;
@@ -653,8 +656,8 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	nextProgressSubStep();
 
 	// Convert vertex positions back from reduced coordinates to absolute coordinates.
-	if(cell().isValid()) {
-		const AffineTransformation cellMatrix = cell().matrix();
+	if(cell()) {
+		const AffineTransformation cellMatrix = cell()->matrix();
 		for(Point3& p : _surfaceMesh.vertices())
 			p = cellMatrix * p;
 	}
@@ -740,9 +743,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 		else {
 			Vector3 delta = _surfaceMesh.vertex(vi2) - _surfaceMesh.vertex(vi1);
 			delta[dim] -= FloatType(1);
-			for(size_t d = dim + 1; d < 3; d++) {
-				if(cell().hasPbc(d))
-					delta[d] -= std::floor(delta[d] + FloatType(0.5));
+			if(cell()) {
+				for(size_t d = dim + 1; d < 3; d++) {
+					if(cell()->hasPbc(d))
+						delta[d] -= std::floor(delta[d] + FloatType(0.5));
+				}
 			}
 			FloatType t;
 			if(delta[dim] != 0)
@@ -822,13 +827,15 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 ******************************************************************************/
 void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 {
+	OVITO_ASSERT(cell());
+
 	// Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
     PropertyAccess<int> isFilledProperty(_inputMesh.regionProperty(SurfaceMeshRegions::IsFilledProperty));
 	bool hasRegions = isFilledProperty && _inputMesh.hasFaceRegions();
-	bool flipCapNormal = (cell().matrix().determinant() < 0);
+	bool flipCapNormal = (cell()->matrix().determinant() < 0);
 
 	// Convert vertex positions to reduced coordinates.
-	AffineTransformation invCellMatrix = cell().inverseMatrix();
+	AffineTransformation invCellMatrix = cell()->inverseMatrix();
 	if(flipCapNormal)
 		invCellMatrix.column(0) = -invCellMatrix.column(0);
 
@@ -841,7 +848,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
 	// Create caps on each side of the simulation with periodic boundary conditions.
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(cell().hasPbc(dim) == false) continue;
+		if(!cell()->hasPbc(dim)) continue;
 
 		if(isCanceled())
 			return;
@@ -899,7 +906,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 					std::vector<Point2> contour = traceContour(edge, reducedPos, visitedFaces, dim);
 					if(contour.empty())
 						throw Exception(tr("Surface mesh is not a proper manifold."));
-					clipContour(contour, std::array<bool,2>{{ cell().hasPbc((dim+1)%3), cell().hasPbc((dim+2)%3) }}, openContours, closedContours);
+					clipContour(contour, std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }}, openContours, closedContours);
 					break;
 				}
 				edge = _inputMesh.nextFaceEdge(edge);
@@ -988,7 +995,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		else {
 			if(isBoxCornerInside3DRegion == -1) {
 				if(closedContours.empty()) {
-					if(boost::optional<SurfaceMeshData::region_index> region = _inputMesh.locatePoint(Point3::Origin() + cell().matrix().translation(), 0, _faceSubset)) {
+					if(boost::optional<SurfaceMeshData::region_index> region = _inputMesh.locatePoint(cell()->cellOrigin(), 0, _faceSubset)) {
 						if(hasRegions) {
 							if(*region >= 0 && *region < isFilledProperty.size()) {
 								isBoxCornerInside3DRegion = (bool)isFilledProperty[*region];
@@ -1047,6 +1054,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 ******************************************************************************/
 std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(HalfEdgeMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const
 {
+	OVITO_ASSERT(cell());
 	size_t dim1 = (dim + 1) % 3;
 	size_t dim2 = (dim + 2) % 3;
 	std::vector<Point2> contour;
@@ -1064,12 +1072,12 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(HalfEdgeM
 		OVITO_ASSERT(delta[dim] >= FloatType(0.5));
 
 		delta[dim] -= FloatType(1);
-		if(cell().hasPbc(dim1)) {
+		if(cell()->hasPbc(dim1)) {
 			FloatType& c = delta[dim1];
 			if(FloatType s = std::floor(c + FloatType(0.5)))
 				c -= s;
 		}
-		if(cell().hasPbc(dim2)) {
+		if(cell()->hasPbc(dim2)) {
 			FloatType& c = delta[dim2];
 			if(FloatType s = std::floor(c + FloatType(0.5)))
 				c -= s;

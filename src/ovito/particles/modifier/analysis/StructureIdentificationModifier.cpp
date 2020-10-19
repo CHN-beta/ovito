@@ -117,14 +117,15 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	// Create output property object.
-	PropertyPtr outputStructures = postProcessStructureTypes(time, modApp, structures());
-	OVITO_ASSERT(outputStructures->size() == particles->elementCount());
-	PropertyObject* structureProperty = particles->createProperty(outputStructures);
+	// Finalize output property.
+	PropertyPtr structureProperty = postProcessStructureTypes(time, modApp, structures());
 	ConstPropertyAccess<int> structureData(structureProperty);
 
 	// Attach structure types to output particle property.
 	structureProperty->setElementTypes(modifier->structureTypes());
+
+	// Add output property to the particles.
+	particles->createProperty(structureProperty);
 	
 	if(modifier->colorByType()) {
 
@@ -162,9 +163,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	}
 
 	// Create the property arrays for the bar chart.
-	PropertyPtr typeCounts = std::make_shared<PropertyStorage>(maxTypeId + 1, PropertyStorage::Int64, 1, 0, tr("Count"), false, DataTable::YProperty);
+	PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(modApp->dataset(), maxTypeId + 1, PropertyObject::Int64, 1, 0, tr("Count"), false, DataTable::YProperty);
 	boost::copy(_typeCounts, PropertyAccess<qlonglong>(typeCounts).begin());
-	PropertyPtr typeIds = std::make_shared<PropertyStorage>(maxTypeId + 1, PropertyStorage::Int, 1, 0, tr("Structure type"), false, DataTable::XProperty);
+	PropertyPtr typeIds = DataTable::OOClass().createUserProperty(modApp->dataset(), maxTypeId + 1, PropertyObject::Int, 1, 0, tr("Structure type"), false, DataTable::XProperty);
 	boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
 
 	// Output a bar chart with the type counts.

@@ -51,7 +51,17 @@ public:
 	const QString& pythonName() const { return _pythonName; }
 
 	/// Creates a new property storage for one of the registered standard properties.
-	virtual PropertyPtr createStandardStorage(size_t elementCount, int typeId, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const { return {}; }
+	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const { return {}; }
+
+	/// Creates a new property object for a standard property of this container class.
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const;
+
+	/// Creates a new property object for a user-defined property.
+	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
+		PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type = 0, std::move(componentNames));
+		prepareNewProperty(property);
+		return property;
+	}
 
 	/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 	virtual bool supportsViewportPicking() const { return false; }
@@ -75,14 +85,6 @@ public:
 	/// This method is called by InputColumnMapping::validate() to let the container class perform custom checks
 	/// on the mapping of the file data columns to internal properties.
 	virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const {}
-
-	/// Creates a new instace of the property object type.
-	OORef<PropertyObject> createFromStorage(DataSet* dataset, PropertyPtr storage) const;
-
-	/// Creates a new instace of the property object type.
-	OORef<PropertyObject> createFromStorage(DataSet* dataset, ConstPropertyPtr storage) const {
-		return createFromStorage(dataset, const_pointer_cast<PropertyStorage>(std::move(storage)));
-	}
 
 	/// Determines whether a standard property ID is defined for this property class.
 	bool isValidStandardPropertyId(int id) const {

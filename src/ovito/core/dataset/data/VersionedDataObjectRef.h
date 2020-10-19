@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief A weak reference (a.k.a. guarded pointer) that refers to a particular revision of a DataObject.
+ * \brief A weak reference (a.k.a. guarded pointer) refering to a particular revision of a DataObject.
  *
  * Data objects can be modified and typically undergo changes. To make it possible for observers to detect such changes,
  * OVITO uses the system of 'object revision numbers'.
@@ -50,35 +50,35 @@ class VersionedDataObjectRef
 public:
 
 	/// Default constructor.
-	VersionedDataObjectRef() Q_DECL_NOTHROW : _revision(std::numeric_limits<unsigned int>::max()) {}
+	VersionedDataObjectRef() noexcept : _revision(std::numeric_limits<int>::max()) {}
 
 	/// Initialization constructor.
-	VersionedDataObjectRef(const DataObject* p) : _ref(const_cast<DataObject*>(p)), _revision(p ? p->revisionNumber() : std::numeric_limits<unsigned int>::max()) {}
+	VersionedDataObjectRef(const DataObject* p) : _ref(const_cast<DataObject*>(p)), _revision(p ? p->revisionNumber() : std::numeric_limits<int>::max()) {}
 
 	/// Initialization constructor with explicit revision number.
-	VersionedDataObjectRef(const DataObject* p, unsigned int revision) : _ref(const_cast<DataObject*>(p)), _revision(revision) {}
+	VersionedDataObjectRef(const DataObject* p, int revision) : _ref(const_cast<DataObject*>(p)), _revision(revision) {}
 
 	VersionedDataObjectRef& operator=(const DataObject* rhs) {
 		_ref = const_cast<DataObject*>(rhs);
-		_revision = rhs ? rhs->revisionNumber() : std::numeric_limits<unsigned int>::max();
+		_revision = rhs ? rhs->revisionNumber() : std::numeric_limits<int>::max();
 		return *this;
 	}
 
-	void reset() Q_DECL_NOTHROW {
+	void reset() noexcept {
 		_ref.clear();
-		_revision = std::numeric_limits<unsigned int>::max();
+		_revision = std::numeric_limits<int>::max();
 	}
 
 	void reset(const DataObject* rhs) {
 		_ref = const_cast<DataObject*>(rhs);
-		_revision = rhs ? rhs->revisionNumber() : std::numeric_limits<unsigned int>::max();
+		_revision = rhs ? rhs->revisionNumber() : std::numeric_limits<int>::max();
 	}
 
-	inline const DataObject* get() const Q_DECL_NOTHROW {
+	inline const DataObject* get() const noexcept {
 		return _ref.data();
 	}
 
-	inline operator const DataObject*() const Q_DECL_NOTHROW {
+	inline operator const DataObject*() const noexcept {
 		return _ref.data();
 	}
 
@@ -90,14 +90,14 @@ public:
 		return _ref.data();
 	}
 
-	inline void swap(VersionedDataObjectRef& rhs) Q_DECL_NOTHROW {
+	inline void swap(VersionedDataObjectRef& rhs) noexcept {
 		std::swap(_ref, rhs._ref);
 		std::swap(_revision, rhs._revision);
 	}
 
-	inline unsigned int revisionNumber() const Q_DECL_NOTHROW { return _revision; }
+	inline int revisionNumber() const noexcept { return _revision; }
 
-	inline void updateRevisionNumber() Q_DECL_NOTHROW {
+	inline void updateRevisionNumber() noexcept {
 		if(_ref) _revision = _ref->revisionNumber();
 	}
 
@@ -107,59 +107,59 @@ private:
 	QPointer<DataObject> _ref;
 
 	// The referenced revision of the object.
-	unsigned int _revision;
+	int _revision;
 };
 
-inline bool operator==(const VersionedDataObjectRef& a, const VersionedDataObjectRef& b) Q_DECL_NOTHROW {
+inline bool operator==(const VersionedDataObjectRef& a, const VersionedDataObjectRef& b) noexcept {
 	return a.get() == b.get() && a.revisionNumber() == b.revisionNumber();
 }
 
-inline bool operator!=(const VersionedDataObjectRef& a, const VersionedDataObjectRef& b) Q_DECL_NOTHROW {
+inline bool operator!=(const VersionedDataObjectRef& a, const VersionedDataObjectRef& b) noexcept {
 	return a.get() != b.get() || a.revisionNumber() != b.revisionNumber();
 }
 
-inline bool operator==(const VersionedDataObjectRef& a, const DataObject* b) Q_DECL_NOTHROW {
+inline bool operator==(const VersionedDataObjectRef& a, const DataObject* b) noexcept {
 	return a.get() == b && (b == nullptr || a.revisionNumber() == b->revisionNumber());
 }
 
-inline bool operator!=(const VersionedDataObjectRef& a, const DataObject* b) Q_DECL_NOTHROW {
+inline bool operator!=(const VersionedDataObjectRef& a, const DataObject* b) noexcept {
 	return a.get() != b || (b != nullptr && a.revisionNumber() != b->revisionNumber());
 }
 
-inline bool operator==(const DataObject* a, const VersionedDataObjectRef& b) Q_DECL_NOTHROW {
+inline bool operator==(const DataObject* a, const VersionedDataObjectRef& b) noexcept {
 	return a == b.get() && (a == nullptr || a->revisionNumber() == b.revisionNumber());
 }
 
-inline bool operator!=(const DataObject* a, const VersionedDataObjectRef& b) Q_DECL_NOTHROW {
+inline bool operator!=(const DataObject* a, const VersionedDataObjectRef& b) noexcept {
 	return a != b.get() || (a != nullptr && a->revisionNumber() != b.revisionNumber());
 }
 
-inline bool operator==(const VersionedDataObjectRef& p, std::nullptr_t) Q_DECL_NOTHROW {
+inline bool operator==(const VersionedDataObjectRef& p, std::nullptr_t) noexcept {
 	return p.get() == nullptr;
 }
 
-inline bool operator==(std::nullptr_t, const VersionedDataObjectRef& p) Q_DECL_NOTHROW {
+inline bool operator==(std::nullptr_t, const VersionedDataObjectRef& p) noexcept {
 	return p.get() == nullptr;
 }
 
-inline bool operator!=(const VersionedDataObjectRef& p, std::nullptr_t) Q_DECL_NOTHROW {
+inline bool operator!=(const VersionedDataObjectRef& p, std::nullptr_t) noexcept {
 	return p.get() != nullptr;
 }
 
-inline bool operator!=(std::nullptr_t, const VersionedDataObjectRef& p) Q_DECL_NOTHROW {
+inline bool operator!=(std::nullptr_t, const VersionedDataObjectRef& p) noexcept {
 	return p.get() != nullptr;
 }
 
-inline void swap(VersionedDataObjectRef& lhs, VersionedDataObjectRef& rhs) Q_DECL_NOTHROW {
+inline void swap(VersionedDataObjectRef& lhs, VersionedDataObjectRef& rhs) noexcept {
 	lhs.swap(rhs);
 }
 
-inline const DataObject* get_pointer(const VersionedDataObjectRef& p) Q_DECL_NOTHROW {
+inline const DataObject* get_pointer(const VersionedDataObjectRef& p) noexcept {
 	return p.get();
 }
 
 inline QDebug operator<<(QDebug debug, const VersionedDataObjectRef& p) {
-	return debug << p.get();
+	return debug << p.get() << "(rev" << p.revisionNumber() << ")";
 }
 
 }	// End of namespace

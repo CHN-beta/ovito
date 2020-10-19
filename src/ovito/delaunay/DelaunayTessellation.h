@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
@@ -122,7 +122,7 @@ public:
 	};
 
 	/// Generates the Delaunay tessellation.
-	bool generateTessellation(const SimulationCell& simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, Task& promise);
+	bool generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, Task& promise);
 
 	/// Returns the total number of tetrahedra in the tessellation.
 	size_type numberOfTetrahedra() const { return _dt->nb_cells(); }
@@ -240,7 +240,7 @@ public:
 	}
 
 	/// Returns the simulation cell geometry.
-	const SimulationCell& simCell() const { return _simCell; }
+	const SimulationCellObject* simCell() const { return _simCell; }
 
 private:
 
@@ -266,7 +266,7 @@ private:
 	size_type _numPrimaryTetrahedra = 0;
 
 	/// The simulation cell geometry.
-	SimulationCell _simCell;
+	const SimulationCellObject* _simCell = nullptr;
 };
 
 }	// End of namespace

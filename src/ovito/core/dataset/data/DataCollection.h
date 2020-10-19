@@ -311,7 +311,7 @@ public:
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
 	DataObjectType* createObject(const PipelineObjectClass* dataSource, Args&&... args) {
 		OVITO_ASSERT(dataSource != nullptr);
-		OORef<DataObjectType> obj = new DataObjectType(dataSource->dataset(), std::forward<Args>(args)...);
+		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), std::forward<Args>(args)...);
 		obj->setDataSource(const_cast<PipelineObjectClass*>(dataSource));
 		addObject(obj);
 		return obj;

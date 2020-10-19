@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard properties.
-		virtual PropertyPtr createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
 
 	protected:
 
@@ -58,7 +58,7 @@ public:
 
 	/// \brief The list of standard properties.
 	enum Type {
-		PositionProperty = PropertyStorage::FirstSpecificProperty,
+		PositionProperty = PropertyObject::FirstSpecificProperty,
 		SampleTimeProperty,
 		ParticleIdentifierProperty
 	};

@@ -164,4 +164,22 @@ Point3 ViewportConfiguration::orbitCenter()
 	return Point3::Origin();
 }
 
+/******************************************************************************
+* Zooms all viewports to the extents of the currently selected nodes.
+******************************************************************************/
+void ViewportConfiguration::zoomToSelectionExtents() 
+{
+	for(Viewport* vp : viewports())
+		vp->zoomToSelectionExtents();
+}
+
+/******************************************************************************
+* Zooms to the extents of the scene.
+******************************************************************************/
+void ViewportConfiguration::zoomToSceneExtents() 
+{
+	for(Viewport* vp : viewports())
+		vp->zoomToSceneExtents();
+}
+
 }	// End of namespace

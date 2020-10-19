@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Create a storage object for standard region properties.
-		virtual PropertyPtr createStandardStorage(size_t regionCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t regionCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -61,10 +61,10 @@ public:
 
 	/// \brief The list of standard region properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyStorage::GenericSelectionProperty,
-		ColorProperty = PropertyStorage::GenericColorProperty,
-		PhaseProperty = PropertyStorage::FirstSpecificProperty,
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		SelectionProperty = PropertyObject::GenericSelectionProperty,
+		ColorProperty = PropertyObject::GenericColorProperty,
+		PhaseProperty = PropertyObject::FirstSpecificProperty,
 		VolumeProperty,
 		SurfaceAreaProperty,
 		IsFilledProperty,

@@ -126,7 +126,7 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 						if(isStandardProperty) break;
 					}
 					if(!isStandardProperty)
-						columnMapping.mapCustomColumn(columnIndex, token, PropertyStorage::Float);
+						columnMapping.mapCustomColumn(columnIndex, token, PropertyObject::Float);
 				}
 			}
 		}

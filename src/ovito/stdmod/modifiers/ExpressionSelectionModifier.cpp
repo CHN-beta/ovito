@@ -83,7 +83,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, Pi
 	std::atomic_size_t nselected(0);
 
 	// Generate the output selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyStorage::GenericSelectionProperty);
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
 	// Evaluate Boolean expression for every input data element.
 	evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {

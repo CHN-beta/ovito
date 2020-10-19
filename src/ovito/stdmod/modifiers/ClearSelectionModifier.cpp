@@ -47,7 +47,7 @@ void ClearSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 		throwException(tr("No input element type selected."));
 
    	PropertyContainer* container = state.expectMutableLeafObject(subject());
-	if(const PropertyObject* selProperty = container->getProperty(PropertyStorage::GenericSelectionProperty))
+	if(const PropertyObject* selProperty = container->getProperty(PropertyObject::GenericSelectionProperty))
 		container->removeProperty(selProperty);
 }
 

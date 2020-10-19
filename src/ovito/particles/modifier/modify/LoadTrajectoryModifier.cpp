@@ -227,7 +227,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			OVITO_ASSERT(outputProperty->stride() == property->stride());
 
 			// Copy and reorder property data.
-			property->mappedCopyTo(outputProperty, indexToIndexMap);
+			property->mappedCopyTo(*outputProperty, indexToIndexMap);
 
 			// Transfer the visual element(s) unless the property already existed in the topology dataset.
 			if(!replacingProperty) {
@@ -255,7 +255,6 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true);
 
 					// Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
-					SimulationCell cell = trajectoryCell->data();
 					for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 						size_t particleIndex1 = topologyProperty[bondIndex][0];
 						size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -314,6 +313,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
 				// Add the properties to the existing bonds, overwriting existing values if necessary.
 				for(const PropertyObject* newProperty : trajectoryBonds->properties()) {
+					bonds->
 					const PropertyObject* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
 					if(existingPropertyObj) {
 						bonds->makeMutable(existingPropertyObj)->setStorage(newProperty->storage());

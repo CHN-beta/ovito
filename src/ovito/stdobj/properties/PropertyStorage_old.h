@@ -232,7 +232,7 @@ public:
 
 	/// Creates a copy of the array, not containing those elements for which
 	/// the corresponding bits in the given bit array were set.
-	std::shared_ptr<PropertyStorage> filterCopy(const boost::dynamic_bitset<>& mask) const;
+	OORef<PropertyObject> filterCopy(const boost::dynamic_bitset<>& mask) const;
 
 	/// Copies the contents from the given source into this storage using a element mapping.
 	void mappedCopyFrom(const PropertyStorage& source, const std::vector<size_t>& mapping);
@@ -262,17 +262,17 @@ public:
 		size_t cmpntCount = componentCount();
 		if(component >= cmpntCount) return false;
 		if(size() == 0) return true;
-		if(dataType() == PropertyStorage::Int) {
+		if(dataType() == PropertyObject::Int) {
 			for(auto v = reinterpret_cast<const int*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
 			return true;
 		}
-		else if(dataType() == PropertyStorage::Int64) {
+		else if(dataType() == PropertyObject::Int64) {
 			for(auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
 			return true;
 		}
-		else if(dataType() == PropertyStorage::Float) {
+		else if(dataType() == PropertyObject::Float) {
 			for(auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
 			return true;
@@ -287,19 +287,19 @@ public:
 		size_t s = size();
 		if(component >= cmpntCount) return false;
 		if(s == 0) return true;
-		if(dataType() == PropertyStorage::Int) {
+		if(dataType() == PropertyObject::Int) {
 			auto v = reinterpret_cast<const int*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
 			return true;
 		}
-		else if(dataType() == PropertyStorage::Int64) {
+		else if(dataType() == PropertyObject::Int64) {
 			auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
 			return true;
 		}
-		else if(dataType() == PropertyStorage::Float) {
+		else if(dataType() == PropertyObject::Float) {
 			auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
@@ -356,9 +356,9 @@ using ConstPropertyPtr = std::shared_ptr<const PropertyStorage>;
 /// Class template returning the Qt data type identifier for the components in the given C++ array structure.
 template<typename T, typename = void> struct PropertyStoragePrimitiveDataType { static constexpr int value = qMetaTypeId<T>(); };
 #ifdef Q_CC_MSVC // MSVC compiler doesn't treat qMetaTypeId() function as constexpr. Workaround:
-template<> struct PropertyStoragePrimitiveDataType<int> { static constexpr PropertyStorage::StandardDataType value = PropertyStorage::Int; };
-template<> struct PropertyStoragePrimitiveDataType<qlonglong> { static constexpr PropertyStorage::StandardDataType value = PropertyStorage::Int64; };
-template<> struct PropertyStoragePrimitiveDataType<FloatType> { static constexpr PropertyStorage::StandardDataType value = PropertyStorage::Float; };
+template<> struct PropertyStoragePrimitiveDataType<int> { static constexpr PropertyStorage::StandardDataType value = PropertyObject::Int; };
+template<> struct PropertyStoragePrimitiveDataType<qlonglong> { static constexpr PropertyStorage::StandardDataType value = PropertyObject::Int64; };
+template<> struct PropertyStoragePrimitiveDataType<FloatType> { static constexpr PropertyStorage::StandardDataType value = PropertyObject::Float; };
 #endif
 template<typename T, std::size_t N> struct PropertyStoragePrimitiveDataType<std::array<T,N>> : public PropertyStoragePrimitiveDataType<T> {};
 template<typename T> struct PropertyStoragePrimitiveDataType<Point_3<T>> : public PropertyStoragePrimitiveDataType<T> {};

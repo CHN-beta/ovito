@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
@@ -234,8 +233,8 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 	const TimeInterval& validityInterval,
-	ConstPropertyPtr positions, const SimulationCell& simCell,
-	ConstPropertyPtr refPositions, const SimulationCell& simCellRef,
+	ConstPropertyPtr positions, const SimulationCellObject* simCell,
+	ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 	ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 	AffineMappingType affineMapping, bool useMinimumImageConvention) :
 	Engine(validityInterval),
@@ -249,30 +248,30 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 	_useMinimumImageConvention(useMinimumImageConvention)
 {
 	// Automatically disable PBCs in Z direction for 2D systems.
-	if(_simCell.is2D()) {
-		_simCell.setPbcFlags(_simCell.hasPbc(0), _simCell.hasPbc(1), false);
+	if(_simCell->is2D()) {
+		_simCell.setPbcFlags(_simCell->hasPbc(0), _simCell->hasPbc(1), false);
 		// Make sure the matrix is invertible.
-		AffineTransformation m = _simCell.matrix();
+		AffineTransformation m = _simCell->matrix();
 		m.column(2) = Vector3(0,0,1);
 		_simCell.setMatrix(m);
-		m = _simCellRef.matrix();
+		m = _simCellRef->matrix();
 		m.column(2) = Vector3(0,0,1);
-		_simCellRef.setMatrix(m);
+		_simCellRef->setMatrix(m);
 	}
 
 	if(affineMapping != NO_MAPPING) {
-		if(std::abs(cell().matrix().determinant()) < FLOATTYPE_EPSILON || std::abs(refCell().matrix().determinant()) < FLOATTYPE_EPSILON)
+		if(std::abs(cell()->matrix().determinant()) < FLOATTYPE_EPSILON || std::abs(refCell()->matrix().determinant()) < FLOATTYPE_EPSILON)
 			throw Exception(tr("Simulation cell is degenerate in either the deformed or the reference configuration."));
 	}
 
 	// PBCs flags of the current configuration always override PBCs flags
 	// of the reference config.
-	_simCellRef.setPbcFlags(_simCell.pbcFlags());
-	_simCellRef.set2D(_simCell.is2D());
+	_simCellRef->setPbcFlags(_simCell.pbcFlags());
+	_simCellRef->set2D(_simCell->is2D());
 
 	// Precompute matrices for transforming points/vector between the two configurations.
-	_refToCurTM = cell().matrix() * refCell().inverseMatrix();
-	_curToRefTM = refCell().matrix() * cell().inverseMatrix();
+	_refToCurTM = cell()->matrix() * refCell()->inverseMatrix();
+	_curToRefTM = refCell()->matrix() * cell()->inverseMatrix();
 }
 
 /******************************************************************************

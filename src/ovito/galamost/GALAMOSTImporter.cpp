@@ -188,49 +188,49 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 			_frameData->simulationCell().setMatrix(cellMatrix);
 		}
 		else if(localName == "position") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::PositionProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::PositionProperty, false);
 		}
 		else if(localName == "velocity") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::VelocityProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::VelocityProperty, false);
 		}
 		else if(localName == "image") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::PeriodicImageProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::PeriodicImageProperty, false);
 		}
 		else if(localName == "mass") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::MassProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::MassProperty, false);
 		}
 		else if(localName == "diameter") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::RadiusProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::RadiusProperty, false);
 		}
 		else if(localName == "charge") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::ChargeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::ChargeProperty, false);
 		}
 		else if(localName == "quaternion") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::OrientationProperty, false);
 		}
 		else if(localName == "orientation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::OrientationProperty, false);
 		}
 		else if(localName == "type") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::TypeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::TypeProperty, false);
 		}
 		else if(localName == "molecule") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::MoleculeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::MoleculeProperty, false);
 		}
 		else if(localName == "body") {
-			_currentProperty = std::make_shared<PropertyStorage>(_natoms, PropertyStorage::Int64, 1, 0, QStringLiteral("Body"), false);
+			_currentProperty = std::make_shared<PropertyStorage>(_natoms, PropertyObject::Int64, 1, 0, QStringLiteral("Body"), false);
 		}
 		else if(localName == "Aspheres") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AsphericalShapeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AsphericalShapeProperty, false);
 		}
 		else if(localName == "rotation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AngularVelocityProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AngularVelocityProperty, false);
 		}
 		else if(localName == "inert") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AngularMomentumProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AngularMomentumProperty, false);
 		}
 		else if(localName == "bond") {
-			_currentProperty = BondsObject::OOClass().createStandardStorage(0, BondsObject::TopologyProperty, false);
+			_currentProperty = BondsObject::OOClass().createStandardProperty(0, BondsObject::TopologyProperty, false);
 		}
 	}
 

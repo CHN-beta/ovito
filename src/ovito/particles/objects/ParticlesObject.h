@@ -46,7 +46,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard particle properties.
-		virtual PropertyPtr createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -85,12 +85,12 @@ public:
 
 	/// \brief The list of standard particle properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyStorage::GenericSelectionProperty,
-		ColorProperty = PropertyStorage::GenericColorProperty,
-		TypeProperty = PropertyStorage::GenericTypeProperty,
-		IdentifierProperty = PropertyStorage::GenericIdentifierProperty,
-		PositionProperty = PropertyStorage::FirstSpecificProperty,
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		SelectionProperty = PropertyObject::GenericSelectionProperty,
+		ColorProperty = PropertyObject::GenericColorProperty,
+		TypeProperty = PropertyObject::GenericTypeProperty,
+		IdentifierProperty = PropertyObject::GenericIdentifierProperty,
+		PositionProperty = PropertyObject::FirstSpecificProperty,
 		DisplacementProperty,
 		DisplacementMagnitudeProperty,
 		PotentialEnergyProperty,

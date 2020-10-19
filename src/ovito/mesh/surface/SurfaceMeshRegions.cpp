@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 /******************************************************************************
 * Creates a storage object for standard region properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardStorage(size_t regionCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t regionCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -40,30 +40,30 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardStorage(size_t region
 
 	switch(type) {
 	case SelectionProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case ColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case PhaseProperty:
 	case IsFilledProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case VolumeProperty:
 	case SurfaceAreaProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 1;
 		stride = sizeof(FloatType);
 		break;
 	case LatticeCorrespondenceProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 9;
 		stride = sizeof(Matrix3);
 		break;
@@ -76,7 +76,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardStorage(size_t region
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(regionCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, regionCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
@@ -115,13 +115,13 @@ void SurfaceMeshRegions::OOMetaClass::initialize()
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
 	const QStringList tensorList = QStringList() << "XX" << "YX" << "ZX" << "XY" << "YY" << "ZY" << "XZ" << "YZ" << "ZZ";
 
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Region colors"));
-	registerStandardProperty(PhaseProperty, tr("Phase"), PropertyStorage::Int, emptyList, nullptr, tr("Phases"));
-	registerStandardProperty(VolumeProperty, tr("Volume"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(SurfaceAreaProperty, tr("Surface Area"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(IsFilledProperty, tr("Filled"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(LatticeCorrespondenceProperty, tr("Lattice Correspondence"), PropertyStorage::Float, tensorList);
+	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Region colors"));
+	registerStandardProperty(PhaseProperty, tr("Phase"), PropertyObject::Int, emptyList, nullptr, tr("Phases"));
+	registerStandardProperty(VolumeProperty, tr("Volume"), PropertyObject::Float, emptyList);
+	registerStandardProperty(SurfaceAreaProperty, tr("Surface Area"), PropertyObject::Float, emptyList);
+	registerStandardProperty(IsFilledProperty, tr("Filled"), PropertyObject::Int, emptyList);
+	registerStandardProperty(LatticeCorrespondenceProperty, tr("Lattice Correspondence"), PropertyObject::Float, tensorList);
 }
 
 /******************************************************************************

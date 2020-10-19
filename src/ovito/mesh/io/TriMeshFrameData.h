@@ -36,7 +36,7 @@ class TriMeshFrameData : public FileSourceImporter::FrameData
 {
 public:
 
-	/// Inserts the loaded loaded into the provided pipeline state structure. This function is
+	/// Inserts the loaded data into a data collection. This function is
 	/// called by the system from the main thread after the asynchronous loading task has finished.
 	virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) override;
 

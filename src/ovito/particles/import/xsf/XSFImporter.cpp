@@ -314,7 +314,7 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			}
 			frameData->simulationCell().setMatrix(cell);
 
-			PropertyAccess<FloatType> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyStorage::Float, 1, 0, name, false));
+			PropertyAccess<FloatType> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 1, 0, name, false));
 			FloatType* data = fieldQuantity.begin();
 			setProgressMaximum(fieldQuantity.size());
 			const char* s = "";

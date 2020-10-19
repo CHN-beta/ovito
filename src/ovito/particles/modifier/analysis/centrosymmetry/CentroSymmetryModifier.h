@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -87,12 +87,12 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, int nneighbors, CSPMode mode) :
+		CentroSymmetryEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode) :
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false)),
+			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.
@@ -108,7 +108,7 @@ private:
 		const ConstPropertyPtr& positions() const { return _positions; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the CSP value range of the histogram.
 		FloatType cspHistogramRange() const { return _cspHistogramRange; }
@@ -120,7 +120,7 @@ private:
 
 		const int _nneighbors;
         const CSPMode _mode;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		ConstPropertyPtr _positions;
 		const PropertyPtr _csp;
 		ParticleOrderingFingerprint _inputFingerprint;

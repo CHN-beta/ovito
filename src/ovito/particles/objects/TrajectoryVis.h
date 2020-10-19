@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ public:
 private:
 
 	/// Clips a trajectory line at the periodic box boundaries.
-	static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell& simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback);
+	static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback);
 
 	/// Controls the display width of trajectory lines.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);

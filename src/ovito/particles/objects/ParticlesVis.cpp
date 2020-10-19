@@ -495,11 +495,11 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		return;
 	}
 
-	ConstPropertyPtr positionStorage = positionProperty ? positionProperty->storage() : nullptr;
-	ConstPropertyPtr radiusStorage = radiusProperty ? radiusProperty->storage() : nullptr;
-	ConstPropertyPtr colorStorage = colorProperty ? colorProperty->storage() : nullptr;
-	ConstPropertyPtr asphericalShapeStorage = asphericalShapeProperty ? asphericalShapeProperty->storage() : nullptr;
-	ConstPropertyPtr orientationStorage = orientationProperty ? orientationProperty->storage() : nullptr;
+	ConstPropertyPtr positionStorage = positionProperty;
+	ConstPropertyPtr radiusStorage = radiusProperty;
+	ConstPropertyPtr colorStorage = colorProperty;
+	ConstPropertyPtr asphericalShapeStorage = asphericalShapeProperty;
+	ConstPropertyPtr orientationStorage = orientationProperty;
 
 	// Get total number of particles.
 	int particleCount = particles->elementCount();
@@ -767,7 +767,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 				if(visibleStandardParticles != particleCount)
 					positiveRadiusStorage = radiusStorage->filterCopy(hiddenParticlesMask);
 				else
-					positiveRadiusStorage = std::make_shared<PropertyStorage>(*radiusStorage);
+					positiveRadiusStorage = CloneHelper().cloneObject(radiusStorage.get(), false);
 				// Replace null entries in the per-particle radius array with the default radius.
 				FloatType defaultRadius = defaultParticleRadius();
 				for(FloatType& r : PropertyAccess<FloatType>(positiveRadiusStorage))
@@ -1217,7 +1217,7 @@ QString ParticlePickInfo::particleInfoString(const PipelineFlowState& pipelineSt
 			if(!str.isEmpty()) str += QStringLiteral(" | ");
 			str += property->name();
 			str += QStringLiteral(" ");
-			if(property->dataType() == PropertyStorage::Int) {
+			if(property->dataType() == PropertyObject::Int) {
 				ConstPropertyAccess<int, true> data(property);
 				for(size_t component = 0; component < data.componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");
@@ -1230,14 +1230,14 @@ QString ParticlePickInfo::particleInfoString(const PipelineFlowState& pipelineSt
 					}
 				}
 			}
-			else if(property->dataType() == PropertyStorage::Int64) {
+			else if(property->dataType() == PropertyObject::Int64) {
 				ConstPropertyAccess<qlonglong, true> data(property);
 				for(size_t component = 0; component < property->componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");
 					str += QString::number(data.get(particleIndex, component));
 				}
 			}
-			else if(property->dataType() == PropertyStorage::Float) {
+			else if(property->dataType() == PropertyObject::Float) {
 				ConstPropertyAccess<FloatType, true> data(property);
 				for(size_t component = 0; component < property->componentCount(); component++) {
 					if(component != 0) str += QStringLiteral(", ");

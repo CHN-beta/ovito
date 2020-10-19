@@ -109,7 +109,6 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
-	const SimulationCell cell = simulationCell ? simulationCell->data() : SimulationCell();
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
@@ -118,7 +117,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 		FloatType,					// Line width
 		Color,						// Line color,
 		FloatType,					// End frame
-		SimulationCell				// Simulation cell
+		VersionedDataObjectRef		// Simulation cell
 	>;
 
 	// The data structure stored in the vis cache.
@@ -139,7 +138,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 			lineWidth(),
 			lineColor(),
 			endFrame,
-			cell));
+			simulationCell));
 
 	// Check if we already have a valid rendering primitives that are up to date.
 	if(!renderingPrimitives.segments || !renderingPrimitives.corners
@@ -180,7 +179,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				else {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], cell, [&lineSegmentCount](const Point3& p1, const Point3& p2) {
+							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&lineSegmentCount](const Point3& p1, const Point3& p2) {
 								lineSegmentCount++;
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
@@ -211,7 +210,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				else {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], cell, [&](const Point3& p1, const Point3& p2) {
+							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
 								renderingPrimitives.segments->setElement(lineSegmentIndex++, p1, p2 - p1, color, lineRadius);
 							});
 						}
@@ -242,17 +241,19 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 /******************************************************************************
 * Clips a trajectory line at the periodic box boundaries.
 ******************************************************************************/
-void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell& simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback)
+void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback)
 {
-	Point3 rp1 = simulationCell.absoluteToReduced(v1);
+	OVITO_ASSERT(simulationCell);
+
+	Point3 rp1 = simulationCell->absoluteToReduced(v1);
 	Vector3 shiftVector = Vector3::Zero();
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(simulationCell.hasPbc(dim)) {
+		if(simulationCell->hasPbc(dim)) {
 			while(rp1[dim] >= 1) { rp1[dim] -= 1; shiftVector[dim] -= 1; }
 			while(rp1[dim] < 0) { rp1[dim] += 1; shiftVector[dim] += 1; }
 		}
 	}
-	Point3 rp2 = simulationCell.absoluteToReduced(v2) + shiftVector;
+	Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
 	FloatType smallestT;
 	bool clippedDimensions[3] = { false, false, false };
 	do {
@@ -260,7 +261,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 		FloatType crossDir;
 		smallestT = FLOATTYPE_MAX;
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(simulationCell.hasPbc(dim) && !clippedDimensions[dim]) {
+			if(simulationCell->hasPbc(dim) && !clippedDimensions[dim]) {
 				int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
 				if(d == 0) continue;
 				FloatType t;
@@ -279,8 +280,8 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 			clippedDimensions[crossDim] = true;
 			Point3 intersection = rp1 + smallestT * (rp2 - rp1);
 			intersection[crossDim] = std::floor(intersection[crossDim] + FloatType(0.5));
-			Point3 rp1abs = simulationCell.reducedToAbsolute(rp1);
-			Point3 intabs = simulationCell.reducedToAbsolute(intersection);
+			Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
+			Point3 intabs = simulationCell->reducedToAbsolute(intersection);
 			if(!intabs.equals(rp1abs)) {
 				segmentCallback(rp1abs, intabs);
 			}
@@ -292,7 +293,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 	}
 	while(smallestT != FLOATTYPE_MAX);
 
-	segmentCallback(simulationCell.reducedToAbsolute(rp1), simulationCell.reducedToAbsolute(rp2));
+	segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2));
 }
 
 }	// End of namespace

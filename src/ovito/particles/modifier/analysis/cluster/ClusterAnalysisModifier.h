@@ -88,15 +88,15 @@ private:
 			_sortBySize(sortBySize),
 			_unwrapParticleCoordinates(unwrapParticleCoordinates),
 			_unwrappedPositions((unwrapParticleCoordinates || computeCentersOfMass || computeRadiusOfGyration) ? std::make_shared<PropertyStorage>(*positions) : nullptr),
-			_centersOfMass(computeCentersOfMass ? std::make_shared<PropertyStorage>(0, PropertyStorage::Float, 3, 0, QStringLiteral("Center of Mass"), true, 
+			_centersOfMass(computeCentersOfMass ? std::make_shared<PropertyStorage>(0, PropertyObject::Float, 3, 0, QStringLiteral("Center of Mass"), true, 
 				0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")) : nullptr),
-			_radiiOfGyration(computeRadiusOfGyration ? std::make_shared<PropertyStorage>(0, PropertyStorage::Float, 1, 0, QStringLiteral("Radius of Gyration"), true) : nullptr),
-			_gyrationTensors(computeRadiusOfGyration ? std::make_shared<PropertyStorage>(0, PropertyStorage::Float, 6, 0, QStringLiteral("Gyration Tensor"), true,
+			_radiiOfGyration(computeRadiusOfGyration ? std::make_shared<PropertyStorage>(0, PropertyObject::Float, 1, 0, QStringLiteral("Radius of Gyration"), true) : nullptr),
+			_gyrationTensors(computeRadiusOfGyration ? std::make_shared<PropertyStorage>(0, PropertyObject::Float, 6, 0, QStringLiteral("Gyration Tensor"), true,
 				0, QStringList() << QStringLiteral("XX") << QStringLiteral("YY") << QStringLiteral("ZZ") << QStringLiteral("XY") << QStringLiteral("XZ") << QStringLiteral("YZ")) : nullptr),
 			_selection(std::move(selection)),
 			_periodicImageBondProperty(std::move(periodicImageBondProperty)),
 			_bondTopology(std::move(bondTopology)),
-			_particleClusters(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::ClusterProperty, false)),
+			_particleClusters(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::ClusterProperty, false)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

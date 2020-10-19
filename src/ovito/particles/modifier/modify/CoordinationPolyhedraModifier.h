@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito { namespace Particles {
 
@@ -78,16 +78,16 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(ConstPropertyPtr positions,
+		ComputePolyhedraEngine(DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
-				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, const SimulationCell& simCell) :
+				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, const SimulationCellObject* simCell) :
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_particleTypes(std::move(particleTypes)),
 			_particleIdentifiers(std::move(particleIdentifiers)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_mesh(simCell) {}
+			_mesh(dataset, simCell) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -102,7 +102,7 @@ private:
 		SurfaceMeshData& mesh() { return _mesh; }
 
 		/// Returns the simulation cell geometry.
-		const SimulationCell& cell() const { return mesh().cell(); }
+		const SimulationCellObject* cell() const { return mesh().cell(); }
 
 	private:
 

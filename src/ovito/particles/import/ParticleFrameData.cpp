@@ -64,7 +64,7 @@ void ParticleFrameData::generateBondPeriodicImageProperty()
 	if(!bondTopologyProperty) return;
 
 	OVITO_ASSERT(!bonds().findStandardProperty(BondsObject::PeriodicImageProperty));
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds().addProperty(BondsObject::OOClass().createStandardStorage(bondTopologyProperty.size(), BondsObject::PeriodicImageProperty, true));
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds().addProperty(BondsObject::OOClass().createStandardProperty(bondTopologyProperty.size(), BondsObject::PeriodicImageProperty, true));
 
 	if(!simulationCell().hasPbc())
 		return;

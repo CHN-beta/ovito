@@ -32,7 +32,8 @@ namespace Ovito { namespace Mesh {
 /******************************************************************************
 * Constructor creating an empty surface mesh.
 ******************************************************************************/
-SurfaceMeshData::SurfaceMeshData(const SimulationCell& cell) :
+SurfaceMeshData::SurfaceMeshData(DataSet* dataset, const SimulationCellObject* cell) :
+	_dataset(dataset),
     _topology(std::make_shared<HalfEdgeMesh>()),
 	_cell(cell)
 {
@@ -45,22 +46,21 @@ SurfaceMeshData::SurfaceMeshData(const SimulationCell& cell) :
 * this structure.
 ******************************************************************************/
 SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* sm) :
+	_dataset(sm->dataset()),
     _topology(sm->topology()),
+	_cell(sm->domain()),
     _spaceFillingRegion(sm->spaceFillingRegion())
 {
-    if(sm->domain())
-		_cell = SimulationCell(sm->domain()->data());
-
 	OVITO_ASSERT(_topology);
 	for(const PropertyObject* property : sm->vertices()->properties()) {
-	    addVertexProperty(const_pointer_cast<PropertyStorage>(property->storage()));
+	    addVertexProperty(property);
 	}
 	for(const PropertyObject* property : sm->faces()->properties()) {
-	    addFaceProperty(const_pointer_cast<PropertyStorage>(property->storage()));
+	    addFaceProperty(property);
 	}
 	_regionCount = sm->regions()->elementCount();
 	for(const PropertyObject* property : sm->regions()->properties()) {
-	    addRegionProperty(const_pointer_cast<PropertyStorage>(property->storage()));
+	    addRegionProperty(property);
 	}
     OVITO_ASSERT(_vertexCoords != nullptr);
 }
@@ -73,14 +73,29 @@ void SurfaceMeshData::transferTo(SurfaceMesh* sm) const
 	sm->setTopology(topology());
     sm->setSpaceFillingRegion(spaceFillingRegion());
 
-	OVITO_STATIC_ASSERT(sizeof(PropertyPtr) == sizeof(decltype(_vertexProperties)::value_type));
-	const std::vector<PropertyPtr>& vertexProperties = reinterpret_cast<const std::vector<PropertyPtr>&>(_vertexProperties);
-	const std::vector<PropertyPtr>& faceProperties = reinterpret_cast<const std::vector<PropertyPtr>&>(_faceProperties);
-	const std::vector<PropertyPtr>& regionProperties = reinterpret_cast<const std::vector<PropertyPtr>&>(_regionProperties);
+	// Gather list of property objects and assign them to the SurfaceMesh's vertex property container.
+	QVector<PropertyObject*> vertexProperties;
+	for(const auto& property : _vertexProperties)
+		vertexProperties.push_back(const_cast<PropertyObject*>(property.storage().get()));
+	for(const auto& property : _mutableVertexProperties)
+		vertexProperties.push_back(property.storage().get());
+	sm->makeVerticesMutable()->setContent(vertexCount(), std::move(vertexProperties));
 
-	sm->makeVerticesMutable()->setContent(vertexCount(), vertexProperties);
-	sm->makeFacesMutable()->setContent(faceCount(), faceProperties);
-	sm->makeRegionsMutable()->setContent(regionCount(), regionProperties);
+	// Gather list of property objects and assign them to the SurfaceMesh's face property container.
+	QVector<PropertyObject*> faceProperties;
+	for(const auto& property : _faceProperties)
+		faceProperties.push_back(const_cast<PropertyObject*>(property.storage().get()));
+	for(const auto& property : _mutableFaceProperties)
+		faceProperties.push_back(property.storage().get());
+	sm->makeFacesMutable()->setContent(faceCount(), std::move(faceProperties));
+
+	// Gather list of property objects and assign them to the SurfaceMesh's region property container.
+	QVector<PropertyObject*> regionProperties;
+	for(const auto& property : _regionProperties)
+		regionProperties.push_back(const_cast<PropertyObject*>(property.storage().get()));
+	for(const auto& property : _mutableRegionProperties)
+		regionProperties.push_back(property.storage().get());
+	sm->makeRegionsMutable()->setContent(regionCount(), std::move(regionProperties));
 }
 
 /******************************************************************************
@@ -120,12 +135,10 @@ bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, 
 
     // Performs one iteration of the smoothing algorithm.
     auto smoothMeshIteration = [this](FloatType prefactor) {
-        const AffineTransformation absoluteToReduced = cell().inverseMatrix();
-        const AffineTransformation reducedToAbsolute = cell().matrix();
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
-        parallelFor(vertexCount(), [this, &displacements, prefactor, absoluteToReduced](vertex_index vertex) {
+        parallelFor(vertexCount(), [this, &displacements, prefactor](vertex_index vertex) {
             Vector3 d = Vector3::Zero();
 
             // Go in positive direction around vertex, facet by facet.
@@ -192,7 +205,7 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 		if(firstEdge == HalfEdgeMesh::InvalidIndex) continue;
 
 		// Compute distance from query point to vertex.
-		Vector3 r = cell().wrapVector(vertexPosition(vindex) - location);
+		Vector3 r = wrapVector(vertexPosition(vindex) - location);
 		FloatType distSq = r.squaredLength();
 		if(distSq < closestDistanceSq) {
 			closestDistanceSq = distSq;
@@ -212,8 +225,8 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 		OVITO_ASSERT_MSG(hasOppositeEdge(edge), "SurfaceMeshData::locatePoint()", "Surface mesh is not fully closed. This should not happen.");
 		const Point3& p1 = vertexPosition(vertex1(edge));
 		const Point3& p2 = vertexPosition(vertex2(edge));
-		Vector3 edgeDir = cell().wrapVector(p2 - p1);
-		Vector3 r = cell().wrapVector(p1 - location);
+		Vector3 edgeDir = wrapVector(p2 - p1);
+		Vector3 r = wrapVector(p1 - location);
 		FloatType edgeLength = edgeDir.length();
 		if(edgeLength <= FLOATTYPE_EPSILON) continue;
 		edgeDir /= edgeLength;
@@ -226,8 +239,8 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 			// Compute pseudo normal of edge by averaging the normal vectors of the two adjacent faces.
 			const Point3& p1a = vertexPosition(vertex2(nextFaceEdge(edge)));
 			const Point3& p1b = vertexPosition(vertex2(nextFaceEdge(oppositeEdge(edge))));
-			Vector3 e1 = cell().wrapVector(p1a - p1);
-			Vector3 e2 = cell().wrapVector(p1b - p1);
+			Vector3 e1 = wrapVector(p1a - p1);
+			Vector3 e2 = wrapVector(p1b - p1);
 			Vector3 pseudoNormal = edgeDir.cross(e1).safelyNormalized() + e2.cross(edgeDir).safelyNormalized();
 
 			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the the query point.
@@ -251,9 +264,9 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 		const Point3& p2 = vertexPosition(vertex2(edge1));
 		const Point3& p3 = vertexPosition(vertex2(edge2));
 		Vector3 edgeVectors[3];
-		edgeVectors[0] = cell().wrapVector(p2 - p1);
-		edgeVectors[1] = cell().wrapVector(p3 - p2);
-		Vector3 r = cell().wrapVector(p1 - location);
+		edgeVectors[0] = wrapVector(p2 - p1);
+		edgeVectors[1] = wrapVector(p3 - p2);
+		Vector3 r = wrapVector(p1 - location);
 		edgeVectors[2] = -edgeVectors[1] - edgeVectors[0];
 
 		// Compute face normal.
@@ -310,14 +323,14 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 				// Compute vertex pseudo-normal by averaging the normal vectors of adjacent faces.
 				closestNormal.setZero();
 				edge_index edge = firstEdge;
-				Vector3 edge1v = cell().wrapVector(vertexPosition(vertex2(edge)) - closestVertexPos);
+				Vector3 edge1v = wrapVector(vertexPosition(vertex2(edge)) - closestVertexPos);
 				edge1v.normalizeSafely();
 				do {
 					visitedEdges.push_back(edge);
 					OVITO_ASSERT(hasOppositeEdge(edge)); // Make sure the mesh is closed.
 					edge_index nextEdge = nextFaceEdge(oppositeEdge(edge));
 					OVITO_ASSERT(vertex1(nextEdge) == closestVertex);
-					Vector3 edge2v = cell().wrapVector(vertexPosition(vertex2(nextEdge)) - closestVertexPos);
+					Vector3 edge2v = wrapVector(vertexPosition(vertex2(nextEdge)) - closestVertexPos);
 					edge2v.normalizeSafely();
 					FloatType angle = std::acos(edge1v.dot(edge2v));
 					Vector3 normal = edge2v.cross(edge1v);
@@ -702,9 +715,9 @@ Vector3 SurfaceMeshData::computeFaceNormal(face_index face) const
 	HalfEdgeMesh::edge_index edge1 = nextFaceEdge(faceEdge);
 	HalfEdgeMesh::edge_index edge2 = nextFaceEdge(edge1);
 	Point3 base = vertexPosition(vertex2(faceEdge));
-	Vector3 e1 = cell().wrapVector(vertexPosition(vertex2(edge1)) - base);
+	Vector3 e1 = wrapVector(vertexPosition(vertex2(edge1)) - base);
 	while(edge2 != faceEdge) {
-		Vector3 e2 = cell().wrapVector(vertexPosition(vertex2(edge2)) - base);
+		Vector3 e2 = wrapVector(vertexPosition(vertex2(edge2)) - base);
 		faceNormal += e1.cross(e2);
 		e1 = e2;
 		edge1 = edge2;

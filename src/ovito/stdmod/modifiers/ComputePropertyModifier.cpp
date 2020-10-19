@@ -22,7 +22,6 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -104,6 +103,8 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor& f
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
 {
+	ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(modApp);
+
 	// Get the delegate object that will take of the specific details.
 	if(!delegate())
 		throwException(tr("No delegate set for the compute property modifier."));
@@ -123,33 +124,48 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 
 	// Get input selection property and existing property data.
 	ConstPropertyPtr selectionProperty;
-	ConstPropertyPtr existingProperty;
-	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
-		selectionProperty = container->getPropertyStorage(PropertyStorage::GenericSelectionProperty);
+	if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+		selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
 		if(!selectionProperty)
 			throwException(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
-
-		const PropertyObject* existingPropertyObj = outputProperty().findInContainer(container);
-		if(existingPropertyObj && existingPropertyObj->componentCount() == propertyComponentCount())
-			existingProperty = existingPropertyObj->storage();
 	}
 
 	// Prepare output property.
 	PropertyPtr outp;
-	if(existingProperty) {
+	const PropertyObject* existingProperty = outputProperty().findInContainer(container);
+	if(existingProperty && existingProperty->componentCount() == propertyComponentCount()) {
 		// Copy existing data.
-		outp = std::make_shared<PropertyStorage>(*existingProperty);
+		outp = CloneHelper().cloneObject(existingProperty, false);
+
+		// Reset cached vis elements.
+		if(myModApp)
+			myModApp->setCachedVisElements({});
 	}
 	else {
 		// Allocate new data array.
-		if(outputProperty().type() != PropertyStorage::GenericUserProperty) {
-			outp = container->getOOMetaClass().createStandardStorage(nelements, outputProperty().type(), onlySelectedElements(), objectPath);
+		if(outputProperty().type() != PropertyObject::GenericUserProperty) {
+			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements(), objectPath);
 		}
 		else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-			outp = std::make_shared<PropertyStorage>(nelements, PropertyStorage::Float, propertyComponentCount(), 0, outputProperty().name(), onlySelectedElements());
+			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), 0, outputProperty().name(), onlySelectedElements());
 		}
 		else {
 			throwException(tr("Output property of compute property modifier has not been specified."));
+		}
+
+		if(myModApp) {
+			// Replace vis elements of output property with cached ones and cache any new vis elements.
+			// This is required to avoid losing the output property's display settings
+			// each time the modifier is re-evaluated or when serializing the modifier.
+			QVector<DataVis*> currentVisElements = outp->visElements();
+			// Replace with cached vis elements if they are of the same class type.
+			for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
+				if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {
+					currentVisElements[i] = myModApp->cachedVisElements()[i];
+				}
+			}
+			outp->setVisElements(currentVisElements);
+			myModApp->setCachedVisElements(std::move(currentVisElements));
 		}
 	}
 	if(propertyComponentCount() != outp->componentCount())
@@ -172,8 +188,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 		engine->setValidityInterval(iv);
 	}
 
-	// Store the list of input variables in the ModifierApplication so that the UI component can display
-	// it to the user.
+	// Store the list of input variables in the ModifierApplication so that the UI component can display it to the user.
 	if(ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(modApp)) {
 		myModApp->setInputVariableNames(engine->inputVariableNames());
 		myModApp->setDelegateInputVariableNames(engine->delegateInputVariableNames());
@@ -312,7 +327,6 @@ bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(con
 ******************************************************************************/
 void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
-	ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(modApp);
 	ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(modApp->modifier());
 
 	if(!modifier->delegate())
@@ -322,22 +336,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(TimePo
 	PropertyContainer* container = state.expectMutableLeafObject(modifier->delegate()->inputContainerRef());
 
 	// Create the output property object in the container.
-	PropertyObject* outputPropertyObj = container->createProperty(outputProperty());
-
-	if(myModApp) {
-		// Replace vis elements of output property with cached ones and cache any new vis elements.
-		// This is required to avoid losing the output property's display settings
-		// each time the modifier is re-evaluated or when serializing the modifier.
-		QVector<DataVis*> currentVisElements = outputPropertyObj->visElements();
-		// Replace with cached vis elements if they are of the same class type.
-		for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
-			if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {
-				currentVisElements[i] = myModApp->cachedVisElements()[i];
-			}
-		}
-		outputPropertyObj->setVisElements(currentVisElements);
-		myModApp->setCachedVisElements(std::move(currentVisElements));
-	}
+	container->addProperty(outputProperty());
 }
 
 }	// End of namespace

@@ -22,7 +22,7 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -87,7 +87,7 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
 		ElementType* ptype = static_object_cast<ElementType>(editObject());
 		if(!ptype) return;
 
-		ElementType::setDefaultColor(PropertyStorage::GenericTypeProperty, ptype->nameOrNumericId(), ptype->color());
+		ElementType::setDefaultColor(PropertyObject::GenericTypeProperty, ptype->nameOrNumericId(), ptype->color());
 
 		mainWindow()->statusBar()->showMessage(tr("Stored current color as default value for type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 	});

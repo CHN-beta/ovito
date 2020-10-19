@@ -219,7 +219,7 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// List only property containers that support element selection.
 	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)
+		return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)
 			&& container->getOOMetaClass().supportsViewportPicking();
 	});
 

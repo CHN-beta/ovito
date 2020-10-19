@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
@@ -70,7 +70,7 @@ public:
 	/// \param vectorComponent The component index if the target property is a vector property.
 	void mapStandardColumn(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = 0) {
 		OVITO_ASSERT(pclass);
-		OVITO_ASSERT(typeId != PropertyStorage::GenericUserProperty);
+		OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
 		this->property = PropertyReference(pclass, typeId, vectorComponent);
 		this->dataType = pclass->standardPropertyDataType(typeId);
 	}
@@ -220,7 +220,7 @@ public:
 	/// \param destination The container where the parsed data will be stored in.
 	/// \param elementCount The number of data elements that will be read from the input file.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount);
+	InputColumnReader(DataSet* dataset, const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);

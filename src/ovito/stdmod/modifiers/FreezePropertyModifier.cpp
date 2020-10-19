@@ -124,8 +124,8 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const PipelineEvaluat
 
 						// Cache the property to be frozen in the ModifierApplication.
 						myModApp->updateStoredData(property,
-							container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty)
-								? container->getProperty(PropertyStorage::GenericIdentifierProperty)
+							container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
+								? container->getProperty(PropertyObject::GenericIdentifierProperty)
 								: nullptr,
 							frozenState.stateValidity());
 
@@ -170,24 +170,25 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 
 	// Get the property that will be overwritten by the stored one.
 	PropertyObject* outputProperty;
-	if(destinationProperty().type() != PropertyStorage::GenericUserProperty) {
+	if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
 		outputProperty = container->createProperty(destinationProperty().type(), true);
 		if(outputProperty->dataType() != myModApp->property()->dataType()
-			|| outputProperty->componentCount() != myModApp->property()->componentCount())
+			|| outputProperty->componentCount() != myModApp->property()->componentCount()
+			|| outputProperty->stride() != myModApp->property()->stride())
 			throwException(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
 	}
 	else {
 		outputProperty = container->createProperty(destinationProperty().name(),
 			myModApp->property()->dataType(), myModApp->property()->componentCount(),
 			0, true);
-		outputProperty->modifiableStorage()->setComponentNames(myModApp->property()->componentNames());
+		outputProperty->setComponentNames(myModApp->property()->componentNames());
 	}
 	OVITO_ASSERT(outputProperty->stride() == myModApp->property()->stride());
 
 	// Check if particle IDs are present and if the order of particles has changed
 	// since we took the snapshot of the property values.
-	ConstPropertyAccess<qlonglong> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty)
-		? container->getProperty(PropertyStorage::GenericIdentifierProperty)
+	ConstPropertyAccess<qlonglong> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
+		? container->getProperty(PropertyObject::GenericIdentifierProperty)
 		: nullptr;
 	ConstPropertyAccess<qlonglong> storedIds = myModApp->identifiers();
 	if(storedIds && idProperty && (idProperty.size() != storedIds.size() || !boost::equal(idProperty, storedIds))) {
@@ -212,23 +213,15 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 		}
 
 		// Copy and reorder property data.
-		myModApp->property()->mappedCopyTo(outputProperty, mapping);
+		myModApp->property()->mappedCopyTo(*outputProperty, mapping);
 	}
 	else {
 		// Make sure the number of elements didn't change when no IDs are defined.
 		if(myModApp->property()->size() != outputProperty->size())
 			throwException(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(myModApp->property()->size()).arg(outputProperty->size()));
 
-		if(outputProperty->type() == myModApp->property()->type()
-				&& outputProperty->name() == myModApp->property()->name()
-				&& outputProperty->dataType() == myModApp->property()->dataType()) {
-			// Make shallow data copy if input and output property are the same.
-			outputProperty->setStorage(myModApp->property()->storage());
-		}
-		else if(outputProperty->stride() == myModApp->property()->stride()) {
-			// Make a full data copy otherwise.
-			outputProperty->copyFrom(myModApp->property());
-		}
+		if(outputProperty->dataType() == myModApp->property()->dataType() && outputProperty->stride() == myModApp->property()->stride())
+			outputProperty->copyFrom(*myModApp->property());
 	}
 
 	// Replace vis elements of output property with cached ones and cache any new elements.

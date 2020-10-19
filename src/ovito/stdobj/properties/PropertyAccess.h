@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include "PropertyStorage.h"
 #include "PropertyObject.h"
 
 #include <boost/range/adaptor/strided.hpp>
@@ -212,11 +211,11 @@ public:
 	U get(size_t i, size_t j) const {
 		OVITO_ASSERT(this->_storage);
 		switch(this->storage()->dataType()) {
-		case PropertyStorage::Float:
+		case PropertyObject::Float:
 			return static_cast<U>(*reinterpret_cast<const FloatType*>(this->cdata(j) + i * this->stride()));
-		case PropertyStorage::Int:
+		case PropertyObject::Int:
 			return static_cast<U>(*reinterpret_cast<const int*>(this->cdata(j) + i * this->stride()));
-		case PropertyStorage::Int64:
+		case PropertyObject::Int64:
 			return static_cast<U>(*reinterpret_cast<const qlonglong*>(this->cdata(j) + i * this->stride()));
 		default:
 			OVITO_ASSERT(false);
@@ -295,7 +294,7 @@ public:
 
 	/// \brief Sets all array elements for which the corresponding entries in the 
 	///        selection array are non-zero to the given uniform value.
-	void fillSelected(const T& value, const PropertyStorage* selectionProperty) {
+	void fillSelected(const T& value, const PropertyObject* selectionProperty) {
 		OVITO_ASSERT(this->storage());
 		this->_storage->template fillSelected<T>(value, selectionProperty);
 	}
@@ -382,13 +381,13 @@ public:
 	void set(size_t i, size_t j, const U& value) {
 		OVITO_ASSERT(this->_storage);
 		switch(this->_storage->dataType()) {
-		case PropertyStorage::Float:
+		case PropertyObject::Float:
 			*reinterpret_cast<FloatType*>(this->data(j) + i * this->stride()) = value;
 			break;
-		case PropertyStorage::Int:
+		case PropertyObject::Int:
 			*reinterpret_cast<int*>(this->data(j) + i * this->stride()) = value;
 			break;
-		case PropertyStorage::Int64:
+		case PropertyObject::Int64:
 			*reinterpret_cast<qlonglong*>(this->data(j) + i * this->stride()) = value;
 			break;
 		default:
@@ -428,55 +427,46 @@ protected:
  * be a compile-time constant.
  */
 template<typename T, bool TableMode = false>
-class ConstPropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, const PropertyStorage*>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, const PropertyStorage*>>
+class ConstPropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, const PropertyObject*>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, const PropertyObject*>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, const PropertyStorage*>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, const PropertyStorage*>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, const PropertyObject*>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, const PropertyObject*>>;
 
 public:
 
-	/// Constructs an accessor object not associated yet with any PropertyStorage.
+	/// Constructs an accessor object not associated yet with any PropertyObject.
 	ConstPropertyAccess() {}
 
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccess(const PropertyObject* propertyObj) 
-		: ParentType(propertyObj ? propertyObj->storage().get() : nullptr) {}
-
-	/// Constructs a read-only accessor for the data in a PropertyStorage.
-	ConstPropertyAccess(const PropertyPtr& property) 
-		: ParentType(property.get()) {}
-
-	/// Constructs a read-only accessor for the data in a PropertyStorage.
-	ConstPropertyAccess(const ConstPropertyPtr& property) 
-		: ParentType(property.get()) {}
-
-	/// Constructs a read-only accessor for the data in a PropertyStorage.
-	ConstPropertyAccess(const PropertyStorage& property) 
-		: ParentType(&property) {}
+		: ParentType(propertyObj) {}
 };
 
 /**
- * \brief Helper class that provides read access to the data elements in a PropertyStorage object
- *        and which keeps a strong reference to the PropertyStorage.
+ * \brief Helper class that provides read access to the data elements in a PropertyObject
+ *        and which keeps a strong reference to the PropertyObject.
  */
-template<typename T>
-class ConstPropertyAccessAndRef : public Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, ConstPropertyPtr>
+template<typename T, bool TableMode = false>
+class ConstPropertyAccessAndRef : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, ConstPropertyPtr>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, ConstPropertyPtr>>
 {
+	using ParentType = std::conditional_t<TableMode, Ovito::StdObj::detail::ReadOnlyPropertyAccessBaseTable<T, ConstPropertyPtr>, Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, ConstPropertyPtr>>;
+
 public:
 
-	/// Constructs an accessor object not associated yet with any PropertyStorage.
+	/// Constructs an accessor object not associated yet with any PropertyObject.
 	ConstPropertyAccessAndRef() {}
 
 	/// Constructs a read-only accessor for the data in a PropertyObject.
-	ConstPropertyAccessAndRef(const PropertyObject* propertyObj) 
-		: Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, ConstPropertyPtr>(propertyObj ? propertyObj->storage() : nullptr) {}
-
-	/// Constructs a read-only accessor for the data in a PropertyStorage.
 	ConstPropertyAccessAndRef(ConstPropertyPtr property)
-		: Ovito::StdObj::detail::ReadOnlyPropertyAccessBase<T, ConstPropertyPtr>(std::move(property)) {}
+		: ParentType(std::move(property)) {}
+
+	/// \brief Moves the internal PropertyPtr out of this object.
+	ConstPropertyPtr take() {
+		return std::move(this->_storage);
+	}
 };
 
 /**
- * \brief Helper class that provides read/write access to the data elements in a PropertyStorage object.
+ * \brief Helper class that provides read/write access to the data elements in a PropertyObject.
  * 
  * The TableMode template parameter should be set to true if access to the individual components
  * of a vector property array is desired or if the number of vector components of the property is unknown at compile time. 
@@ -484,50 +474,38 @@ public:
  * be a compile-time constant.
  * 
  * If the PropertyAccess object is initialized from a PropertyObject pointer, the property object's notifyTargetChanged()
- * method will automatically be called when the PropertyAccess object goes out of scope to inform the system about
+ * method will be automatically called when the PropertyAccess object goes out of scope to inform the system about
  * a modification of the stored property values.
  */
 template<typename T, bool TableMode = false>
-class PropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadWritePropertyAccessBaseTable<T, PropertyStorage*>, Ovito::StdObj::detail::ReadWritePropertyAccessBase<T, PropertyStorage*>>
+class PropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadWritePropertyAccessBaseTable<T, PropertyObject*>, Ovito::StdObj::detail::ReadWritePropertyAccessBase<T, PropertyObject*>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::StdObj::detail::ReadWritePropertyAccessBaseTable<T, PropertyStorage*>, Ovito::StdObj::detail::ReadWritePropertyAccessBase<T, PropertyStorage*>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::StdObj::detail::ReadWritePropertyAccessBaseTable<T, PropertyObject*>, Ovito::StdObj::detail::ReadWritePropertyAccessBase<T, PropertyObject*>>;
 
 public:
 
-	/// Constructs an accessor object not associated yet with any PropertyStorage.
+	/// Constructs an accessor object not associated yet with any PropertyObject.
 	PropertyAccess() {}
 
 	/// Constructs a read/write accessor for the data in a PropertyObject.
-	PropertyAccess(PropertyObject* propertyObj) : 
-		ParentType(propertyObj ? propertyObj->modifiableStorage().get() : nullptr), 
-		_propertyObject(propertyObj) {}
-
-	/// Constructs a read/write accessor for the data in a PropertyStorage.
 	PropertyAccess(const PropertyPtr& property) 
 		: ParentType(property.get()) {}
 
-	/// Constructs a read/write accessor for the data in a PropertyStorage.
-	PropertyAccess(PropertyStorage* property) 
+	/// Constructs a read/write accessor for the data in a PropertyObject.
+	PropertyAccess(PropertyObject* property) 
 		: ParentType(property) {}
 
 	/// When the PropertyAccess object goes out of scope, an automatic change message is sent by the
 	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccess object.
 	~PropertyAccess() {
-		if(_propertyObject) _propertyObject->notifyTargetChanged();
+		if(storage())
+			storage()->notifyTargetChanged();
 	}
-
-	/// Returns the PropertyObject that owns the PropertyStorage.
-	PropertyObject* propertyObject() const { return _propertyObject; }
-
-private:
-
-	/// Pointer to the PropertyObject that owns the PropertyStorage.
-	PropertyObject* _propertyObject = nullptr;
 };
 
 /**
- * \brief Helper class that provides read/write access to the data elements in a PropertyStorage object
- *        and which keeps a strong reference to the PropertyStorage.
+ * \brief Helper class that provides read/write access to the data elements in a PropertyObject object
+ *        and which keeps a strong reference to the PropertyObject.
  */
 template<typename T, bool TableMode = false>
 class PropertyAccessAndRef : public std::conditional_t<TableMode, Ovito::StdObj::detail::ReadWritePropertyAccessBaseTable<T, PropertyPtr>, Ovito::StdObj::detail::ReadWritePropertyAccessBase<T, PropertyPtr>>
@@ -539,22 +517,20 @@ public:
 	/// Constructs an accessor object not associated yet with any PropertyStorage.
 	PropertyAccessAndRef() {}
 
-	/// Constructs a read/write accessor for the data in a PropertyObject.
-	PropertyAccessAndRef(PropertyObject* propertyObj) : 
-		ParentType(propertyObj ? propertyObj->modifiableStorage() : nullptr) {}
-
 	/// Constructs a read/write accessor for the data in a PropertyStorage.
 	PropertyAccessAndRef(PropertyPtr property) 
 		: ParentType(std::move(property)) {}
 
+#if 0
 	/// \brief Helper method for implementing copy-on-write semantics.
 	///        Makes sure that the property storage exclusive owned by this object.
 	void makeMutable() { 
 		PropertyStorage::makeMutable(this->_storage);
 	}
+#endif
 
 	/// \brief Moves the internal PropertyPtr out of this object.
-	PropertyPtr takeStorage() {
+	PropertyPtr take() {
 		return std::move(this->_storage);
 	}
 };

@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard data table properties.
-		virtual PropertyPtr createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
 
 	protected:
 
@@ -59,8 +59,8 @@ public:
 
 	/// \brief The list of standard data table properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		XProperty = PropertyStorage::FirstSpecificProperty,
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		XProperty = PropertyObject::FirstSpecificProperty,
 		YProperty
 	};
 
@@ -74,7 +74,7 @@ public:
 	Q_ENUMS(PlotMode);
 
 	/// Constructor.
-	Q_INVOKABLE DataTable(DataSet* dataset, PlotMode plotMode = Line, const QString& title = QString(), PropertyPtr y = {}, PropertyPtr x = {});
+	Q_INVOKABLE DataTable(DataSet* dataset, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
 	/// Returns the property object containing the y-coordinates of the data points.
 	const PropertyObject* getY() const { return getProperty(Type::YProperty); }
@@ -82,13 +82,10 @@ public:
 	/// Returns the property object containing the x-coordinates of the data points (may be NULL).
 	const PropertyObject* getX() const { return getProperty(Type::XProperty); }
 
-	/// Returns the data array containing the y-coordinates of the data points.
-	ConstPropertyPtr getYStorage() const { return getPropertyStorage(Type::YProperty); }
-
 	/// Returns the data array containing the x-coordinates of the data points.
 	/// If no explicit x-coordinate data is available, the array is dynamically generated
 	/// from the x-axis interval set for this data table.
-	ConstPropertyPtr getXStorage() const;
+	ConstPropertyPtr getXValues() const;
 
 private:
 

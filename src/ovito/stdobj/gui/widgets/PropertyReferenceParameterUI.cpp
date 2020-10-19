@@ -190,7 +190,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& s
 				continue;
 
 			// Properties with a non-numeric data type cannot be used as source properties.
-			if(property->dataType() != PropertyStorage::Int && property->dataType() != PropertyStorage::Int64 && property->dataType() != PropertyStorage::Float)
+			if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
 				continue;
 
 			if(property->componentNames().empty() || !_showComponents) {

@@ -123,9 +123,9 @@ InputColumnMappingDialog::InputColumnMappingDialog(const InputColumnMapping& map
  *****************************************************************************/
 QString InputColumnMappingDialog::dataTypeToString(int dataType)
 {
-	if(dataType == PropertyStorage::Int) return tr("Integer");
-	else if(dataType == PropertyStorage::Int64) return tr("Integer (64-bit)");
-	else if(dataType == PropertyStorage::Float) return tr("Float");
+	if(dataType == PropertyObject::Int) return tr("Integer");
+	else if(dataType == PropertyObject::Int64) return tr("Integer (64-bit)");
+	else if(dataType == PropertyObject::Float) return tr("Float");
 	else return tr("None");
 }
 
@@ -198,7 +198,7 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
 		connect(fileColumnItem, &QCheckBox::clicked, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
 		connect(nameItem, &QComboBox::currentTextChanged, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
 
-		_propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : PropertyStorage::Float);
+		_propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : PropertyObject::Float);
 	}
 
 	_tableWidget->resizeRowsToContents();
@@ -224,7 +224,7 @@ void InputColumnMappingDialog::updateVectorComponentList(int columnIndex)
 
 	QString propertyName = _propertyBoxes[columnIndex]->currentText();
 	int standardProperty = _containerClass->standardPropertyIds().value(propertyName);
-	if(!propertyName.isEmpty() && standardProperty != PropertyStorage::GenericUserProperty) {
+	if(!propertyName.isEmpty() && standardProperty != PropertyObject::GenericUserProperty) {
 		int oldIndex = vecBox->currentIndex();
 		_vectorComponentBoxes[columnIndex]->clear();
 		for(const QString& name : _containerClass->standardPropertyComponentNames(standardProperty))
@@ -251,7 +251,7 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
 		if(_fileColumnBoxes[index]->isChecked()) {
 			QString propertyName = _propertyBoxes[index]->currentText().trimmed();
 			int typeId = _containerClass->standardPropertyIds().value(propertyName);
-			if(typeId != PropertyStorage::GenericUserProperty) {
+			if(typeId != PropertyObject::GenericUserProperty) {
 				int vectorCompnt = std::max(0, _vectorComponentBoxes[index]->currentIndex());
 				mapping[index].mapStandardColumn(_containerClass, typeId, vectorCompnt);
 			}

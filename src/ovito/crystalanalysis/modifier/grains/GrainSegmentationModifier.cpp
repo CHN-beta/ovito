@@ -109,7 +109,7 @@ Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
 	if(!orientationProperty)
 		throwException(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
-	const PropertyObject* correspondenceProperty = particles->expectProperty("Correspondences", PropertyStorage::Int64);
+	const PropertyObject* correspondenceProperty = particles->expectProperty("Correspondences", PropertyObject::Int64);
 
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
@@ -173,7 +173,7 @@ void GrainSegmentationEngine1::applyResults(TimePoint time, ModifierApplication*
 		}
 
 		// Output disorientation angles as a bond property.
-		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = std::make_shared<PropertyStorage>(bonds.size(), PropertyStorage::Float, 1, 0, QStringLiteral("Disorientation"), false);
+		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = std::make_shared<PropertyStorage>(bonds.size(), PropertyObject::Float, 1, 0, QStringLiteral("Disorientation"), false);
 		for (size_t i=0;i<disorientations.size();i++) {
 			neighborDisorientationAngles[i] = disorientations[i];
 		}

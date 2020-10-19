@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard voxel properties.
-		virtual PropertyPtr createStandardStorage(size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
 
 	protected:
 
@@ -63,8 +63,8 @@ public:
 
 	/// \brief The list of standard voxel properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		ColorProperty = PropertyStorage::GenericColorProperty
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		ColorProperty = PropertyObject::GenericColorProperty
 	};
 
 	/// \brief Constructor.

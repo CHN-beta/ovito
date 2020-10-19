@@ -219,9 +219,9 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
 
     	PropertyPtr property;
 		if(propertyType != ParticlesObject::UserProperty)
-			property = ParticlesObject::OOClass().createStandardStorage(natoms, propertyType, true);
+			property = ParticlesObject::OOClass().createStandardProperty(natoms, propertyType, true);
 		else
-			property = std::make_shared<PropertyStorage>(natoms, PropertyStorage::Float, 1, 0, propertyName, true);
+			property = std::make_shared<PropertyStorage>(natoms, PropertyObject::Float, 1, 0, propertyName, true);
 		frameData->particles().addProperty(property);
 		extraProperties.push_back(PropertyAccess<FloatType>(property));
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,19 +28,19 @@
 namespace Ovito {
 
 /**
- * \brief A smart pointer holding a reference to an OvitoObject.
+ * \brief A smart-pointer to an OvitoObject.
  *
- * This smart pointer class takes care of incrementing and decrementing
+ * This smart-pointer class takes care of incrementing and decrementing
  * the reference counter of the object it is pointing to. As soon as no
- * OORef pointer to an object instance is left, the object is automatically
- * deleted.
+ * OORef pointer to an object instance is left, the referenced object is automatically
+ * destroyed.
  */
 template<class T>
 class OORef
 {
 private:
 
-	typedef OORef this_type;
+	using this_type = OORef;
 
 public:
 
@@ -51,11 +51,6 @@ public:
 
     /// Null constructor.
     OORef(std::nullptr_t) noexcept : px(nullptr) {}
-
-    /// Initialization constructor.
-    OORef(T* p) noexcept : px(p) {
-    	if(px) px->incrementReferenceCount();
-    }
 
     /// Initialization constructor.
     OORef(const T* p) noexcept : px(const_cast<T*>(p)) {
@@ -78,6 +73,12 @@ public:
     	rhs.px = nullptr;
     }
 
+    /// Move and conversion constructor.
+    template<class U>
+    OORef(OORef<U>&& rhs) noexcept : px(rhs.px) {
+    	rhs.px = nullptr;
+    }
+
     /// Destructor.
     ~OORef() {
     	if(px) px->decrementReferenceCount();
@@ -95,6 +96,12 @@ public:
     }
 
     OORef& operator=(OORef&& rhs) noexcept {
+    	this_type(std::move(rhs)).swap(*this);
+    	return *this;
+    }
+
+    template<class U>
+    OORef& operator=(OORef<U>&& rhs) noexcept {
     	this_type(std::move(rhs)).swap(*this);
     	return *this;
     }
@@ -134,9 +141,17 @@ public:
     	std::swap(px,rhs.px);
     }
 
+    /// Factory method instantiating a new object and returning a smart-pointer to it.
+    template<typename... Args>
+	static this_type create(Args&&... args) {
+		return this_type(new T(std::forward<Args>(args)...));
+	}
+
 private:
 
     T* px;
+
+	template<class U> friend class OORef;
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept

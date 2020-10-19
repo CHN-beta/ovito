@@ -24,7 +24,7 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
@@ -115,8 +115,8 @@ protected:
 		/// Generates the cap polygons where the surface mesh intersects the periodic domain boundaries.
 		void buildCapTriangleMesh();
 
-		/// Returns the periodic domain the surface mesh is embedded in.
-		const SimulationCell& cell() const { return _inputMesh.cell(); }
+		/// Returns the periodic domain the surface mesh is embedded in (if any).
+		const SimulationCellObject* cell() const { return _inputMesh.cell(); }
 
 	private:
 

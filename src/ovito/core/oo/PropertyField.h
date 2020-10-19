@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,13 +59,16 @@ protected:
 	class OVITO_CORE_EXPORT PropertyFieldOperation : public UndoableOperation
 	{
 	public:
+	
 		/// Constructor.
 		PropertyFieldOperation(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
 		/// Access to the object whose property was changed.
 		RefMaker* owner() const;
 		/// Access to the descriptor of the reference field whose value has changed.
 		const PropertyFieldDescriptor& descriptor() const { return _descriptor; }
+	
 	private:
+
 		/// The object whose property has been changed.
 		/// This is only used if the owner is not the DataSet, because that would create a circular reference.
 		OORef<OvitoObject> _owner;

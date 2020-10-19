@@ -108,16 +108,10 @@ public Q_SLOTS:
 	}
 
 	/// \brief Zooms all viewports to the extents of the currently selected nodes.
-	void zoomToSelectionExtents() {
-		for(Viewport* vp : viewports())
-			vp->zoomToSelectionExtents();
-	}
+	void zoomToSelectionExtents();
 
 	/// \brief Zooms to the extents of the scene.
-	void zoomToSceneExtents() {
-		for(Viewport* vp : viewports())
-			vp->zoomToSceneExtents();
-	}
+	void zoomToSceneExtents();
 
 	/// \brief This will flag all viewports for redrawing.
 	///

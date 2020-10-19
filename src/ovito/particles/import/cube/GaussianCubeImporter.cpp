@@ -212,7 +212,7 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 		// No field table present. Assume file contains a single field property.
 		nfields = 1;
 	}
-	PropertyAccess<FloatType, true> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(gridSize[0]*gridSize[1]*gridSize[2], PropertyStorage::Float, nfields, 0, QStringLiteral("Property"), false, 0, std::move(componentNames)));
+	PropertyAccess<FloatType, true> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(gridSize[0]*gridSize[1]*gridSize[2], PropertyObject::Float, nfields, 0, QStringLiteral("Property"), false, 0, std::move(componentNames)));
 
 	// Parse voxel data.
 	frameData->setVoxelGridShape({gridSize[0], gridSize[1], gridSize[2]});

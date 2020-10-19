@@ -197,8 +197,8 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 
 	// Create particle properties.
 	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::PositionProperty, true);
-	PropertyAccess<int> residueTypeProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyStorage::Int, 1, 0, QStringLiteral("Residue Type"), false));
-	PropertyAccess<qlonglong> residueNumberProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyStorage::Int64, 1, 0, QStringLiteral("Residue Identifier"), false));
+	PropertyAccess<int> residueTypeProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyObject::Int, 1, 0, QStringLiteral("Residue Type"), false));
+	PropertyAccess<qlonglong> residueNumberProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Residue Identifier"), false));
 	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::TypeProperty, false);
 	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::IdentifierProperty, true);
 	PropertyAccess<Vector3> velocityProperty;

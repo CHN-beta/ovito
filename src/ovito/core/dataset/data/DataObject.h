@@ -31,7 +31,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for all objects that represent data.
+ * \brief Abstract base class for all objects that represent a part of a data collection.
  */
 class OVITO_CORE_EXPORT DataObject : public RefTarget
 {
@@ -117,18 +117,20 @@ public:
 	///        Strong references are either RefMaker derived classes that hold a reference to this data object
 	///        or PipelineFlowState instances that contain this data object.
 	int numberOfStrongReferences() const {
-		return _referringFlowStates + dependents().size();
+		// Note: This method is not thread-safe. Must be called from the main thread only.
+		OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+		return _dataReferenceCount.loadRelaxed() + dependents().size();
 	}
 
-	/// Determines if it is safe to modify this data object without unwanted side effects.
+	/// Determines if it is safe to modify this data object without unwanted sideeffects.
 	/// Returns true if there is only one exclusive owner of this data object (if any).
 	/// Returns false if there are multiple references to this data object from several
 	/// data collections or other container data objects.
 	bool isSafeToModify() const;
 
 	/// \brief Returns the current value of the revision counter of this scene object.
-	/// This counter is increment every time the object changes.
-	unsigned int revisionNumber() const Q_DECL_NOTHROW { return _revisionNumber; }
+	/// This counter gets incremented every time the object changes in some way.
+	int revisionNumber() const noexcept { return _revisionNumber.loadRelaxed(); }
 
 	/// Returns the pipeline object that created this data object (may be NULL).
 	PipelineObject* dataSource() const;
@@ -141,10 +143,10 @@ public:
 	virtual bool showInPipelineEditor() const { return false; }
 
 	/// \brief Visits the direct sub-objects of this data object
-	///        and invokes the given visitor function for every sub-objects.
+	///        and invokes the given visitor function for every sub-object.
 	///
 	/// \param fn A functor that takes a DataObject pointer as argument and returns a bool to
-	///           indicate whether visiting of further sub-objects should be stopped.
+	///           indicate whether visiting of further sub-objects should continue.
 	template<class Function>
 	bool visitSubObjects(Function fn) const {
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
@@ -202,6 +204,21 @@ protected:
 
 private:
 
+	/// Increments the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
+	void incrementDataReferenceCount() const noexcept {
+		OVITO_CHECK_OBJECT_POINTER(this);
+		_dataReferenceCount.ref();
+	}
+
+	/// Decrements the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
+	void decrementDataReferenceCount() const noexcept {
+		OVITO_CHECK_OBJECT_POINTER(this);
+		OVITO_ASSERT(_dataReferenceCount.loadAcquire() > 0);
+		_dataReferenceCount.deref();
+	}
+
+private:
+
 	/// The unique identifier of the data object by which it can be referred to from Python, for example.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
 
@@ -211,15 +228,16 @@ private:
 	/// The revision counter of this object.
 	/// The counter is incremented every time the object changes.
 	/// See the VersionedDataObjectRef class for more information.
-	unsigned int _revisionNumber = 0;
+	QAtomicInt _revisionNumber{0};
 
-	/// Counts the current number of PipelineFlowState containers that contain this data object.
-	int _referringFlowStates = 0;
+	/// The current number of strong references to this DataObject that exist.
+	mutable QAtomicInt _dataReferenceCount{0};
 
 	/// Pointer to the pipeline object that created this data object (may be NULL).
 	QPointer<PipelineObject> _dataSource;
 
-	template<typename DataObjectClass> friend class StrongDataObjectRef;
+	// Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
+	template<typename DataObjectClass> friend class DataOORef;
 };
 
 /// A pointer to a DataObject-derived metaclass.
@@ -227,4 +245,4 @@ using DataObjectClassPtr = const DataObject::OOMetaClass*;
 
 }	// End of namespace
 
-#include <ovito/core/dataset/data/StrongDataObjectRef.h>
+#include <ovito/core/dataset/data/DataOORef.h>

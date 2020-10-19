@@ -81,7 +81,7 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CentroSymmetryEngine>(particles, posProperty->storage(), simCell->data(), numNeighbors(), mode());
+	return std::make_shared<CentroSymmetryEngine>(dataset(), particles, posProperty, simCell, numNeighbors(), mode());
 }
 
 /******************************************************************************
@@ -108,7 +108,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
 	// Determine histogram bin size based on maximum CSP value.
 	const size_t numHistogramBins = 100;
-	_cspHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	_cspHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
 	FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
 	if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 	_cspHistogramRange = cspHistogramBinSize * numHistogramBins;
@@ -124,6 +124,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
 	// Release data that is no longer needed.
 	_positions.reset();
+	_simCell.reset();
 }
 
 /******************************************************************************

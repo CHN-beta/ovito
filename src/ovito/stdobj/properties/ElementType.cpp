@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/app/Application.h>
 #include "ElementType.h"
 
@@ -129,7 +129,7 @@ bool ElementType::initialize(bool isNewlyCreated, const QString& name, const QVa
 		}
 	}
 	else if(isNewlyCreated) {
-		setColor(getDefaultColor(PropertyStorage::GenericTypeProperty, nameOrNumericId(), numericId()));
+		setColor(getDefaultColor(PropertyObject::GenericTypeProperty, nameOrNumericId(), numericId()));
 	}
 	
 	return true;

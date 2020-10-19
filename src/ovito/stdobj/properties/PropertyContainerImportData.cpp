@@ -112,23 +112,16 @@ void PropertyContainerImportData::transferToContainer(const PropertyContainer* e
 	for(auto& property : _properties) {
 
 		// Look up existing property object.
-		const PropertyObject* existingPropertyObj = existingContainer ? 
-			((property->type() != PropertyStorage::GenericUserProperty) ? existingContainer->getProperty(property->type()) : existingContainer->getProperty(property->name())) 
+		const PropertyObject* existingProperty = existingContainer ? 
+			((property->type() != PropertyObject::GenericUserProperty) ? existingContainer->getProperty(property->type()) : existingContainer->getProperty(property->name())) 
 			: nullptr;
 
-		OORef<PropertyObject> propertyObj;
-		if(existingPropertyObj) {
-			propertyObj = cloneHelper.cloneObject(existingPropertyObj, false);
-			propertyObj->setStorage(std::move(property));
-			targetContainer->addProperty(propertyObj);
-		}
-		else {
-			propertyObj = targetContainer->createProperty(std::move(property));
-		}
+		// Insert the loaded property into the container.
+		targetContainer->addProperty(property);
 
 		// Transfer element types.
-		auto typeList = _typeLists.find(propertyObj->storage().get());
-		insertTypes(propertyObj, (typeList != _typeLists.end()) ? typeList->second.get() : nullptr, isNewFile);
+		auto typeList = _typeLists.find(property);
+		insertTypes(property, existingProperty, (typeList != _typeLists.end()) ? typeList->second.get() : nullptr, isNewFile);
 	}
 
 	targetContainer->verifyIntegrity();
@@ -137,8 +130,10 @@ void PropertyContainerImportData::transferToContainer(const PropertyContainer* e
 /******************************************************************************
 * Inserts the element types into the given destination property object.
 ******************************************************************************/
-void PropertyContainerImportData::insertTypes(PropertyObject* typeProperty, TypeList* typeList, bool isNewFile) const
+void PropertyContainerImportData::insertTypes(PropertyObject* typeProperty, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile) const
 {
+	OVITO_ASSERT(!existingPropertyObj); // Not implemented yet.
+
 	QSet<ElementType*> activeTypes;
 	boost::container::flat_map<int, int> typeRemapping;
 
@@ -214,7 +209,7 @@ void PropertyContainerImportData::insertTypes(PropertyObject* typeProperty, Type
 ******************************************************************************/
 std::vector<size_t> PropertyContainerImportData::sortElementsById()
 {
-	ConstPropertyAccess<qlonglong> ids = findStandardProperty(PropertyStorage::GenericIdentifierProperty);
+	ConstPropertyAccess<qlonglong> ids = findStandardProperty(PropertyObject::GenericIdentifierProperty);
 	if(!ids) return {};
 
 	// Determine new permutation of data elements which sorts them by ascending ID.
@@ -230,9 +225,10 @@ std::vector<size_t> PropertyContainerImportData::sortElementsById()
 	if(isAlreadySorted) return {};
 
 	// Re-order all values in the property arrays.
+	CloneHelper cloneHelper;
 	for(const PropertyPtr& prop : properties()) {
-		PropertyStorage copy(*prop);
-		prop->mappedCopyFrom(copy, invertedPermutation);
+		OORef<PropertyObject> copy = cloneHelper.cloneObject(prop.get(), false);
+		prop->mappedCopyFrom(*copy, invertedPermutation);
 	}
 
 	return invertedPermutation;

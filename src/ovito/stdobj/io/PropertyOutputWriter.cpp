@@ -87,7 +87,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
 	for(int i = 0; i < (int)mapping.size(); i++) {
 		const PropertyReference& pref = mapping[i];
 		const PropertyObject* property = pref.findInContainer(sourceContainer);
-		if(property == nullptr && pref.type() != PropertyStorage::GenericIdentifierProperty) {
+		if(property == nullptr && pref.type() != PropertyObject::GenericIdentifierProperty) {
 			throw Exception(tr("The specified list of output file columns is invalid. "
 			                   "The property '%2', which is needed to write file column %1, does not exist or could not be computed.").arg(i+1).arg(pref.name()));
 		}
@@ -116,7 +116,7 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
 	for(; property != _properties.constEnd(); ++property, ++vcomp, ++array) {
 		if(property != _properties.constBegin()) stream << ' ';
 		if(*property) {
-			if((*property)->dataType() == PropertyStorage::Int) {
+			if((*property)->dataType() == PropertyObject::Int) {
 				if(_typedPropertyMode == WriteNumericIds || (*property)->elementTypes().empty()) {
 					stream << *reinterpret_cast<const int*>(array->cdata(index, *vcomp));
 				}
@@ -146,10 +146,10 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
 					}
 				}
 			}
-			else if((*property)->dataType() == PropertyStorage::Int64) {
+			else if((*property)->dataType() == PropertyObject::Int64) {
 				stream << *reinterpret_cast<const qlonglong*>(array->cdata(index, *vcomp));
 			}
-			else if((*property)->dataType() == PropertyStorage::Float) {
+			else if((*property)->dataType() == PropertyObject::Float) {
 				stream << *reinterpret_cast<const FloatType*>(array->cdata(index, *vcomp));
 			}
 			else {

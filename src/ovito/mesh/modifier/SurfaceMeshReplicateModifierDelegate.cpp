@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -165,7 +165,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(Modifier* modifier, P
 			OVITO_ASSERT(mesh->faceCount() == newFaceCount);
 
 			if(pbcFlags[0] || pbcFlags[1] || pbcFlags[2]) {
-				ConstPropertyAccess<Point3> vertexCoords = newVertices->getPropertyStorage(SurfaceMeshVertices::PositionProperty);
+				ConstPropertyAccess<Point3> vertexCoords = newVertices->getProperty(SurfaceMeshVertices::PositionProperty);
 				// Unwrap faces that crossed a periodic boundary in the original cell.
 				for(HalfEdgeMesh::face_index face = 0; face < newFaceCount; face++) {
 					HalfEdgeMesh::edge_index edge = mesh->firstFaceEdge(face);
@@ -183,9 +183,9 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(Modifier* modifier, P
 						if(imageShift != Vector3I::Zero()) {
 							size_t imageIndex = v2 / oldVertexCount;
 							Point3I image(imageIndex / nPBC[1] / nPBC[2], (imageIndex / nPBC[2]) % nPBC[1], imageIndex % nPBC[2]);
-							Point3I newImage(SimulationCell::modulo(image[0] + imageShift[0], nPBC[0]),
-											SimulationCell::modulo(image[1] + imageShift[1], nPBC[1]),
-											SimulationCell::modulo(image[2] + imageShift[2], nPBC[2]));
+							Point3I newImage(SimulationCellObject::modulo(image[0] + imageShift[0], nPBC[0]),
+											SimulationCellObject::modulo(image[1] + imageShift[1], nPBC[1]),
+											SimulationCellObject::modulo(image[2] + imageShift[2], nPBC[2]));
 							size_t newImageIndex = (newImage[0] * nPBC[1] * nPBC[2]) + (newImage[1] * nPBC[2]) + newImage[2];
 							HalfEdgeMesh::vertex_index new_v2 = v2wrapped + newImageIndex * oldVertexCount;
 							mesh->transferFaceBoundaryToVertex(edge, new_v2);

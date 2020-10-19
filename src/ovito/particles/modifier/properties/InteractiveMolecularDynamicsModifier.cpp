@@ -244,7 +244,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardStorage(numCoords, ParticlesObject::PositionProperty, false);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty, false);
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return static_cast<Point3>(p); });
 
 				// Notify pipeline system that this modifier has new results. 

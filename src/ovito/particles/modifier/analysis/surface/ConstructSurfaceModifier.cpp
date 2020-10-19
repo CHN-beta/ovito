@@ -519,7 +519,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	std::vector<std::pair<ConstPropertyAccess<FloatType,true>, PropertyAccess<FloatType,true>>> propertyMapping;
 	for(const ConstPropertyPtr& particleProperty : particleProperties()) {
 		// Can only transfer floating-point properties, because we'll need to blend values of several particles.
-		if(particleProperty->dataType() == PropertyStorage::Float) {
+		if(particleProperty->dataType() == PropertyObject::Float) {
 			PropertyPtr vertexProperty;
 			if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh vertices.

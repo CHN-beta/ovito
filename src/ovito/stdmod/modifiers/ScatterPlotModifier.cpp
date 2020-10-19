@@ -149,15 +149,12 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	container->verifyIntegrity();
 
 	// Get the input properties.
-	const PropertyObject* xPropertyObj = xAxisProperty().findInContainer(container);
-	if(!xPropertyObj)
+	const PropertyObject* xProperty = xAxisProperty().findInContainer(container);
+	if(!xProperty)
 		throwException(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
-	const PropertyObject* yPropertyObj = yAxisProperty().findInContainer(container);
-	if(!yPropertyObj)
+	const PropertyObject* yProperty = yAxisProperty().findInContainer(container);
+	if(!yProperty)
 		throwException(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
-
-	ConstPropertyPtr xProperty = xPropertyObj->storage();
-	ConstPropertyPtr yProperty = yPropertyObj->storage();
 
 	size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
 	size_t xVecComponentCount = xProperty->componentCount();
@@ -181,18 +178,18 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	// Create output selection.
 	PropertyAccess<int> outputSelection;
 	size_t numSelected = 0;
-	if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
+	if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyStorage::GenericSelectionProperty);
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
 		boost::fill(outputSelection, 1);
 		numSelected = outputSelection.size();
 	}
 
 	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardStorage(container->elementCount(), DataTable::XProperty, false);
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardStorage(container->elementCount(), DataTable::YProperty, false);
+	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty, false);
+	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty, false);
 	out_x.storage()->setName(xAxisProperty().nameWithComponent());
 	out_y.storage()->setName(yAxisProperty().nameWithComponent());
 
@@ -231,7 +228,7 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	// Output a data table object with the scatter points.
 	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), modApp, 
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
-		out_y.takeStorage(), out_x.takeStorage());
+		out_y.take(), out_x.take());
 
 	QString statusMessage;
 	if(outputSelection) {

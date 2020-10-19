@@ -310,11 +310,11 @@ PropertyStorage* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, co
 {
 	if(gsd.hasChunk(chunkName, frameNumber)) {
 		PropertyPtr prop;
-		if(propertyType != PropertyStorage::GenericUserProperty) {
+		if(propertyType != PropertyObject::GenericUserProperty) {
 			if(!isBondProperty)
-				prop = ParticlesObject::OOClass().createStandardStorage(numElements, propertyType, false);
+				prop = ParticlesObject::OOClass().createStandardProperty(numElements, propertyType, false);
 			else
-				prop = BondsObject::OOClass().createStandardStorage(numElements, propertyType, false);
+				prop = BondsObject::OOClass().createStandardProperty(numElements, propertyType, false);
 		}
 		else {
 			QString propertyName(chunkName);
@@ -327,11 +327,11 @@ PropertyStorage* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, co
 			frameData->particles().addProperty(prop);
 		else
 			frameData->bonds().addProperty(prop);
-		if(prop->dataType() == PropertyStorage::Float)
+		if(prop->dataType() == PropertyObject::Float)
 			gsd.readFloatArray(chunkName, frameNumber, PropertyAccess<FloatType,true>(prop).begin(), numElements, prop->componentCount());
-		else if(prop->dataType() == PropertyStorage::Int)
+		else if(prop->dataType() == PropertyObject::Int)
 			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int,true>(prop).begin(), numElements, prop->componentCount());
-		else if(prop->dataType() == PropertyStorage::Int64)
+		else if(prop->dataType() == PropertyObject::Int64)
 			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<qlonglong,true>(prop).begin(), numElements, prop->componentCount());
 		else
 			throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));

@@ -434,7 +434,7 @@ public:
 		_mergingThreshold(mergingThreshold),
 		_adoptOrphanAtoms(adoptOrphanAtoms),
 		_minGrainAtomCount(minGrainAtomCount),
-		_atomClusters(ParticlesObject::OOClass().createStandardStorage(_numParticles, ParticlesObject::ClusterProperty, true)) {}
+		_atomClusters(ParticlesObject::OOClass().createStandardProperty(_numParticles, ParticlesObject::ClusterProperty, true)) {}
 	
 	/// Performs the computation.
 	virtual void perform() override;

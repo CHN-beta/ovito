@@ -281,8 +281,8 @@ FileSourceImporter::FrameDataPtr OXDNAImporter::FrameLoader::loadFile()
 		frameData->signalAdditionalFrames();
 
 	// Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
-	PropertyAccess<Point3> centerOfMassPositionsArray = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numNucleotidesLong, PropertyStorage::Float, 3, 0, QStringLiteral("Center Of Mass"), false, 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")));
-	PropertyAccess<Point3> basePositionsArray = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numNucleotidesLong, PropertyStorage::Float, 3, 0, QStringLiteral("Base Position"), false, 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")));
+	PropertyAccess<Point3> centerOfMassPositionsArray = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numNucleotidesLong, PropertyObject::Float, 3, 0, QStringLiteral("Center Of Mass"), false, 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")));
+	PropertyAccess<Point3> basePositionsArray = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numNucleotidesLong, PropertyObject::Float, 3, 0, QStringLiteral("Base Position"), false, 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")));
 	PropertyAccess<Point3> positionsArray = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty);
 	ConstPropertyAccess<Vector3> axisVectorArray = frameData->particles().findStandardProperty(ParticlesObject::NucleotideAxisProperty);
 	for(size_t i = 0; i < numNucleotidesLong; i++) {

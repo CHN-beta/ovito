@@ -78,8 +78,8 @@ private:
 				bool useMinimumImageConvention) :
 			RefConfigEngineBase(validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-			_displacements(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
-			_displacementMagnitudes(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
+			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -73,10 +73,10 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
     // Get particle selection.
     ConstPropertyPtr selectionProperty;
     if(onlySelectedParticles())
-        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
+    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
 }
 
 /******************************************************************************

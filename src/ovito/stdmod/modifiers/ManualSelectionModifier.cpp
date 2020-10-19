@@ -88,9 +88,9 @@ void ManualSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		container->verifyIntegrity();
 
 		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyStorage::GenericSelectionProperty),
-				container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty) ?
-					container->getProperty(PropertyStorage::GenericIdentifierProperty) : nullptr);
+				container->createProperty(PropertyObject::GenericSelectionProperty),
+				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
+					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 
 		state.setStatus(std::move(status));
 	}

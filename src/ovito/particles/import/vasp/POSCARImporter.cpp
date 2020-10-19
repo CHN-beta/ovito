@@ -309,7 +309,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 			// Parse charge density volumetric grid.
 			if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
 				auto parseFieldData = [this, &stream, &frameData](size_t nx, size_t ny, size_t nz, const QString& name) -> PropertyPtr {
-					PropertyPtr fieldQuantity = std::make_shared<PropertyStorage>(nx*ny*nz, PropertyStorage::Float, 1, 0, name, false);
+					PropertyPtr fieldQuantity = std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
 					PropertyAccess<FloatType,true> fieldArray(fieldQuantity);
 					const char* s = stream.readLine();
 					FloatType* data = fieldArray.begin();
@@ -381,7 +381,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 				}
 
 				if(magnetizationDensity && magnetizationDensityY && magnetizationDensityZ) {
-					PropertyAccess<FloatType,true> vectorMagnetization = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyStorage::Float, 3, 0, tr("Magnetization density"), false, 0, QStringList() << "X" << "Y" << "Z"));
+					PropertyAccess<FloatType,true> vectorMagnetization = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 3, 0, tr("Magnetization density"), false, 0, QStringList() << "X" << "Y" << "Z"));
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensity), vectorMagnetization.componentRange(0).begin());
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());

@@ -31,7 +31,7 @@
 namespace Ovito { namespace Mesh {
 
 /******************************************************************************
-* Inserts the loaded data into the provided container object.
+* Inserts the loaded data into a data collection.
 * This function is called by the system from the main thread after the
 * asynchronous loading task has finished.
 ******************************************************************************/

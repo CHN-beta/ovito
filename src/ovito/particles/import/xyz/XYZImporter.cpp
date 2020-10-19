@@ -199,7 +199,7 @@ bool XYZImporter::mapVariableToProperty(ParticleInputColumnMapping& columnMappin
 	else if(loweredName == "molecule_type") columnMapping.mapStandardColumn(column, ParticlesObject::MoleculeTypeProperty);
 	else {
 		// Only int or float custom properties are supported
-		if(dataType == PropertyStorage::Float || dataType == PropertyStorage::Int || dataType == PropertyStorage::Int64)
+		if(dataType == PropertyObject::Float || dataType == PropertyObject::Int || dataType == PropertyObject::Int64)
 			columnMapping.mapCustomColumn(column, name, dataType, vec);
 		else
 			return false;
@@ -440,19 +440,19 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 				switch(propType) {
 				case 'I':
 					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Int, k);
+						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyObject::Int, k);
 						col++;
 					}
 					break;
 				case 'R':
 					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Float, k);
+						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyObject::Float, k);
 						col++;
 					}
 					break;
 				case 'L':
 					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Int, k);
+						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyObject::Int, k);
 						col++;
 					}
 					break;

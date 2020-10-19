@@ -462,7 +462,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 					if(!str.isEmpty()) str += QStringLiteral(" | ");
 					str += property->name();
 					str += QStringLiteral(" ");
-					if(property->dataType() == PropertyStorage::Int) {
+					if(property->dataType() == PropertyObject::Int) {
 						ConstPropertyAccess<int, true> data(property);
 						for(size_t component = 0; component < data.componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
@@ -475,14 +475,14 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 							}
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Int64) {
+					else if(property->dataType() == PropertyObject::Int64) {
 						ConstPropertyAccess<qlonglong, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
 							str += QString::number(data.get(bondIndex, component));
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Float) {
+					else if(property->dataType() == PropertyObject::Float) {
 						ConstPropertyAccess<FloatType, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");

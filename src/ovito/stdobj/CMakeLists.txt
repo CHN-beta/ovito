@@ -28,7 +28,6 @@ OVITO_STANDARD_PLUGIN(StdObj
 		simcell/SimulationCellObject.cpp
 		simcell/SimulationCellVis.cpp
 		simcell/PeriodicDomainDataObject.cpp
-		properties/PropertyStorage.cpp
 		properties/PropertyObject.cpp
 		properties/PropertyReference.cpp
 		properties/PropertyContainerClass.cpp

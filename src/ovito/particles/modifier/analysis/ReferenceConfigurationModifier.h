@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
@@ -93,8 +93,8 @@ protected:
 	public:
 
 		/// Constructor.
-		RefConfigEngineBase(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell& simCell,
-				ConstPropertyPtr refPositions, const SimulationCell& simCellRef,
+		RefConfigEngineBase(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, bool useMinimumImageConvention);
 
@@ -104,6 +104,8 @@ protected:
 			_refPositions.reset();
 			_identifiers.reset();
 			_refIdentifiers.reset();
+			_simCell.reset();
+			_simCellRef.reset();
 			decltype(_currentToRefIndexMap){}.swap(_currentToRefIndexMap);
 			decltype(_refToCurrentIndexMap){}.swap(_refToCurrentIndexMap);
 		}
@@ -125,10 +127,10 @@ protected:
 		const ConstPropertyPtr& refIdentifiers() const { return _refIdentifiers; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the reference simulation cell data.
-		const SimulationCell& refCell() const { return _simCellRef; }
+		const DataOORef<const SimulationCellObject>& refCell() const { return _simCellRef; }
 
 		AffineMappingType affineMapping() const { return _affineMapping; }
 
@@ -148,8 +150,8 @@ protected:
 
 	private:
 
-		SimulationCell _simCell;
-		SimulationCell _simCellRef;
+		DataOORef<const SimulationCellObject> _simCell;
+		DataOORef<const SimulationCellObject> _simCellRef;
 		AffineTransformation _refToCurTM;
 		AffineTransformation _curToRefTM;
 		ConstPropertyPtr _positions;

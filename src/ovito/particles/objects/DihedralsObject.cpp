@@ -40,7 +40,7 @@ DihedralsObject::DihedralsObject(DataSet* dataset) : PropertyContainer(dataset)
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr DihedralsObject::OOMetaClass::createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -48,12 +48,12 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardStorage(size_t elementCo
 
 	switch(type) {
 	case TypeProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case TopologyProperty:
-		dataType = PropertyStorage::Int64;
+		dataType = PropertyObject::Int64;
 		componentCount = 4;
 		stride = componentCount * sizeof(qlonglong);
 		break;
@@ -91,8 +91,8 @@ void DihedralsObject::OOMetaClass::initialize()
 	const QStringList emptyList;
 	const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-	registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyStorage::Int, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
-	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyStorage::Int64, abcdList);
+	registerStandardProperty(TypeProperty, tr("Dihedral Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Dihedral types"));
+	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 
 }	// End of namespace

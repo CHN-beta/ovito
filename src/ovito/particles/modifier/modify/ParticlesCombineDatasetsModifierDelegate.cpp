@@ -87,7 +87,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 			}
 			else if(prop->type() != ParticlesObject::UserProperty) {
 				ConstDataObjectPath containerPath = { secondaryParticles };
-				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardStorage(secondaryParticles->elementCount(), prop->type(), true, containerPath);
+				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(secondaryParticles->elementCount(), prop->type(), true, containerPath);
 				prop->modifiableStorage()->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
 			}
 
@@ -153,7 +153,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 
 				// Find corresponding property in second dataset.
 				const PropertyObject* secondProp;
-				if(prop->type() != PropertyStorage::GenericUserProperty)
+				if(prop->type() != PropertyObject::GenericUserProperty)
 					secondProp = secondaryElements->getProperty(prop->type());
 				else
 					secondProp = secondaryElements->getProperty(prop->name());
@@ -161,9 +161,9 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 					OVITO_ASSERT(prop->stride() == secondProp->stride());
 					prop->copyRangeFrom(secondProp, 0, primaryElementCount, secondaryElementCount);
 				}
-				else if(prop->type() != PropertyStorage::GenericUserProperty) {
+				else if(prop->type() != PropertyObject::GenericUserProperty) {
 					ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardStorage(secondaryElementCount, prop->type(), true, containerPath);
+					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(secondaryElementCount, prop->type(), true, containerPath);
 					prop->modifiableStorage()->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
 				}
 
@@ -179,7 +179,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 				if(prop->size() != secondaryElementCount) continue;
 
 				// Check if the property already exists in the output.
-				if(prop->type() != PropertyStorage::GenericUserProperty) {
+				if(prop->type() != PropertyObject::GenericUserProperty) {
 					if(primaryMutableElements->getProperty(prop->type()))
 						continue;
 				}
