@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -76,7 +76,7 @@ private:
 
 		/// Constructor.
 		BondsEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-				const SimulationCell& simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
+				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				ConstPropertyPtr moleculeIDs) :
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
@@ -112,7 +112,7 @@ private:
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		ParticleOrderingFingerprint _inputFingerprint;
 		std::vector<Bond> _bonds;
 	};

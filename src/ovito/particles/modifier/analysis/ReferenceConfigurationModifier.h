@@ -127,10 +127,10 @@ protected:
 		const ConstPropertyPtr& refIdentifiers() const { return _refIdentifiers; }
 
 		/// Returns the simulation cell data.
-		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+		const DataOORef<SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the reference simulation cell data.
-		const DataOORef<const SimulationCellObject>& refCell() const { return _simCellRef; }
+		const DataOORef<SimulationCellObject>& refCell() const { return _simCellRef; }
 
 		AffineMappingType affineMapping() const { return _affineMapping; }
 
@@ -150,8 +150,8 @@ protected:
 
 	private:
 
-		DataOORef<const SimulationCellObject> _simCell;
-		DataOORef<const SimulationCellObject> _simCellRef;
+		DataOORef<SimulationCellObject> _simCell;
+		DataOORef<SimulationCellObject> _simCellRef;
 		AffineTransformation _refToCurTM;
 		AffineTransformation _curToRefTM;
 		ConstPropertyPtr _positions;

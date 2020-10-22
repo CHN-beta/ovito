@@ -123,8 +123,11 @@ public:
 	public:
 
 		/// Constructor.
-		FrameLoader(const Frame& frame, const FileHandle& fileHandle) :
-			_frame(frame), _fileHandle(fileHandle) {}
+		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& fileHandle) :
+			_dataset(dataset), _frame(frame), _fileHandle(fileHandle) { OVITO_ASSERT(dataset); }
+
+		/// Returns the global dataset this frame loader belongs to.
+		DataSet* dataset() const { return _dataset; }
 
 		/// Returns the source file information.
 		const Frame& frame() const { return _frame; }
@@ -141,6 +144,9 @@ public:
 		virtual FrameDataPtr loadFile() = 0;
 
 	private:
+
+		/// The global dataset this frame loader belongs to.
+		DataSet* _dataset;
 
 		/// The source file information.
 		Frame _frame;

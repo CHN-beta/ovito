@@ -216,7 +216,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 			throw Exception(tr("Invalid cell vector in line %1 of VASP file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 	}
 	cell = cell * scaling_factor;
-	frameData->simulationCell().setMatrix(cell);
+	frameData->setSimulationCell(cell);
 
 	// Parse atom type names and atom type counts.
 	QStringList atomTypeNames;
@@ -254,8 +254,8 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 		isCartesian = true;
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::TypeProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::PositionProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::TypeProperty, false);
 	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 
 	// Read atom coordinates.
@@ -292,7 +292,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 				isCartesian = true;
 
 			// Read atomic velocities.
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::VelocityProperty, false);
+			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::VelocityProperty, false);
 			Vector3* v = velocityProperty.begin();
 			for(int atype = 1; atype <= atomCounts.size(); atype++) {
 				for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
@@ -309,12 +309,12 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 			// Parse charge density volumetric grid.
 			if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
 				auto parseFieldData = [this, &stream, &frameData](size_t nx, size_t ny, size_t nz, const QString& name) -> PropertyPtr {
-					PropertyPtr fieldQuantity = std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
+					PropertyPtr fieldQuantity = VoxelGrid::OOClass().createUserProperty(dataset(), nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
 					PropertyAccess<FloatType,true> fieldArray(fieldQuantity);
 					const char* s = stream.readLine();
 					FloatType* data = fieldArray.begin();
 					setProgressMaximum(fieldQuantity->size());
-					FloatType cellVolume = frameData->simulationCell().volume3D();
+					FloatType cellVolume = std::abs(frameData->simulationCell().determinant());
 					for(size_t i = 0; i < fieldQuantity->size(); i++, ++data) {
 						const char* token;
 						for(;;) {
@@ -381,7 +381,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 				}
 
 				if(magnetizationDensity && magnetizationDensityY && magnetizationDensityZ) {
-					PropertyAccess<FloatType,true> vectorMagnetization = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 3, 0, tr("Magnetization density"), false, 0, QStringList() << "X" << "Y" << "Z"));
+					PropertyAccess<FloatType,true> vectorMagnetization = frameData->voxels().addProperty(VoxelGrid::OOClass().createUserProperty(dataset(), nx*ny*nz, PropertyObject::Float, 3, 0, tr("Magnetization density"), false, 0, QStringList() << "X" << "Y" << "Z"));
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensity), vectorMagnetization.componentRange(0).begin());
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
 					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());

@@ -56,6 +56,7 @@ UndoStack::UndoStack() : _suspendCount(0), _index(-1), _cleanIndex(-1),
 void UndoStack::push(std::unique_ptr<UndoableOperation> operation)
 {
 	OVITO_CHECK_POINTER(operation.get());
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
 	OVITO_ASSERT_MSG(isUndoingOrRedoing() == false, "UndoStack::push()", "Cannot record an operation while undoing or redoing another operation.");
 	OVITO_ASSERT_MSG(!isSuspended(), "UndoStack::push()", "Not in recording state.");
 

@@ -212,8 +212,14 @@ public:
 
 	/// Create a standard property.
 	template<class ContainerClass>
-	PropertyObject* createStandardProperty(size_t elementCount, int typeId, bool initializeMemory) {
-		return addProperty(ContainerClass::OOClass().createStandardProperty(elementCount, typeId, initializeMemory));
+	PropertyObject* createStandardProperty(DataSet* dataset, size_t elementCount, int typeId, bool initializeMemory) {
+		return addProperty(ContainerClass::OOClass().createStandardProperty(dataset, elementCount, typeId, initializeMemory));
+	}
+
+	/// Create a user property.
+	template<class ContainerClass>
+	PropertyObject* createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) {
+		return addProperty(ContainerClass::OOClass().createUserProperty(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames)));
 	}
 
 	/// Removes a property from the list.

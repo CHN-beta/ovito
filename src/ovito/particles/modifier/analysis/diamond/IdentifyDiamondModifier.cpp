@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,12 +66,10 @@ Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(co
 		throwException(tr("The modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DiamondIdentificationEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+	return std::make_shared<DiamondIdentificationEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
 }
 
 /******************************************************************************

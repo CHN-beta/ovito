@@ -104,12 +104,12 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, PropertyPtr positions,
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 		const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer) :
 	Engine(validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
-	_positions(positions),
+	_positions(std::move(positions)),
 	_boundingBox(boundingBox),
 	_particleRadii(std::move(particleRadii)),
 	_renderer(renderer),

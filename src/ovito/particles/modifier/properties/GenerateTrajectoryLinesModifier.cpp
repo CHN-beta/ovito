@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -159,7 +159,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		std::vector<Point3> pointData;
 		std::vector<int> timeData;
 		std::vector<qlonglong> idData;
-		std::vector<SimulationCell> cells;
+		std::vector<DataOORef<const SimulationCellObject>> cells;
 		int timeIndex = 0;
 		for(TimePoint time : sampleTimes) {
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
@@ -228,10 +228,10 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 			// Onbtain the simulation cell geometry at the current animation time.
 			if(unwrapTrajectories()) {
 				if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
-					cells.push_back(simCellObj->data());
+					cells.push_back(simCellObj);
 				}
 				else {
-					cells.push_back(SimulationCell());
+					cells.push_back({});
 				}
 			}
 
@@ -286,7 +286,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 			return false;
 
 		// Unwrap trajectory vertices at periodic boundaries of the simulation cell.
-		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front().pbcFlags() != std::array<bool,3>{false, false, false}) {
+		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbc()) {
 			operation.setProgressText(tr("Unwrapping trajectory lines"));
 			operation.setProgressMaximum(trajPosProperty.size() - 1);
 			Point3* pos = trajPosProperty.begin();
@@ -296,18 +296,20 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 				if(!operation.incrementProgressValue())
 					return false;
 				if(id[0] == id[1]) {
-					const SimulationCell& cell1 = cells[timeData[piter[0]]];
-					const SimulationCell& cell2 = cells[timeData[piter[1]]];
-					const Point3& p1 = pos[0];
-					Point3 p2 = pos[1];
-					for(size_t dim = 0; dim < 3; dim++) {
-						if(cell1.hasPbc(dim)) {
-							FloatType reduced1 = cell1.inverseMatrix().prodrow(p1, dim);
-							FloatType reduced2 = cell2.inverseMatrix().prodrow(p2, dim);
-							FloatType delta = reduced2 - reduced1;
-							FloatType shift = std::floor(delta + FloatType(0.5));
-							if(shift != 0) {
-								pos[1] -= cell2.matrix().column(dim) * shift;
+					const SimulationCellObject* cell1 = cells[timeData[piter[0]]];
+					const SimulationCellObject* cell2 = cells[timeData[piter[1]]];
+					if(cell1 && cell2) {
+						const Point3& p1 = pos[0];
+						Point3 p2 = pos[1];
+						for(size_t dim = 0; dim < 3; dim++) {
+							if(cell1->hasPbc(dim)) {
+								FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
+								FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
+								FloatType delta = reduced2 - reduced1;
+								FloatType shift = std::floor(delta + FloatType(0.5));
+								if(shift != 0) {
+									pos[1] -= cell2->matrix().column(dim) * shift;
+								}
 							}
 						}
 					}

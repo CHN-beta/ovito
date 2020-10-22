@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -108,9 +108,7 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 		throwException(tr("The Voronoi modifier does not support 2d simulation cells."));
 
 	// Get selection particle property.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelected())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelected() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle radii.
 	std::vector<FloatType> radii;
@@ -123,13 +121,14 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<VoronoiAnalysisEngine>(
+			dataset(),
 			input.stateValidity(),
 			particles,
-			posProperty->storage(),
+			posProperty,
 			selectionProperty,
-			particles->getPropertyStorage(ParticlesObject::IdentifierProperty),
+			particles->getProperty(ParticlesObject::IdentifierProperty),
 			std::move(radii),
-			inputCell->data(),
+			inputCell,
 			computeIndices(),
 			computeBonds(),
 			computePolyhedra(),
@@ -143,6 +142,8 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 ******************************************************************************/
 void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 {
+	OVITO_ASSERT(_simCell);
+
 	setProgressText(tr("Performing Voronoi analysis"));
 	beginProgressSubSteps(_computePolyhedra ? 2 : 1);
 
@@ -181,9 +182,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		_surfaceAreaProperty = _polyhedraMesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, true).get();
 	}
 
-	if(_positions->size() == 0 || _simCell.volume3D() == 0) {
+	if(_positions->size() == 0 || _simCell->volume3D() == 0) {
 		if(maxFaceOrders()) {
-			_voronoiIndices = std::make_shared<PropertyStorage>(_positions->size(), PropertyObject::Int, 3, 0, QStringLiteral("Voronoi Index"), true);
+			_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->dataset(), _positions->size(), PropertyObject::Int, 3, 0, QStringLiteral("Voronoi Index"), true);
 			// Re-use the output particle property as an output mesh region property.
 			if(_computePolyhedra) {
 				_polyhedraMesh.addRegionProperty(voronoiIndices());
@@ -312,8 +313,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 							Vector3 delta = positionsArray[index] - positionsArray[neighbor_id];
 							Vector3I pbcShift = Vector3I::Zero();
 							for(size_t dim = 0; dim < 3; dim++) {
-								if(_simCell.hasPbc(dim))
-									pbcShift[dim] = (int)std::floor(_simCell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+								if(_simCell->hasPbc(dim))
+									pbcShift[dim] = (int)std::floor(_simCell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 							}
 							Bond bond = { index, (size_t)neighbor_id, pbcShift };
 							if(!bond.isOdd()) {
@@ -348,14 +349,14 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	std::vector<size_t> voronoiBufferIndex;
 
 	// Decide whether to use Voro++ container class or our own implementation.
-	if(_simCell.isAxisAligned()) {
+	if(_simCell->isAxisAligned()) {
 		// Use Voro++ container.
-		double ax = _simCell.matrix()(0,3);
-		double ay = _simCell.matrix()(1,3);
-		double az = _simCell.matrix()(2,3);
-		double bx = ax + _simCell.matrix()(0,0);
-		double by = ay + _simCell.matrix()(1,1);
-		double bz = az + _simCell.matrix()(2,2);
+		double ax = _simCell->matrix()(0,3);
+		double ay = _simCell->matrix()(1,3);
+		double az = _simCell->matrix()(2,3);
+		double bx = ax + _simCell->matrix()(0,0);
+		double by = ay + _simCell->matrix()(1,1);
+		double bz = az + _simCell->matrix()(2,2);
 		if(ax > bx) std::swap(ax,bx);
 		if(ay > by) std::swap(ay,by);
 		if(az > bz) std::swap(az,bz);
@@ -369,7 +370,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		if(_radii.empty()) {
 			// All particles have a uniform size.
 			voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-					_simCell.hasPbc(0), _simCell.hasPbc(1), _simCell.hasPbc(2), (int)std::ceil(voro::optimal_particles));
+					_simCell->hasPbc(0), _simCell->hasPbc(1), _simCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
 			// Insert particles into Voro++ container.
 			for(size_t index = 0; index < positionsArray.size(); index++) {
@@ -404,7 +405,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		else {
 			// Particles have non-uniform sizes -> Compute polydisperse Voronoi tessellation.
 			voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-					_simCell.hasPbc(0), _simCell.hasPbc(1), _simCell.hasPbc(2),
+					_simCell->hasPbc(0), _simCell->hasPbc(1), _simCell->hasPbc(2),
 					(int)std::ceil(voro::optimal_particles));
 
 			// Insert particles into Voro++ container.
@@ -452,18 +453,18 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
 		double boxDiameter = sqrt(
-				  _simCell.matrix().column(0).squaredLength()
-				+ _simCell.matrix().column(1).squaredLength()
-				+ _simCell.matrix().column(2).squaredLength());
+				  _simCell->matrix().column(0).squaredLength()
+				+ _simCell->matrix().column(1).squaredLength()
+				+ _simCell->matrix().column(2).squaredLength());
 
 		// The normal vectors of the three cell planes.
 		std::array<Vector3,3> planeNormals;
-		planeNormals[0] = _simCell.cellNormalVector(0);
-		planeNormals[1] = _simCell.cellNormalVector(1);
-		planeNormals[2] = _simCell.cellNormalVector(2);
+		planeNormals[0] = _simCell->cellNormalVector(0);
+		planeNormals[1] = _simCell->cellNormalVector(1);
+		planeNormals[2] = _simCell->cellNormalVector(2);
 
-		Point3 corner1 = Point3::Origin() + _simCell.matrix().column(3);
-		Point3 corner2 = corner1 + _simCell.matrix().column(0) + _simCell.matrix().column(1) + _simCell.matrix().column(2);
+		Point3 corner1 = Point3::Origin() + _simCell->matrix().column(3);
+		Point3 corner2 = corner1 + _simCell->matrix().column(0) + _simCell->matrix().column(1) + _simCell->matrix().column(2);
 
 		QMutex bondMutex;
 		QMutex indexMutex;
@@ -490,7 +491,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 				// Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
 				bool skipParticle = false;
 				for(size_t dim = 0; dim < 3; dim++) {
-					if(!_simCell.hasPbc(dim)) {
+					if(!_simCell->hasPbc(dim)) {
 						double r;
 						r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
 						if(r <= 0) skipParticle = true;
@@ -536,7 +537,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	if(maxFaceOrders()) {
 		size_t componentCount = std::min(_maxFaceOrder.load(), FaceOrderStorageLimit);
-		_voronoiIndices = std::make_shared<PropertyStorage>(_positions->size(), PropertyObject::Int, componentCount, 0, QStringLiteral("Voronoi Index"), true);
+		_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->dataset(), _positions->size(), PropertyObject::Int, componentCount, 0, QStringLiteral("Voronoi Index"), true);
 		PropertyAccess<int,true> voronoiIndicesArray(_voronoiIndices);
 		ConstPropertyAccess<int> maxFaceOrdersArray(maxFaceOrders());
 		auto indexData = voronoiBuffer.cbegin();
@@ -612,7 +613,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 					if(!isCandidateVertex) continue;
 
 					// Compute distance of other vertex to current vertex.
-					FloatType squared_dist = _polyhedraMesh.cell().wrapVector(_polyhedraMesh.vertexPosition(other_vertex) - vertex_pos).squaredLength();
+					FloatType squared_dist = _polyhedraMesh.wrapVector(_polyhedraMesh.vertexPosition(other_vertex) - vertex_pos).squaredLength();
 
 					// Determine the closest vertex and longest distance (as a measure of the cell size).
 					if(squared_dist > longest_dist) longest_dist = squared_dist;
@@ -723,6 +724,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	_positions.reset();
 	_selection.reset();
 	_particleIdentifiers.reset();
+	_adjacentCellProperty.reset();
+	_centerParticleProperty.reset();
+	_cellVolumeProperty.reset();
+	_cellCoordinationProperty.reset();
+	_surfaceAreaProperty.reset();
+	_simCell.reset();
 	decltype(_radii){}.swap(_radii);
 }
 
@@ -751,7 +758,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(TimePoint time
 	}
 
 	// Check computed Voronoi cell volume sum.
-	FloatType simulationBoxVolume = _simCell.volume3D();
+	FloatType simulationBoxVolume = _simCell->volume3D();
 	if(particles->elementCount() != 0 && std::abs(voronoiVolumeSum() - simulationBoxVolume) > 1e-8 * particles->elementCount() * simulationBoxVolume) {
 		state.setStatus(PipelineStatus(PipelineStatus::Warning,
 				tr("The volume sum of all Voronoi cells does not match the simulation box volume. "

@@ -196,11 +196,11 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 	setProgressMaximum(numParticles);
 
 	// Create particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::PositionProperty, true);
-	PropertyAccess<int> residueTypeProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyObject::Int, 1, 0, QStringLiteral("Residue Type"), false));
-	PropertyAccess<qlonglong> residueNumberProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Residue Identifier"), false));
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::TypeProperty, false);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::IdentifierProperty, true);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::PositionProperty, true);
+	PropertyAccess<int> residueTypeProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), numParticles, PropertyObject::Int, 1, 0, QStringLiteral("Residue Type"), false);
+	PropertyAccess<qlonglong> residueNumberProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Residue Identifier"), false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::TypeProperty, false);
+	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::IdentifierProperty, true);
 	PropertyAccess<Vector3> velocityProperty;
 
 	// Create particle and residue type lists, because we need to populate them while parsing.
@@ -330,7 +330,7 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 			for(const char* c2 = c + 1; *c2 != '\0' && *c2 != '.'; ++c2)
 				columnWidth++;
 			if(!velocityProperty)
-				velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::VelocityProperty, false);
+				velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::VelocityProperty, false);
 			Vector3& v = velocityProperty[atomIndex];
 			for(size_t dim = 0; dim < 3; dim++) {
 				token_end = token + columnWidth;
@@ -367,7 +367,7 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 	  ) < 3)
 		throw Exception(tr("Parsing error in line %1 of Gromacs file. Invalid simulation cell definition: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 	// Convert cell size from nanometers to angstroms.
-	frameData->simulationCell().setMatrix(cell * FloatType(10));
+	frameData->setSimulationCell(cell * FloatType(10));
 
 	// Detect if there are more simulation frames following in the file.
 	if(!stream.eof())

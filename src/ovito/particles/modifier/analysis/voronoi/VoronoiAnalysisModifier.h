@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,8 +28,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -78,8 +77,8 @@ private:
 	public:
 
 		/// Constructor.
-		VoronoiAnalysisEngine(const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, std::vector<FloatType> radii,
-							const SimulationCell& simCell,
+		VoronoiAnalysisEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, std::vector<FloatType> radii,
+							const SimulationCellObject* simCell,
 							bool computeIndices, bool computeBonds, bool computePolyhedra, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
 			Engine(validityInterval),
 			_positions(positions),
@@ -92,11 +91,11 @@ private:
 			_relativeFaceThreshold(relativeFaceThreshold),
 			_computeBonds(computeBonds),
 			_computePolyhedra(computePolyhedra),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
-			_atomicVolumes(std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
-			_maxFaceOrders(computeIndices ? std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
+			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
+			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
-			_polyhedraMesh(simCell) {}
+			_polyhedraMesh(dataset, simCell) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -131,7 +130,7 @@ private:
 		/// Returns the generated surface mesh representing the Voronoi polyhedra.
 		SurfaceMeshData& polyhedraMesh() { return _polyhedraMesh; }
 
-		const SimulationCell& simCell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& simCell() const { return _simCell; }
 		const ConstPropertyPtr& positions() const { return _positions; }
 		const ConstPropertyPtr selection() const { return _selection; }
 
@@ -140,7 +139,7 @@ private:
 		const FloatType _edgeThreshold;
 		const FloatType _faceThreshold;
 		const FloatType _relativeFaceThreshold;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		std::vector<FloatType> _radii;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _selection;
@@ -165,19 +164,19 @@ private:
 		SurfaceMeshData _polyhedraMesh;
 
 		/// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
-		PropertyStorage* _adjacentCellProperty = nullptr;
+		PropertyPtr _adjacentCellProperty;
 
 		/// Output mesh region property storing the indices or identifiers of the particles to which each Voronoi cell belongs. 
-		PropertyStorage* _centerParticleProperty = nullptr;
+		PropertyPtr _centerParticleProperty;
 
 		/// Output mesh region property storing the volume of each Voronoi cell. 
-		PropertyStorage* _cellVolumeProperty = nullptr;
+		PropertyPtr _cellVolumeProperty;
 
 		/// Output mesh region property storing the number of faces of each Voronoi cell. 
-		PropertyStorage* _cellCoordinationProperty = nullptr;
+		PropertyPtr _cellCoordinationProperty;
 
 		/// Output mesh region property storing the surface area of each Voronoi cell. 
-		PropertyStorage* _surfaceAreaProperty = nullptr;
+		PropertyPtr _surfaceAreaProperty;
 
 		/// Maximum length of Voronoi index vectors produced by this modifier.
 		constexpr static int FaceOrderStorageLimit = 32;

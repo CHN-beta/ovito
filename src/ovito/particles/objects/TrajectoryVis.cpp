@@ -183,7 +183,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 								lineSegmentCount++;
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
-								cornerPoints.push_back(cell.wrapPoint(pos[1]));
+								cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
 							}
 						}
 					}

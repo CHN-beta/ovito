@@ -407,7 +407,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 				throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
 			setProgressText(tr("Reading defect surface"));
 			setProgressMaximum(numDefectMeshVertices);
-			std::unique_ptr<SurfaceMeshData> defectSurface = std::make_unique<SurfaceMeshData>();
+			std::unique_ptr<SurfaceMeshData> defectSurface = std::make_unique<SurfaceMeshData>(dataset());
 			for(int index = 0; index < numDefectMeshVertices; index++) {
 				if(!setProgressValueIntermittent(index)) return {};
 				Point3 p;
@@ -472,8 +472,8 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 		}
 	}
 
-	frameData->simulationCell().setMatrix(cell);
-	frameData->simulationCell().setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
+	frameData->setSimulationCell(cell);
+	frameData->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
 
 	frameData->setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
 	return frameData;

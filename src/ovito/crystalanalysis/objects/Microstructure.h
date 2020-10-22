@@ -47,7 +47,7 @@ public:
 	};
 
 	/// Constructor creating an empty microstructure.
-	MicrostructureData(const SimulationCell& cell = {});
+	MicrostructureData(DataSet* dataset, const SimulationCellObject* cell = nullptr);
 
 	/// Constructor that adopts the data from the given pipeline data object into this structure.
 	explicit MicrostructureData(const SurfaceMesh* mo);

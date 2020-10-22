@@ -439,6 +439,14 @@ public:
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccess(const PropertyObject* propertyObj) 
 		: ParentType(propertyObj) {}
+
+	/// Constructs a read-only accessor for the data in a PropertyObject.
+	ConstPropertyAccess(const ConstPropertyPtr& property)
+		: ParentType(property) {}
+
+	/// Constructs a read-only accessor for the data in a PropertyObject.
+	ConstPropertyAccess(const PropertyPtr& property)
+		: ParentType(property) {}
 };
 
 /**
@@ -458,6 +466,10 @@ public:
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccessAndRef(ConstPropertyPtr property)
 		: ParentType(std::move(property)) {}
+
+	/// Constructs a read-only accessor for the data in a PropertyObject.
+	ConstPropertyAccessAndRef(const PropertyObject* property)
+		: ParentType(ConstPropertyPtr(property)) {}
 
 	/// \brief Moves the internal PropertyPtr out of this object.
 	ConstPropertyPtr take() {

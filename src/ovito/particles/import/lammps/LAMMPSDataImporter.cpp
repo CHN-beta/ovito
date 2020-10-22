@@ -83,7 +83,7 @@ Future<LAMMPSDataImporter::LAMMPSAtomStyle> LAMMPSDataImporter::inspectFileHeade
 
 			// Start task that inspects the file header to determine the LAMMPS atom style.
 			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle, sortParticles(), atomStyle(), true);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle, sortParticles(), atomStyle(), true);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedAtomStyle();
@@ -208,7 +208,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 	auto frameData = std::make_shared<LAMMPSFrameData>();
 
 	// Define the simulation cell geometry.
-	frameData->simulationCell().setMatrix(AffineTransformation(
+	frameData->setSimulationCell(AffineTransformation(
 			Vector3(xhi - xlo, 0, 0),
 			Vector3(xy, yhi - ylo, 0),
 			Vector3(xz, yz, zhi - zlo),
@@ -225,9 +225,9 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		foundAtomsSection = true;
 
 	// Create standard particle properties.
-	frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, true);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, true);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::IdentifierProperty, true);
+	frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, true);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, true);
+	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::IdentifierProperty, true);
 
 	// Create atom types.
 	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
@@ -283,7 +283,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				}
 
 				// Parse data in the Atoms section line by line:
-				InputColumnReader columnParser(columnMapping, frameData->particles(), natoms);
+				InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), natoms);
 				try {
 					const int* atomType = typeProperty.cbegin();
 					const qlonglong* atomId = identifierProperty.cbegin();
@@ -317,7 +317,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create the velocity property.
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::VelocityProperty, true);
+			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::VelocityProperty, true);
 			
 			for(size_t i = 0; i < (size_t)natoms; i++) {
 				if(!setProgressValueIntermittent(i)) return {};
@@ -388,10 +388,10 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create bonds storage.
-			PropertyAccess<ParticleIndexPair> bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(nbonds, BondsObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexPair> bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(dataset(), nbonds, BondsObject::TopologyProperty, false);
 
 			// Create bond type property.
-			PropertyAccess<int> typeProperty = frameData->bonds().createStandardProperty<BondsObject>(nbonds, BondsObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = frameData->bonds().createStandardProperty<BondsObject>(dataset(), nbonds, BondsObject::TypeProperty, true);
 
 			// Create bond types.
 			PropertyContainerImportData::TypeList* bondTypeList = frameData->bonds().createPropertyTypesList(typeProperty, BondType::OOClass());
@@ -438,10 +438,10 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create angles topology storage.
-			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = frameData->angles().createStandardProperty<AnglesObject>(nangles, AnglesObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = frameData->angles().createStandardProperty<AnglesObject>(dataset(), nangles, AnglesObject::TopologyProperty, false);
 
 			// Create angle type property.
-			PropertyAccess<int> typeProperty = frameData->angles().createStandardProperty<AnglesObject>(nangles, AnglesObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = frameData->angles().createStandardProperty<AnglesObject>(dataset(), nangles, AnglesObject::TypeProperty, true);
 
 			// Create angle types.
 			PropertyContainerImportData::TypeList* angleTypeList = frameData->angles().createPropertyTypesList(typeProperty, ElementType::OOClass());
@@ -480,10 +480,10 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create dihedrals topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(ndihedrals, DihedralsObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(dataset(), ndihedrals, DihedralsObject::TopologyProperty, false);
 
 			// Create dihedral type property.
-			PropertyAccess<int> typeProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(ndihedrals, DihedralsObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(dataset(), ndihedrals, DihedralsObject::TypeProperty, true);
 
 			// Create dihedral types.
 			PropertyContainerImportData::TypeList* dihedralTypeList = frameData->dihedrals().createPropertyTypesList(typeProperty, ElementType::OOClass());
@@ -522,10 +522,10 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create improper topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = frameData->impropers().createStandardProperty<ImpropersObject>(nimpropers, ImpropersObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = frameData->impropers().createStandardProperty<ImpropersObject>(dataset(), nimpropers, ImpropersObject::TopologyProperty, false);
 
 			// Create improper type property.
-			PropertyAccess<int> typeProperty = frameData->impropers().createStandardProperty<ImpropersObject>(nimpropers, ImpropersObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = frameData->impropers().createStandardProperty<ImpropersObject>(dataset(), nimpropers, ImpropersObject::TypeProperty, true);
 
 			// Create improper types.
 			PropertyContainerImportData::TypeList* improperTypeList = frameData->impropers().createPropertyTypesList(typeProperty, ElementType::OOClass());
@@ -573,7 +573,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 
 	// Assign masses to particles based on their type.
 	if(!massTable.empty() && !frameData->particles().findStandardProperty(ParticlesObject::MassProperty)) {
-		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::MassProperty, false);
+		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::MassProperty, false);
 		boost::transform(typeProperty, massProperty.begin(), [&](int atomType) {
 			return massTable[atomType];
 		});

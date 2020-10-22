@@ -65,7 +65,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, sortParticles());
+		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles());
 	}
 
 private:
@@ -76,8 +76,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file, bool sortParticles)
-		  : FileSourceImporter::FrameLoader(frame, file), _sortParticles(sortParticles) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, bool sortParticles)
+		  : FileSourceImporter::FrameLoader(dataset, frame, file), _sortParticles(sortParticles) {}
 
 	protected:
 

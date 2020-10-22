@@ -75,7 +75,7 @@ Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(con
 
 			// Start task that inspects the file header to determine the contained data columns.
 			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
@@ -213,7 +213,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->simulationCell().setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse triclinic simulation box.
 				FloatType tiltFactors[3];
@@ -229,7 +229,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				simBox.maxc.x() -= std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
 				simBox.minc.y() -= std::min(tiltFactors[2], (FloatType)0);
 				simBox.maxc.y() -= std::max(tiltFactors[2], (FloatType)0);
-				frameData->simulationCell().setMatrix(AffineTransformation(
+				frameData->setSimulationCell(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(tiltFactors[0], simBox.sizeY(), 0),
 						Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()),
@@ -240,7 +240,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->simulationCell().setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse orthogonal simulation box size.
 				Box3 simBox;
@@ -249,7 +249,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 						throw Exception(tr("Invalid box size in line %1 of dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
-				frameData->simulationCell().setMatrix(AffineTransformation(
+				frameData->setSimulationCell(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(0, simBox.sizeY(), 0),
 						Vector3(0, 0, simBox.sizeZ()),
@@ -286,7 +286,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					columnMapping = generateAutomaticColumnMapping(fileColumnNames);
 
 				// Parse data columns.
-				InputColumnReader columnParser(columnMapping, frameData->particles(), numParticles);
+				InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), numParticles);
 
 				// Check if there is an 'element' file column containing the atom type names.
 				int elementColumn = fileColumnNames.indexOf(QStringLiteral("element"));
@@ -359,7 +359,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				if(reducedCoordinates) {
 					// Convert all atom coordinates from reduced to absolute (Cartesian) format.
 					if(PropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
-						const AffineTransformation simCell = frameData->simulationCell().matrix();
+						const AffineTransformation simCell = frameData->simulationCell();
 						for(Point3& p : posProperty)
 							p = simCell * p;
 					}
@@ -380,9 +380,11 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				}
 
 				// Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
-				frameData->simulationCell().set2D(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+				if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
 					return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
-				}));
+				})) {
+					frameData->simulationCell().column(2).setZero();
+				}
 
 				// Detect if there are more simulation frames following in the file.
 				if(!stream.eof()) {

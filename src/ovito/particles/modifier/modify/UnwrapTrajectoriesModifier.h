@@ -153,7 +153,7 @@ private:
 
 	/// Working data used during processing of the input trajectory.
 	std::unordered_map<qlonglong,Point3> _previousPositions;
-	SimulationCell _previousCell;
+	DataOORef<const SimulationCellObject> _previousCell;
 	std::array<int,3> _currentFlipState{{0,0,0}};
 };
 

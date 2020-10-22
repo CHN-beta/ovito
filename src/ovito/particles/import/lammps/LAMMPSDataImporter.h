@@ -97,7 +97,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, sortParticles(), atomStyle());
+		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles(), atomStyle());
 	}
 
 	/// Inspects the header of the given file and returns the detected LAMMPS atom style.
@@ -139,11 +139,11 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file,
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file,
 				bool sortParticles,
 				LAMMPSAtomStyle atomStyle = AtomStyle_Unknown,
 				bool detectAtomStyle = false)
-			: FileSourceImporter::FrameLoader(frame, file),
+			: FileSourceImporter::FrameLoader(dataset, frame, file),
 				_atomStyle(atomStyle),
 				_detectAtomStyle(detectAtomStyle),
 				_sortParticles(sortParticles) {}

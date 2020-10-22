@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -96,8 +96,8 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(particles, posProperty->storage(),
-			simCell->data(), inputCrystalStructure(), std::move(preferredCrystalOrientations),
+	return std::make_shared<ElasticStrainEngine>(dataset(), particles, posProperty,
+			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
 			calculateDeformationGradients(), calculateStrainTensors(),
 			latticeConstant(), axialRatio(), pushStrainTensorsForward());
 }

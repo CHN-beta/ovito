@@ -244,7 +244,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(numCoords, ParticlesObject::PositionProperty, false);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false);
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return static_cast<Point3>(p); });
 
 				// Notify pipeline system that this modifier has new results. 
@@ -302,21 +302,20 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 	outputParticles->verifyIntegrity();
 
-	// Try to replace particle positions with coordinates received from server.
-	PropertyObject* posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
-	if(_coordinates->size() != posProperty->size())
-		throwException(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(posProperty->size()).arg(_coordinates->size()));
+	if(_coordinates->size() != outputParticles->elementCount())
+		throwException(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
 
-	posProperty->setStorage(_coordinates);
+	// Try to replace particle positions with coordinates received from server.
+	outputParticles->createProperty(_coordinates);
 
 	// Check if there are any bonds and a simulation cell with periodic boundary conditions.
+	// If so, their PBC flags need to be updated. 
 	if(outputParticles->bonds()) {
-		if(const SimulationCellObject* cellObj = state.getObject<SimulationCellObject>()) {
-			const SimulationCell cell = cellObj->data();
-			if(cell.hasPbc()) {
+		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+			if(cell->hasPbc()) {
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 					outputParticles->makeBondsMutable();
-					ConstPropertyAccess<Point3> positions(posProperty);
+					ConstPropertyAccess<Point3> positions(_coordinates);
 					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
 					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
 					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
@@ -324,9 +323,9 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 							size_t index1 = topologyProperty[bondIndex][0];
 							size_t index2 = topologyProperty[bondIndex][1];
 							if(index1 < positions.size() && index2 < positions.size()) {
-								Vector3 delta = cell.absoluteToReduced(positions[index1] - positions[index2]);
+								Vector3 delta = cell->absoluteToReduced(positions[index1] - positions[index2]);
 								for(size_t dim = 0; dim < 3; dim++) {
-									if(cell.hasPbc(dim))
+									if(cell->hasPbc(dim))
 										periodicImageProperty[bondIndex][dim] = (int)std::round(delta[dim]);
 								}
 							}

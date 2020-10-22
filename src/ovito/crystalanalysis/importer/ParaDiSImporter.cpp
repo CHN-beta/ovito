@@ -61,7 +61,7 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
     setProgressMaximum(stream.underlyingSize());
 
 	// Create the container structures for holding the loaded data.
-	auto frameData = std::make_shared<DislocFrameData>();
+	auto frameData = std::make_shared<DislocFrameData>(dataset());
 	MicrostructureData& microstructure = frameData->microstructure();
 
     Vector3 minCoordinates = Vector3::Zero();
@@ -97,13 +97,13 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
         }
 	}
 
-	frameData->simulationCell().setMatrix(AffineTransformation(
+	frameData->setSimulationCell(AffineTransformation(
         Vector3(maxCoordinates.x() - minCoordinates.x(), 0, 0),
         Vector3(0, maxCoordinates.y() - minCoordinates.y(), 0),
         Vector3(0, 0, maxCoordinates.z() - minCoordinates.z()),
         minCoordinates
     ));
-	frameData->simulationCell().setPbcFlags(true, true, true);
+	frameData->setPbcFlags(true, true, true);
 
     // Skip to third section of data file.
     for(;;) {

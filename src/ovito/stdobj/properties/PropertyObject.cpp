@@ -622,6 +622,15 @@ void PropertyObject::mappedCopyTo(PropertyObject& destination, const std::vector
 }
 
 /******************************************************************************
+* Reorders the existing elements in this storage array using an index map.
+******************************************************************************/
+void PropertyObject::reorderElements(const std::vector<size_t>& mapping)
+{
+	PropertyPtr copy = CloneHelper().cloneObject(this, false);
+	copy->mappedCopyTo(*this, mapping);
+}
+
+/******************************************************************************
 * Copies the data elements from the given source array into this array. 
 * Array size, component count and data type of source and destination must match exactly.
 ******************************************************************************/

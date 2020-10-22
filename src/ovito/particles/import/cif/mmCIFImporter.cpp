@@ -139,8 +139,8 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 		}
 
 		// Allocate property arrays for atoms.
-		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, false);
-		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, false);
+		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
+		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
 		PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
@@ -168,7 +168,7 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false);
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {
@@ -213,14 +213,14 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 				cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
 				cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 		}
 		else if(posProperty.size() != 0) {
 			// Use bounding box of atomic coordinates as non-periodic simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->simulationCell().setPbcFlags(false, false, false);
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			frameData->setPbcFlags(false, false, false);
+			frameData->setSimulationCell(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),

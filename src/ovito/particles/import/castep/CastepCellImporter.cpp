@@ -122,7 +122,7 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 					throw Exception(tr("Invalid simulation cell in CASTEP file at line %1").arg(stream.lineNumber()));
 				line = readNonCommentLine();
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 		}
 		else if(boost::algorithm::istarts_with(line, "%BLOCK LATTICE_ABC")) {
 			line = readNonCommentLine();
@@ -162,7 +162,7 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 				cell(1,2) = c * (cos(alpha) - cos(beta)*cos(gamma)) / sin(gamma);
 				cell(2,2) = v / (a*b*sin(gamma));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 		}
 		else if((boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_FRAC") && !boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_FRAC_"))
 				|| (boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_ABS") && !boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_ABS_"))) {
@@ -194,15 +194,15 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 
 			// Convert from fractional to cartesian coordinates.
 			if(fractionalCoords) {
-				const AffineTransformation& cell = frameData->simulationCell().matrix();
+				const AffineTransformation cell = frameData->simulationCell();
 				for(Point3& p : coords)
 					p = cell * p;
 			}
 
-			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(coords.size(), ParticlesObject::PositionProperty, false);
+			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::PositionProperty, false);
 			boost::copy(coords, posProperty.begin());
 
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(types.size(), ParticlesObject::TypeProperty, false);
+			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), types.size(), ParticlesObject::TypeProperty, false);
 			boost::copy(types, typeProperty.begin());
 			typeList->sortTypesByName(typeProperty);
 			frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
@@ -220,7 +220,7 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 				line = readNonCommentLine();
 			}
 
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(velocities.size(), ParticlesObject::VelocityProperty, false);
+			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), velocities.size(), ParticlesObject::VelocityProperty, false);
 			boost::copy(velocities, velocityProperty.begin());
 		}
 	}

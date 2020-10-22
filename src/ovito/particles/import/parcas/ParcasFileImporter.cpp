@@ -219,9 +219,9 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
 
     	PropertyPtr property;
 		if(propertyType != ParticlesObject::UserProperty)
-			property = ParticlesObject::OOClass().createStandardProperty(natoms, propertyType, true);
+			property = ParticlesObject::OOClass().createStandardProperty(dataset(), natoms, propertyType, true);
 		else
-			property = std::make_shared<PropertyStorage>(natoms, PropertyObject::Float, 1, 0, propertyName, true);
+			property = ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 1, 0, propertyName, true);
 		frameData->particles().addProperty(property);
 		extraProperties.push_back(PropertyAccess<FloatType>(property));
     }
@@ -232,16 +232,16 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
     		std::abs((FloatType)box_y),
     		std::abs((FloatType)box_z)
     };
-	frameData->simulationCell().setMatrix(AffineTransformation(
+	frameData->setSimulationCell(AffineTransformation(
 			Vector3(boxDim[0], 0, 0), Vector3(0, boxDim[1], 0), Vector3(0, 0, boxDim[2]),
 			Vector3(-boxDim[0]/2, -boxDim[1]/2, -boxDim[2]/2)));
-	frameData->simulationCell().setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
+	frameData->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
 	// Create the required standard properties.
     size_t numAtoms = (size_t)natoms;
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, false);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::IdentifierProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
+	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::IdentifierProperty, false);
 
 	// Create particle types list.
 	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());

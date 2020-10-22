@@ -123,8 +123,8 @@ FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
 		throw Exception(tr("Invalid FHI-aims log file: No atoms found."));
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::TypeProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::PositionProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::TypeProperty, false);
 	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 
 	// Return to beginning of frame.
@@ -158,20 +158,20 @@ FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
 
 	// Set simulation cell.
 	if(lattVecCount == 3) {
-		frameData->simulationCell().setMatrix(cell);
-		frameData->simulationCell().setPbcFlags(true, true, true);
+		frameData->setSimulationCell(cell);
+		frameData->setPbcFlags(true, true, true);
 	}
 	else {
 		// If the input file does not contain simulation cell info,
 		// Use bounding box of particles as simulation cell.
 		Box3 boundingBox;
 		boundingBox.addPoints(posProperty);
-		frameData->simulationCell().setMatrix(AffineTransformation(
+		frameData->setSimulationCell(AffineTransformation(
 				Vector3(boundingBox.sizeX(), 0, 0),
 				Vector3(0, boundingBox.sizeY(), 0),
 				Vector3(0, 0, boundingBox.sizeZ()),
 				boundingBox.minc - Point3::Origin()));
-		frameData->simulationCell().setPbcFlags(false, false, false);
+		frameData->setPbcFlags(false, false, false);
 	}
 
 	frameData->setStatus(tr("%1 atoms").arg(totalAtomCount));

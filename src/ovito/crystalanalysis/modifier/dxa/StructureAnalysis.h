@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,7 @@ public:
 	/// Constructor.
 	StructureAnalysis(
 			ConstPropertyPtr positions,
-			const SimulationCell& simCell,
+			const SimulationCellObject* simCell,
 			LatticeStructureType inputCrystalType,
 			ConstPropertyPtr particleSelection,
 			PropertyPtr outputStructures,
@@ -121,7 +121,7 @@ public:
 	const ConstPropertyPtr& positions() const { return _positions; }
 
 	/// Returns the input simulation cell.
-	const SimulationCell& cell() const { return _simCell; }
+	const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 	/// Returns the array of atom structure types.
 	const PropertyPtr& structureTypes() const { return _structureTypes; }
@@ -218,7 +218,7 @@ private:
 	ConstPropertyAccessAndRef<int> _particleSelection;
 	const std::shared_ptr<ClusterGraph> _clusterGraph;
 	std::atomic<FloatType> _maximumNeighborDistance;
-	const SimulationCell _simCell;
+	DataOORef<const SimulationCellObject> _simCell;
 	std::vector<Matrix3> _preferredCrystalOrientations;
 
 	static CoordinationStructure _coordinationStructures[NUM_COORD_TYPES];

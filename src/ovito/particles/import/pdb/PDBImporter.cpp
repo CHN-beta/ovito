@@ -210,7 +210,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 				cell(1,2) = c * (cos(alpha) - cos(beta)*cos(gamma)) / sin(gamma);
 				cell(2,2) = v / (a*b*sin(gamma));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 			hasSimulationCell = true;
 		}
 		else if(stream.lineStartsWithToken("ATOM") || stream.lineStartsWith("HETATM")) {
@@ -229,8 +229,8 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 	stream.seek(frame().byteOffset, frame().lineNumber);
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::TypeProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::PositionProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::TypeProperty, false);
 	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 
 	// Parse atoms.
@@ -272,7 +272,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 			qlonglong atomSerialNumber;
 			if(sscanf(stream.line() + 6, "%5llu", &atomSerialNumber) == 1) {
 				if(!particleIdentifierProperty) {
-					particleIdentifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::IdentifierProperty, true);
+					particleIdentifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::IdentifierProperty, true);
 				}
 				particleIdentifierProperty[atomIndex] = atomSerialNumber;
 			}
@@ -287,7 +287,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 			qlonglong residueSequenceNumber;
 			if(sscanf(stream.line() + 22, "%4llu", &residueSequenceNumber) == 1) {
 				if(!moleculeIdentifierProperty) {
-					moleculeIdentifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::MoleculeProperty, true);
+					moleculeIdentifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::MoleculeProperty, true);
 				}
 				moleculeIdentifierProperty[atomIndex] = residueSequenceNumber;
 			}
@@ -299,7 +299,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 				if(*c != ' ') moleculeType[moleculeTypeLength++] = *c;
 			if(moleculeTypeLength != 0) {
 				if(!moleculeTypeProperty) {
-					moleculeTypeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::MoleculeTypeProperty, true);
+					moleculeTypeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::MoleculeTypeProperty, true);
 					moleculeTypeList = frameData->particles().createPropertyTypesList(moleculeTypeProperty, ElementType::OOClass());
 				}
 				moleculeTypeProperty[atomIndex] = moleculeTypeList->addTypeName(moleculeType, moleculeType + moleculeTypeLength);
@@ -367,7 +367,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 							if((size_t)atomIndex2 >= particleIdentifierProperty.size())
 								throw Exception(tr("Nonexistent atom ID %1 encountered in line %2 of PDB file.").arg(atomSerialNumber).arg(stream.lineNumber()));
 							if(!bondTopologyProperty)
-								bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(1, BondsObject::TopologyProperty, false);
+								bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(dataset(), 1, BondsObject::TopologyProperty, false);
 							else
 					        	bondTopologyProperty.storage()->resize(bondTopologyProperty.size() + 1, true);
 					        bondTopologyProperty[bondTopologyProperty.size() - 1] = ParticleIndexPair{{atomIndex1, atomIndex2}};
@@ -404,7 +404,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 		Box3 boundingBox;
 		boundingBox.addPoints(posProperty);
 		frameData->simulationCell().setPbcFlags(false, false, false);
-		frameData->simulationCell().setMatrix(AffineTransformation(
+		frameData->setSimulationCell(AffineTransformation(
 				Vector3(boundingBox.sizeX(), 0, 0),
 				Vector3(0, boundingBox.sizeY(), 0),
 				Vector3(0, 0, boundingBox.sizeZ()),
@@ -438,8 +438,8 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 		}
 
 		// Allocate property arrays for atoms.
-		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, false);
-		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, false);
+		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
+		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
 		PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
@@ -467,7 +467,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {
@@ -512,14 +512,14 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 				cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
 				cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 		}
 		else if(posProperty.size() != 0) {
 			// Use bounding box of atomic coordinates as non-periodic simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->simulationCell().setPbcFlags(false, false, false);
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			frameData->setPbcFlags(false, false, false);
+			frameData->setSimulationCell(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),

@@ -313,10 +313,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
 				// Add the properties to the existing bonds, overwriting existing values if necessary.
 				for(const PropertyObject* newProperty : trajectoryBonds->properties()) {
-					bonds->
 					const PropertyObject* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
 					if(existingPropertyObj) {
-						bonds->makeMutable(existingPropertyObj)->setStorage(newProperty->storage());
+						bonds->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
 					}
 					else {
 						bonds->addProperty(newProperty);

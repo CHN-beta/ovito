@@ -107,7 +107,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 		// Extend output line along one direction until we hit a higher order node or an already converted segment.
 		MicrostructureData::edge_index currentEdge = inputEdge;
 		for(;;) {
-			Point3 unwrappedPos2 = outputSegment->line.back() + microstructure.cell().wrapVector(microstructure.vertexPosition(microstructure.vertex2(currentEdge)) - outputSegment->line.back());
+			Point3 unwrappedPos2 = outputSegment->line.back() + microstructure.wrapVector(microstructure.vertexPosition(microstructure.vertex2(currentEdge)) - outputSegment->line.back());
 			outputSegment->line.push_back(unwrappedPos2);
 			outputSegment->coreSize.push_back(3);
 			visitedEdges.emplace(currentEdge, outputSegment->id + 1);
@@ -149,7 +149,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 				break;
 			}
 			currentEdge = nextEdge;
-			Point3 unwrappedPos2 = outputSegment->line.front() + microstructure.cell().wrapVector(microstructure.vertexPosition(microstructure.vertex2(currentEdge)) - outputSegment->line.front());
+			Point3 unwrappedPos2 = outputSegment->line.front() + microstructure.wrapVector(microstructure.vertexPosition(microstructure.vertex2(currentEdge)) - outputSegment->line.front());
 			outputSegment->line.push_front(unwrappedPos2);
 			outputSegment->coreSize.push_front(3);
 			visitedEdges.emplace(currentEdge, -(outputSegment->id + 1));
@@ -167,7 +167,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 				OVITO_ASSERT(visitedEdges.find(edge) != visitedEdges.end());
 				int edgeInfo = visitedEdges[edge];
 				DislocationNode* otherNode = (edgeInfo > 0) ? &segments()[edgeInfo - 1]->backwardNode() : &segments()[-edgeInfo - 1]->forwardNode();
-				OVITO_ASSERT(microstructure.cell().wrapPoint(otherNode->position()).equals(microstructure.cell().wrapPoint(microstructure.vertexPosition(vertex))));
+				OVITO_ASSERT(!microstructure.cell() || microstructure.cell()->wrapPoint(otherNode->position()).equals(microstructure.cell()->wrapPoint(microstructure.vertexPosition(vertex))));
 				if(!headNode)
 					headNode = otherNode;
 				else

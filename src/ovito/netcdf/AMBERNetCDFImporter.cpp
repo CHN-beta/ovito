@@ -126,7 +126,7 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 		.then(executor(), [this, frame](const FileHandle& fileHandle) {
 
 			// Start task that inspects the file header to determine the contained data columns.
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<FrameData*>(frameData.get())->detectedColumnMapping();
@@ -432,7 +432,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 			if(std::abs(a[i] - 90.0) > 1e-12 || std::abs(d[i]) > 1e-12)
 				isCellOrthogonal = false;
 		}
-		frameData->simulationCell().setPbcFlags(pbc);
+		frameData->setPbcFlags(pbc[0], pbc[1], pbc[2]);
 
 		Vector3 va, vb, vc;
 		if(isCellOrthogonal) {
@@ -455,7 +455,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 			double cz = sqrt(1. - cx*cx - cy*cy);
 			vc = Vector3(l[2]*cx+d[0], l[2]*cy+d[1], l[2]*cz);
 		}
-		frameData->simulationCell().setMatrix(AffineTransformation(va, vb, vc, Vector3(o[0], o[1], o[2])));
+		frameData->setSimulationCell(AffineTransformation(va, vb, vc, Vector3(o[0], o[1], o[2])));
 
 		// Report to user.
 		beginProgressSubSteps(columnMapping.size());
@@ -517,7 +517,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 				property = frameData->particles().findStandardProperty(propertyType);
 				if(!property) {
 					// Create standard property.
-					property = ParticlesObject::OOClass().createStandardProperty(particleCount, propertyType, true);
+					property = ParticlesObject::OOClass().createStandardProperty(dataset(), particleCount, propertyType, true);
 					frameData->particles().addProperty(property);
 				}
 			}
@@ -531,7 +531,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 				}
 				if(!property) {
 					// Create a new user-defined property for the column.
-					property = std::make_shared<PropertyStorage>(particleCount, dataType, componentCount, 0, propertyName, true);
+					property = ParticlesObject::OOClass().createUserProperty(dataset(), particleCount, dataType, componentCount, 0, propertyName, true);
 					frameData->particles().addProperty(property);
 				}
 			}
@@ -659,7 +659,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 				Box3 boundingBox;
 				boundingBox.addPoints(posProperty);
 
-				AffineTransformation cell = frameData->simulationCell().matrix();
+				AffineTransformation cell = frameData->simulationCell();
 				for(size_t dim = 0; dim < 3; dim++) {
 					if(!pbc[dim]) {
 						cell.column(3)[dim] = boundingBox.minc[dim];
@@ -667,7 +667,7 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 						cell.column(dim)[dim] = boundingBox.maxc[dim] - boundingBox.minc[dim];
 					}
 				}
-				frameData->simulationCell().setMatrix(cell);
+				frameData->setSimulationCell(cell);
 			}
 		}
 

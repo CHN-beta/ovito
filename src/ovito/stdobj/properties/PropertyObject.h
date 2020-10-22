@@ -247,6 +247,9 @@ public:
 	/// Copies the elements from this storage array into the given destination array using an index mapping.
 	void mappedCopyTo(PropertyObject& destination, const std::vector<size_t>& mapping) const;
 
+	/// Reorders the existing elements in this storage array using an index map.
+	void reorderElements(const std::vector<size_t>& mapping);
+
 	/// Copies the data elements from the given source array into this array. 
 	/// Array size, component count and data type of source and destination must match exactly.
 	void copyFrom(const PropertyObject& source);

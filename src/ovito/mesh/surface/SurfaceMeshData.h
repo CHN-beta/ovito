@@ -54,6 +54,9 @@ public:
     /// Constructor that adopts the data from the given pipeline data object into this structure.
     explicit SurfaceMeshData(const SurfaceMesh* sm);
 
+    /// Returns a pointer to the global dataset.
+    DataSet* dataset() const { return _dataset; }
+
     /// Copies the data stored in this structure to the given pipeline data object.
     void transferTo(SurfaceMesh* sm) const;
 
@@ -430,6 +433,9 @@ public:
 
     /// Returns the simulation box the surface mesh is embedded in.
     const DataOORef<const SimulationCellObject>& cell() const { return _cell; }
+
+    /// Replaces the simulation box.
+    void setCell(DataOORef<const SimulationCellObject> cell) { _cell = std::move(cell); } 
 
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
@@ -860,9 +866,6 @@ protected:
 
     /// Returns the cached raw pointer to the per-face type values.
     int* faceTypes() const { OVITO_ASSERT(_faceTypes != nullptr); return _faceTypes; }
-
-    /// Returns a pointer to the global dataset.
-    DataSet* dataset() const { return _dataset; }
 
 private:
 

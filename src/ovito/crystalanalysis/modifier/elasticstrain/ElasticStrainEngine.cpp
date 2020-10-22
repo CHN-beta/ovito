@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,19 +34,20 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
+		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
-		ConstPropertyPtr positions, const SimulationCell& simCell,
+		ConstPropertyPtr positions, const SimulationCellObject* simCell,
 		int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
 		bool calculateDeformationGradients, bool calculateStrainTensors,
 		FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
-	StructureIdentificationModifier::StructureIdentificationEngine(std::move(fingerprint), positions, simCell, {}),
+	StructureIdentificationModifier::StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, {}),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations))),
 	_inputCrystalStructure(inputCrystalStructure),
 	_latticeConstant(latticeConstant),
 	_pushStrainTensorsForward(pushStrainTensorsForward),
-	_volumetricStrains(std::make_shared<PropertyStorage>(positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Volumetric Strain"), false)),
-	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticStrainTensorProperty, false) : nullptr),
-	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(positions->size(), ParticlesObject::ElasticDeformationGradientProperty, false) : nullptr)
+	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Volumetric Strain"), false)),
+	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticStrainTensorProperty, false) : nullptr),
+	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, false) : nullptr)
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
@@ -122,7 +123,8 @@ void ElasticStrainEngine::perform()
 					int neighborAtomIndex = _structureAnalysis->getNeighbor(particleIndex, n);
 					// Add vector pair to matrices for computing the elastic deformation gradient.
 					Vector3 latticeVector = idealUnitCellTM * _structureAnalysis->neighborLatticeVector(particleIndex, n);
-					const Vector3& spatialVector = cell().wrapVector(positionsArray[neighborAtomIndex] - positionsArray[particleIndex]);
+					Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[particleIndex];
+					if(cell()) spatialVector = cell()->wrapVector(spatialVector);
 					for(size_t i = 0; i < 3; i++) {
 						for(size_t j = 0; j < 3; j++) {
 							orientationV(i,j) += (double)(latticeVector[j] * latticeVector[i]);

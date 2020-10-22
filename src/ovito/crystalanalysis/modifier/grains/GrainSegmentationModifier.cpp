@@ -25,7 +25,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -120,12 +120,13 @@ Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<GrainSegmentationEngine1>(
+			dataset(),
 			particles,
-			posProperty->storage(),
-			structureProperty->storage(),
-			orientationProperty->storage(),
-			correspondenceProperty->storage(),
-			simCell->data(),
+			posProperty,
+			structureProperty,
+			orientationProperty,
+			correspondenceProperty,
+			simCell,
 			mergeAlgorithm(),
 			handleCoherentInterfaces(),
 			outputBonds());
@@ -162,8 +163,8 @@ void GrainSegmentationEngine1::applyResults(TimePoint time, ModifierApplication*
 				// Determine PBC bond shift using minimum image convention.
 				Vector3 delta = positionsArray[bond.index1] - positionsArray[bond.index2];
 				for(size_t dim = 0; dim < 3; dim++) {
-					if(cell().pbcFlags()[dim])
-						bond.pbcShift[dim] = (int)std::floor(cell().inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+					if(cell() && cell()->pbcFlags()[dim])
+						bond.pbcShift[dim] = (int)std::floor(cell()->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 					else
 						bond.pbcShift[dim] = 0;
 				}
@@ -173,12 +174,12 @@ void GrainSegmentationEngine1::applyResults(TimePoint time, ModifierApplication*
 		}
 
 		// Output disorientation angles as a bond property.
-		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = std::make_shared<PropertyStorage>(bonds.size(), PropertyObject::Float, 1, 0, QStringLiteral("Disorientation"), false);
+		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(dataset(), bonds.size(), PropertyObject::Float, 1, 0, QStringLiteral("Disorientation"), false);
 		for (size_t i=0;i<disorientations.size();i++) {
 			neighborDisorientationAngles[i] = disorientations[i];
 		}
 
-		particles->addBonds(bonds, modifier->bondsVis(), { neighborDisorientationAngles.takeStorage() });
+		particles->addBonds(bonds, modifier->bondsVis(), { neighborDisorientationAngles.take() });
 	}
 
 	// Output a data plot with the dendrogram points.
@@ -229,15 +230,8 @@ void GrainSegmentationEngine2::applyResults(TimePoint time, ModifierApplication*
 	DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), modApp, DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
 	// Add extra columns to the table containing other per-grain data.
 	grainTable->createProperty(_grainColors);
-	PropertyObject* grainStructureTypesProperty = grainTable->createProperty(_grainStructureTypes);
+	grainTable->createProperty(_grainStructureTypes);
 	grainTable->createProperty(_grainOrientations);
-
-	// Transfer the set of PTM crystal structure types to the structure column of the grain table. 
-	const PropertyObject* structureProperty = particles->expectProperty(ParticlesObject::StructureTypeProperty);
-	for(const ElementType* type : structureProperty->elementTypes()) {
-		if(type->enabled())
-			grainStructureTypesProperty->addElementType(type);
-	}
 
 	size_t numGrains = 0;
 	if(atomClusters()->size() != 0)

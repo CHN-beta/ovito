@@ -100,7 +100,7 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 		throw Exception(tr("The disloc file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
 	// Create the container structures for holding the loaded data.
-	auto frameData = std::make_shared<DislocFrameData>();
+	auto frameData = std::make_shared<DislocFrameData>(dataset());
 	MicrostructureData& microstructure = frameData->microstructure();
 
 	// Fix disloc specific data.
@@ -182,9 +182,9 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 		NCERR(nc_get_vara_double(root_ncid, cell_origin_var, startp, countp, cellMatrix.column(3).data()));
 #endif
 		NCERR(nc_get_vara_int(root_ncid, cell_pbc_var, startp, countp, cellPbc));
-		frameData->simulationCell().setPbcFlags({cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0});
-		frameData->simulationCell().setMatrix(cellMatrix);
-		frameData->microstructure().cell() = frameData->simulationCell();
+		frameData->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
+		frameData->setSimulationCell(cellMatrix);
+		frameData->microstructure().setCell(OORef<SimulationCellObject>::create(dataset(), frameData->simulationCell(), cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
 
 		// Read lattice orientation matrix.
 		int lattice_orientation_var;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/BoundedPriorityQueue.h>
 #include <ovito/core/utilities/MemoryPool.h>
 
@@ -73,7 +73,7 @@ private:
 		bool isLeaf() const { return splitDim == -1; }
 
 		/// Converts the bounds of this node and all children to absolute coordinates.
-		void convertToAbsoluteCoordinates(const SimulationCell& cell) {
+		void convertToAbsoluteCoordinates(const SimulationCellObject& cell) {
 			bounds.minc = cell.reducedToAbsolute(bounds.minc);
 			bounds.maxc = cell.reducedToAbsolute(bounds.maxc);
 			if(!isLeaf()) {
@@ -117,7 +117,7 @@ public:
 	/// \return \c false when the operation has been canceled by the user;
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCell& cellData, ConstPropertyAccess<int> selectionProperty, Task* promise);
+	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, Task* promise);
 
 	/// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
 	size_t particleCount() const {
@@ -173,10 +173,11 @@ public:
 		/// Builds the sorted list of neighbors around the given point.
 		void findNeighbors(const Point3& query_point, bool includeSelf) {
 			queue.clear();
+			OVITO_ASSERT(t.simCell);
 			for(const Vector3& pbcShift : t.pbcImages) {
 				q = query_point - pbcShift;
 				if(!queue.full() || queue.top().distanceSq > t.minimumDistance(t.root, q)) {
-					qr = t.simCell.absoluteToReduced(q);
+					qr = t.simCell->absoluteToReduced(q);
 					visitNode(t.root, includeSelf);
 				}
 			}
@@ -228,10 +229,11 @@ public:
 	template<class Visitor>
 	void visitNeighbors(const Point3& query_point, Visitor& v, bool includeSelf = false) const {
 		FloatType mrs = FLOATTYPE_MAX;
+		OVITO_ASSERT(simCell);
 		for(const Vector3& pbcShift : pbcImages) {
 			Point3 q = query_point - pbcShift;
 			if(mrs > minimumDistance(root, q)) {
-				visitNode(root, q, simCell.absoluteToReduced(q), v, mrs, includeSelf);
+				visitNode(root, q, simCell->absoluteToReduced(q), v, mrs, includeSelf);
 			}
 		}
 	}
@@ -298,7 +300,7 @@ private:
 	std::vector<NeighborListAtom> atoms;
 
 	// Simulation cell.
-	SimulationCell simCell;
+	DataOORef<const SimulationCellObject> simCell;
 
 	/// The normal vectors of the three cell planes.
 	Vector3 planeNormals[3];

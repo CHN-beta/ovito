@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -151,8 +151,8 @@ private:
 	public:
 
 		/// Constructor.
-		FixedCNAEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
-			CNAEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+		FixedCNAEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
+			CNAEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
 			_cutoff(cutoff) {}
 
 		/// Computes the modifier's results.
@@ -194,11 +194,11 @@ private:
 	public:
 
 		/// Constructor.
-		BondCNAEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-			CNAEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+		BondCNAEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+			CNAEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_cnaIndices(std::make_shared<PropertyStorage>(_bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
+			_cnaIndices(BondsObject::OOClass().createUserProperty(dataset, _bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(Microstructure);
 /******************************************************************************
 * Constructor creating an empty microstructure.
 ******************************************************************************/
-MicrostructureData::MicrostructureData(const SimulationCell& cell) : SurfaceMeshData(cell)
+MicrostructureData::MicrostructureData(DataSet* dataset, const SimulationCellObject* cell) : SurfaceMeshData(dataset, cell)
 {
     createFaceProperty(SurfaceMeshFaces::RegionProperty);
     createFaceProperty(SurfaceMeshFaces::BurgersVectorProperty);

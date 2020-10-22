@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
 	/// Constructor.
-	DislocationAnalysisEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell,
+	DislocationAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 			int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,

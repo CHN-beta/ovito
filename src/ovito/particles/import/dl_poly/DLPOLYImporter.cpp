@@ -189,9 +189,9 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 	if(stream.eof() || sscanf(stream.readLine(256), "%u %u %llu", &levcfg, &imcon, &expectedAtomCount) < 2 || levcfg < 0 || levcfg > 2 || imcon < 0 || imcon > 6)
 		throw Exception(tr("Invalid record line %1 in DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-	if(imcon == 0) frameData->simulationCell().setPbcFlags(false, false, false);
-	else if(imcon == 1 || imcon == 2 || imcon == 3) frameData->simulationCell().setPbcFlags(true, true, true);
-	else if(imcon == 6) frameData->simulationCell().setPbcFlags(true, true, false);
+	if(imcon == 0) frameData->setPbcFlags(false, false, false);
+	else if(imcon == 1 || imcon == 2 || imcon == 3) frameData->setPbcFlags(true, true, true);
+	else if(imcon == 6) frameData->setPbcFlags(true, true, false);
 	else throw Exception(tr("Invalid boundary condition type in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 	// Jump to byte offset.
@@ -224,7 +224,7 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 			stream.readLine();
 		}
 		cell.column(3) = cell * Vector3(-0.5, -0.5, -0.5);
-		frameData->simulationCell().setMatrix(cell);
+		frameData->setSimulationCell(cell);
 	}
 
 	// The temporary buffers for the atom records.
@@ -307,10 +307,10 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 		throw Exception(tr("Unexpected end of DL_POLY file. Expected %1 atom records but found only %2.").arg(expectedAtomCount).arg(positions.size()));
 
 	// Create particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(positions.size(), ParticlesObject::PositionProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), positions.size(), ParticlesObject::PositionProperty, false);
 	boost::copy(positions, posProperty.begin());
 
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(atom_types.size(), ParticlesObject::TypeProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), atom_types.size(), ParticlesObject::TypeProperty, false);
 	boost::copy(atom_types, typeProperty.begin());
 	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
 	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
@@ -319,27 +319,27 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 	frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
 	
 	if(identifiers.size() == positions.size()) {
-		PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(identifiers.size(), ParticlesObject::IdentifierProperty, false);
+		PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), identifiers.size(), ParticlesObject::IdentifierProperty, false);
 		boost::copy(identifiers, identifierProperty.begin());
 	}
 	if(levcfg > 0) {
-		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(velocities.size(), ParticlesObject::VelocityProperty, false);
+		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), velocities.size(), ParticlesObject::VelocityProperty, false);
 		boost::copy(velocities, velocityProperty.begin());
 	}
 	if(levcfg > 1) {
-		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(forces.size(), ParticlesObject::ForceProperty, false);
+		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), forces.size(), ParticlesObject::ForceProperty, false);
 		boost::copy(forces, forceProperty.begin());
 	}
 	if(masses.size() == positions.size()) {
-		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(masses.size(), ParticlesObject::MassProperty, false);
+		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), masses.size(), ParticlesObject::MassProperty, false);
 		boost::copy(masses, massProperty.begin());
 	}
 	if(charges.size() == positions.size()) {
-		PropertyAccess<FloatType> chargeProperty = frameData->particles().createStandardProperty<ParticlesObject>(charges.size(), ParticlesObject::ChargeProperty, false);
+		PropertyAccess<FloatType> chargeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), charges.size(), ParticlesObject::ChargeProperty, false);
 		boost::copy(charges, chargeProperty.begin());
 	}
 	if(displacementMagnitudes.size() == positions.size()) {
-		PropertyAccess<FloatType> displProperty = frameData->particles().createStandardProperty<ParticlesObject>(displacementMagnitudes.size(), ParticlesObject::DisplacementMagnitudeProperty, false);
+		PropertyAccess<FloatType> displProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), displacementMagnitudes.size(), ParticlesObject::DisplacementMagnitudeProperty, false);
 		boost::copy(displacementMagnitudes, displProperty.begin());
 	}
 

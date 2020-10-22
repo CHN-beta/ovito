@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -178,9 +178,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 		throwException(tr("The DXA modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Build list of preferred crystal orientations.
 	std::vector<Matrix3> preferredCrystalOrientations;
@@ -190,21 +188,22 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 
 	// Get cluster property.
 #if 0
-	ConstPropertyPtr clusterProperty = particles->getPropertyStorage(ParticlesObject::ClusterProperty);
+	const PropertyObject* clusterProperty = particles->getProperty(ParticlesObject::ClusterProperty);
 #else
-	ConstPropertyPtr clusterProperty = nullptr;
+	const PropertyObject* clusterProperty = nullptr;
 #endif
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DislocationAnalysisEngine>(
+			dataset(), 
 			particles,
-			posProperty->storage(),
-			simCell->data(),
+			posProperty,
+			simCell,
 			inputCrystalStructure(),
 			maxTrialCircuitSize(),
 			circuitStretchability(),
-			std::move(selectionProperty),
-			std::move(clusterProperty),
+			selectionProperty,
+			clusterProperty,
 			std::move(preferredCrystalOrientations),
 			onlyPerfectDislocations(),
 			defectMeshSmoothingLevel(),

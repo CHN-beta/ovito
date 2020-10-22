@@ -22,7 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
@@ -121,17 +121,13 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 		throwException(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle types if needed.
-	ConstPropertyPtr typeProperty;
-	if(outputOrderingTypes())
-		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty)->storage();
+	const PropertyObject* typeProperty = outputOrderingTypes() ? particles->expectProperty(ParticlesObject::TypeProperty) : nullptr;
 
-	return std::make_shared<PTMEngine>(posProperty->storage(), particles, std::move(typeProperty), simCell->data(),
-			getTypesToIdentify(PTMAlgorithm::NUM_STRUCTURE_TYPES), std::move(selectionProperty),
+	return std::make_shared<PTMEngine>(dataset(), posProperty, particles, typeProperty, simCell,
+			getTypesToIdentify(PTMAlgorithm::NUM_STRUCTURE_TYPES), selectionProperty,
 			outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
 }
 
@@ -143,7 +139,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 //TODO: separate pre-calculation of neighbor ordering, so that we don't have to call it again unless the pipeline has changed.
 //	i.e.: if user adds the option "Output RMSD", the old neighbor ordering is still valid.
 
-	if(cell().is2D())
+	if(cell() && cell()->is2D())
 		throw Exception(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Specify the structure types the PTM should look for.
@@ -247,8 +243,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 		return;
 
 	// Determine histogram bin size based on maximum RMSD value.
-	const size_t numHistogramBins = 100;
-	_rmsdHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	const size_t numHistogramBins = _rmsdHistogram->size();
 	FloatType rmsdHistogramBinSize = (rmsdArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(rmsdArray) / numHistogramBins) : 0;
 	if(rmsdHistogramBinSize <= 0) rmsdHistogramBinSize = 1;
 	_rmsdHistogramRange = rmsdHistogramBinSize * numHistogramBins;
@@ -285,7 +280,7 @@ PropertyPtr PolyhedralTemplateMatchingModifier::PTMEngine::postProcessStructureT
 	if(rmsdCutoff > 0 && rmsd()) {
 
 		// Start off with the original particle classifications and make a copy.
-		PropertyPtr finalStructureTypes = std::make_shared<PropertyStorage>(*structures);
+		PropertyPtr finalStructureTypes = structures.makeCopy();
 
 		// Mark those particles whose RMSD exceeds the cutoff as 'OTHER'.
 		ConstPropertyAccess<FloatType> rmdsArray(rmsd());
@@ -345,9 +340,9 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(TimePoint time,
 		particles->createProperty(deformationGradients());
 	}
 	if(orderingTypes() && modifier->outputOrderingTypes()) {
-		PropertyObject* orderingProperty = particles->createProperty(orderingTypes());
 		// Attach ordering types to output particle property.
-		orderingProperty->setElementTypes(modifier->orderingTypes());
+		orderingTypes()->setElementTypes(modifier->orderingTypes());
+		particles->createProperty(orderingTypes());
 	}
 
 	// Output RMSD histogram.

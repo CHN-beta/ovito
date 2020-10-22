@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,9 +24,9 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -65,8 +65,8 @@ private:
 	public:
 
 		/// Constructor.
-		WignerSeitzAnalysisEngine(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell& simCell,
-				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCell& simCellRef, AffineMappingType affineMapping,
+		WignerSeitzAnalysisEngine(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
 				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
 			RefConfigEngineBase(validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
 				nullptr, nullptr, affineMapping, false),
@@ -149,5 +149,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-

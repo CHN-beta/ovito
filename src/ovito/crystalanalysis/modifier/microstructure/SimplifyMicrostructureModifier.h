@@ -92,7 +92,7 @@ private:
 		const MicrostructureData& microstructure() const { return _microstructure; }
 
 		/// Returns the input simulation cell.
-		const SimulationCell& cell() const { return microstructure().cell(); }
+		const SimulationCellObject* cell() const { return microstructure().cell(); }
 
 	private:
 

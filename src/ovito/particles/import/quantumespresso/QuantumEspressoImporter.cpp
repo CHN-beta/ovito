@@ -205,9 +205,9 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 			}
 
 			// Create particle properties.
-			posProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, false);
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, false);
-			PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::MassProperty, true);
+			posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
+			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
+			PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::MassProperty, true);
 
 			// Parse atom definitions.
 			for(int i = 0; i < natoms; i++) {
@@ -262,7 +262,7 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 						&cell(0,i), &cell(1,i), &cell(2,i)) != 3 || cell.column(i) == Vector3::Zero())
 					throw Exception(tr("Invalid cell vector in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 			}
-			frameData->simulationCell().setMatrix(cell * scaling);
+			frameData->setSimulationCell(cell * scaling);
 			hasCellVectors = true;
 		}
 	}
@@ -291,12 +291,12 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 				break;
 			default: throw Exception(tr("Unsupported 'ibrav' value in QE file: %1").arg(ibrav));
 		}
-		frameData->simulationCell().setMatrix(AffineTransformation(cell));
+		frameData->setSimulationCell(AffineTransformation(cell));
 	}
 
 	if(convertToAbsoluteCoordinates) {
 		// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-		const AffineTransformation simCell = frameData->simulationCell().matrix();
+		const AffineTransformation simCell = frameData->simulationCell();
 		for(Point3& p : posProperty)
 			p = simCell * p;
 	}

@@ -393,11 +393,11 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 	const DataTable* neighCorrelation = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-neighbor"));
 	const DataTable* neighRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-neighbor-rdf"));
 	if(modifier && modifierApplication() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
-		const auto& xStorage = neighCorrelation->getXStorage();
+		const auto& xStorage = neighCorrelation->getXValues();
 		ConstPropertyAccess<FloatType> xData(xStorage);
-		const auto& yStorage = neighCorrelation->getYStorage();
+		const auto& yStorage = neighCorrelation->getY();
 		ConstPropertyAccess<FloatType> yData(yStorage);
-		const auto& rdfStorage = neighRDF->getYStorage();
+		const auto& rdfStorage = neighRDF->getY();
 		ConstPropertyAccess<FloatType> rdfData(rdfStorage);
 		size_t numberOfDataPoints = yData.size();
 		QVector<QPointF> plotData(numberOfDataPoints);
@@ -423,7 +423,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 	const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-real-space-rdf"));
 	if(modifier && modifierApplication() && realSpaceCorrelation) {
 		auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
-			(realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->getYStorage() : nullptr);
+			(realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->getY() : nullptr);
 
 		UndoSuspender noUndo(modifier);
 		if(!modifier->fixRealSpaceXAxisRange()) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,39 +79,38 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 		throwException(tr("Simulation cell is degenerate in the reference configuration."));
 
 	// Get the particle types of the current configuration.
-	ConstPropertyPtr typeProperty;
+	const PropertyObject* typeProperty = nullptr;
 	int ptypeMinId = std::numeric_limits<int>::max();
 	int ptypeMaxId = std::numeric_limits<int>::lowest();
 	if(perTypeOccupancy()) {
-		const PropertyObject* ptypeProp = particles->expectProperty(ParticlesObject::TypeProperty);
+		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
 		// Determine value range of particle type IDs.
-		for(const ElementType* pt : ptypeProp->elementTypes()) {
+		for(const ElementType* pt : typeProperty->elementTypes()) {
 			if(pt->numericId() < ptypeMinId) ptypeMinId = pt->numericId();
 			if(pt->numericId() > ptypeMaxId) ptypeMaxId = pt->numericId();
 		}
-		typeProperty = ptypeProp->storage();
 	}
 
 	// If output of the displaced configuration is requested, obtain types of the reference sites.
-	ConstPropertyPtr referenceTypeProperty;
-	ConstPropertyPtr referenceIdentifierProperty;
+	const PropertyObject* referenceTypeProperty = nullptr;
+	const PropertyObject* referenceIdentifierProperty = nullptr;
 	if(outputCurrentConfig()) {
-		referenceTypeProperty = refParticles->getPropertyStorage(ParticlesObject::TypeProperty);
-		referenceIdentifierProperty = refParticles->getPropertyStorage(ParticlesObject::IdentifierProperty);
+		referenceTypeProperty = refParticles->getProperty(ParticlesObject::TypeProperty);
+		referenceIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
 	}
 
 	// Create compute engine instance. Pass all relevant modifier parameters and the input data to the engine.
-	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(validityInterval, posProperty->storage(), inputCell->data(),
+	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(validityInterval, posProperty, inputCell,
 			referenceState,
-			refPosProperty->storage(), refCell->data(), affineMapping(), std::move(typeProperty), ptypeMinId, ptypeMaxId,
-			std::move(referenceTypeProperty), std::move(referenceIdentifierProperty));
+			refPosProperty, refCell, affineMapping(), typeProperty, ptypeMinId, ptypeMaxId,
+			referenceTypeProperty, referenceIdentifierProperty);
 
 	// Create output properties:
 	if(outputCurrentConfig()) {
 		if(referenceIdentifierProperty)
-			engine->setSiteIdentifiers(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Identifier"), false));
-		engine->setSiteTypes(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int, 1, 0, tr("Site Type"), false));
-		engine->setSiteIndices(std::make_shared<PropertyStorage>(posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Index"), false));
+			engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Identifier"), false));
+		engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int, 1, 0, tr("Site Type"), false));
+		engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Index"), false));
 	}
 
 	return engine;
@@ -153,7 +152,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 
 	AffineTransformation tm;
 	if(affineMapping() == TO_REFERENCE_CELL)
-		tm = refCell().matrix() * cell().inverseMatrix();
+		tm = refCell()->matrix() * cell()->inverseMatrix();
 
 	// Create array for atomic counting.
 	size_t arraySize = refPositions()->size() * ncomponents;
@@ -198,7 +197,8 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 	if(isCanceled()) return;
 
 	// Create output storage.
-	setOccupancyNumbers(std::make_shared<PropertyStorage>(
+	setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
+		positions()->dataset(),
 		siteTypes() ? positions()->size() : refPositions()->size(),
 		PropertyObject::Int, ncomponents, 0, tr("Occupancy"), false));
 	if(ncomponents > 1 && typemin != 1) {
@@ -284,11 +284,11 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(TimePo
 
 	particles->createProperty(occupancyNumbers());
 	if(siteTypes()) {
-		PropertyObject* outProp = particles->createProperty(siteTypes());
 		// Transfer particle type list from reference type property to output site type property.
 		if(const PropertyObject* inProp = refParticles->getProperty(ParticlesObject::TypeProperty)) {
-			outProp->setElementTypes(inProp->elementTypes());
+			siteTypes()->setElementTypes(inProp->elementTypes());
 		}
+		particles->createProperty(siteTypes());
 	}
 	if(siteIndices())
 		particles->createProperty(siteIndices());

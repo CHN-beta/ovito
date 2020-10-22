@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -210,12 +210,12 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	}
 
 	// Get molecule IDs.
-	ConstPropertyPtr moleculeProperty = onlyIntraMoleculeBonds() ? particles->getPropertyStorage(ParticlesObject::MoleculeProperty) : nullptr;
+	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<BondsEngine>(particles, posProperty->storage(),
-			typeProperty ? typeProperty->storage() : nullptr, simCell->data(), cutoffMode(),
-			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), std::move(moleculeProperty));
+	return std::make_shared<BondsEngine>(particles, posProperty,
+			typeProperty, simCell, cutoffMode(),
+			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), moleculeProperty);
 }
 
 /******************************************************************************
@@ -286,6 +286,7 @@ void CreateBondsModifier::BondsEngine::perform()
 	_positions.reset();
 	_particleTypes.reset();
 	_moleculeIDs.reset();
+	_simCell.reset();
 }
 
 /******************************************************************************

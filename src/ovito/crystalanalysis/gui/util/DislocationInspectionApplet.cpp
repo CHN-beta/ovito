@@ -140,13 +140,13 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
 			case 4: return segment->burgersVector.cluster()->id;
 			case 5: return _dislocationObj->structureById(segment->burgersVector.cluster()->structure)->name();
 			case 6: { Point3 headLocation = segment->backwardNode().position();
-						if(_dislocationObj->domain()) headLocation = _dislocationObj->domain()->data().wrapPoint(headLocation);
+						if(_dislocationObj->domain()) headLocation = _dislocationObj->domain()->wrapPoint(headLocation);
 						return QStringLiteral("%1 %2 %3")
 							.arg(QLocale::c().toString(headLocation.x(), 'f', 4), 7)
 							.arg(QLocale::c().toString(headLocation.y(), 'f', 4), 7)
 							.arg(QLocale::c().toString(headLocation.z(), 'f', 4), 7); }
 			case 7: { Point3 tailLocation = segment->forwardNode().position();
-						if(_dislocationObj->domain()) tailLocation = _dislocationObj->domain()->data().wrapPoint(tailLocation);
+						if(_dislocationObj->domain()) tailLocation = _dislocationObj->domain()->wrapPoint(tailLocation);
 						return QStringLiteral("%1 %2 %3")
 							.arg(QLocale::c().toString(tailLocation.x(), 'f', 4), 7)
 							.arg(QLocale::c().toString(tailLocation.y(), 'f', 4), 7)

@@ -119,7 +119,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(Ti
 		else {
 			// Initialize working data structures.
 			_previousPositions.clear();
-			_previousCell = SimulationCell();
+			_previousCell.reset();
 			_currentFlipState.fill(0);
 		}
 
@@ -187,8 +187,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	// If the periodic image flags particle property is present, use it to unwrap particle positions.
 	if(ConstPropertyAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
 		// Get current simulation cell.
-		const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
-		const SimulationCell cell = simCellObj->data();
+		const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
 
 		// Make a modifiable copy of the particles object.
 		ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
@@ -197,7 +196,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 		const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
 		for(Point3& p : posProperty) {
-			p += cell.matrix() * Vector3(*pbcShift++);
+			p += cell->cellMatrix() * Vector3(*pbcShift++);
 		}
 
 		// Unwrap bonds by adjusting their PBC shift vectors.
@@ -254,8 +253,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		return;
 
 	// Get current simulation cell.
-	const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
-	const SimulationCell cell = simCellObj->data();
+	const SimulationCellObject* simCell = state.expectObject<SimulationCellObject>();
 
 	// Make a modifiable copy of the particles object.
 	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
@@ -281,7 +279,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 			}
 		}
 		if(shifted) {
-			p += cell.matrix() * pbcShift;
+			p += simCell->matrix() * pbcShift;
 		}
 		index++;
 	}
@@ -380,12 +378,14 @@ void UnwrapTrajectoriesModifierApplication::fetchNextFrame()
 ******************************************************************************/
 void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoint time, const PipelineFlowState& state)
 {
-	const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>();
-	if(!simCellObj)
+	// Get simulation cell geometry and boundary conditions.
+	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
+	if(!cell)
 		throwException(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
-	SimulationCell cell = simCellObj->data();
-	if(!cell.hasPbc())
+	if(!cell->hasPbc())
 		throwException(tr("No periodic boundary conditions set for the simulation cell."));
+	AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
+
 	const ParticlesObject* particles = state.getObject<ParticlesObject>();
 	if(!particles)
 		throwException(tr("Input data contains no particles at frame %1.").arg(frame));
@@ -395,25 +395,25 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		identifierProperty.reset();
 
 	// Special handling of cell flips in LAMMPS, which occur whenever a tilt factor exceeds +/-50%.
-	if(cell.matrix()(1,0) == 0 && cell.matrix()(2,0) == 0 && cell.matrix()(2,1) == 0 && cell.matrix()(0,0) > 0 && cell.matrix()(1,1) > 0) {
-		if(_previousCell.matrix() != AffineTransformation::Zero()) {
+	if(cell->matrix()(1,0) == 0 && cell->matrix()(2,0) == 0 && cell->matrix()(2,1) == 0 && cell->matrix()(0,0) > 0 && cell->matrix()(1,1) > 0) {
+		if(_previousCell) {
 			std::array<int,3> flipState = _currentFlipState;
 			// Detect discontinuities in the three tilt factors of the cell.
-			if(cell.hasPbc(0)) {
-				FloatType xy1 = _previousCell.matrix()(0,1) / _previousCell.matrix()(0,0);
-				FloatType xy2 = cell.matrix()(0,1) / cell.matrix()(0,0);
+			if(cell->hasPbc(0)) {
+				FloatType xy1 = _previousCell->matrix()(0,1) / _previousCell->matrix()(0,0);
+				FloatType xy2 = cell->matrix()(0,1) / cell->matrix()(0,0);
 				if(int flip_xy = (int)std::round(xy2 - xy1))
 					flipState[0] -= flip_xy;
-				if(!cell.is2D()) {
-					FloatType xz1 = _previousCell.matrix()(0,2) / _previousCell.matrix()(0,0);
-					FloatType xz2 = cell.matrix()(0,2) / cell.matrix()(0,0);
+				if(!cell->is2D()) {
+					FloatType xz1 = _previousCell->matrix()(0,2) / _previousCell->matrix()(0,0);
+					FloatType xz2 = cell->matrix()(0,2) / cell->matrix()(0,0);
 					if(int flip_xz = (int)std::round(xz2 - xz1))
 						flipState[1] -= flip_xz;
 				}
 			}
-			if(cell.hasPbc(1) && !cell.is2D()) {
-				FloatType yz1 = _previousCell.matrix()(1,2) / _previousCell.matrix()(1,1);
-				FloatType yz2 = cell.matrix()(1,2) / cell.matrix()(1,1);
+			if(cell->hasPbc(1) && !cell->is2D()) {
+				FloatType yz1 = _previousCell->matrix()(1,2) / _previousCell->matrix()(1,1);
+				FloatType yz2 = cell->matrix()(1,2) / cell->matrix()(1,1);
 				if(int flip_yz = (int)std::round(yz2 - yz1))
 					flipState[2] -= flip_yz;
 			}
@@ -425,17 +425,17 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		_previousCell = cell;
 		// Unflip current simulation cell.
 		if(_currentFlipState != std::array<int,3>{{0,0,0}}) {
-			AffineTransformation newCellMatrix = cell.matrix();
-			newCellMatrix(0,1) += cell.matrix()(0,0) * _currentFlipState[0];
-			newCellMatrix(0,2) += cell.matrix()(0,0) * _currentFlipState[1];
-			newCellMatrix(1,2) += cell.matrix()(1,1) * _currentFlipState[2];
-			cell.setMatrix(newCellMatrix);
+			AffineTransformation newCellMatrix = cell->matrix();
+			newCellMatrix(0,1) += cell->matrix()(0,0) * _currentFlipState[0];
+			newCellMatrix(0,2) += cell->matrix()(0,0) * _currentFlipState[1];
+			newCellMatrix(1,2) += cell->matrix()(1,1) * _currentFlipState[2];
+			reciprocalCellMatrix = newCellMatrix.inverse();
 		}
 	}
 
 	qlonglong index = 0;
 	for(const Point3& p : posProperty) {
-		Point3 rp = cell.absoluteToReduced(p);
+		Point3 rp = reciprocalCellMatrix * p;
 		// Try to insert new position of particle into map.
 		// If an old position already exists, insertion will fail and we can
 		// test if the particle has crossed a periodic cell boundary.
@@ -443,7 +443,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		if(!result.second) {
 			Vector3 delta = result.first->second - rp;
 			for(size_t dim = 0; dim < 3; dim++) {
-				if(cell.hasPbc(dim)) {
+				if(cell->hasPbc(dim)) {
 					int shift = (int)std::round(delta[dim]);
 					if(shift != 0) {
 						// Create a new record when particle has crossed a periodic cell boundary.

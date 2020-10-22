@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,8 +37,8 @@ class ElasticStrainEngine : public StructureIdentificationModifier::StructureIde
 public:
 
 	/// Constructor.
-	ElasticStrainEngine(ParticleOrderingFingerprint fingerprint,
-			ConstPropertyPtr positions, const SimulationCell& simCell,
+	ElasticStrainEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint,
+			ConstPropertyPtr positions, const SimulationCellObject* simCell,
 			int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
 			bool calculateDeformationGradients, bool calculateStrainTensors,
 			FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);

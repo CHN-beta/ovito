@@ -165,13 +165,13 @@ FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
 		if(isCanceled())
 			return {};
 	}
-	frameData->simulationCell().setMatrix(cell);
+	frameData->setSimulationCell(cell);
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(coords.size(), ParticlesObject::PositionProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::PositionProperty, false);
 	boost::copy(coords, posProperty.begin());
 
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(types.size(), ParticlesObject::TypeProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), types.size(), ParticlesObject::TypeProperty, false);
 	boost::copy(types, typeProperty.begin());
 
 	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
@@ -181,11 +181,11 @@ FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
 	frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
 
 	if(velocities.size() == coords.size()) {
-		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(velocities.size(), ParticlesObject::VelocityProperty, false);
+		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), velocities.size(), ParticlesObject::VelocityProperty, false);
 		boost::copy(velocities, velocityProperty.begin());
 	}
 	if(forces.size() == coords.size()) {
-		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(forces.size(), ParticlesObject::ForceProperty, false);
+		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), forces.size(), ParticlesObject::ForceProperty, false);
 		boost::copy(forces, forceProperty.begin());
 	}
 

@@ -105,7 +105,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 			std::move(expressions),
 			dataset()->animationSettings()->timeToFrame(time),
 			input,
-			positions->storage(),
+			positions,
 			neighborExpressions(),
 			cutoff());
 }
@@ -170,7 +170,7 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
 	std::vector<ConstPropertyPtr> inputProperties;
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	for(const PropertyObject* prop : particles->properties()) {
-		inputProperties.push_back(prop->storage());
+		inputProperties.push_back(prop);
 	}
 	_neighborEvaluator->registerPropertyVariables(inputProperties, 1, "@");
 

@@ -27,8 +27,8 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -90,10 +90,10 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell& simCell, std::vector<ConstPropertyPtr> particleProperties) :
+		ConstructSurfaceEngineBase(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell, std::vector<ConstPropertyPtr> particleProperties) :
 			_positions(positions),
 			_selection(std::move(selection)),
-			_mesh(simCell),
+			_mesh(dataset, simCell),
 			_particleProperties(std::move(particleProperties)) {}
 
 		/// Returns the generated surface mesh.
@@ -150,14 +150,14 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, const SimulationCell& simCell, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
+		AlphaShapeEngine(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, const SimulationCellObject* simCell, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(dataset, std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
 			_particleClusters(particleClusters),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
-			_totalCellVolume(simCell.volume3D()),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(this->positions()->size(), ParticlesObject::SelectionProperty, true) : nullptr) {}
+			_totalCellVolume(simCell ? simCell->volume3D() : 0.0),
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -213,9 +213,9 @@ private:
 	public:
 
 		/// Constructor.
-		GaussianDensityEngine(ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell& simCell,
+		GaussianDensityEngine(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
 				FloatType radiusFactor, FloatType isoLevel, int gridResolution, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
+			ConstructSurfaceEngineBase(dataset, std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
 			_gridResolution(gridResolution),

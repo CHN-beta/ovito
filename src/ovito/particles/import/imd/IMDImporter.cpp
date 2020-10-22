@@ -144,7 +144,7 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 		}
 		else throw Exception(tr("Invalid header line key in IMD atom file (line %2).").arg(stream.lineNumber()));
 	}
-	frameData->simulationCell().setMatrix(cell);
+	frameData->setSimulationCell(cell);
 
 	// Save file position.
 	qint64 headerOffset = stream.byteOffset();
@@ -166,7 +166,7 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 	stream.seek(headerOffset, headerLineNumber);
 
 	// Parse data columns.
-	InputColumnReader columnParser(columnMapping, frameData->particles(), numAtoms);
+	InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), numAtoms);
 	for(size_t i = 0; i < numAtoms; i++) {
 		if(!setProgressValueIntermittent(i)) return {};
 		try {

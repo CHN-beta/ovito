@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,7 @@
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -83,7 +82,7 @@ private:
 	public:
 
 		/// Constructor.
-		CoordinationAnalysisEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell,
+		CoordinationAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
 			_positions(std::move(positions)),
 			_simCell(simCell),
@@ -91,7 +90,7 @@ private:
 			_computePartialRdfs(particleTypes),
 			_particleTypes(std::move(particleTypes)),
 			_uniqueTypeIds(std::move(uniqueTypeIds)),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
 			_inputFingerprint(std::move(fingerprint))
 		{
 			size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
@@ -104,7 +103,7 @@ private:
 					}
 				}
 			}
-			_rdfY = std::make_shared<PropertyStorage>(rdfSampleCount, PropertyObject::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
+			_rdfY = DataTable::OOClass().createUserProperty(dataset, rdfSampleCount, PropertyObject::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
 		}
 
 		/// Computes the modifier's results.
@@ -126,7 +125,7 @@ private:
 		const ConstPropertyPtr& particleTypes() const { return _particleTypes; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the cutoff radius.
 		FloatType cutoff() const { return _cutoff; }
@@ -137,7 +136,7 @@ private:
 	private:
 
 		const FloatType _cutoff;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		bool _computePartialRdfs;
 		boost::container::flat_map<int,QString> _uniqueTypeIds;
 		ConstPropertyPtr _positions;

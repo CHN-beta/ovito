@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -158,7 +158,7 @@ public:
 public:
 
 	/// Constructor.
-	InterfaceMesh(ElasticMapping& elasticMapping) : SurfaceMeshData(elasticMapping.structureAnalysis().cell()),
+	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshData(dataset, elasticMapping.structureAnalysis().cell()),
 		_elasticMapping(elasticMapping) {}
 
 	/// Returns the mapping from the physical configuration of the system

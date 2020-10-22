@@ -107,9 +107,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
 	// Get particle selection flags if requested.
-	ConstPropertyPtr selProperty;
-	if(onlySelectedParticles())
-		selProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle cluster property.
 	const PropertyObject* clusterProperty = particles->getProperty(ParticlesObject::ClusterProperty);
@@ -127,16 +125,17 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 			if(property->type() == ParticlesObject::SelectionProperty) continue;
 			if(property->type() == ParticlesObject::PositionProperty) continue;
 			if(property->type() == ParticlesObject::IdentifierProperty) continue;
-			particleProperties.push_back(property->storage());
+			particleProperties.push_back(property);
 		}
 	}
 	
 	if(method() == AlphaShape) {
 		// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-		return std::make_shared<AlphaShapeEngine>(posProperty->storage(),
-				std::move(selProperty),
-				clusterProperty ? clusterProperty->storage() : nullptr,
-				simCell->data(),
+		return std::make_shared<AlphaShapeEngine>(dataset(), 
+				posProperty,
+				selProperty,
+				clusterProperty,
+				simCell,
 				probeSphereRadius(),
 				smoothingLevel(),
 				selectSurfaceParticles(),
@@ -145,9 +144,10 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	}
 	else {
 		// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-		return std::make_shared<GaussianDensityEngine>(posProperty->storage(),
-				std::move(selProperty),
-				simCell->data(),
+		return std::make_shared<GaussianDensityEngine>(dataset(), 
+				posProperty,
+				selProperty,
+				simCell,
 				radiusFactor(),
 				isoValue(),
 				gridResolution(),
@@ -162,11 +162,12 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 {
 	setProgressText(tr("Constructing surface mesh"));
+	OVITO_ASSERT(mesh().cell());
 
 	if(probeSphereRadius() <= 0)
 		throw Exception(tr("Radius parameter must be positive."));
 
-	if(mesh().cell().volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+	if(mesh().cell()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
 		throw Exception(tr("Simulation cell is degenerate."));
 
 	double alpha = probeSphereRadius() * probeSphereRadius();
@@ -174,8 +175,8 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	// Check if combination of radius parameter and simulation cell size is valid.
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(mesh().cell().hasPbc(dim)) {
-			int stencilCount = (int)ceil(ghostLayerSize / mesh().cell().matrix().column(dim).dot(mesh().cell().cellNormalVector(dim)));
+		if(mesh().cell()->hasPbc(dim)) {
+			int stencilCount = (int)ceil(ghostLayerSize / mesh().cell()->matrix().column(dim).dot(mesh().cell()->cellNormalVector(dim)));
 			if(stencilCount > 1)
 				throw Exception(tr("Cannot generate Delaunay tessellation. Simulation cell is too small, or radius parameter is too large."));
 		}
@@ -259,7 +260,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		OVITO_ASSERT(mesh().regionCount() == 1);
 
 		// Just construct a one-sided surface mesh without caring about spatial regions.
-		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh(), alpha, false, *positions());
+		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh(), alpha, false, positions());
 		if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
 			return;
 	}
@@ -267,7 +268,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		beginProgressSubStepsWithWeights({ 2, 1 });
 
 		// Construct a two-sided surface mesh with mesh faces associated with spatial regions (filled or solid).
-		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh(), alpha, true, *positions());
+		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh(), alpha, true, positions());
 		if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
 			return;
 
@@ -290,10 +291,10 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	// Create mesh vertex properties.
 	for(const ConstPropertyPtr& particleProperty : particleProperties()) {
-		PropertyStorage* vertexProperty;
+		PropertyPtr vertexProperty;
 		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 			// Input property is also a standard property for mesh vertices.
-			vertexProperty = mesh().createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type())).get();
+			vertexProperty = mesh().createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
 			OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
 			OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
 		}
@@ -301,11 +302,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 			// Input property name is that of a standard property for mesh vertices.
 			// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 			QString newPropertyName = particleProperty->name() + tr("_particles");
-			vertexProperty = mesh().createVertexProperty(particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), newPropertyName, false, particleProperty->componentNames()).get();
+			vertexProperty = mesh().createVertexProperty(particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), newPropertyName, false, particleProperty->componentNames());
 		}
 		else {
 			// Input property is a user property for mesh vertices.
-			vertexProperty = mesh().createVertexProperty(particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), particleProperty->name(), false, particleProperty->componentNames()).get();
+			vertexProperty = mesh().createVertexProperty(particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), particleProperty->name(), false, particleProperty->componentNames());
 		}
 		// Copy particle property values to mesh vertices using precomputed index mapping.
 		particleProperty->mappedCopyTo(*vertexProperty, vertexToParticleMap);
@@ -372,9 +373,10 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 {
 	setProgressText(tr("Constructing surface mesh"));
+	OVITO_ASSERT(mesh().cell());
 
 	// Check input data.
-	if(mesh().cell().volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+	if(mesh().cell()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
 		throw Exception(tr("Simulation cell is degenerate."));
 
 	if(positions()->size() == 0) {
@@ -394,16 +396,17 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	FloatType cutoffSize = FloatType(3) * *std::max_element(_particleRadii.cbegin(), _particleRadii.cend());
 
 	// Determine the extents of the density grid.
-	AffineTransformation gridBoundaries = mesh().cell().matrix();
+	AffineTransformation gridBoundaries = mesh().cell()->matrix();
 	ConstPropertyAccess<Point3> positionsArray(positions());
 	for(size_t dim = 0; dim < 3; dim++) {
 		// Use bounding box of particles in directions that are non-periodic.
-		if(!mesh().cell().hasPbc(dim)) {
+		if(!mesh().cell()->hasPbc(dim)) {
 			// Compute range of relative atomic coordinates in the current direction.
 			FloatType xmin =  FLOATTYPE_MAX;
 			FloatType xmax = -FLOATTYPE_MAX;
+			const AffineTransformation inverseCellMatrix = mesh().cell()->inverseMatrix();
 			for(const Point3& p : positionsArray) {
-				FloatType rp = mesh().cell().inverseMatrix().prodrow(p, dim);
+				FloatType rp = inverseCellMatrix.prodrow(p, dim);
 				if(rp < xmin) xmin = rp;
 				if(rp > xmax) xmax = rp;
 			}
@@ -442,9 +445,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
 	// Set up a matrix that converts grid coordinates to spatial coordinates.
 	AffineTransformation gridToCartesian = gridBoundaries;
-	gridToCartesian.column(0) /= gridDims[0] - (mesh().cell().hasPbc(0)?0:1);
-	gridToCartesian.column(1) /= gridDims[1] - (mesh().cell().hasPbc(1)?0:1);
-	gridToCartesian.column(2) /= gridDims[2] - (mesh().cell().hasPbc(2)?0:1);
+	gridToCartesian.column(0) /= gridDims[0] - (mesh().cell()->hasPbc(0)?0:1);
+	gridToCartesian.column(1) /= gridDims[1] - (mesh().cell()->hasPbc(1)?0:1);
+	gridToCartesian.column(2) /= gridDims[2] - (mesh().cell()->hasPbc(2)?0:1);
 
 	// Compute the accumulated density at each grid point.
 	parallelFor(densityData.size(), *this, [&](size_t voxelIndex) {
@@ -470,7 +473,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	// Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
     auto getFieldValue = [
 			_data = densityData.data(),
-			_pbcFlags = mesh().cell().pbcFlags(),
+			_pbcFlags = mesh().cell()->pbcFlags(),
 			_gridShape = gridDims
 			](int i, int j, int k) -> FloatType {
         if(_pbcFlags[0]) {
@@ -500,8 +503,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1])];
     };
 
+	// Set the domain of the output mesh.
+	if(mesh().cell()->cellMatrix() != gridBoundaries) {
+		auto newCell = mesh().cell().makeCopy();
+		newCell->setCellMatrix(gridBoundaries);
+		mesh().setCell(std::move(newCell));
+	}
+
 	// Construct isosurface of the density field.
-	mesh().cell().setMatrix(gridBoundaries);
 	MarchingCubes mc(mesh(), gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
 	if(!mc.generateIsosurface(_isoLevel, *this))
 		return;
@@ -661,7 +670,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::applyResults(TimePoint tim
 	meshObj->setVisElement(modifier->surfaceMeshVis());
 
 	// Set the spatial domain of the mesh.
-	meshObj->setDomain(new SimulationCellObject(meshObj->dataset(), mesh().cell()));
+	meshObj->setDomain(mesh().cell());
 
 	// Output total surface area.
 	state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), modApp);

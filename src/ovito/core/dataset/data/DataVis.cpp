@@ -40,15 +40,17 @@ DataVis::DataVis(DataSet* dataset) : ActiveObject(dataset)
 ******************************************************************************/
 QSet<PipelineSceneNode*> DataVis::pipelines(bool onlyScenePipelines) const
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataVis::pipelines", "This function may only be called from the main thread.");
+
 	QSet<PipelineSceneNode*> pipelineList;
-	for(RefMaker* dependent : this->dependents()) {
+	visitDependents([&](RefMaker* dependent) {
 		if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
             if(pipeline->visElements().contains(const_cast<DataVis*>(this))) {
 				if(!onlyScenePipelines || pipeline->isInScene())
 		    		pipelineList.insert(pipeline);
 			}
 		}
-	}
+	});
 	return pipelineList;
 }
 

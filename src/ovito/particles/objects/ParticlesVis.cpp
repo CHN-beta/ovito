@@ -767,7 +767,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 				if(visibleStandardParticles != particleCount)
 					positiveRadiusStorage = radiusStorage->filterCopy(hiddenParticlesMask);
 				else
-					positiveRadiusStorage = CloneHelper().cloneObject(radiusStorage.get(), false);
+					positiveRadiusStorage = radiusStorage.makeCopy();
 				// Replace null entries in the per-particle radius array with the default radius.
 				FloatType defaultRadius = defaultParticleRadius();
 				for(FloatType& r : PropertyAccess<FloatType>(positiveRadiusStorage))

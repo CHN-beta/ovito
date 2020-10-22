@@ -50,6 +50,12 @@ public:
 	/// Returns a reference to the simulation cell matrix.
 	AffineTransformation& simulationCell() { return _simulationCell; }
 
+	/// Sets the simulation cell geometry.
+	void setSimulationCell(const AffineTransformation& cellMatrix) { _simulationCell = cellMatrix; }
+
+	/// Sets the PBC flags of the simulation cell.
+	void setPbcFlags(bool pbcX, bool pbcY, bool pbcZ) { _pbcFlags[0] = pbcX; _pbcFlags[1] = pbcY; _pbcFlags[2] = pbcZ; }
+
 	/// Returns the per-particle data.
 	PropertyContainerImportData& particles() { return _particleData; }
 
@@ -106,7 +112,7 @@ private:
 	AffineTransformation _simulationCell = AffineTransformation::Zero();
 
 	/// The simulation cell boundary conditions.
-	std::array<bool, 3> _pbcFlags{{false, false, false}};
+	std::array<bool, 3> _pbcFlags{{true, true, true}};
 
 	/// Particle properties.
 	PropertyContainerImportData _particleData;

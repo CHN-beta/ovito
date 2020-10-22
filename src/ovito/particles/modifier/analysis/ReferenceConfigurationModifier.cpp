@@ -239,24 +239,27 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 	AffineMappingType affineMapping, bool useMinimumImageConvention) :
 	Engine(validityInterval),
 	_positions(std::move(positions)),
-	_simCell(simCell),
 	_refPositions(std::move(refPositions)),
-	_simCellRef(simCellRef),
 	_identifiers(std::move(identifiers)),
 	_refIdentifiers(std::move(refIdentifiers)),
 	_affineMapping(affineMapping),
 	_useMinimumImageConvention(useMinimumImageConvention)
 {
+	// Clone the input simulation cells, because we need to slightly adjust for the computation. 
+	CloneHelper cloneHelper;
+	_simCell = cloneHelper.cloneObject(simCell, false);
+	_simCellRef = cloneHelper.cloneObject(simCellRef, false);
+
 	// Automatically disable PBCs in Z direction for 2D systems.
 	if(_simCell->is2D()) {
-		_simCell.setPbcFlags(_simCell->hasPbc(0), _simCell->hasPbc(1), false);
+		_simCell->setPbcFlags(_simCell->hasPbc(0), _simCell->hasPbc(1), false);
 		// Make sure the matrix is invertible.
 		AffineTransformation m = _simCell->matrix();
 		m.column(2) = Vector3(0,0,1);
-		_simCell.setMatrix(m);
+		_simCell->setCellMatrix(m);
 		m = _simCellRef->matrix();
 		m.column(2) = Vector3(0,0,1);
-		_simCellRef->setMatrix(m);
+		_simCellRef->setCellMatrix(m);
 	}
 
 	if(affineMapping != NO_MAPPING) {
@@ -266,8 +269,8 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 
 	// PBCs flags of the current configuration always override PBCs flags
 	// of the reference config.
-	_simCellRef->setPbcFlags(_simCell.pbcFlags());
-	_simCellRef->set2D(_simCell->is2D());
+	_simCellRef->setPbcFlags(_simCell->pbcFlags());
+	_simCellRef->setIs2D(_simCell->is2D());
 
 	// Precompute matrices for transforming points/vector between the two configurations.
 	_refToCurTM = cell()->matrix() * refCell()->inverseMatrix();

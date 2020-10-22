@@ -22,7 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>

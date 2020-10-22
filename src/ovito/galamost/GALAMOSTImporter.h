@@ -66,7 +66,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, file);
+		return std::make_shared<FrameLoader>(dataset(), frame, file);
 	}
 
 private:
@@ -77,8 +77,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file)
+			: FileSourceImporter::FrameLoader(dataset, frame, file) {}
 
 	protected:
 

@@ -86,16 +86,15 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
     particles->verifyIntegrity();
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCellObj = state.expectObject<SimulationCellObject>();
-    const SimulationCell cell = simulationCellObj->data();
-    const AffineTransformation& simCell = cell.matrix();
+    const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+    const AffineTransformation& simCell = cell->matrix();
 
     // Output simulation step.
     uint64_t timestep = state.getAttributeValue(QStringLiteral("Timestep"), frameNumber).toLongLong();
     _gsdFile->writeChunk<uint64_t>("configuration/step", 1, 1, &timestep);
 
     // Output dimensionality of the particle system.
-    if(cell.is2D()) {
+    if(cell->is2D()) {
         uint8_t dimensionality = 2;
         _gsdFile->writeChunk<uint8_t>("configuration/dimensions", 1, 1, &dimensionality);
     }
@@ -143,8 +142,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
     for(size_t i = 0; i < ordering.size(); i++) {
         const Point3& p = posProperty[ordering[i]];
 		for(size_t dim = 0; dim < 3; dim++) {
-            FloatType s = std::floor(cell.inverseMatrix().prodrow(p, dim));
-            posBuffer[i][dim] = transformation.prodrow(p - s * cell.matrix().column(dim), dim);
+            FloatType s = std::floor(cell->inverseMatrix().prodrow(p, dim));
+            posBuffer[i][dim] = transformation.prodrow(p - s * cell->matrix().column(dim), dim);
             imageBuffer[i][dim] = s;
   		}
     }

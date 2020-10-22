@@ -91,7 +91,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 
 			// Start task that inspects the file header to determine the number of data columns.
 			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<XYZFrameData*>(frameData.get())->detectedColumnMapping();
@@ -265,7 +265,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	bool hasSimulationCell = false;
 	int movieMode = -1;
 
-	frameData->simulationCell().setPbcFlags(false, false, false);
+	frameData->setPbcFlags(false, false, false);
 	Vector3 cellOrigin = Vector3::Zero();
 	Vector3 cellVector1 = Vector3::Zero();
 	Vector3 cellVector2 = Vector3::Zero();
@@ -287,7 +287,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 			FloatType sy = (FloatType)list[1].toDouble(&ok2);
 			FloatType sz = (FloatType)list[2].toDouble(&ok3);
 			if(ok1 && ok2 && ok3) {
-				frameData->simulationCell().setMatrix(AffineTransformation(Vector3(sx, 0, 0), Vector3(0, sy, 0), Vector3(0, 0, sz), Vector3(-sx / 2, -sy / 2, -sz / 2)));
+				frameData->setSimulationCell(AffineTransformation(Vector3(sx, 0, 0), Vector3(0, sy, 0), Vector3(0, 0, sz), Vector3(-sx / 2, -sy / 2, -sz / 2)));
 				hasSimulationCell = true;
 			}
 		}
@@ -295,7 +295,8 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 
 	if((index = commentLine.indexOf(QStringLiteral("Lattice=\""), 0, Qt::CaseInsensitive)) >= 0) {
 		// Extended XYZ format: Lattice="R11 R21 R31 R12 R22 R32 R13 R23 R33"
-		// See http://jrkermode.co.uk/quippy/io.html#extendedxyz for details
+		// See https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz for details.
+		// Or see https://atomsk.univ-lille.fr/doc/en/format_xyz.html.
 
 		QString latticeStr = commentLine.mid(index + 9);
 		latticeStr.truncate(latticeStr.indexOf("\""));
@@ -395,13 +396,13 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	}
 
 	if(cellVector1 != Vector3::Zero() && cellVector2 != Vector3::Zero() && cellVector3 != Vector3::Zero()) {
-		frameData->simulationCell().setMatrix(AffineTransformation(cellVector1, cellVector2, cellVector3, cellOrigin));
+		frameData->setSimulationCell(AffineTransformation(cellVector1, cellVector2, cellVector3, cellOrigin));
 		hasSimulationCell = true;
 	}
 
 	if((index = commentLine.indexOf("pbc ")) >= 0) {
 		QStringList list = commentLine.mid(index + 4).split(ws_re);
-		frameData->simulationCell().setPbcFlags((bool)list[0].toInt(), (bool)list[1].toInt(), (bool)list[2].toInt());
+		frameData->setPbcFlags((bool)list[0].toInt(), (bool)list[1].toInt(), (bool)list[2].toInt());
 	}
 	else if((index = commentLine.indexOf("pbc=\"")) >= 0) {
 		// Look for Extended XYZ PBC keyword
@@ -413,10 +414,10 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 			QByteArray ba = list[i].toLatin1();
 			parseBool(ba.data(), pbcFlags[i]);
 		}
-		frameData->simulationCell().setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
+		frameData->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
 	}
 	else if(hasSimulationCell) {
-		frameData->simulationCell().setPbcFlags(true, true, true);
+		frameData->setPbcFlags(true, true, true);
 	}
 
 	frameData->detectedColumnMapping() = _columnMapping;
@@ -508,7 +509,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	}
 
 	// Parse data columns.
-	InputColumnReader columnParser(_columnMapping, frameData->particles(), numParticlesLong);
+	InputColumnReader columnParser(dataset(), _columnMapping, frameData->particles(), numParticlesLong);
 	try {
 		for(size_t i = 0; i < numParticlesLong; i++) {
 			if(!setProgressValueIntermittent(i)) return {};
@@ -533,7 +534,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 		if(!hasSimulationCell) {
 			// If the input file does not contain simulation cell info,
 			// use bounding box of particles as simulation cell.
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			frameData->setSimulationCell(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
@@ -544,13 +545,13 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 			// Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
 			if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
 				// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-				const AffineTransformation simCell = frameData->simulationCell().matrix();
+				const AffineTransformation simCell = frameData->simulationCell();
 				for(Point3& p : posProperty)
 					p = simCell * p;
 			}
 			else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
 				// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-				const AffineTransformation simCell = frameData->simulationCell().matrix();
+				const AffineTransformation simCell = frameData->simulationCell();
 				for(Point3& p : posProperty)
 					p = simCell * (p + Vector3(FloatType(0.5)));
 			}

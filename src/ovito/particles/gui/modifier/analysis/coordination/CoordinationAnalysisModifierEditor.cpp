@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,10 +101,8 @@ void CoordinationAnalysisModifierEditor::plotRDF()
 
 		// Determine X plotting range.
 		if(table) {
-			ConstPropertyPtr rdfX = table->getXStorage();
-			ConstPropertyPtr rdfY = table->getYStorage();
-			ConstPropertyAccess<FloatType,false> rdfXArray(rdfX);
-			ConstPropertyAccess<FloatType,true>  rdfYArray(rdfY);
+			ConstPropertyAccessAndRef<FloatType,false> rdfXArray(table->getXValues());
+			ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->getY());
 			double minX = 0;
 			for(size_t i = 0; i < rdfYArray.size(); i++) {
 				for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {

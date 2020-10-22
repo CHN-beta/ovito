@@ -66,7 +66,7 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(elementCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {

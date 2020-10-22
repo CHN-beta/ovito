@@ -408,8 +408,8 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true);
 		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true) : nullptr;
 
-		if(newBondTypeProperty && !newBondTypeProperty.propertyObject()->elementType(bondType->numericId()))
-			newBondTypeProperty.propertyObject()->addElementType(bondType);
+		if(newBondTypeProperty && !newBondTypeProperty.storage()->elementType(bondType->numericId()))
+			newBondTypeProperty.storage()->addElementType(bondType);
 
 		// Copy bonds information into the extended arrays.
 		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
@@ -465,7 +465,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 ******************************************************************************/
 std::vector<ColorA> ParticlesObject::inputParticleColors() const
 {
-	// Obtain the particle vis element.
+	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
 		
 		// Query particle colors from vis element.
@@ -481,7 +481,7 @@ std::vector<ColorA> ParticlesObject::inputParticleColors() const
 ******************************************************************************/
 std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
 {
-	// Obtain the bonds vis element.
+	// Access the bonds vis element.
     if(bonds()) {
 		if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
 
@@ -508,7 +508,7 @@ std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorPro
 ******************************************************************************/
 std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 {
-	// Obtain the particle vis element.
+	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
 
 		// Query particle radii from vis element.

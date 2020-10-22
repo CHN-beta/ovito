@@ -75,6 +75,7 @@ bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFie
 ******************************************************************************/
 void PropertyFieldBase::pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "PropertyFieldBase::pushUndoRecord()", "This function may only be called from the main thread.");
 	owner->dataset()->undoStack().push(std::move(operation));
 }
 

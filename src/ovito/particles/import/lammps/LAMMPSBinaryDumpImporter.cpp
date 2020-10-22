@@ -156,7 +156,7 @@ Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(c
 		.then(executor(), [this, frame](const FileHandle& fileHandle) {
 
 			// Start task that inspects the file header to determine the contained data columns.
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
@@ -346,15 +346,15 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 	simBox.maxc.x() -= std::max(std::max(std::max(header.tiltFactors[0], header.tiltFactors[1]), header.tiltFactors[0]+header.tiltFactors[1]), 0.0);
 	simBox.minc.y() -= std::min(header.tiltFactors[2], 0.0);
 	simBox.maxc.y() -= std::max(header.tiltFactors[2], 0.0);
-	frameData->simulationCell().setMatrix(AffineTransformation(
+	frameData->setSimulationCell(AffineTransformation(
 			Vector3(simBox.sizeX(), 0, 0),
 			Vector3(header.tiltFactors[0], simBox.sizeY(), 0),
 			Vector3(header.tiltFactors[1], header.tiltFactors[2], simBox.sizeZ()),
 			simBox.minc - Point3::Origin()));
-	frameData->simulationCell().setPbcFlags(header.boundaryFlags[0][0] == 0, header.boundaryFlags[1][0] == 0, header.boundaryFlags[2][0] == 0);
+	frameData->setPbcFlags(header.boundaryFlags[0][0] == 0, header.boundaryFlags[1][0] == 0, header.boundaryFlags[2][0] == 0);
 
 	// Parse particle data.
-	InputColumnReader columnParser(_columnMapping, frameData->particles(), header.natoms);
+	InputColumnReader columnParser(dataset(), _columnMapping, frameData->particles(), header.natoms);
 	try {
 		QVector<double> chunkData;
 		int i = 0;
@@ -415,7 +415,7 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 
 		if(Box3(Point3(-0.01), Point3(1.01)).containsBox(boundingBox)) {
 			// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-			const AffineTransformation simCell = frameData->simulationCell().matrix();
+			const AffineTransformation simCell = frameData->simulationCell();
 			for(Point3& p : posProperty)
 				p = simCell * p;
 		}

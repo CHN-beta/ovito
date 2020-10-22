@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/vorotop/VoroTopPlugin.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include "Filter.h"
 
@@ -77,9 +77,9 @@ private:
 	public:
 
 		/// Constructor.
-		VoroTopAnalysisEngine(ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-							std::vector<FloatType> radii, const SimulationCell& simCell, const QString& filterFile, std::shared_ptr<Filter> filter, QVector<bool> typesToIdentify) :
-			StructureIdentificationEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+		VoroTopAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, QVector<bool> typesToIdentify) :
+			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
 			_filterFile(filterFile),
 			_filter(std::move(filter)),
 			_radii(std::move(radii)) {}

@@ -101,9 +101,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
     const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 
     // Get selection particle property.
-    ConstPropertyPtr selectionProperty;
-    if(onlySelectedParticles())
-        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Get particle radii.
     std::vector<FloatType> radii;
@@ -111,12 +109,13 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
         radii = particles->inputParticleRadii();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(particles,
+    return std::make_shared<VoroTopAnalysisEngine>(dataset(),
+                                                   particles,
                                                    input.stateValidity(),
-                                                   posProperty->storage(),
-                                                   std::move(selectionProperty),
+                                                   posProperty,
+                                                   selectionProperty,
                                                    std::move(radii),
-                                                   inputCell->data(),
+                                                   inputCell,
                                                    filterFile(),
                                                    filter(),
                                                    getTypesToIdentify(structureTypes().size()));
@@ -390,14 +389,14 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
     PropertyAccess<int> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
-    if(cell().isAxisAligned()) {
+    if(cell()->isAxisAligned()) {
         // Use Voro++ container.
-        double ax = cell().matrix()(0,3);
-        double ay = cell().matrix()(1,3);
-        double az = cell().matrix()(2,3);
-        double bx = ax + cell().matrix()(0,0);
-        double by = ay + cell().matrix()(1,1);
-        double bz = az + cell().matrix()(2,2);
+        double ax = cell()->matrix()(0,3);
+        double ay = cell()->matrix()(1,3);
+        double az = cell()->matrix()(2,3);
+        double bx = ax + cell()->matrix()(0,0);
+        double by = ay + cell()->matrix()(1,1);
+        double bz = az + cell()->matrix()(2,2);
         if(ax > bx) std::swap(ax,bx);
         if(ay > by) std::swap(ay,by);
         if(az > bz) std::swap(az,bz);
@@ -409,7 +408,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
         if(_radii.empty()) {
             voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                          cell().hasPbc(0), cell().hasPbc(1), cell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                          cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -445,7 +444,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         }
         else {
             voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                               cell().hasPbc(0), cell().hasPbc(1), cell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                               cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -492,18 +491,18 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
         double boxDiameter = sqrt(
-                                  cell().matrix().column(0).squaredLength()
-                                  + cell().matrix().column(1).squaredLength()
-                                  + cell().matrix().column(2).squaredLength());
+                                  cell()->matrix().column(0).squaredLength()
+                                  + cell()->matrix().column(1).squaredLength()
+                                  + cell()->matrix().column(2).squaredLength());
 
         // The normal vectors of the three cell planes.
         std::array<Vector3,3> planeNormals;
-        planeNormals[0] = cell().cellNormalVector(0);
-        planeNormals[1] = cell().cellNormalVector(1);
-        planeNormals[2] = cell().cellNormalVector(2);
+        planeNormals[0] = cell()->cellNormalVector(0);
+        planeNormals[1] = cell()->cellNormalVector(1);
+        planeNormals[2] = cell()->cellNormalVector(2);
 
-        Point3 corner1 = Point3::Origin() + cell().matrix().column(3);
-        Point3 corner2 = corner1 + cell().matrix().column(0) + cell().matrix().column(1) + cell().matrix().column(2);
+        Point3 corner1 = Point3::Origin() + cell()->matrix().column(3);
+        Point3 corner2 = corner1 + cell()->matrix().column(0) + cell()->matrix().column(1) + cell()->matrix().column(2);
 
         // Perform analysis, particle-wise parallel.
         parallelFor(positions()->size(), *this, [&](size_t index) {
@@ -524,7 +523,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
             // Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
             bool skipParticle = false;
             for(size_t dim = 0; dim < 3; dim++) {
-                if(!cell().hasPbc(dim)) {
+                if(!cell()->hasPbc(dim)) {
                     double r;
                     r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
                     if(r <= 0) skipParticle = true;

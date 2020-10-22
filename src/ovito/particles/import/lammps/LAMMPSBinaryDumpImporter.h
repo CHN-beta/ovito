@@ -70,7 +70,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, file, sortParticles(), columnMapping());
+		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles(), columnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -104,12 +104,12 @@ private:
 	public:
 
 		/// Normal constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file, bool sortParticles, const ParticleInputColumnMapping& columnMapping)
-			: FileSourceImporter::FrameLoader(frame, file), _sortParticles(sortParticles), _parseFileHeaderOnly(false), _columnMapping(columnMapping) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, bool sortParticles, const ParticleInputColumnMapping& columnMapping)
+			: FileSourceImporter::FrameLoader(dataset, frame, file), _sortParticles(sortParticles), _parseFileHeaderOnly(false), _columnMapping(columnMapping) {}
 
 		/// Constructor used when reading only the file header information.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file), _parseFileHeaderOnly(true) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file)
+			: FileSourceImporter::FrameLoader(dataset, frame, file), _parseFileHeaderOnly(true) {}
 
 		/// Returns the file column mapping used to load the file.
 		const ParticleInputColumnMapping& columnMapping() const { return _columnMapping; }

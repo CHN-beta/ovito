@@ -24,8 +24,8 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/mesh/surface/SurfaceMeshData.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
@@ -59,7 +59,7 @@ public:
 
 	/// Constructor.
 	ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshData& outputMesh, FloatType alpha, bool createRegions,
-			const PropertyStorage& positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) {}
+			const PropertyObject* positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
 	/// Returns the number of filled regions that have been identified.
 	SurfaceMeshData::size_type filledRegionCount() const { return _filledRegionCount; }
@@ -130,9 +130,9 @@ public:
 		_emptyRegionCount = 0;
 
 		// Flags indicating which periodic cell directions are connected by a surface through the cell boundary.
-		const SimulationCell simCell = _tessellation.simCell();
+		const SimulationCellObject* simCell = _tessellation.simCell();
 		bool surfaceCrossesBoundaries[3] = { false, false, false };
-		bool detectBoundaryCrossings = simCell.hasPbc();
+		bool detectBoundaryCrossings = simCell->hasPbc();
 
 		// Stack of faces to visit. Used for implementing recursive algorithm.
 		std::deque<SurfaceMeshData::face_index> facesToProcess;
@@ -169,11 +169,11 @@ public:
 						const Point3& p2 = _mesh.vertexPosition(_mesh.vertex2(edge));
 						Vector3 delta = p2 - p1;
 						for(size_t dim = 0; dim < 3; dim++) {
-							if(!surfaceCrossesBoundaries[dim] && simCell.hasPbc(dim)) {
+							if(!surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
 								// The edge is crossing the periodic boundary if it spans more than half of the simulation cell in that direction.
-								if(std::abs(simCell.inverseMatrix().prodrow(delta, dim)) >= FloatType(0.5)) {
+								if(std::abs(simCell->inverseMatrix().prodrow(delta, dim)) >= FloatType(0.5)) {
 									surfaceCrossesBoundaries[dim] = true;
-									detectBoundaryCrossings = (simCell.hasPbc(0) && !surfaceCrossesBoundaries[0]) || (simCell.hasPbc(1) && !surfaceCrossesBoundaries[1]) || (simCell.hasPbc(2) && !surfaceCrossesBoundaries[2]);
+									detectBoundaryCrossings = (simCell->hasPbc(0) && !surfaceCrossesBoundaries[0]) || (simCell->hasPbc(1) && !surfaceCrossesBoundaries[1]) || (simCell->hasPbc(2) && !surfaceCrossesBoundaries[2]);
 								}
 							}
 						}
@@ -301,7 +301,7 @@ public:
 				// that is not crossed by the surface mesh. In this case, we need to merge the two empty
 				// regions that were created separately on either side of the simulation box boundary. 
 				for(size_t dim = 0; dim < 3; dim++) {
-					if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell.hasPbc(dim)) {
+					if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
 						if(splitPeriodicRegion == HalfEdgeMesh::InvalidIndex)
 							splitPeriodicRegion = emptyRegion;
 						else
@@ -373,7 +373,7 @@ public:
 
 		// Create one space-filling empty region if there is no filled region.
 		if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
-			_mesh.createRegion(0, simCell.volume3D());
+			_mesh.createRegion(0, simCell->volume3D());
 			_emptyRegionCount = 1;
 		}
 
@@ -667,7 +667,7 @@ private:
 			Vector3 ad = unwrappedVerts[0] - unwrappedVerts[3];
 			Vector3 bd = unwrappedVerts[1] - unwrappedVerts[3];
 			Vector3 cd = unwrappedVerts[2] - unwrappedVerts[3];
-			if(_tessellation.simCell().isWrappedVector(ad) || _tessellation.simCell().isWrappedVector(bd) || _tessellation.simCell().isWrappedVector(cd))
+			if(_tessellation.simCell()->isWrappedVector(ad) || _tessellation.simCell()->isWrappedVector(bd) || _tessellation.simCell()->isWrappedVector(cd))
 				throw Exception("Cannot construct manifold. Simulation cell length is too small for the given probe sphere radius parameter.");
 
 			// Iterate over the four faces of the tetrahedron cell.
@@ -903,7 +903,7 @@ private:
 		Point3 reducedVertexPositions[4];
 		for(int v = 0; v < 4; v++) {
 			const Point3& vpos = vertexPositions[v] = _tessellation.vertexPosition(_tessellation.cellVertex(cell, v));
-			const Point3& rp = reducedVertexPositions[v] = _tessellation.simCell().absoluteToReduced(vpos);
+			const Point3& rp = reducedVertexPositions[v] = _tessellation.simCell()->absoluteToReduced(vpos);
 			if(rp.x() < 0.0 || rp.x() > 1.0) {
 				isCompletelyInsideBox = false;
 				outsideDir[0] = true;
@@ -1030,7 +1030,7 @@ private:
 			return 0;	// Overlap is degenerate.
 
 		// Construct convex hull of remaining line segments.
-		SurfaceMeshData mesh;
+		SurfaceMeshData mesh(_mesh.dataset());
 		mesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));
 
 		// The convex hull may be empty if the input point set is degenerate.
@@ -1055,7 +1055,7 @@ private:
 			}
 		}
 
-		return (convexVolume / 6.0) * _tessellation.simCell().volume3D();
+		return (convexVolume / 6.0) * _tessellation.simCell()->volume3D();
 	}
 
 private:

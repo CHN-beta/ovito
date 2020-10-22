@@ -73,7 +73,7 @@ Future<InputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Fram
 
 			// Start task that inspects the file header to determine the contained data columns.
 			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
+			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
 			return dataset()->taskManager().runTaskAsync(inspectionTask)
 				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
 					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
@@ -212,7 +212,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->simulationCell().setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse triclinic simulation box.
 				FloatType tiltFactors[3];
@@ -228,7 +228,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				simBox.maxc.x() -= std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
 				simBox.minc.y() -= std::min(tiltFactors[2], (FloatType)0);
 				simBox.maxc.y() -= std::max(tiltFactors[2], (FloatType)0);
-				frameData->simulationCell().setMatrix(AffineTransformation(
+				frameData->setSimulationCell(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(tiltFactors[0], simBox.sizeY(), 0),
 						Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()),
@@ -239,7 +239,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->simulationCell().setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse orthogonal simulation box size.
 				Box3 simBox;
@@ -248,7 +248,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 						throw Exception(tr("Invalid box size in line %1 of LAMMPS dump local file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
-				frameData->simulationCell().setMatrix(AffineTransformation(
+				frameData->setSimulationCell(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(0, simBox.sizeY(), 0),
 						Vector3(0, 0, simBox.sizeZ()),
@@ -280,7 +280,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				}
 
 				// Parse data columns.
-				InputColumnReader columnParser(_columnMapping, frameData->bonds(), numElements);
+				InputColumnReader columnParser(dataset(), _columnMapping, frameData->bonds(), numElements);
 
 				// If possible, use memory-mapped file access for best performance.
 				const char* s_start;

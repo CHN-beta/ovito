@@ -78,8 +78,8 @@ private:
 	public:
 
 		/// Constructor.
-		DiamondIdentificationEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection) :
-			StructureIdentificationEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)) {}
+		DiamondIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection) :
+			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

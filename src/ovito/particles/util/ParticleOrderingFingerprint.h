@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 namespace Ovito { namespace Particles {
@@ -43,7 +42,7 @@ public:
 	/// Constructor.
 	ParticleOrderingFingerprint(const ParticlesObject* particles) :
 		_particleCount(particles->elementCount()),
-		_particleIdentifiers(particles->getPropertyStorage(ParticlesObject::IdentifierProperty)) {}
+		_particleIdentifiers(particles->getProperty(ParticlesObject::IdentifierProperty)) {}
 
 	/// Returns the number of particles for which this object was constructed.
 	size_t particleCount() const { return _particleCount; }
@@ -56,8 +55,8 @@ public:
 		if(const PropertyObject* prop = particles->getProperty(ParticlesObject::IdentifierProperty)) {
 			if(!_particleIdentifiers)
 				return true;
-			if(prop->storage() != _particleIdentifiers) {
-				if(!boost::equal(ConstPropertyAccess<qlonglong>(prop), ConstPropertyAccess<qlonglong>(_particleIdentifiers)))
+			if(prop != _particleIdentifiers) {
+				if(!prop->equals(*_particleIdentifiers))
 					return true;
 			}
 		}

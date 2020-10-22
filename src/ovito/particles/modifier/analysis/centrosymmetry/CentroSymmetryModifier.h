@@ -27,6 +27,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -93,7 +94,8 @@ private:
 			_positions(std::move(positions)),
 			_simCell(simCell),
 			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false)),
-			_inputFingerprint(std::move(fingerprint)) {}
+			_inputFingerprint(std::move(fingerprint)),
+			_cspHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

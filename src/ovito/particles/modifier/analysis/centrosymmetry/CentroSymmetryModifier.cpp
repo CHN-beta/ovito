@@ -107,8 +107,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 		return;
 
 	// Determine histogram bin size based on maximum CSP value.
-	const size_t numHistogramBins = 100;
-	_cspHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	const size_t numHistogramBins = _cspHistogram->size();
 	FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
 	if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 	_cspHistogramRange = cspHistogramBinSize * numHistogramBins;

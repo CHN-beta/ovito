@@ -68,7 +68,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, file, sortParticles(), useCustomColumnMapping(), customColumnMapping());
+		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles(), useCustomColumnMapping(), customColumnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -102,14 +102,14 @@ private:
 	public:
 
 		/// Normal constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file,
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file,
 				bool sortParticles,
 				bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
-			: FileSourceImporter::FrameLoader(frame, file), _parseFileHeaderOnly(false), _sortParticles(sortParticles), _useCustomColumnMapping(useCustomColumnMapping), _customColumnMapping(customColumnMapping) {}
+			: FileSourceImporter::FrameLoader(dataset, frame, file), _parseFileHeaderOnly(false), _sortParticles(sortParticles), _useCustomColumnMapping(useCustomColumnMapping), _customColumnMapping(customColumnMapping) {}
 
 		/// Constructor used when reading only the file header information.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file), _parseFileHeaderOnly(true), _useCustomColumnMapping(false) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file)
+			: FileSourceImporter::FrameLoader(dataset, frame, file), _parseFileHeaderOnly(true), _useCustomColumnMapping(false) {}
 
 		/// Returns the file column mapping used to load the file.
 		const ParticleInputColumnMapping& columnMapping() const { return _customColumnMapping; }

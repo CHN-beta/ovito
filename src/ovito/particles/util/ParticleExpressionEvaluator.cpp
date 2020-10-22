@@ -30,7 +30,7 @@ namespace Ovito { namespace Particles {
 /******************************************************************************
 * Initializes the list of input variables from the given input state.
 ******************************************************************************/
-void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame)
+void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame)
 {
 	PropertyExpressionEvaluator::createInputVariables(inputProperties, simCell, attributes, animationFrame);
 
@@ -41,16 +41,15 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 			return property->type() == ParticlesObject::PositionProperty;
 		});
 		if(iter != inputProperties.end()) {
-			SimulationCell cellData = *simCell;
 			ConstPropertyAccess<Point3> posProperty = *iter;
-			registerComputedVariable("ReducedPosition.X", [posProperty,cellData](size_t particleIndex) -> double {
-				return cellData.inverseMatrix().prodrow(posProperty[particleIndex], 0);
+			registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
+				return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
 			});
-			registerComputedVariable("ReducedPosition.Y", [posProperty,cellData](size_t particleIndex) -> double {
-				return cellData.inverseMatrix().prodrow(posProperty[particleIndex], 1);
+			registerComputedVariable("ReducedPosition.Y", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
+				return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 1);
 			});
-			registerComputedVariable("ReducedPosition.Z", [posProperty,cellData](size_t particleIndex) -> double {
-				return cellData.inverseMatrix().prodrow(posProperty[particleIndex], 2);
+			registerComputedVariable("ReducedPosition.Z", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
+				return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 2);
 			});
 		}
 	}
@@ -67,29 +66,25 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
 	if(containerPath.size() >= 2) { 
 		if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size() - 2])) {
 			const BondsObject* bonds = static_object_cast<BondsObject>(containerPath.back());
-			_topologyArray = bonds->getPropertyStorage(BondsObject::TopologyProperty);
+			_topologyArray = bonds->getProperty(BondsObject::TopologyProperty);
 
 			// Define computed variable 'BondLength', which yields the length of the bonds.
 			if(ConstPropertyAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
 				if(ConstPropertyAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
 					ConstPropertyAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
-					SimulationCell simCell;
-					if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>())
-						simCell = simCellObj->data();
-					else
-						periodicImages.reset();
+					DataOORef<const SimulationCellObject> simCell = state.getObject<SimulationCellObject>();
 
-					registerComputedVariable("BondLength", [positions=std::move(positions),topology=std::move(topology),periodicImages=std::move(periodicImages),simCell](size_t bondIndex) -> double {
+					registerComputedVariable("BondLength", [positions=std::move(positions),topology=std::move(topology),periodicImages=std::move(periodicImages),simCell=std::move(simCell)](size_t bondIndex) -> double {
 						size_t index1 = topology[bondIndex][0];
 						size_t index2 = topology[bondIndex][1];
 						if(positions.size() > index1 && positions.size() > index2) {
 							const Point3& p1 = positions[index1];
 							const Point3& p2 = positions[index2];
 							Vector3 delta = p2 - p1;
-							if(periodicImages) {
-								if(int dx = periodicImages[bondIndex][0]) delta += simCell.matrix().column(0) * (FloatType)dx;
-								if(int dy = periodicImages[bondIndex][1]) delta += simCell.matrix().column(1) * (FloatType)dy;
-								if(int dz = periodicImages[bondIndex][2]) delta += simCell.matrix().column(2) * (FloatType)dz;
+							if(periodicImages && simCell) {
+								if(int dx = periodicImages[bondIndex][0]) delta += simCell->matrix().column(0) * (FloatType)dx;
+								if(int dy = periodicImages[bondIndex][1]) delta += simCell->matrix().column(1) * (FloatType)dy;
+								if(int dz = periodicImages[bondIndex][2]) delta += simCell->matrix().column(2) * (FloatType)dz;
 							}
 							return delta.length();
 						}
@@ -102,7 +97,7 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
 			// Build list of particle properties that will be made available as expression variables.
 			std::vector<ConstPropertyPtr> inputParticleProperties;
 			for(const PropertyObject* prop : particles->properties()) {
-				inputParticleProperties.push_back(prop->storage());
+				inputParticleProperties.push_back(prop);
 			}
 			registerPropertyVariables(inputParticleProperties, 1, "@1.");
 			registerPropertyVariables(inputParticleProperties, 2, "@2.");

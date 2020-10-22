@@ -70,7 +70,7 @@ public:
 	public:
 
 		/// Constructor.
-		AmbientOcclusionEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, PropertyPtr positions,
+		AmbientOcclusionEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 			const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer);
 
 		/// Destructor.
@@ -96,14 +96,14 @@ public:
 		const PropertyPtr& brightness() const { return _brightness; }
 
 		/// Returns the property storage that contains the input particle positions.
-		const PropertyPtr& positions() const { return _positions; }
+		const ConstPropertyPtr& positions() const { return _positions; }
 
 	private:
 
 		AmbientOcclusionRenderer* _renderer;
 		const int _resolution;
 		const int _samplingCount;
-		PropertyPtr _positions;
+		ConstPropertyPtr _positions;
 		const Box3 _boundingBox;
 		std::vector<FloatType> _particleRadii;
 		PropertyPtr _brightness;

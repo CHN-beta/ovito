@@ -222,17 +222,29 @@ public:
 	///         notification messages from it.
 	const DependentsList& dependents() const { return _dependents; }
 
+	/// \brief Visits all immediate dependents that reference this target object
+	///        and invokes the given function for every dependent encountered.
+	///
+	/// \note The visitor function may be called multiple times for a dependent if that dependent
+	///       has multiple references to this target.
+	template<class Callable>
+	void visitDependents(Callable&& fn) const {
+		for(RefMaker* dependent : dependents()) {
+			fn(dependent);
+		}
+	}
+
 	/// \brief Recursively visits all dependents that directly or indirectly reference this target object
 	///        and invokes the given function for every dependent encountered.
 	///
 	/// \note The visitor function may be called multiple times for a dependent if that dependent
 	///       has multiple references that in turn reference this target.
-	template<class Function>
-	void visitDependents(Function fn) const {
+	template<class Callable>
+	void visitDependentsRecursive(Callable&& fn) const {
 		for(RefMaker* dependent : dependents()) {
 			fn(dependent);
 			if(dependent->isRefTarget())
-				static_object_cast<RefTarget>(dependent)->visitDependents(fn);
+				static_object_cast<RefTarget>(dependent)->visitDependentsRecursive(fn);
 		}
 	}
 
@@ -241,7 +253,7 @@ public:
 	template<class ObjectType>
 	QSet<ObjectType*> findDependents() const {
 		QSet<ObjectType*> results;
-		visitDependents([&results](RefMaker* dependent) {
+		visitDependentsRecursive([&results](RefMaker* dependent) {
 			if(ObjectType* o = dynamic_object_cast<ObjectType>(dependent))
 				results.insert(o);
 		});

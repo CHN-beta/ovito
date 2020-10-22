@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,26 +76,23 @@ Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEn
 		throwException(tr("The CNA modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == AdaptiveCutoffMode) {
-		return std::make_shared<AdaptiveCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+		return std::make_shared<AdaptiveCNAEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
 	}
 	else if(mode() == IntervalCutoffMode) {
-		return std::make_shared<IntervalCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+		return std::make_shared<IntervalCNAEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
 	}
 	else if(mode() == BondMode) {
 		particles->expectBonds()->verifyIntegrity();
 		const PropertyObject* topologyProperty = particles->expectBonds()->expectProperty(BondsObject::TopologyProperty);
 		const PropertyObject* periodicImagesProperty = particles->expectBonds()->getProperty(BondsObject::PeriodicImageProperty);
-		return std::make_shared<BondCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty),
-			topologyProperty->storage(), periodicImagesProperty ? periodicImagesProperty->storage() : nullptr);
+		return std::make_shared<BondCNAEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty, topologyProperty, periodicImagesProperty);
 	}
 	else {
-		return std::make_shared<FixedCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
+		return std::make_shared<FixedCNAEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty, cutoff());
 	}
 }
 

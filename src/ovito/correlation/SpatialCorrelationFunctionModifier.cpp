@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -188,12 +188,13 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CorrelationAnalysisEngine>(posProperty->storage(),
-													   property1->storage(),
+	return std::make_shared<CorrelationAnalysisEngine>(dataset(),
+													   posProperty,
+													   property1,
 													   std::max(0, sourceProperty1().vectorComponent()),
-													   property2->storage(),
+													   property2,
 													   std::max(0, sourceProperty2().vectorComponent()),
-													   inputCell->data(),
+													   inputCell,
 													   fftGridSpacing(),
 													   applyWindow(),
 													   doComputeNeighCorrelation(),
@@ -205,7 +206,7 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 /******************************************************************************
 * Map property onto grid.
 ******************************************************************************/
-std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::mapToSpatialGrid(const PropertyStorage* property,
+std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::mapToSpatialGrid(const PropertyObject* property,
 																			  size_t propertyVectorComponent,
 																			  const AffineTransformation& reciprocalCellMatrix,
 																			  int nX, int nY, int nZ,
@@ -219,7 +220,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 	std::vector<FloatType> gridData(numberOfGridPoints, 0);
 
 	// Get periodic boundary flag.
-	const std::array<bool, 3> pbc = cell().pbcFlags();
+	const std::array<bool, 3> pbc = cell()->pbcFlags();
 
 	if(!property || property->size() > 0) {
 		ConstPropertyAccess<Point3> positionsArray(positions());
@@ -230,11 +231,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexY = int( fractionalPos.y() * nY );
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
-				if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
+				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
-				if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
+				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
+				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
 				if (!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -245,7 +246,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 			}
 		}
 		else if(property->dataType() == PropertyObject::Float) {
-			ConstPropertyAccess<FloatType,true> propertyArray(*property);
+			ConstPropertyAccess<FloatType,true> propertyArray(property);
 			const Point3* pos = positionsArray.cbegin();
 			for(FloatType v : propertyArray.componentRange(vecComponent)) {
 				if(!std::isnan(v)) {
@@ -254,11 +255,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 					int binIndexY = int( fractionalPos.y() * nY );
 					int binIndexZ = int( fractionalPos.z() * nZ );
 					FloatType window = 1;
-					if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
+					if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
 					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
-					if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
+					if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
 					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-					if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
+					if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
 					else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
 					if(!applyWindow) window = 1;
 					if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -271,7 +272,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 			}
 		}
 		else if(property->dataType() == PropertyObject::Int) {
-			ConstPropertyAccess<int,true> propertyArray(*property);
+			ConstPropertyAccess<int,true> propertyArray(property);
 			const Point3* pos = positionsArray.cbegin();
 			for(int v : propertyArray.componentRange(vecComponent)) {
 				Point3 fractionalPos = reciprocalCellMatrix * (*pos);
@@ -279,11 +280,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexY = int( fractionalPos.y() * nY );
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
-				if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
+				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
-				if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
+				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
+				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
 				if(!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -295,7 +296,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 			}
 		}
 		else if(property->dataType() == PropertyObject::Int64) {
-			ConstPropertyAccess<qlonglong,true> propertyArray(*property);
+			ConstPropertyAccess<qlonglong,true> propertyArray(property);
 			const Point3* pos = positionsArray.cbegin();
 			for(qlonglong v : propertyArray.componentRange(vecComponent)) {
 				Point3 fractionalPos = reciprocalCellMatrix * (*pos);
@@ -303,11 +304,11 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 				int binIndexY = int( fractionalPos.y() * nY );
 				int binIndexZ = int( fractionalPos.z() * nZ );
 				FloatType window = 1;
-				if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
+				if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.x()));
-				if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
+				if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.y()));
-				if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
+				if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
 				else window *= sqrt(2./3)*(1-cos(2*FLOATTYPE_PI*fractionalPos.z()));
 				if(!applyWindow) window = 1;
 				if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -376,8 +377,8 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCorrelation()
 {
 	// Get reciprocal cell.
-	const AffineTransformation& cellMatrix = cell().matrix();
-	const AffineTransformation& reciprocalCellMatrix = cell().inverseMatrix();
+	const AffineTransformation& cellMatrix = cell()->matrix();
+	const AffineTransformation& reciprocalCellMatrix = cell()->inverseMatrix();
 
 	// Note: Cell vectors are in columns. Those are 3-vectors.
 	int nX = std::max(1, (int)(cellMatrix.column(0).length() / fftGridSpacing()));
@@ -460,7 +461,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Averaged reciprocal space correlation function.
-	_reciprocalSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfWavevectorBins, PropertyObject::Float, 1, 0, tr("C(q)"), true, DataTable::YProperty);
+	_reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfWavevectorBins, PropertyObject::Float, 1, 0, tr("C(q)"), true, DataTable::YProperty);
 	_reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
 	std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -487,9 +488,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 						continue;
 
 					// Compute wavevector.
-					int iX = SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2;
-					int iY = SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2;
-					int iZ = SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
+					int iX = SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2;
+					int iY = SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2;
+					int iZ = SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
 					// This is the reciprocal space vector (without a factor of 2*pi).
 					Vector4 wavevector = FloatType(iX)*reciprocalCellMatrix.row(0) +
 										 FloatType(iY)*reciprocalCellMatrix.row(1) +
@@ -514,7 +515,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Compute averages and normalize reciprocal-space correlation function.
-	FloatType normalizationFactor = cell().volume3D() / (sourceProperty1()->size() * sourceProperty2()->size());
+	FloatType normalizationFactor = cell()->volume3D() / (sourceProperty1()->size() * sourceProperty2()->size());
 	for(int wavevectorBinIndex = 0; wavevectorBinIndex < numberOfWavevectorBins; wavevectorBinIndex++) {
 		if(numberOfValues[wavevectorBinIndex] != 0)
 			reciprocalSpaceCorrelationData[wavevectorBinIndex] *= normalizationFactor / numberOfValues[wavevectorBinIndex];
@@ -541,9 +542,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
 	// Radially averaged real space correlation function.
-	_realSpaceCorrelation = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("C(r)"), true, DataTable::YProperty);
+	_realSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("C(r)"), true, DataTable::YProperty);
 	_realSpaceCorrelationRange = minCellFaceDistance / 2;
-	_realSpaceRDF = std::make_shared<PropertyStorage>(numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("g(r)"), true, DataTable::YProperty);
+	_realSpaceRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("g(r)"), true, DataTable::YProperty);
 
 	numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
 	PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -559,9 +560,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 					continue;
 
 				// Compute distance. (FIXME! Check that this is actually correct for even and odd numbers of grid points.)
-				FloatType fracX = FloatType(SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
-				FloatType fracY = FloatType(SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
-				FloatType fracZ = FloatType(SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
+				FloatType fracX = FloatType(SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
+				FloatType fracY = FloatType(SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
+				FloatType fracZ = FloatType(SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
 				// This is the real space vector.
 				Vector3 distance = fracX*cellMatrix.column(0) +
 						 		   fracY*cellMatrix.column(1) +
@@ -626,7 +627,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	}
 
 	// Allocate neighbor RDF.
-	_neighRDF = std::make_shared<PropertyStorage>(neighCorrelation()->size(), PropertyObject::Float, 1, 0, tr("Neighbor g(r)"), true, DataTable::YProperty);
+	_neighRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), neighCorrelation()->size(), PropertyObject::Float, 1, 0, tr("Neighbor g(r)"), true, DataTable::YProperty);
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
@@ -684,7 +685,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 
 	// Normalize short-ranged real-space correlation function.
 	FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
-	FloatType normalizationFactor = 3 * cell().volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+	FloatType normalizationFactor = 3 * cell()->volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
 	PropertyAccess<FloatType> neighCorrelationArray(neighCorrelation());
 	PropertyAccess<FloatType> neighRDFArray(neighRDF());
 	for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
@@ -787,6 +788,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 	_positions.reset();
 	_sourceProperty1.reset();
 	_sourceProperty2.reset();
+	_simCell.reset();
 }
 
 /******************************************************************************

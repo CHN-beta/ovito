@@ -141,10 +141,8 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 			// Parse dimensionality.
 			QString dimensionsStr = atts.value(QStringLiteral("dimensions"));
 			if(!dimensionsStr.isEmpty()) {
-				int dimensions = dimensionsStr.toInt();
-				if(dimensions == 2)
-					_frameData->simulationCell().set2D(true);
-				else if(dimensions != 3)
+				_dimensions = dimensionsStr.toInt();
+				if(_dimensions != 2 && _dimensions != 3)
 					throw Exception(tr("GALAMOST file parsing error. Invalid 'dimensions' attribute value in <%1> element: %2").arg(qName).arg(dimensionsStr));
 			}
 
@@ -162,7 +160,7 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 		}
 		else if(localName == "box") {
 			// Parse box dimensions.
-			AffineTransformation cellMatrix = _frameData->simulationCell().matrix();
+			AffineTransformation cellMatrix = _frameData->simulationCell();
 			QString lxStr = atts.value(QStringLiteral("lx"));
 			if(!lxStr.isEmpty()) {
 				bool ok;
@@ -184,53 +182,55 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 				if(!ok)
 					throw Exception(tr("GALAMOST file parsing error. Invalid 'lz' attribute value in <%1> element: %2").arg(qName).arg(lzStr));
 			}
+			if(_dimensions == 2)
+				cellMatrix.column(2).setZero();
 			cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
-			_frameData->simulationCell().setMatrix(cellMatrix);
+			_frameData->setSimulationCell(cellMatrix);
 		}
 		else if(localName == "position") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::PositionProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::PositionProperty, false);
 		}
 		else if(localName == "velocity") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::VelocityProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::VelocityProperty, false);
 		}
 		else if(localName == "image") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::PeriodicImageProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::PeriodicImageProperty, false);
 		}
 		else if(localName == "mass") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::MassProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::MassProperty, false);
 		}
 		else if(localName == "diameter") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::RadiusProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::RadiusProperty, false);
 		}
 		else if(localName == "charge") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::ChargeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::ChargeProperty, false);
 		}
 		else if(localName == "quaternion") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::OrientationProperty, false);
 		}
 		else if(localName == "orientation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::OrientationProperty, false);
 		}
 		else if(localName == "type") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::TypeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::TypeProperty, false);
 		}
 		else if(localName == "molecule") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::MoleculeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::MoleculeProperty, false);
 		}
 		else if(localName == "body") {
-			_currentProperty = std::make_shared<PropertyStorage>(_natoms, PropertyObject::Int64, 1, 0, QStringLiteral("Body"), false);
+			_currentProperty = ParticlesObject::OOClass().createUserProperty(dataset(), _natoms, PropertyObject::Int64, 1, 0, QStringLiteral("Body"), false);
 		}
 		else if(localName == "Aspheres") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AsphericalShapeProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AsphericalShapeProperty, false);
 		}
 		else if(localName == "rotation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AngularVelocityProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AngularVelocityProperty, false);
 		}
 		else if(localName == "inert") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(_natoms, ParticlesObject::AngularMomentumProperty, false);
+			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AngularMomentumProperty, false);
 		}
 		else if(localName == "bond") {
-			_currentProperty = BondsObject::OOClass().createStandardProperty(0, BondsObject::TopologyProperty, false);
+			_currentProperty = BondsObject::OOClass().createStandardProperty(dataset(), 0, BondsObject::TopologyProperty, false);
 		}
 	}
 
@@ -389,9 +389,9 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 				topology.push_back({a,b});
 				stream.skipWhiteSpace();
 			}
-			PropertyAccess<ParticleIndexPair> topologyProperty = _frameData->bonds().createStandardProperty<BondsObject>(topology.size(), BondsObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexPair> topologyProperty = _frameData->bonds().createStandardProperty<BondsObject>(dataset(), topology.size(), BondsObject::TopologyProperty, false);
 			boost::copy(topology, topologyProperty.begin());
-			PropertyAccess<int> bondTypeProperty = _frameData->bonds().createStandardProperty<BondsObject>(bondTypes.size(), BondsObject::TypeProperty, false);
+			PropertyAccess<int> bondTypeProperty = _frameData->bonds().createStandardProperty<BondsObject>(dataset(), bondTypes.size(), BondsObject::TypeProperty, false);
 			boost::copy(bondTypes, bondTypeProperty.begin());
 			typeList->sortTypesByName(bondTypeProperty);
 			_frameData->bonds().setPropertyTypesList(bondTypeProperty, std::move(typeList));

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito { namespace Particles {
 
@@ -66,20 +66,21 @@ private:
 	public:
 
 		/// Constructor.
-		DisplacementEngine(const TimeInterval& validityInterval, 
+		DisplacementEngine(DataSet* dataset,
+				const TimeInterval& validityInterval, 
 				ConstPropertyPtr positions, 
-				const SimulationCell& simCell,
+				const SimulationCellObject* simCell,
 				ParticleOrderingFingerprint fingerprint,
 				ConstPropertyPtr refPositions, 
-				const SimulationCell& simCellRef,
+				const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, 
 				ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, 
 				bool useMinimumImageConvention) :
 			RefConfigEngineBase(validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
-			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
+			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

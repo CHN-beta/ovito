@@ -83,12 +83,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 			else
 				secondProp = secondaryParticles->getProperty(prop->name());
 			if(secondProp && secondProp->size() == secondaryParticleCount && secondProp->componentCount() == prop->componentCount() && secondProp->dataType() == prop->dataType()) {
-				prop->copyRangeFrom(secondProp, 0, primaryParticleCount, secondaryParticleCount);
+				prop->copyRangeFrom(*secondProp, 0, primaryParticleCount, secondaryParticleCount);
 			}
 			else if(prop->type() != ParticlesObject::UserProperty) {
 				ConstDataObjectPath containerPath = { secondaryParticles };
-				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(secondaryParticles->elementCount(), prop->type(), true, containerPath);
-				prop->modifiableStorage()->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
+				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(dataset(), secondaryParticles->elementCount(), prop->type(), true, containerPath);
+				prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
 			}
 
 			// Combine particle types lists.
@@ -124,14 +124,14 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 		}
 
 		// Put the property into the output.
-		OORef<PropertyObject> clonedProperty = cloneHelper.cloneObject(prop, false);
+		PropertyPtr clonedProperty = cloneHelper.cloneObject(prop, false);
 		clonedProperty->resize(totalParticleCount, true);
 		particles->addProperty(clonedProperty);
 
 		// Shift values of second dataset and reset values of first dataset to zero:
 		if(primaryParticleCount != 0) {
-			std::memmove(clonedProperty->modifiableStorage()->buffer() + primaryParticleCount * clonedProperty->stride(), clonedProperty->storage()->cbuffer(), clonedProperty->stride() * secondaryParticleCount);
-			std::memset(clonedProperty->modifiableStorage()->buffer(), 0, clonedProperty->stride() * primaryParticleCount);
+			std::memmove(clonedProperty->buffer() + primaryParticleCount * clonedProperty->stride(), clonedProperty->cbuffer(), clonedProperty->stride() * secondaryParticleCount);
+			std::memset(clonedProperty->buffer(), 0, clonedProperty->stride() * primaryParticleCount);
 		}
 	}
 
@@ -159,12 +159,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 					secondProp = secondaryElements->getProperty(prop->name());
 				if(secondProp && secondProp->size() == secondaryElementCount && secondProp->componentCount() == prop->componentCount() && secondProp->dataType() == prop->dataType()) {
 					OVITO_ASSERT(prop->stride() == secondProp->stride());
-					prop->copyRangeFrom(secondProp, 0, primaryElementCount, secondaryElementCount);
+					prop->copyRangeFrom(*secondProp, 0, primaryElementCount, secondaryElementCount);
 				}
 				else if(prop->type() != PropertyObject::GenericUserProperty) {
 					ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(secondaryElementCount, prop->type(), true, containerPath);
-					prop->modifiableStorage()->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
+					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(dataset(), secondaryElementCount, prop->type(), true, containerPath);
+					prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
 				}
 
 				// Combine type lists.
@@ -195,8 +195,8 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 
 				// Shift values of second dataset and reset values of first dataset to zero:
 				if(primaryElementCount != 0) {
-					std::memmove(clonedProperty->modifiableStorage()->buffer() + primaryElementCount * clonedProperty->stride(), clonedProperty->storage()->cbuffer(), clonedProperty->stride() * secondaryElementCount);
-					std::memset(clonedProperty->modifiableStorage()->buffer(), 0, clonedProperty->stride() * primaryElementCount);
+					std::memmove(clonedProperty->buffer() + primaryElementCount * clonedProperty->stride(), clonedProperty->cbuffer(), clonedProperty->stride() * secondaryElementCount);
+					std::memset(clonedProperty->buffer(), 0, clonedProperty->stride() * primaryElementCount);
 				}
 			}
 

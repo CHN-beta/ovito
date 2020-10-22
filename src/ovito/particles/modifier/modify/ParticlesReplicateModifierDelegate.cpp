@@ -66,8 +66,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 	size_t oldParticleCount = inputParticles->elementCount();
 	size_t newParticleCount = oldParticleCount * numCopies;
 
-	const SimulationCell cell = state.expectObject<SimulationCellObject>()->data();
-	const AffineTransformation& cellMatrix = cell.matrix();
+	const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+	const AffineTransformation cellMatrix = cell->matrix();
 
 	// Ensure that the particles can be modified.
 	ParticlesObject* outputParticles = state.makeMutable(inputParticles);
@@ -139,7 +139,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 								Point3I newImage;
 								for(size_t dim = 0; dim < 3; dim++) {
 									int i = image[dim] + (oldPeriodicImages ? oldPeriodicImages[bindex][dim] : 0) - newImages.minc[dim];
-									newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+									newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 								}
 								OVITO_ASSERT(newImage.x() >= newImages.minc.x() && newImage.x() <= newImages.maxc.x());
 								OVITO_ASSERT(newImage.y() >= newImages.minc.y() && newImage.y() <= newImages.maxc.y());
@@ -209,10 +209,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}
@@ -256,10 +256,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}
@@ -303,10 +303,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}

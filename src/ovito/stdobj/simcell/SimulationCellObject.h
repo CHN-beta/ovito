@@ -110,7 +110,7 @@ public:
 	}
 
 	/// \brief Enables or disables periodic boundary conditions in the three spatial directions.
-	void setPBCFlags(const std::array<bool,3>& flags) {
+	void setPbcFlags(const std::array<bool,3>& flags) {
 		setPbcX(flags[0]);
 		setPbcY(flags[1]);
 		setPbcZ(flags[2]);

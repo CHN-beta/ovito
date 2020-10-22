@@ -175,6 +175,11 @@ public:
             return std::move(_ref);
         return CloneHelper().cloneObject(_ref, false);
     }
+
+    /// Returns a copy of the data object, which can be safely modified.
+    DataOORef<std::remove_const_t<DataObjectClass>> makeCopy() const {
+        return CloneHelper().cloneObject(_ref, false);
+    }
 };
 
 }	// End of namespace

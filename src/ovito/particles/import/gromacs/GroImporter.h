@@ -68,7 +68,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, std::move(file));
+		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file));
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.

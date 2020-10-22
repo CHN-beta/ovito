@@ -209,7 +209,7 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 	setProgressMaximum(header.numParticles);
 
 	// Prepare the mapping between input file columns and particle properties.
-	InputColumnReader columnParser(cfgMapping, frameData->particles(), header.numParticles);
+	InputColumnReader columnParser(dataset(), cfgMapping, frameData->particles(), header.numParticles);
 
 	// Create particle mass and type properties.
 	int currentAtomType = 0;
@@ -218,9 +218,9 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 	PropertyAccess<FloatType> massProperty;
 	PropertyContainerImportData::TypeList* typeList = nullptr;
 	if(header.isExtendedFormat) {
-		typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(header.numParticles, ParticlesObject::TypeProperty, false);
+		typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), header.numParticles, ParticlesObject::TypeProperty, false);
 		typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
-		massProperty = frameData->particles().createStandardProperty<ParticlesObject>(header.numParticles, ParticlesObject::MassProperty, false);
+		massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), header.numParticles, ParticlesObject::MassProperty, false);
 	}
 
 	// Read per-particle data.
@@ -284,7 +284,7 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 
 	AffineTransformation H((header.transform * header.H0).transposed());
 	H.translation() = H * Vector3(-0.5, -0.5, -0.5);
-	frameData->simulationCell().setMatrix(H);
+	frameData->setSimulationCell(H);
 
 	// The CFG file stores particle positions in reduced coordinates.
 	// Rescale them now to absolute (Cartesian) coordinates.

@@ -29,9 +29,10 @@ namespace Ovito { namespace Particles {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCell& cellData, ConstPropertyAccess<int> selectionProperty, Task* promise)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty, Task* promise)
 {
 	OVITO_ASSERT(positions);
+	OVITO_ASSERT(cell);
 	if(promise) promise->setProgressMaximum(0);
 
 	_cutoffRadius = cutoffRadius;
@@ -39,30 +40,32 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	if(_cutoffRadius <= 0)
 		throw Exception("Invalid parameter: Neighbor cutoff radius must be positive.");
 
-	simCell = cellData;
+	simCell = cell;
 
 	// Automatically disable PBCs in Z direction for 2D systems.
-	if(simCell.is2D()) {
-		simCell.setPbcFlags(simCell.hasPbc(0), simCell.hasPbc(1), false);
-		AffineTransformation matrix = simCell.matrix();
-		matrix.column(2) = Vector3(0, 0, 0.01f);
-		simCell.setMatrix(matrix);
+	if(simCell->is2D()) {
+		OVITO_ASSERT(!simCell->matrix().column(2).isZero());
+		OVITO_ASSERT(simCell->hasPbc(2) == false);
+//		simCell.setPbcFlags(simCell.hasPbc(0), simCell.hasPbc(1), false);
+//		AffineTransformation matrix = simCell.matrix();
+//		matrix.column(2) = Vector3(0, 0, 0.01f);
+//		simCell.setMatrix(matrix);
 	}
-	if(simCell.volume3D() <= FLOATTYPE_EPSILON)
-		throw Exception("Invalid input data: Simulation cell is degenerate.");
+	if(simCell->volume3D() <= FLOATTYPE_EPSILON)
+		throw Exception("Invalid input: Simulation cell is degenerate.");
 
 	AffineTransformation binCell;
-	binCell.translation() = simCell.matrix().translation();
+	binCell.translation() = simCell->matrix().translation();
 	std::array<Vector3,3> planeNormals;
 
 	// Determine the number of bins along each simulation cell vector.
 	const double binCountLimit = 128*128*128;
 	for(size_t i = 0; i < 3; i++) {
-		planeNormals[i] = simCell.cellNormalVector(i);
-		FloatType x = std::abs(simCell.matrix().column(i).dot(planeNormals[i]) / _cutoffRadius);
+		planeNormals[i] = simCell->cellNormalVector(i);
+		FloatType x = std::abs(simCell->matrix().column(i).dot(planeNormals[i]) / _cutoffRadius);
 		binDim[i] = std::max((int)floor(std::min(x, FloatType(binCountLimit))), 1);
 	}
-	if(simCell.is2D())
+	if(simCell->is2D())
 		binDim[2] = 1;
 
 	// Impose limit on the total number of bins.
@@ -70,7 +73,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 
 	// Reduce bin count in each dimension by the same fraction to stay below total bin count limit.
 	if(estimatedBinCount > binCountLimit) {
-		if(!simCell.is2D()) {
+		if(!simCell->is2D()) {
 			double factor = pow(binCountLimit / estimatedBinCount, 1.0/3.0);
 			for(size_t i = 0; i < 3; i++)
 				binDim[i] = std::max((int)(binDim[i] * factor), 1);
@@ -87,7 +90,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 
 	// Compute bin cell.
 	for(size_t i = 0; i < 3; i++) {
-		binCell.column(i) = simCell.matrix().column(i) / binDim[i];
+		binCell.column(i) = simCell->matrix().column(i) / binDim[i];
 	}
 	reciprocalBinCell = binCell.inverse();
 
@@ -127,9 +130,9 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		size_t oldCount = stencil.size();
 		if(oldCount > 100*100)
 			throw Exception("Neighbor cutoff radius is too large compared to the simulation cell size.");
-		int stencilRadiusX = simCell.hasPbc(0) ? stencilRadius : std::min(stencilRadius, binDim[0] - 1);
-		int stencilRadiusY = simCell.hasPbc(1) ? stencilRadius : std::min(stencilRadius, binDim[1] - 1);
-		int stencilRadiusZ = simCell.hasPbc(2) ? stencilRadius : std::min(stencilRadius, binDim[2] - 1);
+		int stencilRadiusX = simCell->hasPbc(0) ? stencilRadius : std::min(stencilRadius, binDim[0] - 1);
+		int stencilRadiusY = simCell->hasPbc(1) ? stencilRadius : std::min(stencilRadius, binDim[1] - 1);
+		int stencilRadiusZ = simCell->hasPbc(2) ? stencilRadius : std::min(stencilRadius, binDim[2] - 1);
 		for(int ix = -stencilRadiusX; ix <= stencilRadiusX; ix++) {
 			for(int iy = -stencilRadiusY; iy <= stencilRadiusY; iy++) {
 				for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
@@ -181,7 +184,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		Point3I binLocation;
 		for(size_t k = 0; k < 3; k++) {
 			binLocation[k] = (int)floor(rp[k]);
-			if(simCell.hasPbc(k)) {
+			if(simCell->hasPbc(k)) {
 				if(binLocation[k] < 0 || binLocation[k] >= binDim[k]) {
 					int shift;
 					if(binLocation[k] < 0)
@@ -189,8 +192,8 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 					else
 						shift = -binLocation[k]/binDim[k];
 					a.pbcShift[k] = shift;
-					a.pos += (FloatType)shift * simCell.matrix().column(k);
-					binLocation[k] = SimulationCell::modulo(binLocation[k], binDim[k]);
+					a.pos += (FloatType)shift * simCell->matrix().column(k);
+					binLocation[k] = SimulationCellObject::modulo(binLocation[k], binDim[k]);
 				}
 			}
 			else if(binLocation[k] < 0) {
@@ -236,7 +239,7 @@ CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t pa
 * Iterator constructor
 ******************************************************************************/
 CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, const Point3& location)
-	: _builder(finder), _center(finder.simCell.wrapPoint(location))
+	: _builder(finder), _center(finder.simCell->wrapPoint(location))
 {
 	_stencilIter = _builder.stencil.begin();
 
@@ -279,7 +282,7 @@ void CutoffNeighborFinder::Query::next()
 			bool skipBin = false;
 			for(size_t k = 0; k < 3; k++) {
 				_currentBin[k] = _centerBin[k] + (*_stencilIter)[k];
-				if(!_builder.simCell.hasPbc(k)) {
+				if(!_builder.simCell->hasPbc(k)) {
 					if(_currentBin[k] < 0 || _currentBin[k] >= _builder.binDim[k]) {
 						skipBin = true;
 						break;
@@ -290,13 +293,13 @@ void CutoffNeighborFinder::Query::next()
 						int s = _currentBin[k] / _builder.binDim[k];
 						_pbcShift[k] = s;
 						_currentBin[k] -= s * _builder.binDim[k];
-						_shiftedCenter -= _builder.simCell.matrix().column(k) * (FloatType)s;
+						_shiftedCenter -= _builder.simCell->matrix().column(k) * (FloatType)s;
 					}
 					else if(_currentBin[k] < 0) {
 						int s = (_currentBin[k] - _builder.binDim[k] + 1) / _builder.binDim[k];
 						_pbcShift[k] = s;
 						_currentBin[k] -= s * _builder.binDim[k];
-						_shiftedCenter -= _builder.simCell.matrix().column(k) * (FloatType)s;
+						_shiftedCenter -= _builder.simCell->matrix().column(k) * (FloatType)s;
 					}
 				}
 				OVITO_ASSERT(_currentBin[k] >= 0 && _currentBin[k] < _builder.binDim[k]);

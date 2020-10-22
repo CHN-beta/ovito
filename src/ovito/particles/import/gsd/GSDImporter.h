@@ -72,7 +72,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, std::move(file), this, std::max(roundingResolution(), 1));
+		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), this, std::max(roundingResolution(), 1));
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -111,8 +111,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const Frame& frame, const FileHandle& file, GSDImporter* importer, int roundingResolution)
-			: FileSourceImporter::FrameLoader(frame, file), _importer(importer), _roundingResolution(roundingResolution) {}
+		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, GSDImporter* importer, int roundingResolution)
+			: FileSourceImporter::FrameLoader(dataset, frame, file), _importer(importer), _roundingResolution(roundingResolution) {}
 
 	protected:
 
@@ -120,7 +120,7 @@ private:
 		virtual FrameDataPtr loadFile() override;
 
 		/// Reads the values of a particle or bond property from the GSD file.
-		PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, uint32_t numElements, int propertyType, bool isBondProperty, const std::shared_ptr<ParticleFrameData>& frameData);
+		PropertyPtr readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, uint32_t numElements, int propertyType, bool isBondProperty, const std::shared_ptr<ParticleFrameData>& frameData);
 
 		/// Parse the JSON string containing a particle shape definition.
 		void parseParticleShape(int typeId, PropertyContainerImportData::TypeList* typeList, size_t numParticles, ParticleFrameData* frameData, const QByteArray& shapeSpecString);

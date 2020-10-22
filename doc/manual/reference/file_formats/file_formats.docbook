@@ -54,7 +54,7 @@
             <row>
               <entry>XYZ</entry>
               <entry><para>Simple column-based text format for particle data, which is documented <link xlink:href="http://en.wikipedia.org/wiki/XYZ_file_format">here</link>.</para>
-                <para>OVITO can read the <link xlink:href="http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz">extended XYZ format</link>, which supports arbitrary sets of particle data columns, 
+                <para>OVITO can read the <link xlink:href="https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz">"extended XYZ" format</link>, which supports arbitrary sets of particle data columns, 
                 and can store addtional information such as the simulation cell geometry and boundary conditions.</para>
                 </entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>

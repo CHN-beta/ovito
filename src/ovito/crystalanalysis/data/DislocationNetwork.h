@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/crystalanalysis/modifier/dxa/InterfaceMesh.h>
 #include <ovito/crystalanalysis/modifier/dxa/BurgersCircuit.h>
 #include "ClusterVector.h"

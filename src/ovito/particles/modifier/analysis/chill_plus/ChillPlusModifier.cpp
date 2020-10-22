@@ -71,12 +71,10 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
         throwException(tr("Chill+ modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    ConstPropertyPtr selectionProperty;
-    if(onlySelectedParticles())
-        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty);
+    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
+    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty, cutoff());
 }
 
 /******************************************************************************

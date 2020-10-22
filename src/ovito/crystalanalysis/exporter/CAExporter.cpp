@@ -236,7 +236,7 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 
 	if(defectMesh && defectMesh->topology()->isClosed()) {
 		defectMesh->verifyMeshIntegrity();
-		const ConstPropertyPtr& vertexCoords = defectMesh->vertices()->getPropertyStorage(SurfaceMeshVertices::PositionProperty);
+		const PropertyObject* vertexCoords = defectMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty);
 		ConstHalfEdgeMeshPtr topology = defectMesh->topology();
 
 		// Serialize list of vertices.

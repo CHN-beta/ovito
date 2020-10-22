@@ -61,9 +61,11 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor& field)
 ******************************************************************************/
 void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+
 	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
-	for(RefMaker* refmaker : dependents()) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(refmaker)) {
+	visitDependents([&](RefMaker* dependent) {
+		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
 			try {
 				fileSource->reloadFrame(refetchFiles, frame);
 			}
@@ -71,7 +73,7 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 				ex.reportError();
 			}
 		}
-	}
+	});
 }
 
 /******************************************************************************
@@ -81,8 +83,8 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 {
 	// Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
-	for(RefMaker* refmaker : dependents()) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(refmaker)) {
+	visitDependents([&](RefMaker* dependent) {
+		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
 			try {
 				// Scan input source for animation frames.
 				fileSource->updateListOfFrames(refetchCurrentFile);
@@ -91,7 +93,7 @@ void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 				ex.reportError();
 			}
 		}
-	}
+	});
 }
 
 /******************************************************************************
@@ -99,11 +101,12 @@ void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 ******************************************************************************/
 FileSource* FileSourceImporter::fileSource() const
 {
-	for(RefMaker* refmaker : dependents()) {
-		if(FileSource* fileSource = dynamic_object_cast<FileSource>(refmaker))
-			return fileSource;
-	}
-	return nullptr;
+	FileSource* source = nullptr;
+	visitDependents([&](RefMaker* dependent) {
+		if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent))
+			source = fileSource;
+	});
+	return source;
 }
 
 /******************************************************************************

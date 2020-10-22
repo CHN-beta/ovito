@@ -71,7 +71,7 @@ public:
 	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
 		activateCLocale();
 		bool isInteractiveContext = (Application::instance()->executionContext() == Application::ExecutionContext::Interactive);
-		return std::make_shared<FrameLoader>(frame, file, topologyFileUrl(), isInteractiveContext);
+		return std::make_shared<FrameLoader>(dataset(), frame, file, topologyFileUrl(), isInteractiveContext);
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -88,8 +88,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const Frame& frame, const FileHandle& file, const QUrl& userSpecifiedTopologyUrl, bool isInteractiveContext) :
-			FileSourceImporter::FrameLoader(frame, file), 
+		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, const QUrl& userSpecifiedTopologyUrl, bool isInteractiveContext) :
+			FileSourceImporter::FrameLoader(dataset, frame, file), 
 			_userSpecifiedTopologyUrl(userSpecifiedTopologyUrl), 
 			_isInteractiveContext(isInteractiveContext) {}
 

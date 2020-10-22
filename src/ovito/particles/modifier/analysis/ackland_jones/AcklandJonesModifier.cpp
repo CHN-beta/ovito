@@ -64,12 +64,10 @@ Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const
 		throwException(tr("The bond-angle ananlysis modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AcklandJonesAnalysisEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+	return std::make_shared<AcklandJonesAnalysisEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
 }
 
 /******************************************************************************

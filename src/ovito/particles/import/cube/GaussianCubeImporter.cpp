@@ -146,12 +146,12 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 	// Automatically convert from Bohr units to Angstroms units.
 	if(isBohrUnits)
 		cellMatrix = cellMatrix * 0.52917721067;
-	frameData->simulationCell().setPbcFlags(true, true, true);
-	frameData->simulationCell().setMatrix(cellMatrix);
+	frameData->setPbcFlags(true, true, true);
+	frameData->setSimulationCell(cellMatrix);
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::TypeProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::PositionProperty, false);
+	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numAtoms, ParticlesObject::TypeProperty, false);
 
 	// Read atomic coordinates.
 	Point3* p = posProperty.begin();
@@ -212,7 +212,7 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 		// No field table present. Assume file contains a single field property.
 		nfields = 1;
 	}
-	PropertyAccess<FloatType, true> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(gridSize[0]*gridSize[1]*gridSize[2], PropertyObject::Float, nfields, 0, QStringLiteral("Property"), false, 0, std::move(componentNames)));
+	PropertyAccess<FloatType, true> fieldQuantity = frameData->voxels().addProperty(VoxelGrid::OOClass().createUserProperty(dataset(), gridSize[0]*gridSize[1]*gridSize[2], PropertyObject::Float, nfields, 0, QStringLiteral("Property"), false, 0, std::move(componentNames)));
 
 	// Parse voxel data.
 	frameData->setVoxelGridShape({gridSize[0], gridSize[1], gridSize[2]});

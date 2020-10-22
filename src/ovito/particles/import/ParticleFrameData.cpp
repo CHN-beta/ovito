@@ -29,7 +29,6 @@
 #include <ovito/grid/objects/VoxelGridVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -43,9 +42,6 @@ namespace Ovito { namespace Particles {
 ******************************************************************************/
 ParticleFrameData::ParticleFrameData() 
 {
-	// Assume periodic boundary conditions by default.
-	_simulationCell.setPbcFlags(true, true, true);
-
 	// Set the default visualization element types.
 	particles().setVisElementClass(&ParticlesVis::OOClass());
 	bonds().setVisElementClass(&BondsVis::OOClass());
@@ -64,11 +60,12 @@ void ParticleFrameData::generateBondPeriodicImageProperty()
 	if(!bondTopologyProperty) return;
 
 	OVITO_ASSERT(!bonds().findStandardProperty(BondsObject::PeriodicImageProperty));
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds().addProperty(BondsObject::OOClass().createStandardProperty(bondTopologyProperty.size(), BondsObject::PeriodicImageProperty, true));
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds().addProperty(BondsObject::OOClass().createStandardProperty(bondTopologyProperty.storage()->dataset(), bondTopologyProperty.size(), BondsObject::PeriodicImageProperty, true));
 
-	if(!simulationCell().hasPbc())
+	if(!_pbcFlags[0] && !_pbcFlags[1] && !_pbcFlags[2])
 		return;
-	const AffineTransformation inverseCellMatrix = simulationCell().inverseMatrix();
+
+	const AffineTransformation inverseCellMatrix = simulationCell().inverse();
 
 	for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
 		size_t index1 = bondTopologyProperty[bondIndex][0];
@@ -76,7 +73,7 @@ void ParticleFrameData::generateBondPeriodicImageProperty()
 		OVITO_ASSERT(index1 < posProperty.size() && index2 < posProperty.size());
 		Vector3 delta = posProperty[index1] - posProperty[index2];
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(simulationCell().hasPbc(dim))
+			if(_pbcFlags[dim])
 				bondPeriodicImageProperty[bondIndex][dim] = std::lround(inverseCellMatrix.prodrow(delta, dim));
 		}
 	}
@@ -92,11 +89,13 @@ OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing
 	// Start with a fresh data collection that will be populated.
 	OORef<DataCollection> output = new DataCollection(fileSource->dataset());
 
+	bool isCell2D = (simulationCell().column(2) == Vector3::Zero());
+
 	// Create the simulation cell.
 	const SimulationCellObject* existingCell = existing ? existing->getObject<SimulationCellObject>() : nullptr;
 	if(!existingCell) {
 		// Create a new SimulationCellObject.
-		SimulationCellObject* cell = output->createObject<SimulationCellObject>(fileSource, simulationCell());
+		SimulationCellObject* cell = output->createObject<SimulationCellObject>(fileSource, simulationCell(), _pbcFlags[0], _pbcFlags[1], _pbcFlags[2], isCell2D);
 
 		// Initialize the simulation cell and its vis element with default values.
 		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
@@ -107,9 +106,9 @@ OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing
 
 			// Choose an appropriate line width depending on the cell's size.
 			FloatType cellDiameter = (
-					simulationCell().matrix().column(0) +
-					simulationCell().matrix().column(1) +
-					simulationCell().matrix().column(2)).length();
+					simulationCell().column(0) +
+					simulationCell().column(1) +
+					simulationCell().column(2)).length();
 			cellVis->setDefaultCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
 			cellVis->setCellLineWidth(cellVis->defaultCellLineWidth());
 		}
@@ -118,9 +117,13 @@ OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing
 		// Adopt pbc flags from input file only if it is a new file.
 		// This gives the user the option to change the pbc flags without them
 		// being overwritten when a new frame from a simulation sequence is loaded.
-		SimulationCellObject* cell = cloneHelper.cloneObject(existingCell, false); 
-		output->addObject(cell);
-		cell->setData(simulationCell(), isNewFile);
+		OORef<SimulationCellObject> cell = cloneHelper.cloneObject(existingCell, false); 
+		cell->setCellMatrix(simulationCell());
+		if(isNewFile) {
+			cell->setPbcFlags(_pbcFlags);
+			cell->setIs2D(isCell2D);
+		}
+		output->addObject(std::move(cell));
 	}
 
 	if(!particles().properties().empty() || !bonds().properties().empty() || !angles().properties().empty() || !dihedrals().properties().empty() || !impropers().properties().empty()) {
@@ -134,9 +137,9 @@ OORef<DataCollection> ParticleFrameData::handOver(const DataCollection* existing
 		if(isNewFile) {
 			if(ParticlesVis* particleVis = targetParticles->visElement<ParticlesVis>()) {
 				FloatType cellDiameter = (
-						simulationCell().matrix().column(0) +
-						simulationCell().matrix().column(1) +
-						simulationCell().matrix().column(2)).length();
+						simulationCell().column(0) +
+						simulationCell().column(1) +
+						simulationCell().column(2)).length();
 				// Limit particle radius to a fraction of the cell diameter.
 				// This is to avoid extremely large particles when the length scale of the simulation is <<1.
 				cellDiameter /= 2;

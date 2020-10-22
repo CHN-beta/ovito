@@ -178,15 +178,15 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			// Will continue parsing subsequent lines from the file.
 			line = stream.line();
 
-			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(coords.size(), ParticlesObject::PositionProperty, false);
+			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::PositionProperty, false);
 			boost::copy(coords, posProperty.begin());
 
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(types.size(), ParticlesObject::TypeProperty, false);
+			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), types.size(), ParticlesObject::TypeProperty, false);
 			boost::copy(types, typeProperty.begin());
 			frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
 
 			if(forces.size() != 0) {
-				PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(coords.size(), ParticlesObject::ForceProperty, false);
+				PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::ForceProperty, false);
 				boost::copy(forces, forceProperty.begin());
 			}
 
@@ -196,25 +196,25 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			// Use bounding box of particles as simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			frameData->setSimulationCell(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
 					boundingBox.minc - Point3::Origin()));
-			frameData->simulationCell().setPbcFlags(false, false, false);
+			frameData->setPbcFlags(false, false, false);
 		}
 
 		if(boost::algorithm::starts_with(line, "CRYSTAL")) {
-			frameData->simulationCell().setPbcFlags(true, true, true);
+			frameData->setPbcFlags(true, true, true);
 		}
 		else if(boost::algorithm::starts_with(line, "SLAB")) {
-			frameData->simulationCell().setPbcFlags(true, true, false);
+			frameData->setPbcFlags(true, true, false);
 		}
 		else if(boost::algorithm::starts_with(line, "POLYMER")) {
-			frameData->simulationCell().setPbcFlags(true, false, false);
+			frameData->setPbcFlags(true, false, false);
 		}
 		else if(boost::algorithm::starts_with(line, "MOLECULE")) {
-			frameData->simulationCell().setPbcFlags(false, false, false);
+			frameData->setPbcFlags(false, false, false);
 		}
 		else if(boost::algorithm::starts_with(line, "PRIMVEC")) {
 			int anim;
@@ -226,7 +226,7 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 						&cell.column(i).x(), &cell.column(i).y(), &cell.column(i).z()) != 3)
 					throw Exception(tr("Invalid cell vector in XSF file at line %1").arg(stream.lineNumber()));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 		}
 		else if(boost::algorithm::starts_with(line, "PRIMCOORD")) {
 			int anim;
@@ -268,7 +268,7 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			stream.seek(atomsListOffset, atomsLineNumber);
 
 			// Parse atoms data.
-			InputColumnReader columnParser(columnMapping, frameData->particles(), natoms);
+			InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), natoms);
 			setProgressMaximum(natoms);
 			for(size_t i = 0; i < natoms; i++) {
 				if(!setProgressValueIntermittent(i)) return {};
@@ -312,9 +312,9 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 						&cell.column(i).x(), &cell.column(i).y(), &cell.column(i).z()) != 3)
 					throw Exception(tr("Invalid cell vector in XSF file at line %1").arg(stream.lineNumber()));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			frameData->setSimulationCell(cell);
 
-			PropertyAccess<FloatType> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(nx*ny*nz, PropertyObject::Float, 1, 0, name, false));
+			PropertyAccess<FloatType> fieldQuantity = frameData->voxels().createUserProperty<VoxelGrid>(dataset(), nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
 			FloatType* data = fieldQuantity.begin();
 			setProgressMaximum(fieldQuantity.size());
 			const char* s = "";

@@ -265,14 +265,13 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 			index++;
 		}
 
-		if(useMinimumImageConvention() && cell1 != nullptr) {
-			SimulationCell cell = cell1->data();
+		if(useMinimumImageConvention() && cell1) {
 			auto id = idProperty1.cbegin();
 			for(Point3& p1 : outputPositions) {
 				auto mapEntry = idmap.find(*id);
 				if(mapEntry == idmap.end())
 					throwException(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-				Vector3 delta = cell.wrapVector(posProperty2[mapEntry->second] - p1);
+				Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
 				p1 += delta * t;
 				++id;
 			}
@@ -290,10 +289,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	}
 	else {
 		const Point3* p2 = posProperty2.cbegin();
-		if(useMinimumImageConvention() && cell1 != nullptr) {
-			SimulationCell cell = cell1->data();
+		if(useMinimumImageConvention() && cell1) {
 			for(Point3& p1 : outputPositions) {
-				Vector3 delta = cell.wrapVector((*p2++) - p1);
+				Vector3 delta = cell1->wrapVector((*p2++) - p1);
 				p1 += delta * t;
 			}
 		}
@@ -326,9 +324,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Interpolate simulation cell vectors.
 	if(cell1 && cell2) {
-		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
-		const AffineTransformation& cellMat1 = cell1->cellMatrix();
+		const AffineTransformation cellMat1 = cell1->cellMatrix();
 		const AffineTransformation delta = cell2->cellMatrix() - cellMat1;
+		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
 		outputCell->setCellMatrix(cellMat1 + delta * t);
 	}
 
@@ -397,14 +395,13 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 			// Average particle positions over time.
 			const Point3* p1 = posProperty1.cbegin();
-			if(useMinimumImageConvention() && cell2 != nullptr) {
-				SimulationCell cell = cell2->data();
+			if(useMinimumImageConvention() && cell2) {
 				auto id = idProperty1.cbegin();
 				for(Point3& pout : outputPositions) {
 					auto mapEntry = idmap.find(*id);
 					if(mapEntry == idmap.end())
 						throwException(tr("Cannot smooth trajectories, because the set of particles doesn't remain the same from frame to frame."));
-					pout += cell.wrapVector(posProperty2[mapEntry->second] - (*p1++)) * weight;
+					pout += cell2->wrapVector(posProperty2[mapEntry->second] - (*p1++)) * weight;
 					++id;
 				}
 			}
@@ -440,10 +437,9 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 			// Average particle positions over time.
 			const Point3* p1 = posProperty1.cbegin();
 			const Point3* p2 = posProperty2.cbegin();
-			if(useMinimumImageConvention() && cell2 != nullptr) {
-				SimulationCell cell = cell2->data();
+			if(useMinimumImageConvention() && cell2) {
 				for(Point3& pout : outputPositions) {
-					pout += cell.wrapVector((*p2++) - (*p1++)) * weight;
+					pout += cell2->wrapVector((*p2++) - (*p1++)) * weight;
 				}
 			}
 			else {

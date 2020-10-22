@@ -163,13 +163,13 @@ FileSourceImporter::FrameDataPtr XTCImporter::FrameLoader::loadFile()
 
 	// Transfer atomic coordinates to property storage. Also convert from nanometer units to angstroms.
 	size_t numParticles = xtcFrame.xyz.size();
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::PositionProperty, false);
+	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::PositionProperty, false);
 	std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
 		return static_cast<Point3>(p * 10.0f);
 	});
 
 	// Convert cell vectors from nanometers to angstroms.
-	frameData->simulationCell().setMatrix(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));
+	frameData->setSimulationCell(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));
 
 	frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step));
 	frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time));

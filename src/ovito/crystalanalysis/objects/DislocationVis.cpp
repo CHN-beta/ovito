@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -86,7 +86,6 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 		return std::move(flowState);
 
 	// Generate the list of clipped line segments.
-	const SimulationCell cellData = cellObject->data();
 	std::vector<RenderableDislocationLines::Segment> outputSegments;
 	std::shared_ptr<ClusterGraph> clusterGraph;
 
@@ -111,7 +110,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 					continue;
 				}
 			}
-			clipDislocationLine(segment->line, cellData, periodicDomainObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+			clipDislocationLine(segment->line, *cellObject, periodicDomainObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
 				outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
 			});
 			segmentIndex++;
@@ -152,7 +151,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 					line[0] = p;
 					p += mdata.edgeVector(edge);
 					line[1] = p;
-					clipDislocationLine(line, cellData, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+					clipDislocationLine(line, *cellObject, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
 						outputSegments.push_back({ { p1, p2 }, b, region, face });
 					});
 					MicrostructureData::vertex_index v1 = mdata.vertex1(edge);
@@ -184,12 +183,11 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 	if(!domainObj) return {};
 	const SimulationCellObject* cellObject = domainObj->domain();
 	if(!cellObject) return {};
-	SimulationCell cell = cellObject->data();
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
 		VersionedDataObjectRef,	// Source object + revision number
-		SimulationCell,			// Simulation cell geometry
+		VersionedDataObjectRef,	// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling
@@ -199,7 +197,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 	// Look up the bounding box in the vis cache.
 	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
 			renderableObj,
-			cell,
+			cellObject,
 			lineWidth(),
 			showBurgersVectors(),
 			burgersVectorScaling(),
@@ -216,7 +214,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 			padding = std::max(padding, burgersVectorWidth() * FloatType(2));
 			if(const DislocationNetworkObject* dislocationObj = dynamic_object_cast<DislocationNetworkObject>(domainObj)) {
 				for(const DislocationSegment* segment : dislocationObj->segments()) {
-					Point3 center = cell.wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					bb.addPoint(center + dir);
 				}
@@ -249,7 +247,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		CompatibleRendererGroup,// The scene renderer
 		VersionedDataObjectRef,	// Source object + revision number
 		VersionedDataObjectRef,	// Renderable object + revision number
-		SimulationCell,			// Simulation cell geometry
+		VersionedDataObjectRef,	// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling
@@ -297,7 +295,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		renderer,
 		domainObj,
 		renderableLines,
-		cellObject->data(),
+		cellObject,
 		lineWidth(),
 		showBurgersVectors(),
 		burgersVectorScaling(),
@@ -322,7 +320,6 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		ConstPropertyAccess<int> phaseArray(phaseProperty);
 		ConstPropertyAccess<Matrix3> correspondenceArray(correspondenceProperty);
 
-		SimulationCell cellData = cellObject->data();
 		// First determine number of corner vertices/segments that are going to be rendered.
 		int lineSegmentCount = renderableLines->lineSegments().size();
 		int cornerCount = 0;
@@ -437,7 +434,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 				FloatType arrowRadius = std::max(burgersVectorWidth() / 2, FloatType(0));
 				for(const DislocationSegment* segment : dislocationsObj->segments()) {
 					subobjToSegmentMap.push_back(arrowIndex);
-					Point3 center = cellData.wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					// Check if arrow is clipped away by cutting planes.
 					for(const Plane3& plane : dislocationsObj->cuttingPlanes()) {
@@ -490,7 +487,6 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const SimulationCellObject* cellObject = dislocationsObj->domain();
 	if(!cellObject)
 		return;
-	SimulationCell cellData = cellObject->data();
 
 	if(segmentIndex < 0 || segmentIndex >= dislocationsObj->segments().size())
 		return;
@@ -500,7 +496,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	// Generate the polyline segments to render.
 	std::vector<std::pair<Point3,Point3>> lineSegments;
 	std::vector<Point3> cornerVertices;
-	clipDislocationLine(segment->line, cellData, dislocationsObj->cuttingPlanes(), [&lineSegments, &cornerVertices](const Point3& v1, const Point3& v2, bool isInitialSegment) {
+	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&lineSegments, &cornerVertices](const Point3& v1, const Point3& v2, bool isInitialSegment) {
 		lineSegments.push_back({v1,v2});
 		if(!isInitialSegment)
 			cornerVertices.push_back(v1);
@@ -543,7 +539,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	cornerBuffer->render(renderer);
 
 	if(!segment->line.empty()) {
-		Point3 wrappedHeadPos = cellData.wrapPoint(segment->line.front());
+		Point3 wrappedHeadPos = cellObject->wrapPoint(segment->line.front());
 		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 		headBuffer->setSize(1);
 		headBuffer->setParticlePositions(&wrappedHeadPos);
@@ -559,7 +555,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 /******************************************************************************
 * Clips a dislocation line at the periodic box boundaries.
 ******************************************************************************/
-void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
+void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCellObject& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
 {
 	bool isInitialSegment = true;
 	auto clippingFunction = [&clippingPlanes, &segmentCallback, &isInitialSegment](Point3 p1, Point3 p2) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,8 +40,9 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
+		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
-		ConstPropertyPtr positions, const SimulationCell& simCell,
+		ConstPropertyPtr positions, const SimulationCellObject* simCell,
 		int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 		ConstPropertyPtr particleSelection,
 		ConstPropertyPtr crystalClusters,
@@ -49,12 +50,12 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		bool onlyPerfectDislocations, int defectMeshSmoothingLevel,
 		int lineSmoothingLevel, FloatType linePointInterval,
 		bool doOutputInterfaceMesh) :
-	StructureIdentificationModifier::StructureIdentificationEngine(std::move(fingerprint), positions, simCell, {}, std::move(particleSelection)),
-	_simCellVolume(simCell.volume3D()),
+	StructureIdentificationModifier::StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, {}, std::move(particleSelection)),
+	_simCellVolume(simCell->volume3D()),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
 	_tessellation(std::make_unique<DelaunayTessellation>()),
 	_elasticMapping(std::make_unique<ElasticMapping>(*_structureAnalysis, *_tessellation)),
-	_interfaceMesh(std::make_unique<InterfaceMesh>(*_elasticMapping)),
+	_interfaceMesh(std::make_unique<InterfaceMesh>(dataset, *_elasticMapping)),
 	_dislocationTracer(std::make_unique<DislocationTracer>(*_interfaceMesh, _structureAnalysis->clusterGraph(), maxTrialCircuitSize, maxCircuitElongation)),
 	_inputCrystalStructure(inputCrystalStructure),
 	_crystalClusters(crystalClusters),
@@ -62,7 +63,8 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 	_defectMeshSmoothingLevel(defectMeshSmoothingLevel),
 	_lineSmoothingLevel(lineSmoothingLevel),
 	_linePointInterval(linePointInterval),
-	_doOutputInterfaceMesh(doOutputInterfaceMesh)
+	_doOutputInterfaceMesh(doOutputInterfaceMesh),
+	_defectMesh(dataset)
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	setDislocationNetwork(_dislocationTracer->network());
@@ -358,21 +360,21 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	int maxId = 0;
 	for(const auto& entry : dislocationLengths)
 		maxId = std::max(maxId, entry.first->numericId());
-	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = std::make_shared<PropertyStorage>(maxId+1, PropertyObject::Float, 1, 0, DislocationAnalysisModifier::tr("Total line length"), true, DataTable::YProperty);
+	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Float, 1, 0, DislocationAnalysisModifier::tr("Total line length"), true, DataTable::YProperty);
 	for(const auto& entry : dislocationLengths)
 		dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-	PropertyAccessAndRef<int> dislocationTypeIds = std::make_shared<PropertyStorage>(maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
+	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
 	boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
-	DataTable* lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.takeStorage(), dislocationTypeIds.takeStorage());
+	DataTable* lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
 	PropertyObject* xProperty = lengthTableObj->expectMutableProperty(DataTable::XProperty);
 	for(const auto& entry : dislocationLengths)
 		xProperty->addElementType(entry.first);
 
 	// Output a data table with the dislocation segment counts.
-	PropertyAccessAndRef<int> dislocationCountsProperty = std::make_shared<PropertyStorage>(maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
+	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
 	for(const auto& entry : segmentCounts)
 		dislocationCountsProperty[entry.first->numericId()] = entry.second;
-	DataTable* countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.takeStorage());
+	DataTable* countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
 	countTableObj->insertProperty(0, xProperty);
 
 	// Output particle properties.
