@@ -118,7 +118,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
                                                    inputCell,
                                                    filterFile(),
                                                    filter(),
-                                                   getTypesToIdentify(structureTypes().size()));
+                                                   structureTypes());
 }
 
 /******************************************************************************

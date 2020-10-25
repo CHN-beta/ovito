@@ -166,7 +166,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 					}
 				}
 				else if(isPropertyFieldUI()) {
-					editObject()->setPropertyFieldValue(*propertyField(), id);
+					editor()->changePropertyFieldValue(*propertyField(), id);
 				}
 				Q_EMIT valueEntered();
 			});

@@ -271,7 +271,7 @@ private:
 	void computeInverseMatrix() const;
 
 	/// Stores the three cell vectors and the position of the cell origin.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, cellMatrix, setCellMatrix);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, cellMatrix, setCellMatrix, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The inverse of the cell matrix, which is kept in sync with the cell matrix at all times.
 	mutable AffineTransformation _reciprocalSimulationCell;
@@ -279,14 +279,14 @@ private:
 	mutable bool _isReciprocalMatrixValid = false;
 
 	/// Specifies periodic boundary condition in the X direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcX, setPbcX);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcX, setPbcX, PROPERTY_FIELD_DATA_OBJECT);
 	/// Specifies periodic boundary condition in the Y direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcY, setPbcY);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcY, setPbcY, PROPERTY_FIELD_DATA_OBJECT);
 	/// Specifies periodic boundary condition in the Z direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcZ, setPbcZ);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcZ, setPbcZ, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Stores the dimensionality of the system.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, is2D, setIs2D);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, is2D, setIs2D, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// This is a special flag used by the Python bindings to indicate that
 	/// this simulation cell has been temporarily put into a writable state.

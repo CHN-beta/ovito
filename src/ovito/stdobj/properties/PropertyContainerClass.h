@@ -58,7 +58,7 @@ public:
 
 	/// Creates a new property object for a user-defined property.
 	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
-		PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type = 0, std::move(componentNames));
+		PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames));
 		prepareNewProperty(property);
 		return property;
 	}

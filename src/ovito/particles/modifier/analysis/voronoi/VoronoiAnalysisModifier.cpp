@@ -147,6 +147,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	setProgressText(tr("Performing Voronoi analysis"));
 	beginProgressSubSteps(_computePolyhedra ? 2 : 1);
 
+	// Compute total simulation cell volume.
+	_simulationBoxVolume = _simCell->volume3D();
+
 	// Stores the starting vertex index and the vertex count for each Voronoi polyhedron. 
 	std::vector<std::pair<SurfaceMeshData::vertex_index, SurfaceMeshData::size_type>> polyhedraVertices;
 
@@ -758,14 +761,13 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(TimePoint time
 	}
 
 	// Check computed Voronoi cell volume sum.
-	FloatType simulationBoxVolume = _simCell->volume3D();
-	if(particles->elementCount() != 0 && std::abs(voronoiVolumeSum() - simulationBoxVolume) > 1e-8 * particles->elementCount() * simulationBoxVolume) {
+	if(particles->elementCount() != 0 && std::abs(voronoiVolumeSum() - _simulationBoxVolume) > 1e-8 * particles->elementCount() * _simulationBoxVolume) {
 		state.setStatus(PipelineStatus(PipelineStatus::Warning,
 				tr("The volume sum of all Voronoi cells does not match the simulation box volume. "
 						"This may be a result of particles being located outside of the simulation box boundaries. "
 						"See user manual for more information.\n"
 						"Simulation box volume: %1\n"
-						"Voronoi cell volume sum: %2").arg(simulationBoxVolume).arg(voronoiVolumeSum())));
+						"Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum())));
 	}
 
 	if(modifier->computeBonds()) {

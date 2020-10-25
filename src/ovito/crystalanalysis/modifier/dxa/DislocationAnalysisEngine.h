@@ -45,7 +45,7 @@ public:
 
 	/// Constructor.
 	DislocationAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
-			int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
+			const QVector<ElementType*>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,
 			std::vector<Matrix3> preferredCrystalOrientations,

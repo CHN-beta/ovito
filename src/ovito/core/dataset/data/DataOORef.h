@@ -180,6 +180,16 @@ public:
     DataOORef<std::remove_const_t<DataObjectClass>> makeCopy() const {
         return CloneHelper().cloneObject(_ref, false);
     }
+
+    /// Makes a shallow copy of a data object.
+    static DataOORef<std::remove_const_t<DataObjectClass>> makeCopy(const DataObjectClass* obj) {
+        return CloneHelper().cloneObject(obj, false);
+    }
+
+    /// Makes a deep copy of a data object and its children.
+    static DataOORef<std::remove_const_t<DataObjectClass>> makeDeepCopy(const DataObjectClass* obj) {
+        return CloneHelper().cloneObject(obj, true);
+    }
 };
 
 }	// End of namespace

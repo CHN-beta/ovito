@@ -158,7 +158,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editObject()->setPropertyFieldValue(*propertyField(), value);
+				editor()->changePropertyFieldValue(*propertyField(), value);
 			}
 			Q_EMIT valueEntered();
 		});

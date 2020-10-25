@@ -525,13 +525,13 @@ public:
         for(auto property = _vertexProperties.begin(); property != _vertexProperties.end(); ++property) {
             if(property->storage()->type() == ptype) {
                 // Turn the read-only property into a read-write property.
-                _mutableVertexProperties.push_back(property->take().makeMutable());
+                _mutableVertexProperties.push_back(property->take().makeCopy());
                 _vertexProperties.erase(property);
                 updateVertexPropertyPointers(_mutableVertexProperties.back());
                 return _mutableVertexProperties.back().storage();
             }
         }
-        // Check if requested the property already exists as a read-write property.
+        // Check if the requested property already exists as a read-write property.
         for(const auto& property : _mutableVertexProperties)
             if(property.storage()->type() == ptype)
                 return property.storage();
@@ -555,13 +555,13 @@ public:
         for(auto property = _faceProperties.begin(); property != _faceProperties.end(); ++property) {
             if(property->storage()->type() == ptype) {
                 // Turn the read-only property into a read-write property.
-                _mutableFaceProperties.push_back(property->take().makeMutable());
+                _mutableFaceProperties.push_back(property->take().makeCopy());
                 _faceProperties.erase(property);
                 updateFacePropertyPointers(_mutableFaceProperties.back());
                 return _mutableFaceProperties.back().storage();
             }
         }
-        // Check if requested the property already exists as a read-write property.
+        // Check if the requested property already exists as a read-write property.
         for(const auto& property : _mutableFaceProperties)
             if(property.storage()->type() == ptype)
                 return property.storage();
@@ -605,13 +605,13 @@ public:
         for(auto property = _regionProperties.begin(); property != _regionProperties.end(); ++property) {
             if(property->storage()->type() == ptype) {
                 // Turn the read-only property into a read-write property.
-                _mutableRegionProperties.push_back(property->take().makeMutable());
+                _mutableRegionProperties.push_back(property->take().makeCopy());
                 _regionProperties.erase(property);
                 updateRegionPropertyPointers(_mutableRegionProperties.back());
                 return _mutableRegionProperties.back().storage();
             }
         }
-        // Check if requested the property already exists as a read-write property.
+        // Check if the requested property already exists as a read-write property.
         for(const auto& property : _mutableRegionProperties)
             if(property.storage()->type() == ptype)
                 return property.storage();
@@ -648,7 +648,7 @@ public:
         OVITO_ASSERT(property->type() == SurfaceMeshVertices::UserProperty || std::none_of(_vertexProperties.cbegin(), _vertexProperties.cend(), [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->type() == SurfaceMeshVertices::UserProperty || std::none_of(_mutableVertexProperties.cbegin(), _mutableVertexProperties.cend(), [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->size() == vertexCount());
-        _mutableVertexProperties.push_back(std::move(property).makeMutable());
+        _mutableVertexProperties.push_back(std::move(property));
         updateVertexPropertyPointers(_mutableVertexProperties.back());
     }
 
@@ -672,7 +672,7 @@ public:
         OVITO_ASSERT(property->type() == SurfaceMeshFaces::UserProperty || std::none_of(_faceProperties.cbegin(), _faceProperties.cend(), [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->type() == SurfaceMeshFaces::UserProperty || std::none_of(_mutableFaceProperties.cbegin(), _mutableFaceProperties.cend(), [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->size() == faceCount());
-        _mutableFaceProperties.push_back(std::move(property).makeMutable());
+        _mutableFaceProperties.push_back(std::move(property));
         updateFacePropertyPointers(_mutableFaceProperties.back());
     }
 
@@ -696,7 +696,7 @@ public:
         OVITO_ASSERT(property->type() == SurfaceMeshRegions::UserProperty || boost::algorithm::none_of(_regionProperties, [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->type() == SurfaceMeshRegions::UserProperty || boost::algorithm::none_of(_mutableRegionProperties, [t = property->type()](const auto& p) { return p.storage()->type() == t; }));
         OVITO_ASSERT(property->size() == regionCount());
-        _mutableRegionProperties.push_back(std::move(property).makeMutable());
+        _mutableRegionProperties.push_back(std::move(property));
         updateRegionPropertyPointers(_mutableRegionProperties.back());
     }
 
@@ -732,7 +732,7 @@ public:
     void makeVertexPropertiesMutable() {
         // Move properties from the read-only list to the read-write list.
         for(auto& property : _vertexProperties) {
-            _mutableVertexProperties.push_back(property.take().makeMutable());
+            _mutableVertexProperties.push_back(property.take().makeCopy());
             updateVertexPropertyPointers(_mutableVertexProperties.back());
         }
         _vertexProperties.clear();
@@ -743,7 +743,7 @@ public:
     void makeFacePropertiesMutable() {
         // Move properties from the read-only list to the read-write list.
         for(auto& property : _faceProperties) {
-            _mutableFaceProperties.push_back(property.take().makeMutable());
+            _mutableFaceProperties.push_back(property.take().makeCopy());
             updateFacePropertyPointers(_mutableFaceProperties.back());
         }
         _faceProperties.clear();
@@ -754,7 +754,7 @@ public:
     void makeRegionPropertiesMutable() {
         // Move properties from the read-only list to the read-write list.
         for(auto& property : _regionProperties) {
-            _mutableRegionProperties.push_back(property.take().makeMutable());
+            _mutableRegionProperties.push_back(property.take().makeCopy());
             updateRegionPropertyPointers(_mutableRegionProperties.back());
         }
         _regionProperties.clear();

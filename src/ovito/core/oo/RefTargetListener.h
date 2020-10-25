@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ protected:
 	/// This method is called after the reference counter of this object has reached zero
 	/// and before the object is being deleted.
 	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with reference counting pointers.");
+		OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with OORef smart-pointers.");
 	}
 
 	/// \brief Is called when the RefTarget referenced by this listener has generated an event.
@@ -153,7 +153,7 @@ protected:
 	/// This method is called after the reference counter of this object has reached zero
 	/// and before the object is being deleted.
 	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with reference counting pointers.");
+		OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with OORef smart-pointers.");
 	}
 
 	/// \brief Is called when a RefTarget referenced by this listener has generated an event.

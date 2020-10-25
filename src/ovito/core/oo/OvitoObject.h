@@ -107,23 +107,6 @@ public:
 	/// Returns the class descriptor for this object.
 	const OvitoClass& getOOMetaClass() const { return OOClass(); }
 
-	/// \brief Internal method that calls this object's aboutToBeDeleted() routine.
-	/// It is automatically called when the object's reference counter reaches zero.
-	void deleteObjectInternal() noexcept {
-		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT(_referenceCount.loadAcquire() == 0);
-
-		// Set the reference counter to a positive value to prevent the object
-		// from being deleted a second time during the call to aboutToBeDeleted().
-		_referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
-		aboutToBeDeleted();
-
-		// After returning from aboutToBeDeleted(), the reference count should be back at the
-		// original value (no new references).
-		OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
-		_referenceCount.storeRelease(0);
-	}
-
 protected:
 
 	/// \brief Saves the internal data of this object to an output stream.
@@ -192,9 +175,12 @@ private:
 		OVITO_CHECK_OBJECT_POINTER(this);
 		if(!_referenceCount.deref()) {
 			const_cast<OvitoObject*>(this)->deleteObjectInternal();
-			const_cast<OvitoObject*>(this)->deleteLater();
 		}
 	}
+
+	/// Internal method that calls this object's aboutToBeDeleted() routine and the deletes the object.
+	/// It is automatically called when the object's reference counter reaches zero.
+	Q_INVOKABLE void deleteObjectInternal() noexcept;
 
 	/// Returns the name of the plugin class this object is an instance of. 
 	/// This method is an implementation detail required by the Q_PROPERTY macro above.

@@ -157,13 +157,13 @@ protected:
 private:
 
 	/// Holds the list of properties.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(PropertyObject, properties, setProperties);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(PropertyObject, properties, setProperties, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Keeps track of the number of data elements this property container contains.
-	DECLARE_PROPERTY_FIELD(size_t, elementCount);
+	DECLARE_PROPERTY_FIELD_FLAGS(size_t, elementCount, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The assigned title of the data object, which is displayed in the user interface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 /// Encapsulates a reference to a PropertyContainer in a PipelineFlowState.

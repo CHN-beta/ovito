@@ -426,10 +426,10 @@ protected:
 private:
 
 	/// Contains the list of defined "types" if this is a typed property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, elementTypes, setElementTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(ElementType, elementTypes, setElementTypes, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The user-interface title of this property.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The type of this property.
 	int _type = 0;

@@ -297,14 +297,18 @@ void CreateBondsModifier::BondsEngine::applyResults(TimePoint time, ModifierAppl
 	CreateBondsModifier* modifier = static_object_cast<CreateBondsModifier>(modApp->modifier());
 	OVITO_ASSERT(modifier);
 
-	// Add our bonds to the system.
+	// Make the parent particle system mutable.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	// Bonds have been created for a specific particles ordering. Make sure it's still the same.
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	particles->addBonds(bonds(), modifier->bondsVis(), {}, modifier->bondType());
+	// Pass a deep copy of the original bond type to the data pipeline.
+	DataOORef<BondType> clonedBondType = DataOORef<BondType>::makeDeepCopy(modifier->bondType());
+
+	// Add our bonds to the system.
+	particles->addBonds(bonds(), modifier->bondsVis(), {}, std::move(clonedBondType));
 
 	size_t bondsCount = bonds().size();
 	state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(bondsCount), modApp);

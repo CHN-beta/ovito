@@ -296,12 +296,12 @@ public:
 	void setVisElementClass(OvitoClassPtr visElementClass) { _visElementClass = visElementClass; }
 
 	/// Transfers the internal property data to the target PropertyContainer.
-	void transferToContainer(const PropertyContainer* existingContainer, PropertyContainer* targetContainer, bool isNewFile, CloneHelper& cloneHelper) const;
+	void transferToContainer(const PropertyContainer* existingContainer, PropertyContainer* targetContainer, bool isNewFile, CloneHelper& cloneHelper);
 
 private:
 
 	/// Inserts the stored element types into the given property object.
-	void insertTypes(PropertyObject* propertyObj, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile) const;
+	void insertTypes(PropertyObject* propertyObj, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile);
 
 private:
 

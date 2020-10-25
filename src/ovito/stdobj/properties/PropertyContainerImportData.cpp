@@ -82,7 +82,7 @@ void PropertyContainerImportData::TypeList::sortTypesById()
 /******************************************************************************
 * Transfers the internal property data to the target PropertyContainer.
 ******************************************************************************/
-void PropertyContainerImportData::transferToContainer(const PropertyContainer* existingContainer, PropertyContainer* targetContainer, bool isNewFile, CloneHelper& cloneHelper) const
+void PropertyContainerImportData::transferToContainer(const PropertyContainer* existingContainer, PropertyContainer* targetContainer, bool isNewFile, CloneHelper& cloneHelper)
 {
 	if(!existingContainer) {
 		// Create the vis element requested by the file importer.
@@ -116,13 +116,14 @@ void PropertyContainerImportData::transferToContainer(const PropertyContainer* e
 			((property->type() != PropertyObject::GenericUserProperty) ? existingContainer->getProperty(property->type()) : existingContainer->getProperty(property->name())) 
 			: nullptr;
 
-		// Insert the loaded property into the container.
-		targetContainer->addProperty(property);
-
 		// Transfer element types.
 		auto typeList = _typeLists.find(property);
 		insertTypes(property, existingProperty, (typeList != _typeLists.end()) ? typeList->second.get() : nullptr, isNewFile);
+
+		// Insert the loaded property into the container.
+		targetContainer->addProperty(std::move(property));
 	}
+	_properties.clear();
 
 	targetContainer->verifyIntegrity();
 }
@@ -130,14 +131,19 @@ void PropertyContainerImportData::transferToContainer(const PropertyContainer* e
 /******************************************************************************
 * Inserts the element types into the given destination property object.
 ******************************************************************************/
-void PropertyContainerImportData::insertTypes(PropertyObject* typeProperty, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile) const
+void PropertyContainerImportData::insertTypes(PropertyObject* typeProperty, const PropertyObject* existingPropertyObj, TypeList* typeList, bool isNewFile)
 {
-	OVITO_ASSERT(!existingPropertyObj); // Not implemented yet.
+	OVITO_ASSERT(typeProperty->elementTypes().empty());
 
 	QSet<ElementType*> activeTypes;
 	boost::container::flat_map<int, int> typeRemapping;
 
 	if(typeList) {
+
+		// Move existing element types over to the new property.
+		if(existingPropertyObj)
+			typeProperty->setElementTypes(existingPropertyObj->elementTypes());
+
 		// Add the new element types one by one to the property object.
 		for(auto& item : typeList->types()) {
 			// Look up existing element type.

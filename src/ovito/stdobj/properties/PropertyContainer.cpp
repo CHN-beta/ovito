@@ -157,9 +157,6 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 ******************************************************************************/
 PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, const ConstDataObjectPath& containerPath)
 {
-	// Undo recording should never be active during pipeline evaluation.
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-
 	if(getOOMetaClass().isValidStandardPropertyId(typeId) == false) {
 		if(typeId == PropertyObject::GenericSelectionProperty)
 			throwException(tr("Creating selections is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
@@ -187,7 +184,7 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 	}
 	else {
 		// Create a new property object.
-		OORef<PropertyObject> newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, containerPath);
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -199,9 +196,6 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 ******************************************************************************/
 PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames)
 {
-	// Undo recording should never be active during pipeline evaluation.
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-
 	// Check if property already exists in the output.
 	const PropertyObject* existingProperty = getProperty(name);
 
@@ -230,7 +224,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 	}
 	else {
 		// Create a new property object.
-		OORef<PropertyObject> newProperty = getOOMetaClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, stride, name, initializeMemory, 0, std::move(componentNames));
+		PropertyPtr newProperty = getOOMetaClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, stride, name, initializeMemory, 0, std::move(componentNames));
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -244,9 +238,6 @@ void PropertyContainer::createProperty(const PropertyObject* property)
 {
 	OVITO_CHECK_POINTER(property);
 
-	// Undo recording should never be active during pipeline evaluation.
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-
 	// Length of first property array determines number of data elements in the container.
 	if(properties().empty() && elementCount() == 0)
 		_elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
@@ -259,7 +250,7 @@ void PropertyContainer::createProperty(const PropertyObject* property)
 		throwException(tr("Cannot add new %1 property '%2': Array length is not consistent with number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));
 	}
 
-	// Check if property already exists in the container.
+	// Check if the same property already exists in the container.
 	const PropertyObject* existingProperty;
 	if(property->type() != 0) {
 		existingProperty = getProperty(property->type());
@@ -278,6 +269,7 @@ void PropertyContainer::createProperty(const PropertyObject* property)
 		replaceReferencesTo(existingProperty, property);
 	}
 	else {
+		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		addProperty(property);
 	}
 }
@@ -289,8 +281,6 @@ void PropertyContainer::createProperty(const PropertyObject* property)
 ******************************************************************************/
 void PropertyContainer::setContent(size_t newElementCount, const QVector<PropertyObject*>& newProperties)
 {
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-
 	// Lengths of new property arrays must be consistent.
 	for(const auto& property : newProperties) {
 		if(property->size() != newElementCount) {

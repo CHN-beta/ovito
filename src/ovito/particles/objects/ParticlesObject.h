@@ -30,6 +30,7 @@
 #include "AnglesObject.h"
 #include "DihedralsObject.h"
 #include "ImpropersObject.h"
+#include "BondType.h"
 
 namespace Ovito { namespace Particles {
 
@@ -166,7 +167,7 @@ public:
 	const PropertyObject* expectBondsTopology() const;
 
 	/// Adds a set of new bonds to the particle system.
-	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties = {}, const BondType* bondType = nullptr);
+	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a vector with the input particle colors.
 	std::vector<ColorA> inputParticleColors() const;
@@ -180,16 +181,16 @@ public:
 private:
 
 	/// The bonds list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(BondsObject, bonds, setBonds);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(BondsObject, bonds, setBonds, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The angles list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(AnglesObject, angles, setAngles);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(AnglesObject, angles, setAngles, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The dihedrals list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DihedralsObject, dihedrals, setDihedrals);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DihedralsObject, dihedrals, setDihedrals, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The impropers list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(ImpropersObject, impropers, setImpropers);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ImpropersObject, impropers, setImpropers, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 /**

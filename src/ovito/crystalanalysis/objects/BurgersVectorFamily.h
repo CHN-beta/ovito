@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ public:
 private:
 
 	/// This prototype Burgers vector of this family.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, burgersVector, setBurgersVector);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3, burgersVector, setBurgersVector, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

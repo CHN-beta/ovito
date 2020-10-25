@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -128,7 +128,7 @@ void ColorParameterUI::onColorPickerChanged()
 					ctrl->setCurrentColorValue(colorPicker()->color());
 			}
 			else if(isPropertyFieldUI()) {
-				editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
+				editor()->changePropertyFieldValue(*propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
 			}
 			Q_EMIT valueEntered();
 		});

@@ -54,9 +54,6 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(DataSet* dataset) : StructureId
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
 {
-	if(structureTypes().size() != NUM_STRUCTURE_TYPES)
-		throwException(tr("The number of structure types has changed. Please remove this modifier from the modification pipeline and insert it again."));
-
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -69,7 +66,7 @@ Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(co
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DiamondIdentificationEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
+	return std::make_shared<DiamondIdentificationEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************
@@ -181,9 +178,9 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 			else if(maxChainLength == 2) n422++;
 			else return;
 		}
-		if(n421 == 12 && typesToIdentify()[CUBIC_DIAMOND]) 
+		if(n421 == 12 && typeIdentificationEnabled(CUBIC_DIAMOND)) 
 			output[index] = CUBIC_DIAMOND;
-		else if(n421 == 6 && n422 == 6 && typesToIdentify()[HEX_DIAMOND]) 
+		else if(n421 == 6 && n422 == 6 && typeIdentificationEnabled(HEX_DIAMOND)) 
 			output[index] = HEX_DIAMOND;
 	});
 	if(isCanceled()) return;

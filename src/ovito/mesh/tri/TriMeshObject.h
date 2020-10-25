@@ -61,7 +61,7 @@ protected:
 private:
 
 	/// The data structure storing the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(TriMeshPtr, mesh, setMesh);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(TriMeshPtr, mesh, setMesh, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

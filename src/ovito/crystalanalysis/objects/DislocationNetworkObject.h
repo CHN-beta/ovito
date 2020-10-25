@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,10 +74,10 @@ public:
 private:
 
 	/// The internal data.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::shared_ptr<DislocationNetwork>, storage, setStorage, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// List of crystal structures.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, crystalStructures, setCrystalStructures);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(MicrostructurePhase, crystalStructures, setCrystalStructures, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

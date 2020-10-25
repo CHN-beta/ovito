@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -128,22 +128,22 @@ public:
 private:
 
 	/// The default display radius to be used for particles of this type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, radius, setRadius, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// An optional user-defined shape used for rendering particles of this type.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Activates the culling of back-facing faces of the user-defined shape assigned to this particle type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Use the mesh colors intead of particle colors when rendering the user-defined shape.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, shapeUseMeshColor, setShapeUseMeshColor);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeUseMeshColor, setShapeUseMeshColor, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The mass of this particle type (maybe zero if not set).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mass, setMass);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, mass, setMass, PROPERTY_FIELD_DATA_OBJECT);
 
 private:
 

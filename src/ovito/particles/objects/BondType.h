@@ -70,7 +70,7 @@ public:
 private:
 
 	/// Stores the radius of the bond type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, radius, setRadius, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

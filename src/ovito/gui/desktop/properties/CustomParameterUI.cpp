@@ -125,7 +125,7 @@ void CustomParameterUI::updatePropertyValue()
                 }
             }
             else if(isPropertyFieldUI()) {
-                editObject()->setPropertyFieldValue(*propertyField(), newValue);
+                editor()->changePropertyFieldValue(*propertyField(), newValue);
             }
 
 			Q_EMIT valueEntered();

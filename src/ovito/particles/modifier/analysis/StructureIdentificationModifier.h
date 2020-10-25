@@ -60,13 +60,7 @@ public:
 	public:
 
 		/// Constructor.
-		StructureIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection = {}) :
-			_positions(std::move(positions)),
-			_simCell(simCell),
-			_typesToIdentify(std::move(typesToIdentify)),
-			_selection(std::move(selection)),
-			_structures(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty, false)),
-			_inputFingerprint(std::move(fingerprint)) {}
+		StructureIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection = {});
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
@@ -93,8 +87,13 @@ public:
 		/// Returns the simulation cell data.
 		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
-		/// Returns the list of structure types to search for.
-		const QVector<bool>& typesToIdentify() const { return _typesToIdentify; }
+		/// Returns whether a given structural type is enabled for identification.
+		bool typeIdentificationEnabled(int typeId) const {
+			OVITO_ASSERT(typeId >= 0);
+			if(typeId >= structures()->elementTypes().size()) return false;
+			OVITO_ASSERT(structures()->elementTypes()[typeId]->numericId() == typeId);
+			return structures()->elementTypes()[typeId]->enabled();
+		}
 
 		/// Returns the number of identified particles of the given structure type.
 		qlonglong getTypeCount(int typeIndex) const {
@@ -109,7 +108,6 @@ public:
 			_positions.reset();
 			_selection.reset();
 			_simCell.reset();
-			decltype(_typesToIdentify){}.swap(_typesToIdentify);
 		}
 
 		/// Gives subclasses the possibility to post-process per-particle structure types
@@ -123,7 +121,6 @@ public:
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _selection;
 		DataOORef<const SimulationCellObject> _simCell;
-		QVector<bool> _typesToIdentify;
 		const PropertyPtr _structures;
 		ParticleOrderingFingerprint _inputFingerprint;
 		std::vector<qlonglong> _typeCounts;
@@ -148,9 +145,6 @@ protected:
 	/// Create an instance of the ParticleType class to represent a structure type.
 	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType);
 
-	/// Returns a bit flag array which indicates what structure types to search for.
-	QVector<bool> getTypesToIdentify(int numTypes) const;
-
 private:
 
 	/// Contains the list of structure types recognized by this analysis modifier.
@@ -165,5 +159,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-

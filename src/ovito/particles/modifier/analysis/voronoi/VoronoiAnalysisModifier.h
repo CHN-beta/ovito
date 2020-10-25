@@ -178,6 +178,9 @@ private:
 		/// Output mesh region property storing the surface area of each Voronoi cell. 
 		PropertyPtr _surfaceAreaProperty;
 
+		/// The total volume of the simulation cell.
+		FloatType _simulationBoxVolume;
+
 		/// Maximum length of Voronoi index vectors produced by this modifier.
 		constexpr static int FaceOrderStorageLimit = 32;
 	};

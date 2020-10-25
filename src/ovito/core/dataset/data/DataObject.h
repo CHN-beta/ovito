@@ -27,6 +27,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/dataset/pipeline/PipelineObject.h>
 
 namespace Ovito {
 
@@ -114,12 +115,10 @@ public:
 	}
 
 	/// \brief Returns the number of strong references to this data object.
-	///        Strong references are either RefMaker derived classes that hold a reference to this data object
-	///        or PipelineFlowState instances that contain this data object.
 	int numberOfStrongReferences() const {
 		// Note: This method is not thread-safe. Must be called from the main thread only.
 		OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-		return _dataReferenceCount.loadRelaxed() + dependents().size();
+		return _dataReferenceCount.loadRelaxed();
 	}
 
 	/// Determines if it is safe to modify this data object without unwanted sideeffects.
@@ -127,16 +126,6 @@ public:
 	/// Returns false if there are multiple references to this data object from several
 	/// data collections or other container data objects.
 	bool isSafeToModify() const;
-
-	/// \brief Returns the current value of the revision counter of this scene object.
-	/// This counter gets incremented every time the object changes in some way.
-	int revisionNumber() const noexcept { return _revisionNumber.loadRelaxed(); }
-
-	/// Returns the pipeline object that created this data object (may be NULL).
-	PipelineObject* dataSource() const;
-
-	/// Sets the internal pointer to the pipeline object that created this data object.
-	void setDataSource(PipelineObject* dataSource);
 
 	/// Returns whether this data object wants to be shown in the pipeline editor
 	/// under the data source section. The default implementation returns false.
@@ -186,21 +175,11 @@ public:
 
 protected:
 
-	/// \brief Sends an event to all dependents of this RefTarget.
-	/// \param event The notification event to be sent to all dependents of this RefTarget.
-	virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
-
-	/// Handles reference events sent by reference targets of this object.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
-
-	/// Creates a copy of this object.
-	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 private:
 
@@ -220,24 +199,23 @@ private:
 private:
 
 	/// The unique identifier of the data object by which it can be referred to from Python, for example.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, identifier, setIdentifier, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The attached visual elements that are responsible for rendering this object's data.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DATA_OBJECT | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
-	/// The revision counter of this object.
-	/// The counter is incremented every time the object changes.
-	/// See the VersionedDataObjectRef class for more information.
-	QAtomicInt _revisionNumber{0};
+	/// The pipeline object that created this data object (may be null).
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QPointer<PipelineObject>, dataSource, setDataSource, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The current number of strong references to this DataObject that exist.
 	mutable QAtomicInt _dataReferenceCount{0};
 
-	/// Pointer to the pipeline object that created this data object (may be NULL).
-	QPointer<PipelineObject> _dataSource;
-
 	// Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
 	template<typename DataObjectClass> friend class DataOORef;
+
+	// These classes also require direct access to the shared ownership counter.
+	friend class VectorReferenceFieldBase;
+	friend class SingleReferenceFieldBase;
 };
 
 /// A pointer to a DataObject-derived metaclass.

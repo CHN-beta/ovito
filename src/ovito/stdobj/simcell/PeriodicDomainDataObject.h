@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,13 +56,13 @@ protected:
 private:
 
 	/// The spatial domain (possibly periodic) this geometry object is embedded in.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QVector<Plane3>, cuttingPlanes, setCuttingPlanes, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The assigned title of the data object, which is displayed in the user interface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

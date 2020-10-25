@@ -74,18 +74,18 @@ public:
 protected:
 
 	/// Stores the unique numeric identifier of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numericId, setNumericId);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numericId, setNumericId, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The human-readable name assigned to this type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, name, setName);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, name, setName, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Stores the visualization color of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Stores whether this type is "enabled" or "disabled".
 	/// This makes only sense in some sorts of types. For example, structure identification modifiers
 	/// use this field to determine which structural types they should look for.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, enabled, setEnabled, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

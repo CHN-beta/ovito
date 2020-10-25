@@ -79,8 +79,8 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(dataset, fingerprint, positions, simCell, typesToIdentify, selection),
+        ChillPlusEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+            StructureIdentificationEngine(dataset, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 
         /// Computes the modifier's results.
@@ -89,12 +89,13 @@ private:
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-        StructureType determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify);
-
         /// Returns the value of the cutoff parameter.
         FloatType cutoff() const { return _cutoff; }
 
     private:
+
+        /// Implementation of the identification algorithm.
+        StructureType determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex);
 
         /// Helper method.
         static std::complex<float> compute_q_lm(CutoffNeighborFinder& neighFinder, size_t particleIndex, int, int);

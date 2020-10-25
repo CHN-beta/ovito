@@ -42,7 +42,7 @@ namespace Ovito { namespace CrystalAnalysis {
 DislocationAnalysisEngine::DislocationAnalysisEngine(
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
-		ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes,
 		int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 		ConstPropertyPtr particleSelection,
 		ConstPropertyPtr crystalClusters,
@@ -50,7 +50,7 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		bool onlyPerfectDislocations, int defectMeshSmoothingLevel,
 		int lineSmoothingLevel, FloatType linePointInterval,
 		bool doOutputInterfaceMesh) :
-	StructureIdentificationModifier::StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, {}, std::move(particleSelection)),
+	StructureIdentificationModifier::StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
 	_simCellVolume(simCell->volume3D()),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
 	_tessellation(std::make_unique<DelaunayTessellation>()),

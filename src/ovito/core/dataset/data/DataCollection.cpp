@@ -101,6 +101,9 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 ******************************************************************************/
 void DataCollection::makeAllMutableRecursive()
 {
+	// Note: This method is not thread-safe. Must only be called from the main thread.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	CloneHelper cloneHelper;
 	makeAllMutableImpl(this, cloneHelper);
 }
@@ -111,8 +114,7 @@ void DataCollection::makeAllMutableRecursive()
 void DataCollection::makeAllMutableImpl(DataObject* parent, CloneHelper& cloneHelper)
 {
 	parent->visitSubObjects([&](const DataObject* subObject) {
-		OVITO_ASSERT(subObject->numberOfStrongReferences() >= 1);
-		if(subObject->numberOfStrongReferences() > 1) {
+		if(!subObject->isSafeToModify()) {
 			OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
 			parent->replaceReferencesTo(subObject, clone);
 			subObject = clone;
@@ -183,11 +185,10 @@ DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 {
 	OVITO_ASSERT(obj != nullptr);
 	OVITO_ASSERT(contains(obj));
-	OVITO_ASSERT(obj->numberOfStrongReferences() >= 1);
-	if(obj->numberOfStrongReferences() > 1) {
+	if(!obj->isSafeToModify()) {
 		OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
 		if(replaceObject(obj, clone)) {
-			OVITO_ASSERT(clone->numberOfStrongReferences() == 1);
+			OVITO_ASSERT(clone->isSafeToModify());
 			return clone;
 		}
 	}

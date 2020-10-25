@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,22 +52,19 @@ AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentifi
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
 {
-	if(structureTypes().size() != NUM_STRUCTURE_TYPES)
-		throwException(tr("The number of structure types has changed. Please remove this modifier from the pipeline and insert it again."));
-
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
 	if(simCell->is2D())
-		throwException(tr("The bond-angle ananlysis modifier does not support 2d simulation cells."));
+		throwException(tr("The Ackland-Jones ananlysis modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AcklandJonesAnalysisEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty);
+	return std::make_shared<AcklandJonesAnalysisEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************
@@ -87,7 +84,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
 	// Perform analysis on each particle.
 	if(!selection()) {
 		parallelFor(positions()->size(), *this, [&](size_t index) {
-			output[index] = determineStructure(neighborFinder, index, typesToIdentify());
+			output[index] = determineStructure(neighborFinder, index);
 		});
 	}
 	else {
@@ -95,7 +92,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
 		parallelFor(positions()->size(), *this, [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
-				output[index] = determineStructure(neighborFinder, index, typesToIdentify());
+				output[index] = determineStructure(neighborFinder, index);
 			else
 				output[index] = OTHER;
 		});
@@ -109,7 +106,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
 * Determines the coordination structure of a single particle using the
 * bond-angle analysis method.
 ******************************************************************************/
-AcklandJonesModifier::StructureType AcklandJonesModifier::determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify)
+AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisEngine::determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex)
 {
 	// Find 14 nearest neighbors of current particle.
 	NearestNeighborFinder::Query<14> neighborQuery(neighFinder);
@@ -172,19 +169,19 @@ AcklandJonesModifier::StructureType AcklandJonesModifier::determineStructure(Nea
 
 	if(chi[7] > 0) return OTHER;
 	else if(chi[4] < 3) {
-		if(!typesToIdentify[ICO] || n1 > 13 || n1 < 11) return OTHER;
+		if(!typeIdentificationEnabled(ICO) || n1 > 13 || n1 < 11) return OTHER;
 		else return ICO;
 	}
 	else if(delta_bcc <= delta_cp) {
-		if(!typesToIdentify[BCC] || n1 < 11) return OTHER;
+		if(!typeIdentificationEnabled(BCC) || n1 < 11) return OTHER;
 		else return BCC;
 	}
 	else if(n1 > 12 || n1 < 11) return OTHER;
 	else if(delta_fcc < delta_hcp) {
-		if(typesToIdentify[FCC]) return FCC;
+		if(typeIdentificationEnabled(FCC)) return FCC;
 		else return OTHER;
 	}
-	else if(typesToIdentify[HCP]) return HCP;
+	else if(typeIdentificationEnabled(HCP)) return HCP;
 	else return OTHER;
 }
 

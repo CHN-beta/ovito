@@ -61,7 +61,7 @@ protected:
 private:
 
 	/// The stored attribute value.
-	DECLARE_RUNTIME_PROPERTY_FIELD(QVariant, value, setValue);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QVariant, value, setValue, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

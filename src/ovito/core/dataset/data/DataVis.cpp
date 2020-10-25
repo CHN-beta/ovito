@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "DataVis.h"
 
 namespace Ovito {
@@ -33,6 +34,8 @@ IMPLEMENT_OVITO_CLASS(DataVis);
 ******************************************************************************/
 DataVis::DataVis(DataSet* dataset) : ActiveObject(dataset)
 {
+	// Visual elements must be created in the main thread.
+	OVITO_ASSERT(this->thread() == dataset->thread());
 }
 
 /******************************************************************************

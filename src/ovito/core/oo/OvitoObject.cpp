@@ -40,6 +40,35 @@ OvitoObject::~OvitoObject()
 #endif
 
 /******************************************************************************
+* Internal method that calls this object's aboutToBeDeleted() routine.
+* It is automatically called when the object's reference counter reaches zero.
+******************************************************************************/
+void OvitoObject::deleteObjectInternal() noexcept 
+{
+	// Delete the object in the main thread only.
+	if(QThread::currentThread() != this->thread()) {
+		QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
+		return;
+	}
+
+	OVITO_CHECK_OBJECT_POINTER(this);
+	OVITO_ASSERT(_referenceCount.loadAcquire() == 0);
+
+	// Set the reference counter to a positive value to prevent the object
+	// from being deleted a second time during the call to aboutToBeDeleted().
+	_referenceCount.storeRelease(INVALID_REFERENCE_COUNT);
+	aboutToBeDeleted();
+
+	// After returning from aboutToBeDeleted(), the reference count should be back at the
+	// original value (no new references).
+	OVITO_ASSERT(_referenceCount.loadAcquire() == INVALID_REFERENCE_COUNT);
+	_referenceCount.storeRelease(0);
+
+	// Delete the object itself.
+	delete this;
+}
+
+/******************************************************************************
 * Returns true if this object is currently being loaded from an ObjectLoadStream.
 ******************************************************************************/
 bool OvitoObject::isBeingLoaded() const

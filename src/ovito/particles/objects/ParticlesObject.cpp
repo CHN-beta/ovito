@@ -336,7 +336,7 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 /******************************************************************************
 * Adds a set of new bonds to the particle system.
 ******************************************************************************/
-void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties, const BondType* bondType)
+void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	// Check if there are existing bonds.
 	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
@@ -364,7 +364,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		// Insert property objects into the output pipeline state.
 		if(bondTypeProperty) {
 			bondTypeProperty->fill<int>(bondType->numericId());
-			bondTypeProperty->addElementType(bondType);
+			bondTypeProperty->addElementType(std::move(bondType));
 		}
 
 		// Insert other bond properties.

@@ -59,9 +59,6 @@ ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentification
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
 {
-    if(structureTypes().size() != NUM_STRUCTURE_TYPES)
-        throwException(tr("The number of structure types has changed. Please remove this modifier from the pipeline and insert it again."));
-
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -74,7 +71,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, getTypesToIdentify(NUM_STRUCTURE_TYPES), selectionProperty, cutoff());
+    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 }
 
 /******************************************************************************
@@ -118,7 +115,7 @@ void ChillPlusModifier::ChillPlusEngine::perform()
             return;
         }
 
-        output[index] = determineStructure(neighborListBuilder, index, typesToIdentify());
+        output[index] = determineStructure(neighborListBuilder, index);
     });
 
 	// Release data that is no longer needed.
@@ -137,10 +134,9 @@ std::complex<float> ChillPlusModifier::ChillPlusEngine::compute_q_lm(CutoffNeigh
 }
 
 /******************************************************************************
-* Determines the structure of each atom based on the number of eclipsed and
-* staggered bonds.
+* Determines the structure of an atom based on the number of eclipsed and staggered bonds.
 ******************************************************************************/
-ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify)
+ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex)
 {
     int num_eclipsed = 0;
     int num_staggered = 0;

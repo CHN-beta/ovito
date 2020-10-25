@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 
 namespace Ovito {
@@ -56,16 +55,15 @@ public:
 
 private:
 
-	/// Stores a weak reference to + revision version number of the original DataObject
-	/// this TransformedDataObject was derived from.
+	/// Stores a reference to the original DataObject this TransformedDataObject was generated from.
 	/// We use it to detect changes to the source object and avoid unnecessary regeneration
 	/// of the transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(VersionedDataObjectRef, sourceDataObject, setSourceDataObject);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Stores a revision version number of the TransformingDataVis that created this TransformedDataObject.
 	/// We use this to detect changes to the TransformingDataVis's parameters that require a re-generation of the
 	/// transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(unsigned int, visElementRevision, setVisElementRevision);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int, visElementRevision, setVisElementRevision, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

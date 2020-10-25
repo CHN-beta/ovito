@@ -119,6 +119,9 @@ public:
 		return UndoableTransaction::handleExceptions(dataset()->undoStack(), operationLabel, std::forward<Function>(func));
 	}
 
+	/// Changes the value of a non-animatable property field of the object being edited.
+	void changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue);
+
 public Q_SLOTS:
 
 	/// \brief Sets the object being edited in this editor.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,8 +78,7 @@ private:
 	public:
 
 		/// Constructor.
-		DiamondIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection) :
-			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)) {}
+		using StructureIdentificationEngine::StructureIdentificationEngine;
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

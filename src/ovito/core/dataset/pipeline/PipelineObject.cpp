@@ -40,6 +40,14 @@ PipelineObject::PipelineObject(DataSet* dataset) : ActiveObject(dataset)
 }
 
 /******************************************************************************
+* Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
+******************************************************************************/
+PipelineFlowState PipelineObject::evaluateSynchronous(TimePoint time) 
+{ 
+	return {}; 
+}
+
+/******************************************************************************
 * Returns a list of pipeline nodes that have this object in their pipeline.
 ******************************************************************************/
 QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) const

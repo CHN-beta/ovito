@@ -66,22 +66,8 @@ private:
 
 		/// Constructor.
 		PTMEngine(DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
-				QVector<bool> typesToIdentify, ConstPropertyPtr selection,
-				bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
-			StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, std::move(typesToIdentify), std::move(selection)),
-			_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
-			_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
-			_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),
-			_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true) : nullptr),
-			_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
-			_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, tr("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
-			_rmsdHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
-			{
-				_algorithm.emplace();
-				_algorithm->setCalculateDefGradient(outputDeformationGradient);
-				_algorithm->setIdentifyOrdering(particleTypes);
-				_algorithm->setRmsdCutoff(0.0); // Note: We do our own RMSD threshold filtering in postProcessStructureTypes().
-			}
+				const QVector<ElementType*>& structureTypes, const QVector<ElementType*>& orderingTypes, ConstPropertyPtr selection,
+				bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

@@ -28,6 +28,7 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
+DEFINE_PROPERTY_FIELD(DataObject, dataSource);
 DEFINE_REFERENCE_FIELD(DataObject, visElements);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 
@@ -77,30 +78,10 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 ******************************************************************************/
 DataObject::DataObject(DataSet* dataset) : RefTarget(dataset)
 {
-}
+	OVITO_ASSERT(dataset);
 
-/******************************************************************************
-* Sends an event to all dependents of this RefTarget.
-******************************************************************************/
-void DataObject::notifyDependentsImpl(const ReferenceEvent& event)
-{
-	// Automatically increment revision counter each time the object changes.
-	if(event.type() == ReferenceEvent::TargetChanged)
-		_revisionNumber++;
-
-	RefTarget::notifyDependentsImpl(event);
-}
-
-/******************************************************************************
-* Handles reference events sent by reference targets of this object.
-******************************************************************************/
-bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	// Automatically increment revision counter each time a sub-object of this object changes (except vis elements).
-	if(event.type() == ReferenceEvent::TargetChanged && !visElements().contains(static_cast<DataVis*>(source))) {
-		_revisionNumber++;
-	}
-	return RefTarget::referenceEvent(source, event);
+	// Data objects must live in the main thread.
+	moveToThread(dataset->thread());
 }
 
 /******************************************************************************
@@ -126,36 +107,6 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Creates a copy of this object.
-******************************************************************************/
-OORef<RefTarget> DataObject::clone(bool deepCopy, CloneHelper& cloneHelper) const
-{
-	// Let the base class create an instance of this class.
-	OORef<RefTarget> clone = RefTarget::clone(deepCopy, cloneHelper);
-
-	// Copy data source reference.
-	static_object_cast<DataObject>(clone)->_dataSource = this->_dataSource;
-
-	return clone;
-}
-
-/******************************************************************************
-* Returns the pipeline object that created this data object (may be NULL).
-******************************************************************************/
-PipelineObject* DataObject::dataSource() const
-{
-	return _dataSource;
-}
-
-/******************************************************************************
-* Returns the pipeline object that created this data object (may be NULL).
-******************************************************************************/
-void DataObject::setDataSource(PipelineObject* dataSource)
-{
-	_dataSource = dataSource;
-}
-
-/******************************************************************************
 * Determines if it is safe to modify this data object without unwanted side effects.
 * Returns true if there is only one exclusive owner of this data object (if any).
 * Returns false if there are multiple references to this data object from several
@@ -164,21 +115,20 @@ void DataObject::setDataSource(PipelineObject* dataSource)
 bool DataObject::isSafeToModify() const
 {
 	// Note: This method is not thread-safe. Must be called from the main thread only.
+	// The method is mainly used by the Python bindings to check if write access to the data object is permitted.
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 	OVITO_CHECK_OBJECT_POINTER(this);
+
 	if(_dataReferenceCount.loadRelaxed() <= 1) {
-		if(dependents().empty()) {
-			return true;
-		}
-		else if(dependents().size() == 1) {
+		for(const RefMaker* dependent : dependents()) {
 			// Recursively determine if the container of this data object is safe to modify as well.
 			// Only if the entire hierarchy of objects is safe to modify, we can safely modify
 			// the leaf object.
-			if(DataObject* owner = dynamic_object_cast<DataObject>(dependents().front())) {
+			if(const DataObject* owner = dynamic_object_cast<DataObject>(dependent)) {
 				return owner->isSafeToModify();
 			}
-			else return true;
 		}
+		return true;
 	}
 	return false;
 }
@@ -193,16 +143,19 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 {
 	// Note: This method is not thread-safe. Must only be called from the main thread.
 	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	OVITO_CHECK_OBJECT_POINTER(this);
 	OVITO_ASSERT(subObject);
 	OVITO_ASSERT(hasReferenceTo(subObject));
-	OVITO_ASSERT(subObject->numberOfStrongReferences() >= 1);
-	if(subObject && subObject->numberOfStrongReferences() > 1) {
+	OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
+	
+	if(subObject && !subObject->isSafeToModify()) {
 		OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
 		replaceReferencesTo(subObject, clone);
+		OVITO_ASSERT(hasReferenceTo(clone));
 		subObject = clone;
 	}
-	OVITO_ASSERT(subObject->numberOfStrongReferences() == 1);
+	OVITO_ASSERT(subObject->isSafeToModify());
 	return const_cast<DataObject*>(subObject);
 }
 

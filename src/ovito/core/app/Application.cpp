@@ -68,7 +68,7 @@ void Application::qtMessageOutput(QtMsgType type, const QMessageLogContext& cont
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application() : _exitCode(0), _consoleMode(true), _headlessMode(true)
+Application::Application()
 {
 	// Set global application pointer.
 	OVITO_ASSERT(_instance == nullptr);	// Only allowed to create one Application class instance.

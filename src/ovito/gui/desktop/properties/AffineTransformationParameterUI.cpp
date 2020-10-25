@@ -73,7 +73,7 @@ void AffineTransformationParameterUI::updatePropertyValue()
 					val(row, column) = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editObject()->setPropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(*propertyField(), currentValue);
 			}
 			Q_EMIT valueEntered();
 		}

@@ -42,6 +42,16 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
 			qPrintable(QString("Flag PROPERTY_FIELD_NO_CHANGE_MESSAGE has not been set for property field '%1' of class '%2' even though '%2' is not derived from RefTarget.")
 					.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
 
+	OVITO_ASSERT_MSG(owner->getOOClass().isDerivedFrom(DataObject::OOClass()) == descriptor.isDataObjectField(), "PropertyFieldBase::generateTargetChangedEvent()", qPrintable(QString("Property field '%1' of class %2 has not been correctly marked as PROPERTY_FIELD_DATA_OBJECT.").arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
+	if(descriptor.isDataObjectField()) {
+		// Change events are only sent by a DataObject if the object
+		// is not shared by multiple owners and if we are in the main thread.
+		if(QThread::currentThread() != owner->thread())
+			return;
+		if(!static_object_cast<DataObject>(owner)->isSafeToModify())
+			return;
+	}
+
 	// Send notification message to dependents of owner object.
 	if(eventType != ReferenceEvent::TargetChanged) {
 		OVITO_ASSERT(owner->isRefTarget());
@@ -67,7 +77,20 @@ void PropertyFieldBase::generatePropertyChangedEvent(RefMaker* owner, const Prop
 ******************************************************************************/
 bool PropertyFieldBase::isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor& descriptor) const
 {
-	return descriptor.automaticUndo() && owner->dataset() && owner->dataset()->undoStack().isRecording();
+	OVITO_ASSERT_MSG(owner->getOOClass().isDerivedFrom(DataObject::OOClass()) == descriptor.isDataObjectField(), "PropertyFieldBase::isUndoRecordingActive()", qPrintable(QString("Property field '%1' of class %2 has not been correctly marked as PROPERTY_FIELD_DATA_OBJECT.").arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
+
+	if(descriptor.automaticUndo() && owner->dataset()) {
+		if(descriptor.isDataObjectField()) {
+			// Undo recording is only performed for a DataObject if the object
+			// is not shared by multiple owners and if we are in the main thread.
+			if(QThread::currentThread() != owner->thread())
+				return false;
+			if(!static_object_cast<DataObject>(owner)->isSafeToModify())
+				return false;
+		}
+		return owner->dataset()->undoStack().isRecording();
+	}
+	return false;
 }
 
 /******************************************************************************
@@ -112,11 +135,23 @@ void SingleReferenceFieldBase::swapReference(RefMaker* owner, const PropertyFiel
 
 	OORef<RefTarget> oldTarget(_pointer);
 
-	if(inactiveTarget && !descriptor.isWeakReference())
+	if(inactiveTarget && !descriptor.isWeakReference()) {
 		inactiveTarget->incrementReferenceCount();
 
-	if(_pointer && !descriptor.isWeakReference())
+		// Increment the strong reference counter of data objects if they are
+		// referenced by other data objects.
+		if(descriptor.isDataObjectField() && descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()))
+			static_object_cast<DataObject>(inactiveTarget.get())->incrementDataReferenceCount();
+	}
+
+	if(_pointer && !descriptor.isWeakReference()) {
+		// Decrement the strong reference counter of data objects if they were
+		// referenced by other data objects.
+		if(descriptor.isDataObjectField() && descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()))
+			static_object_cast<DataObject>(_pointer)->decrementDataReferenceCount();
+
 		_pointer->decrementReferenceCount();
+	}
 
 	_pointer = inactiveTarget.get();
 
@@ -222,6 +257,12 @@ OORef<RefTarget> VectorReferenceFieldBase::removeReference(RefMaker* owner, cons
 	// Release old reference target if there are no more references to it.
 	if(target) {
 		if(!descriptor.isWeakReference()) {
+
+			// Decrement the strong reference counter of data objects if they were
+			// referenced by other data objects.
+			if(descriptor.isDataObjectField() && descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()))
+				static_object_cast<DataObject>(target)->decrementDataReferenceCount();
+
 			OVITO_ASSERT(target->objectReferenceCount() >= 2);
 			target->decrementReferenceCount();
 		}
@@ -280,8 +321,14 @@ int VectorReferenceFieldBase::addReference(RefMaker* owner, const PropertyFieldD
 		OVITO_ASSERT(index >= 0 && index <= pointers.size());
 		pointers.insert(index, target.get());
 	}
-	if(target && !descriptor.isWeakReference())
+	if(target && !descriptor.isWeakReference()) {
 		target->incrementReferenceCount();
+
+		// Increment the strong reference counter of data objects if they are
+		// referenced by other data objects.
+		if(descriptor.isDataObjectField() && descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()))
+			static_object_cast<DataObject>(target.get())->incrementDataReferenceCount();
+	}
 
 	// Add the RefMaker to the list of dependents of the new target.
 	if(target && !target->_dependents.contains(owner))

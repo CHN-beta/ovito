@@ -507,12 +507,14 @@ public:
 	PropertyAccess(PropertyObject* property) 
 		: ParentType(property) {}
 
+#if 0
 	/// When the PropertyAccess object goes out of scope, an automatic change message is sent by the
 	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccess object.
 	~PropertyAccess() {
 		if(storage())
 			storage()->notifyTargetChanged();
 	}
+#endif
 };
 
 /**

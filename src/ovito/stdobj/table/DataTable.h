@@ -90,19 +90,19 @@ public:
 private:
 
 	/// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalStart, setIntervalStart);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, intervalStart, setIntervalStart, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The upper bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalEnd, setIntervalEnd);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, intervalEnd, setIntervalEnd, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The label of the x-axis (optional).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelX, setAxisLabelX);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, axisLabelX, setAxisLabelX, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The label of the y-axis (optional).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelY, setAxisLabelY);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, axisLabelY, setAxisLabelY, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The plotting mode for this data table.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode, plotMode, setPlotMode);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(PlotMode, plotMode, setPlotMode, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 /**

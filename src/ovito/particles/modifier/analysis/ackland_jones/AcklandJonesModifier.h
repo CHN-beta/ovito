@@ -84,10 +84,12 @@ private:
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
-	};
 
-	/// Determines the coordination structure of a single particle using the bond-angle analysis method.
-	static StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify);
+	private:
+	
+		/// Determines the coordination structure of a single particle using the bond-angle analysis method.
+		StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
+	};
 };
 
 }	// End of namespace

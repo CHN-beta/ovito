@@ -38,6 +38,7 @@ void RefTarget::aboutToBeDeleted()
 {
 	OVITO_CHECK_OBJECT_POINTER(this);
 	OVITO_ASSERT(this->__isObjectAlive());
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::aboutToBeDeleted()", "This function may only be called from the main thread.");
 
 	// Make sure undo recording is not active while deleting the object from memory.
 	UndoSuspender noUndo(this);
@@ -248,6 +249,4 @@ bool RefTarget::isObjectBeingEdited() const
 	return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
 }
 
-
 }	// End of namespace
-

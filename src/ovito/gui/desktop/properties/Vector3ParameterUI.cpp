@@ -96,7 +96,7 @@ void Vector3ParameterUI::updatePropertyValue()
 					val[_component] = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editObject()->setPropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(*propertyField(), currentValue);
 			}
 
 			Q_EMIT valueEntered();

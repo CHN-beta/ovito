@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,9 +33,12 @@ namespace Ovito {
 ******************************************************************************/
 DataCollection* PipelineFlowState::mutableData()
 {
-    if(_data && _data->numberOfStrongReferences() > 1) {
+	// Note: This method is not thread-safe. Must only be called from the main thread.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
+    if(_data && !_data->isSafeToModify()) {
         _data = CloneHelper().cloneObject(_data.get(), false);
-		OVITO_ASSERT(_data->numberOfStrongReferences() == 1);
+		OVITO_ASSERT(_data->isSafeToModify());
     }
     return _data.get();
 }

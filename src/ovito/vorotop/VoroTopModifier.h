@@ -78,8 +78,8 @@ private:
 
 		/// Constructor.
 		VoroTopAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, QVector<bool> typesToIdentify) :
-			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const QVector<ElementType*>& structureTypes) :
+			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_filterFile(filterFile),
 			_filter(std::move(filter)),
 			_radii(std::move(radii)) {}

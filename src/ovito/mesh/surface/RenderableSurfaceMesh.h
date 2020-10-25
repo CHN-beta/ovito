@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,19 +49,19 @@ public:
 private:
 
 	/// The surface part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, surfaceMesh, setSurfaceMesh);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(TriMesh, surfaceMesh, setSurfaceMesh, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The cap polygon part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, capPolygonsMesh, setCapPolygonsMesh);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(TriMesh, capPolygonsMesh, setCapPolygonsMesh, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The material colors assigned to the surface mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::vector<ColorA>, materialColors, setMaterialColors, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The mapping of triangles of the renderable surface mesh to the original mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<size_t>, originalFaceMap, setOriginalFaceMap);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::vector<size_t>, originalFaceMap, setOriginalFaceMap, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// Indicates whether triangles of the surface mesh should be rendered with active backface culling.
-	DECLARE_RUNTIME_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(bool, backfaceCulling, setBackfaceCulling, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

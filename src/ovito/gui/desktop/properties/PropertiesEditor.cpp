@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -150,6 +150,12 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
 {
 	if(field == PROPERTY_FIELD(editObject)) {
+
+		// Do not allow editing of data objects that have shared ownership. 
+		// Otherwise we may risk race conditions when the data object changes while
+		// it is being conusmed by the data pipeline.
+		OVITO_ASSERT(!dynamic_object_cast<DataObject>(newTarget) || static_object_cast<DataObject>(newTarget)->isSafeToModify());
+
 		setDataset(editObject() ? editObject()->dataset() : nullptr);
 		if(oldTarget) oldTarget->unsetObjectEditingFlag();
 		if(newTarget) newTarget->setObjectEditingFlag();
@@ -158,5 +164,15 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget);
 }
+
+/******************************************************************************
+* Changes the value of a non-animatable property field of the object being edited.
+******************************************************************************/
+void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
+{
+	OVITO_ASSERT(editObject());
+	editObject()->setPropertyFieldValue(field, newValue);
+}
+
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 ******************************************************************************/
 ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
 {
-	OORef<ParticleType> stype(new ParticleType(dataset()));
+	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset());
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
 	stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
@@ -91,16 +91,23 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Returns a bit flag array which indicates what structure types to search for.
+* Compute engine constructor.
 ******************************************************************************/
-QVector<bool> StructureIdentificationModifier::getTypesToIdentify(int numTypes) const
+StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection) :
+	_positions(std::move(positions)),
+	_simCell(simCell),
+	_selection(std::move(selection)),
+	_structures(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty, false)),
+	_inputFingerprint(std::move(fingerprint)) 
 {
-	QVector<bool> typesToIdentify(numTypes, true);
-	for(ElementType* type : structureTypes()) {
-		if(type->numericId() >= 0 && type->numericId() < numTypes)
-			typesToIdentify[type->numericId()] = type->enabled();
+	// Create deep copies of the structure elements types, because data objects owned by the modifier should
+	// not be passed to the data pipeline.
+	for(const ElementType* type : structureTypes) {
+		OVITO_ASSERT(type && type->numericId() == _structures->elementTypes().size());
+
+		// Attach structure types to output particle property.
+		_structures->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
 	}
-	return typesToIdentify;
 }
 
 /******************************************************************************
@@ -120,9 +127,6 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	// Finalize output property.
 	PropertyPtr structureProperty = postProcessStructureTypes(time, modApp, structures());
 	ConstPropertyAccess<int> structureData(structureProperty);
-
-	// Attach structure types to output particle property.
-	structureProperty->setElementTypes(modifier->structureTypes());
 
 	// Add output property to the particles.
 	particles->createProperty(structureProperty);
@@ -173,7 +177,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
 	// Use the structure types as labels for the output bar chart.
 	PropertyObject* xProperty = table->expectMutableProperty(DataTable::XProperty);
-	for(const ElementType* type : modifier->structureTypes()) {
+	for(const ElementType* type : structureProperty->elementTypes()) {
 		if(type->enabled())
 			xProperty->addElementType(type);
 	}

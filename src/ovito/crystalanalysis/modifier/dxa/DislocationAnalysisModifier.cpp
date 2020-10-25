@@ -199,6 +199,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 			particles,
 			posProperty,
 			simCell,
+			structureTypes(),
 			inputCrystalStructure(),
 			maxTrialCircuitSize(),
 			circuitStretchability(),

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,10 +68,10 @@ public:
 private:
 
 	/// The list of clipped and wrapped line segments.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<RenderableDislocationLines::Segment>, lineSegments, setLineSegments);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::vector<RenderableDislocationLines::Segment>, lineSegments, setLineSegments, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The associated cluster graph.
-	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph);
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,7 +109,8 @@ void FilenameParameterUI::setEnabled(bool enabled)
 {
 	if(enabled == isEnabled()) return;
 	PropertyParameterUI::setEnabled(enabled);
-	if(selectorWidget()) selectorWidget()->setEnabled(editObject() && isEnabled());
+	if(selectorWidget()) 
+		selectorWidget()->setEnabled(editObject() && isEnabled());
 }
 
 }	// End of namespace

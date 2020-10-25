@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -256,7 +256,10 @@ public:
 	///
 	/// The recording state can be controlled via the suspend() and resume() methods.
 	/// Or it can be temporarily suspended using the UndoSuspender helper class.
-	bool isRecording() const { return !isSuspended() && _compoundStack.empty() == false; }
+	bool isRecording() const { 
+		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::isRecording()", "This method must only be called from the main thread.");
+		return !isSuspended() && _compoundStack.empty() == false; 
+	}
 
 	/// \brief Records a single operation.
 	/// \param operation An instance of a UndoableOperation derived class that encapsulates
@@ -473,26 +476,26 @@ private:
 
 	/// A call to suspend() increases this value by one.
 	/// A call to resume() decreases it.
-	int _suspendCount;
+	int _suspendCount = 0;
 
 	/// Current position in the undo stack. This is where
 	/// new undoable edits will be inserted.
-	int _index;
+	int _index = -1;
 
 	/// The state which has been marked as clean.
-	int _cleanIndex;
+	int _cleanIndex = -1;
 
 	/// The stack of open compound records.
 	std::vector<std::unique_ptr<CompoundOperation>> _compoundStack;
 
 	/// Maximum number of records in the undo stack.
-	int _undoLimit;
+	int _undoLimit = 20;
 
 	/// Indicates if we are currently undoing an operation.
-	bool _isUndoing;
+	bool _isUndoing = false;
 
 	/// Indicates if we are currently redoing an operation.
-	bool _isRedoing;
+	bool _isRedoing = false;
 
 	friend class UndoSuspender;
 };
@@ -510,7 +513,10 @@ private:
  */
 class OVITO_CORE_EXPORT UndoSuspender {
 public:
-	UndoSuspender(UndoStack& undoStack) : _suspendCount(&undoStack._suspendCount) { ++(*_suspendCount); }
+	UndoSuspender(UndoStack& undoStack) : _suspendCount(&undoStack._suspendCount) { 
+		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoSuspender::UndoSuspender()", "This method must only be called from the main thread.");
+		++(*_suspendCount); 
+	}
 	UndoSuspender(const RefMaker* object);
 	~UndoSuspender() { reset(); }
 	void reset() {

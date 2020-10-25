@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -87,16 +87,16 @@ public:
 private:
 
 	/// The shortened title of this phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, shortName, setShortName);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, shortName, setShortName, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The dimensionality type of the phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(Dimensionality, dimensionality, setDimensionality);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Dimensionality, dimensionality, setDimensionality, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// The type of crystal symmetry of the phase if it is crystalline.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass, PROPERTY_FIELD_DATA_OBJECT);
 
 	/// List of Burgers vector families defined for the phase if it is crystalline.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies, PROPERTY_FIELD_DATA_OBJECT);
 };
 
 }	// End of namespace

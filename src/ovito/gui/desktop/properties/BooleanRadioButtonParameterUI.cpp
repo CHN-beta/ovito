@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -140,7 +140,7 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 					}
 				}
 				else if(propertyField()) {
-					editObject()->setPropertyFieldValue(*propertyField(), (bool)id);
+					editor()->changePropertyFieldValue(*propertyField(), (bool)id);
 				}
 			}
 			Q_EMIT valueEntered();

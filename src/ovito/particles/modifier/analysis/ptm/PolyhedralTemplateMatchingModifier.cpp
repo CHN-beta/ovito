@@ -76,7 +76,7 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 
 	// Define the ordering types.
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-		OORef<ParticleType> otype = new ParticleType(dataset);
+		DataOORef<ParticleType> otype = DataOORef<ParticleType>::create(dataset);
 		otype->setNumericId(id);
 		otype->setColor({0.75f, 0.75f, 0.75f});
 		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
@@ -109,9 +109,6 @@ void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDesc
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
 {
-	if(structureTypes().size() != PTMAlgorithm::NUM_STRUCTURE_TYPES)
-		throwException(tr("The number of structure types has changed. Please remove this modifier from the data pipeline and insert it again."));
-
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -127,8 +124,39 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 	const PropertyObject* typeProperty = outputOrderingTypes() ? particles->expectProperty(ParticlesObject::TypeProperty) : nullptr;
 
 	return std::make_shared<PTMEngine>(dataset(), posProperty, particles, typeProperty, simCell,
-			getTypesToIdentify(PTMAlgorithm::NUM_STRUCTURE_TYPES), selectionProperty,
+			structureTypes(), orderingTypes(), selectionProperty,
 			outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
+}
+
+/******************************************************************************
+* Compute engine constructor.
+******************************************************************************/
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+		const QVector<ElementType*>& structureTypes, const QVector<ElementType*>& orderingTypes, ConstPropertyPtr selection,
+		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
+	StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
+	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
+	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
+	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),
+	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true) : nullptr),
+	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
+	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, tr("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
+	_rmsdHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
+{
+	_algorithm.emplace();
+	_algorithm->setCalculateDefGradient(outputDeformationGradient);
+	_algorithm->setIdentifyOrdering(particleTypes);
+	_algorithm->setRmsdCutoff(0.0); // Note: We do our own RMSD threshold filtering in postProcessStructureTypes().
+
+	// Attach ordering types to output particle property.
+	if(_orderingTypes) {
+		// Create deep copies of the elements types, because data objects owned by the modifier should
+		// not be passed to the data pipeline.
+		for(const ElementType* type : orderingTypes) {
+			// Attach element type to output particle property.
+			_orderingTypes->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
+		}
+	}
 }
 
 /******************************************************************************
@@ -143,8 +171,8 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 		throw Exception(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Specify the structure types the PTM should look for.
-	for(int i = 0; i < typesToIdentify().size() && i < PTMAlgorithm::NUM_STRUCTURE_TYPES; i++) {
-		_algorithm->setStructureTypeIdentification(static_cast<PTMAlgorithm::StructureType>(i), typesToIdentify()[i]);
+	for(int i = 0; i < PTMAlgorithm::NUM_STRUCTURE_TYPES; i++) {
+		_algorithm->setStructureTypeIdentification(static_cast<PTMAlgorithm::StructureType>(i), typeIdentificationEnabled(i));
 	}
 
 	// Initialize the algorithm object.
@@ -340,8 +368,6 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(TimePoint time,
 		particles->createProperty(deformationGradients());
 	}
 	if(orderingTypes() && modifier->outputOrderingTypes()) {
-		// Attach ordering types to output particle property.
-		orderingTypes()->setElementTypes(modifier->orderingTypes());
 		particles->createProperty(orderingTypes());
 	}
 
