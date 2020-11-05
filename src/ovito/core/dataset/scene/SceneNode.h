@@ -220,13 +220,17 @@ public:
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return _nodeName; }
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
+
 protected:
 
 	/// From RefMaker.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// From RefMaker.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// From RefMaker.
 	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;

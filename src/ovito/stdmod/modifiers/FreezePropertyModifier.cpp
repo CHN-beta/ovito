@@ -171,7 +171,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 	// Get the property that will be overwritten by the stored one.
 	PropertyObject* outputProperty;
 	if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
-		outputProperty = container->createProperty(destinationProperty().type(), true);
+		outputProperty = container->createProperty(destinationProperty().type(), true, Application::instance()->executionContext());
 		if(outputProperty->dataType() != myModApp->property()->dataType()
 			|| outputProperty->componentCount() != myModApp->property()->componentCount()
 			|| outputProperty->stride() != myModApp->property()->stride())

@@ -42,15 +42,11 @@ public:
 	PipelineFlowState() = default;
 
 	/// \brief Constructor that initializes the state with the data from a DataCollection.
-	/// \param dataCollection The data which is used to fill the state. A shallow copy of the DataCollection object is automatically made if necessary.
+	/// \param dataCollection The data which is used to fill the state.
 	/// \param status A status object describing the outcome of the pipeline evaluation.
 	/// \param validityInterval The time interval during which the state is valid.
 	PipelineFlowState(const DataCollection* dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-		_data(dataCollection), _status(status), _stateValidity(validityInterval)
-	{
-		// Ensure that the DataCollection object is not referenced by more than one PipelineFlowState.
-		mutableData();
-	}
+		_data(dataCollection), _status(status), _stateValidity(validityInterval) {}
 
 	/// \brief Discards all contents of this state object and resets it to an empty state.
 	void reset() {
@@ -149,6 +145,15 @@ public:
 	DataObjectClass* expectMutableObject() {
 		OVITO_ASSERT(data());
 		return mutableData()->expectMutableObject<DataObjectClass>();
+	}
+
+	/// Finds an object of the given type in the list of data objects stored in this flow state.
+	/// If it exists, makes the data object mutable.
+	template<class DataObjectClass>
+	DataObjectClass* getMutableObject() {
+		if(const DataObjectClass* obj = getObject<DataObjectClass>())
+			return mutableData()->makeMutable<DataObjectClass>(obj);
+		return nullptr;
 	}
 
 	/// Finds an object of the given type in the list of data objects stored in this flow state
@@ -355,21 +360,25 @@ public:
 		return mutableData()->makeMutable(path, deepCopy);
 	}
 
+	/// Makes the last object in the data path mutable and returns a pointer to the mutable copy.
+	/// Also update the data path to point to the new object.
+	DataObject* makeMutableInplace(ConstDataObjectPath& path);
+
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, Args&&... args) {
+	DataObjectType* createObject(const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
 		OVITO_ASSERT(data());
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, std::forward<Args>(args)...);
+		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, executionContext, std::forward<Args>(args)...);
 	}
 
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assign a unique identifier to the object, assigns the given data source object, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Args&&... args) {
+	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
 		OVITO_ASSERT(data());
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, std::forward<Args>(args)...);
+		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, executionContext, std::forward<Args>(args)...);
 	}
 
 	/// Builds a list of the global attributes stored in this pipeline state.
@@ -394,6 +403,12 @@ public:
 	AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
 		OVITO_ASSERT(data());
 		return mutableData()->addAttribute(key, std::move(value), dataSource);
+	}
+
+	/// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
+	AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
+		OVITO_ASSERT(data());
+		return mutableData()->setAttribute(key, std::move(value), dataSource);
 	}
 
 	/// Returns a new unique data object identifier that does not collide with the

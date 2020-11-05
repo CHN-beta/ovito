@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "PDBImporter.h"
@@ -152,7 +152,7 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
+void PDBImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -161,9 +161,6 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 #if 0
 	// Parse metadata records.
@@ -420,10 +417,10 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 	try {
 		// Parse the PDB file's contents.
 		gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_line_input(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		structure.merge_chain_parts();
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		if(structure.models.empty())
 			throw Exception(tr("PDB parsing error: No structural models."));
@@ -438,9 +435,9 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 		}
 
 		// Allocate property arrays for atoms.
-		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
-		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
-		PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
+		setParticleCount(natoms);
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
 
@@ -448,26 +445,25 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 		bool hasOccupancy = false;
 		for(const gemmi::Chain& chain : model.chains) {
 			for(const gemmi::Residue& residue : chain.residues) {
-				if(isCanceled()) return {};
+				if(isCanceled()) return;
 				for(const gemmi::Atom& atom : residue.atoms) {
 					// Atomic position.
 					*posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
 					// Atomic type.
 					*typeIter++ = atom.element.ordinal();
-					if(!typeList->hasTypeId(atom.element.ordinal()))
-						typeList->addNamedTypeId(atom.element.ordinal(), QString::fromStdString(atom.element.name()), false);
+					addNumericType(typeProperty.storage(), atom.element.ordinal(), QString::fromStdString(atom.element.name()), ParticleType::OOClass());
 
 					// Check for presence of occupancy values.
 					if(atom.occ != 0 && atom.occ != 1) hasOccupancy = true;
 				}
 			}
 		}
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float, 1, 0, false);
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {
@@ -482,7 +478,7 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 		// Since we created particle types on the go while reading the particles, the assigned particle type IDs
 		// depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
-		typeList->sortTypesById();
+		typeProperty.storage()->sortElementTypesById();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {
@@ -512,20 +508,20 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 				cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
 				cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
 			}
-			frameData->setSimulationCell(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if(posProperty.size() != 0) {
 			// Use bounding box of atomic coordinates as non-periodic simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->setPbcFlags(false, false, false);
-			frameData->setSimulationCell(AffineTransformation(
+			simulationCell()->setPbcFlags(false, false, false);
+			simulationCell()->setCellMatrix(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
 					boundingBox.minc - Point3::Origin()));
 		}
-		frameData->setStatus(tr("Number of atoms: %1").arg(natoms));
+		state().setStatus(tr("Number of atoms: %1").arg(natoms));
 	}
 	catch(const std::exception& e) {
 		throw Exception(tr("PDB file error: %1").arg(e.what()));
@@ -535,13 +531,14 @@ FileSourceImporter::FrameDataPtr PDBImporter::FrameLoader::loadFile()
 	if(!stream.eof()) {
 		stream.readLine();
 		if(!stream.eof()) {
-			frameData->signalAdditionalFrames();
+			signalAdditionalFrames();
 		}
 	}
 
 #endif
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

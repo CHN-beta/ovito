@@ -40,6 +40,7 @@ namespace Ovito {
         using ConstPropertyPtr = DataOORef<const PropertyObject>;
         class PropertyReference;
         template<class PropertyContainerType> class TypedPropertyReference;
+        class ElementType;
         class InputColumnMapping;
         template<class PropertyContainerType> class TypedInputColumnMapping;
         class InputColumnReader;

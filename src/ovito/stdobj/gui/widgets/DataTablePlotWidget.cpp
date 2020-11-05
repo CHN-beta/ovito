@@ -289,7 +289,7 @@ void DataTablePlotWidget::updateDataPlot()
 		QStringList labels;
 		ConstPropertyAccess<void,true> yarray(y);
 		for(int i = 0; i < y->size(); i++) {
-			ElementType* type = y->elementType(i);
+			const ElementType* type = y->elementType(i);
 			if(!type && x) type = x->elementType(i);
 			if(type) {
 				ycoords.push_back(yarray.get<double>(i, 0));

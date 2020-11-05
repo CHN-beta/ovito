@@ -142,10 +142,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 	// Export to selected file.
 	try {
 		// Create exporter service.
-		OORef<AttributeFileExporter> exporter = new AttributeFileExporter(currentPipeline()->dataset());
-
-		// Load user-defined default settings.
-		exporter->loadUserDefaults();
+		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create(currentPipeline()->dataset(), Application::instance()->executionContext());
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

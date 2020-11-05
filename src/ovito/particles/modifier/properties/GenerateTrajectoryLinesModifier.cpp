@@ -68,8 +68,18 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(DataSet* datase
 	_everyNthFrame(1),
 	_unwrapTrajectories(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void GenerateTrajectoryLinesModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create the vis element for rendering the trajectories created by the modifier.
-	setTrajectoryVis(new TrajectoryVis(dataset));
+	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), executionContext));
+
+	Modifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -262,21 +272,21 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 
 		// Copy re-ordered trajectory points.
 		trajObj->setElementCount(pointData.size());
-		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false);
+		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false, Application::instance()->executionContext());
 		auto piter = permutation.cbegin();
 		for(Point3& p : trajPosProperty) {
 			p = pointData[*piter++];
 		}
 
 		// Copy re-ordered trajectory time stamps.
-		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false);
+		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false, Application::instance()->executionContext());
 		piter = permutation.cbegin();
 		for(int& t : trajTimeProperty) {
 			t = sampleFrames[timeData[*piter++]];
 		}
 
 		// Copy re-ordered trajectory ids.
-		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false);
+		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false, Application::instance()->executionContext());
 		piter = permutation.cbegin();
 		for(qlonglong& id : trajIdProperty) {
 			id = idData[*piter++];

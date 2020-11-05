@@ -88,7 +88,7 @@ void ManualSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		container->verifyIntegrity();
 
 		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyObject::GenericSelectionProperty),
+				container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext()),
 				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
 					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 

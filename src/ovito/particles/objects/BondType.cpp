@@ -40,37 +40,34 @@ BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0)
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-bool BondType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void BondType::initializeType(int propertyType)
 {
-	if(!ElementType::initialize(isNewlyCreated, name, attributes, typePropertyId))
-		return false;
+	ElementType::initializeType(propertyType);
 
-	// Initialize color value.
-	if(isNewlyCreated && !attributes.contains(QStringLiteral("color"))) {
-		setColor(getDefaultBondColor(static_cast<BondsObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-	}
+	setColor(getDefaultBondColor(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId()));
+	setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId()));
+}
 
-	// Initialize radius value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("radius"))) {
-			setRadius(attributes.value(QStringLiteral("radius")).value<FloatType>());
-		}
-		else {
-			setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-		}
-	}
-	else {
-		FloatType r = attributes.value(QStringLiteral("radius"), QVariant::fromValue(radius())).value<FloatType>();
-		if(r != radius()) {
-			if(!isSafeToModify())
-				return false;
-			setRadius(r);
-		}
-	}
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	ElementType::updateEditableProxies(state, dataPath);
 
-	return true;
+	// Note: 'this' may no longer exist at this point, because the base method implementationmay
+	// have already replaced it with a mutable copy.
+	const BondType* self = static_object_cast<BondType>(dataPath.back());
+
+	if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
+		if(proxy->radius() != self->radius()) {
+			// Make this data object mutable first.
+			BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
+			mutableSelf->setRadius(proxy->radius());
+		}
+	}
 }
 
 /******************************************************************************

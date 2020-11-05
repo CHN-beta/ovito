@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,15 +43,15 @@ namespace Ovito {
 		class ParticlesObject;
 		class BondType;
 		class BondsObject;
+		class AnglesObject;
+		class DihedralsObject;
+		class ImpropersObject;
 		class ParticlesVis;
 		class BondsVis;
 		class VectorVis;
 		class ParticleBondMap;
 		class TrajectoryObject;
-
-		class ParticleFrameData;
 		class ParticleImporter;
-
 		class NearestNeighborFinder;
 		class CutoffNeighborFinder;
 	}

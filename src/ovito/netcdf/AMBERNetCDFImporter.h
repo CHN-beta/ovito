@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
@@ -67,8 +66,8 @@ public:
 	virtual QString objectTitle() const override { return tr("NetCDF"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles(), useCustomColumnMapping(), customColumnMapping());
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, sortParticles(), useCustomColumnMapping(), customColumnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -81,66 +80,59 @@ public:
 
 private:
 
-	class FrameData : public ParticleFrameData
+	class NetCDFFile 
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
+		/// Destructor.
+		~NetCDFFile() { close(); }
+		
+		/// Open NetCDF file for reading.
+		QString open(const QString& filename);
 
-		/// Returns the file column mapping generated from the information in the file header.
-		ParticleInputColumnMapping& detectedColumnMapping() { return _detectedColumnMapping; }
+		/// Close the current NetCDF file.
+		void close();
 
-	private:
+		/// Scans the NetCDF file and determines the set of particle properties it contains.
+		ParticleInputColumnMapping detectColumnMapping(size_t movieFrame = 0);
 
-		ParticleInputColumnMapping _detectedColumnMapping;
+        /// Map dimensions from NetCDF file to internal representation.
+        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t *startp, size_t *countp);
+
+		bool _ncIsOpen = false;
+		int _ncid = -1;
+		int _root_ncid = -1;
+		int _frame_dim, _atom_dim, _spatial_dim, _sph_dim, _dem_dim;
+		int _cell_origin_var, _cell_lengths_var, _cell_angles_var;
+		int _shear_dx_var;	
+		int _coordinatesVar = -1;
 	};
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
-		/// Normal constructor.
+		/// Constructor.
 		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file,
+				const DataCollection* masterCollection, PipelineObject* dataSource,
 				bool sortParticles,
 				bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
-			: FileSourceImporter::FrameLoader(dataset, frame, file), _parseFileHeaderOnly(false), _sortParticles(sortParticles), _useCustomColumnMapping(useCustomColumnMapping), _customColumnMapping(customColumnMapping) {}
-
-		/// Constructor used when reading only the file header information.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(dataset, frame, file), _parseFileHeaderOnly(true), _useCustomColumnMapping(false) {}
+			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), 
+			_sortParticles(sortParticles), 
+			_useCustomColumnMapping(useCustomColumnMapping), 
+			_customColumnMapping(customColumnMapping) {}
 
 		/// Returns the file column mapping used to load the file.
 		const ParticleInputColumnMapping& columnMapping() const { return _customColumnMapping; }
 
 	protected:
 
-        /// Map dimensions from NetCDF file to internal representation.
-        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t *startp, size_t *countp);
-
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 	private:
 
-		/// Is the NetCDF file open?
-		bool _ncIsOpen = false;
-
-		/// NetCDF ids.
-		int _ncid = -1;
-		int _root_ncid = -1;
-		int _frame_dim, _atom_dim, _spatial_dim, _sph_dim, _dem_dim;
-		int _cell_origin_var, _cell_lengths_var, _cell_angles_var;
-		int _shear_dx_var;
-
-		/// Open NetCDF file, and load additional information
-		void openNetCDF(const QString &filename, FrameData* frameData);
-
-		/// Close the current NetCDF file.
-		void closeNetCDF();
-
-		bool _parseFileHeaderOnly;
 		bool _sortParticles;
 		bool _useCustomColumnMapping;
 		ParticleInputColumnMapping _customColumnMapping;

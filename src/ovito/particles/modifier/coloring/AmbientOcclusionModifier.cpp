@@ -266,7 +266,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(TimePoint ti
 
 	// Get output property object.
 	ConstPropertyAccess<FloatType> brightnessValues(brightness());
-	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, {particles});
+	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, Application::instance()->executionContext(), {particles});
 	const FloatType* b = brightnessValues.cbegin();
 	for(Color& c : colorProperty) {
 		FloatType factor = FloatType(1) - intensity + (*b);

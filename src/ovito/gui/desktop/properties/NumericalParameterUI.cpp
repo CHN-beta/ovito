@@ -160,7 +160,9 @@ void NumericalParameterUI::onSpinnerValueChanged()
 		transaction.commit();
 	}
 	else {
+		qDebug() << "--- START resetCurrentCompoundOperation --- editor:" << editor() << "editObject:" << editObject();
 		dataset()->undoStack().resetCurrentCompoundOperation();
+		qDebug() << "--- END   resetCurrentCompoundOperation ---";
 		updatePropertyValue();
 	}
 }

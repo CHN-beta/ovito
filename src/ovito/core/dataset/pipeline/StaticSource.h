@@ -61,7 +61,7 @@ protected:
 private:
 
 	/// The data collection owned by this source.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataCollection, dataCollection, setDataCollection, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataCollection, dataCollection, setDataCollection);
 };
 
 }	// End of namespace

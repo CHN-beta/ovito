@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
-#include <ovito/stdobj/properties/PropertyContainerImportData.h>
+#include <ovito/stdobj/properties/PropertyAccess.h>
 
 namespace Ovito { namespace StdObj {
 
@@ -217,10 +217,9 @@ public:
 	/// \brief Initializes the object.
 	/// \param mapping Defines the mapping of columns of the input file
 	///        to the target properties.
-	/// \param destination The container where the parsed data will be stored in.
-	/// \param elementCount The number of data elements that will be read from the input file.
+	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(DataSet* dataset, const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount);
+	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, Application::ExecutionContext executionContext, bool removeExistingProperties = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);
@@ -257,17 +256,20 @@ private:
 	InputColumnMapping _mapping;
 
 	/// The container that receives the parsed data.
-	PropertyContainerImportData& _destination;
+	PropertyContainer* _container;
+
+	/// Indicates whether the file parsing is happening in an interactive GUI or in the context of a running script.
+	Application::ExecutionContext _executionContext;
 
 	struct TargetPropertyRecord {
-		PropertyPtr property;
+		PropertyObject* property = nullptr;
 		PropertyAccess<void,true> propertyArray;
 		uint8_t* data;
 		size_t stride;
 		size_t count;
 		int vectorComponent;
 		int dataType;
-		PropertyContainerImportData::TypeList* typeList = nullptr;
+		OvitoClassPtr elementTypeClass = nullptr;
 		bool numericElementTypes;
 		int nameOfNumericTypeColumn = -1;
 		std::pair<const char*, const char*> typeName{nullptr, nullptr};

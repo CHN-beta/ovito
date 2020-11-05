@@ -93,6 +93,7 @@
 #include <QElapsedTimer>
 #include <QtMath>
 #include <QBuffer>
+#include <QRegularExpression>
 #ifndef OVITO_DISABLE_THREADING
     #include <QException>
 #endif

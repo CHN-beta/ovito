@@ -60,7 +60,7 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 ******************************************************************************/
 ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
 {
-	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset());
+	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), Application::ExecutionContext::Scripting);
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
 	stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
@@ -144,7 +144,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 		}
 
 		// Assign colors to particles based on their structure type.
-		PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, false);
+		PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, false, Application::instance()->executionContext());
 		boost::transform(structureData, colorProperty.begin(), [&](int s) {
 			if(s >= 0 && s < structureTypeColors.size())
 				return structureTypeColors[s];
@@ -173,7 +173,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
 
 	// Output a bar chart with the type counts.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), modApp, DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), modApp, Application::ExecutionContext::Scripting, DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
 
 	// Use the structure types as labels for the output bar chart.
 	PropertyObject* xProperty = table->expectMutableProperty(DataTable::XProperty);

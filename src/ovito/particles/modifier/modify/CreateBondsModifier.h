@@ -122,8 +122,11 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CreateBondsModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	/// \param modApp The ModifierApplication object that has been created for this modifier.
 	virtual void initializeModifier(ModifierApplication* modApp) override;
 
 	/// Sets the cutoff radius for a pair of particle types.

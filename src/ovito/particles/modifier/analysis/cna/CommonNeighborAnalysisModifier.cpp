@@ -50,12 +50,22 @@ CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(DataSet* dataset)
 	_cutoff(3.2), 
 	_mode(AdaptiveCutoffMode)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void CommonNeighborAnalysisModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create the structure types.
 	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
 	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
 	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
 	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
 	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
+
+	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

@@ -46,6 +46,7 @@ protected:
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
+#if 0
 protected Q_SLOTS:
 
 	/// Is called when a spinner's value has changed.
@@ -60,19 +61,22 @@ protected Q_SLOTS:
 	/// Is called when the user aborts dragging a spinner interactively.
 	void onSizeSpinnerDragAbort(int dim);
 
+#endif
 	/// After the simulation cell size has changed, updates the UI controls.
 	void updateSimulationBoxSize();
 
 private:
 
+#if 0
 	/// After the user has changed a spinner's value, this method changes the
 	/// simulation cell geometry.
 	void changeSimulationBoxSize(int dim);
 
 	SpinnerWidget* simCellSizeSpinners[3];
-	BooleanParameterUI* pbczPUI;
 	AffineTransformationParameterUI* zvectorPUI[3];
 	AffineTransformationParameterUI* zoriginPUI;
+#endif
+	BooleanParameterUI* pbczPUI;
 };
 
 }	// End of namespace

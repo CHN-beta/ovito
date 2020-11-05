@@ -284,7 +284,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 ******************************************************************************/
 bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType)
 {
-	OORef<FileImporter> fileimporter;
+	OORef<FileImporter> fileImporter;
 
 	// Create file importer instance.
 	if(!importerType) {
@@ -294,27 +294,26 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 		if(!fileSource->dataset()->taskManager().waitForFuture(importerFuture))
 			return false;
 
-		fileimporter = importerFuture.result();
-		if(!fileimporter)
+		fileImporter = importerFuture.result();
+		if(!fileImporter)
 			fileSource->throwException(tr("Could not detect the format of the file to be imported. The format might not be supported."));
 	}
 	else {
 		// Caller has provided a specific importer type.
-		fileimporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
-		if(!fileimporter)
+		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
+		if(!fileImporter)
 			return false;
 	}
+	// Load user-defined default import settings.
+	fileImporter->loadUserDefaults(Application::instance()->executionContext());
 
 	// The importer must be a FileSourceImporter.
-	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileimporter);
+	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileImporter);
 	if(!newImporter)
 		fileSource->throwException(tr("The selected file type is not compatible."));
 
 	// Temporarily suppress viewport updates while setting up the newly imported data.
 	ViewportSuspender noVPUpdate(fileSource->dataset()->viewportConfig());
-
-	// Load user-defined default import settings.
-	newImporter->loadUserDefaults();
 
 	// Show the optional user interface (which is provided by the corresponding FileImporterEditor class) for the new importer.
 	for(OvitoClassPtr clazz = &newImporter->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {

@@ -135,7 +135,7 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	for(size_t row = 0; row < row_count; row++) {
 		// Write the X column.
 		if(table->plotMode() == DataTable::BarChart) {
-			ElementType* type = yprop->elementType(row);
+			const ElementType* type = yprop->elementType(row);
 			if(!type && xprop) type = xprop->elementType(row);
 			if(type) {
 				textStream() << formatColumnName(type->name()) << " ";

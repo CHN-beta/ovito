@@ -46,24 +46,27 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(dataset),
 	_keepSelection(true)
 {
-	setColorController(ControllerManager::createColorController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void AssignColorModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setColorController(ControllerManager::createColorController(dataset(), executionContext));
 	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
 
 	// Let this modifier operate on particles by default.
 	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"));
-}
 
-/******************************************************************************
-* Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
-******************************************************************************/
-void AssignColorModifier::loadUserDefaults()
-{
-	Modifier::loadUserDefaults();
+	if(executionContext == Application::ExecutionContext::Interactive) {
+		// In the graphical program environment, we clear the
+		// selection by default to make the assigned colors visible.
+		setKeepSelection(false);
+	}
 
-	// In the graphical program environment, we clear the
-	// selection by default to make the assigned colors visible.
-	setKeepSelection(false);
+	DelegatingModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -107,7 +110,7 @@ PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFl
 	mod->colorController()->getColorValue(time, color, state.mutableStateValidity());
 
 	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, objectPath);
+    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, Application::instance()->executionContext(), objectPath);
 	// Assign color to selected elements (or all elements if there is no selection).
 	colorProperty.fillSelected(color, selProperty.get());
 

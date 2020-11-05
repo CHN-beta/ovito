@@ -173,12 +173,8 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	OORef<FileSource> fileSource = existingFileSource;
 
 	// Create the object that will insert the imported data into the scene.
-	if(!fileSource) {
-		fileSource = new FileSource(dataset());
-		// Load user-defined default settings.
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			fileSource->loadUserDefaults();
-	}
+	if(!fileSource)
+		fileSource = OORef<FileSource>::create(dataset(), Application::instance()->executionContext());
 
 	// Create a new object node in the scene for the linked data.
 	OORef<PipelineSceneNode> pipeline;
@@ -187,7 +183,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 			UndoSuspender unsoSuspender(this);	// Do not create undo records for this part.
 
 			// Add object to scene.
-			pipeline = new PipelineSceneNode(dataset());
+			pipeline = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
 			pipeline->setDataProvider(fileSource);
 
 			// Let the importer subclass customize the pipeline scene node.
@@ -348,6 +344,38 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 			return QVector<Frame>{{ Frame(sourceUrl, 0, 1, dateTime, fileInfo.fileName()) }};
 		}
 	}
+}
+
+/******************************************************************************
+* Loads the data for the given frame from the external file.
+******************************************************************************/
+Future<PipelineFlowState> FileSourceImporter::loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource)
+{
+	// Create the frame loader for the requested frame.
+	FrameLoaderPtr frameLoader = createFrameLoader(frame, file, masterCollection, dataSource);
+	OVITO_ASSERT(frameLoader);
+
+	// Execute the loader in a background thread.
+	Future<PipelineFlowState> future = dataset()->taskManager().runTaskAsync(std::move(frameLoader));
+
+	// If the parser has detects additional frames following the first frame in the 
+	// input file being loaded, automatically turn on scanning of the input file.
+	// Only  automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
+	if(masterCollection == nullptr) {
+		// Note: Changing a parameter of the file importer must be done in the main thread.
+		future.finally(executor(), [this](TaskPtr task) {
+			if(!task->isCanceled()) {
+				FrameLoader* frameLoader = static_cast<FrameLoader*>(task.get());
+				OVITO_ASSERT(frameLoader->dataset() == dataset());
+				if(frameLoader->additionalFramesDetected()) {
+					UndoSuspender noUndo(this);
+					setMultiTimestepFile(true);
+				}
+			}
+		});
+	}
+
+	return future;
 }
 
 /******************************************************************************
@@ -529,7 +557,10 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 void FileSourceImporter::FrameLoader::perform()
 {
 	// Let the subclass implementation parse the file.
-	setResult(loadFile());
+	loadFile();
+
+	// Pass the constructed pipeline state back to the caller.
+	setResult(std::move(_state));
 }
 
 }	// End of namespace

@@ -58,12 +58,12 @@ private:
 	/// Stores a reference to the original DataObject this TransformedDataObject was generated from.
 	/// We use it to detect changes to the source object and avoid unnecessary regeneration
 	/// of the transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject);
 
 	/// Stores a revision version number of the TransformingDataVis that created this TransformedDataObject.
 	/// We use this to detect changes to the TransformingDataVis's parameters that require a re-generation of the
 	/// transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int, visElementRevision, setVisElementRevision, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(int, visElementRevision, setVisElementRevision);
 };
 
 }	// End of namespace

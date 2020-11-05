@@ -52,11 +52,22 @@ SET_PROPERTY_FIELD_LABEL(ParticlesObject, impropers, "Impropers");
 ******************************************************************************/
 ParticlesObject::ParticlesObject(DataSet* dataset) : PropertyContainer(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ParticlesObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
-	
+
 	// Create and attach a default visualization element for rendering the particles.
-	addVisElement(new ParticlesVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<ParticlesVis>::create(dataset(), executionContext));
+
+	PropertyContainer::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -334,20 +345,83 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 }
 
 /******************************************************************************
+* Sorts the particles list with respect to particle IDs.
+* Does nothing if particles do not have IDs.
+******************************************************************************/
+std::vector<size_t> ParticlesObject::sortById()
+{
+	std::vector<size_t> invertedPermutation = PropertyContainer::sortById();
+
+	// If the storage order of particles has changed, we need to update other topological 
+	// structures that refer to the particle indices.
+	if(!invertedPermutation.empty()) {
+
+		// Update bond topology data to match new particle ordering.
+		if(bonds()) {
+			if(PropertyAccess<ParticleIndexPair> bondTopology = makeBondsMutable()->getMutableProperty(BondsObject::TopologyProperty)) {
+				for(ParticleIndexPair& bond : bondTopology) {
+					for(qlonglong& idx : bond) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update angle topology data to match new particle ordering.
+		if(angles()) {
+			if(PropertyAccess<ParticleIndexTriplet> angleTopology = makeAnglesMutable()->getMutableProperty(AnglesObject::TopologyProperty)) {
+				for(ParticleIndexTriplet& angle : angleTopology) {
+					for(qlonglong& idx : angle) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update dihedral topology data to match new particle ordering.
+		if(dihedrals()) {
+			if(PropertyAccess<ParticleIndexQuadruplet> dihedralTopology = makeDihedralsMutable()->getMutableProperty(DihedralsObject::TopologyProperty)) {
+				for(ParticleIndexQuadruplet& dihedral : dihedralTopology) {
+					for(qlonglong& idx : dihedral) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update improper topology data to match new particle ordering.
+		if(impropers()) {
+			if(PropertyAccess<ParticleIndexQuadruplet> improperTopology = makeImpropersMutable()->getMutableProperty(ImpropersObject::TopologyProperty)) {
+				for(ParticleIndexQuadruplet& improper : improperTopology) {
+					for(qlonglong& idx : improper) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+	}
+	return invertedPermutation;
+}
+
+/******************************************************************************
 * Adds a set of new bonds to the particle system.
 ******************************************************************************/
-void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
+void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, Application::ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	// Check if there are existing bonds.
 	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
 		// Create the bonds object.
-		setBonds(new BondsObject(dataset()));
+		setBonds(DataOORef<BondsObject>::create(dataset(), executionContext));
 		bonds()->setElementCount(newBonds.size());
 
 		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false);
-		PropertyAccess<Vector3I> periodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false);
-		PropertyObject* bondTypeProperty = bondType ? bonds()->createProperty(BondsObject::TypeProperty, false) : nullptr;
+		PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext);
+		PropertyAccess<Vector3I> periodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
+		PropertyObject* bondTypeProperty = bondType ? bonds()->createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
 
 		// Copy data into property arrays.
 		auto t = topologyProperty.begin();
@@ -405,8 +479,8 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		bonds->setElementCount(outputBondCount);
 
 		PropertyAccess<ParticleIndexPair> newBondsTopology = bonds->expectMutableProperty(BondsObject::TopologyProperty);
-		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true);
-		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true) : nullptr;
+		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
+		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
 
 		if(newBondTypeProperty && !newBondTypeProperty.storage()->elementType(bondType->numericId()))
 			newBondTypeProperty.storage()->addElementType(bondType);
@@ -445,7 +519,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 
 			PropertyObject* propertyObject;
 			if(bprop->type() != BondsObject::UserProperty) {
-				propertyObject = bonds->createProperty(bprop->type(), true);
+				propertyObject = bonds->createProperty(bprop->type(), true, executionContext);
 			}
 			else {
 				propertyObject = bonds->createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
@@ -520,45 +594,9 @@ std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 }
 
 /******************************************************************************
-* Gives the property class the opportunity to set up a newly created
-* property object.
-******************************************************************************/
-void ParticlesObject::OOMetaClass::prepareNewProperty(PropertyObject* property) const
-{
-	if(property->type() == ParticlesObject::DisplacementProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Displacements"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		property->addVisElement(vis);
-	}
-	else if(property->type() == ParticlesObject::ForceProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Forces"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		vis->setReverseArrowDirection(false);
-		vis->setArrowPosition(VectorVis::Base);
-		property->addVisElement(vis);
-	}
-	else if(property->type() == ParticlesObject::DipoleOrientationProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Dipoles"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		vis->setReverseArrowDirection(false);
-		vis->setArrowPosition(VectorVis::Center);
-		property->addVisElement(vis);
-	}
-}
-
-/******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
-PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -660,7 +698,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
 	// Allocate the storage array.
-	PropertyPtr property = PropertyPtr::create(dataset, particleCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, particleCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
@@ -708,6 +746,29 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 				}
 			}
 		}
+	}
+
+	if(type == ParticlesObject::DisplacementProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Displacements"));
+		vis->setEnabled(false);
+		property->addVisElement(std::move(vis));
+	}
+	else if(type == ParticlesObject::ForceProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Forces"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Base);
+		property->addVisElement(std::move(vis));
+	}
+	else if(type == ParticlesObject::DipoleOrientationProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Dipoles"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Center);
+		property->addVisElement(std::move(vis));
 	}
 
 	if(initializeMemory) {

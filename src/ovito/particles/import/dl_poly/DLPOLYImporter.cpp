@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "DLPOLYImporter.h"
@@ -166,21 +166,18 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
+void DLPOLYImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
 	setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
 	setProgressMaximum(stream.underlyingSize());
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
-
 	// Read first comment line (record 1).
 	stream.readLine(1024);
 	QString trimmedComment = stream.lineString().trimmed();
 	if(!trimmedComment.isEmpty())
-		frameData->attributes().insert(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment));
+		state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
 
 	// Parse second line (record 2).
 	int levcfg;
@@ -189,9 +186,9 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 	if(stream.eof() || sscanf(stream.readLine(256), "%u %u %llu", &levcfg, &imcon, &expectedAtomCount) < 2 || levcfg < 0 || levcfg > 2 || imcon < 0 || imcon > 6)
 		throw Exception(tr("Invalid record line %1 in DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-	if(imcon == 0) frameData->setPbcFlags(false, false, false);
-	else if(imcon == 1 || imcon == 2 || imcon == 3) frameData->setPbcFlags(true, true, true);
-	else if(imcon == 6) frameData->setPbcFlags(true, true, false);
+	if(imcon == 0) simulationCell()->setPbcFlags(false, false, false);
+	else if(imcon == 1 || imcon == 2 || imcon == 3) simulationCell()->setPbcFlags(true, true, true);
+	else if(imcon == 6) simulationCell()->setPbcFlags(true, true, false);
 	else throw Exception(tr("Invalid boundary condition type in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 	// Jump to byte offset.
@@ -208,8 +205,8 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 		double ttime;
 		if(sscanf(stream.line(), "timestep %u %llu %i %i %lg %lg", &nstep, &megatm, &keytrj, &imcon, &tstep, &ttime) != 6 || megatm != expectedAtomCount)
 			throw Exception(tr("Invalid timestep record in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-		frameData->attributes().insert(QStringLiteral("IntegrationTimestep"), QVariant::fromValue(tstep));
-		frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue(ttime));
+		state().setAttribute(QStringLiteral("IntegrationTimestep"), QVariant::fromValue(tstep), dataSource());
+		state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(ttime), dataSource());
 		stream.readLine();
 	}
 
@@ -224,12 +221,12 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 			stream.readLine();
 		}
 		cell.column(3) = cell * Vector3(-0.5, -0.5, -0.5);
-		frameData->setSimulationCell(cell);
+		simulationCell()->setCellMatrix(cell);
 	}
 
 	// The temporary buffers for the atom records.
 	std::vector<qlonglong> identifiers;
-	std::vector<int> atom_types;
+	std::vector<QString> atom_types;
 	std::vector<Point3> positions;
 	std::vector<Vector3> velocities;
 	std::vector<Vector3> forces;
@@ -237,13 +234,10 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 	std::vector<FloatType> charges;
 	std::vector<FloatType> displacementMagnitudes;
 
-	// Create particle type list, because we need to populate the it while parsing.
-	std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
-
 	// Parse atoms.
 	do {
 		// Report progress.
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 		if((positions.size() % 1024) == 0)
 			setProgressValueIntermittent(stream.underlyingByteOffset());
 
@@ -258,7 +252,7 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 		// Parse atom type name.
 		const char* line_end = line;
 		while(*line_end != '\0' && *line_end > ' ') ++line_end;
-		atom_types.push_back(typeList->addTypeName(line, line_end));
+		atom_types.push_back(QLatin1String(line, line_end));
 
 		// Parse atom identifier and other info (optional).
 		if(*line_end != '\0') {
@@ -307,48 +301,52 @@ FileSourceImporter::FrameDataPtr DLPOLYImporter::FrameLoader::loadFile()
 		throw Exception(tr("Unexpected end of DL_POLY file. Expected %1 atom records but found only %2.").arg(expectedAtomCount).arg(positions.size()));
 
 	// Create particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), positions.size(), ParticlesObject::PositionProperty, false);
+	setParticleCount(positions.size());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	boost::copy(positions, posProperty.begin());
 
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), atom_types.size(), ParticlesObject::TypeProperty, false);
-	boost::copy(atom_types, typeProperty.begin());
-	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	boost::transform(atom_types, typeProperty.begin(), [&](const QString& typeName) {
+		return addNamedType(typeProperty.storage(), typeName, ParticleType::OOClass())->numericId();
+	});
+	// Since we created particle types on the go while reading the particles, the type ordering
+	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeList->sortTypesByName(typeProperty);
-	frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
+	typeProperty.storage()->sortElementTypesByName();
 	
 	if(identifiers.size() == positions.size()) {
-		PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), identifiers.size(), ParticlesObject::IdentifierProperty, false);
+		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 		boost::copy(identifiers, identifierProperty.begin());
 	}
 	if(levcfg > 0) {
-		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), velocities.size(), ParticlesObject::VelocityProperty, false);
+		PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 		boost::copy(velocities, velocityProperty.begin());
 	}
 	if(levcfg > 1) {
-		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), forces.size(), ParticlesObject::ForceProperty, false);
+		PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, executionContext());
 		boost::copy(forces, forceProperty.begin());
 	}
 	if(masses.size() == positions.size()) {
-		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), masses.size(), ParticlesObject::MassProperty, false);
+		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
 		boost::copy(masses, massProperty.begin());
 	}
 	if(charges.size() == positions.size()) {
-		PropertyAccess<FloatType> chargeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), charges.size(), ParticlesObject::ChargeProperty, false);
+		PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext());
 		boost::copy(charges, chargeProperty.begin());
 	}
 	if(displacementMagnitudes.size() == positions.size()) {
-		PropertyAccess<FloatType> displProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), displacementMagnitudes.size(), ParticlesObject::DisplacementMagnitudeProperty, false);
+		PropertyAccess<FloatType> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty, false, executionContext());
 		boost::copy(displacementMagnitudes, displProperty.begin());
 	}
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
-	frameData->setStatus(tr("Number of particles: %1").arg(positions.size()));
-	return frameData;
+	state().setStatus(tr("Number of particles: %1").arg(positions.size()));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

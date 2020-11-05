@@ -262,13 +262,19 @@ public:
 		return _pointer;
 	}
 
-	/// Replaces the reference target.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget);
-
 protected:
 
+	/// Replaces the current reference target with a new target. Handles undo recording.
+	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget);
+
 	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<RefTarget>& inactiveTarget, bool generateNotificationEvents = true);
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* inactiveTarget, bool generateNotificationEvents = true);
+
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, bool generateNotificationEvents = true);
+
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>& inactiveTarget, bool generateNotificationEvents = true);
 
 	/// The actual pointer to the reference target.
 	RefTarget* _pointer = nullptr;
@@ -276,20 +282,35 @@ protected:
 	friend class RefMaker;
 	friend class RefTarget;
 
-protected:
+private:
 
-	class OVITO_CORE_EXPORT SetReferenceOperation : public PropertyFieldOperation
+	template<typename ReferenceType>
+	class SetReferenceOperation : public PropertyFieldOperation
 	{
 	private:
+
 		/// The reference target that is currently not assigned to the reference field.
 		/// This is stored here so that we can restore it on a call to undo().
-		OORef<RefTarget> _inactiveTarget;
+		ReferenceType _inactiveTarget;
+
 		/// The reference field whose value has changed.
 		SingleReferenceFieldBase& _reffield;
+
 	public:
-		SetReferenceOperation(RefMaker* owner, RefTarget* oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor);
-		virtual void undo() override { _reffield.swapReference(owner(), descriptor(), _inactiveTarget); }
-		virtual QString displayName() const override;
+		
+		SetReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _inactiveTarget(oldTarget), _reffield(reffield) {}
+		
+		virtual void undo() override { 
+			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
+		}
+
+		virtual QString displayName() const override {
+				return QStringLiteral("Setting reference field <%1> of %2 to object %3")
+					.arg(descriptor().identifier())
+					.arg(owner()->getOOClass().name())
+					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
+		}
 	};
 };
 
@@ -386,84 +407,145 @@ public:
 	/// Removes the element at index position i.
 	void remove(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i);
 
-	/// Replaces a reference in the vector.
-	/// This method removes the reference at index i and inserts the new reference at the same index.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i, const RefTarget* object) {
-		OVITO_ASSERT(i >= 0 && i < size());
-		if(targets()[i] != object) {
-			remove(owner, descriptor, i);
-			insertInternal(owner, descriptor, object, i);
-		}
-	}
-
 protected:
 
 	/// The actual pointer list to the reference targets.
 	QVector<RefTarget*> pointers;
 
+	/// Replaces a reference in the vector.
+	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i, const RefTarget* object);
+
 	/// Adds a reference target to the internal list.
 	int insertInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget, int index = -1);
 
 	/// Removes a target from the list reference field.
-	OORef<RefTarget> removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, bool generateNotificationEvents = true);
+	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, bool generateNotificationEvents = true);
+
+	/// Removes a target from the list reference field.
+	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, OORef<const RefTarget>& deadStorage, bool generateNotificationEvents = true);
+
+	/// Removes a target from the list reference field.
+	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, DataOORef<const DataObject>& deadStorage, bool generateNotificationEvents = true);
 
 	/// Adds the target to the list reference field.
-	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const OORef<RefTarget>& target, int index);
+	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* target, int index);
 
-protected:
+	/// Adds the target to the list reference field.
+	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>&& target, int index);
 
-	class OVITO_CORE_EXPORT InsertReferenceOperation : public PropertyFieldOperation
+	/// Adds the target to the list reference field.
+	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>&& target, int index);
+
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* inactiveTarget, int index, bool generateNotificationEvents = true);
+
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, int index, bool generateNotificationEvents = true);
+
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>& inactiveTarget, int index, bool generateNotificationEvents = true);
+
+private:
+
+	template<typename ReferenceType>
+	class InsertReferenceOperation : public PropertyFieldOperation
 	{
 	public:
-    	InsertReferenceOperation(RefMaker* owner, RefTarget* target, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor);
+    	InsertReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* target, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _target(target), _reffield(reffield), _index(index) {}
 
 		virtual void undo() override {
 			OVITO_ASSERT(!_target);
-			_target = _reffield.removeReference(owner(), descriptor(), _index);
+			_reffield.removeReference(owner(), descriptor(), _index, _target);
 		}
 
 		virtual void redo() override {
-			_index = _reffield.addReference(owner(), descriptor(), _target, _index);
-			_target.reset();
+			_index = _reffield.addReference(owner(), descriptor(), std::move(_target), _index);
+			OVITO_ASSERT(!_target);
 		}
 
 		int insertionIndex() const { return _index; }
 
-		virtual QString displayName() const override;
+		virtual QString displayName() const override {
+			return QStringLiteral("Insert ref to %1 into vector field <%2> of %3")
+				.arg(_target ? _target->getOOClass().name() : "<null>")
+				.arg(descriptor().identifier())
+				.arg(owner()->getOOClass().name());
+		}
+
 
 	private:
 		/// The target that has been added into the vector reference field.
-	    OORef<RefTarget> _target;
+	    ReferenceType _target;
 		/// The vector reference field to which the reference has been added.
 		VectorReferenceFieldBase& _reffield;
 		/// The position at which the target has been inserted into the vector reference field.
 		int _index;
 	};
 
-	class OVITO_CORE_EXPORT RemoveReferenceOperation : public PropertyFieldOperation
+	template<typename ReferenceType>
+	class RemoveReferenceOperation : public PropertyFieldOperation
 	{
 	public:
-    	RemoveReferenceOperation(RefMaker* owner, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor);
+    	RemoveReferenceOperation(RefMaker* owner, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _reffield(reffield), _index(index) {}
 
 		virtual void undo() override {
-			_index = _reffield.addReference(owner(), descriptor(), _target, _index);
-			_target.reset();
+			_index = _reffield.addReference(owner(), descriptor(), std::move(_target), _index);
+			OVITO_ASSERT(!_target);
 		}
 
 		virtual void redo() override {
 			OVITO_ASSERT(!_target);
-			_target = _reffield.removeReference(owner(), descriptor(), _index);
+			_reffield.removeReference(owner(), descriptor(), _index, _target);
 		}
 
-		virtual QString displayName() const override;
+		virtual QString displayName() const override {
+			return QStringLiteral("Remove ref to %1 from vector field <%2> of %3")
+				.arg(_target ? _target->getOOClass().name() : "<null>")
+				.arg(descriptor().identifier())
+				.arg(owner()->getOOClass().name());
+		}
 
 	private:
 		/// The target that has been removed from the vector reference field.
-	    OORef<RefTarget> _target;
+	    ReferenceType _target;
 		/// The vector reference field from which the reference has been removed.
 		VectorReferenceFieldBase& _reffield;
 		/// The position at which the target has been removed from the vector reference field.
 		int _index;
+	};
+
+	template<typename ReferenceType>
+	class ReplaceReferenceOperation : public PropertyFieldOperation
+	{
+	private:
+
+		/// The reference target that is currently not assigned to the reference field.
+		/// This is stored here so that we can restore it on a call to undo().
+		ReferenceType _inactiveTarget;
+
+		/// The reference field whose value has changed.
+		VectorReferenceFieldBase& _reffield;
+
+		/// The list position at which the target has been replaced.
+		int _index;
+
+	public:
+		
+		ReplaceReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* oldTarget, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor, int index) :
+			PropertyFieldOperation(owner, descriptor), _inactiveTarget(oldTarget), _reffield(reffield), _index(index) {}
+		
+		virtual void undo() override { 
+			_reffield.swapReference(owner(), descriptor(), _inactiveTarget, _index); 
+		}
+
+		virtual QString displayName() const override {
+			return QStringLiteral("Replacing ref with %1 in vector field <%2> of %3")
+				.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>")
+				.arg(descriptor().identifier())
+				.arg(owner()->getOOClass().name());
+		}
 	};
 
 	friend class RefMaker;

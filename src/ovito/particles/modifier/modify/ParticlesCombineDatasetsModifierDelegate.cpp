@@ -40,9 +40,8 @@ IMPLEMENT_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesCombineDatasetsModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	if(input.containsObject<ParticlesObject>())
-		return { DataObjectReference(&ParticlesObject::OOClass()) };
-	return {};
+	// Always return a non-empty vector, because this delegate wants to be called always.
+	return { DataObjectReference(&DataCollection::OOClass()) };
 }
 
 /******************************************************************************
@@ -52,17 +51,23 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 {
 	// Get the secondary dataset.
 	if(additionalInputs.empty())
-		throwException(tr("No second dataset has been provided."));
+		return PipelineStatus::Success;
 	const PipelineFlowState& secondaryState = additionalInputs.front();
 
 	// Get the particles from secondary dataset.
 	const ParticlesObject* secondaryParticles = secondaryState.getObject<ParticlesObject>();
 	if(!secondaryParticles)
-		throwException(tr("Second dataset does not contain any particles."));
+		return PipelineStatus::Success;
 	const PropertyObject* secondaryPosProperty = secondaryParticles->expectProperty(ParticlesObject::PositionProperty);
 
 	// Get the positions from the primary dataset.
-	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+	const ParticlesObject* primaryParticles = state.getObject<ParticlesObject>();
+	// If primary dataset does not contain particles yet, simply copy the particles from the secondary dataset over to the first.
+	if(!primaryParticles) {
+		state.addObject(secondaryParticles);
+		return PipelineStatus::Success;
+	}
+	ParticlesObject* particles = state.makeMutable(primaryParticles);
 
 	size_t primaryParticleCount = particles->elementCount();
 	size_t secondaryParticleCount = secondaryParticles->elementCount();
@@ -87,7 +92,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 			}
 			else if(prop->type() != ParticlesObject::UserProperty) {
 				ConstDataObjectPath containerPath = { secondaryParticles };
-				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(dataset(), secondaryParticles->elementCount(), prop->type(), true, containerPath);
+				PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(dataset(), secondaryParticles->elementCount(), prop->type(), true, Application::instance()->executionContext(), containerPath);
 				prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
 			}
 
@@ -163,7 +168,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 				}
 				else if(prop->type() != PropertyObject::GenericUserProperty) {
 					ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(dataset(), secondaryElementCount, prop->type(), true, containerPath);
+					PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(dataset(), secondaryElementCount, prop->type(), true, Application::instance()->executionContext(), containerPath);
 					prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
 				}
 

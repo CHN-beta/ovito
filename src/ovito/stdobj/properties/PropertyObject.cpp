@@ -58,7 +58,7 @@ DEFINE_REFERENCE_FIELD(PropertyObject, elementTypes);
 DEFINE_PROPERTY_FIELD(PropertyObject, title);
 SET_PROPERTY_FIELD_LABEL(PropertyObject, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");
-//SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChanged);
+SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
 * Constructor creating an emptz property array.
@@ -80,6 +80,7 @@ PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataTy
 	_name(name),
 	_type(type)
 {
+	setIdentifier(name);
 	OVITO_ASSERT(dataType == Int || dataType == Int64 || dataType == Float);
 	OVITO_ASSERT(_dataTypeSize > 0);
 	OVITO_ASSERT(_componentCount > 0);
@@ -114,6 +115,7 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
 	clone->_componentNames = _componentNames;
 	clone->_data.reset(new uint8_t[_numElements * _stride]);
 	std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
+	OVITO_ASSERT(clone->identifier() == clone->name());
 
 	return clone;
 }
@@ -393,7 +395,7 @@ OORef<PropertyObject> PropertyObject::filterCopy(const boost::dynamic_bitset<>& 
 
 	size_t s = size();
 	size_t newSize = size() - mask.count();
-	OORef<PropertyObject> copy = OORef<PropertyObject>::create(dataset(), newSize, dataType(), componentCount(), stride(), name(), false, type(), componentNames());
+	OORef<PropertyObject> copy = OORef<PropertyObject>::create(dataset(), Application::ExecutionContext::Scripting, newSize, dataType(), componentCount(), stride(), name(), false, type(), componentNames());
 
 	// Optimize filter operation for the most common property types.
 	if(dataType() == PropertyObject::Float && stride() == sizeof(FloatType)) {
@@ -784,6 +786,123 @@ void PropertyObject::convertDataType(int newDataType)
 	_data = std::move(newData);
 }
 
+/******************************************************************************
+* Sorts the types w.r.t. their name.
+* This method is used by file parsers that create element types on the
+* go while the read the data. In such a case, the ordering of types
+* depends on the storage order of data elements in the file, which is not desirable.
+******************************************************************************/
+void PropertyObject::sortElementTypesByName()
+{
+	OVITO_ASSERT(dataType() == StandardDataType::Int);
+
+	// Check if type IDs form a consecutive sequence starting at 1.
+	// If not, we leave the type order as it is.
+	int id = 1;
+	for(const ElementType* type : elementTypes()) {
+		if(type->numericId() != id++)
+			return;
+	}
+
+	// Check if types are already in the correct order.
+	if(std::is_sorted(elementTypes().begin(), elementTypes().end(), 
+			[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; }))
+		return;
+
+	// This is to keep the element types alive during the assignment to the vector reference field below.
+	std::vector<DataOORef<ElementType>> typeRefs(elementTypes().begin(), elementTypes().end());
+
+	// Reorder types by name.
+	QVector<ElementType*> types = elementTypes();
+	std::sort(types.begin(), types.end(), 
+		[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; });
+	setElementTypes(std::move(types));
+
+#if 0
+	// NOTE: No longer reassigning numeric IDs to the types here, because the new requirement is
+	// that the numeric ID of an existing ElementType never changes once it has been created.
+	// Otherwise the editable proxy objects would become out of sync.
+
+	// Build map of IDs.
+	std::vector<int> mapping(elementTypes().size() + 1);
+	for(int index = 0; index < elementTypes().size(); index++) {
+		int id = elementTypes()[index]->numericId();
+		mapping[id] = index + 1;
+		if(id != index + 1)
+			makeMutable(elementTypes()[index])->setNumericId(index + 1);
+	}
+
+	// Remap type IDs.
+	for(int& t : PropertyAccess<int>(this)) {
+		OVITO_ASSERT(t >= 1 && t < mapping.size());
+		t = mapping[t];
+	}
+#endif
+}
+
+/******************************************************************************
+* Sorts the element types with respect to the numeric identifier.
+******************************************************************************/
+void PropertyObject::sortElementTypesById()
+{
+	// This is to keep the element types alive during the assignment to the vector reference field below.
+	std::vector<DataOORef<ElementType>> typeRefs(elementTypes().begin(), elementTypes().end());
+
+	QVector<ElementType*> types = elementTypes();
+	std::sort(types.begin(), types.end(), 
+		[](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
+	setElementTypes(std::move(types));
+}
+
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	DataObject::updateEditableProxies(state, dataPath);
+
+	// Note: 'this' may no longer exist at this point, because the base method implementation may
+	// have already replaced it with a mutable copy.
+	const PropertyObject* self = static_object_cast<PropertyObject>(dataPath.back());
+
+	if(PropertyObject* proxy = static_object_cast<PropertyObject>(self->editableProxy())) {
+		// Synchronize the actual data object with the editable proxy object.
+		OVITO_ASSERT(proxy->type() == self->type());
+		OVITO_ASSERT(proxy->dataType() == self->dataType());
+		OVITO_ASSERT(proxy->title() == self->title());
+
+		// Add the proxies of newly created element types to the proxy property object.
+		for(const ElementType* type : self->elementTypes()) {
+			ElementType* proxyType = static_object_cast<ElementType>(type->editableProxy());
+			OVITO_ASSERT(proxyType != nullptr);
+			if(!proxy->elementTypes().contains(proxyType))
+				proxy->addElementType(proxyType);
+		}
+
+		// Add element types that are non-existing in the actual property object.
+		// Note: Currently this should never happen, because file parser never
+		// remove element types.
+		for(ElementType* proxyType : proxy->elementTypes()) {
+			OVITO_ASSERT(std::any_of(self->elementTypes().begin(), self->elementTypes().end(), [proxyType](const ElementType* type) { return type->editableProxy() == proxyType; }));
+		}
+	}
+	else if(!self->elementTypes().empty()) {
+		// Create and initialize a new proxy property object. 
+		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
+		DataOORef<PropertyObject> newProxy = DataOORef<PropertyObject>::create(self->dataset(), Application::ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		newProxy->setTitle(self->title());
+
+		// Adopt the proxy object for the element types, which have already been created by
+		// the recursive method.
+		for(const ElementType* type : self->elementTypes()) {
+			OVITO_ASSERT(type->editableProxy() != nullptr);
+			newProxy->addElementType(static_object_cast<ElementType>(type->editableProxy()));
+		}
+
+		// Make this data object mutable and attach the proxy object to it.
+		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
+	}
+}
 
 }	// End of namespace
 }	// End of namespace

@@ -51,16 +51,14 @@ public:
 	const QString& pythonName() const { return _pythonName; }
 
 	/// Creates a new property storage for one of the registered standard properties.
-	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const { return {}; }
+	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const { return {}; }
 
 	/// Creates a new property object for a standard property of this container class.
-	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const;
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext = Application::instance()->executionContext(), const ConstDataObjectPath& containerPath = {}) const;
 
 	/// Creates a new property object for a user-defined property.
 	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
-		PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames));
-		prepareNewProperty(property);
-		return property;
+		return PropertyPtr::create(dataset, Application::ExecutionContext::Scripting, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames));
 	}
 
 	/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
@@ -163,9 +161,6 @@ protected:
 
 	/// Sets the name by which this property class is referred to from Python scripts.
 	void setPythonName(const QString& name) { _pythonName = name; }
-
-	/// Gives the property class the opportunity to set up a newly created property object.
-	virtual void prepareNewProperty(PropertyObject* property) const {}
 
 private:
 

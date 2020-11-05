@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "QuantumEspressoImporter.h"
 
@@ -80,14 +80,11 @@ bool QuantumEspressoImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile()
+void QuantumEspressoImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
 	setProgressText(tr("Reading Quantum Espresso file %1").arg(fileHandle().toString()));
-
-	// Create the storage container for the data being loaded.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 	// For converting Bohr radii to Angstrom units:
 	constexpr FloatType bohr2angstrom = 0.529177;
@@ -97,8 +94,8 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 	int natoms = 0;
 	int ntypes = 0;
 	int ibrav = 0;
+	std::vector<QString> type_names;
 	std::vector<FloatType> type_masses;
-	auto typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
 	bool hasCellVectors = false;
 	bool convertToAbsoluteCoordinates = false;
 	PropertyAccess<Point3> posProperty;
@@ -164,6 +161,7 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 		}
 
 		if(stream.lineStartsWithToken("ATOMIC_SPECIES")) {
+			type_names.resize(ntypes);
 			type_masses.resize(ntypes);
 			for(int i = 0; i < ntypes; i++) {
 				const char* line = stream.readLineTrimLeft();
@@ -171,7 +169,7 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 				// Parse atom type name.
 				const char* token_end = line;
 				while(*token_end > ' ') ++token_end;
-				typeList->addTypeName(line, token_end);
+				type_names[i] = QLatin1String(line, token_end);
 
 				// Parse atomic mass.
 				if(sscanf(token_end, FLOATTYPE_SCANF_STRING, &type_masses[i]) != 1)
@@ -205,9 +203,16 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 			}
 
 			// Create particle properties.
-			posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
-			PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::MassProperty, true);
+			setParticleCount(natoms);
+			posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+			PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, true, executionContext());
+
+			// Add the registered atom types.
+			for(int i = 0; i < ntypes; i++) {
+				const ElementType* type = addNamedType(typeProperty.storage(), type_names[i], ParticleType::OOClass());
+				static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(type_masses[i]);
+			}
 
 			// Parse atom definitions.
 			for(int i = 0; i < natoms; i++) {
@@ -216,7 +221,7 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 				// Parse atom type name.
 				const char* token_end = line;
 				while(*token_end > ' ') ++token_end;
-				int typeId = typeList->addTypeName(line, token_end);
+				int typeId = addNamedType(typeProperty.storage(), QLatin1String(line, token_end), ParticleType::OOClass())->numericId();
 				typeProperty[i] = typeId;
 				if(typeId >= 1 && typeId <= type_masses.size())
 					massProperty[i] = type_masses[typeId-1];
@@ -227,7 +232,6 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 					throw Exception(tr("Invalid atomic coordinates in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				posProperty[i] = pos * scaling;
 			}
-			frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
 		}
 		else if(stream.lineStartsWithToken("CELL_PARAMETERS")) {
 			// Parse the unit specification.
@@ -262,12 +266,12 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 						&cell(0,i), &cell(1,i), &cell(2,i)) != 3 || cell.column(i) == Vector3::Zero())
 					throw Exception(tr("Invalid cell vector in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 			}
-			frameData->setSimulationCell(cell * scaling);
+			simulationCell()->setCellMatrix(cell * scaling);
 			hasCellVectors = true;
 		}
 	}
 	if(isCanceled())
-		return {};
+		return;
 
 	// Make sure some atoms have been defined in the file.
 	if(natoms <= 0 || ntypes <= 0)
@@ -291,18 +295,20 @@ FileSourceImporter::FrameDataPtr QuantumEspressoImporter::FrameLoader::loadFile(
 				break;
 			default: throw Exception(tr("Unsupported 'ibrav' value in QE file: %1").arg(ibrav));
 		}
-		frameData->setSimulationCell(AffineTransformation(cell));
+		simulationCell()->setCellMatrix(AffineTransformation(cell));
 	}
 
 	if(convertToAbsoluteCoordinates) {
 		// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-		const AffineTransformation simCell = frameData->simulationCell();
+		const AffineTransformation simCell = simulationCell()->cellMatrix();
 		for(Point3& p : posProperty)
 			p = simCell * p;
 	}
 
-	frameData->setStatus(tr("Number of particles: %1").arg(natoms));
-	return frameData;
+	state().setStatus(tr("Number of particles: %1").arg(natoms));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

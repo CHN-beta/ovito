@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,17 @@ TriMeshVis::TriMeshVis(DataSet* dataset) : DataVis(dataset),
 	_color(0.85, 0.85, 1),
 	_highlightEdges(false)
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TriMeshVis::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	DataVis::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

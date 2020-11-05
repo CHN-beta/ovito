@@ -29,27 +29,29 @@ namespace Ovito { namespace Particles {
 IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 
 /******************************************************************************
- * Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
- *****************************************************************************/
-void FileColumnParticleExporter::loadUserDefaults()
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+*****************************************************************************/
+void FileColumnParticleExporter::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-	ParticleExporter::loadUserDefaults();
+	ParticleExporter::loadUserDefaults(executionContext);
 
-	// Restore last output column mapping.
-	QSettings settings;
-	settings.beginGroup("exporter/particles/");
-	if(settings.contains("columnmapping")) {
-		try {
-			_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray(), dataset()->taskManager());
+	if(executionContext == Application::ExecutionContext::Interactive) {
+		// Restore last output column mapping.
+		QSettings settings;
+		settings.beginGroup("exporter/particles/");
+		if(settings.contains("columnmapping")) {
+			try {
+				_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray(), dataset()->taskManager());
+			}
+			catch(Exception& ex) {
+				ex.setContext(dataset());
+				ex.prependGeneralMessage(tr("Failed to load previous output column mapping from application settings store."));
+				ex.logError();
+			}
 		}
-		catch(Exception& ex) {
-			ex.setContext(dataset());
-			ex.prependGeneralMessage(tr("Failed to load previous output column mapping from application settings store."));
-			ex.logError();
-		}
+		settings.endGroup();
 	}
-	settings.endGroup();
 }
 
 }	// End of namespace

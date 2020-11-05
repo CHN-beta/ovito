@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CIFImporter.h"
 
@@ -89,7 +89,7 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
+void CIFImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -98,9 +98,6 @@ FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 	// Map the whole file into memory for parsing.
 	const char* buffer_start;
@@ -121,18 +118,18 @@ FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
 		// Unmap the input file from memory.
 		if(fileContents.isEmpty())
 			stream.munmap();
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse the CIF data into an atomic structure representation.
 		const cif::Block& block = doc.sole_block();
 		gemmi::SmallStructure structure = gemmi::make_small_structure_from_block(block);
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse list of atomic sites.
 		std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
-		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), sites.size(), ParticlesObject::PositionProperty, false);
-		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), sites.size(), ParticlesObject::TypeProperty, false);
-		PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
+		setParticleCount(sites.size());
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
 		bool hasOccupancy = false;
@@ -142,24 +139,24 @@ FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
 			posIter->y() = pos.y;
 			posIter->z() = pos.z;
 			++posIter;
-			*typeIter++ = typeList->addTypeName(site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str());
+			*typeIter++ = addNamedType(typeProperty.storage(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str(), ParticleType::OOClass())->numericId();
 			if(site.occ != 1) hasOccupancy = true;
 		}
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), sites.size(), PropertyObject::Float, 1, 0, QStringLiteral("Occupancy"), false);
+			PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float, 1, 0, false);
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::SmallStructure::Site& site : sites) {
 				*occupancyIter++ = site.occ;
 			}
 		}
 
-		// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-		// depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
+		// Since we created particle types on the go while reading the particles, the type ordering
+		// depends on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
-		typeList->sortTypesByName(typeProperty);
+		typeProperty.storage()->sortElementTypesByName();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {
@@ -189,27 +186,28 @@ FileSourceImporter::FrameDataPtr CIFImporter::FrameLoader::loadFile()
 				cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
 				cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
 			}
-			frameData->setSimulationCell(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if(posProperty.size() != 0) {
 			// Use bounding box of atomic coordinates as non-periodic simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->setPbcFlags(false, false, false);
-			frameData->setSimulationCell(AffineTransformation(
+			simulationCell()->setPbcFlags(false, false, false);
+			simulationCell()->setCellMatrix(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
 					boundingBox.minc - Point3::Origin()));
 		}
 
-		frameData->setStatus(tr("Number of atoms: %1").arg(posProperty.size()));
+		state().setStatus(tr("Number of atoms: %1").arg(posProperty.size()));
 	}
 	catch(const std::exception& e) {
 		throw Exception(tr("CIF file reader: %1").arg(e.what()));
 	}
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

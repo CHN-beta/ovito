@@ -47,6 +47,8 @@ private:
 
 public:
 
+    using element_type = DataObjectClass;
+
     /// Default constructor.
 #ifndef MSVC
     DataOORef() noexcept = default;
@@ -163,8 +165,8 @@ public:
 
     /// Factory method instantiating a new data object and returning a smart-pointer to it.
     template<typename... Args>
-	static DataOORef create(Args&&... args) {
-		return DataOORef(OORef<DataObjectClass>::create(std::forward<Args>(args)...));
+	static DataOORef create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
+		return DataOORef(OORef<DataObjectClass>::create(dataset, executionContext, std::forward<Args>(args)...));
 	}
 
     /// Turns a read-only reference to a data object into a read-write reference.

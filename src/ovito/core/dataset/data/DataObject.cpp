@@ -30,7 +30,9 @@ IMPLEMENT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
 DEFINE_PROPERTY_FIELD(DataObject, dataSource);
 DEFINE_REFERENCE_FIELD(DataObject, visElements);
+DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
+SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
 
 /******************************************************************************
 * Produces a string representation of the object path.
@@ -78,10 +80,6 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 ******************************************************************************/
 DataObject::DataObject(DataSet* dataset) : RefTarget(dataset)
 {
-	OVITO_ASSERT(dataset);
-
-	// Data objects must live in the main thread.
-	moveToThread(dataset->thread());
 }
 
 /******************************************************************************
@@ -114,21 +112,20 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 bool DataObject::isSafeToModify() const
 {
-	// Note: This method is not thread-safe. Must be called from the main thread only.
-	// The method is mainly used by the Python bindings to check if write access to the data object is permitted.
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 	OVITO_CHECK_OBJECT_POINTER(this);
 
 	if(_dataReferenceCount.loadRelaxed() <= 1) {
-		for(const RefMaker* dependent : dependents()) {
+		bool isExclusivelyOwned = true;
+		visitDependents([&](RefMaker* dependent) {
 			// Recursively determine if the container of this data object is safe to modify as well.
 			// Only if the entire hierarchy of objects is safe to modify, we can safely modify
 			// the leaf object.
 			if(const DataObject* owner = dynamic_object_cast<DataObject>(dependent)) {
-				return owner->isSafeToModify();
+				if(owner->editableProxy() != this && !owner->isSafeToModify())
+					isExclusivelyOwned = false;
 			}
-		}
-		return true;
+		});
+		return isExclusivelyOwned;
 	}
 	return false;
 }
@@ -141,9 +138,6 @@ bool DataObject::isSafeToModify() const
 ******************************************************************************/
 DataObject* DataObject::makeMutable(const DataObject* subObject)
 {
-	// Note: This method is not thread-safe. Must only be called from the main thread.
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
 	OVITO_CHECK_OBJECT_POINTER(this);
 	OVITO_ASSERT(subObject);
 	OVITO_ASSERT(hasReferenceTo(subObject));
@@ -155,8 +149,94 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 		OVITO_ASSERT(hasReferenceTo(clone));
 		subObject = clone;
 	}
-	OVITO_ASSERT(subObject->isSafeToModify());
+#ifdef OVITO_DEBUG
+	if(!subObject->isSafeToModify()) {
+		qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
+		qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadRelaxed();
+		qDebug() << "Listing dependents of sub-object:";
+		subObject->visitDependents([](RefMaker* dependent) {
+			qDebug() << "  -" << dependent; 
+		});
+		qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadRelaxed();
+		qDebug() << "Listing dependents of parent object:";
+		visitDependents([](RefMaker* dependent) {
+			qDebug() << "  -" << dependent; 
+		});
+		OVITO_ASSERT(false);
+	}
+#endif
 	return const_cast<DataObject*>(subObject);
+}
+
+/******************************************************************************
+* Returns the absolute path of this DataObject within the DataCollection.
+* Returns an empty path if the DataObject is not exclusively owned by one
+* DataCollection.
+******************************************************************************/
+ConstDataObjectPath DataObject::exclusiveDataObjectPath() const
+{
+	ConstDataObjectPath path;
+	const DataObject* obj = this;
+	do {
+		path.push_back(obj);
+		const DataObject* parent = nullptr;
+		obj->visitDependents([&](RefMaker* dependent) {
+			if(const DataObject* dataParent = dynamic_object_cast<DataObject>(dependent)) {
+				if(!parent)
+					parent = dataParent;
+				else
+					path.clear();
+			}
+		});
+		obj = parent;
+	}
+	while(obj && !path.empty());
+	std::reverse(path.begin(), path.end());
+	return path;
+}
+
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+	// have already replaced it with a mutable copy.
+
+	const DataObject* self = dataPath.back();
+	const OvitoClass& selfClass = self->getOOClass();
+	OVITO_ASSERT(selfClass == this->getOOClass());
+	OVITO_ASSERT(!self->dataset()->undoStack().isRecording());
+	
+	// Visit all sub-objects recursively.
+	for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
+		if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
+			if(!field->isVector()) {
+				if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceField(*field).getInternal())) {
+					OVITO_ASSERT(self->hasReferenceTo(subObject));
+					dataPath.push_back(subObject);
+					subObject->updateEditableProxies(state, dataPath);
+					dataPath.pop_back();
+					OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
+					self = dataPath.back();
+				}
+			}
+			else {
+				// Note: Making a copy of the vector, because 'self' may get replaced or deleted at any time!
+				const QVector<RefTarget*> list = self->getVectorReferenceField(*field);
+				for(const RefTarget* target : list) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(target)) {
+						OVITO_ASSERT(self->hasReferenceTo(subObject));
+						dataPath.push_back(subObject);
+						subObject->updateEditableProxies(state, dataPath);
+						dataPath.pop_back();
+						OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
+						self = dataPath.back();
+					}
+				}
+			}
+		}
+	}
 }
 
 }	// End of namespace

@@ -72,42 +72,46 @@ ColorCodingModifier::ColorCodingModifier(DataSet* dataset) : DelegatingModifier(
 	_colorOnlySelected(false),
 	_keepSelection(true)
 {
-	setColorGradient(new ColorCodingHSVGradient(dataset));
-	setStartValueController(ControllerManager::createFloatController(dataset));
-	setEndValueController(ControllerManager::createFloatController(dataset));
-
-	// Let this modifier act on particles by default.
-	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
 }
 
 /******************************************************************************
-* Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ColorCodingModifier::loadUserDefaults()
+void ColorCodingModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-	DelegatingModifier::loadUserDefaults();
+	setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), executionContext));
+	setStartValueController(ControllerManager::createFloatController(dataset(), executionContext));
+	setEndValueController(ControllerManager::createFloatController(dataset(), executionContext));
 
-	// Load the default gradient type set by the user.
-	QSettings settings;
-	settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-	settings.beginGroup(ColorCodingModifier::OOClass().name());
-	QString typeString = settings.value(PROPERTY_FIELD(colorGradient).identifier()).toString();
-	if(!typeString.isEmpty()) {
-		try {
-			OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
-			if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-				OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset()));
-				if(gradient) setColorGradient(gradient);
+	// Let this modifier act on particles by default.
+	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
+
+	if(executionContext == Application::ExecutionContext::Interactive) {
+		// Load the default gradient type set by the user.
+		QSettings settings;
+		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
+		settings.beginGroup(ColorCodingModifier::OOClass().name());
+		QString typeString = settings.value(PROPERTY_FIELD(colorGradient).identifier()).toString();
+		if(!typeString.isEmpty()) {
+			try {
+				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
+				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
+					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset()));
+					if(gradient) setColorGradient(gradient);
+				}
 			}
+			catch(...) {}
 		}
-		catch(...) {}
+
+		// In the graphical program environment, we let the modifier clear the selection by default
+		// in order to make the newly assigned colors visible.
+		setKeepSelection(false);
 	}
 
-	// In the graphical program environment, we let the modifier clear the selection by default
-	// in order to make the newly assigned colors visible.
-	setKeepSelection(false);
+	DelegatingModifier::loadUserDefaults(executionContext);
 }
+
 
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
@@ -149,13 +153,13 @@ void ColorCodingModifier::initializeModifier(ModifierApplication* modApp)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	// Whenever the delegate of this modifier is being replaced, update the source property reference.
 	if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {
 		setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
 	}
-	DelegatingModifier::referenceReplaced(field, oldTarget, newTarget);
+	DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -328,7 +332,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 	}
 
 	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, objectPath);
+    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, Application::instance()->executionContext(), objectPath);
 
 	// Get modifier's parameter values.
 	FloatType startValue = 0, endValue = 0;

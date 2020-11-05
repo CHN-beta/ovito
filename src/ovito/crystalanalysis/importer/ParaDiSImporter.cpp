@@ -293,7 +293,7 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
 * This function is called by the system from the main thread after the
 * asynchronous loading operation has finished.
 ******************************************************************************/
-OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
+OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	// Insert simulation cell.
 	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);
@@ -308,10 +308,7 @@ OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataColle
 		microstructureObj = output->createObject<Microstructure>(fileSource);
 
 		// Create a visual element for the dislocation lines.
-		OORef<DislocationVis> dislocationVis = new DislocationVis(fileSource->dataset());
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			dislocationVis->loadUserDefaults();
-		microstructureObj->setVisElement(dislocationVis);
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(fileSource->dataset(), Application::instance()->executionContext()));
 	}
 	microstructureObj->setDomain(output->getObject<SimulationCellObject>());
 	microstructure().transferTo(microstructureObj);

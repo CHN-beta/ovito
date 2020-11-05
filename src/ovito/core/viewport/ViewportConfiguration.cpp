@@ -59,7 +59,7 @@ ViewportConfiguration::ViewportConfiguration(DataSet* dataset) : RefTarget(datas
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(activeViewport)) {
 		Q_EMIT activeViewportChanged(_activeViewport);
@@ -67,7 +67,7 @@ void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& fie
 	else if(field == PROPERTY_FIELD(maximizedViewport)) {
 		Q_EMIT maximizedViewportChanged(_maximizedViewport);
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

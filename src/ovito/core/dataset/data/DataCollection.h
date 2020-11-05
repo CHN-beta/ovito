@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -309,9 +309,9 @@ public:
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, Args&&... args) {
+	DataObjectType* createObject(const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
 		OVITO_ASSERT(dataSource != nullptr);
-		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), std::forward<Args>(args)...);
+		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), executionContext, std::forward<Args>(args)...);
 		obj->setDataSource(const_cast<PipelineObjectClass*>(dataSource));
 		addObject(obj);
 		return obj;
@@ -321,8 +321,8 @@ public:
 	/// assign a unique identifier to the object, assigns the given data source object, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Args&&... args) {
-		DataObjectType* obj = createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, std::forward<Args>(args)...);
+	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
+		DataObjectType* obj = createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, executionContext, std::forward<Args>(args)...);
 		OVITO_ASSERT(!baseName.isEmpty());
 		obj->setIdentifier(generateUniqueIdentifier<DataObjectType>(baseName));
 		return obj;
@@ -341,6 +341,9 @@ public:
 
 	/// Inserts a new global attribute into the pipeline state.
 	AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource);
+
+	/// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
+	AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource);
 
 	/// Returns a new unique data object identifier that does not collide with the
 	/// identifiers of any existing data object of the given type in the same data
@@ -375,7 +378,7 @@ private:
 private:
 
 	/// Stores the list of data objects.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataObject, objects, setObjects, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataObject, objects, setObjects);
 };
 
 }	// End of namespace

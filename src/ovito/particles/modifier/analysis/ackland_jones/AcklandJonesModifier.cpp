@@ -38,12 +38,22 @@ IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
 ******************************************************************************/
 AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentificationModifier(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void AcklandJonesModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create the structure types.
 	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
 	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
 	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
 	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
 	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
+	
+	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

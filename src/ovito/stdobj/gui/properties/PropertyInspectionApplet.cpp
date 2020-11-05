@@ -241,7 +241,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
 					ConstPropertyAccess<int, true> data(property);
 					str += QString::number(data.get(elementIndex, component));
 					if(property->elementTypes().empty() == false) {
-						if(ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
+						if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
 							if(!ptype->name().isEmpty())
 								str += QStringLiteral(" (%1)").arg(ptype->name());
 						}
@@ -270,7 +270,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
 			}
 			else if(property->dataType() == PropertyObject::Int && property->componentCount() == 1 && property->elementTypes().empty() == false) {
 				ConstPropertyAccess<int> data(property);
-				if(ElementType* ptype = property->elementType(data[elementIndex]))
+				if(const ElementType* ptype = property->elementType(data[elementIndex]))
 					return (QColor)ptype->color();
 			}
 		}

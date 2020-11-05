@@ -36,7 +36,17 @@ IMPLEMENT_OVITO_CLASS(TargetVis);
 ******************************************************************************/
 TargetObject::TargetObject(DataSet* dataset) : DataObject(dataset)
 {
-	addVisElement(new TargetVis(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TargetObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	addVisElement(OORef<TargetVis>::create(dataset(), executionContext));
+
+	DataObject::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

@@ -407,8 +407,8 @@ void ModifierListModel::insertModifier()
 		if(action->modifierClass()) {
 			// Create an instance of the modifier.
 			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset));
-			// Initialize parameters to user-defined defaults.
-			modifier->loadUserDefaults();
+			// Initialize modifier to default settings.
+			modifier->loadUserDefaults(Application::instance()->executionContext());
 			// Insert modifier into the data pipeline.
 			_pipelineListModel->applyModifiers({modifier});
 		}
@@ -434,8 +434,8 @@ void ModifierListModel::insertModifier()
 					// Instantiate the PythonScriptModifier class.
 					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset));
 					OVITO_CHECK_OBJECT_POINTER(modifier);
+					modifier->loadUserDefaults(Application::instance()->executionContext());
 					modifier->setTitle(action->text());
-					modifier->loadUserDefaults();
 
 					// Assign the script code.
 					const PropertyFieldDescriptor* scriptPropertyField = modifierClass->findPropertyField("script");

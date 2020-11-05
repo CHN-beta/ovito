@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GALAMOSTImporter.h"
 
@@ -79,12 +79,9 @@ bool GALAMOSTImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr GALAMOSTImporter::FrameLoader::loadFile()
+void GALAMOSTImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
-
-	// Create the container for the particle data to be loaded.
-	_frameData = std::make_shared<ParticleFrameData>();
 
 	// Set up XML data source and reader, then parse the file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -95,15 +92,16 @@ FileSourceImporter::FrameDataPtr GALAMOSTImporter::FrameLoader::loadFile()
 	reader.parse(&source, false);
 
 	// Make sure bonds that cross a periodic cell boundary are correctly wrapped around.
-	_frameData->generateBondPeriodicImageProperty();
+	generateBondPeriodicImageProperty();
 
 	// Report number of particles and bonds to the user.
 	QString statusString = tr("Number of particles: %1").arg(_natoms);
-	if(PropertyPtr topologyProperty = _frameData->bonds().findStandardProperty(BondsObject::TopologyProperty))
-		statusString += tr("\nNumber of bonds: %1").arg(topologyProperty->size());
-	_frameData->setStatus(statusString);
+	if(_nbonds != 0)
+		statusString += tr("\nNumber of bonds: %1").arg(_nbonds);
+	state().setStatus(statusString);
 
-	return std::move(_frameData);
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -133,7 +131,7 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 			QString timeStepStr = atts.value(QStringLiteral("time_step"));
 			if(!timeStepStr.isEmpty()) {
 				bool ok;
-				_frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)));
+				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)), dataSource());
 				if(!ok)
 					throw Exception(tr("GALAMOST file parsing error. Invalid 'time_step' attribute value in <%1> element: %2").arg(qName).arg(timeStepStr));
 			}
@@ -153,6 +151,7 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 				_natoms = natomsStr.toULongLong(&ok);
 				if(!ok)
 					throw Exception(tr("GALAMOST file parsing error. Invalid 'natoms' attribute value in <%1> element: %2").arg(qName).arg(natomsStr));
+				setParticleCount(_natoms);
 			}
 			else {
 				throw Exception(tr("GALAMOST file parsing error. Expected 'natoms' attribute in <%1> element.").arg(qName));
@@ -160,7 +159,7 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 		}
 		else if(localName == "box") {
 			// Parse box dimensions.
-			AffineTransformation cellMatrix = _frameData->simulationCell();
+			AffineTransformation cellMatrix = simulationCell()->cellMatrix();
 			QString lxStr = atts.value(QStringLiteral("lx"));
 			if(!lxStr.isEmpty()) {
 				bool ok;
@@ -183,54 +182,66 @@ bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, co
 					throw Exception(tr("GALAMOST file parsing error. Invalid 'lz' attribute value in <%1> element: %2").arg(qName).arg(lzStr));
 			}
 			if(_dimensions == 2)
-				cellMatrix.column(2).setZero();
+				simulationCell()->setIs2D(true);
 			cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
-			_frameData->setSimulationCell(cellMatrix);
+			simulationCell()->setCellMatrix(cellMatrix);
 		}
 		else if(localName == "position") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::PositionProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 		}
 		else if(localName == "velocity") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::VelocityProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 		}
 		else if(localName == "image") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::PeriodicImageProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::PeriodicImageProperty, false, executionContext());
 		}
 		else if(localName == "mass") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::MassProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
 		}
 		else if(localName == "diameter") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::RadiusProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::RadiusProperty, false, executionContext());
 		}
 		else if(localName == "charge") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::ChargeProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext());
 		}
 		else if(localName == "quaternion") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
 		}
 		else if(localName == "orientation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::OrientationProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
 		}
 		else if(localName == "type") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::TypeProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 		}
 		else if(localName == "molecule") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::MoleculeProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::MoleculeProperty, false, executionContext());
 		}
 		else if(localName == "body") {
-			_currentProperty = ParticlesObject::OOClass().createUserProperty(dataset(), _natoms, PropertyObject::Int64, 1, 0, QStringLiteral("Body"), false);
+			_currentProperty = particles()->createProperty(QStringLiteral("Body"), PropertyObject::Int64, 1, 0, false);
 		}
 		else if(localName == "Aspheres") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AsphericalShapeProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, false, executionContext());
 		}
 		else if(localName == "rotation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AngularVelocityProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::AngularVelocityProperty, false, executionContext());
 		}
 		else if(localName == "inert") {
-			_currentProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), _natoms, ParticlesObject::AngularMomentumProperty, false);
+			_currentProperty = particles()->createProperty(ParticlesObject::AngularMomentumProperty, false, executionContext());
 		}
 		else if(localName == "bond") {
-			_currentProperty = BondsObject::OOClass().createStandardProperty(dataset(), 0, BondsObject::TopologyProperty, false);
+			// Parse number of bonds.
+			QString nbondsStr = atts.value(QStringLiteral("num"));
+			if(!nbondsStr.isEmpty()) {
+				bool ok;
+				_nbonds = nbondsStr.toULongLong(&ok);
+				if(!ok)
+					throw Exception(tr("GALAMOST file parsing error. Invalid 'num' attribute value in <%1> element: %2").arg(qName).arg(nbondsStr));
+				setBondCount(_nbonds);
+			}
+			else {
+				throw Exception(tr("GALAMOST file parsing error. Expected 'num' attribute in <%1> element.").arg(qName));
+			}
+			_currentProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
 		}
 	}
 
@@ -339,21 +350,18 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 		else if(localName == "type") {
 			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::TypeProperty);
 			QString typeName;
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
 			PropertyAccess<int> typeArray(_currentProperty);
 			for(int& type : typeArray) {
 				stream >> typeName;
-				type = typeList->addTypeName(typeName);
+				type = addNamedType(_currentProperty, typeName, ParticleType::OOClass())->numericId();
 			}
-			typeList->sortTypesByName(typeArray);
-			_frameData->particles().setPropertyTypesList(typeArray, std::move(typeList));
+			_currentProperty->sortElementTypesByName();
 		}
 		else if(localName == "Aspheres") {
 			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::AsphericalShapeProperty);
-			ConstPropertyAccess<int> typeProperty = _frameData->particles().findStandardProperty(ParticlesObject::TypeProperty);
+			ConstPropertyAccess<int> typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
 			if(!typeProperty)
 				throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(qName));
-			PropertyContainerImportData::TypeList* typeList = _frameData->particles().createPropertyTypesList(typeProperty.storage(), ParticleType::OOClass());
 			std::vector<Vector3> typesAsphericalShape;
 			while(!stream.atEnd()) {
 				QString typeName;
@@ -361,10 +369,10 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 				FloatType eps_a, eps_b, eps_c;
 				stream >> typeName >> a >> b >> c >> eps_a >> eps_b >> eps_c;
 				stream.skipWhiteSpace();
-				for(const PropertyContainerImportData::TypeDefinition& type : typeList->types()) {
-					if(type.name == typeName) {
-						if(typesAsphericalShape.size() <= type.id) typesAsphericalShape.resize(type.id+1, Vector3::Zero());
-						typesAsphericalShape[type.id] = Vector3(a/2,b/2,c/2);
+				for(const ElementType* type : typeProperty.storage()->elementTypes()) {
+					if(type->name() == typeName) {
+						if(typesAsphericalShape.size() <= type->numericId()) typesAsphericalShape.resize(type->numericId()+1, Vector3::Zero());
+						typesAsphericalShape[type->numericId()] = Vector3(a/2,b/2,c/2);
 						break;
 					}
 				}
@@ -378,31 +386,20 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 		}
 		else if(localName == "bond") {
 			OVITO_ASSERT(_currentProperty->type() == BondsObject::TopologyProperty);
+			PropertyAccess<ParticleIndexPair> topologyProperty = _currentProperty;
+			PropertyAccess<int> typeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
 			QString typeName;
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(BondType::OOClass());
-			std::vector<ParticleIndexPair> topology;
-			std::vector<int> bondTypes;
-			while(!stream.atEnd()) {
-				qlonglong a,b;
-				stream >> typeName >> a >> b;
-				bondTypes.push_back(typeList->addTypeName(typeName));
-				topology.push_back({a,b});
+			for(size_t i = 0; i < topologyProperty.size(); i++) {
+				stream >> typeName >> topologyProperty[i][0] >> topologyProperty[i][1];
+				typeProperty[i] = addNamedType(typeProperty.storage(), typeName, BondType::OOClass())->numericId();
 				stream.skipWhiteSpace();
 			}
-			PropertyAccess<ParticleIndexPair> topologyProperty = _frameData->bonds().createStandardProperty<BondsObject>(dataset(), topology.size(), BondsObject::TopologyProperty, false);
-			boost::copy(topology, topologyProperty.begin());
-			PropertyAccess<int> bondTypeProperty = _frameData->bonds().createStandardProperty<BondsObject>(dataset(), bondTypes.size(), BondsObject::TypeProperty, false);
-			boost::copy(bondTypes, bondTypeProperty.begin());
-			typeList->sortTypesByName(bondTypeProperty);
-			_frameData->bonds().setPropertyTypesList(bondTypeProperty, std::move(typeList));
-			_currentProperty.reset();
+			typeProperty.storage()->sortElementTypesByName();
+			_currentProperty = nullptr;
 		}
 		if(stream.status() == QTextStream::ReadPastEnd)
 			throw Exception(tr("GALAMOST file parsing error. Unexpected end of data in <%1> element").arg(qName));
-		if(_currentProperty) {
-			_frameData->particles().addProperty(std::move(_currentProperty));
-			_currentProperty.reset();
-		}
+		_currentProperty = nullptr;
 		_characterData.clear();
 	}
 	else {

@@ -318,29 +318,40 @@ public:
 	//////////////////////////////// Element types //////////////////////////////
 
 	/// Appends an element type to the list of types.
-	void addElementType(const ElementType* type) {
+	const ElementType* addElementType(const ElementType* type) {
 		OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
 		_elementTypes.push_back(this, PROPERTY_FIELD(elementTypes), type);
+		return type;
 	}
 
 	/// Inserts an element type into the list of types.
-	void insertElementType(int index, const ElementType* type) {
+	const ElementType* insertElementType(int index, const ElementType* type) {
 		OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
 		_elementTypes.insert(this, PROPERTY_FIELD(elementTypes), index, type);
+		return type;
 	}
 
 	/// Returns the element type with the given ID, or NULL if no such type exists.
-	ElementType* elementType(int id) const {
-		for(ElementType* type : elementTypes())
+	const ElementType* elementType(int id) const {
+		for(const ElementType* type : elementTypes())
 			if(type->numericId() == id)
 				return type;
 		return nullptr;
 	}
 
 	/// Returns the element type with the given human-readable name, or NULL if no such type exists.
-	ElementType* elementType(const QString& name) const {
+	const ElementType* elementType(const QString& name) const {
 		OVITO_ASSERT(!name.isEmpty());
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
+			if(type->name() == name)
+				return type;
+		return nullptr;
+	}
+
+	/// Returns the element type with the given human-readable name, or NULL if no such type exists.
+	const ElementType* elementType(const QLatin1String& name) const {
+		OVITO_ASSERT(!name.isEmpty());
+		for(const ElementType* type : elementTypes())
 			if(type->name() == name)
 				return type;
 		return nullptr;
@@ -359,7 +370,7 @@ public:
 	/// Builds a mapping from numeric IDs to type colors.
 	std::map<int,Color> typeColorMap() const {
 		std::map<int,Color> m;
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
 			m.insert({type->numericId(), type->color()});
 		return m;
 	}
@@ -367,10 +378,19 @@ public:
 	/// Returns an numeric type ID that is not yet used by any of the existing element types.
 	int generateUniqueElementTypeId(int startAt = 1) const {
 		int maxId = startAt;
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
 			maxId = std::max(maxId, type->numericId() + 1);
 		return maxId;
 	}
+
+	/// Sorts the element types with respect to the numeric identifier.
+	void sortElementTypesById();
+
+	/// Sorts the types w.r.t. their name. 
+	/// This method is used by file parsers that create element types on the
+	/// go while the read the data. In such a case, the type ordering
+	/// depends on the storage order of data elements in the loaded file, which is not desirable.
+	void sortElementTypesByName();
 
 	/// Helper method that remaps the existing type IDs to a contiguous range starting at the given
 	/// base ID. This method is mainly used for file output, because some file formats
@@ -406,6 +426,9 @@ public:
 		return !elementTypes().empty();
 	}
 
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+
 	/// Returns the display title of this property object in the user interface.
 	virtual QString objectTitle() const override;
 
@@ -426,10 +449,10 @@ protected:
 private:
 
 	/// Contains the list of defined "types" if this is a typed property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(ElementType, elementTypes, setElementTypes, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, elementTypes, setElementTypes);
 
 	/// The user-interface title of this property.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 
 	/// The type of this property.
 	int _type = 0;

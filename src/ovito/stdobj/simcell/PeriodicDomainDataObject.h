@@ -56,13 +56,13 @@ protected:
 private:
 
 	/// The spatial domain (possibly periodic) this geometry object is embedded in.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QVector<Plane3>, cuttingPlanes, setCuttingPlanes, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
 
 	/// The assigned title of the data object, which is displayed in the user interface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 };
 
 }	// End of namespace

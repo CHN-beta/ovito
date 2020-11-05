@@ -34,8 +34,6 @@ IMPLEMENT_OVITO_CLASS(DataVis);
 ******************************************************************************/
 DataVis::DataVis(DataSet* dataset) : ActiveObject(dataset)
 {
-	// Visual elements must be created in the main thread.
-	OVITO_ASSERT(this->thread() == dataset->thread());
 }
 
 /******************************************************************************

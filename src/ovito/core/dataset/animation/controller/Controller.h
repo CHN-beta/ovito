@@ -291,30 +291,28 @@ class OVITO_CORE_EXPORT ControllerManager
 public:
 
 	/// \brief Creates a new float controller.
-	static OORef<Controller> createFloatController(DataSet* dataset);
+	static OORef<Controller> createFloatController(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new integer controller.
-	static OORef<Controller> createIntController(DataSet* dataset);
+	static OORef<Controller> createIntController(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new Vector3 controller.
-	static OORef<Controller> createVector3Controller(DataSet* dataset);
+	static OORef<Controller> createVector3Controller(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new Color controller.
-	static OORef<Controller> createColorController(DataSet* dataset) { return createVector3Controller(dataset); }
+	static OORef<Controller> createColorController(DataSet* dataset, Application::ExecutionContext executionContext) { return createVector3Controller(dataset, executionContext); }
 
 	/// \brief Creates a new position controller.
-	static OORef<Controller> createPositionController(DataSet* dataset);
+	static OORef<Controller> createPositionController(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new rotation controller.
-	static OORef<Controller> createRotationController(DataSet* dataset);
+	static OORef<Controller> createRotationController(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new scaling controller.
-	static OORef<Controller> createScalingController(DataSet* dataset);
+	static OORef<Controller> createScalingController(DataSet* dataset, Application::ExecutionContext executionContext);
 
 	/// \brief Creates a new transformation controller.
-	static OORef<Controller> createTransformationController(DataSet* dataset);
+	static OORef<Controller> createTransformationController(DataSet* dataset, Application::ExecutionContext executionContext);
 };
 
 }	// End of namespace
-
-

@@ -45,12 +45,23 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUn
 ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentificationModifier(dataset),
     _cutoff(3.5)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ChillPlusModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	// Create the structure types.
     createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
     createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE);
     createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE);
     createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE);
     createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE);
     createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE);
+
+	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

@@ -56,7 +56,7 @@ bool ModifierPropertiesEditor::referenceEvent(RefTarget* source, const Reference
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ModifierPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ModifierPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	// Whenever a new Modifier is being loaded into the editor,
 	// update our reference to the current ModifierApplication.
@@ -73,7 +73,7 @@ void ModifierPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& 
 		_modifierApplication.set(this, PROPERTY_FIELD(modifierApplication), newModApp);
 	}
 
-	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget);
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

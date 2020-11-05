@@ -316,7 +316,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 					outputParticles->makeBondsMutable();
 					ConstPropertyAccess<Point3> positions(_coordinates);
-					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
 					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
 						for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

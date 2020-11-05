@@ -52,8 +52,18 @@ AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : M
 	_targetCell(AffineTransformation::Zero()),
 	_relativeMode(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void AffineTransformationModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Generate the list of delegate objects.
 	createModifierDelegates(AffineTransformationModifierDelegate::OOClass());
+	
+	MultiDelegatingModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

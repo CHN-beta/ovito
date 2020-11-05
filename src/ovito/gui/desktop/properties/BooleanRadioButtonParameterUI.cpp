@@ -135,7 +135,7 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 			int id = buttonGroup()->checkedId();
 			if(id != -1) {
 				if(propertyName()) {
-					if(!editObject()->setProperty(propertyName(), (bool)id)) {
+					if(!mutableEditObject()->setProperty(propertyName(), (bool)id)) {
 						OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
 					}
 				}

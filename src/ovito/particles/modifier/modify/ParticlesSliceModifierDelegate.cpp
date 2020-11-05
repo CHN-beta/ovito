@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,7 +118,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	}
 	else {
 		size_t numSelected = 0;
-		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
+		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty, false, Application::instance()->executionContext());
 		OVITO_ASSERT(mask.size() == newSelProperty.size());
 		boost::dynamic_bitset<>::size_type i = 0;
 		for(int& s : newSelProperty) {

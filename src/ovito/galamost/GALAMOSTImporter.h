@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 
 #include <QXmlDefaultHandler>
 
@@ -65,25 +64,24 @@ public:
 	virtual QString objectTitle() const override { return tr("GALAMOST"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, file);
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource);
 	}
 
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader, protected QXmlDefaultHandler
+	class FrameLoader : public ParticleImporter::FrameLoader, protected QXmlDefaultHandler
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(dataset, frame, file) {}
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 		/// Is called by the XML parser whenever a new XML element is read.
 		virtual bool startElement(const QString& namespaceURI, const QString& localName, const QString& qName, const QXmlAttributes& atts) override;
@@ -99,17 +97,17 @@ private:
 
 	private:
 
-		/// Container for the parsed particle data.
-		std::shared_ptr<ParticleFrameData> _frameData;
-
 		/// The dimensionality of the dataset.
 		int _dimensions = 3;
 
 		/// The number of atoms.
 		size_t _natoms = 0;
 
+		/// The number of bonds.
+		size_t _nbonds = 0;
+
 		/// The particle/bond property which is currently being parsed.
-		PropertyPtr _currentProperty;
+		PropertyObject* _currentProperty = nullptr;
 
 		/// Buffer for text data read from XML file.
 		QString _characterData;

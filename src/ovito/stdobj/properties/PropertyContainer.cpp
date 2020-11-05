@@ -23,6 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyContainer.h"
+#include "PropertyAccess.h"
 
 namespace Ovito { namespace StdObj {
 
@@ -155,7 +156,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath)
 {
 	if(getOOMetaClass().isValidStandardPropertyId(typeId) == false) {
 		if(typeId == PropertyObject::GenericSelectionProperty)
@@ -169,22 +170,13 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 	// Check if property already exists in the output.
 	if(const PropertyObject* existingProperty = getProperty(typeId)) {
 		PropertyObject* newProperty = makeMutable(existingProperty);
-#if 0		
-		if(newProperty != existingProperty && !initializeMemory) {
-			// If no memory initialization is requested, create a new storage buffer to avoid copying the contents of the old one when
-			// a deep copy is made on the first write access.
-			newProperty->setStorage(getOOMetaClass().createStandardProperty(newProperty->size(), typeId, false));
-		}
-#else
-		OVITO_ASSERT(false); // Not implemented yet
-#endif
-		OVITO_ASSERT(newProperty->numberOfStrongReferences() == 1);
+		OVITO_ASSERT(newProperty->isSafeToModify());
 		OVITO_ASSERT(newProperty->size() == elementCount());
 		return newProperty;
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, executionContext, containerPath);
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -209,16 +201,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 			throwException(tr("Existing property '%1' has a different stride.").arg(name));
 
 		PropertyObject* newProperty = makeMutable(existingProperty);
-#if 0
-		if(newProperty != existingProperty && !initializeMemory) {
-			// If no memory initialization is requested, create a new storage buffer to avoid copying the contents of the old one when
-			// a deep copy is made on the first write access.
-			newProperty->setStorage(std::make_shared<PropertyStorage>(newProperty->size(), dataType, componentCount, stride, name, false));
-		}
-#else
-		OVITO_ASSERT(false); // Not implemented yet
-#endif
-		OVITO_ASSERT(newProperty->numberOfStrongReferences() == 1);
+		OVITO_ASSERT(newProperty->isSafeToModify());
 		OVITO_ASSERT(newProperty->size() == elementCount());
 		return newProperty;
 	}
@@ -319,6 +302,43 @@ void PropertyContainer::replicate(size_t n, bool replicatePropertyValues)
 		property->replicate(n, replicatePropertyValues);
 
 	setElementCount(newCount);
+}
+
+/******************************************************************************
+* Sorts the data elements with respect to their unique IDs.
+* Does nothing if data elements do not have IDs.
+******************************************************************************/
+std::vector<size_t> PropertyContainer::sortById()
+{
+#ifdef OVITO_DEBUG
+	verifyIntegrity();
+#endif	
+	if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+		return {};
+	ConstPropertyAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+	if(!ids) 
+		return {};
+
+	// Determine new permutation of data elements which sorts them by ascending ID.
+	std::vector<size_t> permutation(ids.size());
+	std::iota(permutation.begin(), permutation.end(), (size_t)0);
+	std::sort(permutation.begin(), permutation.end(), [&](size_t a, size_t b) { return ids[a] < ids[b]; });
+	std::vector<size_t> invertedPermutation(ids.size());
+	bool isAlreadySorted = true;
+	for(size_t i = 0; i < permutation.size(); i++) {
+		invertedPermutation[permutation[i]] = i;
+		if(permutation[i] != i) isAlreadySorted = false;
+	}
+	if(isAlreadySorted) return {};
+
+	// Re-order all values in the property arrays.
+	CloneHelper cloneHelper;
+	for(const PropertyPtr& prop : properties()) {
+		OORef<PropertyObject> copy = cloneHelper.cloneObject(prop.get(), false);
+		prop->mappedCopyFrom(*copy, invertedPermutation);
+	}
+
+	return invertedPermutation;
 }
 
 /******************************************************************************

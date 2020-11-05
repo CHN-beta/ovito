@@ -50,12 +50,21 @@ IMPLEMENT_OVITO_CLASS(CameraVis);
 ******************************************************************************/
 CameraObject::CameraObject(DataSet* dataset) : AbstractCameraObject(dataset), _isPerspective(true)
 {
-	setFovController(ControllerManager::createFloatController(dataset));
-	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
-	setZoomController(ControllerManager::createFloatController(dataset));
-	zoomController()->setFloatValue(0, 200);
+}
 
-	addVisElement(new CameraVis(dataset));
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void CameraObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setFovController(ControllerManager::createFloatController(dataset(), executionContext));
+	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
+	setZoomController(ControllerManager::createFloatController(dataset(), executionContext));
+	zoomController()->setFloatValue(0, 200);
+	addVisElement(OORef<CameraVis>::create(dataset(), executionContext));
+
+	AbstractCameraObject::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -146,19 +155,20 @@ void CameraObject::setFieldOfView(TimePoint time, FloatType newFOV)
 ******************************************************************************/
 bool CameraObject::isTargetCamera() const
 {
-	for(RefMaker* dependent : dependents()) {
-		if(StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
+	bool result = false;
+	visitDependents([&](RefMaker* dependent) {
+		if(const StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
 			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
 				if(data->contains(this)) {
 					for(PipelineSceneNode* node : staticSource->pipelines(true)) {
 						if(node->lookatTargetNode() != nullptr)
-							return true;
+							result = true;
 					}
 				}
 			}
 		}
-	}
-	return false;
+	});
+	return result;
 }
 
 /******************************************************************************
@@ -168,7 +178,7 @@ void CameraObject::setIsTargetCamera(bool enable)
 {
 	dataset()->undoStack().pushIfRecording<TargetChangedUndoOperation>(this);
 
-	for(RefMaker* dependent : dependents()) {
+	visitDependents([&](RefMaker* dependent) {
 		if(StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
 			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
 				if(data->contains(this)) {
@@ -176,11 +186,11 @@ void CameraObject::setIsTargetCamera(bool enable)
 						if(node->lookatTargetNode() == nullptr && enable) {
 							if(SceneNode* parentNode = node->parentNode()) {
 								AnimationSuspender noAnim(this);
-								OORef<TargetObject> targetObj = new TargetObject(dataset());
-								OORef<DataCollection> dataCollection = new DataCollection(dataset());
+								OORef<TargetObject> targetObj = OORef<TargetObject>::create(dataset(), Application::instance()->executionContext());
+								DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset(), Application::instance()->executionContext());
 								dataCollection->addObject(targetObj);
-								OORef<StaticSource> targetSource = new StaticSource(dataset(), dataCollection);
-								OORef<PipelineSceneNode> targetNode = new PipelineSceneNode(dataset());
+								OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), Application::instance()->executionContext(), dataCollection);
+								OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
 								targetNode->setDataProvider(targetSource);
 								targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
 								parentNode->addChildNode(targetNode);
@@ -203,7 +213,7 @@ void CameraObject::setIsTargetCamera(bool enable)
 				}
 			}
 		}
-	}
+	});
 
 	dataset()->undoStack().pushIfRecording<TargetChangedRedoOperation>(this);
 	notifyTargetChanged();
@@ -214,25 +224,27 @@ void CameraObject::setIsTargetCamera(bool enable)
 ******************************************************************************/
 FloatType CameraObject::targetDistance() const
 {
-	for(RefMaker* dependent : dependents()) {
-		if(StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
+	// That's the fixed target distance of a free camera:
+	FloatType result = 50.0;
+
+	visitDependents([&](RefMaker* dependent) {
+		if(const StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
 			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
 				if(data->contains(this)) {
-					for(PipelineSceneNode* node : staticSource->pipelines(true)) {
+					for(const PipelineSceneNode* node : staticSource->pipelines(true)) {
 						if(node->lookatTargetNode() != nullptr) {
 							TimeInterval iv;
 							Vector3 cameraPos = node->getWorldTransform(dataset()->animationSettings()->time(), iv).translation();
 							Vector3 targetPos = node->lookatTargetNode()->getWorldTransform(dataset()->animationSettings()->time(), iv).translation();
-							return (cameraPos - targetPos).length();
+							result = (cameraPos - targetPos).length();
 						}
 					}
 				}
 			}
 		}
-	}
+	});
 
-	// That's the fixed target distance of a free camera:
-	return FloatType(50);
+	return result;
 }
 
 /******************************************************************************

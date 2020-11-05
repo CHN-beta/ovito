@@ -308,8 +308,7 @@ void ModifyCommandPage::onDeleteModifier()
 	if(!modApp) return;
 
 	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete modifier"), [modApp, this]() {
-		auto dependentsList = modApp->dependents();
-		for(RefMaker* dependent : dependentsList) {
+		modApp->visitDependents([&](RefMaker* dependent) {
 			if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
 				if(precedingModApp->input() == modApp) {
 					precedingModApp->setInput(modApp->input());
@@ -322,7 +321,7 @@ void ModifyCommandPage::onDeleteModifier()
 					pipelineListModel()->setNextToSelectObject(pipeline->dataProvider());
 				}
 			}
-		}
+		});
 		OORef<Modifier> modifier = modApp->modifier();
 		modApp->setInput(nullptr);
 		modApp->setModifier(nullptr);
@@ -369,6 +368,8 @@ void ModifyCommandPage::onModifierMoveUp()
 
 	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier up"), [modApp]() {
 		OVITO_ASSERT(modApp->isPipelineBranch(true) == false);
+		OVITO_ASSERT(false); // Not implemented yet.
+#if 0
 		for(RefMaker* dependent : modApp->dependents()) {
 			if(OORef<ModifierApplication> predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
 				if(predecessor->pipelines(true).empty()) continue;
@@ -386,6 +387,7 @@ void ModifyCommandPage::onModifierMoveUp()
 				break;
 			}
 		}
+#endif
 	});
 }
 
@@ -401,6 +403,8 @@ void ModifyCommandPage::onModifierMoveDown()
 	if(!modApp) return;
 
 	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier down"), [modApp]() {
+		OVITO_ASSERT(false); // Not implemented yet.
+#if 0
 		if(OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input())) {
 			OVITO_ASSERT(successor->isPipelineBranch(true) == false);
 			const auto dependentsList = modApp->dependents();
@@ -415,6 +419,7 @@ void ModifyCommandPage::onModifierMoveDown()
 			modApp->setInput(successor->input());
 			successor->setInput(modApp);
 		}
+#endif
 	});
 }
 

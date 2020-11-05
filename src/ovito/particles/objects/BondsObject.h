@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard bond properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -66,9 +66,6 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 
 		/// Is called by the system after construction of the meta-class instance.
 		virtual void initialize() override;
-
-		/// Gives the property class the opportunity to set up a newly created property object.
-		virtual void prepareNewProperty(PropertyObject* property) const override;
 	};
 
 	Q_OBJECT
@@ -92,6 +89,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE BondsObject(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	
 	/// Convinience method that returns the bond topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 

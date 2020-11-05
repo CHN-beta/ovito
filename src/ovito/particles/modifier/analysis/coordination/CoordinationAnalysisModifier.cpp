@@ -242,7 +242,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(Time
 	particles->createProperty(coordinationNumbers());
 
 	// Output RDF histogram(s).
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, DataTable::Line, tr("Radial distribution function"), rdfY());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("Radial distribution function"), rdfY());
 	table->setIntervalStart(0);
 	table->setIntervalEnd(cutoff());
 	table->setAxisLabelX(tr("Pair separation distance"));

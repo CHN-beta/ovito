@@ -42,8 +42,11 @@ public:
 	/// \brief Constructs a new type.
 	Q_INVOKABLE ElementType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId);
+	/// \brief Initializes the element type's attributes to standard values.
+	virtual void initializeType(int propertyType);
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	/// \brief Returns the name of this type, or a dynamically generated string representing the
 	///        numeric ID if the type has no assigned name.
@@ -74,18 +77,18 @@ public:
 protected:
 
 	/// Stores the unique numeric identifier of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numericId, setNumericId, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numericId, setNumericId);
 
 	/// The human-readable name assigned to this type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, name, setName, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, name, setName);
 
 	/// Stores the visualization color of the type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
 
 	/// Stores whether this type is "enabled" or "disabled".
 	/// This makes only sense in some sorts of types. For example, structure identification modifiers
 	/// use this field to determine which structural types they should look for.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, enabled, setEnabled, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
 };
 
 }	// End of namespace

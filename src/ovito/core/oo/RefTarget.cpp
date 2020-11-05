@@ -31,6 +31,29 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(RefTarget);
 
 /******************************************************************************
+* Constructor.
+******************************************************************************/
+RefTarget::RefTarget(DataSet* dataset) : RefMaker(dataset) 
+{
+	OVITO_CHECK_POINTER(dataset);
+
+	// Ovito objects always live in the main thread.
+	moveToThread(dataset->thread());
+}
+
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+RefTarget::~RefTarget() 
+{
+	// Make sure there are no more dependents left.
+	static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
+	OVITO_ASSERT_MSG(!isSignalConnected(objectEventSignal), "RefTarget destructor", "RefTarget object has not been correctly deleted. It still has dependents left.");
+}
+#endif
+
+/******************************************************************************
 * This method is called when the reference counter of this OvitoObject
 * has reached zero.
 ******************************************************************************/
@@ -71,37 +94,24 @@ void RefTarget::deleteReferenceObject()
 void RefTarget::notifyDependentsImpl(const ReferenceEvent& event)
 {
 	OVITO_CHECK_OBJECT_POINTER(this);
-	OVITO_ASSERT_MSG(event.sender() == this, "RefTarget::notifyDependentsImpl()", "The notifying object is not the sender given in the event object.");
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::notifyDependentsImpl()", "This function may only be called from the main thread.");
 
 	// If reference count is zero, then there cannot be any dependents.
 	if(objectReferenceCount() == 0) {
-		OVITO_ASSERT(dependents().empty());
+#ifdef OVITO_DEBUG
+		// Verify there are no dependents.
+		static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
+		OVITO_ASSERT(!isSignalConnected(objectEventSignal));
+#endif
 		return;
 	}
 
-	// Prevent this object from being deleted while iterating over the list of dependents.
+	// Prevent this object from being deleted while emitting the event signal.
 	OORef<RefTarget> this_(this);
 
-	// Be careful here: The list of dependents can change at any time while broadcasting
-	// the message.
-	for(int i = dependents().size() - 1; i >= 0; --i) {
-		if(i >= dependents().size()) continue;
-		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_CHECK_OBJECT_POINTER(dependents()[i]);
-		dependents()[i]->handleReferenceEvent(this, event);
-	}
+	// Send the signal to the registered dependents.
+	Q_EMIT objectEvent(this, event);
 
-	OVITO_ASSERT(this->__isObjectAlive());
-#ifdef OVITO_DEBUG
-	if(event.type() == ReferenceEvent::TargetDeleted && !dependents().empty()) {
-		qDebug() << "Object being deleted:" << this;
-		for(int i = 0; i < dependents().size(); i++) {
-			qDebug() << "  Dependent" << i << ":" << dependents()[i];
-		}
-		OVITO_ASSERT_MSG(false, "RefTarget deletion", "RefTarget has generated a TargetDeleted event but it still has dependents.");
-	}
-#endif
+	OVITO_CHECK_OBJECT_POINTER(this);
 }
 
 /******************************************************************************
@@ -111,21 +121,13 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event)
 ******************************************************************************/
 bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	OVITO_CHECK_OBJECT_POINTER(this);
-
 	// Let this object process the message.
 	if(!RefMaker::handleReferenceEvent(source, event))
 		return false;
 
-	// Pass message on to dependents of this RefTarget.
-	for(int i = dependents().size() - 1; i >=0 ; --i) {
-		OVITO_ASSERT(i < dependents().size());
-		OVITO_CHECK_OBJECT_POINTER(dependents()[i]);
-		dependents()[i]->handleReferenceEvent(this, event);
-		OVITO_CHECK_OBJECT_POINTER(this);
-	}
+	// Pass event on to dependents of this RefTarget if our handleReferenceEvent() method has requested it.
+	notifyDependentsImpl(event);
 
-	OVITO_ASSERT(this->__isObjectAlive());
 	return true;
 }
 
@@ -134,12 +136,10 @@ bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& ev
 ******************************************************************************/
 bool RefTarget::isReferencedBy(const RefMaker* obj) const
 {
-	for(RefMaker* m : dependents()) {
-		OVITO_CHECK_OBJECT_POINTER(m);
-		if(m == obj) return true;
-		if(m->isReferencedBy(obj)) return true;
-	}
-	return false;
+	if(this == obj) return true;
+	CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj);		
+	const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
+	return event.isReferenced();
 }
 
 /******************************************************************************

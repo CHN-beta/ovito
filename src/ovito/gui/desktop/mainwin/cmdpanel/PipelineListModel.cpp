@@ -169,8 +169,9 @@ void PipelineListModel::refreshList()
 					defaultObjectToSelect = pipelineObject;
 
 				// Create list items for the source's editable data objects.
-				if(const DataCollection* collection = pipelineObject->getSourceDataCollection())
+				if(const DataCollection* collection = pipelineObject->getSourceDataCollection()) {
 					createListItemsForSubobjects(collection, newItems, item);
+				}
 
 				// Done.
 				break;
@@ -221,10 +222,11 @@ void PipelineListModel::refreshList()
 ******************************************************************************/
 void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, std::vector<OORef<PipelineListItem>>& items, PipelineListItem* parentItem)
 {
-	if(dataObj->showInPipelineEditor())
-		items.push_back(parentItem = new PipelineListItem(const_cast<DataObject*>(dataObj), PipelineListItem::DataObject, parentItem));
+	if(dataObj->showInPipelineEditor() && dataObj->editableProxy()) {
+		items.push_back(parentItem = new PipelineListItem(dataObj->editableProxy(), PipelineListItem::DataObject, parentItem));
+	}
 
-	// Recursively visit the sub-objects of the object.
+	// Recursively visit the sub-objects of the data object.
 	dataObj->visitSubObjects([&](const DataObject* subObject) {
 		createListItemsForSubobjects(subObject, items, parentItem);
 		return false;
@@ -284,11 +286,11 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 			for(int i = modifiers.size() - 1; i >= 0; i--) {
 				Modifier* modifier = modifiers[i];
 				std::vector<OORef<RefMaker>> dependentsList;
-				for(RefMaker* dependent : pobj->dependents()) {
+				pobj->visitDependents([&](RefMaker* dependent) {
 					if(dynamic_object_cast<ModifierApplication>(dependent) || dynamic_object_cast<PipelineSceneNode>(dependent)) {
 						dependentsList.push_back(dependent);
 					}
-				}
+				});
 				OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 				modApp->setModifier(modifier);
 				modApp->setInput(pobj);

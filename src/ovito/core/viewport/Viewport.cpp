@@ -367,7 +367,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(viewNode)) {
 		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
@@ -384,7 +384,7 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget
 		// Update viewport when the camera has been replaced by another scene node.
 		updateViewportTitle();
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

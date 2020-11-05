@@ -21,13 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
+#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSDumpLocalImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -60,25 +59,6 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 	}
 
 	return false;
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<InputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the contained data columns.
-			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
-				});
-		});
 }
 
 /******************************************************************************
@@ -156,7 +136,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile()
+void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -166,11 +146,8 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<LAMMPSFrameData>();
-
 	// Hide particles, because this importer loads non-particle data.
-	frameData->particles().setVisElementClass(nullptr);
+	particles()->setVisElement(nullptr);
 
 	// Regular expression for whitespace characters.
 	QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -187,14 +164,14 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 			if(stream.lineStartsWith("ITEM: TIMESTEP")) {
 				if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
 					throw Exception(tr("LAMMPS dump local file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-				frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(timestep));
+				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
 				break;
 			}
 			else if(stream.lineStartsWithToken("ITEM: TIME")) {
 				FloatType simulationTime;
 				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
 					throw Exception(tr("LAMMPS dump local file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-				frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue(simulationTime));
+				state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
 				break;
 			}
 			else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
@@ -204,6 +181,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 					throw Exception(tr("LAMMPS dump local file parsing error. Invalid number of entries in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 				numElements = (size_t)u;
+				setBondCount(numElements);
 				setProgressMaximum(u);
 				break;
 			}
@@ -212,7 +190,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse triclinic simulation box.
 				FloatType tiltFactors[3];
@@ -228,7 +206,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				simBox.maxc.x() -= std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
 				simBox.minc.y() -= std::min(tiltFactors[2], (FloatType)0);
 				simBox.maxc.y() -= std::max(tiltFactors[2], (FloatType)0);
-				frameData->setSimulationCell(AffineTransformation(
+				simulationCell()->setCellMatrix(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(tiltFactors[0], simBox.sizeY(), 0),
 						Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()),
@@ -239,7 +217,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse orthogonal simulation box size.
 				Box3 simBox;
@@ -248,7 +226,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 						throw Exception(tr("Invalid box size in line %1 of LAMMPS dump local file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
-				frameData->setSimulationCell(AffineTransformation(
+				simulationCell()->setCellMatrix(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(0, simBox.sizeY(), 0),
 						Vector3(0, 0, simBox.sizeZ()),
@@ -262,25 +240,8 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
 				QStringList fileColumnNames = tokens.mid(2);
 
-				// Stop here if we are only inspecting the file's header.
-				if(_parseFileHeaderOnly) {
-					if(fileColumnNames.isEmpty()) {
-						// If no file columns names are available, count at least the number
-						// of data columns.
-						stream.readLine();
-						int columnCount = stream.lineString().split(ws_re, QString::SkipEmptyParts).size();
-						frameData->detectedColumnMapping().resize(columnCount);
-					}
-					else {
-						frameData->detectedColumnMapping().resize(fileColumnNames.size());
-						for(int i = 0; i < fileColumnNames.size(); i++)
-							frameData->detectedColumnMapping()[i].columnName = fileColumnNames[i];
-					}
-					return frameData;
-				}
-
 				// Parse data columns.
-				InputColumnReader columnParser(dataset(), _columnMapping, frameData->bonds(), numElements);
+				InputColumnReader columnParser(_columnMapping, bonds(), executionContext());
 
 				// If possible, use memory-mapped file access for best performance.
 				const char* s_start;
@@ -290,7 +251,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				int lineNumber = stream.lineNumber() + 1;
 				try {
 					for(size_t i = 0; i < numElements; i++, lineNumber++) {
-						if(!setProgressValueIntermittent(i)) return {};
+						if(!setProgressValueIntermittent(i)) return;
 						if(!s)
 							columnParser.readElement(i, stream.readLine());
 						else
@@ -305,12 +266,12 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 					stream.seek(stream.byteOffset() + (s - s_start));
 				}
 
-				// Sort the type lists since we created elements on the go and their order depends on the occurrence of types in the file.
+				// Sort the element types since we created them on the go while parsing the file. Otherwise their order be dependent on the first occurrence of element types in the file.
 				columnParser.sortElementTypes();
 
 				// If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
 				// uses 1-based atom IDs and OVITO uses 0-based indices.
-				if(PropertyAccess<ParticleIndexPair> topologyProperty = frameData->bonds().findStandardProperty(BondsObject::TopologyProperty)) {
+				if(PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->getMutableProperty(BondsObject::TopologyProperty)) {
 					for(ParticleIndexPair& ab : topologyProperty) {
 						ab[0] -= 1;
 						ab[1] -= 1;
@@ -321,11 +282,16 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 				if(!stream.eof()) {
 					stream.readLine();
 					if(stream.lineStartsWith("ITEM: TIMESTEP") || stream.lineStartsWith("ITEM: TIME"))
-						frameData->signalAdditionalFrames();
+						signalAdditionalFrames();
 				}
 
-				frameData->setStatus(tr("%1 bonds at timestep %2").arg(numElements).arg(timestep));
-				return frameData; // Done!
+				state().setStatus(tr("%1 bonds at timestep %2").arg(numElements).arg(timestep));
+
+				// Call base implementation to finalize the loaded data.
+				ParticleImporter::FrameLoader::loadFile();
+
+				return; // Done!
+
 			}
 			else if(stream.lineStartsWith("ITEM:")) {
 				// For the sake of forward compatibility, we ignore unknown ITEM sections.
@@ -344,6 +310,50 @@ FileSourceImporter::FrameDataPtr LAMMPSDumpLocalImporter::FrameLoader::loadFile(
 	}
 
 	throw Exception(tr("LAMMPS dump local file parsing error. Unexpected end of file at line %1 or \"ITEM: ENTRIES\" section is not present in dump file.").arg(stream.lineNumber()));
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the number of file columns.
+******************************************************************************/
+Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
+{
+	activateCLocale();
+
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then([](const FileHandle& fileHandle) {
+
+			// Start parsing the file up to the specification of the file columns.
+			CompressedTextReader stream(fileHandle);
+
+			BondInputColumnMapping detectedColumnMapping;
+			while(!stream.eof()) {
+				// Parse next line.
+				stream.readLine();
+
+				if(stream.lineStartsWith("ITEM: ENTRIES")) {
+					// Read the column names list.
+					QRegularExpression ws_re(QStringLiteral("\\s+"));
+					QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+					OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
+					QStringList fileColumnNames = tokens.mid(2);
+
+					if(fileColumnNames.isEmpty()) {
+						// If no file columns names are available, count at least the number of columns in the first data line.
+						stream.readLine();
+						int columnCount = stream.lineString().split(ws_re, QString::SkipEmptyParts).size();
+						detectedColumnMapping.resize(columnCount);
+					}
+					else {
+						detectedColumnMapping.resize(fileColumnNames.size());
+						for(int i = 0; i < fileColumnNames.size(); i++)
+							detectedColumnMapping[i].columnName = fileColumnNames[i];
+					}
+					break;
+				}
+			}
+			return detectedColumnMapping;
+		});
 }
 
 }	// End of namespace

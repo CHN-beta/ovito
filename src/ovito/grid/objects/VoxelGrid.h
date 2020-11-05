@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard voxel properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -69,6 +69,10 @@ public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE VoxelGrid(DataSet* dataset, const QString& title = QString());
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
 
 	/// Returns the spatial domain this voxel grid is embedded in after making sure it
 	/// can safely be modified.
@@ -107,10 +111,10 @@ protected:
 private:
 
 	/// The shape of the grid (i.e. number of voxels in each dimension).
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(GridDimensions, shape, setShape, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(GridDimensions, shape, setShape);
 
 	/// The domain the object is embedded in.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SimulationCellObject, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**

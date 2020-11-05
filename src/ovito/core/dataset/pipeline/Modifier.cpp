@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -94,11 +94,11 @@ Future<PipelineFlowState> Modifier::evaluate(const PipelineEvaluationRequest& re
 QVector<ModifierApplication*> Modifier::modifierApplications() const
 {
 	QVector<ModifierApplication*> apps;
-	for(RefMaker* dependent : dependents()) {
+	visitDependents([&](RefMaker* dependent) {
         ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
 		if(modApp != nullptr && modApp->modifier() == this)
 			apps.push_back(modApp);
-	}
+	});
 	return apps;
 }
 
@@ -107,12 +107,13 @@ QVector<ModifierApplication*> Modifier::modifierApplications() const
 ******************************************************************************/
 ModifierApplication* Modifier::someModifierApplication() const
 {
-	for(RefMaker* dependent : dependents()) {
+	ModifierApplication* result = nullptr;
+	visitDependents([&](RefMaker* dependent) {
         ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
 		if(modApp != nullptr && modApp->modifier() == this)
-			return modApp;
-	}
-	return nullptr;
+			result = modApp;
+	});
+	return result;
 }
 
 /******************************************************************************

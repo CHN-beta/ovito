@@ -119,6 +119,7 @@ OORef<OvitoObject> OvitoClass::createInstance(DataSet* dataset) const
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {
+			OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
 			// Load plugin first.
 			try {
 				plugin()->loadPlugin();
@@ -159,7 +160,7 @@ OvitoObject* OvitoClass::createInstanceImpl(DataSet* dataset) const
 
 	if(isDerivedFrom(RefTarget::OOClass()) && *this != DataSet::OOClass()) {
 		OVITO_ASSERT(dataset != nullptr);
-		UndoSuspender noUndo(dataset->undoStack());
+		UndoSuspender noUndo(dataset);
 		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(DataSet*, dataset)));
 	}
 	else {

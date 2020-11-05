@@ -21,6 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
+#include <ovito/core/dataset/data/DataObjectReference.h>
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "SimulationCellObject.h"
 #include "SimulationCellVis.h"
@@ -41,12 +44,16 @@ SET_PROPERTY_FIELD_LABEL(SimulationCellObject, is2D, "2D");
 SET_PROPERTY_FIELD_UNITS(SimulationCellObject, cellMatrix, WorldParameterUnit);
 
 /******************************************************************************
-* Creates the storage for the internal parameters.
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SimulationCellObject::init(DataSet* dataset)
+void SimulationCellObject::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the simulation box.
-	addVisElement(new SimulationCellVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<SimulationCellVis>::create(dataset(), executionContext));
+
+	DataObject::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -82,6 +89,37 @@ void SimulationCellObject::propertyChanged(const PropertyFieldDescriptor& field)
 		invalidateReciprocalCellMatrix();
 	}
 	DataObject::propertyChanged(field);
+}
+
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	OVITO_ASSERT(this == dataPath.back());
+
+	if(SimulationCellObject* proxy = static_object_cast<SimulationCellObject>(editableProxy())) {
+		// Synchronize the actual data object with the editable proxy object.
+		if(pbcFlags() != proxy->pbcFlags() || is2D() != proxy->is2D()) {
+			// Make this data object mutable first.
+			SimulationCellObject* self = static_object_cast<SimulationCellObject>(state.makeMutableInplace(dataPath));
+			
+			self->setPbcFlags(proxy->pbcFlags());
+			self->setIs2D(proxy->is2D());
+		}
+	}
+	else {
+		// Create and initialize a new proxy.
+		DataOORef<SimulationCellObject> newProxy = DataOORef<SimulationCellObject>::create(dataset(), Application::ExecutionContext::Scripting);
+		newProxy->setPbcFlags(pbcFlags());
+		newProxy->setIs2D(is2D());
+		newProxy->setCellMatrix(cellMatrix());
+
+		// Make this data object mutable and attach the proxy object to it.
+		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
+	}
+
+	DataObject::updateEditableProxies(state, dataPath);
 }
 
 /******************************************************************************

@@ -258,6 +258,15 @@ public:
 				endInsertRows();
 			}
 		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refEvent.field() == &PROPERTY_FIELD(KeyframeController::keys)) {
+				OVITO_ASSERT(keys().size() == ctrl()->keys().size());
+				_keys.set(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
+				Q_EMIT dataChanged(createIndex(refEvent.index(), 0), createIndex(refEvent.index(), columnCount() - 1));
+				Q_EMIT headerDataChanged(Qt::Vertical, refEvent.index(), refEvent.index());
+			}
+		}
 	}
 
 	/// Is called when an animation key generates a notification event.

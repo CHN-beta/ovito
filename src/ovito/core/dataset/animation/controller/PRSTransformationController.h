@@ -48,6 +48,10 @@ public:
 	/// Default constructor.
 	Q_INVOKABLE PRSTransformationController(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
+
 	/// \brief Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }
 

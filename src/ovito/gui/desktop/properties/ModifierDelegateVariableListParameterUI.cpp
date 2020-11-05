@@ -121,6 +121,12 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
 				_delegates.remove(this, PROPERTY_FIELD(delegates), refevent.index());
 			}
 		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
+				_delegates.set(this, PROPERTY_FIELD(delegates), refevent.index(), static_object_cast<ModifierDelegate>(refevent.newTarget()));
+			}
+		}
 		else if(event.type() == ReferenceEvent::ModifierInputChanged) {
 			// The modifier's input from the pipeline has changed -> update list of available delegates.
 			updateUI();

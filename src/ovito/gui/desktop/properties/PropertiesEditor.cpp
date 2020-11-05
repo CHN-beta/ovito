@@ -79,6 +79,17 @@ void PropertiesEditor::initialize(PropertiesPanel* container, MainWindow* mainWi
 }
 
 /******************************************************************************
+* Sets the object being edited in this editor.
+******************************************************************************/
+void PropertiesEditor::setEditObject(RefTarget* newObject) 
+{
+	OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
+			"PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
+
+	_editObject.set(this, PROPERTY_FIELD(editObject), newObject);
+}
+
+/******************************************************************************
 * Creates a new rollout in the rollout container and returns
 * the empty widget that can then be filled with UI controls.
 * The rollout is automatically deleted when the editor is deleted.
@@ -147,22 +158,39 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(editObject)) {
-
-		// Do not allow editing of data objects that have shared ownership. 
-		// Otherwise we may risk race conditions when the data object changes while
-		// it is being conusmed by the data pipeline.
-		OVITO_ASSERT(!dynamic_object_cast<DataObject>(newTarget) || static_object_cast<DataObject>(newTarget)->isSafeToModify());
-
 		setDataset(editObject() ? editObject()->dataset() : nullptr);
 		if(oldTarget) oldTarget->unsetObjectEditingFlag();
 		if(newTarget) newTarget->setObjectEditingFlag();
 		Q_EMIT contentsReplaced(editObject());
 		Q_EMIT contentsChanged(editObject());
 	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget);
+	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Returns the object being edited or a copy of the object which is safe to modify.
+******************************************************************************/
+RefTarget* PropertiesEditor::mutableEditObject()
+{
+	OVITO_ASSERT(editObject());
+	if(DataObject* dataObject = dynamic_object_cast<DataObject>(editObject())) {
+		OVITO_ASSERT(dataObject->isSafeToModify());
+#if 0
+		if(!dataObject->isSafeToModify()) {
+			qDebug() << ">>>>Editor" << this << "mutableEditObject(): Making edit object" << dataObject << "mutable";
+			OVITO_ASSERT(isSignalConnected(QMetaMethod::fromSignal(&PropertiesEditor::mutableDataObjectRequested)));
+			Q_EMIT mutableDataObjectRequested(dataObject);
+			OVITO_CHECK_OBJECT_POINTER(this);
+			OVITO_ASSERT(editObject() != dataObject);
+			OVITO_ASSERT(static_object_cast<DataObject>(editObject())->isSafeToModify());
+			qDebug() << "<<<<Editor" << this << "made edit object" << editObject() << "mutable";
+		}
+#endif
+	}
+	return editObject();
 }
 
 /******************************************************************************
@@ -170,9 +198,7 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 ******************************************************************************/
 void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
 {
-	OVITO_ASSERT(editObject());
-	editObject()->setPropertyFieldValue(field, newValue);
+	mutableEditObject()->setPropertyFieldValue(field, newValue);
 }
-
 
 }	// End of namespace

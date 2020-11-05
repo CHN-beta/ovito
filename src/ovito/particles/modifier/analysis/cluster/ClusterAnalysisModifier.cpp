@@ -532,7 +532,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 		clusterColors[0] = Color(0.8, 0.8, 0.8);
 
 		// Assign colors to particles according to the clusters they belong to.
-		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty, false);
+		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty, false, Application::instance()->executionContext());
 		boost::transform(ConstPropertyAccess<qlonglong>(particleClusters()), colorsArray.begin(), [&](qlonglong cluster) { 
 			OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
 			return clusterColors[cluster];
@@ -554,7 +554,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 		state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), modApp);
 
 	// Output a data table with the cluster list.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, Application::ExecutionContext::Scripting, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
 	// Output centers of mass.
 	if(modifier->computeCentersOfMass() && _centersOfMass)

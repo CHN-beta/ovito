@@ -214,7 +214,7 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 /******************************************************************************
 * Gets called when the data provider of the pipeline has been replaced.
 ******************************************************************************/
-void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(dataProvider)) {
 		// Reset caches when the pipeline data source is replaced.
@@ -228,7 +228,7 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 			}
 		}
 	}
-	SceneNode::referenceReplaced(field, oldTarget, newTarget);
+	SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

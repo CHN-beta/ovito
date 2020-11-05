@@ -73,8 +73,18 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 	_highlightEdges(false),
 	_surfaceIsClosed(true)
 {
-	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset));
-	setCapTransparencyController(ControllerManager::createFloatController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SurfaceMeshVis::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+	setCapTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	TransformingDataVis::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

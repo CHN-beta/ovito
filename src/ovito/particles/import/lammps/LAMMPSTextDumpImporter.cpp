@@ -21,13 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSTextDumpImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -62,25 +60,6 @@ bool LAMMPSTextDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 	}
 
 	return false;
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the contained data columns.
-			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
-				});
-		});
 }
 
 /******************************************************************************
@@ -158,7 +137,7 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
+void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -167,9 +146,6 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<LAMMPSFrameData>();
 
 	// Regular expression for whitespace characters.
 	QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -186,14 +162,14 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 			if(stream.lineStartsWith("ITEM: TIMESTEP")) {
 				if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
 					throw Exception(tr("LAMMPS dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-				frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(timestep));
+				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
 				break;
 			}
 			else if(stream.lineStartsWithToken("ITEM: TIME")) {
 				FloatType simulationTime;
 				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
 					throw Exception(tr("LAMMPS dump file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-				frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue(simulationTime));
+				state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
 				break;
 			}
 			else if(stream.lineStartsWith("ITEM: NUMBER OF ATOMS")) {
@@ -205,6 +181,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					throw Exception(tr("LAMMPS dump file parsing error. Number of atoms in line %1 exceeds internal limit of 2^31 atoms:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 				numParticles = (size_t)u;
+				setParticleCount(numParticles);
 				setProgressMaximum(u);
 				break;
 			}
@@ -213,7 +190,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse triclinic simulation box.
 				FloatType tiltFactors[3];
@@ -229,7 +206,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				simBox.maxc.x() -= std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
 				simBox.minc.y() -= std::min(tiltFactors[2], (FloatType)0);
 				simBox.maxc.y() -= std::max(tiltFactors[2], (FloatType)0);
-				frameData->setSimulationCell(AffineTransformation(
+				simulationCell()->setCellMatrix(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(tiltFactors[0], simBox.sizeY(), 0),
 						Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()),
@@ -240,7 +217,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				// Parse optional boundary condition flags.
 				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")).split(ws_re, QString::SkipEmptyParts);
 				if(tokens.size() >= 3)
-					frameData->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
 				// Parse orthogonal simulation box size.
 				Box3 simBox;
@@ -249,7 +226,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 						throw Exception(tr("Invalid box size in line %1 of dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				}
 
-				frameData->setSimulationCell(AffineTransformation(
+				simulationCell()->setCellMatrix(AffineTransformation(
 						Vector3(simBox.sizeX(), 0, 0),
 						Vector3(0, simBox.sizeY(), 0),
 						Vector3(0, 0, simBox.sizeZ()),
@@ -263,21 +240,6 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ATOMS");
 				QStringList fileColumnNames = tokens.mid(2);
 
-				// Stop here if we are only inspecting the file's header.
-				if(_parseFileHeaderOnly) {
-					if(fileColumnNames.isEmpty()) {
-						// If no file columns names are available, count at least the number
-						// of data columns.
-						stream.readLine();
-						int columnCount = stream.lineString().split(ws_re, QString::SkipEmptyParts).size();
-						frameData->detectedColumnMapping().resize(columnCount);
-					}
-					else {
-						frameData->detectedColumnMapping() = generateAutomaticColumnMapping(fileColumnNames);
-					}
-					return frameData;
-				}
-
 				// Set up column-to-property mapping.
 				ParticleInputColumnMapping columnMapping;
 				if(_useCustomColumnMapping)
@@ -286,7 +248,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					columnMapping = generateAutomaticColumnMapping(fileColumnNames);
 
 				// Parse data columns.
-				InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), numParticles);
+				InputColumnReader columnParser(columnMapping, particles(), executionContext());
 
 				// Check if there is an 'element' file column containing the atom type names.
 				int elementColumn = fileColumnNames.indexOf(QStringLiteral("element"));
@@ -305,7 +267,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				int lineNumber = stream.lineNumber() + 1;
 				try {
 					for(size_t i = 0; i < numParticles; i++, lineNumber++) {
-						if(!setProgressValueIntermittent(i)) return {};
+						if(!setProgressValueIntermittent(i)) return;
 						if(!s)
 							columnParser.readElement(i, stream.readLine());
 						else
@@ -346,8 +308,8 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					// Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
 					// We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
 					// wraps around particles at the periodic boundaries only occasionally.
-					if(ConstPropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
-						// Compute bound box of particle positions.
+					if(ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+						// Compute bounding box of particle positions.
 						Box3 boundingBox;
 						boundingBox.addPoints(posProperty);
 						// Check if bounding box is inside the (slightly extended) unit cube.
@@ -358,8 +320,8 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 
 				if(reducedCoordinates) {
 					// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-					if(PropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
-						const AffineTransformation simCell = frameData->simulationCell();
+					if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+						const AffineTransformation simCell = simulationCell()->cellMatrix();
 						for(Point3& p : posProperty)
 							p = simCell * p;
 					}
@@ -370,7 +332,7 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				if(!fileColumnNames.empty()) {
 					for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
 						if(columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-							if(PropertyAccess<FloatType> radiusProperty = frameData->particles().findStandardProperty(ParticlesObject::RadiusProperty)) {
+							if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
 								for(FloatType& r : radiusProperty)
 									r /= 2;
 							}
@@ -383,22 +345,26 @@ FileSourceImporter::FrameDataPtr LAMMPSTextDumpImporter::FrameLoader::loadFile()
 				if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
 					return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
 				})) {
-					frameData->simulationCell().column(2).setZero();
+					simulationCell()->setIs2D(true);
 				}
 
 				// Detect if there are more simulation frames following in the file.
 				if(!stream.eof()) {
 					stream.readLine();
 					if(stream.lineStartsWith("ITEM: TIMESTEP") || stream.lineStartsWith("ITEM: TIME"))
-						frameData->signalAdditionalFrames();
+						signalAdditionalFrames();
 				}
 
 				// Sort particles by ID.
 				if(_sortParticles)
-					frameData->sortParticlesById();
+					particles()->sortById();
 
-				frameData->setStatus(tr("%1 particles at timestep %2").arg(numParticles).arg(timestep));
-				return frameData; // Done!
+				state().setStatus(tr("%1 particles at timestep %2").arg(numParticles).arg(timestep));
+
+				// Call base implementation to finalize the loaded particle data.
+				ParticleImporter::FrameLoader::loadFile();
+
+				return; // Done!
 			}
 			else if(stream.lineStartsWith("ITEM:")) {
 				// For the sake of forward compatibility, we ignore unknown ITEM sections.
@@ -523,6 +489,48 @@ void LAMMPSTextDumpImporter::loadFromStream(ObjectLoadStream& stream)
 		stream >> _customColumnMapping.mutableValue();
 	}
 	stream.closeChunk();
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the number of file columns.
+******************************************************************************/
+Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(const Frame& frame)
+{
+	activateCLocale();
+
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then([](const FileHandle& fileHandle) {
+			
+			// Start parsing the file up to the specification of the file columns.
+			CompressedTextReader stream(fileHandle);
+
+			ParticleInputColumnMapping detectedColumnMapping;
+			while(!stream.eof()) {
+				// Parse next line.
+				stream.readLine();
+
+				if(stream.lineStartsWith("ITEM: ATOMS")) {
+					// Read the column names list.
+					QRegularExpression ws_re(QStringLiteral("\\s+"));
+					QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+					OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ATOMS");
+					QStringList fileColumnNames = tokens.mid(2);
+
+					if(fileColumnNames.isEmpty()) {
+						// If no file columns names are available, count at least the number of columns in the first atom line.
+						stream.readLine();
+						int columnCount = stream.lineString().split(ws_re, QString::SkipEmptyParts).size();
+						detectedColumnMapping.resize(columnCount);
+					}
+					else {
+						detectedColumnMapping = generateAutomaticColumnMapping(fileColumnNames);
+					}
+					break;
+				}
+			}
+			return detectedColumnMapping;
+		});
 }
 
 }	// End of namespace

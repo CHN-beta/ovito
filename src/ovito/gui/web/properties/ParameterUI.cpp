@@ -33,7 +33,7 @@ DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(editObject)) {
 		if(oldTarget) oldTarget->unsetObjectEditingFlag();
@@ -42,7 +42,7 @@ void ParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTar
 		updateUI();
 		Q_EMIT editObjectReplaced();
 	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget);
+	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

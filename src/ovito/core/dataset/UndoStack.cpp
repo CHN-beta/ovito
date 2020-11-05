@@ -33,13 +33,14 @@ namespace Ovito {
 ******************************************************************************/
 UndoSuspender::UndoSuspender(const RefMaker* object)
 {
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoSuspender::UndoSuspender()", "This method may only be called from the main thread.");
 	OVITO_CHECK_OBJECT_POINTER(object);
-	if(object->dataset()) {
+	if(object->dataset() && QThread::currentThread() == object->thread()) {
 		_suspendCount = &object->dataset()->undoStack()._suspendCount;
 		++(*_suspendCount);
 	}
-	else _suspendCount = nullptr;
+	else {
+		_suspendCount = nullptr;
+	}
 }
 
 /******************************************************************************
@@ -102,7 +103,6 @@ void UndoStack::endCompoundOperation(bool commit)
 	OVITO_ASSERT_MSG(!_compoundStack.empty(), "UndoStack::endCompoundOperation()", "Missing call to beginCompoundOperation().");
 
 	if(!commit) {
-		UndoSuspender noUndo(*this);
 		// Undo operations in current compound operation first.
 		resetCurrentCompoundOperation();
 		// Then discard compound operation.

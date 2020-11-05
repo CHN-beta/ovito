@@ -63,7 +63,7 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 		}
 		else {
 			// Close previous editor.
-			_editor = nullptr;
+			_editor.reset();
 		}
 	}
 
@@ -71,7 +71,8 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 		// Open new properties editor.
 		_editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(newEditObject);
 		if(editor() && _mainWindow) {
-			editor()->initialize(this, _mainWindow, RolloutInsertionParameters(), nullptr);
+			if(!editor()->container())
+				editor()->initialize(this, _mainWindow, RolloutInsertionParameters(), nullptr);
 			editor()->setEditObject(newEditObject);
 		}
 	}

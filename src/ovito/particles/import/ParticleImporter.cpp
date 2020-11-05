@@ -22,9 +22,15 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/modify/LoadTrajectoryModifier.h>
+#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/ParticleType.h>
+#include <ovito/particles/objects/BondsObject.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "ParticleImporter.h"
 
 namespace Ovito { namespace Particles {
@@ -48,6 +54,266 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor& field)
 }
 
 /******************************************************************************
+* Returns the simulation cell object, newly creating it first if necessary.
+******************************************************************************/
+SimulationCellObject* ParticleImporter::FrameLoader::simulationCell()
+{
+	if(!_simulationCell) {
+		_simulationCell = state().getMutableObject<SimulationCellObject>();
+		if(!_simulationCell) {
+			_simulationCell = state().createObject<SimulationCellObject>(dataSource(), executionContext(), AffineTransformation::Zero(), true, true, true, false);
+			_simulationCellNewlyCreated = _simulationCell;
+		}
+	}
+	return _simulationCell;
+}
+
+/******************************************************************************
+* Returns the particles container object, newly creating it first if necessary.
+******************************************************************************/
+ParticlesObject* ParticleImporter::FrameLoader::particles()
+{
+	if(!_particles) {
+		_particles = state().getMutableObject<ParticlesObject>();
+		if(!_particles)
+			_particles = state().createObject<ParticlesObject>(dataSource(), executionContext());
+	}
+	return _particles;
+}
+
+/******************************************************************************
+* Returns the bonds container object, newly creating it first if necessary.
+******************************************************************************/
+BondsObject* ParticleImporter::FrameLoader::bonds()
+{
+	if(!_bonds) {
+		if(particles()->bonds()) {
+			_bonds = particles()->makeBondsMutable();
+		}
+		else {
+			particles()->setBonds(DataOORef<BondsObject>::create(dataset(), executionContext()));
+			_bonds = particles()->bonds();
+			_bonds->setDataSource(dataSource());
+		}
+	}
+	return _bonds;
+}
+
+/******************************************************************************
+* Returns the angles container object, newly creating it first if necessary.
+******************************************************************************/
+AnglesObject* ParticleImporter::FrameLoader::angles()
+{
+	if(!_angles) {
+		if(particles()->angles()) {
+			_angles = particles()->makeAnglesMutable();
+		}
+		else {
+			particles()->setAngles(DataOORef<AnglesObject>::create(dataset(), executionContext()));
+			_angles = particles()->angles();
+			_angles->setDataSource(dataSource());
+		}
+	}
+	return _angles;
+}
+
+/******************************************************************************
+* Returns the dihedrals container object, newly creating it first if necessary.
+******************************************************************************/
+DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
+{
+	if(!_dihedrals) {
+		if(particles()->dihedrals()) {
+			_dihedrals = particles()->makeDihedralsMutable();
+		}
+		else {
+			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset(), executionContext()));
+			_dihedrals = particles()->dihedrals();
+			_dihedrals->setDataSource(dataSource());
+		}
+	}
+	return _dihedrals;
+}
+
+/******************************************************************************
+* Returns the impropers container object, newly creating it first if necessary.
+******************************************************************************/
+ImpropersObject* ParticleImporter::FrameLoader::impropers()
+{
+	if(!_impropers) {
+		if(particles()->impropers()) {
+			_impropers = particles()->makeImpropersMutable();
+		}
+		else {
+			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset(), executionContext()));
+			_impropers = particles()->impropers();
+			_impropers->setDataSource(dataSource());
+		}
+	}
+	return _impropers;
+}
+
+/******************************************************************************
+* Creates a particle object (if the particle count is non-zero) and adjusts the 
+* number of elements of the property container.
+******************************************************************************/
+void ParticleImporter::FrameLoader::setParticleCount(size_t count)
+{
+	if(count != 0) {
+		particles()->setElementCount(count);
+	}
+	else {
+		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+			state().removeObject(particles);
+		_particles = nullptr;
+	}
+}
+
+/******************************************************************************
+* Creates a bonds container object (if the bond count is non-zero) and adjusts the 
+* number of elements of the property container.
+******************************************************************************/
+void ParticleImporter::FrameLoader::setBondCount(size_t count)
+{
+	if(count != 0) {
+		bonds()->setElementCount(count);
+	}
+	else {
+		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+			if(particles->bonds())
+				state().makeMutable(particles)->setBonds(nullptr);
+		_bonds = nullptr;
+	}
+}
+
+/******************************************************************************
+* Creates an angles container object (if the bond count is non-zero) and adjusts the 
+* number of elements of the property container.
+******************************************************************************/
+void ParticleImporter::FrameLoader::setAngleCount(size_t count)
+{
+	if(count != 0) {
+		angles()->setElementCount(count);
+	}
+	else {
+		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+			if(particles->angles())
+				state().makeMutable(particles)->setAngles(nullptr);
+		_angles = nullptr;
+	}
+}
+
+/******************************************************************************
+* Creates a dihedrals container object (if the bond count is non-zero) and adjusts the 
+* number of elements of the property container.
+******************************************************************************/
+void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
+{
+	if(count != 0) {
+		dihedrals()->setElementCount(count);
+	}
+	else {
+		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+			if(particles->dihedrals())
+				state().makeMutable(particles)->setDihedrals(nullptr);
+		_dihedrals = nullptr;
+	}
+}
+
+/******************************************************************************
+* Creates an impropers containerobject (if the bond count is non-zero) and adjusts the 
+* number of elements of the property container.
+******************************************************************************/
+void ParticleImporter::FrameLoader::setImproperCount(size_t count)
+{
+	if(count != 0) {
+		impropers()->setElementCount(count);
+	}
+	else {
+		if(const ParticlesObject* particles = state().getObject<ParticlesObject>())
+			if(particles->impropers())
+				state().makeMutable(particles)->setImpropers(nullptr);
+		_impropers = nullptr;
+	}
+}
+
+/******************************************************************************
+* Determines the PBC shift vectors for bonds using the minimum image convention.
+******************************************************************************/
+void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
+{
+	ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+	if(!posProperty) return;
+
+	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
+	if(!bondTopologyProperty) return;
+
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
+
+	if(!_simulationCell || !_simulationCell->hasPbc()) {
+		bondPeriodicImageProperty.fill(Vector3I::Zero());
+	}
+	else {
+		const AffineTransformation inverseCellMatrix = _simulationCell->inverseMatrix();
+		const std::array<bool,3> pbcFlags = _simulationCell->pbcFlags();
+		for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
+			size_t index1 = bondTopologyProperty[bondIndex][0];
+			size_t index2 = bondTopologyProperty[bondIndex][1];
+			OVITO_ASSERT(index1 < posProperty.size() && index2 < posProperty.size());
+			Vector3 delta = posProperty[index1] - posProperty[index2];
+			for(size_t dim = 0; dim < 3; dim++) {
+				if(pbcFlags[dim])
+					bondPeriodicImageProperty[bondIndex][dim] = std::lround(inverseCellMatrix.prodrow(delta, dim));
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Registers a new numeric element type with the given ID and an optional name string.
+******************************************************************************/
+const ElementType* ParticleImporter::FrameLoader::addNumericType(PropertyObject* typedProperty, int id, const QString& name, const OvitoClass& elementTypeClass)
+{
+	if(const ElementType* existingType = typedProperty->elementType(id))
+		return existingType;
+
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass.createInstance(dataset()));
+	elementType->setNumericId(id);
+	elementType->setName(name);
+	elementType->loadUserDefaults(executionContext());
+	elementType->initializeType(typedProperty->type());
+
+	return typedProperty->addElementType(std::move(elementType));
+}
+
+/******************************************************************************
+* Finalizes the particle data loaded by a sub-class.
+******************************************************************************/
+void ParticleImporter::FrameLoader::loadFile()
+{
+	if(_simulationCellNewlyCreated) {
+		// Set up the vis element for the simulation cell.
+		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(_simulationCellNewlyCreated->visElement())) {
+			// Choose an appropriate line width that depends on the cell's size.
+			FloatType cellDiameter = (
+					_simulationCellNewlyCreated->cellMatrix().column(0) +
+					_simulationCellNewlyCreated->cellMatrix().column(1) +
+					_simulationCellNewlyCreated->cellMatrix().column(2)).length();
+			cellVis->setDefaultCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
+			cellVis->setCellLineWidth(cellVis->defaultCellLineWidth());
+		}
+	}
+
+#ifdef OVITO_DEBUG
+	if(_particles) _particles->verifyIntegrity();
+	if(_bonds) _bonds->verifyIntegrity();
+	if(_angles) _angles->verifyIntegrity();
+	if(_dihedrals) _dihedrals->verifyIntegrity();
+	if(_impropers) _impropers->verifyIntegrity();
+#endif
+}
+
+/******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
 bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
@@ -57,10 +323,7 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 	if(this->isTrajectoryFormat() == false && nextImporter->isTrajectoryFormat() == true) {
 
 		// Create a new file source for loading the trajectory.
-		OORef<FileSource> fileSource = new FileSource(dataset());
-		// Load user-defined default settings.
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			fileSource->loadUserDefaults();
+		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), Application::instance()->executionContext());
 
 		// Concatenate all files from the input list having the same file format into one sequence,
 		// which gets handled by the trajectory importer.

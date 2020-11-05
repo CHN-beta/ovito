@@ -24,7 +24,6 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include "WavefrontOBJImporter.h"
-#include "TriMeshFrameData.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -81,7 +80,7 @@ bool WavefrontOBJImporter::OOMetaClass::checkFileFormat(const FileHandle& file) 
 /******************************************************************************
 * Parses the given input file and stores the data in the given container object.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
+void WavefrontOBJImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -92,9 +91,8 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Create output data structure.
-	auto frameData = std::make_shared<TriMeshFrameData>();
-	TriMesh& mesh = frameData->mesh();
+	// Create mesh data structure.
+	TriMeshPtr mesh = std::make_shared<TriMesh>();
 
 	// List of parsed vertex normals.
 	std::vector<Vector3> vertexNormals;
@@ -114,7 +112,7 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 			Point3 xyz;
 			if(sscanf(line, "v " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &xyz.x(), &xyz.y(), &xyz.z()) != 3)
 				throw Exception(tr("Invalid vertex specification in line %1 of OBJ file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-			mesh.addVertex(xyz);
+			mesh->addVertex(xyz);
 		}
 		else if(stream.lineStartsWithToken("f", true)) {
 			// Parse polygon definition.
@@ -127,14 +125,14 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 				if(*s == '\0') break;
 				int vi = std::atoi(s);
 				if(vi >= 1) {
-					if(vi > mesh.vertexCount())
+					if(vi > mesh->vertexCount())
 						throw Exception(tr("Invalid polygon specification in line %1 of OBJ file: Vertex index %2 is out of range.").arg(stream.lineNumber()).arg(vi));
 					vi--; // Make it zero-based.
 				}
 				else if(vi <= -1) {
-					if(mesh.vertexCount() + vi < 0)
+					if(mesh->vertexCount() + vi < 0)
 						throw Exception(tr("Invalid polygon specification in line %1 of OBJ file: Vertex index %2 is out of range.").arg(stream.lineNumber()).arg(vi));
-					vi = mesh.vertexCount() + vi;
+					vi = mesh->vertexCount() + vi;
 				}
 				else throw Exception(tr("Invalid polygon specification in line %1 of OBJ file: Vertex index %2 is invalid.").arg(stream.lineNumber()).arg(vi));
 				vindices[std::min(nVertices,2)] = vi;
@@ -164,7 +162,7 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 
 				// Emit a new face to triangulate the polygon.
 				if(nVertices >= 3) {
-					TriMeshFace& f = mesh.addFace();
+					TriMeshFace& f = mesh->addFace();
 					f.setVertices(vindices[0], vindices[1], vindices[2]);
 					if(smoothingGroup != 0 && smoothingGroup < OVITO_MAX_NUM_SMOOTHING_GROUPS)
 						f.setSmoothingGroups(1 << (smoothingGroup-1));
@@ -183,7 +181,7 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 				}
 			}
 			if(nVertices >= 3)
-				mesh.faces().back().setEdgeVisible(2);
+				mesh->faces().back().setEdgeVisible(2);
 		}
 		else if(stream.lineStartsWithToken("vn", true)) {
 			// Parse vertex normal.
@@ -216,12 +214,19 @@ FileSourceImporter::FrameDataPtr WavefrontOBJImporter::FrameLoader::loadFile()
 			throw Exception(tr("Invalid or unsupported OBJ file format. Encountered unknown token in line %1.").arg(stream.lineNumber()));
 
 		if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-			return {};
+			return;
 	}
-	mesh.invalidateVertices();
-	mesh.invalidateFaces();
-	frameData->setStatus(tr("%1 vertices, %2 triangles").arg(mesh.vertexCount()).arg(mesh.faceCount()));
-	return frameData;
+	mesh->invalidateVertices();
+	mesh->invalidateFaces();
+
+	// Show some stats to the user.
+	state().setStatus(tr("%1 vertices, %2 triangles").arg(mesh->vertexCount()).arg(mesh->faceCount()));
+
+	// Add mesh to the data collection.
+	TriMeshObject* meshObj = state().getMutableObject<TriMeshObject>();
+	if(!meshObj)
+		meshObj = state().createObject<TriMeshObject>(dataSource(), executionContext());
+	meshObj->setMesh(std::move(mesh));	
 }
 
 }	// End of namespace

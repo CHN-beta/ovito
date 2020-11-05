@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2020 Alexander Stukowski
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -30,7 +30,9 @@ OVITO_STANDARD_PLUGIN(MeshMod
 		SurfaceMeshAssignColorModifierDelegate.cpp
 		SurfaceMeshDeleteSelectedModifierDelegate.cpp
 		SurfaceMeshExpressionSelectionModifierDelegate.cpp
+#		ParaViewVTMImporter.cpp
 	PLUGIN_DEPENDENCIES Mesh StdMod
+	LIB_DEPENDENCIES Qt5::Xml
 )
 
 # Propagate list of plugins to parent scope.

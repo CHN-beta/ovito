@@ -148,7 +148,7 @@ void OverlayListModel::refreshList()
 ******************************************************************************/
 void OverlayListModel::onViewportEvent(const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::TitleChanged) {
+	if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::TitleChanged) {
 		requestUpdate();
 	}
 }

@@ -1031,7 +1031,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		// Check if the particle must be rendered using a custom shape.
 		if(typeProperty && particleIndex < typeProperty->size()) {
 			ConstPropertyAccess<int> typeArray(typeProperty);
-			if(ParticleType* ptype = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeArray[particleIndex]))) {
+			if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeArray[particleIndex]))) {
 				if(ptype->shapeMesh())
 					return;	// Note: Highlighting of particles with user-defined shapes is not implemented yet.
 			}

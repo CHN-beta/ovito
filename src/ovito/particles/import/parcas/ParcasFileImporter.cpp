@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "ParcasFileImporter.h"
 
 namespace Ovito { namespace Particles {
@@ -126,7 +126,7 @@ bool ParcasFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
+void ParcasFileImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading Parcas file %1").arg(fileHandle().toString()));
 
@@ -194,11 +194,8 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
     if(natoms > std::numeric_limits<int>::max())
     	throw Exception(tr("PARCAS file parsing error: File contains %1 atoms. OVITO can handle only %2 atoms.").arg(natoms).arg(std::numeric_limits<int>::max()));
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
-
-	frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue((int)frame_num));
-	frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue(simu_time));
+	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue((int)frame_num), dataSource());
+	state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), dataSource());
 
 	// Create particle properties for extra fields.
 	std::vector<PropertyAccess<FloatType>> extraProperties;
@@ -217,13 +214,12 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
     	if(propertyName == "Epot") propertyType = ParticlesObject::PotentialEnergyProperty;
     	else if(propertyName == "Ekin") propertyType = ParticlesObject::KineticEnergyProperty;
 
-    	PropertyPtr property;
+    	PropertyObject* property;
 		if(propertyType != ParticlesObject::UserProperty)
-			property = ParticlesObject::OOClass().createStandardProperty(dataset(), natoms, propertyType, true);
+			property = particles()->createProperty(propertyType, true, executionContext());
 		else
-			property = ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 1, 0, propertyName, true);
-		frameData->particles().addProperty(property);
-		extraProperties.push_back(PropertyAccess<FloatType>(property));
+			property = particles()->createProperty(propertyName, PropertyObject::Float, 1, 0, true);
+		extraProperties.emplace_back(property);
     }
 
     // Set up simulation cell and periodic boundary flags.
@@ -232,24 +228,24 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
     		std::abs((FloatType)box_y),
     		std::abs((FloatType)box_z)
     };
-	frameData->setSimulationCell(AffineTransformation(
+	simulationCell()->setCellMatrix(AffineTransformation(
 			Vector3(boxDim[0], 0, 0), Vector3(0, boxDim[1], 0), Vector3(0, 0, boxDim[2]),
 			Vector3(-boxDim[0]/2, -boxDim[1]/2, -boxDim[2]/2)));
-	frameData->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
+	simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
 	// Create the required standard properties.
     size_t numAtoms = (size_t)natoms;
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, false);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::IdentifierProperty, false);
+	setParticleCount(numAtoms);
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 
 	// Create particle types list.
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);
     for(int i = mintype; i <= maxtype; i++) {
     	stream.read(types[i - mintype].data(), 4);
     	types[i - mintype][4] = '\0';
-		typeList->addNamedTypeId(i, QString::fromUtf8(types[i - mintype].data()).trimmed(), true);
+		addNumericType(typeProperty.storage(), i, QString::fromUtf8(types[i - mintype].data()).trimmed(), ParticleType::OOClass());
     }
 
 	// The actual header is now parsed. Check the offsets.
@@ -296,15 +292,17 @@ FileSourceImporter::FrameDataPtr ParcasFileImporter::FrameLoader::loadFile()
 		}
 
 		// Update progress indicator.
-		if(!setProgressValueIntermittent(i)) return {};
+		if(!setProgressValueIntermittent(i)) return;
 	}
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
-	frameData->setStatus(tr("%1 atoms at simulation time %2").arg(numAtoms).arg(simu_time));
-	return frameData;
+	state().setStatus(tr("%1 atoms at simulation time %2").arg(numAtoms).arg(simu_time));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

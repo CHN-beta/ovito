@@ -122,6 +122,9 @@ public:
 	/// Changes the value of a non-animatable property field of the object being edited.
 	void changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue);
 
+	/// Returns the object being edited or a copy of the object which is safe to modify.
+	RefTarget* mutableEditObject();
+
 public Q_SLOTS:
 
 	/// \brief Sets the object being edited in this editor.
@@ -129,11 +132,7 @@ public Q_SLOTS:
 	///                  as the previous object.
 	///
 	/// This method generates a contentsReplaced() and a contentsChanged() signal.
-	void setEditObject(RefTarget* newObject) {
-		OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
-				"PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
-		_editObject.set(this, PROPERTY_FIELD(editObject), newObject);
-	}
+	void setEditObject(RefTarget* newObject);
 
 Q_SIGNALS:
 
@@ -147,6 +146,11 @@ Q_SIGNALS:
 	/// \sa editObject The object that has changed.
     void contentsChanged(Ovito::RefTarget* editObject);
 
+	/// \brief This signal is emitted by the editor of a DataObject with shared ownership in order to
+	///        request a replacement of the object with a mutable copy. The owner of the editor, for example
+	///        the parent editor, should handle the request.
+	void mutableDataObjectRequested(const Ovito::DataObject* dataObject);
+
 protected:
 
 	/// Creates the user interface controls for the editor.
@@ -157,7 +161,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
@@ -171,7 +175,7 @@ private:
 	PropertiesEditor* _parentEditor = nullptr;
 
 	/// The object being edited in this editor.
-	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
 	/// The list of rollout widgets that have been created by editor.
 	/// The cleanup handler is used to delete them when the editor is being deleted.

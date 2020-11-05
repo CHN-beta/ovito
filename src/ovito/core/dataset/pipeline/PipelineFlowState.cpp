@@ -33,14 +33,27 @@ namespace Ovito {
 ******************************************************************************/
 DataCollection* PipelineFlowState::mutableData()
 {
-	// Note: This method is not thread-safe. Must only be called from the main thread.
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
     if(_data && !_data->isSafeToModify()) {
         _data = CloneHelper().cloneObject(_data.get(), false);
 		OVITO_ASSERT(_data->isSafeToModify());
     }
     return _data.get();
+}
+
+/******************************************************************************
+* Makes the last object in the data path mutable and returns a pointer to the mutable copy.
+* Also update the data path to point to the new object.
+******************************************************************************/
+DataObject* PipelineFlowState::makeMutableInplace(ConstDataObjectPath& path)
+{
+    OVITO_ASSERT(path.empty() == false);
+    OVITO_ASSERT(path.front() == data());
+    DataObject* parent = mutableData();
+    path.front() = parent;
+	for(auto obj = std::next(path.begin()); obj != path.end(); ++obj) {
+        *obj = parent = parent->makeMutable(*obj);
+	}
+    return parent;
 }
 
 }	// End of namespace

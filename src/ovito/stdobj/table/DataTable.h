@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard data table properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -90,19 +90,19 @@ public:
 private:
 
 	/// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, intervalStart, setIntervalStart, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalStart, setIntervalStart);
 
 	/// The upper bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, intervalEnd, setIntervalEnd, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalEnd, setIntervalEnd);
 
 	/// The label of the x-axis (optional).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, axisLabelX, setAxisLabelX, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelX, setAxisLabelX);
 
 	/// The label of the y-axis (optional).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, axisLabelY, setAxisLabelY, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelY, setAxisLabelY);
 
 	/// The plotting mode for this data table.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(PlotMode, plotMode, setPlotMode, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode, plotMode, setPlotMode);
 };
 
 /**

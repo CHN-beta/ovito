@@ -169,8 +169,10 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 	_sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
 	_importer.set(this, PROPERTY_FIELD(importer), importer);
 
-	// Set flag indicating that the file being loaded is a newly selected one.
-	_isNewFile = true;
+	// Discard previously loaded data.
+	if(!dataset()->undoStack().isUndoingOrRedoing())
+		setDataCollection(nullptr);
+	setDataCollectionFrame(-1);
 
 	// Trigger a reload of all frames.
 	_frames.clear();
@@ -194,8 +196,8 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(bool refetchCurrentFile)
 {
 	// Remove current data file from local file cache so that it will get downloaded again in case it came from a remote location.
-	if(refetchCurrentFile && _dataCollectionFrame >= 0 && _dataCollectionFrame < frames().size()) {
-		Application::instance()->fileManager()->removeFromCache(frames()[_dataCollectionFrame].sourceFile);
+	if(refetchCurrentFile && dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
+		Application::instance()->fileManager()->removeFromCache(frames()[dataCollectionFrame()].sourceFile);
 	}
 
 	// Update the list of frames.
@@ -270,7 +272,7 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	// Adjust the global animation length to match the new number of source frames.
 	notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-	if(_isNewFile && !_originallySelectedFilename.contains(QChar('*'))) {
+	if(!dataCollection() && !_originallySelectedFilename.contains(QChar('*'))) {
 		// Position time slider to the frame that corresponds to the file initially picked by the user
 		// in the file selection dialog.
 		for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
@@ -505,33 +507,37 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					TimeInterval interval = frameTimeInterval(frame);
 					const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
-					// Create the frame loader for the requested frame.
-					FileSourceImporter::FrameLoaderPtr frameLoader = importer()->createFrameLoader(frameInfo, fileHandle);
-					OVITO_ASSERT(frameLoader);
+					// Load the frame data and process results in the UI thread.
+					auto future = importer()->loadFrame(frameInfo, fileHandle, dataCollection(), this)
+						.then(executor(), [this, frame, frameInfo, interval](PipelineFlowState state) {
+							OVITO_ASSERT_MSG(state, "FileSource::requestFrameInternal()", "File importer did not return a valid pipeline state.");
 
-					// Execute the loader in a background thread.
-					// Collect results from the loader in the UI thread once it has finished running.
-					auto future = dataset()->taskManager().runTaskAsync(frameLoader)
-						.then(executor(), [this, frame, frameInfo, interval](FileSourceImporter::FrameDataPtr&& frameData) {
-							OVITO_ASSERT_MSG(frameData, "FileSource::requestFrameInternal()", "File importer did not return a FrameData object.");
+							// Add some standard global attributes to the pipeline state to indicate where it is coming from.
+							state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
+							state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
 
-							// Let the import class insert its data into the pipeline state.
-							_handOverInProgress = true;
-							try {
-								CloneHelper cloneHelper;
-								OORef<DataCollection> loadedData = frameData->handOver(dataCollection(), _isNewFile, cloneHelper, this);
-								_isNewFile = false;
-								_handOverInProgress = false;
-								loadedData->addAttribute(QStringLiteral("SourceFrame"), frame, this);
-								loadedData->addAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
+							// Also give the state the precomputed validity interval.
+							state.setStateValidity(interval);
 
-								// Return the result state.
-								return PipelineFlowState(std::move(loadedData), frameData->status(), interval);
+							// Create editable proxy objects for the data objects in the loaded collection.
+							OVITO_ASSERT(state.data()->isSafeToModify());
+							if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+								_updatingEditableProxies = true;
+								ConstDataObjectPath dataPath = { state.data() };
+								state.data()->updateEditableProxies(state, dataPath);
+								_updatingEditableProxies = false;
 							}
-							catch(...) {
-								_handOverInProgress = false;
-								throw;
+
+							// Adopt the loaded data collection as our internal master data collection (only if it is for the current animation time).
+							if(interval.contains(dataset()->animationSettings()->time())) {
+								setDataCollectionFrame(frame);
+								setDataCollection(state.data());
+								setStatus(state.status());
+								notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
 							}
+
+							// Return the result state.
+							return state;
 						});
 					return future;
 				});
@@ -541,7 +547,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 
 			return loadFrameFuture;
 		})
-		// Post-process the results of the load operation before returning them to the caller.
+		// Post-process the results of the loading operation before returning them to the caller.
 		//
 		//  - Turn any exception that was thrown during loading into a
 		//    valid pipeline state with an error code.
@@ -590,38 +596,6 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 	// Throw away cached frame data and notify pipeline that an update is in order.
 	pipelineCache().invalidate(unchangedInterval);
 	notifyTargetChangedOutsideInterval(unchangedInterval);
-}
-
-/******************************************************************************
-* Sets which frame is currently stored in the data collection sub-object.
-******************************************************************************/
-void FileSource::setDataCollectionFrame(int frameIndex)
-{
-	if(_dataCollectionFrame != frameIndex) {
-		_dataCollectionFrame = frameIndex;
-	}
-}
-
-/******************************************************************************
-* Asks the object for the result of the data pipeline.
-******************************************************************************/
-SharedFuture<PipelineFlowState> FileSource::evaluate(const PipelineEvaluationRequest& request)
-{
-	SharedFuture<PipelineFlowState> future = CachingPipelineObject::evaluate(request);
-
-	// If the state for the current animation time is requested, we make it the main data collection
-	// of this FileSource. The main data collection is shown in the UI as extra subitems under the 
-	// file source in the pipeline editor.
-	return future.then(executor(), [this, time = request.time()](PipelineFlowState state) {
-		if(time == dataset()->animationSettings()->time() && state.data() != dataCollection()) {
-			pipelineCache().invalidateSynchronousState();
-			setDataCollectionFrame(animationTimeToSourceFrame(time));
-			setDataCollection(state.data());
-			setStatus(state.status());
-			notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-		}
-		return state;
-	});
 }
 
 /******************************************************************************
@@ -709,25 +683,33 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
 }
 
 /******************************************************************************
-* Handles reference events sent by reference targets of this object.
+* Is called when a RefTarget referenced by this object has generated an event.
 ******************************************************************************/
 bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection()) {
-		if(_handOverInProgress) {
-			// The hand-over should not generate any change messages.
-			OVITO_ASSERT(false);
-		}
-		else if(!event.sender()->isBeingLoaded()) {
-			// Whenever the user actively edits the data collection of this FileSource,
-			// the cached pipeline states become (mostly) invalid and is replaced with the data collection.
-			pipelineCache().overrideCache(dataCollection());
+	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
+		qDebug() << "Data collection changed dataCollectionFrame()=" << dataCollectionFrame();
 
-			// Inform the pipeline that we have a new preliminary input state.
-			notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+			// The user has modified one of the editable proxy objects attached to the data collection.
+			// Apply the changes made to the proxy objects to the actual data objects.
+			UndoSuspender noUndo(this);
+			PipelineFlowState state(dataCollection(), PipelineStatus::Success);
+			_updatingEditableProxies = true;
+			// Temporarily detach data collection from the FileSource to ignore change signals sent by the data collection.
+			setDataCollection(nullptr);
+			ConstDataObjectPath dataPath = {state.data()};
+			state.data()->updateEditableProxies(state, dataPath);
+			// Re-attach the updated data collection to the FileSource.
+			setDataCollection(state.data());
+			_updatingEditableProxies = false;
 		}
+
+		// Invalidate pipeline cache, except at the current animation time. 
+		// Here we use the updated data collection.
+		if(dataCollectionFrame() >= 0)
+			pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
 	}
-
 	return CachingPipelineObject::referenceEvent(source, event);
 }
 

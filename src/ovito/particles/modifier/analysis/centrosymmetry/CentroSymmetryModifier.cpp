@@ -187,7 +187,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(TimePoint time, 
 	particles->createProperty(csp());
 
 	// Output CSP histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("csp-centrosymmetry"), modApp, DataTable::Line, tr("CSP distribution"), cspHistogram());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("csp-centrosymmetry"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("CSP distribution"), cspHistogram());
 	table->setAxisLabelX(tr("CSP"));
 	table->setIntervalStart(0);
 	table->setIntervalEnd(cspHistogramRange());

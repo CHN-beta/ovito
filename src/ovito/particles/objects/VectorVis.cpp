@@ -72,7 +72,17 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 	_renderingQuality(ArrowPrimitive::LowQuality),
 	_offset(Vector3::Zero())
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VectorVis::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	DataVis::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

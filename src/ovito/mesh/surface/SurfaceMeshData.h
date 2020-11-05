@@ -199,19 +199,27 @@ public:
         return vidx;
     }
 
-    /// Creates several new vertices and initializes their coordinates.
-    template<typename CoordinatesIterator>
-    void createVertices(CoordinatesIterator begin, CoordinatesIterator end) {
+    /// Creates a specified number of new vertices in the mesh without initializing their positions.
+    /// Returns the index of first newly created vertex.
+    vertex_index createVertices(size_type count) {
         OVITO_ASSERT(isTopologyMutable());
         OVITO_ASSERT(areVertexPropertiesMutable());
         size_type oldVertexCount = vertexCount();
-        auto nverts = std::distance(begin, end);
-        topology()->createVertices(nverts);
+        topology()->createVertices(count);
         for(auto& prop : _mutableVertexProperties) {
-            if(prop.storage()->grow(nverts))
+            if(prop.storage()->grow(count))
                 updateVertexPropertyPointers(prop);
         }
-	    std::copy(begin, end, vertexCoords() + oldVertexCount);
+        return oldVertexCount;
+    }
+
+    /// Creates several new vertices and initializes their coordinates.
+    template<typename CoordinatesIterator>
+    vertex_index createVertices(CoordinatesIterator begin, CoordinatesIterator end) {
+        auto nverts = std::distance(begin, end);
+        vertex_index startIndex = createVertices(nverts);
+	    std::copy(begin, end, vertexCoords() + startIndex);
+        return startIndex;
     }
 
     /// Deletes a vertex from the mesh.

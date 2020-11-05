@@ -45,9 +45,7 @@ public:
 	Q_INVOKABLE SimulationCellObject(DataSet* dataset) : DataObject(dataset),
 		_cellMatrix(AffineTransformation::Zero()),
 		_reciprocalSimulationCell(AffineTransformation::Zero()),
-		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false) {
-		init(dataset);
-	}
+		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false) {}
 
 	/// \brief Constructs a cell from three vectors specifying the cell's edges.
 	/// \param a1 The first edge vector.
@@ -58,17 +56,13 @@ public:
 			const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
 		DataObject(dataset),
 		_cellMatrix(a1, a2, a3, origin - Point3::Origin()),
-		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
-	}
+		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
 
 	/// \brief Constructs a cell from a matrix that specifies its shape and position in space.
 	/// \param cellMatrix The matrix
 	SimulationCellObject(DataSet* dataset, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
 		DataObject(dataset),
-		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
-	}
+		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
 
 	/// \brief Constructs a cell with an axis-aligned box shape.
 	/// \param box The axis-aligned box.
@@ -79,9 +73,12 @@ public:
 		DataObject(dataset),
 		_cellMatrix(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()),
 		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
 		OVITO_ASSERT_MSG(box.sizeX() >= 0 && box.sizeY() >= 0 && box.sizeZ() >= 0, "SimulationCellObject constructor", "The simulation box must have a non-negative volume.");
 	}
+	
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
 
 	/// Returns inverse of the simulation cell matrix.
 	/// This matrix maps the simulation cell to the unit cube ([0,1]^3).
@@ -237,6 +234,9 @@ public:
 	/// under the data source section.
 	virtual bool showInPipelineEditor() const override { return true; }
 
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Simulation cell"); }
 
@@ -264,14 +264,11 @@ protected:
 
 private:
 
-	/// Creates the storage for the internal parameters.
-	void init(DataSet* dataset);
-
 	/// Computes the inverse of the cell matrix.
 	void computeInverseMatrix() const;
 
 	/// Stores the three cell vectors and the position of the cell origin.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, cellMatrix, setCellMatrix, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, cellMatrix, setCellMatrix);
 
 	/// The inverse of the cell matrix, which is kept in sync with the cell matrix at all times.
 	mutable AffineTransformation _reciprocalSimulationCell;
@@ -279,14 +276,14 @@ private:
 	mutable bool _isReciprocalMatrixValid = false;
 
 	/// Specifies periodic boundary condition in the X direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcX, setPbcX, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcX, setPbcX);
 	/// Specifies periodic boundary condition in the Y direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcY, setPbcY, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcY, setPbcY);
 	/// Specifies periodic boundary condition in the Z direction.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pbcZ, setPbcZ, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcZ, setPbcZ);
 
 	/// Stores the dimensionality of the system.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, is2D, setIs2D, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, is2D, setIs2D);
 
 	/// This is a special flag used by the Python bindings to indicate that
 	/// this simulation cell has been temporarily put into a writable state.

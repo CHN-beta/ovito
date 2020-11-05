@@ -118,7 +118,7 @@ void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Create the selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
 
 	// Counts the number of selected elements.
 	size_t nSelected = 0;

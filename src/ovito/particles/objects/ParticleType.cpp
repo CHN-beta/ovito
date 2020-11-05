@@ -56,67 +56,40 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-bool ParticleType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void ParticleType::initializeType(int propertyType)
 {
-	if(!ElementType::initialize(isNewlyCreated, name, attributes, typePropertyId))
-		return false;
+	ElementType::initializeType(propertyType);
 
-	// Initialize color value.
-	if(isNewlyCreated && !attributes.contains(QStringLiteral("color"))) {
-		setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-	}
+	setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId()));
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId()));
+}
 
-	// Initialize radius value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("radius"))) {
-			setRadius(attributes.value(QStringLiteral("radius")).value<FloatType>());
-		}
-		else {
-			setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-		}
-	}
-	else {
-		FloatType r = attributes.value(QStringLiteral("radius"), QVariant::fromValue(radius())).value<FloatType>();
-		if(r != radius()) {
-			if(!isSafeToModify())
-				return false;
-			setRadius(r);
-		}
-	}
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	ElementType::updateEditableProxies(state, dataPath);
 
-	// Initialize mass value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("mass"))) {
-			setMass(attributes.value(QStringLiteral("mass")).value<FloatType>());
+	// Note: 'this' may no longer exist at this point, because the base method implementationmay
+	// have already replaced it with a mutable copy.
+	const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
+
+	if(const ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
+		if(proxy->radius() != self->radius() || proxy->mass() != self->mass() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
+				|| proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
+			// Make this data object mutable first.
+			ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
+			mutableSelf->setRadius(proxy->radius());
+			mutableSelf->setMass(proxy->mass());
+			mutableSelf->setShapeMesh(proxy->shapeMesh());
+			mutableSelf->setHighlightShapeEdges(proxy->highlightShapeEdges());
+			mutableSelf->setShapeBackfaceCullingEnabled(proxy->shapeBackfaceCullingEnabled());
+			mutableSelf->setShapeUseMeshColor(proxy->shapeUseMeshColor());
 		}
 	}
-	else {
-		FloatType m = attributes.value(QStringLiteral("mass"), QVariant::fromValue(mass())).value<FloatType>();
-		if(m != mass()) {
-			if(!isSafeToModify())
-				return false;
-			setMass(m);
-		}
-	}	
-
-	// Initialize particle shape.
-	if(attributes.contains(QStringLiteral("shape"))) {
-		if(!isSafeToModify())
-			return false;
-
-		TriMeshObject* shapeObject = new TriMeshObject(dataset());
-		shapeObject->setMesh(attributes.value(QStringLiteral("shape")).value<std::shared_ptr<TriMesh>>());
-		setShapeMesh(shapeObject);
-	}
-	else {
-		// Note: Do not automatically reset shape, because we don't want to loose
-		// a shape manually assigned by the user to this particle type.
-		//setShapeMesh(nullptr);
-	}
-	
-	return true;
 }
 
 /******************************************************************************

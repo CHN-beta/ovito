@@ -156,7 +156,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
 	}
 
 	// Create selection property for output.
@@ -314,7 +314,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	// Output a data table with the histogram data.
 	DataTable* table = state.createObject<DataTable>(
 		QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
-		modApp, DataTable::Histogram, sourceProperty().nameWithComponent(), 
+		modApp, Application::ExecutionContext::Scripting, DataTable::Histogram, sourceProperty().nameWithComponent(), 
 		histogram.take());
 	table->setAxisLabelX(sourceProperty().nameWithComponent());
 	table->setIntervalStart(intervalStart);

@@ -107,13 +107,16 @@ public:
 		return std::move(inputLabels);
 	}
 
+	/// Implementation method, which performs the merging of two pipeline states.
+	void combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState);
+
 protected:
 
 	/// \brief Is called when a RefTarget referenced by this object has generated an event.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 

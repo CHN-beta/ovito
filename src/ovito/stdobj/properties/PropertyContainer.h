@@ -97,6 +97,14 @@ public:
 		return nullptr;
 	}
 
+	/// Looks up the standard property with the given ID and makes it mutable if necessary.
+	PropertyObject* getMutableProperty(int typeId) {
+		if(const PropertyObject* p = getProperty(typeId))
+			return makeMutable(p);
+		else
+			return nullptr;
+	}
+
 	/// Returns the given standard property.
 	/// If it does not exist, an exception is thrown.
 	const PropertyObject* expectProperty(int typeId) const;
@@ -118,7 +126,7 @@ public:
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(int typeId, bool initializeMemory = false, const ConstDataObjectPath& containerPath = {});
+	PropertyObject* createProperty(int typeId, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {});
 
 	/// Creates a user-defined property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
@@ -142,6 +150,10 @@ public:
 	/// Duplicates all data elements by extending the property arrays and replicating the existing data N times.
 	void replicate(size_t n, bool replicatePropertyValues = true);
 
+	/// Sorts the data elements in the container with respect to their unique IDs.
+	/// Does nothing if data elements do not have the ID property.
+	virtual std::vector<size_t> sortById();
+
 	/// Makes sure that all property arrays in this container have a consistent length.
 	/// If this is not the case, the method throws an exception.
 	void verifyIntegrity() const;
@@ -157,13 +169,13 @@ protected:
 private:
 
 	/// Holds the list of properties.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(PropertyObject, properties, setProperties, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(PropertyObject, properties, setProperties);
 
 	/// Keeps track of the number of data elements this property container contains.
-	DECLARE_PROPERTY_FIELD_FLAGS(size_t, elementCount, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_PROPERTY_FIELD(size_t, elementCount);
 
 	/// The assigned title of the data object, which is displayed in the user interface.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, title, setTitle, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 };
 
 /// Encapsulates a reference to a PropertyContainer in a PipelineFlowState.

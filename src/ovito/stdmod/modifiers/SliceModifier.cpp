@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,19 +68,29 @@ SliceModifier::SliceModifier(DataSet* dataset) : MultiDelegatingModifier(dataset
 	_applyToSelection(false),
 	_enablePlaneVisualization(false)
 {
-	setNormalController(ControllerManager::createVector3Controller(dataset));
-	setDistanceController(ControllerManager::createFloatController(dataset));
-	setWidthController(ControllerManager::createFloatController(dataset));
-	if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
+}
 
-	// Create the vis element for the plane.
-	setPlaneVis(new TriMeshVis(dataset));
-	planeVis()->setTitle(tr("Plane"));
-	planeVis()->setHighlightEdges(true);
-	planeVis()->setTransparency(0.5);
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SliceModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setNormalController(ControllerManager::createVector3Controller(dataset(), executionContext));
+	setDistanceController(ControllerManager::createFloatController(dataset(), executionContext));
+	setWidthController(ControllerManager::createFloatController(dataset(), executionContext));
+	if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
 
 	// Generate the list of delegate objects.
 	createModifierDelegates(SliceModifierDelegate::OOClass());
+
+	MultiDelegatingModifier::loadUserDefaults(executionContext);
+
+	// Create the vis element for the plane.
+	setPlaneVis(OORef<TriMeshVis>::create(dataset(), executionContext));
+	planeVis()->setTitle(tr("Plane"));
+	planeVis()->setHighlightEdges(true);
+	planeVis()->setTransparency(0.5);
 }
 
 /******************************************************************************
@@ -320,7 +330,7 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 		}
 
 		// Create an output mesh for visualizing the cutting plane.
-		TriMeshObject* meshObj = state.createObject<TriMeshObject>(QStringLiteral("plane"), modApp);
+		TriMeshObject* meshObj = state.createObject<TriMeshObject>(QStringLiteral("plane"), modApp, Application::ExecutionContext::Scripting);
 		meshObj->setMesh(std::move(mesh));
 		meshObj->setVisElement(planeVis());
 	}

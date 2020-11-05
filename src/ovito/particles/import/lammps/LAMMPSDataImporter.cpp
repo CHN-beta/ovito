@@ -21,18 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "LAMMPSDataImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -73,28 +71,9 @@ bool LAMMPSDataImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 }
 
 /******************************************************************************
-* Inspects the header of the given file and returns the detected LAMMPS atom style.
-******************************************************************************/
-Future<LAMMPSDataImporter::LAMMPSAtomStyle> LAMMPSDataImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the LAMMPS atom style.
-			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(dataset(), frame, fileHandle, sortParticles(), atomStyle(), true);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedAtomStyle();
-				});
-		});
-}
-
-/******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
+void LAMMPSDataImporter::FrameLoader::loadFile()
 {
 	using namespace std;
 
@@ -204,11 +183,8 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 	if(xhi < xlo || yhi < ylo || zhi < zlo)
 		throw Exception(tr("Invalid simulation cell size in header of LAMMPS data file."));
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<LAMMPSFrameData>();
-
 	// Define the simulation cell geometry.
-	frameData->setSimulationCell(AffineTransformation(
+	simulationCell()->setCellMatrix(AffineTransformation(
 			Vector3(xhi - xlo, 0, 0),
 			Vector3(xy, yhi - ylo, 0),
 			Vector3(xz, yz, zhi - zlo),
@@ -224,18 +200,23 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 	if(natoms == 0)
 		foundAtomsSection = true;
 
-	// Create standard particle properties.
-	frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::PositionProperty, true);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::TypeProperty, true);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::IdentifierProperty, true);
+	// Set container sizes.
+	setParticleCount(natoms);
+	setBondCount(nbonds);
+	setAngleCount(nangles);
+	setDihedralCount(ndihedrals);
+	setImproperCount(nimpropers);
 
-	// Create atom types.
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
-	for(int i = 1; i <= natomtypes; i++)
-		typeList->addTypeId(i);
+	// Create standard particle properties.
+	particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, true, executionContext());
+	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 
 	// Atom type mass table.
-	std::vector<FloatType> massTable;
+	std::vector<FloatType> massTable(natomtypes, 0.0);
+	bool hasTypeMasses = false;
+	// Atom type name table.
+	std::vector<QString> atomTypeNames(natomtypes);
 
 	/// Maps atom IDs to indices.
 	std::unordered_map<qlonglong,size_t> atomIdMap;
@@ -252,13 +233,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 
 			if(natoms != 0) {
 				stream.readLine();
-				bool withPBCImageFlags = detectAtomStyle(stream.line(), keyword);
-				frameData->setDetectedAtomStyle(_atomStyle, _atomSubStyles);
-				if(_detectAtomStyle) {
-					// We are done at this point if we are only supposed to
-					// detect the atom style used in the file.
-					return frameData;
-				}
+				bool withPBCImageFlags = detectAtomStyle(stream.line(), keyword, _atomStyle, _atomSubStyles);
 				if(_atomStyle == AtomStyle_Unknown)
 					throw Exception(tr("Atom style of the LAMMPS data file could not be detected, or the number of file columns is not as expected for the selected atom style."));
 
@@ -283,12 +258,12 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				}
 
 				// Parse data in the Atoms section line by line:
-				InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), natoms);
+				InputColumnReader columnParser(columnMapping, particles(), executionContext());
 				try {
 					const int* atomType = typeProperty.cbegin();
 					const qlonglong* atomId = identifierProperty.cbegin();
 					for(size_t i = 0; i < (size_t)natoms; i++, ++atomType, ++atomId) {
-						if(!setProgressValueIntermittent(i)) return {};
+						if(!setProgressValueIntermittent(i)) return;
 						if(i != 0) stream.readLine();
 						columnParser.readElement(i, stream.line());
 						if(*atomType < 1 || *atomType > natomtypes)
@@ -302,7 +277,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 
 				// Some LAMMPS data files contain per-particle diameter information.
 				// OVITO only knows the "Radius" particle property, which is means we have to divide by 2.
-				if(PropertyAccess<FloatType> radiusProperty = frameData->particles().findStandardProperty(ParticlesObject::RadiusProperty)) {
+				if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
 					for(FloatType& r : radiusProperty)
 						r /= FloatType(2);
 				}
@@ -312,15 +287,15 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		else if(keyword.startsWith("Velocities")) {
 
 			// Get the atomic IDs.
-			ConstPropertyAccess<qlonglong> identifierProperty = frameData->particles().findStandardProperty(ParticlesObject::IdentifierProperty);
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create the velocity property.
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::VelocityProperty, true);
+			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, true, executionContext());
 			
 			for(size_t i = 0; i < (size_t)natoms; i++) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				stream.readLine();
 
 				Vector3 v;
@@ -341,7 +316,7 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(keyword.startsWith("Masses")) {
-			massTable.resize(natomtypes + 1, 0);
+			hasTypeMasses = true;
 			for(int i = 1; i <= natomtypes; i++) {
 				// Try to parse atom types names, which some data files list as comments in the Masses section.
 				const char* start = stream.readLine();
@@ -351,14 +326,13 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				FloatType mass;
     			if(sscanf(start, "%i " FLOATTYPE_SCANF_STRING, &atomType, &mass) != 2 || atomType < 1 || atomType > natomtypes)
 					throw Exception(tr("Invalid mass specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
-				massTable[atomType] = mass;
-				typeList->setTypeMass(atomType, mass);
+				massTable[atomType - 1] = mass;
 
 				while(*start && *start != '#') start++;
 				if(*start) {
 					QStringList words = QString::fromLocal8Bit(start).split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
 					if(words.size() == 2)
-						typeList->setTypeName(atomType, words[1], true);
+						atomTypeNames[atomType - 1] = words[1];
 				}
 			}
 		}
@@ -383,26 +357,25 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		else if(keyword.startsWith("Bonds")) {
 
 			// Get the atomic IDs, which have already been read.
-			ConstPropertyAccess<qlonglong> identifierProperty = frameData->particles().findStandardProperty(ParticlesObject::IdentifierProperty);
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create bonds storage.
-			PropertyAccess<ParticleIndexPair> bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(dataset(), nbonds, BondsObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
 
 			// Create bond type property.
-			PropertyAccess<int> typeProperty = frameData->bonds().createStandardProperty<BondsObject>(dataset(), nbonds, BondsObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
 
 			// Create bond types.
-			PropertyContainerImportData::TypeList* bondTypeList = frameData->bonds().createPropertyTypesList(typeProperty, BondType::OOClass());
 			for(int i = 1; i <= nbondtypes; i++)
-				bondTypeList->addTypeId(i);
+				addNumericType(typeProperty.storage(), i, {}, BondType::OOClass());
 
 			setProgressMaximum(nbonds);
 			int* bondType = typeProperty.begin();
 			ParticleIndexPair* bond = bondTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				stream.readLine();
 
 				qlonglong bondId, atomId1, atomId2;
@@ -428,31 +401,30 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 				if(*bondType < 1 || *bondType > nbondtypes)
 					throw Exception(tr("Bond type out of range in Bonds section of LAMMPS data file at line %1.").arg(stream.lineNumber()));
 			}
-			frameData->generateBondPeriodicImageProperty();
+			generateBondPeriodicImageProperty();
 		}
 		else if(keyword.startsWith("Angles")) {
 
 			// Get the atomic IDs, which have already been read.
-			ConstPropertyAccess<qlonglong> identifierProperty = frameData->particles().findStandardProperty(ParticlesObject::IdentifierProperty);
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create angles topology storage.
-			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = frameData->angles().createStandardProperty<AnglesObject>(dataset(), nangles, AnglesObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty, false, executionContext());
 
 			// Create angle type property.
-			PropertyAccess<int> typeProperty = frameData->angles().createStandardProperty<AnglesObject>(dataset(), nangles, AnglesObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = angles()->createProperty(AnglesObject::TypeProperty, false, executionContext());
 
 			// Create angle types.
-			PropertyContainerImportData::TypeList* angleTypeList = frameData->angles().createPropertyTypesList(typeProperty, ElementType::OOClass());
 			for(int i = 1; i <= nangletypes; i++)
-				angleTypeList->addTypeId(i);
+				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(nangles);
 			int* angleType = typeProperty.begin();
 			ParticleIndexTriplet* angle = angleTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				stream.readLine();
 
 				qlonglong angleId;
@@ -475,26 +447,25 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		else if(keyword.startsWith("Dihedrals")) {
 
 			// Get the atomic IDs, which have already been read.
-			ConstPropertyAccess<qlonglong> identifierProperty = frameData->particles().findStandardProperty(ParticlesObject::IdentifierProperty);
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create dihedrals topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(dataset(), ndihedrals, DihedralsObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty, false, executionContext());
 
 			// Create dihedral type property.
-			PropertyAccess<int> typeProperty = frameData->dihedrals().createStandardProperty<DihedralsObject>(dataset(), ndihedrals, DihedralsObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty, false, executionContext());
 
 			// Create dihedral types.
-			PropertyContainerImportData::TypeList* dihedralTypeList = frameData->dihedrals().createPropertyTypesList(typeProperty, ElementType::OOClass());
 			for(int i = 1; i <= ndihedraltypes; i++)
-				dihedralTypeList->addTypeId(i);
+				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(ndihedrals);
 			int* dihedralType = typeProperty.begin();
 			ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				stream.readLine();
 
 				qlonglong dihedralId;
@@ -517,26 +488,25 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		else if(keyword.startsWith("Impropers")) {
 
 			// Get the atomic IDs, which have already been read.
-			ConstPropertyAccess<qlonglong> identifierProperty = frameData->particles().findStandardProperty(ParticlesObject::IdentifierProperty);
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
 			if(!identifierProperty)
 				throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create improper topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = frameData->impropers().createStandardProperty<ImpropersObject>(dataset(), nimpropers, ImpropersObject::TopologyProperty, false);
+			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty, false, executionContext());
 
 			// Create improper type property.
-			PropertyAccess<int> typeProperty = frameData->impropers().createStandardProperty<ImpropersObject>(dataset(), nimpropers, ImpropersObject::TypeProperty, true);
+			PropertyAccess<int> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty, false, executionContext());
 
 			// Create improper types.
-			PropertyContainerImportData::TypeList* improperTypeList = frameData->impropers().createPropertyTypesList(typeProperty, ElementType::OOClass());
 			for(int i = 1; i <= nimpropertypes; i++)
-				improperTypeList->addTypeId(i);
+				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(nimpropers);
 			int* improperType = typeProperty.begin();
 			ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				stream.readLine();
 
 				qlonglong improperId;
@@ -572,16 +542,23 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		throw Exception("LAMMPS data file does not contain atomic coordinates.");
 
 	// Assign masses to particles based on their type.
-	if(!massTable.empty() && !frameData->particles().findStandardProperty(ParticlesObject::MassProperty)) {
-		PropertyAccess<FloatType> massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), natoms, ParticlesObject::MassProperty, false);
+	if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
+		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
 		boost::transform(typeProperty, massProperty.begin(), [&](int atomType) {
-			return massTable[atomType];
+			return massTable[atomType - 1];
 		});
 	}
 
-	// Sort particles by ID.
+	// Create atom types and assign per-type masses.
+	for(int i = 1; i <= natomtypes; i++) {
+		const ElementType* type = addNumericType(typeProperty.storage(), i, atomTypeNames[i - 1], ParticleType::OOClass());
+		if(massTable[i - 1] != 0)
+			static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(massTable[i - 1]);
+	}
+
+	// Sort particles by ID if requested.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
 	QString statusString = tr("Number of particles: %1").arg(natoms);
 	if(nbondtypes > 0 || nbonds > 0)
@@ -592,14 +569,16 @@ FileSourceImporter::FrameDataPtr LAMMPSDataImporter::FrameLoader::loadFile()
 		statusString += tr("\nNumber of dihedrals: %1").arg(ndihedrals);
 	if(nimpropertypes > 0 || nimpropers > 0)
 		statusString += tr("\nNumber of impropers: %1").arg(nimpropers);
-	frameData->setStatus(statusString);
-	return frameData;
+	state().setStatus(statusString);
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
 * Detects or verifies the LAMMPS atom style used by the data file.
 ******************************************************************************/
-bool LAMMPSDataImporter::FrameLoader::detectAtomStyle(const char* firstLine, const QByteArray& keywordLine)
+bool LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyle& atomStyle, std::vector<LAMMPSAtomStyle>& atomSubStyles)
 {
 	QRegularExpression ws_re(QStringLiteral("\\s+"));
 
@@ -622,15 +601,15 @@ bool LAMMPSDataImporter::FrameLoader::detectAtomStyle(const char* firstLine, con
 	QStringList tokens = str.split(ws_re, QString::SkipEmptyParts);
 	int count = tokens.size();
 
-	if((_atomStyle == AtomStyle_Unknown || _atomStyle == AtomStyle_Hybrid) && !atomStyleHint.isEmpty()) {
-		_atomStyle = parseAtomStyleHint(atomStyleHint);
-		if(_atomStyle == AtomStyle_Hybrid) {
+	if((atomStyle == AtomStyle_Unknown || atomStyle == AtomStyle_Hybrid) && !atomStyleHint.isEmpty()) {
+		atomStyle = parseAtomStyleHint(atomStyleHint);
+		if(atomStyle == AtomStyle_Hybrid) {
 			if(!atomSubStyleHints.empty()) {
-				_atomSubStyles.clear();
+				atomSubStyles.clear();
 				for(const QString& subStyleHint : atomSubStyleHints) {
-					_atomSubStyles.push_back(parseAtomStyleHint(subStyleHint));
-					if(_atomSubStyles.back() == AtomStyle_Unknown || _atomSubStyles.back() == AtomStyle_Hybrid) {
-						_atomSubStyles.clear();
+					atomSubStyles.push_back(parseAtomStyleHint(subStyleHint));
+					if(atomSubStyles.back() == AtomStyle_Unknown || atomSubStyles.back() == AtomStyle_Hybrid) {
+						atomSubStyles.clear();
 						qWarning() << "This atom sub-style in LAMMPS data file is not supported by OVITO:" << subStyleHint;
 						break;
 					}
@@ -641,37 +620,37 @@ bool LAMMPSDataImporter::FrameLoader::detectAtomStyle(const char* firstLine, con
 
 	// If no style hint is given in the data file, and if the number of
 	// columns is 5 (or 5+3 including image flags), assume atom style is "atomic".
-	if(_atomStyle == AtomStyle_Unknown) {
+	if(atomStyle == AtomStyle_Unknown) {
 		if(count == 5) {
-			_atomStyle = AtomStyle_Atomic;
+			atomStyle = AtomStyle_Atomic;
 			return false;
 		}
 		else if(count == 5+3) {
 			if(!tokens[5].contains(QChar('.')) && !tokens[6].contains(QChar('.')) && !tokens[7].contains(QChar('.'))) {
-				_atomStyle = AtomStyle_Atomic;
+				atomStyle = AtomStyle_Atomic;
 				return true;
 			}
 		}
 	}
-	else if(_atomStyle == AtomStyle_Hybrid) {
+	else if(atomStyle == AtomStyle_Hybrid) {
 		if(count >= 5)
 			return false;
 	}
 	else {
 		// Check if the number of columns present in the data file matches the expectated count for the selected atom style.
-		ParticleInputColumnMapping columnMapping = createColumnMapping(_atomStyle, false);
+		ParticleInputColumnMapping columnMapping = createColumnMapping(atomStyle, false);
 		if(columnMapping.size() == count) return false;
-		else if(columnMapping.size()+3 == count) return true;
+		else if(columnMapping.size() + 3 == count) return true;
 	}
 	// Invalid or unexpected column count:
-	_atomStyle = AtomStyle_Unknown;
+	atomStyle = AtomStyle_Unknown;
 	return false;
 }
 
 /******************************************************************************
 * Parses a hint string for the LAMMPS atom style.
 ******************************************************************************/
-LAMMPSDataImporter::LAMMPSAtomStyle LAMMPSDataImporter::FrameLoader::parseAtomStyleHint(const QString& atomStyleHint)
+LAMMPSDataImporter::LAMMPSAtomStyle LAMMPSDataImporter::parseAtomStyleHint(const QString& atomStyleHint)
 {
 	if(atomStyleHint == QStringLiteral("angle")) return AtomStyle_Angle;
 	else if(atomStyleHint == QStringLiteral("atomic")) return AtomStyle_Atomic;
@@ -681,11 +660,11 @@ LAMMPSDataImporter::LAMMPSAtomStyle LAMMPSDataImporter::FrameLoader::parseAtomSt
 	else if(atomStyleHint == QStringLiteral("dipole")) return AtomStyle_Dipole;
 	else if(atomStyleHint == QStringLiteral("dpd")) return AtomStyle_DPD;
 	else if(atomStyleHint == QStringLiteral("edpd")) return AtomStyle_EDPD;
-	else if(atomStyleHint == QStringLiteral("mdpd")) return AtomStyle_MDPD;
 	else if(atomStyleHint == QStringLiteral("electron")) return AtomStyle_Electron;
 	else if(atomStyleHint == QStringLiteral("ellipsoid")) return AtomStyle_Ellipsoid;
 	else if(atomStyleHint == QStringLiteral("full")) return AtomStyle_Full;
 	else if(atomStyleHint == QStringLiteral("line")) return AtomStyle_Line;
+	else if(atomStyleHint == QStringLiteral("mdpd")) return AtomStyle_MDPD;
 	else if(atomStyleHint == QStringLiteral("meso")) return AtomStyle_Meso;
 	else if(atomStyleHint == QStringLiteral("molecular")) return AtomStyle_Molecular;
 	else if(atomStyleHint == QStringLiteral("peri")) return AtomStyle_Peri;
@@ -701,7 +680,7 @@ LAMMPSDataImporter::LAMMPSAtomStyle LAMMPSDataImporter::FrameLoader::parseAtomSt
 /******************************************************************************
 * Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
 ******************************************************************************/
-ParticleInputColumnMapping LAMMPSDataImporter::FrameLoader::createColumnMapping(LAMMPSAtomStyle atomStyle, bool includeImageFlags)
+ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomStyle atomStyle, bool includeImageFlags)
 {
 	ParticleInputColumnMapping columnMapping;
 	switch(atomStyle) {
@@ -938,6 +917,80 @@ ParticleInputColumnMapping LAMMPSDataImporter::FrameLoader::createColumnMapping(
 		columnMapping.emplace_back(&ParticlesObject::OOClass(), ParticlesObject::PeriodicImageProperty, 2);
 	}
 	return columnMapping;
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the detected LAMMPS atom style.
+******************************************************************************/
+Future<LAMMPSDataImporter::LAMMPSAtomStyle> LAMMPSDataImporter::inspectFileHeader(const Frame& frame)
+{
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then([](const FileHandle& fileHandle) {
+			using namespace std;
+
+			// Open file for reading.
+			CompressedTextReader stream(fileHandle);
+			// Skip comment line
+			stream.readLine();
+			// Parse file header.
+			while(true) {
+				string line(stream.readLine());
+
+				// Trim anything from '#' onward.
+				size_t commentStart = line.find('#');
+				if(commentStart != string::npos) line.resize(commentStart);
+
+				// If line is blank, continue.
+				if(line.find_first_not_of(" \t\n\r") == string::npos) continue;
+
+				if(line.find("xlo") != string::npos && line.find("xhi") != string::npos) {}
+				else if(line.find("ylo") != string::npos && line.find("yhi") != string::npos) {}
+				else if(line.find("zlo") != string::npos && line.find("zhi") != string::npos) {}
+				else if(line.find("xy") != string::npos && line.find("xz") != string::npos && line.find("yz") != string::npos) {}
+				else if(line.find("atoms") != string::npos) {
+					qlonglong natoms = 0;
+					sscanf(line.c_str(), "%llu", &natoms);
+					if(natoms <= 0) return AtomStyle_Unknown;
+				}
+				else if(line.find("atom") != string::npos && line.find("types") != string::npos) {}
+				else if(line.find("bonds") != string::npos) {}
+				else if(line.find("bond") != string::npos && line.find("types") != string::npos) {}
+				else if(line.find("angles") != string::npos) {}
+				else if(line.find("angle") != string::npos && line.find("types") != string::npos) {}
+				else if(line.find("dihedrals") != string::npos) {}
+				else if(line.find("dihedral") != string::npos && line.find("types") != string::npos) {}
+				else if(line.find("impropers") != string::npos) {}
+				else if(line.find("improper") != string::npos && line.find("types") != string::npos) {}
+				else if(line.find("extra") != string::npos && line.find("per") != string::npos && line.find("atom") != string::npos) {}
+				else if(line.find("triangles") != string::npos) {}
+				else if(line.find("ellipsoids") != string::npos) {}
+				else if(line.find("lines") != string::npos) {}
+				else if(line.find("bodies") != string::npos) {}
+				else break;
+			}
+
+			// Skip to following line after first non-blank line.
+			while(!stream.eof() && string(stream.line()).find_first_not_of(" \t\n\r") == string::npos) {
+				stream.readLine();
+			}
+
+			// Read lines one by one in free-form part of data file until we find the 'Atoms' section.
+			for(;;) {
+				if(stream.eof()) break;
+				const char* line = stream.readLineTrimLeft();
+				if(stream.lineStartsWithToken("Atoms", true)) {
+					// Try to guess the LAMMPS atom style from the 'Atoms' keyword line or the first data line.
+					LAMMPSAtomStyle atomStyle = AtomStyle_Unknown;
+					std::vector<LAMMPSAtomStyle> atomSubStyles;
+					QByteArray keyword = QByteArray(line).trimmed();
+					stream.readLine();
+					detectAtomStyle(stream.readLine(), keyword, atomStyle, atomSubStyles);
+					return atomStyle;
+				}
+			}
+			return AtomStyle_Unknown;
+		});
 }
 
 

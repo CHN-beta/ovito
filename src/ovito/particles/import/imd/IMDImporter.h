@@ -63,26 +63,26 @@ public:
 	virtual QString objectTitle() const override { return tr("IMD"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, sortParticles());
+		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, sortParticles());
 	}
 
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, bool sortParticles)
-		  : FileSourceImporter::FrameLoader(dataset, frame, file), _sortParticles(sortParticles) {}
+		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, bool sortParticles)
+		  : ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), _sortParticles(sortParticles) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 	private:
 

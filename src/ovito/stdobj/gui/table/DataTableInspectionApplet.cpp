@@ -182,12 +182,9 @@ void DataTableInspectionApplet::exportDataToFile()
 		// Create exporter service.
 		OORef<FileExporter> exporter;
 		if(_stackedWidget->currentIndex() == 0)
-			exporter = new DataTablePlotExporter(table->dataset());
+			exporter = OORef<DataTablePlotExporter>::create(table->dataset(), Application::instance()->executionContext());
 		else
-			exporter = new DataTableExporter(table->dataset());
-
-		// Load user-defined default settings.
-		exporter->loadUserDefaults();
+			exporter = OORef<DataTableExporter>::create(table->dataset(), Application::instance()->executionContext());
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

@@ -49,7 +49,7 @@ void TrajectoryObject::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -81,7 +81,7 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride,
+	return PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
 								propertyName, initializeMemory, type, componentNames);
 }
 
@@ -90,11 +90,22 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 ******************************************************************************/
 TrajectoryObject::TrajectoryObject(DataSet* dataset) : PropertyContainer(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TrajectoryObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the trajectory lines.
-	addVisElement(new TrajectoryVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<TrajectoryVis>::create(dataset(), executionContext));
+
+	PropertyContainer::loadUserDefaults(executionContext);
 }
 
 }	// End of namespace

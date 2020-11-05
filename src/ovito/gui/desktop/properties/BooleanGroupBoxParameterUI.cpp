@@ -140,7 +140,7 @@ void BooleanGroupBoxParameterUI::updatePropertyValue()
 	if(groupBox() && editObject()) {
 		undoableTransaction(tr("Change parameter"), [this]() {
 			if(isQtPropertyUI()) {
-				if(!editObject()->setProperty(propertyName(), groupBox()->isChecked())) {
+				if(!mutableEditObject()->setProperty(propertyName(), groupBox()->isChecked())) {
 					OVITO_ASSERT_MSG(false, "BooleanGroupBoxParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
 				}
 			}

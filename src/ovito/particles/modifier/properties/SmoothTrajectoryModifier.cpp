@@ -253,7 +253,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 	ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true);
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
 	std::unordered_map<qlonglong, size_t> idmap;
 	if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
@@ -304,7 +304,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Interpolate particle orientations.
 	if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true);
+		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext());
 		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 			auto id = idProperty1.cbegin();
 			for(Quaternion& q1 : outputOrientations) {
@@ -350,11 +350,11 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 	// Create a modifiable copy of the particle coordinates array.
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true);
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
 
 	// Create output orientations array if smoothing particle orientations.
 	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true)
+		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext())
 		: nullptr;
 
 	// For interpolating the simulation cell vectors.

@@ -22,6 +22,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "InputColumnMapping.h"
 
@@ -187,15 +188,15 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(DataSet* dataset, const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount)
-	: _mapping(mapping), _destination(destination)
+InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, Application::ExecutionContext executionContext, bool removeExistingProperties)
+	: _mapping(mapping), _container(container), _executionContext(executionContext)
 {
 	mapping.validate();
 
 	// Create target properties as defined by the mapping.
 	for(int i = 0; i < (int)mapping.size(); i++) {
 
-		PropertyPtr property;
+		PropertyObject* property = nullptr;
 		const PropertyReference& pref = mapping[i].property;
 
 		int vectorComponent = std::max(0, pref.vectorComponent());
@@ -205,58 +206,32 @@ InputColumnReader::InputColumnReader(DataSet* dataset, const InputColumnMapping&
 
 		if(dataType != QMetaType::Void) {
 			if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
-				throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
+				_container->throwException(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
 			if(pref.type() != PropertyObject::GenericUserProperty) {
-				// Look for existing standard property.
-				for(const auto& p : destination.properties()) {
-					if(p->type() == pref.type()) {
-						property = p;
-						break;
-					}
-				}
-				if(!property) {
-					// Create standard property.
-					property = pref.containerClass()->createStandardProperty(dataset, elementCount, pref.type(), true);
-					destination.addProperty(property);
-
-					// Also create a type list if it is a typed property.
-					if(OvitoClassPtr elementTypeClass = pref.containerClass()->typedPropertyElementClass(pref.type()))
-						rec.typeList = destination.createPropertyTypesList(property, *elementTypeClass);
-				}
+				// Create standard property.
+				property = container->createProperty(pref.type(), true, executionContext);
+				// File reader may be overriden the property name.
+				property->setName(pref.name());
+				rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.type());
 			}
 			else {
+				// Determine the number of vector components we need for this user-defined property.
+				int componentCount = vectorComponent + 1;
+				for(const InputColumnInfo& col : mapping)
+					if(col.property.type() == PropertyObject::GenericUserProperty && col.property.name() == pref.name())
+						componentCount = std::max(componentCount, col.property.vectorComponent() + 1);
+
 				// Look for existing user-defined property with the same name.
-                PropertyPtr oldProperty = nullptr;
-				for(int j = 0; j < (int)destination.properties().size(); j++) {
-					const auto& p = destination.properties()[j];
-					if(p->name() == pref.name()) {
-						if(p->dataType() == dataType && (int)p->componentCount() > vectorComponent) {
-							property = p;
-                        }
-						else {
-                            oldProperty = p;
-                        }
-						break;
-					}
+                if(const PropertyObject* existingProperty = container->getProperty(pref.name())) {
+					// If the existing property is incompatible, remove it from the container and create a new one.
+					if(existingProperty->type() != pref.type() || existingProperty->componentCount() != componentCount || existingProperty->dataType() != dataType)
+						container->removeProperty(existingProperty);
 				}
-				if(!property) {
-					// Create a new user-defined property for the column.
-					property = pref.containerClass()->createUserProperty(dataset, elementCount, dataType, vectorComponent + 1, 0, pref.name(), true);
-					destination.addProperty(property);
-					if(oldProperty) {
-						// We need to replace all old properties (with lower vector component count) with this one.
-						for(TargetPropertyRecord& rec2 : _properties) {
-							if(rec2.property == oldProperty)
-								rec2.property = property;
-						}
-						// Remove old property.
-						destination.removeProperty(oldProperty);
-					}
-				}
+
+				// Create a new user-defined property for the column.
+				property = container->createProperty(pref.name(), dataType, componentCount, 0, true);
 			}
-			if(property)
-				property->setName(pref.name());
 
 			OVITO_ASSERT(vectorComponent < (int)property->componentCount());
 			rec.vectorComponent = vectorComponent;
@@ -267,7 +242,16 @@ InputColumnReader::InputColumnReader(DataSet* dataset, const InputColumnMapping&
 		_properties.push_back(rec);
 	}
 
-	// Finalize the target property records.
+	// Remove properties from the container which are not being parsed.
+	if(removeExistingProperties) {
+		for(int index = container->properties().size() - 1; index >= 0; index--) {
+			const PropertyObject* property = container->properties()[index];
+			if(std::none_of(_properties.cbegin(), _properties.cend(), [&](const TargetPropertyRecord& rec) { return rec.property == property; }))
+				container->removeProperty(property);
+		}
+	}
+
+	// Finalize the property records.
 	for(TargetPropertyRecord& rec : _properties) {
 		if(rec.property) {
 			rec.count = rec.property->size();
@@ -276,6 +260,7 @@ InputColumnReader::InputColumnReader(DataSet* dataset, const InputColumnMapping&
 			rec.stride = rec.property->stride();
 			rec.propertyArray = PropertyAccess<void,true>(rec.property);
 			rec.data = reinterpret_cast<uint8_t*>(rec.propertyArray.data(rec.vectorComponent));
+			OVITO_ASSERT(container->properties().contains(rec.property));
 		}
 	}
 }
@@ -317,7 +302,7 @@ const char* InputColumnReader::readElement(size_t elementIndex, const char* s, c
 		if(s == s_end) break;
 	}
 	if(columnIndex < _properties.size())
-		throw Exception(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
+		_container->throwException(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
 
 	if(_readingTypeNamesFromSeparateColumns)
 		assignTypeNamesFromSeparateColumns();
@@ -352,7 +337,7 @@ void InputColumnReader::readElement(size_t elementIndex, const char* s)
 		s++;
 	}
 	if(columnIndex < _properties.size())
-		throw Exception(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
+		_container->throwException(tr("Data line in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(columnIndex));
 
 	if(_readingTypeNamesFromSeparateColumns)
 		assignTypeNamesFromSeparateColumns();
@@ -364,9 +349,13 @@ void InputColumnReader::readElement(size_t elementIndex, const char* s)
 void InputColumnReader::assignTypeNamesFromSeparateColumns()
 {
 	for(TargetPropertyRecord& record : _properties) {
-		if(record.typeList && record.typeName.second != record.typeName.first) {
-			size_t nameLength = record.typeName.second - record.typeName.first;
-			record.typeList->setTypeName(record.lastTypeId, record.typeName.first, nameLength, true);
+		if(record.elementTypeClass && record.typeName.second != record.typeName.first) {
+			if(const ElementType* type = record.property->elementType(record.lastTypeId)) {
+				QLatin1String name(record.typeName.first, record.typeName.second);
+				if(type->name() != name) {
+					record.property->makeMutable(type)->setName(name);
+				}
+			}
 		}
 	}
 }
@@ -387,25 +376,45 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 
 	if(prec.dataType == PropertyObject::Float) {
 		if(!parseFloatType(token, token_end, *reinterpret_cast<FloatType*>(prec.data + elementIndex * prec.stride)))
-			throw Exception(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+			_container->throwException(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 	}
 	else if(prec.dataType == PropertyObject::Int) {
 		int& d = *reinterpret_cast<int*>(prec.data + elementIndex * prec.stride);
 		bool ok = parseInt(token, token_end, d);
-		if(prec.typeList == nullptr) {
+		if(prec.elementTypeClass == nullptr) {
 			if(!ok) {
 				ok = parseBool(token, token_end, d);
 				if(!ok)
-					throw Exception(tr("Invalid integer/bool value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+					_container->throwException(tr("Invalid integer/bool value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 			}
 		}
 		else {
 			// Automatically register a new element type if a new type identifier is encountered.
 			if(ok) {
-				prec.typeList->addTypeId(d);
+				// Instantiate a new element type with a numeric ID and add it to the property's type list.
+				if(!prec.property->elementType(d)) {
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
+					elementType->setNumericId(d);
+					elementType->loadUserDefaults(_executionContext);
+						elementType->initializeType(prec.property->type());
+					prec.property->addElementType(std::move(elementType));
+				}
 			}
 			else {
-				d = prec.typeList->addTypeName(token, token_end);
+				// Instantiate a new named element type and add it to the property's type list.
+				QLatin1String typeName(token, token_end);
+				if(const ElementType* t = prec.property->elementType(typeName)) {
+					d = t->numericId();
+				}
+				else {
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
+					elementType->setName(typeName);
+					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
+					elementType->loadUserDefaults(_executionContext);
+					elementType->initializeType(prec.property->type());
+					d = elementType->numericId();
+					prec.property->addElementType(std::move(elementType));
+				}
 				prec.numericElementTypes = false;
 			}
 			prec.lastTypeId = d;
@@ -426,7 +435,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 {
 	OVITO_ASSERT(_properties.size() == _mapping.size());
 	if(nvalues < _properties.size())
-		throw Exception(tr("Data record in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(nvalues));
+		_container->throwException(tr("Data record in input file does not contain enough columns. Expected %1 file columns, but found only %2.").arg(_properties.size()).arg(nvalues));
 
 	auto prec = _properties.cbegin();
 	const double* token = values;
@@ -435,7 +444,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 		if(!prec->property) continue;
 
 		if(elementIndex >= prec->count)
-			throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec->count));
+			_container->throwException(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec->count));
 
 		if(prec->data) {
 			if(prec->dataType == PropertyObject::Float) {
@@ -443,9 +452,15 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 			}
 			else if(prec->dataType == PropertyObject::Int) {
 				int ival = (int)*token;
-				if(prec->typeList) {
-					// Automatically register a new element type if a new type identifier is encountered.
-					prec->typeList->addTypeId(ival);
+				if(prec->elementTypeClass) {
+					// Instantiate a new element type with a numeric ID and add it to the property's type list.
+					if(!prec->property->elementType(ival)) {
+						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset()));
+						elementType->setNumericId(ival);
+						elementType->loadUserDefaults(_executionContext);
+						elementType->initializeType(prec->property->type());
+						prec->property->addElementType(std::move(elementType));
+					}
 				}
 				*reinterpret_cast<int*>(prec->data + elementIndex * prec->stride) = ival;
 			}
@@ -463,18 +478,14 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 void InputColumnReader::sortElementTypes()
 {
 	for(const TargetPropertyRecord& p : _properties) {
-		if(p.typeList && p.property) {
-			// Since we created element types on the go while reading the elements, the assigned type IDs
-			// depend on the storage order of data elements in the file. We rather want a well-defined type ordering, that's
+		if(p.elementTypeClass && p.property) {
+			// Since we created element types on the go while reading the elements, the ordering of the type list
+			// depends on the storage order of data elements in the file. We rather want a well-defined type ordering, that's
 			// why we sort them here according to their names or numeric IDs.
-			if(p.numericElementTypes) {
-				p.typeList->sortTypesById();
-			}
-			else {
-				PropertyAccess<int> typeArray(p.property);
-				p.typeList->sortTypesByName(typeArray);
-			}
-			break;
+			if(p.numericElementTypes)
+				p.property->sortElementTypesById();
+			else
+				p.property->sortElementTypesByName();
 		}
 	}
 }

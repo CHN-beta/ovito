@@ -65,6 +65,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CoordinationPolyhedraModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.

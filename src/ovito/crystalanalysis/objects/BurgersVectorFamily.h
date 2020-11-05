@@ -47,7 +47,7 @@ public:
 private:
 
 	/// This prototype Burgers vector of this family.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3, burgersVector, setBurgersVector, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, burgersVector, setBurgersVector);
 };
 
 }	// End of namespace

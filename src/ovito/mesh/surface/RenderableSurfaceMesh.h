@@ -49,19 +49,19 @@ public:
 private:
 
 	/// The surface part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(TriMesh, surfaceMesh, setSurfaceMesh, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, surfaceMesh, setSurfaceMesh);
 
 	/// The cap polygon part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(TriMesh, capPolygonsMesh, setCapPolygonsMesh, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, capPolygonsMesh, setCapPolygonsMesh);
 
 	/// The material colors assigned to the surface mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::vector<ColorA>, materialColors, setMaterialColors, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);
 
 	/// The mapping of triangles of the renderable surface mesh to the original mesh (optional).
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::vector<size_t>, originalFaceMap, setOriginalFaceMap, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<size_t>, originalFaceMap, setOriginalFaceMap);
 
 	/// Indicates whether triangles of the surface mesh should be rendered with active backface culling.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(bool, backfaceCulling, setBackfaceCulling, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 
 }	// End of namespace

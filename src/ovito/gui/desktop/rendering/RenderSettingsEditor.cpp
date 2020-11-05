@@ -304,7 +304,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	if(!settings->renderer() || &settings->renderer()->getOOClass() != rendererClasses[newIndex]) {
 		undoableTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
 			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset()));
-			renderer->loadUserDefaults();
+			renderer->loadUserDefaults(Application::instance()->executionContext());
 			settings->setRenderer(renderer);
 		});
 	}

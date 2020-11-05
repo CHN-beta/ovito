@@ -173,6 +173,13 @@ public:
 		return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(subObject)));
 	}
 
+	/// Returns the absolute path of this DataObject within the DataCollection.
+	/// Returns an empty path if the DataObject is not exclusively owned by one DataCollection.
+	ConstDataObjectPath exclusiveDataObjectPath() const;
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
+
 protected:
 
 	/// Saves the class' contents to the given stream.
@@ -199,13 +206,16 @@ private:
 private:
 
 	/// The unique identifier of the data object by which it can be referred to from Python, for example.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, identifier, setIdentifier, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
 
 	/// The attached visual elements that are responsible for rendering this object's data.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DATA_OBJECT | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
 	/// The pipeline object that created this data object (may be null).
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QPointer<PipelineObject>, dataSource, setDataSource, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
+
+	/// The attached editable proxy object.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
 
 	/// The current number of strong references to this DataObject that exist.
 	mutable QAtomicInt _dataReferenceCount{0};

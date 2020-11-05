@@ -42,11 +42,22 @@ IMPLEMENT_OVITO_CLASS(BondsObject);
 ******************************************************************************/
 BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void BondsObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
-	
-	// Attach a visualization element for rendering the bonds.
-	addVisElement(new BondsVis(dataset));
+
+	// Create and attach a default visualization element for rendering the bonds.
+	if(!visElement())
+		setVisElement(OORef<BondsVis>::create(dataset(), executionContext));
+
+	PropertyContainer::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -68,7 +79,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 	const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
 	auto topoIter = bondTopologyProperty.begin();
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, Application::ExecutionContext::Scripting);
 	for(Vector3I& pbcVec : bondPeriodicImageProperty) {
 		size_t particleIndex1 = (*topoIter)[0];
 		size_t particleIndex2 = (*topoIter)[1];
@@ -87,17 +98,9 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 }
 
 /******************************************************************************
-* Gives the property class the opportunity to set up a newly created
-* property object.
-******************************************************************************/
-void BondsObject::OOMetaClass::prepareNewProperty(PropertyObject* property) const
-{
-}
-
-/******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -141,7 +144,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, bondsCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, bondsCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.

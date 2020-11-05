@@ -67,7 +67,7 @@ public:
 
 	/// Special method used by the FileSource class to replace the contents of the pipeline
 	/// cache with a data collection modified by the user.
-	void overrideCache(DataCollection* dataCollection);
+	void overrideCache(DataCollection* dataCollection, const TimeInterval& keepInterval);
 
 	/// Enables or disables the precomputation and caching of all frames of the animation.
 	void setPrecomputeAllFrames(bool enable);

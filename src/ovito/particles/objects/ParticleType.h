@@ -73,8 +73,11 @@ public:
 	/// \brief Constructs a new particle type.
 	Q_INVOKABLE ParticleType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId) override;
+	/// \brief Initializes the element type's attributes to standard values.
+	virtual void initializeType(int propertyType) override;
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	//////////////////////////////////// Utility methods ////////////////////////////////
 
@@ -128,22 +131,22 @@ public:
 private:
 
 	/// The default display radius to be used for particles of this type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, radius, setRadius, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 
 	/// An optional user-defined shape used for rendering particles of this type.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
 
 	/// Activates the culling of back-facing faces of the user-defined shape assigned to this particle type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
 
 	/// Use the mesh colors intead of particle colors when rendering the user-defined shape.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeUseMeshColor, setShapeUseMeshColor, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, shapeUseMeshColor, setShapeUseMeshColor);
 
 	/// The mass of this particle type (maybe zero if not set).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, mass, setMass, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mass, setMass);
 
 private:
 

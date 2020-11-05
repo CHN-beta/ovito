@@ -21,10 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "XSFImporter.h"
@@ -125,20 +126,18 @@ void XSFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
+void XSFImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
 	setProgressText(tr("Reading XSF file %1").arg(fileHandle().toString()));
 
-	// Create the destination container for the loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
-
 	// The animation frame number to load from the XSF file.
 	int frameNumber = frame().lineNumber + 1;
 
+	VoxelGrid* voxelGrid = nullptr;
 	while(!stream.eof()) {
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 		const char* line = stream.readLineTrimLeft(1024);
 		if(boost::algorithm::starts_with(line, "ATOMS")) {
 
@@ -146,9 +145,8 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			if(sscanf(line, "ATOMS %i", &anim) == 1 && anim != frameNumber)
 				continue;
 
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
 			std::vector<Point3> coords;
-			std::vector<int> types;
+			std::vector<QString> types;
 			std::vector<Vector3> forces;
 			while(!stream.eof()) {
 				Point3 pos;
@@ -159,18 +157,17 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 				if(nfields != 4 && nfields != 7) break;
 				coords.push_back(pos);
 				int atomTypeId;
-				if(sscanf(atomTypeName, "%i", &atomTypeId) == 1) {
-					typeList->addTypeId(atomTypeId);
-					types.push_back(atomTypeId);
+				if(sscanf(atomTypeName, "%i", &atomTypeId) == 1 && atomTypeId >= 0 && atomTypeId < sizeof(chemical_symbols)/sizeof(chemical_symbols[0])) {
+					types.emplace_back(QLatin1String(chemical_symbols[atomTypeId]));
 				}
 				else {
-					types.push_back(typeList->addTypeName(atomTypeName));
+					types.emplace_back(QLatin1String(atomTypeName));
 				}
 				if(nfields == 7) {
 					forces.resize(coords.size(), Vector3::Zero());
 					forces.back() = f;
 				}
-				if(isCanceled()) return {};
+				if(isCanceled()) return;
 			}
 			if(coords.empty())
 				throw Exception(tr("Invalid ATOMS section in line %1 of XSF file.").arg(stream.lineNumber()));
@@ -178,43 +175,49 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			// Will continue parsing subsequent lines from the file.
 			line = stream.line();
 
-			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::PositionProperty, false);
+			setParticleCount(coords.size());
+			PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 			boost::copy(coords, posProperty.begin());
 
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), types.size(), ParticlesObject::TypeProperty, false);
-			boost::copy(types, typeProperty.begin());
-			frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
+			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+			boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
+				return addNamedType(typeProperty.storage(), typeName, ParticleType::OOClass())->numericId();
+			});
+			// Since we created particle types on the go while reading the particles, the type ordering
+			// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+			// why we sort them now.
+			typeProperty.storage()->sortElementTypesByName();
 
-			if(forces.size() != 0) {
-				PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::ForceProperty, false);
+			if(forces.size() == coords.size()) {
+				PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, executionContext());
 				boost::copy(forces, forceProperty.begin());
 			}
 
-			frameData->setStatus(tr("%1 atoms").arg(coords.size()));
+			state().setStatus(tr("%1 atoms").arg(coords.size()));
 
 			// If the input file does not contain simulation cell info,
 			// Use bounding box of particles as simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->setSimulationCell(AffineTransformation(
+			simulationCell()->setCellMatrix(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
 					boundingBox.minc - Point3::Origin()));
-			frameData->setPbcFlags(false, false, false);
+			simulationCell()->setPbcFlags(false, false, false);
 		}
 
 		if(boost::algorithm::starts_with(line, "CRYSTAL")) {
-			frameData->setPbcFlags(true, true, true);
+			simulationCell()->setPbcFlags(true, true, true);
 		}
 		else if(boost::algorithm::starts_with(line, "SLAB")) {
-			frameData->setPbcFlags(true, true, false);
+			simulationCell()->setPbcFlags(true, true, false);
 		}
 		else if(boost::algorithm::starts_with(line, "POLYMER")) {
-			frameData->setPbcFlags(true, false, false);
+			simulationCell()->setPbcFlags(true, false, false);
 		}
 		else if(boost::algorithm::starts_with(line, "MOLECULE")) {
-			frameData->setPbcFlags(false, false, false);
+			simulationCell()->setPbcFlags(false, false, false);
 		}
 		else if(boost::algorithm::starts_with(line, "PRIMVEC")) {
 			int anim;
@@ -226,7 +229,7 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 						&cell.column(i).x(), &cell.column(i).y(), &cell.column(i).z()) != 3)
 					throw Exception(tr("Invalid cell vector in XSF file at line %1").arg(stream.lineNumber()));
 			}
-			frameData->setSimulationCell(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if(boost::algorithm::starts_with(line, "PRIMCOORD")) {
 			int anim;
@@ -239,6 +242,7 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			if(sscanf(stream.readLine(), "%llu %i", &u, &ii) != 2)
 				throw Exception(tr("XSF file parsing error. Invalid number of atoms in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 			size_t natoms = (size_t)u;
+			setParticleCount(natoms);
 
 			qint64 atomsListOffset = stream.byteOffset();
 			int atomsLineNumber = stream.lineNumber();
@@ -268,10 +272,10 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 			stream.seek(atomsListOffset, atomsLineNumber);
 
 			// Parse atoms data.
-			InputColumnReader columnParser(dataset(), columnMapping, frameData->particles(), natoms);
+			InputColumnReader columnParser(columnMapping, particles(), executionContext());
 			setProgressMaximum(natoms);
 			for(size_t i = 0; i < natoms; i++) {
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 				try {
 					columnParser.readElement(i, stream.readLine());
 				}
@@ -279,29 +283,41 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 					throw ex.prependGeneralMessage(tr("Parsing error in line %1 of XSF file.").arg(atomsLineNumber + i));
 				}
 			}
+			columnParser.sortElementTypes();
+
+			// Give numeric atom types chemical names.
+			if(PropertyObject* typeProperty = particles()->getMutableProperty(ParticlesObject::TypeProperty)) {
+				for(int i = 0; i < typeProperty->elementTypes().size(); i++) {
+					const ElementType* type = typeProperty->elementTypes()[i];
+					int typeId = type->numericId();
+					if(type->name().isEmpty() && typeId >= 0 && typeId < sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
+						typeProperty->makeMutable(type)->setName(chemical_symbols[typeId]);
+				}
+			}
 		}
 		else if(boost::algorithm::starts_with(line, "BEGIN_BLOCK_DATAGRID_3D") || boost::algorithm::starts_with(line, "BLOCK_DATAGRID_3D") || boost::algorithm::starts_with(line, "BEGIN_BLOCK_DATAGRID3D")) {
 			stream.readLine();
 			QString gridId = stream.lineString().trimmed();
-			if(!gridId.isEmpty()) {
-				frameData->setVoxelGridTitle(gridId);
-				frameData->setVoxelGridId(gridId);
-			}
+			if(gridId.isEmpty()) gridId = QStringLiteral("imported");
+
+			// Create the voxel grid data object.
+			voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridId);
+			if(!voxelGrid)
+				voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext(), gridId);
+			voxelGrid->setDomain(simulationCell());
+			voxelGrid->setIdentifier(gridId);
 		}
 		else if(boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") || boost::algorithm::starts_with(line, "DATAGRID_3D_")) {
 			QString name = QString::fromLatin1(line + (boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") ? 18 : 12)).trimmed();
-			for(const PropertyPtr& p : frameData->voxels().properties()) {
-				if(p->name() == name)
-					throw Exception(tr("XSF file parsing error. Duplicate data grid identifier in line %1: %2").arg(stream.lineNumber()).arg(name));
-			}
 
-			size_t nx, ny, nz;
-			if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) != 3)
+			// Parse grid dimensions.
+			VoxelGrid::GridDimensions gridSize;
+			if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) != 3 || !voxelGrid)
 				throw Exception(tr("XSF file parsing error. Invalid data grid specification in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-			if(frameData->voxelGridShape() == VoxelGrid::GridDimensions{0,0,0})
-				frameData->setVoxelGridShape({nx, ny, nz});
-			else if(frameData->voxelGridShape() != VoxelGrid::GridDimensions{nx, ny, nz})
-				throw Exception(tr("XSF file parsing error. Data grid specification in line %1 is incompatible with preceding grid dimensions found in the same file.").arg(stream.lineNumber()));
+			if(voxelGrid->shape() != gridSize) {
+				voxelGrid->setShape(gridSize);
+				voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
+			}
 
 			AffineTransformation cell = AffineTransformation::Identity();
 			if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -312,9 +328,16 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 						&cell.column(i).x(), &cell.column(i).y(), &cell.column(i).z()) != 3)
 					throw Exception(tr("Invalid cell vector in XSF file at line %1").arg(stream.lineNumber()));
 			}
-			frameData->setSimulationCell(cell);
+			if(voxelGrid->domain()) {
+				voxelGrid->mutableDomain()->setCellMatrix(cell);
+			}
+			else {
+				DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(dataset(), executionContext(), cell, true, true, true, false);
+				simCell->setDataSource(dataSource());
+				voxelGrid->setDomain(std::move(simCell));
+			}
 
-			PropertyAccess<FloatType> fieldQuantity = frameData->voxels().createUserProperty<VoxelGrid>(dataset(), nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
+			PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, PropertyObject::Float, 1, 0, false);
 			FloatType* data = fieldQuantity.begin();
 			setProgressMaximum(fieldQuantity.size());
 			const char* s = "";
@@ -332,23 +355,13 @@ FileSourceImporter::FrameDataPtr XSFImporter::FrameLoader::loadFile()
 				if(*s != '\0')
 					s++;
 
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 			}
 		}
 	}
 
-	// Translate atomic numbers into element names.
-	if(PropertyPtr typeProperty = frameData->particles().findStandardProperty(ParticlesObject::TypeProperty)) {
-		if(PropertyContainerImportData::TypeList* typeList = frameData->particles().propertyTypesList(typeProperty)) {
-			for(const auto& t : typeList->types()) {
-				if(t.name.isEmpty() && t.id >= 1 && t.id < sizeof(chemical_symbols)/sizeof(chemical_symbols[0])) {
-					typeList->setTypeName(t.id, chemical_symbols[t.id], false);
-				}
-			}
-		}
-	}
-
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -71,8 +70,8 @@ public:
 	virtual QString objectTitle() const override { return tr("GSD"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), this, std::max(roundingResolution(), 1));
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), masterCollection, dataSource, this, std::max(roundingResolution(), 1));
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -106,42 +105,45 @@ private:
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, GSDImporter* importer, int roundingResolution)
-			: FileSourceImporter::FrameLoader(dataset, frame, file), _importer(importer), _roundingResolution(roundingResolution) {}
+		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, GSDImporter* importer, int roundingResolution)
+			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), _importer(importer), _roundingResolution(roundingResolution) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 		/// Reads the values of a particle or bond property from the GSD file.
-		PropertyPtr readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, uint32_t numElements, int propertyType, bool isBondProperty, const std::shared_ptr<ParticleFrameData>& frameData);
+		PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container);
 
 		/// Parse the JSON string containing a particle shape definition.
-		void parseParticleShape(int typeId, PropertyContainerImportData::TypeList* typeList, size_t numParticles, ParticleFrameData* frameData, const QByteArray& shapeSpecString);
+		void parseParticleShape(int typeId, const QByteArray& shapeSpecString);
 
 		/// Parsing routine for 'Sphere' particle shape definitions.
-		void parseSphereShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition);
+		void parseSphereShape(int typeId, QJsonObject definition);
 
 		/// Parsing routine for 'Ellipsoid' particle shape definitions.
-		void parseEllipsoidShape(int typeId, PropertyContainerImportData::TypeList* typeList, size_t numParticles, ParticleFrameData* frameData, QJsonObject definition);
+		void parseEllipsoidShape(int typeId, QJsonObject definition);
 
 		/// Parsing routine for 'Polygon' particle shape definitions.
-		void parsePolygonShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString);
+		void parsePolygonShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
 		/// Parsing routine for 'ConvexPolyhedron' particle shape definitions.
-		void parseConvexPolyhedronShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString);
+		void parseConvexPolyhedronShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
 		/// Parsing routine for 'Mesh' particle shape definitions.
-		void parseMeshShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString);
+		void parseMeshShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
 		/// Parsing routine for 'SphereUnion' particle shape definitions.
-		void parseSphereUnionShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString);
+		void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
+
+		/// Assigns a mesh-based shape to a particle type.
+		void setParticleTypeShape(int typeId, TriMeshPtr shapeMesh);
 
 	private:
 

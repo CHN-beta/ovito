@@ -54,7 +54,7 @@ public:
 private:
 
 	/// The internal data.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::shared_ptr<ClusterGraph>, storage, setStorage, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, storage, setStorage);
 };
 
 }	// End of namespace

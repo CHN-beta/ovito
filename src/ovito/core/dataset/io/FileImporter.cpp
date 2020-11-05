@@ -61,6 +61,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 ******************************************************************************/
 OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file)
 {
+	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
 			if(importerClass->checkFileFormat(file)) {
@@ -80,6 +81,9 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 ******************************************************************************/
 void FileImporter::activateCLocale()
 {
+	// Note: This function may only be called from the main thread.
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	std::setlocale(LC_ALL, "C");
 }
 

@@ -84,20 +84,20 @@ public:
 private:
 
 	/// The data structure storing the topology of the surface mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(HalfEdgeMeshPtr, topology, setTopology, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(HalfEdgeMeshPtr, topology, setTopology);
 
 	/// The container holding the mesh vertex properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshVertices, vertices, setVertices, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshVertices, vertices, setVertices);
 
 	/// The container holding the mesh face properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshFaces, faces, setFaces, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshFaces, faces, setFaces);
 
 	/// The container holding the properties of the volumetric regions enclosed by the mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshRegions, regions, setRegions, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshRegions, regions, setRegions);
 
 	/// If the mesh has zero faces and is embedded in a fully periodic domain,
 	/// this indicates the volumetric region that fills the entire space.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, spaceFillingRegion, setSpaceFillingRegion, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, spaceFillingRegion, setSpaceFillingRegion);
 };
 
 }	// End of namespace

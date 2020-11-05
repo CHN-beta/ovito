@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -44,7 +45,7 @@ private:
 
 public:
 
-    typedef T element_type;
+    using element_type = T;
 
     /// Default constructor.
     OORef() noexcept : px(nullptr) {}
@@ -143,8 +144,10 @@ public:
 
     /// Factory method instantiating a new object and returning a smart-pointer to it.
     template<typename... Args>
-	static this_type create(Args&&... args) {
-		return this_type(new T(std::forward<Args>(args)...));
+	static this_type create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
+		this_type obj(new T(dataset, std::forward<Args>(args)...));
+        obj->loadUserDefaults(executionContext);
+        return obj;
 	}
 
 private:

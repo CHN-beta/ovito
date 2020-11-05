@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/LookAtController.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
+#include <ovito/core/dataset/DataSet.h>
 
 namespace Ovito {
 
@@ -39,8 +40,18 @@ SET_PROPERTY_FIELD_UNITS(LookAtController, rollController, AngleParameterUnit);
 ******************************************************************************/
 LookAtController::LookAtController(DataSet* dataset) : Controller(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void LookAtController::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create sub-controller.
-	setRollController(ControllerManager::createFloatController(dataset));
+	setRollController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	Controller::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

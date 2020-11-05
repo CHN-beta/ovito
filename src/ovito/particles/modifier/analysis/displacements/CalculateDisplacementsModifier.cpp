@@ -37,8 +37,16 @@ DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 ******************************************************************************/
 CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset) : ReferenceConfigurationModifier(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void CalculateDisplacementsModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create vis element for vectors.
-	setVectorVis(new VectorVis(dataset));
+	setVectorVis(OORef<VectorVis>::create(dataset(), executionContext));
 	vectorVis()->setObjectTitle(tr("Displacements"));
 
 	// Don't show vectors by default, because too many vectors can make the
@@ -49,6 +57,8 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset)
 	// to the current particle positions.
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
+
+	ReferenceConfigurationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

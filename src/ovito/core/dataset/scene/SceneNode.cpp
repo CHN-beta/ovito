@@ -55,12 +55,22 @@ SceneNode::SceneNode(DataSet* dataset) : RefTarget(dataset),
 	_boundingBoxValidity(TimeInterval::empty()),
 	_displayColor(0,0,0)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SceneNode::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Assign random color to node.
 	static std::default_random_engine rng;
 	setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
 
 	// Create a transformation controller for the node.
-	setTransformationController(ControllerManager::createTransformationController(dataset));
+	setTransformationController(ControllerManager::createTransformationController(dataset(), executionContext));
+
+	RefTarget::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -152,11 +162,11 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 			// Create a look at controller.
 			OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
 			if(!lookAtCtrl)
-				lookAtCtrl = new LookAtController(dataset());
+				lookAtCtrl = OORef<LookAtController>::create(dataset(), Application::instance()->executionContext());
 			lookAtCtrl->setTargetNode(targetNode);
 
 			// Assign it as rotation sub-controller.
-			prs->setRotationController(lookAtCtrl);
+			prs->setRotationController(std::move(lookAtCtrl));
 
 			return dynamic_object_cast<LookAtController>(prs->rotationController());
 		}
@@ -168,9 +178,9 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 			prs->rotationController()->getRotationValue(time, rotation, iv);
 
 			// Reset to default rotation controller.
-			OORef<Controller> controller = ControllerManager::createRotationController(dataset());
+			OORef<Controller> controller = ControllerManager::createRotationController(dataset(), Application::instance()->executionContext());
 			controller->setRotationValue(time, rotation, true);
-			prs->setRotationController(controller);
+			prs->setRotationController(std::move(controller));
 		}
 	}
 
@@ -207,13 +217,13 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * From RefMaker.
 ******************************************************************************/
-void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(transformationController)) {
 		// TM controller has changed -> rebuild world tm cache.
 		invalidateWorldTransformation();
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

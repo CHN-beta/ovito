@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CFGImporter.h"
 
@@ -164,7 +164,7 @@ void CFGHeader::parse(CompressedTextReader& stream)
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
+void CFGImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -177,9 +177,6 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 	// Parse header of CFG file.
 	CFGHeader header;
 	header.parse(stream);
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	ParticleInputColumnMapping cfgMapping;
 	if(header.isExtendedFormat == false) {
@@ -207,20 +204,19 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 	}
 
 	setProgressMaximum(header.numParticles);
+	setParticleCount(header.numParticles);
 
 	// Prepare the mapping between input file columns and particle properties.
-	InputColumnReader columnParser(dataset(), cfgMapping, frameData->particles(), header.numParticles);
+	InputColumnReader columnParser(cfgMapping, particles(), executionContext());
 
 	// Create particle mass and type properties.
 	int currentAtomType = 0;
 	FloatType currentMass = 0;
 	PropertyAccess<int> typeProperty;
 	PropertyAccess<FloatType> massProperty;
-	PropertyContainerImportData::TypeList* typeList = nullptr;
 	if(header.isExtendedFormat) {
-		typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), header.numParticles, ParticlesObject::TypeProperty, false);
-		typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
-		massProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), header.numParticles, ParticlesObject::MassProperty, false);
+		typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
 	}
 
 	// Read per-particle data.
@@ -229,7 +225,7 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 
 		// Update progress indicator.
 		if(!setProgressValueIntermittent(particleIndex))
-			return {};
+			return;
 
 		if(!isFirstLine)
 			stream.readLine();
@@ -257,8 +253,7 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 				const char* line = stream.readLineTrimLeft();
 				const char* line_end = line;
 				while(*line_end != '\0' && *line_end > ' ') ++line_end;
-				currentAtomType = typeList->addTypeName(line, line_end);
-
+				currentAtomType = addNamedType(typeProperty.storage(), QLatin1String(line, line_end), ParticleType::OOClass())->numericId();
 				continue;
 			}
 
@@ -275,31 +270,33 @@ FileSourceImporter::FrameDataPtr CFGImporter::FrameLoader::loadFile()
 		}
 	}
 
-	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+	// Since we created particle types on the go while reading the particles, the ordering of the type list
+	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
 	columnParser.sortElementTypes();
 	if(header.isExtendedFormat)
-		typeList->sortTypesByName(typeProperty);
+		typeProperty.storage()->sortElementTypesByName();
 
 	AffineTransformation H((header.transform * header.H0).transposed());
 	H.translation() = H * Vector3(-0.5, -0.5, -0.5);
-	frameData->setSimulationCell(H);
+	simulationCell()->setCellMatrix(H);
 
 	// The CFG file stores particle positions in reduced coordinates.
 	// Rescale them now to absolute (Cartesian) coordinates.
 	// However, do this only if no absolute coordinates have been read from the extra data columns in the CFG file.
-	if(PropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
+	if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
 		for(Point3& p : posProperty)
 			p = H * p;
 	}
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
-	frameData->setStatus(tr("Number of particles: %1").arg(header.numParticles));
-	return frameData;
+	state().setStatus(tr("Number of particles: %1").arg(header.numParticles));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************

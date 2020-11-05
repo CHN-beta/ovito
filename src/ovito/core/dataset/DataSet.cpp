@@ -189,7 +189,7 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void DataSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void DataSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(viewportConfig)) {
 		Q_EMIT viewportConfigReplaced(viewportConfig());
@@ -221,7 +221,7 @@ void DataSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget*
 		}
 	}
 
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -264,20 +264,23 @@ SharedFuture<> DataSet::whenSceneReady()
 	OVITO_CHECK_OBJECT_POINTER(viewportConfig());
 	OVITO_ASSERT(!viewportConfig()->isRendering());
 
+	TimePoint time = animationSettings()->time();
 	if(_sceneReadyPromise.isValid()) {
 		// The promise should never be in the canceled state, because we've used autoResetWhenCanceled().
 		OVITO_ASSERT(!_sceneReadyPromise.isCanceled());
 
 		// Recreate async operation object if the animation time has changed.
-		if(_sceneReadyPromise.isFinished() && _sceneReadyTime != animationSettings()->time())
+		if(_sceneReadyPromise.isFinished() && _sceneReadyTime != time)
 			_sceneReadyPromise.reset();
+		else
+			_sceneReadyTime = time;
 	}
 
 	// Create a new promise to represent the process of making the scene ready.
 	if(!_sceneReadyPromise.isValid()) {
 		_sceneReadyPromise = Promise<>::createSignal();
 		_sceneReadyPromise.autoResetWhenCanceled(executor());
-		_sceneReadyTime = animationSettings()->time();
+		_sceneReadyTime = time;
 
 		// This will call makeSceneReady() soon in order to evaluate all pipelines in the scene.
 		makeSceneReadyLater(false);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMakerClass.h>
 #include <ovito/core/oo/ReferenceEvent.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -82,7 +83,6 @@ protected:
 
 	/// \brief Is called when the value of a reference field of this RefMaker changes.
 	/// \param field Specifies the reference field of this RefMaker that has been changed.
-	///              This is always a single reference ReferenceField.
 	/// \param oldTarget The old target that was referenced by the ReferenceField. This can be \c NULL.
 	/// \param newTarget The new target that is now referenced by the ReferenceField. This can be \c NULL.
 	///
@@ -92,7 +92,7 @@ protected:
 	/// \note When this method is overridden in sub-classes then the base implementation of this method
 	///       should always be called from the new implementation to allow the base classes to handle
 	///       messages for their specific reference fields.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) {}
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) {}
 
 	/// \brief Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 	/// \param field Specifies the reference field of this RefMaker to which a new entry has been added.
@@ -216,6 +216,11 @@ protected:
 	/// and before the object is being deleted.
 	virtual void aboutToBeDeleted() override;
 
+private Q_SLOTS:
+
+	/// This Qt slot receives signals from the target objects referenced by this object.
+	void receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event);
+
 public:
 
 	/// \brief Returns true if this object is an instance of a RefTarget derived class.
@@ -252,7 +257,7 @@ public:
 	///
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
-	virtual void loadUserDefaults();
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext);
 
 	/////////////////////////// Runtime reference field access //////////////////////////////
 

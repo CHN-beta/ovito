@@ -24,6 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 namespace Ovito { namespace Particles {
@@ -54,6 +55,96 @@ public:
 	}
 
 protected:
+
+	/// The format-specific task object that is responsible for reading an input file in the background.
+	class OVITO_PARTICLES_EXPORT FrameLoader : public FileSourceImporter::FrameLoader
+	{
+	public:
+
+		/// Constructor.
+		using FileSourceImporter::FrameLoader::FrameLoader;
+
+		/// Returns the simulation cell object, newly creating it first if necessary.
+		SimulationCellObject* simulationCell();
+
+		/// Returns the particles container object, newly creating it first if necessary.
+		ParticlesObject* particles();
+
+		/// Returns the bonds container object, newly creating it first if necessary.
+		BondsObject* bonds();
+
+		/// Returns the angles container object, newly creating it first if necessary.
+		AnglesObject* angles();
+
+		/// Returns the dihedrals container object, newly creating it first if necessary.
+		DihedralsObject* dihedrals();
+
+		/// Returns the impropers container object, newly creating it first if necessary.
+		ImpropersObject* impropers();
+
+		/// Creates a particles container object (if the particle count is non-zero) and adjusts the number of elements of the property container.
+		void setParticleCount(size_t count);
+
+		/// Creates a bonds container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setBondCount(size_t count);
+
+		/// Creates an angles container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setAngleCount(size_t count);
+
+		/// Creates a dihedrals container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setDihedralCount(size_t count);
+
+		/// Creates an impropers container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setImproperCount(size_t count);
+
+		/// Registers a new numeric element type with the given ID and an optional name string.
+		const ElementType* addNumericType(PropertyObject* typedProperty, int id, const QString& name, const OvitoClass& elementTypeClass);
+
+		/// Registers a new named element type and automatically gives it a unique numeric ID.
+		const ElementType* addNamedType(PropertyObject* typedProperty, const QString& name, const OvitoClass& elementTypeClass) {
+			if(const ElementType* existingType = typedProperty->elementType(name))
+				return existingType;
+			return addNumericType(typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
+		}
+
+		/// Registers a new named element type and automatically gives it a unique numeric ID.
+		const ElementType* addNamedType(PropertyObject* typedProperty, const QLatin1String& name, const OvitoClass& elementTypeClass) {
+			if(const ElementType* existingType = typedProperty->elementType(name))
+				return existingType;
+			return addNumericType(typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
+		}
+
+		/// Determines the PBC shift vectors for bonds based on the minimum image convention.
+		void generateBondPeriodicImageProperty();
+
+	protected:
+
+		/// Finalizes the particle data loaded by a sub-class.
+		virtual void loadFile() override;
+
+	private:
+
+		/// The simulation cell object.
+		SimulationCellObject* _simulationCell = nullptr;
+
+		/// The simulation cell object if it was newly created by the importer.
+		SimulationCellObject* _simulationCellNewlyCreated = nullptr;
+
+		/// The particles container object.
+		ParticlesObject* _particles = nullptr;
+
+		/// The bonds container object.
+		BondsObject* _bonds = nullptr;
+
+		/// The angles container object.
+		AnglesObject* _angles = nullptr;
+
+		/// The dihedrals container object.
+		DihedralsObject* _dihedrals = nullptr;
+
+		/// The impropers container object.
+		ImpropersObject* _impropers = nullptr;
+	};
 
 	/// \brief Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;

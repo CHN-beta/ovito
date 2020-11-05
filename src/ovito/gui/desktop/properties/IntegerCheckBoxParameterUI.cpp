@@ -153,7 +153,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isQtPropertyUI()) {
-				if(!editObject()->setProperty(propertyName(), value)) {
+				if(!mutableEditObject()->setProperty(propertyName(), value)) {
 					OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
 				}
 			}

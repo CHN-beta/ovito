@@ -67,7 +67,7 @@ public:
 	virtual QString objectTitle() const override { return tr("CA File"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
 		activateCLocale();
 		return std::make_shared<FrameLoader>(dataset(), frame, file);
 	}
@@ -109,7 +109,7 @@ protected:
 
 		/// Inserts the loaded data into the provided pipeline state structure. This function is
 		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) override;
+		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
 
 		void addPattern(PatternInfo pattern) {
 			_patterns.push_back(std::move(pattern));
@@ -163,7 +163,7 @@ protected:
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

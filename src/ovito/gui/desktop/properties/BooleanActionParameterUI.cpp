@@ -107,7 +107,7 @@ void BooleanActionParameterUI::updatePropertyValue()
 	if(action() && editObject()) {
 		undoableTransaction(tr("Change parameter"), [this]() {
 			if(isQtPropertyUI()) {
-				if(!editObject()->setProperty(propertyName(), action()->isChecked())) {
+				if(!mutableEditObject()->setProperty(propertyName(), action()->isChecked())) {
 					OVITO_ASSERT_MSG(false, "BooleanActionParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
 				}
 			}

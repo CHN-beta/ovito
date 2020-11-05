@@ -171,7 +171,7 @@ void RefTargetListParameterUI::openSubEditor()
 					subEditor()->editObject()->getOOClass() != selection->getOOClass()) {
 
 				if(selection || &subEditor()->getOOClass() != _defaultEditorClass)
-					_subEditor = nullptr;
+					_subEditor.reset();
 			}
 		}
 		if(!subEditor() && editor()) {
@@ -184,8 +184,10 @@ void RefTargetListParameterUI::openSubEditor()
 			else {
 				return;
 			}
-			if(subEditor())
+			if(subEditor()) {
 				subEditor()->initialize(editor()->container(), editor()->mainWindow(), _rolloutParams, editor());
+				connect(subEditor(), &PropertiesEditor::mutableDataObjectRequested, this, &RefTargetListParameterUI::makeSelectedDataObjectMutable);
+			}
 		}
 		if(subEditor()) {
 			subEditor()->setEditObject(selection);
@@ -240,6 +242,27 @@ int RefTargetListParameterUI::setSelectedObject(RefTarget* selObj)
 }
 
 /******************************************************************************
+* This method handles requests from the sub-editor to replace the selected data object,
+* which has shared ownership, with a copy that is safe to modify.
+******************************************************************************/
+void RefTargetListParameterUI::makeSelectedDataObjectMutable(const DataObject* dataObject)
+{
+	OVITO_ASSERT(editor() != nullptr);
+	OVITO_ASSERT(dataObject == selectedObject());
+	OVITO_ASSERT(editObject()->hasReferenceTo(dataObject));
+	RefTarget* mutableParent = editor()->mutableEditObject();
+	OVITO_ASSERT(mutableParent->hasReferenceTo(dataObject));
+	if(!dataObject->isSafeToModify()) {
+		qDebug() << "RefTargetListParameterUI::makeSelectedDataObjectMutable: cloning shared data object" << dataObject;
+		DataOORef<DataObject> clone = DataOORef<DataObject>::makeCopy(dataObject);
+		DataObject* mutableDataObject = clone.get();
+		mutableParent->replaceReferencesTo(dataObject, std::move(clone));
+		clone.reset();
+		OVITO_ASSERT(mutableDataObject->isSafeToModify());
+	}
+}
+
+/******************************************************************************
 * This method is called when a reference target changes.
 ******************************************************************************/
 bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
@@ -261,7 +284,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 					_rowToTarget[i]++;
 				if(refevent.newTarget() != nullptr) {
 					_rowToTarget.insert(rowIndex, refevent.index());
-					for(int i=refevent.index()+1; i<_targetToRow.size(); i++)
+					for(int i = refevent.index()+1; i < _targetToRow.size(); i++)
 						_targetToRow[i]++;
 					_model->endInsert();
 				}
@@ -284,6 +307,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 		}
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			OVITO_ASSERT(false);
 			if(refevent.field() == &referenceField()) {
 				int rowIndex = _targetToRow[refevent.index()];
 				if(refevent.oldTarget())
@@ -291,11 +315,11 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 				OVITO_ASSERT(refevent.oldTarget() == _targets[refevent.index()]);
 				_targets.remove(this, PROPERTY_FIELD(targets), refevent.index());
 				_targetToRow.remove(refevent.index());
-				for(int i=rowIndex; i<_rowToTarget.size(); i++)
+				for(int i = rowIndex; i < _rowToTarget.size(); i++)
 					_rowToTarget[i]--;
 				if(refevent.oldTarget()) {
 					_rowToTarget.remove(rowIndex);
-					for(int i=refevent.index(); i<_targetToRow.size(); i++)
+					for(int i = refevent.index(); i < _targetToRow.size(); i++)
 						_targetToRow[i]--;
 					_model->endRemove();
 				}
@@ -316,6 +340,32 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 #endif
 			}
 		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refevent.field() == &referenceField()) {
+				OVITO_ASSERT(refevent.newTarget() != nullptr && refevent.oldTarget() != nullptr);
+				_targets.set(this, PROPERTY_FIELD(targets), refevent.index(), refevent.newTarget());
+				// Update a single item.
+				int rowIndex = _targetToRow[refevent.index()];
+				_model->updateItem(rowIndex);
+				onSelectionChanged();
+#ifdef OVITO_DEBUG
+				// Check internal list structures.
+				int numRows = 0;
+				int numTargets = 0;
+				const QVector<RefTarget*>& reflist = editObject()->getVectorReferenceField(referenceField());
+				for(RefTarget* t : reflist) {
+					OVITO_ASSERT(_targets[numTargets] == t);
+					OVITO_ASSERT(_targetToRow[numTargets] == numRows);
+					if(t != nullptr) {
+						OVITO_ASSERT(_rowToTarget[numRows] == numTargets);
+						numRows++;
+					}
+					numTargets++;
+				}
+#endif
+			}
+		}		
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged || event.type() == ReferenceEvent::TargetChanged) {
 		OVITO_ASSERT(_targetToRow.size() == _targets.size());

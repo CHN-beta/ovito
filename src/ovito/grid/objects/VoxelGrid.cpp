@@ -22,6 +22,7 @@
 
 #include <ovito/grid/Grid.h>
 #include "VoxelGrid.h"
+#include "VoxelGridVis.h"
 
 namespace Ovito { namespace Grid {
 
@@ -55,7 +56,7 @@ void VoxelGrid::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -77,7 +78,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, voxelCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, voxelCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {
@@ -93,6 +94,25 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 ******************************************************************************/
 VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer(dataset, title)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VoxelGrid::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	// Create and attach a default visualization element for rendering the grid.
+	if(!visElement()) {
+		OORef<VoxelGridVis> gridVis = OORef<VoxelGridVis>::create(dataset(), executionContext);
+		// Do not render the grid by default.
+		gridVis->setEnabled(false);
+		// Use the grid's title also as the vis element's title.
+		gridVis->setTitle(title());
+		setVisElement(std::move(gridVis));
+	}
+
+	PropertyContainer::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,6 +35,9 @@ namespace Ovito {
 	namespace Grid {
 		using namespace Ovito::Mesh;
 		using namespace Ovito::StdObj;
+
+		class VoxelGrid;
+		class VoxelGridVis;
 	}
 }
 

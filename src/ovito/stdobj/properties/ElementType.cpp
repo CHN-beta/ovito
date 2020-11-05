@@ -23,6 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
 namespace Ovito { namespace StdObj {
@@ -45,6 +46,14 @@ ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
 	_color(1,1,1),
 	_enabled(true)
 {
+}
+
+/******************************************************************************
+* Initializes the element type's attributes to standard values.
+******************************************************************************/
+void ElementType::initializeType(int propertyType)
+{
+	setColor(getDefaultColor(propertyType, nameOrNumericId(), numericId()));
 }
 
 /******************************************************************************
@@ -100,39 +109,39 @@ void ElementType::setDefaultColor(int typeClass, const QString& typeName, const 
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-bool ElementType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	if(isNewlyCreated && Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-		loadUserDefaults();
+	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+	// have already replaced it with a mutable copy.
+	const ElementType* self = static_object_cast<ElementType>(dataPath.back());
 
-	// Assign name string.
-	if(name != this->name() && (isNewlyCreated || !name.isEmpty())) {
-		if(!isSafeToModify())
-			return false;
-		setName(name);
-	}
+	if(const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy())) {
+		// The numeric ID of a type and some other attributes should never change.
+		OVITO_ASSERT(proxy->numericId() == self->numericId());
+		OVITO_ASSERT(proxy->enabled() == self->enabled());
 
-	// Initialize color value.
-	if(attributes.contains(QStringLiteral("color"))) {
-		Color c = attributes.value(QStringLiteral("color")).value<Color>();
-		if(isNewlyCreated) {
-			setColor(c);
-		}
-		else if(c != color()) {
-			if(!isSafeToModify())
-				return false;
-			setColor(c);
+		if(proxy->name() != self->name() || proxy->color() != self->color()) {
+			// Make this data object mutable first.
+			ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
+		
+			mutableSelf->setName(proxy->name());
+			mutableSelf->setColor(proxy->color());
 		}
 	}
-	else if(isNewlyCreated) {
-		setColor(getDefaultColor(PropertyObject::GenericTypeProperty, nameOrNumericId(), numericId()));
+	else {
+		// Create and initialize a new proxy.
+		DataOORef<ElementType> newProxy = DataOORef<ElementType>::makeCopy(self);
+		OVITO_ASSERT(newProxy->numericId() == self->numericId());
+		OVITO_ASSERT(newProxy->enabled() == self->enabled());
+
+		// Make this element type mutable and attach the proxy object to it.
+		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
 	}
-	
-	return true;
+
+	DataObject::updateEditableProxies(state, dataPath);
 }
-
 
 }	// End of namespace
 }	// End of namespace

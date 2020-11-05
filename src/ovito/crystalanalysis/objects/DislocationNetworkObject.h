@@ -74,10 +74,10 @@ public:
 private:
 
 	/// The internal data.
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(std::shared_ptr<DislocationNetwork>, storage, setStorage, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
 
 	/// List of crystal structures.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(MicrostructurePhase, crystalStructures, setCrystalStructures, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, crystalStructures, setCrystalStructures);
 };
 
 }	// End of namespace

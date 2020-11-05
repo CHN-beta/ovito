@@ -70,7 +70,7 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 			outputParticles->makeBondsMutable();
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];

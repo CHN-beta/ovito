@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -81,6 +81,9 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		layout2->addWidget(pbczPUI->checkBox(), 0, 2);
 	}
 
+	connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
+
+#if 0
 	{
 		QGroupBox* sizeGroupBox = new QGroupBox(tr("Box size"), rollout);
 		layout1->addWidget(sizeGroupBox);
@@ -100,6 +103,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			simCellSizeSpinners[i]->setMinValue(0);
 			layout2->addWidget(textBox, i, 1);
 			layout2->addWidget(simCellSizeSpinners[i], i, 2);
+			simCellSizeSpinners[i]->setEnabled(false);
 
 			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerValueChanged, signalMapperValueChanged, (void (QSignalMapper::*)())&QSignalMapper::map);
 			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerDragStart, signalMapperDragStart, (void (QSignalMapper::*)())&QSignalMapper::map);
@@ -118,8 +122,6 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		layout2->addWidget(new QLabel(tr("Width (X):")), 0, 0);
 		layout2->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
 		layout2->addWidget(new QLabel(tr("Height (Z):")), 2, 0);
-
-		connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
 	}
 
 	{
@@ -141,6 +143,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			sublayout->addLayout(layout2);
 			for(int i = 0; i < 3; i++) {
 				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 0);
+				vPUI->setEnabled(false);
 				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
 				layout2->setColumnStretch(i*2, 1);
 				if(i != 2)
@@ -157,6 +160,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			sublayout->addLayout(layout2);
 			for(int i = 0; i < 3; i++) {
 				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 1);
+				vPUI->setEnabled(false);
 				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
 				layout2->setColumnStretch(i*2, 1);
 				if(i != 2)
@@ -173,6 +177,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			sublayout->addLayout(layout2);
 			for(int i = 0; i < 3; i++) {
 				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 2);
+				vPUI->setEnabled(false);
 				zvectorPUI[i] = vPUI;
 				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
 				layout2->setColumnStretch(i*2, 1);
@@ -190,6 +195,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			sublayout->addLayout(layout2);
 			for(int i = 0; i < 3; i++) {
 				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 3);
+				vPUI->setEnabled(false);
 				if(i == 2) zoriginPUI = vPUI;
 				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
 				layout2->setColumnStretch(i*2, 1);
@@ -198,8 +204,36 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 			}
 		}
 	}
+#endif
 }
 
+/******************************************************************************
+* After the simulation cell size has changed, updates the UI controls.
+******************************************************************************/
+void SimulationCellEditor::updateSimulationBoxSize()
+{
+	SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
+	if(!cell) return;
+
+#if 0
+	const AffineTransformation& cellTM = cell->cellMatrix();
+	for(int dim = 0; dim < 3; dim++) {
+		if(simCellSizeSpinners[dim]->isDragging() == false) {
+			simCellSizeSpinners[dim]->setUnit(dataset()->unitsManager().worldUnit());
+			simCellSizeSpinners[dim]->setFloatValue(cellTM(dim,dim));
+		}
+	}
+#endif
+
+	pbczPUI->setEnabled(!cell->is2D());
+//	simCellSizeSpinners[2]->setEnabled(!cell->is2D());
+//	zvectorPUI[0]->setEnabled(!cell->is2D());
+//	zvectorPUI[1]->setEnabled(!cell->is2D());
+//	zvectorPUI[2]->setEnabled(!cell->is2D());
+//	zoriginPUI->setEnabled(!cell->is2D());
+}
+
+#if 0
 /******************************************************************************
 * After the user has changed a spinner value, this method changes the
 * simulation cell geometry.
@@ -216,30 +250,6 @@ void SimulationCellEditor::changeSimulationBoxSize(int dim)
 	cellTM.column(3)[dim] -= FloatType(0.5) * (newSize - cellTM(dim, dim));
 	cellTM(dim, dim) = newSize;
 	cell->setCellMatrix(cellTM);
-}
-
-/******************************************************************************
-* After the simulation cell size has changed, updates the UI controls.
-******************************************************************************/
-void SimulationCellEditor::updateSimulationBoxSize()
-{
-	SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
-	if(!cell) return;
-
-	const AffineTransformation& cellTM = cell->cellMatrix();
-	for(int dim = 0; dim < 3; dim++) {
-		if(simCellSizeSpinners[dim]->isDragging() == false) {
-			simCellSizeSpinners[dim]->setUnit(dataset()->unitsManager().worldUnit());
-			simCellSizeSpinners[dim]->setFloatValue(cellTM(dim,dim));
-		}
-	}
-
-	pbczPUI->setEnabled(!cell->is2D());
-	simCellSizeSpinners[2]->setEnabled(!cell->is2D());
-	zvectorPUI[0]->setEnabled(!cell->is2D());
-	zvectorPUI[1]->setEnabled(!cell->is2D());
-	zvectorPUI[2]->setEnabled(!cell->is2D());
-	zoriginPUI->setEnabled(!cell->is2D());
 }
 
 /******************************************************************************
@@ -285,6 +295,7 @@ void SimulationCellEditor::onSizeSpinnerDragAbort(int dim)
 	OVITO_ASSERT(dataset()->undoStack().isRecording());
 	dataset()->undoStack().endCompoundOperation(false);
 }
+#endif
 
 }	// End of namespace
 }	// End of namespace

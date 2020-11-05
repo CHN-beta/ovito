@@ -21,14 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "POSCARImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -175,14 +174,11 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
+void POSCARImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
 	setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
-
-	// Create the destination container for loaded data.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 	// Jump to requested animation frame.
 	if(frame().byteOffset != 0)
@@ -200,7 +196,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 		trimmedComment = stream.lineString().trimmed();
 	}
 	if(!trimmedComment.isEmpty())
-		frameData->attributes().insert(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment));
+		state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
 
 	// Read global scaling factor
 	FloatType scaling_factor = 0;
@@ -216,7 +212,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 			throw Exception(tr("Invalid cell vector in line %1 of VASP file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 	}
 	cell = cell * scaling_factor;
-	frameData->setSimulationCell(cell);
+	simulationCell()->setCellMatrix(cell);
 
 	// Parse atom type names and atom type counts.
 	QStringList atomTypeNames;
@@ -225,6 +221,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 	int totalAtomCount = std::accumulate(atomCounts.begin(), atomCounts.end(), 0);
 	if(totalAtomCount <= 0)
 		throw Exception(tr("Invalid atom counts in line %1 of VASP file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+	setParticleCount(totalAtomCount);
 
 	if(atomTypeNames.empty() && atomCounts.size() >= 1) {
 		// The file might be in VASP 4.x format, which is the format written by ASE's write_vasp() function.
@@ -254,9 +251,8 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 		isCartesian = true;
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::TypeProperty, false);
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 
 	// Read atom coordinates.
 	Point3* p = posProperty.begin();
@@ -264,9 +260,9 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 	for(int atype = 1; atype <= atomCounts.size(); atype++) {
 		int typeId = atype;
 		if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
-			typeId = typeList->addTypeName(atomTypeNames[atype-1]);
+			typeId = addNamedType(typeProperty.storage(), atomTypeNames[atype-1], ParticleType::OOClass())->numericId();
 		else
-			typeList->addTypeId(atype);
+			addNumericType(typeProperty.storage(), atype, {}, ParticleType::OOClass());
 		for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
 			*a = typeId;
 			if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -292,7 +288,7 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 				isCartesian = true;
 
 			// Read atomic velocities.
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), totalAtomCount, ParticlesObject::VelocityProperty, false);
+			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 			Vector3* v = velocityProperty.begin();
 			for(int atype = 1; atype <= atomCounts.size(); atype++) {
 				for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
@@ -305,96 +301,15 @@ FileSourceImporter::FrameDataPtr POSCARImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(!stream.eof()) {
-			size_t nx, ny, nz;
-			// Parse charge density volumetric grid.
-			if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
-				auto parseFieldData = [this, &stream, &frameData](size_t nx, size_t ny, size_t nz, const QString& name) -> PropertyPtr {
-					PropertyPtr fieldQuantity = VoxelGrid::OOClass().createUserProperty(dataset(), nx*ny*nz, PropertyObject::Float, 1, 0, name, false);
-					PropertyAccess<FloatType,true> fieldArray(fieldQuantity);
-					const char* s = stream.readLine();
-					FloatType* data = fieldArray.begin();
-					setProgressMaximum(fieldQuantity->size());
-					FloatType cellVolume = std::abs(frameData->simulationCell().determinant());
-					for(size_t i = 0; i < fieldQuantity->size(); i++, ++data) {
-						const char* token;
-						for(;;) {
-							while(*s == ' ' || *s == '\t') ++s;
-							token = s;
-							while(*s > ' ' || *s < 0) ++s;
-							if(s != token) break;
-							s = stream.readLine();
-						}
-						if(!parseFloatType(token, s, *data))
-							throw Exception(tr("Invalid value in charge density section of VASP file (line %1): \"%2\"").arg(stream.lineNumber()).arg(QString::fromLocal8Bit(token, s - token)));
-						*data /= cellVolume;
-						if(*s != '\0')
-							s++;
-
-						if(!setProgressValueIntermittent(i)) return {};
-					}
-					return fieldQuantity;
-				};
-
-				frameData->setVoxelGridShape({nx, ny, nz});
-				frameData->setVoxelGridTitle(tr("Charge density"));
-				frameData->setVoxelGridId(QStringLiteral("charge-density"));
-
-				// Parse spin up + spin down denisty.
-				PropertyPtr chargeDensity = parseFieldData(nx, ny, nz, tr("Charge density"));
-				if(!chargeDensity) return {};
-				frameData->voxels().addProperty(chargeDensity);
-				statusString += tr("\nCharge density grid: %1 x %2 x %3").arg(nx).arg(ny).arg(nz);
-
-				// Look for spin up - spin down density.
-				PropertyPtr magnetizationDensity;
-				while(!stream.eof()) {
-					if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
-						if(nx != frameData->voxelGridShape()[0] || ny != frameData->voxelGridShape()[1] || nz != frameData->voxelGridShape()[2])
-							throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-						magnetizationDensity = parseFieldData(nx, ny, nz, tr("Magnetization density"));
-						if(!magnetizationDensity) return {};
-						statusString += tr("\nMagnetization density grid: %1 x %2 x %3").arg(nx).arg(ny).arg(nz);
-						break;
-					}
-				}
-
-				// Look for more vector components in case file contains vector magnetization.
-				PropertyPtr magnetizationDensityY;
-				PropertyPtr magnetizationDensityZ;
-				while(!stream.eof()) {
-					if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
-						if(nx != frameData->voxelGridShape()[0] || ny != frameData->voxelGridShape()[1] || nz != frameData->voxelGridShape()[2])
-							throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-						magnetizationDensityY = parseFieldData(nx, ny, nz, tr("Magnetization density"));
-						if(!magnetizationDensityY) return {};
-						break;
-					}
-				}
-				while(!stream.eof()) {
-					if(sscanf(stream.readLine(), "%zu %zu %zu", &nx, &ny, &nz) == 3 && nx > 0 && ny > 0 && nz > 0) {
-						if(nx != frameData->voxelGridShape()[0] || ny != frameData->voxelGridShape()[1] || nz != frameData->voxelGridShape()[2])
-							throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-						magnetizationDensityZ = parseFieldData(nx, ny, nz, tr("Magnetization density"));
-						if(!magnetizationDensityZ) return {};
-						break;
-					}
-				}
-
-				if(magnetizationDensity && magnetizationDensityY && magnetizationDensityZ) {
-					PropertyAccess<FloatType,true> vectorMagnetization = frameData->voxels().addProperty(VoxelGrid::OOClass().createUserProperty(dataset(), nx*ny*nz, PropertyObject::Float, 3, 0, tr("Magnetization density"), false, 0, QStringList() << "X" << "Y" << "Z"));
-					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensity), vectorMagnetization.componentRange(0).begin());
-					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-					boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
-				}
-				else if(magnetizationDensity) {
-					frameData->voxels().addProperty(std::move(magnetizationDensity));
-				}
-			}
+			// Parse charge density grid.
+			statusString += readDensityGrid(stream);
 		}
 	}
 
-	frameData->setStatus(statusString);
-	return frameData;
+	state().setStatus(statusString);
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -427,6 +342,107 @@ void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, Q
 	}
 }
 
+/******************************************************************************
+* Parses a charge density grid.
+******************************************************************************/
+QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& stream)
+{
+	QString statusString;
+
+	// Parse grid dimensions.
+	VoxelGrid::GridDimensions gridSize;
+	if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) != 3 || gridSize[0] == 0 || gridSize[1] == 0 || gridSize[2] == 0)
+		return {};
+
+	// Create the voxel grid data object.
+	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
+	if(!voxelGrid)
+		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext(), tr("Charge density"));
+	voxelGrid->setDomain(simulationCell());
+	voxelGrid->setIdentifier(QStringLiteral("charge-density"));
+	voxelGrid->setShape(gridSize);
+	voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
+
+	// Parse spin up + spin down density.
+	if(!readFieldQuantity(stream, voxelGrid, tr("Charge density")))
+		return {};
+	statusString += tr("\nCharge density grid: %1 x %2 x %3").arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]);
+
+	// Look for spin up - spin down density.
+	PropertyPtr magnetizationDensityX;
+	while(!stream.eof()) {
+		if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
+			if(gridSize != voxelGrid->shape())
+				throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
+			magnetizationDensityX = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+			if(!magnetizationDensityX) return {};
+			statusString += tr("\nMagnetization density grid: %1 x %2 x %3").arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]);
+			break;
+		}
+	}
+
+	// Look for more vector components in case file contains vectorial magnetization.
+	PropertyPtr magnetizationDensityY;
+	PropertyPtr magnetizationDensityZ;
+	while(!stream.eof()) {
+		if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
+			if(gridSize != voxelGrid->shape())
+				throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
+			magnetizationDensityY = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+			if(!magnetizationDensityY) return {};
+			break;
+		}
+	}
+	while(!stream.eof()) {
+		if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
+			if(gridSize != voxelGrid->shape())
+				throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
+			magnetizationDensityZ = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+			if(!magnetizationDensityZ) return {};
+			break;
+		}
+	}
+
+	if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
+		PropertyAccess<FloatType,true> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), PropertyObject::Float, 3, 0, false, QStringList() << "X" << "Y" << "Z");
+		boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+		boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+		boost::copy(ConstPropertyAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+	}
+
+	voxelGrid->verifyIntegrity();
+	return statusString;
+}
+
+/******************************************************************************
+* Parses the values of one field quantity.
+******************************************************************************/
+PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
+{
+	PropertyAccess<FloatType,true> fieldArray = grid->createProperty(name, PropertyObject::Float, 1, 0, false);
+	const char* s = stream.readLine();
+	FloatType* data = fieldArray.begin();
+	setProgressMaximum(fieldArray.size());
+	FloatType cellVolume = std::abs(simulationCell()->cellMatrix().determinant());
+	for(size_t i = 0; i < fieldArray.size(); i++, ++data) {
+		const char* token;
+		for(;;) {
+			while(*s == ' ' || *s == '\t') ++s;
+			token = s;
+			while(*s > ' ' || *s < 0) ++s;
+			if(s != token) break;
+			s = stream.readLine();
+		}
+		if(!parseFloatType(token, s, *data))
+			throw Exception(tr("Invalid value in charge density section of VASP file (line %1): \"%2\"").arg(stream.lineNumber()).arg(QString::fromLocal8Bit(token, s - token)));
+		*data /= cellVolume;
+		if(*s != '\0')
+			s++;
+
+		if(!setProgressValueIntermittent(i)) return nullptr;
+	}
+	return fieldArray.storage();
+}
 
 }	// End of namespace
 }	// End of namespace

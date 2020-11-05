@@ -39,51 +39,15 @@ class OVITO_CORE_EXPORT RefTarget : public RefMaker
 	Q_OBJECT
 	OVITO_CLASS(RefTarget)
 
-public:
-
-	/// \brief This light-weight array class holds the list of dependents of a RefTarget.
-	class DependentsList : public QVarLengthArray<RefMaker*, 4> {
-	private:
-		typedef QVarLengthArray<RefMaker*, 4> BaseClass;
-	public:
-		/// Checks whether an object is in the list.
-		inline bool contains(RefMaker* o) const {
-			for(auto iter : *this)
-				if(iter == o) return true;
-			return false;
-		}
-		/// Adds a dependent to the list.
-		inline void push_back(RefMaker* o) {
-			OVITO_ASSERT(!contains(o));
-			BaseClass::append(o);
-		}
-		/// Removes a dependent from the list.
-		inline void remove(RefMaker* o) {
-			for(auto iter = begin(); ; ++iter) {
-				OVITO_ASSERT(iter != end());
-				if(*iter == o) {
-					erase(iter);
-					return;
-				}
-			}
-			OVITO_ASSERT(false);
-		}
-	};
-
 protected:
 
 	/// \brief Constructor.
 	/// \param dataset The dataset this object will belong to.
-	RefTarget(DataSet* dataset) : RefMaker(dataset) {
-		OVITO_CHECK_POINTER(dataset);
-	}
+	RefTarget(DataSet* dataset);
 
 #ifdef OVITO_DEBUG
-	/// \brief The virtual destructor.
-	virtual ~RefTarget() {
-		// Make sure there are no more dependents left.
-		OVITO_ASSERT_MSG(dependents().empty(), "RefTarget destructor", "RefTarget object has not been correctly deleted.");
-	}
+	/// \brief Destructor.
+	virtual ~RefTarget();
 #endif
 
 	//////////////////////////////// from OvitoObject //////////////////////////////////////
@@ -100,7 +64,6 @@ protected:
 
 	/// \brief Is called when the value of a reference field of this RefMaker changes.
 	/// \param field Specifies the reference field of this RefMaker that has been changed.
-	///              This is always a single reference ReferenceField.
 	/// \param oldTarget The old target that was referenced by the ReferenceField. This can be \c NULL.
 	/// \param newTarget The new target that is now referenced by the ReferenceField. This can be \c NULL.
 	///
@@ -112,8 +75,8 @@ protected:
 	///       messages for their specific reference fields.
 	///
 	/// The RefTarget implementation of this virtual method generates a ReferenceEvent::ReferenceChanged notification event
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override {
-		notifyDependentsImpl(ReferenceFieldEvent(ReferenceEvent::ReferenceChanged, this, &field, oldTarget, newTarget));
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override {
+		notifyDependentsImpl(ReferenceFieldEvent(ReferenceEvent::ReferenceChanged, this, &field, oldTarget, newTarget, listIndex));
 	}
 
 	/// \brief Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
@@ -180,6 +143,11 @@ protected:
 	/// \sa CloneHelper::cloneObject()
 	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const;
 
+Q_SIGNALS:
+
+	/// This Qt signal is used to communicate with the dependents of this RefTarget.
+	void objectEvent(RefTarget* sender, const ReferenceEvent& event);
+
 public:
 
 	/// \brief Returns true if this object is an instance of a RefTarget derived class.
@@ -194,6 +162,7 @@ public:
 		OVITO_ASSERT(eventType != ReferenceEvent::ReferenceChanged);
 		OVITO_ASSERT(eventType != ReferenceEvent::ReferenceAdded);
 		OVITO_ASSERT(eventType != ReferenceEvent::ReferenceRemoved);
+		OVITO_ASSERT(eventType != ReferenceEvent::CheckIsReferencedBy);
 		const_cast<RefTarget*>(this)->notifyDependentsImpl(ReferenceEvent(eventType, const_cast<RefTarget*>(this)));
 	}
 
@@ -210,17 +179,11 @@ public:
 
 	////////////////////////////////// Dependency graph ///////////////////////////////////////
 
-	/// \brief Checks whether this RefTarget is directly or indirectly referenced by a RefMaker.
-	/// \param obj The RefMaker that might hold a reference to \c this object.
-	/// \return \c true if \a obj has a direct or indirect reference to this RefTarget;
-	///         \c false if \a obj does not depend on this RefTarget.
+	/// \brief Checks whether this object is directly or indirectly referenced by some other object.
+	/// \param obj The object that might hold a reference to \c this object.
+	/// \return \c true if \a obj has a direct or indirect reference to this object;
+	///         \c false if \a obj does not depend on this object.
 	virtual bool isReferencedBy(const RefMaker* obj) const override;
-
-	/// \brief Returns the list of RefMaker objects that hold at least one direct reference
-	///        to this RefTarget.
-	/// \return A list of reference makers that directly depend on this RefTarget and receive
-	///         notification messages from it.
-	const DependentsList& dependents() const { return _dependents; }
 
 	/// \brief Visits all immediate dependents that reference this target object
 	///        and invokes the given function for every dependent encountered.
@@ -229,35 +192,8 @@ public:
 	///       has multiple references to this target.
 	template<class Callable>
 	void visitDependents(Callable&& fn) const {
-		for(RefMaker* dependent : dependents()) {
-			fn(dependent);
-		}
-	}
-
-	/// \brief Recursively visits all dependents that directly or indirectly reference this target object
-	///        and invokes the given function for every dependent encountered.
-	///
-	/// \note The visitor function may be called multiple times for a dependent if that dependent
-	///       has multiple references that in turn reference this target.
-	template<class Callable>
-	void visitDependentsRecursive(Callable&& fn) const {
-		for(RefMaker* dependent : dependents()) {
-			fn(dependent);
-			if(dependent->isRefTarget())
-				static_object_cast<RefTarget>(dependent)->visitDependentsRecursive(fn);
-		}
-	}
-
-	/// \brief Generates a list of dependents that directly or indirectly reference this target object.
-	/// \return A list of all dependents that are instance of the object type specified by the template parameter.
-	template<class ObjectType>
-	QSet<ObjectType*> findDependents() const {
-		QSet<ObjectType*> results;
-		visitDependentsRecursive([&results](RefMaker* dependent) {
-			if(ObjectType* o = dynamic_object_cast<ObjectType>(dependent))
-				results.insert(o);
-		});
-		return results;
+		VisitDependentsEvent event(const_cast<RefTarget*>(this), std::move(fn));
+		const_cast<RefTarget*>(this)->notifyDependentsImpl(event);		
 	}
 
 	/// \brief Asks this object to delete itself.
@@ -299,9 +235,6 @@ public:
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) {}
 
 private:
-
-	/// The list of reference fields that hold a reference to this target.
-	DependentsList _dependents;
 
 	friend class RefMaker;
 	friend class CloneHelper;

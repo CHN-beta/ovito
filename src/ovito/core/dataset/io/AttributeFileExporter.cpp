@@ -35,7 +35,7 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 /******************************************************************************
  * This is called once for every output file to be written and before
  * exportData() is called.
- *****************************************************************************/
+*****************************************************************************/
 bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
@@ -56,7 +56,7 @@ bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOf
 /******************************************************************************
  * This is called once for every output file written after exportData()
  * has been called.
- *****************************************************************************/
+*****************************************************************************/
 void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 {
 	_outputStream.reset();
@@ -68,22 +68,24 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 }
 
 /******************************************************************************
-* Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
- *****************************************************************************/
-void AttributeFileExporter::loadUserDefaults()
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+*****************************************************************************/
+void AttributeFileExporter::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-	// This exporter is typically used to export attributes as functions of time.
-	if(dataset()->animationSettings()->animationInterval().duration() != 0)
-		setExportAnimation(true);
+	if(executionContext == Application::ExecutionContext::Interactive) {
+		// This exporter is typically used to export attributes as functions of time.
+		if(dataset()->animationSettings()->animationInterval().duration() != 0)
+			setExportAnimation(true);
 
-	FileExporter::loadUserDefaults();
+		// Restore last output column mapping.
+		QSettings settings;
+		settings.beginGroup("exporter/attributes/");
+		setAttributesToExport(settings.value("attrlist", QVariant::fromValue(QStringList())).toStringList());
+		settings.endGroup();
+	}
 
-	// Restore last output column mapping.
-	QSettings settings;
-	settings.beginGroup("exporter/attributes/");
-	setAttributesToExport(settings.value("attrlist", QVariant::fromValue(QStringList())).toStringList());
-	settings.endGroup();
+	FileExporter::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

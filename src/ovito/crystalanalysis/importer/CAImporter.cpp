@@ -484,7 +484,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 * This function is called by the system from the main thread after the
 * asynchronous loading task has finished.
 ******************************************************************************/
-OORef<DataCollection> CAImporter::CrystalAnalysisFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
+OORef<DataCollection> CAImporter::CrystalAnalysisFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	// Output simulation cell.
 	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);
@@ -498,15 +498,13 @@ OORef<DataCollection> CAImporter::CrystalAnalysisFrameData::handOver(const DataC
 		}
 		else {
 			defectSurfaceObj = output->createObject<SurfaceMesh>(fileSource, tr("Defect mesh"));
-			OORef<SurfaceMeshVis> vis = new SurfaceMeshVis(fileSource->dataset());
+			OORef<SurfaceMeshVis> vis = OORef<SurfaceMeshVis>::create(fileSource->dataset(), Application::instance()->executionContext());
 			vis->setShowCap(true);
 			vis->setSmoothShading(true);
 			vis->setReverseOrientation(true);
 			vis->setCapTransparency(0.5);
 			vis->setObjectTitle(tr("Defect mesh"));
-			if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-				vis->loadUserDefaults();
-			defectSurfaceObj->setVisElement(vis);
+			defectSurfaceObj->setVisElement(std::move(vis));
 		}
 		defectSurface()->transferTo(defectSurfaceObj);
 		defectSurfaceObj->setDomain(output->getObject<SimulationCellObject>());
@@ -527,10 +525,7 @@ OORef<DataCollection> CAImporter::CrystalAnalysisFrameData::handOver(const DataC
 		}
 		else {
 			dislocationNetwork = output->createObject<DislocationNetworkObject>(fileSource);
-			OORef<DislocationVis> vis = new DislocationVis(fileSource->dataset());
-			if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-				vis->loadUserDefaults();
-			dislocationNetwork->setVisElement(vis);
+			dislocationNetwork->setVisElement(OORef<DislocationVis>::create(fileSource->dataset(), Application::instance()->executionContext()));
 		}
 		dislocationNetwork->setDomain(output->getObject<SimulationCellObject>());
 		dislocationNetwork->setStorage(dislocations());

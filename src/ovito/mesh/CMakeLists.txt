@@ -31,9 +31,10 @@ SET(SourceFiles
 	surface/SurfaceMeshVertices.cpp
 	surface/SurfaceMeshFaces.cpp
 	surface/SurfaceMeshRegions.cpp
-	io/TriMeshFrameData.cpp
 	io/VTKFileImporter.cpp
 	io/VTKTriangleMeshExporter.cpp
+#	io/ParaViewVTPMeshImporter.cpp
+#	io/ParaViewVTRSimulationCellImporter.cpp
 	io/WavefrontOBJImporter.cpp
 	io/STLImporter.cpp
 )
@@ -59,6 +60,7 @@ OVITO_STANDARD_PLUGIN(Mesh
 		${GLUSourceFiles}
 	PLUGIN_DEPENDENCIES StdObj
 	PRECOMPILED_HEADERS Mesh.h
+	LIB_DEPENDENCIES Qt5::Xml
 )
 
 # Polytess code does not support unity build. Need to turn it off.

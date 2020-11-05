@@ -48,7 +48,18 @@ VoxelGridVis::VoxelGridVis(DataSet* dataset) : DataVis(dataset),
 	_highlightGridLines(true),
 	_interpolateColors(false)
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset));
+}
+
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VoxelGridVis::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	DataVis::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

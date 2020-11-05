@@ -182,7 +182,7 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
 		boost::fill(outputSelection, 1);
 		numSelected = outputSelection.size();
 	}
@@ -226,7 +226,7 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	}
 
 	// Output a data table object with the scatter points.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), modApp, 
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), modApp, Application::ExecutionContext::Scripting,
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
 		out_y.take(), out_x.take());
 

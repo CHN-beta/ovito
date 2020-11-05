@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Create a storage object for standard face properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;

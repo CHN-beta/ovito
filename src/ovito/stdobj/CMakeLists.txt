@@ -35,7 +35,6 @@ OVITO_STANDARD_PLUGIN(StdObj
 		properties/ElementType.cpp
 		properties/GenericPropertyModifier.cpp
 		properties/PropertyExpressionEvaluator.cpp
-		properties/PropertyContainerImportData.cpp
 		properties/InputColumnMapping.cpp
 		table/DataTable.cpp
 		io/DataTableExporter.cpp

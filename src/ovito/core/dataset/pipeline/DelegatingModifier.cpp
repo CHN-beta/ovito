@@ -45,18 +45,19 @@ DEFINE_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 ******************************************************************************/
 Modifier* ModifierDelegate::modifier() const
 {
-	for(RefMaker* dependent : this->dependents()) {
+	Modifier* result = nullptr;
+	visitDependents([&](RefMaker* dependent) {
 		if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) return modifier;
+			if(modifier->delegate() == this) result = modifier;
 		}
 		else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
-			if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) return modifier;
+			if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
 		}
 		else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) return modifier;
+			if(modifier->delegate() == this) result = modifier;
 		}
-	}
-	return nullptr;
+	});
+	return result;
 }
 
 /******************************************************************************

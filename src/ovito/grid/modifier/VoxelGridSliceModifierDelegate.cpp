@@ -41,13 +41,23 @@ DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 ******************************************************************************/
 VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset) : SliceModifierDelegate(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VoxelGridSliceModifierDelegate::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create the vis element for rendering the mesh.
-	setSurfaceMeshVis(new SurfaceMeshVis(dataset));
+	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
 	surfaceMeshVis()->setShowCap(false);
 	surfaceMeshVis()->setHighlightEdges(false);
 	surfaceMeshVis()->setSmoothShading(false);
 	surfaceMeshVis()->setSurfaceIsClosed(false);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
+
+	SliceModifierDelegate::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -162,7 +172,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 				mesh.flipFaces();
 			
 			// Create the output mesh data object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, tr("Volume slice"));
+			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, Application::ExecutionContext::Scripting, tr("Volume slice"));
 			mesh.transferTo(meshObj);
 			meshObj->setVisElement(surfaceMeshVis());
 		}

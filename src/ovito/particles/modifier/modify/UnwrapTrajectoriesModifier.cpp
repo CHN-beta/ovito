@@ -159,12 +159,12 @@ bool UnwrapTrajectoriesModifierApplication::referenceEvent(RefTarget* source, co
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(input)) {
 		invalidateUnwrapData();
 	}
-	ModifierApplication::referenceReplaced(field, oldTarget, newTarget);
+	ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -203,7 +203,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		if(outputParticles->bonds()) {
 			if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 				outputParticles->makeBondsMutable();
-				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 				for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 					size_t particleIndex1 = topologyProperty[bondIndex][0];
 					size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -288,7 +288,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 			outputParticles->makeBondsMutable();
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];

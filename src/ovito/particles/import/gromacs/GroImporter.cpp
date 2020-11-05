@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "GroImporter.h"
@@ -163,7 +163,7 @@ void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
+void GroImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -172,9 +172,6 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	// Read comment line.
 	stream.readLine();
@@ -194,24 +191,21 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 	if(numParticles > (unsigned long long)std::numeric_limits<int>::max())
 		throw Exception(tr("Too many atoms in Gromacs file. This program version can read files with up to %1 atoms only.").arg(std::numeric_limits<int>::max()));
 	setProgressMaximum(numParticles);
+	setParticleCount(numParticles);
 
 	// Create particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::PositionProperty, true);
-	PropertyAccess<int> residueTypeProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), numParticles, PropertyObject::Int, 1, 0, QStringLiteral("Residue Type"), false);
-	PropertyAccess<qlonglong> residueNumberProperty = frameData->particles().createUserProperty<ParticlesObject>(dataset(), numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Residue Identifier"), false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::TypeProperty, false);
-	PropertyAccess<qlonglong> identifierProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::IdentifierProperty, true);
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
+	PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
+	PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64, 1, 0, false);
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, true, executionContext());
 	PropertyAccess<Vector3> velocityProperty;
-
-	// Create particle and residue type lists, because we need to populate them while parsing.
-	std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
-	std::unique_ptr<PropertyContainerImportData::TypeList> residueTypeList = std::make_unique<PropertyContainerImportData::TypeList>(ElementType::OOClass());
 
 	// Parse list of atoms.
 	int atomBaseNumber = 0;
 	int residueBaseNumber = 0;
 	for(size_t i = 0; i < numParticles; i++) {
-		if(!setProgressValueIntermittent(i)) return {};
+		if(!setProgressValueIntermittent(i)) return;
 		const char* token = stream.readLine();
 
 		// Parse residue number (5 characters).
@@ -289,8 +283,8 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 
 		// Store parsed value in property arrays.
 		identifierProperty.set(atomIndex, atomNumber);
-		typeProperty.set(atomIndex, typeList->addTypeName(atomNameStart, atomNameEnd));
-		residueTypeProperty.set(atomIndex, residueTypeList->addTypeName(residueNameStart, residueNameEnd));
+		typeProperty.set(atomIndex, addNamedType(typeProperty.storage(), QLatin1String(atomNameStart, atomNameEnd), ParticleType::OOClass())->numericId());
+		residueTypeProperty.set(atomIndex, addNamedType(residueTypeProperty.storage(), QLatin1String(residueNameStart, residueNameEnd), ElementType::OOClass())->numericId());
 		residueNumberProperty.set(atomIndex, residueNumber);
 
 		// Parse atomic xyz coordinates.
@@ -330,7 +324,7 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 			for(const char* c2 = c + 1; *c2 != '\0' && *c2 != '.'; ++c2)
 				columnWidth++;
 			if(!velocityProperty)
-				velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::VelocityProperty, false);
+				velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 			Vector3& v = velocityProperty[atomIndex];
 			for(size_t dim = 0; dim < 3; dim++) {
 				token_end = token + columnWidth;
@@ -347,13 +341,11 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 		}
 	}
 
-	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+	// Since we created particle types on the go while reading the particles, the type ordering
+	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeList->sortTypesByName(typeProperty);
-	residueTypeList->sortTypesByName(residueTypeProperty);
-	frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
-	frameData->particles().setPropertyTypesList(residueTypeProperty, std::move(residueTypeList));
+	typeProperty.storage()->sortElementTypesByName();
+	residueTypeProperty.storage()->sortElementTypesByName();
 
 	// Parse simulation cell definition.
 	AffineTransformation cell = AffineTransformation::Identity();
@@ -367,18 +359,19 @@ FileSourceImporter::FrameDataPtr GroImporter::FrameLoader::loadFile()
 	  ) < 3)
 		throw Exception(tr("Parsing error in line %1 of Gromacs file. Invalid simulation cell definition: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 	// Convert cell size from nanometers to angstroms.
-	frameData->setSimulationCell(cell * FloatType(10));
+	simulationCell()->setCellMatrix(cell * FloatType(10));
 
 	// Detect if there are more simulation frames following in the file.
 	if(!stream.eof())
-		frameData->signalAdditionalFrames();
+		signalAdditionalFrames();
 
 	if(commentLine.isEmpty())
-		frameData->setStatus(tr("%1 atoms").arg(numParticles));
+		state().setStatus(tr("%1 atoms").arg(numParticles));
 	else
-		frameData->setStatus(tr("%1 atoms\n%2").arg(numParticles).arg(commentLine));
+		state().setStatus(tr("%1 atoms\n%2").arg(numParticles).arg(commentLine));
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

@@ -87,16 +87,16 @@ public:
 private:
 
 	/// The shortened title of this phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, shortName, setShortName, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, shortName, setShortName);
 
 	/// The dimensionality type of the phase.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Dimensionality, dimensionality, setDimensionality, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(Dimensionality, dimensionality, setDimensionality);
 
 	/// The type of crystal symmetry of the phase if it is crystalline.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
 
 	/// List of Burgers vector families defined for the phase if it is crystalline.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies);
 };
 
 }	// End of namespace

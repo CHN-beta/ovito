@@ -56,7 +56,7 @@ void DataTable::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard data table properties.
 ******************************************************************************/
-PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -79,7 +79,7 @@ PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride,
+	return PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
 			propertyName, initializeMemory, type, componentNames);
 }
 

@@ -214,8 +214,7 @@ bool GuiDataSetContainer::askForSaveChanges()
 bool GuiDataSetContainer::fileNew()
 {
 	OORef<DataSet> newSet = new DataSet();
-	if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive && Application::instance()->guiMode())
-		newSet->loadUserDefaults();
+	newSet->loadUserDefaults(Application::instance()->executionContext());
 	setCurrentSet(newSet);
 	return true;
 }
@@ -299,7 +298,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 		}
 
 		// Load user-defined default settings for the importer.
-		importer->loadUserDefaults();
+		importer->loadUserDefaults(Application::instance()->executionContext());
 
 		urlImporters.push_back(std::make_pair(url, std::move(importer)));
 	}

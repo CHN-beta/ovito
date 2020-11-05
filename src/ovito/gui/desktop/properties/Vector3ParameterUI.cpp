@@ -80,7 +80,7 @@ void Vector3ParameterUI::updatePropertyValue()
 					val[_component] = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				if(!editObject()->setProperty(propertyName(), currentValue)) {
+				if(!mutableEditObject()->setProperty(propertyName(), currentValue)) {
 					OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
 				}
 			}

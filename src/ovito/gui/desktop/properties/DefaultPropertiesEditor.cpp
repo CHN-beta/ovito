@@ -39,9 +39,9 @@ void DefaultPropertiesEditor::createUI(const RolloutInsertionParameters& rollout
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void DefaultPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void DefaultPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget);
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 	if(field == PROPERTY_FIELD(editObject)) {
 		updateSubEditors();
 	}

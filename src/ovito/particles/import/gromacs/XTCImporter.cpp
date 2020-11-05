@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "XTCImporter.h"
 
 #include <xdrfile/xdrfile.h>
@@ -142,13 +142,10 @@ void XTCImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr XTCImporter::FrameLoader::loadFile()
+void XTCImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	// Open XTC file for reading.
 	XTCFile file;
@@ -163,18 +160,20 @@ FileSourceImporter::FrameDataPtr XTCImporter::FrameLoader::loadFile()
 
 	// Transfer atomic coordinates to property storage. Also convert from nanometer units to angstroms.
 	size_t numParticles = xtcFrame.xyz.size();
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), numParticles, ParticlesObject::PositionProperty, false);
+	setParticleCount(numParticles);
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
 		return static_cast<Point3>(p * 10.0f);
 	});
 
 	// Convert cell vectors from nanometers to angstroms.
-	frameData->setSimulationCell(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));
+	simulationCell()->setCellMatrix(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));
 
-	frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step));
-	frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time));
+	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step), dataSource());
+	state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time), dataSource());
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

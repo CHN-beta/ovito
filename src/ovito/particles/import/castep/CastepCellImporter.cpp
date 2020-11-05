@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CastepCellImporter.h"
 
@@ -80,7 +80,7 @@ bool CastepCellImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
+void CastepCellImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -97,9 +97,6 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 		}
 		return "";
 	};
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	while(!isCanceled()) {
 
@@ -122,7 +119,7 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 					throw Exception(tr("Invalid simulation cell in CASTEP file at line %1").arg(stream.lineNumber()));
 				line = readNonCommentLine();
 			}
-			frameData->setSimulationCell(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if(boost::algorithm::istarts_with(line, "%BLOCK LATTICE_ABC")) {
 			line = readNonCommentLine();
@@ -162,15 +159,14 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 				cell(1,2) = c * (cos(alpha) - cos(beta)*cos(gamma)) / sin(gamma);
 				cell(2,2) = v / (a*b*sin(gamma));
 			}
-			frameData->setSimulationCell(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if((boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_FRAC") && !boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_FRAC_"))
 				|| (boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_ABS") && !boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_ABS_"))) {
 			bool fractionalCoords = boost::algorithm::istarts_with(line, "%BLOCK POSITIONS_FRAC");
 			line = readNonCommentLine();
 			std::vector<Point3> coords;
-			std::vector<int> types;
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
+			std::vector<QString> types;
 			while(!boost::algorithm::istarts_with(line, "%ENDBLOCK") && !isCanceled() && !stream.eof()) {
 				Point3 pos;
 				int atomicNumber;
@@ -178,13 +174,13 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 					coords.push_back(pos);
 					if(atomicNumber < 0 || atomicNumber >= sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
 						atomicNumber = 0;
-					types.push_back(typeList->addTypeName(chemical_symbols[atomicNumber]));
+					types.push_back(QLatin1String(chemical_symbols[atomicNumber]));
 				}
 				else if(sscanf(line, "%*s " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pos.x(), &pos.y(), &pos.z()) == 3) {
 					coords.push_back(pos);
 					const char* typeNameEnd = line;
 					while(*typeNameEnd > ' ') typeNameEnd++;
-					types.push_back(typeList->addTypeName(line, typeNameEnd));
+					types.push_back(QLatin1String(line, typeNameEnd));
 				}
 				else {
 					// Ignore parsing error, skip optional units.
@@ -194,20 +190,22 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 
 			// Convert from fractional to cartesian coordinates.
 			if(fractionalCoords) {
-				const AffineTransformation cell = frameData->simulationCell();
+				const AffineTransformation cell = simulationCell()->cellMatrix();
 				for(Point3& p : coords)
 					p = cell * p;
 			}
 
-			PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), coords.size(), ParticlesObject::PositionProperty, false);
+			setParticleCount(coords.size());
+			PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 			boost::copy(coords, posProperty.begin());
 
-			PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), types.size(), ParticlesObject::TypeProperty, false);
-			boost::copy(types, typeProperty.begin());
-			typeList->sortTypesByName(typeProperty);
-			frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
+			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+			boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
+				return addNamedType(typeProperty.storage(), typeName, ParticleType::OOClass())->numericId();
+			});
+			typeProperty.storage()->sortElementTypesByName();
 
-			frameData->setStatus(tr("%1 atoms").arg(coords.size()));
+			state().setStatus(tr("%1 atoms").arg(coords.size()));
 		}
 		else if(boost::algorithm::istarts_with(line, "%BLOCK IONIC_VELOCITIES")) {
 			line = readNonCommentLine();
@@ -219,12 +217,16 @@ FileSourceImporter::FrameDataPtr CastepCellImporter::FrameLoader::loadFile()
 				// Ignore parsing error, skip optional units.
 				line = readNonCommentLine();
 			}
-
-			PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(dataset(), velocities.size(), ParticlesObject::VelocityProperty, false);
+			
+			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
+			if(velocities.size() != velocityProperty.size())
+				throw Exception(tr("Invalid number of velocity vectors in CASTEP file."));
 			boost::copy(velocities, velocityProperty.begin());
 		}
 	}
-	return frameData;
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

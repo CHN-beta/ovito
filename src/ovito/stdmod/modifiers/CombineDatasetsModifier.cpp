@@ -23,6 +23,9 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/tri/TriMeshObject.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -83,18 +86,8 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const PipelineEvalua
 		// Merge validity intervals of primary and secondary datasets.
 		state.intersectStateValidity(secondaryState.stateValidity());
 
-		// Merge global attributes of primary and secondary datasets.
-		if(state && secondaryState) {
-			for(const DataObject* obj : secondaryState.data()->objects()) {
-				if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-					if(state.getAttributeValue(attribute->identifier()).isNull())
-						state.mutableData()->addObject(attribute);
-				}
-			}
-		}
-
-		// Let the delegates do their job.
-		applyDelegates(state, time, modApp, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
+		// Perform the merging of two pipeline states.
+		combineDatasets(time, modApp, state, secondaryState);
 
 		return std::move(state);
 	});
@@ -111,7 +104,17 @@ void CombineDatasetsModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 
 	// Acquire the state to be merged.
 	const PipelineFlowState& secondaryState = secondaryDataSource()->evaluateSynchronous(time);
-	if(!secondaryState)
+
+	// Perform the merging of two pipeline states.
+	combineDatasets(time, modApp, state, secondaryState);
+}
+
+/******************************************************************************
+* Implementation method, which performs the merging of two pipeline states.
+******************************************************************************/
+void CombineDatasetsModifier::combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState)
+{
+	if(!state || !secondaryState)
 		return;
 
 	// Merge validity intervals of primary and secondary datasets.
@@ -125,8 +128,29 @@ void CombineDatasetsModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		}
 	}
 
+	// Combine surface meshes from primary and secondary datasets.
+	for(const DataObject* obj : secondaryState.data()->objects()) {
+		if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(obj)) {
+			if(!state.data()->contains(surfaceMesh))
+				state.addObject(surfaceMesh);
+		}
+		else if(const TriMeshObject* triMesh = dynamic_object_cast<TriMeshObject>(obj)) {
+			if(!state.data()->contains(surfaceMesh))
+				state.addObject(triMesh);
+		}
+	}
+
 	// Let the delegates do their job and merge the data objects of the two datasets.
 	applyDelegates(state, time, modApp, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
+
+	// Special handling for the simulation cell. If the secondary dataset contains a simulation cell but 
+	// the primary doesn't, then copy it over to the primary dataset.
+	if(const SimulationCellObject* secondaryCell = secondaryState.getObject<SimulationCellObject>()) {
+		const SimulationCellObject* primaryCell = state.getObject<SimulationCellObject>();
+		if(!primaryCell) {
+			state.addObject(secondaryCell);
+		}
+	}
 }
 
 /******************************************************************************
@@ -144,13 +168,13 @@ bool CombineDatasetsModifier::referenceEvent(RefTarget* source, const ReferenceE
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded()) {
 		// The animation length might have changed when the secondary source has been replaced.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
-	MultiDelegatingModifier::referenceReplaced(field, oldTarget, newTarget);
+	MultiDelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

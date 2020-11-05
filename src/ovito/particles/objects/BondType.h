@@ -42,8 +42,11 @@ public:
 	/// \brief Constructs a new bond type.
 	Q_INVOKABLE BondType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId) override;
+	/// \brief Initializes the element type's attributes to standard values.
+	virtual void initializeType(int propertyType) override;
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	//////////////////////////////////// Utility methods ////////////////////////////////
 
@@ -70,7 +73,7 @@ public:
 private:
 
 	/// Stores the radius of the bond type.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, radius, setRadius, PROPERTY_FIELD_DATA_OBJECT);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 };
 
 }	// End of namespace

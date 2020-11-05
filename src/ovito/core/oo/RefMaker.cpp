@@ -128,18 +128,43 @@ const VectorReferenceFieldBase& RefMaker::getVectorReferenceField(const Property
 }
 
 /******************************************************************************
+* This Qt slot receives signals from the target objects referenced by this object.
+******************************************************************************/
+void RefMaker::receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event) 
+{
+	handleReferenceEvent(sender, event);
+}
+
+/******************************************************************************
 * Handles a notification event from a RefTarget referenced by this object.
 ******************************************************************************/
 bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	OVITO_CHECK_OBJECT_POINTER(this);
 
-	// Handle delete messages.
+	// Handle delete signals.
 	if(event.type() ==  ReferenceEvent::TargetDeleted) {
 		OVITO_ASSERT(source == event.sender());
 		referenceEvent(source, event);
 		OVITO_CHECK_OBJECT_POINTER(this);
 		clearReferencesTo(event.sender());
+		return false;
+	}
+
+	// Handle CheckIsReferencedBy signals.
+	if(event.type() ==  ReferenceEvent::CheckIsReferencedBy) {
+		const CheckIsReferencedByEvent& queryEvent = static_cast<const CheckIsReferencedByEvent&>(event);
+		if(queryEvent.dependent() == this) {
+			queryEvent.setIsReferenced();
+			return false;
+		}
+		return true;
+	}
+
+	// Handle VisitDependents signals.
+	if(event.type() ==  ReferenceEvent::VisitDependents) {
+		const VisitDependentsEvent& visitEvent = static_cast<const VisitDependentsEvent&>(event);
+		visitEvent.visitDependent(this);
 		return false;
 	}
 
@@ -223,8 +248,7 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 			VectorReferenceFieldBase& vectorField = field->vectorStorageAccessFunc(this);
 			for(int i = vectorField.size(); i--;) {
 				if(vectorField[i] == oldTarget) {
-					vectorField.remove(this, *field, i);
-					vectorField.insertInternal(this, *field, newTarget, i);
+					vectorField.setInternal(this, *field, i, newTarget);
 					hasBeenReplaced = true;
 				}
 			}
@@ -515,13 +539,8 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 * This function is recursive, i.e., it also loads default parameter values for
 * referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 ******************************************************************************/
-void RefMaker::loadUserDefaults()
+void RefMaker::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-#ifdef OVITO_DEBUG
-	if(Application::instance()->executionContext() == Application::ExecutionContext::Scripting)
-		qWarning() << "Warning: loadUserDefaults() called in a scripting context for" << this;
-#endif
-
 	// Iterate over all property fields in the class hierarchy.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 		if(field->flags().testFlag(PROPERTY_FIELD_MEMORIZE)) {
@@ -529,23 +548,25 @@ void RefMaker::loadUserDefaults()
 				// If it's a reference field, recursively call loadUserDefaults() on the reference object(s).
 				if(!field->isVector()) {
 					if(RefTarget* target = getReferenceField(*field)) {
-						target->loadUserDefaults();
+						target->loadUserDefaults(executionContext);
 
-						// If it's a controller type, load default controller value.
-						if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
-							QSettings settings;
-							settings.beginGroup(getOOClass().plugin()->pluginId());
-							settings.beginGroup(getOOClass().name());
-							QVariant v = settings.value(field->identifier());
-							if(!v.isNull()) {
-								if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-									ctrl->setFloatValue(0, v.value<FloatType>());
-								}
-								else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-									ctrl->setIntValue(0, v.value<int>());
-								}
-								else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-									ctrl->setVector3Value(0, v.value<Vector3>());
+						if(executionContext == Application::ExecutionContext::Interactive) {
+							// If it's a controller type, load default controller value.
+							if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
+								QSettings settings;
+								settings.beginGroup(getOOClass().plugin()->pluginId());
+								settings.beginGroup(getOOClass().name());
+								QVariant v = settings.value(field->identifier());
+								if(!v.isNull()) {
+									if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
+										ctrl->setFloatValue(0, v.value<FloatType>());
+									}
+									else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
+										ctrl->setIntValue(0, v.value<int>());
+									}
+									else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
+										ctrl->setVector3Value(0, v.value<Vector3>());
+									}
 								}
 							}
 						}
@@ -554,13 +575,15 @@ void RefMaker::loadUserDefaults()
 				else {
 					const QVector<RefTarget*>& list = getVectorReferenceField(*field);
 					for(RefTarget* target : list) {
-						if(target) target->loadUserDefaults();
+						if(target) target->loadUserDefaults(executionContext);
 					}
 				}
 			}
 			else {
 				// If it's a property field, load the user-defined default value.
-				field->loadDefaultValue(this);
+				if(executionContext == Application::ExecutionContext::Interactive) {
+					field->loadDefaultValue(this);
+				}
 			}
 		}
 	}

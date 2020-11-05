@@ -45,14 +45,14 @@ OvitoObject::~OvitoObject()
 ******************************************************************************/
 void OvitoObject::deleteObjectInternal() noexcept 
 {
+	OVITO_CHECK_OBJECT_POINTER(this);
+	OVITO_ASSERT_MSG(_referenceCount.loadAcquire() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
+
 	// Delete the object in the main thread only.
 	if(QThread::currentThread() != this->thread()) {
 		QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
 		return;
 	}
-
-	OVITO_CHECK_OBJECT_POINTER(this);
-	OVITO_ASSERT(_referenceCount.loadAcquire() == 0);
 
 	// Set the reference counter to a positive value to prevent the object
 	// from being deleted a second time during the call to aboutToBeDeleted().

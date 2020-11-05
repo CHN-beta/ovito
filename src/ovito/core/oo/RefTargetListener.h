@@ -127,6 +127,9 @@ public:
 	/// \brief Inserts a new object into the list of targets this listener should listen to.
 	void insert(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.insert(this, PROPERTY_FIELD(targets), index, target); }
 
+	/// \brief Replaces an object in the list of targets this listener should listen to.
+	void set(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.set(this, PROPERTY_FIELD(targets), index, target); }
+
 	/// \brief Removes an object from the list of targets this listener should listen to.
 	void remove(RefTarget* target) {
 		OVITO_CHECK_OBJECT_POINTER(target);
@@ -191,6 +194,9 @@ public:
 
 	/// \brief Inserts a new object into the list of targets this listener should listen to.
 	void insert(int index, T* target) { VectorRefTargetListenerBase::insert(index, target); }
+
+	/// \brief Replaces an object in the list of targets this listener should listen to.
+	void set(int index, T* target) { VectorRefTargetListenerBase::set(index, target); }
 };
 
 }	// End of namespace

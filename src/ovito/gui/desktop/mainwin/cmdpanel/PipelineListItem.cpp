@@ -38,7 +38,7 @@ PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType,
 	_parent(parent), _itemType(itemType)
 {
 	_object.set(this, PROPERTY_FIELD(object), object);
-
+	
 	switch(_itemType) {
 	case VisualElementsHeader: _title = tr("Visual elements"); break;
 	case ModificationsHeader: _title = tr("Modifications"); break;

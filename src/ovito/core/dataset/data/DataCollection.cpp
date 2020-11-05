@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -203,7 +203,13 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, bool
 	DataObjectPath result;
 	DataObject* parent = this;
 	for(const DataObject* obj : path) {
-		result.push_back(parent->makeMutable(obj));
+		if(obj == this) {
+			OVITO_ASSERT(path.front() == this);
+			result.push_back(this);
+		}
+		else {
+			result.push_back(parent->makeMutable(obj));
+		}
 		parent = result.back();
 	}
 	return result;
@@ -535,7 +541,26 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 ******************************************************************************/
 AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, Application::ExecutionContext::Scripting, std::move(value));
+}
+
+/******************************************************************************
+* Inserts a new global attribute into the pipeline state overwritting any 
+* existing attribute with the same name.
+******************************************************************************/
+AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
+{
+	for(const DataObject* obj : objects()) {
+		if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+			if(attribute->identifier() == key) {
+				AttributeDataObject* newAttribute = makeMutable(attribute);
+				newAttribute->setValue(std::move(value));
+				newAttribute->setDataSource(const_cast<PipelineObject*>(dataSource));
+				return newAttribute;
+			}
+		}
+	}
+	return createObject<AttributeDataObject>(key, dataSource, Application::ExecutionContext::Scripting, std::move(value));
 }
 
 /******************************************************************************

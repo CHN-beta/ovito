@@ -63,6 +63,14 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 		_outputDeformationGradient(false),
 		_outputOrderingTypes(false)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void PolyhedralTemplateMatchingModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Define the structure types.
 	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER);
 	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC);
@@ -76,7 +84,7 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 
 	// Define the ordering types.
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-		DataOORef<ParticleType> otype = DataOORef<ParticleType>::create(dataset);
+		DataOORef<ParticleType> otype = DataOORef<ParticleType>::create(dataset(), executionContext);
 		otype->setNumericId(id);
 		otype->setColor({0.75f, 0.75f, 0.75f});
 		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
@@ -90,6 +98,8 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 	orderingTypes()[PTMAlgorithm::ORDERING_B2]->setName(tr("B2"));
 	orderingTypes()[PTMAlgorithm::ORDERING_ZINCBLENDE_WURTZITE]->setName(tr("Zincblende/Wurtzite"));
 	orderingTypes()[PTMAlgorithm::ORDERING_BORON_NITRIDE]->setName(tr("Boron/Nitride"));
+
+	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************
@@ -372,7 +382,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(TimePoint time,
 	}
 
 	// Output RMSD histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
 	table->setAxisLabelX(tr("RMSD"));
 	table->setIntervalStart(0);
 	table->setIntervalEnd(rmsdHistogramRange());
