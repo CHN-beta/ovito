@@ -60,11 +60,21 @@ ComputePropertyModifier::ComputePropertyModifier(DataSet* dataset) : Asynchronou
 	_onlySelectedElements(false),
 	_useMultilineFields(false)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ComputePropertyModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Let this modifier act on particles by default.
-	createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));
+	createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), executionContext);
 	// Set default output property.
 	if(delegate())
 		setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
+
+	AsynchronousDelegatingModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

@@ -53,8 +53,8 @@ public:
     /// The structure types recognized by the Chill+ algorithm.
     enum StructureType {
         OTHER = 0,				//< Unidentified structure
-        HEXAGONAL_ICE,			//< Cubic ice
-        CUBIC_ICE,				//< Hexagonal ice
+        HEXAGONAL_ICE,			//< Hexagonal ice
+        CUBIC_ICE,				//< Cubic ice
         INTERFACIAL_ICE,		//< Interfacial ice
         HYDRATE,				//< Hydrate
         INTERFACIAL_HYDRATE,    //< Interfacial hydrate

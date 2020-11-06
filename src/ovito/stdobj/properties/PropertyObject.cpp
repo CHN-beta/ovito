@@ -27,32 +27,6 @@
 
 namespace Ovito { namespace StdObj {
 
-// Export a couple of commonly used class template instantiations. 
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<int>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<qlonglong>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<FloatType>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<Point3>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<Vector3>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<Color>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<Vector3I>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<std::array<qlonglong,2>>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<int, true>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<qlonglong, true>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<FloatType, true>;
-template class OVITO_STDOBJ_EXPORT ConstPropertyAccess<void, true>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<int>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<qlonglong>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<FloatType>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<Point3>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<Vector3>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<Color>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<Vector3I>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<std::array<qlonglong,2>>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<int, true>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<qlonglong, true>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<FloatType, true>;
-template class OVITO_STDOBJ_EXPORT PropertyAccess<void, true>;
-
 IMPLEMENT_OVITO_CLASS(PropertyObject);
 DEFINE_REFERENCE_FIELD(PropertyObject, elementTypes);
 DEFINE_PROPERTY_FIELD(PropertyObject, title);
@@ -61,7 +35,7 @@ SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");
 SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Constructor creating an emptz property array.
+* Constructor creating an empty property array.
 ******************************************************************************/
 PropertyObject::PropertyObject(DataSet* dataset) : DataObject(dataset)
 {
@@ -287,23 +261,24 @@ void PropertyObject::replicate(size_t n, bool replicateValues)
 {
 	OVITO_ASSERT(n >= 1);
 	if(n <= 1) return;
-#if 0
-	ConstPropertyPtr oldData = storage();
-	resize(oldData->size() * n, false);
+
+	size_t oldSize = _numElements;
+	std::unique_ptr<uint8_t[]> oldData = std::move(_data);
+
+	_numElements *= n;
+	_capacity = _numElements;
+	_data = std::make_unique<uint8_t[]>(_capacity * _stride);
 	if(replicateValues) {
 		// Replicate data values N times.
-		size_t chunkSize = oldData->size();
-		for(size_t i = 0; i < n; i++) {
-			copyRangeFrom(*oldData, 0, i * chunkSize, chunkSize);
+		uint8_t* dest = _data.get();
+		for(size_t i = 0; i < n; i++, dest += oldSize * stride()) {
+			std::memcpy(dest, oldData.get(), oldSize * stride());
 		}
 	}
 	else {
 		// Copy just one replica of the data from the old memory buffer to the new one.
-		copyRangeFrom(*oldData, 0, 0, oldData->size());
+		std::memcpy(_data.get(), oldData.get(), oldSize * stride());
 	}
-#else
-	OVITO_ASSERT(false); // Not implemented yet
-#endif
 }
 
 /******************************************************************************

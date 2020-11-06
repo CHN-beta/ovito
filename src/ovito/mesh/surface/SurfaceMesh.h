@@ -47,6 +47,10 @@ public:
 	/// Constructor creating an empty SurfaceMesh object.
 	Q_INVOKABLE SurfaceMesh(DataSet* dataset, const QString& title = QString());
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	
 	/// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
 	/// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
 	void verifyMeshIntegrity() const;

@@ -190,7 +190,7 @@ void ElasticStrainEngine::applyResults(TimePoint time, ModifierApplication* modA
 	StructureIdentificationEngine::applyResults(time, modApp, state);
 
 	// Output cluster graph.
-	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(modApp);
+	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(modApp, Application::instance()->executionContext());
 	clusterGraphObj->setStorage(clusterGraph());
 
 	// Output particle properties.

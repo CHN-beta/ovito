@@ -85,7 +85,7 @@ void ColorCodingModifier::loadUserDefaults(Application::ExecutionContext executi
 	setEndValueController(ControllerManager::createFloatController(dataset(), executionContext));
 
 	// Let this modifier act on particles by default.
-	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
+	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), executionContext);
 
 	if(executionContext == Application::ExecutionContext::Interactive) {
 		// Load the default gradient type set by the user.
@@ -97,7 +97,7 @@ void ColorCodingModifier::loadUserDefaults(Application::ExecutionContext executi
 			try {
 				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
 				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset()));
+					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset(), executionContext));
 					if(gradient) setColorGradient(gradient);
 				}
 			}
@@ -111,7 +111,6 @@ void ColorCodingModifier::loadUserDefaults(Application::ExecutionContext executi
 
 	DelegatingModifier::loadUserDefaults(executionContext);
 }
-
 
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.

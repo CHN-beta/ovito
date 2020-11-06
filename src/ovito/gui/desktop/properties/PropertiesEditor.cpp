@@ -51,7 +51,7 @@ OORef<PropertiesEditor> PropertiesEditor::create(RefTarget* obj)
 			if(editorClass) {
 				if(!editorClass->isDerivedFrom(PropertiesEditor::OOClass()))
 					throw Exception(tr("The editor class %1 assigned to the RefTarget-derived class %2 is not derived from PropertiesEditor.").arg(editorClass->name(), clazz->name()));
-				return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance(nullptr));
+				return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance());
 			}
 		}
 	}

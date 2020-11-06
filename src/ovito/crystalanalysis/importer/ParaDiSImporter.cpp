@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,8 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
+#include <ovito/crystalanalysis/objects/Microstructure.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
@@ -53,7 +55,7 @@ bool ParaDiSImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
+void ParaDiSImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -61,14 +63,13 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
     setProgressMaximum(stream.underlyingSize());
 
 	// Create the container structures for holding the loaded data.
-	auto frameData = std::make_shared<DislocFrameData>(dataset());
-	MicrostructureData& microstructure = frameData->microstructure();
+	MicrostructureData microstructure(dataset());
 
     Vector3 minCoordinates = Vector3::Zero();
     Vector3 maxCoordinates = Vector3::Zero();
 	for(;;) {
         // Report progress.
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 		setProgressValueIntermittent(stream.underlyingByteOffset());
 
         // Parse the next control parameter from the file.
@@ -97,18 +98,18 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
         }
 	}
 
-	frameData->setSimulationCell(AffineTransformation(
+	simulationCell()->setCellMatrix(AffineTransformation(
         Vector3(maxCoordinates.x() - minCoordinates.x(), 0, 0),
         Vector3(0, maxCoordinates.y() - minCoordinates.y(), 0),
         Vector3(0, 0, maxCoordinates.z() - minCoordinates.z()),
         minCoordinates
     ));
-	frameData->setPbcFlags(true, true, true);
+	simulationCell()->setPbcFlags(true, true, true);
 
     // Skip to third section of data file.
     for(;;) {
         // Report progress.
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 		setProgressValueIntermittent(stream.underlyingByteOffset());
         if(stream.lineStartsWithToken("nodalData")) break;
         stream.readLine();
@@ -125,7 +126,7 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
     // Parse nodes list.
     while(!stream.eof()) {
         // Report progress.
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
         if((microstructure.vertexCount() % 1024) == 0)
 		    setProgressValueIntermittent(stream.underlyingByteOffset());
 
@@ -210,29 +211,30 @@ FileSourceImporter::FrameDataPtr ParaDiSImporter::FrameLoader::loadFile()
     // Otherwise, if there exists at least one <111>-type dislocation, it's like the BCC crystal structure.
     // Note: This will only work for the default [100] crystal orientation.
     if(std::abs(bmag110 - sqrt(1.0/2.0)) < 1e-4) {
-        frameData->setLatticeStructure(ParticleType::PredefinedStructureType::FCC);
+        setLatticeStructure(ParticleType::PredefinedStructureType::FCC);
         FloatType scaleFactor = 0.5 / sqrt(1.0/2.0);
         for(MicrostructureData::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }
     else if(std::abs(bmag111 - sqrt(1.0/3.0)) < 1e-4) {
-        frameData->setLatticeStructure(ParticleType::PredefinedStructureType::BCC);
+        setLatticeStructure(ParticleType::PredefinedStructureType::BCC);
         FloatType scaleFactor = 0.5 / sqrt(1.0/3.0);
         for(MicrostructureData::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }
-    microstructure.createRegion(frameData->latticeStructure());
+    microstructure.createRegion(latticeStructure());
 
     // Form continuous dislocation lines from the segments having the same Burgers vector.
     microstructure.makeContinuousDislocationLines();
 
-	frameData->setStatus(tr("Number of nodes: %1\nNumber of dislocations: %2")
+	state().setStatus(tr("Number of nodes: %1\nNumber of dislocations: %2")
 		.arg(microstructure.vertexCount())
 		.arg(microstructure.faceCount()));
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -288,6 +290,7 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
     return {};
 }
 
+#if 0
 /******************************************************************************
 * Inserts the data loaded by the FrameLoader into the provided data collection.
 * This function is called by the system from the main thread after the
@@ -354,6 +357,7 @@ OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataColle
 
 	return output;
 }
+#endif
 
 }	// End of namespace
 }	// End of namespace

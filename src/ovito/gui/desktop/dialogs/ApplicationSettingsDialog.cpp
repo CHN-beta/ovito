@@ -45,7 +45,7 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(QWidget* parent, OvitoClass
 	// Instantiate all ApplicationSettingsDialogPage derived classes.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationSettingsDialogPage::OOClass())) {
 		try {
-			OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance(nullptr));
+			OORef<ApplicationSettingsDialogPage> page = static_object_cast<ApplicationSettingsDialogPage>(clazz->createInstance());
 			_pages.push_back(page);
 		}
 		catch(const Exception& ex) {

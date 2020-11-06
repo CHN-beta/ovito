@@ -215,8 +215,6 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 	// Atom type mass table.
 	std::vector<FloatType> massTable(natomtypes, 0.0);
 	bool hasTypeMasses = false;
-	// Atom type name table.
-	std::vector<QString> atomTypeNames(natomtypes);
 
 	/// Maps atom IDs to indices.
 	std::unordered_map<qlonglong,size_t> atomIdMap;
@@ -230,6 +228,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 		stream.readLine();
 
 		if(keyword.startsWith("Atoms")) {
+
+			// Create atom types.
+			for(int i = 1; i <= natomtypes; i++)
+				addNumericType(typeProperty.storage(), i, {}, ParticleType::OOClass());
 
 			if(natoms != 0) {
 				stream.readLine();
@@ -317,8 +319,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 		}
 		else if(keyword.startsWith("Masses")) {
 			hasTypeMasses = true;
+			// Parse atom type masses and also optional atom type names, which some data files list as comments in the Masses section.
 			for(int i = 1; i <= natomtypes; i++) {
-				// Try to parse atom types names, which some data files list as comments in the Masses section.
 				const char* start = stream.readLine();
 
 				// Parse mass information.
@@ -328,12 +330,18 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 					throw Exception(tr("Invalid mass specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 				massTable[atomType - 1] = mass;
 
+				// Parse atom type name, which may be appended to the line as a comment.
 				while(*start && *start != '#') start++;
+				QString atomTypeName;
 				if(*start) {
 					QStringList words = QString::fromLocal8Bit(start).split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
 					if(words.size() == 2)
-						atomTypeNames[atomType - 1] = words[1];
+						atomTypeName = words[1];
 				}
+
+				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty.storage(), atomType, atomTypeName, ParticleType::OOClass()));
+				if(mass != 0 && mass != type->mass())
+					static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(mass);
 			}
 		}
 		else if(keyword.startsWith("Pair Coeffs")) {
@@ -547,13 +555,6 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 		boost::transform(typeProperty, massProperty.begin(), [&](int atomType) {
 			return massTable[atomType - 1];
 		});
-	}
-
-	// Create atom types and assign per-type masses.
-	for(int i = 1; i <= natomtypes; i++) {
-		const ElementType* type = addNumericType(typeProperty.storage(), i, atomTypeNames[i - 1], ParticleType::OOClass());
-		if(massTable[i - 1] != 0)
-			static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(massTable[i - 1]);
 	}
 
 	// Sort particles by ID if requested.

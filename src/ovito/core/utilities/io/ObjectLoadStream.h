@@ -112,6 +112,9 @@ private:
 
 	/// The current dataset being loaded.
 	DataSet* _dataset = nullptr;
+
+	/// The context in which the file is being loaded.
+	Application::ExecutionContext _executionContext = Application::instance()->executionContext();
 };
 
 }	// End of namespace

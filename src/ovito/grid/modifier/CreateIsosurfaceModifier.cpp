@@ -164,7 +164,7 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ComputeIsosurfaceEngine>(validityInterval, voxelGrid->shape(), property,
+	return std::make_shared<ComputeIsosurfaceEngine>(dataset(), validityInterval, voxelGrid->shape(), property,
 			sourceProperty().vectorComponent(), voxelGrid->domain(), isolevel, std::move(auxiliaryProperties));
 }
 

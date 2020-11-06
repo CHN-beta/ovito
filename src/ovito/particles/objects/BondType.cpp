@@ -42,12 +42,12 @@ BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0)
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void BondType::initializeType(int propertyType)
+void BondType::initializeType(int propertyType, Application::ExecutionContext executionContext)
 {
-	ElementType::initializeType(propertyType);
+	ElementType::initializeType(propertyType, executionContext);
 
-	setColor(getDefaultBondColor(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId()));
-	setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId()));
+	setColor(getDefaultBondColor(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
+	setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
@@ -93,9 +93,9 @@ Color BondType::getDefaultBondColorForId(BondsObject::Type typeClass, int bondTy
 /******************************************************************************
 * Returns the default color for a bond type name.
 ******************************************************************************/
-Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults)
+Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, Application::ExecutionContext executionContext)
 {
-	if(userDefaults) {
+	if(executionContext == Application::ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("bonds/defaults/color");
 		settings.beginGroup(QString::number((int)typeClass));
@@ -110,9 +110,9 @@ Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& 
 /******************************************************************************
 * Returns the default radius for a bond type name.
 ******************************************************************************/
-FloatType BondType::getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults)
+FloatType BondType::getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, Application::ExecutionContext executionContext)
 {
-	if(userDefaults) {
+	if(executionContext == Application::ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("bonds/defaults/radius");
 		settings.beginGroup(QString::number((int)typeClass));

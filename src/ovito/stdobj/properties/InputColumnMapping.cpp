@@ -393,10 +393,9 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			if(ok) {
 				// Instantiate a new element type with a numeric ID and add it to the property's type list.
 				if(!prec.property->elementType(d)) {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
 					elementType->setNumericId(d);
-					elementType->loadUserDefaults(_executionContext);
-						elementType->initializeType(prec.property->type());
+					elementType->initializeType(prec.property->type(), _executionContext);
 					prec.property->addElementType(std::move(elementType));
 				}
 			}
@@ -407,11 +406,10 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 					d = t->numericId();
 				}
 				else {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
 					elementType->setName(typeName);
 					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
-					elementType->loadUserDefaults(_executionContext);
-					elementType->initializeType(prec.property->type());
+					elementType->initializeType(prec.property->type(), _executionContext);
 					d = elementType->numericId();
 					prec.property->addElementType(std::move(elementType));
 				}
@@ -444,7 +442,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 		if(!prec->property) continue;
 
 		if(elementIndex >= prec->count)
-			_container->throwException(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec->count));
+			_container->throwException(tr("Too many data values in input file. Expected only %1 values.").arg(prec->count));
 
 		if(prec->data) {
 			if(prec->dataType == PropertyObject::Float) {
@@ -455,10 +453,9 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 				if(prec->elementTypeClass) {
 					// Instantiate a new element type with a numeric ID and add it to the property's type list.
 					if(!prec->property->elementType(ival)) {
-						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset()));
+						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset(), _executionContext));
 						elementType->setNumericId(ival);
-						elementType->loadUserDefaults(_executionContext);
-						elementType->initializeType(prec->property->type());
+						elementType->initializeType(prec->property->type(), _executionContext);
 						prec->property->addElementType(std::move(elementType));
 					}
 				}

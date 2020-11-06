@@ -48,6 +48,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE DislocationAnalysisModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	
 	/// Returns the crystal structure with the given ID, or null if no such structure exists.
 	MicrostructurePhase* structureById(int id) const {
 		for(ElementType* stype : structureTypes())

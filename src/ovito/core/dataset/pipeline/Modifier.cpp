@@ -71,7 +71,7 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 				}
 			}
 #endif
-			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset()));
+			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset(), Application::ExecutionContext::Scripting));
 		}
 	}
 	return new ModifierApplication(dataset());

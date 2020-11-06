@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "DislocationNetworkObject.h"
+#include "DislocationVis.h"
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -40,12 +41,26 @@ static const std::shared_ptr<DislocationNetwork> defaultStorage = std::make_shar
 ******************************************************************************/
 DislocationNetworkObject::DislocationNetworkObject(DataSet* dataset) : PeriodicDomainDataObject(dataset), _storage(defaultStorage)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void DislocationNetworkObject::loadUserDefaults(Application::ExecutionContext executionContext)
+{
+	// Attach a visualization element for rendering the dislocation lines.
+	if(!visElement())
+		setVisElement(OORef<DislocationVis>::create(dataset(), executionContext));
+
 	// Create the "unidentified" structure.
-	OORef<MicrostructurePhase> defaultStructure(new MicrostructurePhase(dataset));
+	DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
 	defaultStructure->setName(tr("Unidentified structure"));
 	defaultStructure->setColor(Color(1,1,1));
-	defaultStructure->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	addCrystalStructure(defaultStructure);
+	defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	addCrystalStructure(std::move(defaultStructure));
+
+	PeriodicDomainDataObject::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

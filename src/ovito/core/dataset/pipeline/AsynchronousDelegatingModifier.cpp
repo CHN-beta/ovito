@@ -53,15 +53,15 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const PipelineEval
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName)
+void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Find the delegate type that corresponds to the given name string.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
 		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset()));
-			setDelegate(delegate);
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext));
+			setDelegate(std::move(delegate));
 			break;
 		}
 	}

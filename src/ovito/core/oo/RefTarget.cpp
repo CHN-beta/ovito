@@ -153,7 +153,9 @@ bool RefTarget::isReferencedBy(const RefMaker* obj) const
 OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
 	// Create a new instance of the object's class.
-	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstance(dataset()));
+	// Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
+	// object parameters to default values. Default initialization is not needed when cloning an object.
+	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(dataset()));
 	OVITO_ASSERT(clone);
 	OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 	if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))

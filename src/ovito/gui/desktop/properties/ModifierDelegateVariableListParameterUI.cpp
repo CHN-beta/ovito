@@ -188,6 +188,21 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 }
 
 /******************************************************************************
+* Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+******************************************************************************/
+void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
+		OVITO_ASSERT(false); // No implemented yet.
+		
+	//	QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
+	//	ModifierDelegateParameterUI::populateComboBox(comboBox, static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
+	//		newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
+	}
+	ParameterUI::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
 * Sets the enabled state of the UI.
 ******************************************************************************/
 void ModifierDelegateVariableListParameterUI::setEnabled(bool enabled)
@@ -261,7 +276,7 @@ void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 		ModifierDelegate* oldDelegate = delegates()[delegateIndex];
 		if(!oldDelegate || &oldDelegate->getOOClass() != delegateType || oldDelegate->inputDataObject() != ref) {
 			// Create the new delegate object.
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset()));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset(), Application::ExecutionContext::Interactive));
 			// Set which input data object the delegate should operate on.
 			delegate->setInputDataObject(ref);
 			// Activate the new delegate.

@@ -365,7 +365,6 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 	if(_useCustomColumnMapping && !_customColumnMapping.empty())
 		columnMapping = _customColumnMapping;
 
-
 	// Enumerate global attributes.
 	int nVars;
 	NCERR( nc_inq_nvars(ncFile._ncid, &nVars) );
@@ -485,6 +484,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 	setParticleCount(particleCount);
 
 	// Now iterate over all NetCDF variables and load the appropriate frame data.
+	std::vector<PropertyObject*> loadedProperties;
 	for(const InputColumnInfo& column : columnMapping) {
 		if(isCanceled())
 			return;
@@ -521,6 +521,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 			// Create a new user-defined property for the column.
 			property = particles()->createProperty(propertyName, dataType, componentCount, 0, true);
 		}
+		loadedProperties.push_back(property);
 
 		// Make sure the dimensions match.
 		bool doVoigtConversion = false;
@@ -625,6 +626,13 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 		}
 	}
 
+	// Remove properties from the existing container which are not being parsed.
+	for(int index = particles()->properties().size() - 1; index >= 0; index--) {
+		const PropertyObject* property = particles()->properties()[index];
+		if(std::find(loadedProperties.cbegin(), loadedProperties.cend(), property) == loadedProperties.cend())
+			particles()->removeProperty(property);
+	}
+
 	endProgressSubSteps();
 
 	// If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
@@ -709,8 +717,6 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 	// Retrieve file.
 	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
 		.then(executor(), [](const FileHandle& fileHandle) {
-			return ParticleInputColumnMapping();
-#if 0
 			QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
 			if(filename.isEmpty())
 				throw Exception(tr("The NetCDF file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
@@ -718,84 +724,12 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 			// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
 			NetCDFExclusiveAccess locker;
 
-			try {
-				openNetCDF(filename);
+			// Open the NetCDF file for reading.
+			NetCDFFile ncFile;
+			ncFile.open(filename);
 
-				// Scan NetCDF and iterate supported column names.
-				ParticleInputColumnMapping columnMapping;
-
-				// Now iterate over all variables and see whether they start with either atom or frame dimensions.
-				int nVars;
-				int coordinatesVar = -1;
-				NCERR( nc_inq_nvars(_ncid, &nVars) );
-				for(int varId = 0; varId < nVars; varId++) {
-					char name[NC_MAX_NAME+1];
-					nc_type type;
-
-					// Retrieve NetCDF meta-information.
-					int nDims, dimIds[NC_MAX_VAR_DIMS];
-					NCERR( nc_inq_var(_ncid, varId, name, &type, &nDims, dimIds, NULL) );
-					OVITO_ASSERT(nDims >= 1);
-
-					int nDimsDetected;
-					size_t componentCount;
-					size_t startp[4];
-					size_t countp[4];
-					// Check if dimensions make sense and we can understand them.
-					if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
-						// Do we support this data type?
-						if(type == NC_BYTE || type == NC_SHORT || type == NC_INT || type == NC_LONG) {
-							columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int, componentCount));
-						}
-						else if(type == NC_INT64) {
-							columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int64, componentCount));
-						}
-						else if(type == NC_FLOAT || type == NC_DOUBLE) {
-							columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Float, componentCount));
-							if(qstrcmp(name, "coordinates") == 0 || qstrcmp(name, "unwrapped_coordinates") == 0)
-								coordinatesVar = varId;
-						}
-						else {
-							qDebug() << "Skipping NetCDF variable " << name << " because data type is not known.";
-						}
-					}
-
-					// Read in scalar values as attributes.
-					if(nDims == 1 && dimIds[0] == _frame_dim) {
-						if(type == NC_SHORT || type == NC_INT || type == NC_LONG) {
-							size_t startp[2] = { movieFrame, 0 };
-							size_t countp[2] = { 1, 1 };
-							int value;
-							NCERR( nc_get_vara_int(_ncid, varId, startp, countp, &value) );
-							state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
-						}
-						else if(type == NC_INT64) {
-							size_t startp[2] = { movieFrame, 0 };
-							size_t countp[2] = { 1, 1 };
-							qlonglong value;
-							NCERR( nc_get_vara_longlong(_ncid, varId, startp, countp, &value) );
-							state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
-						}
-						else if(type == NC_FLOAT || type == NC_DOUBLE) {
-							size_t startp[2] = { movieFrame, 0 };
-							size_t countp[2] = { 1, 1 };
-							double value;
-							NCERR( nc_get_vara_double(_ncid, varId, startp, countp, &value) );
-							state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
-						}
-					}
-				}
-				if(coordinatesVar == -1)
-					throw Exception(tr("NetCDF file contains no variable named 'coordinates' or 'unwrapped_coordinates'."));
-
-				closeNetCDF();
-				return columnMapping;
-			}
-			catch(...) {
-				closeNetCDF();
-				throw;
-			}
-#endif
+			// Scan NetCDF file and enumerate supported column names.
+			return ncFile.detectColumnMapping();
 		});
 }
 

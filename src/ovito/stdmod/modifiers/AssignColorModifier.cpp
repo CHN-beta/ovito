@@ -54,11 +54,12 @@ AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(
 ******************************************************************************/
 void AssignColorModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-	setColorController(ControllerManager::createColorController(dataset(), executionContext));
+	if(!colorController())
+		setColorController(ControllerManager::createColorController(dataset(), executionContext));
 	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
 
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"));
+	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), executionContext);
 
 	if(executionContext == Application::ExecutionContext::Interactive) {
 		// In the graphical program environment, we clear the

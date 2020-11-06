@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,6 +75,10 @@ public:
 
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE ReplicateModifier(DataSet* dataset);
+
+	/// Loads the user-defined default values of this object's parameter fields from the
+	/// application's settings store.
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;

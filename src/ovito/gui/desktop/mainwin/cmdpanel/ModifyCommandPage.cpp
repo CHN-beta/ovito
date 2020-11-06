@@ -248,9 +248,8 @@ void ModifyCommandPage::onSelectedItemChanged()
 		// because the currently selected modifier may be rendering gizmos in the viewports. 
 		if(_datasetContainer.currentSet())
 			_datasetContainer.currentSet()->viewportConfig()->updateViewports();
-
-		updateActions(currentItem);
 	}
+	updateActions(currentItem);
 
 	// Whenever no object is selected, show the About Panel containing information about the program.
 	if(currentItem == nullptr)
@@ -368,26 +367,21 @@ void ModifyCommandPage::onModifierMoveUp()
 
 	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier up"), [modApp]() {
 		OVITO_ASSERT(modApp->isPipelineBranch(true) == false);
-		OVITO_ASSERT(false); // Not implemented yet.
-#if 0
-		for(RefMaker* dependent : modApp->dependents()) {
+		modApp->visitDependents([&](RefMaker* dependent) {
 			if(OORef<ModifierApplication> predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
-				if(predecessor->pipelines(true).empty()) continue;
-				const auto dependentsList2 = predecessor->dependents();
-				for(RefMaker* dependent2 : dependentsList2) {
+				if(predecessor->pipelines(true).empty()) return;
+				predecessor->visitDependents([&](RefMaker* dependent2) {
 					if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent2)) {
 						predecessor2->setInput(modApp);
 					}
 					else if(PipelineSceneNode* predecessor2 = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
 						predecessor2->setDataProvider(modApp);
 					}
-				}
+				});
 				predecessor->setInput(modApp->input());
 				modApp->setInput(predecessor);
-				break;
 			}
-		}
-#endif
+		});
 	});
 }
 
@@ -403,23 +397,19 @@ void ModifyCommandPage::onModifierMoveDown()
 	if(!modApp) return;
 
 	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier down"), [modApp]() {
-		OVITO_ASSERT(false); // Not implemented yet.
-#if 0
 		if(OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input())) {
 			OVITO_ASSERT(successor->isPipelineBranch(true) == false);
-			const auto dependentsList = modApp->dependents();
-			for(RefMaker* dependent : dependentsList) {
+			modApp->visitDependents([&](RefMaker* dependent) {
 				if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
 					predecessor->setInput(successor);
 				}
 				else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
 					predecessor->setDataProvider(successor);
 				}
-			}
+			});
 			modApp->setInput(successor->input());
 			successor->setInput(modApp);
 		}
-#endif
 	});
 }
 

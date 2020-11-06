@@ -90,16 +90,7 @@ public:
 
 	/// Returns the internal replacement for the given data vis element.
 	/// If there is no replacement, the original vis element is returned.
-	DataVis* getReplacementVisElement(DataVis* vis) const {
-		OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
-		OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
-		OVITO_ASSERT(vis);
-		int index = replacedVisElements().indexOf(vis);
-		if(index >= 0)
-			return replacementVisElements()[index];
-		else
-			return vis;
-	}
+	DataVis* getReplacementVisElement(DataVis* vis) const;
 
 protected:
 
@@ -151,10 +142,10 @@ private:
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// List of weak references to visual elements coming from the pipeline which shall be replaced with
-	/// independent versions owned by this node.
+	/// independent versions owned by this pipeline.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
-	/// Visual elements owned by the node which replace the ones produced by the pipeline.
+	/// Visual elements owned by the pipeline itself, which replace the ones generated within the pipeline.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Activates the precomputation of the pipeline results for all animation frames.

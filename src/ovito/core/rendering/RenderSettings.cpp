@@ -101,7 +101,7 @@ void RenderSettings::loadUserDefaults(Application::ExecutionContext executionCon
 		if(!classList.empty()) rendererClass = classList.front();
 	}
 	if(rendererClass)
-		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset())));
+		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), executionContext)));
 
 	RefTarget::loadUserDefaults(executionContext);
 }

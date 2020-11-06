@@ -221,7 +221,7 @@ void ViewportMenu::onCreateCamera()
 			QVector<OvitoClassPtr> cameraTypes = PluginManager::instance().listClasses(AbstractCameraObject::OOClass());
 			if(cameraTypes.empty())
 				_viewport->throwException(tr("OVITO has been built without support for camera objects."));
-			OORef<AbstractCameraObject> cameraObj = static_object_cast<AbstractCameraObject>(cameraTypes.front()->createInstance(_viewport->dataset()));
+			OORef<AbstractCameraObject> cameraObj = static_object_cast<AbstractCameraObject>(cameraTypes.front()->createInstance(_viewport->dataset(), Application::ExecutionContext::Interactive));
 
 			cameraObj->setPerspectiveCamera(_viewport->isPerspectiveProjection());
 			if(_viewport->isPerspectiveProjection())

@@ -58,12 +58,12 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(int propertyType)
+void ParticleType::initializeType(int propertyType, Application::ExecutionContext executionContext)
 {
-	ElementType::initializeType(propertyType);
+	ElementType::initializeType(propertyType, executionContext);
 
-	setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId()));
-	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId()));
+	setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
@@ -95,7 +95,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, Application::ExecutionContext executionContext, const FileImporterClass* importerType)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -106,20 +106,20 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, c
 	if(!importerType) {
 
 		// Inspect input file to detect its format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), sourceUrl);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), executionContext, sourceUrl);
 		if(!operation.waitForFuture(importerFuture))
 			return false;
 
 		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
 	}
 	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset()));
+		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset(), executionContext));
 	}
 	if(!importer)
 		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
 	// Create a temporary FileSource for loading the geometry data from the file.
-	OORef<FileSource> fileSource = new FileSource(dataset());
+	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), executionContext);
 	fileSource->setSource({sourceUrl}, importer, false);
 	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
 	if(!operation.waitForFuture(stateFuture))
@@ -208,9 +208,9 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 /******************************************************************************
 * Returns the default color for a particle type name.
 ******************************************************************************/
-Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults)
+Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext)
 {
-	if(userDefaults) {
+	if(executionContext == Application::ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("particles/defaults/color");
 		settings.beginGroup(QString::number((int)typeClass));
@@ -234,7 +234,7 @@ Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, con
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleColor(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, userDefaults);
+			return getDefaultParticleColor(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, executionContext);
 		}
 	}
 
@@ -250,7 +250,7 @@ void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, cons
 	settings.beginGroup("particles/defaults/color");
 	settings.beginGroup(QString::number((int)typeClass));
 
-	if(getDefaultParticleColor(typeClass, particleTypeName, 0, false) != color)
+	if(getDefaultParticleColor(typeClass, particleTypeName, 0, Application::ExecutionContext::Scripting) != color)
 		settings.setValue(particleTypeName, QVariant::fromValue((QColor)color));
 	else
 		settings.remove(particleTypeName);
@@ -259,9 +259,9 @@ void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, cons
 /******************************************************************************
 * Returns the default radius for a particle type name.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext)
 {
-	if(userDefaults) {
+	if(executionContext == Application::ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("particles/defaults/radius");
 		settings.beginGroup(QString::number((int)typeClass));
@@ -278,7 +278,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, userDefaults);
+			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, executionContext);
 		}
 	}
 
@@ -294,7 +294,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	settings.beginGroup("particles/defaults/radius");
 	settings.beginGroup(QString::number((int)typeClass));
 
-	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, false) != radius)
+	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, Application::ExecutionContext::Scripting) != radius)
 		settings.setValue(particleTypeName, QVariant::fromValue(radius));
 	else
 		settings.remove(particleTypeName);

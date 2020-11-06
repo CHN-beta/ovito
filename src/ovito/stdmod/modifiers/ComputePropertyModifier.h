@@ -172,6 +172,10 @@ public:
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE ComputePropertyModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	
 	/// \brief Returns the current delegate of this ComputePropertyModifier.
 	ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
 

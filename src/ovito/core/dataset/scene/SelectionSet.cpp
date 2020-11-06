@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,6 +101,21 @@ void SelectionSet::referenceRemoved(const PropertyFieldDescriptor& field, RefTar
 		}
 	}
 	RefTarget::referenceRemoved(field, oldTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+******************************************************************************/
+void SelectionSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(nodes)) {
+		Q_EMIT selectionChanged(this);
+		if(!_selectionChangeInProgress) {
+			_selectionChangeInProgress = true;
+			QMetaObject::invokeMethod(this, "onSelectionChangeCompleted", Qt::QueuedConnection);
+		}
+	}
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

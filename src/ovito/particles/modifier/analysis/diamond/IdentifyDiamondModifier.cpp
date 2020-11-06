@@ -47,13 +47,13 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(DataSet* dataset) : StructureId
 void IdentifyDiamondModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
-	createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND);
-	createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH);
-	createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH);
-	createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND);
-	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH);
-	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+	createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, executionContext);
+	createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, executionContext);
+	createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, executionContext);
+	createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, executionContext);
+	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, executionContext);
+	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, executionContext);
 
 	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }

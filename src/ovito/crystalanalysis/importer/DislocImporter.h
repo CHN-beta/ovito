@@ -26,7 +26,6 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -65,7 +64,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, file);
+		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource);
 	}
 
 protected:
@@ -73,23 +72,23 @@ protected:
 	/// This method is called when the pipeline node for the FileSource is created.
 	virtual void setupPipeline(PipelineSceneNode* pipeline, FileSource* importObj) override;
 
-	/// The format-specific data holder.
-	class DislocFrameData : public ParticleFrameData
+	/// The format-specific task object that is responsible for reading an input file in a worker thread.
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
-		/// Constructor.
-		DislocFrameData(DataSet* dataset) : _microstructure(dataset) {}
+		/// Inherit constructor from base class.
+		using ParticleImporter::FrameLoader::FrameLoader;
 
-		/// Inserts the loaded data into the provided pipeline state structure. This function is
-		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
+	protected:
 
-		/// Returns the loaded microstructure.
-		const MicrostructureData& microstructure() const { return _microstructure; }
+		/// Reads the frame data from the external file.
+		virtual void loadFile() override;
 
-		/// Returns the microstructure being loaded.
-		MicrostructureData& microstructure() { return _microstructure; }
+	private:
+
+		/// Connects the slip faces to form two-dimensional manifolds.
+		static void connectSlipFaces(MicrostructureData& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap);
 
 		/// Sets the type of crystal ("fcc", "bcc", etc.)
 		void setLatticeStructure(ParticleType::PredefinedStructureType latticeStructure, const Matrix3& latticeOrientation) {
@@ -100,33 +99,11 @@ protected:
 		/// Returns the type of crystal structure.
 		ParticleType::PredefinedStructureType latticeStructure() const { return _latticeStructure; }
 
-	protected:
-
-		/// The loaded microstructure.
-		MicrostructureData _microstructure;
-
 		/// The type of crystal ("fcc", "bcc", etc.)
 		ParticleType::PredefinedStructureType _latticeStructure;
 
 		/// The lattice orientation matrix.
 		Matrix3 _latticeOrientation;
-	};
-
-	/// The format-specific task object that is responsible for reading an input file in a worker thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
-
-	protected:
-
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-
-		/// Connects the slip faces to form two-dimensional manifolds.
-		static void connectSlipFaces(MicrostructureData& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap);
 	};
 };
 

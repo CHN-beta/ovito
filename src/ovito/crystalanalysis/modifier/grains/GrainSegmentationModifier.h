@@ -67,6 +67,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE GrainSegmentationModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	
 protected:
 
 	/// Is called when the value of a property of this object has changed.

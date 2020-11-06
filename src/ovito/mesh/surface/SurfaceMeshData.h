@@ -37,7 +37,7 @@ namespace Ovito { namespace Mesh {
 /**
  * Container data structure that represents a surface mesh consisting of a topology data structure and vertex coordinates.
  * The class is used in the implementation of algorithms to build up or operate on surface meshes.
-§ */
+ */
 class OVITO_MESH_EXPORT SurfaceMeshData
 {
 public:
@@ -544,7 +544,7 @@ public:
             if(property.storage()->type() == ptype)
                 return property.storage();
         // Create new property object.
-        PropertyPtr prop = SurfaceMeshVertices::OOClass().createStandardProperty(dataset(), vertexCount(), ptype, initialize);
+        PropertyPtr prop = SurfaceMeshVertices::OOClass().createStandardProperty(dataset(), vertexCount(), ptype, initialize, Application::ExecutionContext::Scripting);
         addVertexProperty(prop);
         return prop;
     }
@@ -574,7 +574,7 @@ public:
             if(property.storage()->type() == ptype)
                 return property.storage();
         // Create new property object.
-        PropertyPtr prop = SurfaceMeshFaces::OOClass().createStandardProperty(dataset(), faceCount(), ptype, initialize);
+        PropertyPtr prop = SurfaceMeshFaces::OOClass().createStandardProperty(dataset(), faceCount(), ptype, initialize, Application::ExecutionContext::Scripting);
         addFaceProperty(prop);
         return prop;
     }
@@ -624,7 +624,7 @@ public:
             if(property.storage()->type() == ptype)
                 return property.storage();
         // Create new property object.
-        PropertyPtr prop = SurfaceMeshRegions::OOClass().createStandardProperty(dataset(), regionCount(), ptype, initialize);
+        PropertyPtr prop = SurfaceMeshRegions::OOClass().createStandardProperty(dataset(), regionCount(), ptype, initialize, Application::ExecutionContext::Scripting);
         addRegionProperty(prop);
         return prop;
     }

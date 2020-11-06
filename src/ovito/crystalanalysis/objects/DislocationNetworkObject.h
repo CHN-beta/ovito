@@ -45,6 +45,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE DislocationNetworkObject(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;		
+
 	/// Returns the data encapsulated by this object after making sure it is not shared with other owners.
 	const std::shared_ptr<DislocationNetwork>& modifiableStorage();
 

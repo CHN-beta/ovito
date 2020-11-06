@@ -381,6 +381,13 @@ public:
 		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, executionContext, std::forward<Args>(args)...);
 	}
 
+	/// Adds a data object to this collection while making sure the object gets a unique identifier.
+	template<class DataObjectType>
+	void addObjectWithUniqueId(const DataObjectType* obj) {
+		OVITO_ASSERT(data());
+		return mutableData()->addObjectWithUniqueId<DataObjectType>(obj);
+	}
+
 	/// Builds a list of the global attributes stored in this pipeline state.
 	QVariantMap buildAttributesMap() const {
 		OVITO_ASSERT(data());

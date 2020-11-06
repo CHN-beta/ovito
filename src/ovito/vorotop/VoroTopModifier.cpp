@@ -53,7 +53,7 @@ VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModi
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation, Application::ExecutionContext executionContext)
 {
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -72,7 +72,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
         OORef<ParticleType> stype(new ParticleType(dataset()));
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), i));
+        stype->initializeType(ParticlesObject::StructureTypeProperty, executionContext);
         addStructureType(stype);
     }
 

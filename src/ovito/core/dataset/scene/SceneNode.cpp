@@ -223,6 +223,23 @@ void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarge
 		// TM controller has changed -> rebuild world tm cache.
 		invalidateWorldTransformation();
 	}
+	else if(field == PROPERTY_FIELD(children)) {
+		// A child node has been replaced.
+		SceneNode* oldChild = static_object_cast<SceneNode>(oldTarget);
+		OVITO_ASSERT(oldChild->parentNode() == this);
+		oldChild->_parentNode = nullptr;
+
+		SceneNode* newChild = static_object_cast<SceneNode>(newTarget);
+		OVITO_CHECK_OBJECT_POINTER(newChild);
+		OVITO_ASSERT(newChild->parentNode() == nullptr);
+		newChild->_parentNode = this;
+
+		// Invalidate cached world bounding box of this parent node.
+		invalidateBoundingBox();
+
+		// The animation length might have changed when an object has been removed from the scene.
+		notifyDependents(ReferenceEvent::AnimationFramesChanged);
+	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 

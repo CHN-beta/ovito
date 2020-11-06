@@ -58,12 +58,12 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
+ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, Application::ExecutionContext executionContext)
 {
-	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), Application::ExecutionContext::Scripting);
+	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), executionContext);
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-	stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
+	stype->initializeType(ParticlesObject::StructureTypeProperty, executionContext);
 	addStructureType(stype);
 	return stype;
 }

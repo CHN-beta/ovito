@@ -106,7 +106,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
 		// Load application service classes and let them register their custom command line options.
 		for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationService::OOClass())) {
-			OORef<ApplicationService> service = static_object_cast<ApplicationService>(clazz->createInstance(nullptr));
+			OORef<ApplicationService> service = static_object_cast<ApplicationService>(clazz->createInstance());
 			service->registerCommandLineOptions(_cmdLineParser);
 			_applicationServices.push_back(std::move(service));
 		}

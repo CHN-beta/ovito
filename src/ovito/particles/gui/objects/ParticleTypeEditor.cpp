@@ -112,9 +112,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		if(!ptype) return;
 
 		undoableTransaction(tr("Load default particle settings"), [&]() {
-			ptype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->numericId()));
-			ptype->setRadius(ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->numericId()));
-
+			ptype->initializeType(ParticlesObject::TypeProperty, Application::ExecutionContext::Interactive);
 			mainWindow()->statusBar()->showMessage(tr("Loaded default color and radius values for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		});
 	});
@@ -217,7 +215,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 				}
 				// Load the geometry from the selected file.
 				ProgressDialog progressDialog(container(), ptype->dataset()->taskManager(), tr("Loading mesh file"));
-				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), fileImporterType);
+				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), Application::ExecutionContext::Interactive, fileImporterType);
 			});
 		}
 	});

@@ -46,7 +46,7 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 ExpressionSelectionModifier::ExpressionSelectionModifier(DataSet* dataset) : DelegatingModifier(dataset)
 {
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"));
+	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), Application::ExecutionContext::Scripting);
 }
 
 /******************************************************************************

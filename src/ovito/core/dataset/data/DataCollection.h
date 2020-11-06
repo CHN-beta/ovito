@@ -328,6 +328,21 @@ public:
 		return obj;
 	}
 
+	/// Adds a data object to this collection while making sure the object gets a unique identifier.
+	template<class DataObjectType>
+	void addObjectWithUniqueId(const DataObjectType* obj) {
+		OVITO_ASSERT(!obj->identifier().isEmpty());
+		QString uniqueId = generateUniqueIdentifier<DataObjectType>(obj->identifier());
+		if(uniqueId == obj->identifier()) {
+			addObject(obj);
+		}
+		else {
+			DataOORef<DataObjectType> clone = DataOORef<DataObjectType>::makeCopy(obj);
+			clone->setIdentifier(std::move(uniqueId));
+			addObject(std::move(clone));
+		}
+	}
+
 	/// Builds a list of the global attributes stored in this pipeline state.
 	QVariantMap buildAttributesMap() const;
 

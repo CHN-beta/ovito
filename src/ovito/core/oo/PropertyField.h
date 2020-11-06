@@ -268,7 +268,7 @@ protected:
 	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget);
 
 	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* inactiveTarget, bool generateNotificationEvents = true);
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*& inactiveTarget, bool generateNotificationEvents = true);
 
 	/// Replaces the target stored in the reference field.
 	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, bool generateNotificationEvents = true);
@@ -298,8 +298,8 @@ private:
 
 	public:
 		
-		SetReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(oldTarget), _reffield(reffield) {}
+		SetReferenceOperation(RefMaker* owner, ReferenceType oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
 		
 		virtual void undo() override { 
 			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
@@ -401,7 +401,7 @@ public:
 	/// Returns the stored references as a QVector.
 	const QVector<RefTarget*>& targets() const { return pointers; }
 
-	/// Clears all references at sets the vector size to zero.
+	/// Clears all references and sets the vector size to zero.
 	void clear(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
 
 	/// Removes the element at index position i.
@@ -419,7 +419,7 @@ protected:
 	int insertInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget, int index = -1);
 
 	/// Removes a target from the list reference field.
-	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, bool generateNotificationEvents = true);
+	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, RefTarget const*& deadStorage, bool generateNotificationEvents = true);
 
 	/// Removes a target from the list reference field.
 	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, OORef<const RefTarget>& deadStorage, bool generateNotificationEvents = true);
@@ -428,7 +428,7 @@ protected:
 	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, DataOORef<const DataObject>& deadStorage, bool generateNotificationEvents = true);
 
 	/// Adds the target to the list reference field.
-	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* target, int index);
+	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*&& target, int index);
 
 	/// Adds the target to the list reference field.
 	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>&& target, int index);
@@ -437,7 +437,7 @@ protected:
 	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>&& target, int index);
 
 	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* inactiveTarget, int index, bool generateNotificationEvents = true);
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*& inactiveTarget, int index, bool generateNotificationEvents = true);
 
 	/// Replaces the target stored in the reference field.
 	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, int index, bool generateNotificationEvents = true);
@@ -451,8 +451,8 @@ private:
 	class InsertReferenceOperation : public PropertyFieldOperation
 	{
 	public:
-    	InsertReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* target, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _target(target), _reffield(reffield), _index(index) {}
+    	InsertReferenceOperation(RefMaker* owner, ReferenceType target, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _target(std::move(target)), _reffield(reffield), _index(index) {}
 
 		virtual void undo() override {
 			OVITO_ASSERT(!_target);
@@ -533,8 +533,8 @@ private:
 
 	public:
 		
-		ReplaceReferenceOperation(RefMaker* owner, const typename ReferenceType::element_type* oldTarget, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor, int index) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(oldTarget), _reffield(reffield), _index(index) {}
+		ReplaceReferenceOperation(RefMaker* owner, ReferenceType oldTarget, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor, int index) :
+			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield), _index(index) {}
 		
 		virtual void undo() override { 
 			_reffield.swapReference(owner(), descriptor(), _inactiveTarget, _index); 

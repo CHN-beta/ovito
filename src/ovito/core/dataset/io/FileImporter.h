@@ -115,11 +115,11 @@ public:
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
 	/// \throw Exception if url is invalid or if operation has been canceled by the user.
 	/// \note This is a blocking function, which downloads the file and can take a long time to return.
-	static Future<OORef<FileImporter>> autodetectFileFormat(DataSet* dataset, const QUrl& url);
+	static Future<OORef<FileImporter>> autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const QUrl& url);
 
 	/// \brief Tries to detect the format of the given file.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
-	static OORef<FileImporter> autodetectFileFormat(DataSet* dataset, const FileHandle& file);
+	static OORef<FileImporter> autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const FileHandle& file);
 
 	/// Helper function that is called by sub-classes prior to file parsing in order to
 	/// activate the default "C" locale.

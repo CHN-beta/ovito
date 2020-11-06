@@ -277,11 +277,11 @@ const ElementType* ParticleImporter::FrameLoader::addNumericType(PropertyObject*
 	if(const ElementType* existingType = typedProperty->elementType(id))
 		return existingType;
 
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass.createInstance(dataset()));
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass.createInstance(dataset(), executionContext()));
 	elementType->setNumericId(id);
 	elementType->setName(name);
 	elementType->loadUserDefaults(executionContext());
-	elementType->initializeType(typedProperty->type());
+	elementType->initializeType(typedProperty->type(), executionContext());
 
 	return typedProperty->addElementType(std::move(elementType));
 }

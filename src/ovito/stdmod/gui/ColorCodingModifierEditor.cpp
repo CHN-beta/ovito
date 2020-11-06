@@ -239,7 +239,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 	OvitoClassPtr descriptor = colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
 		undoableTransaction(tr("Change color gradient"), [descriptor, mod]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset()));
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset(), Application::ExecutionContext::Interactive));
 			if(gradient) {
 				mod->setColorGradient(gradient);
 
@@ -352,7 +352,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(dataset) {
 		try {
 			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset));
+			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, Application::ExecutionContext::Interactive));
 			if(map) {
 				QIcon icon = iconFromColorMap(map);
 				iconCache.insert(std::make_pair(clazz, icon));

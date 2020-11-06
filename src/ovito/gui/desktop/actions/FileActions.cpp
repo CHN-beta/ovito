@@ -348,8 +348,7 @@ void ActionManager::on_FileExport_triggered()
 		OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
 		// Create exporter and initialize it.
-		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance(dataset()));
-		exporter->loadUserDefaults(Application::instance()->executionContext());
+		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance(dataset(), Application::ExecutionContext::Interactive));
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

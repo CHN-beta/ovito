@@ -51,9 +51,9 @@ ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
 /******************************************************************************
 * Initializes the element type's attributes to standard values.
 ******************************************************************************/
-void ElementType::initializeType(int propertyType)
+void ElementType::initializeType(int propertyType, Application::ExecutionContext executionContext)
 {
-	setColor(getDefaultColor(propertyType, nameOrNumericId(), numericId()));
+	setColor(getDefaultColor(propertyType, nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
@@ -79,9 +79,9 @@ const Color& ElementType::getDefaultColorForId(int typeClass, int typeId)
 /******************************************************************************
 * Returns the default color for a element type name.
 ******************************************************************************/
-Color ElementType::getDefaultColor(int typeClass, const QString& typeName, int typeId, bool useUserDefaults)
+Color ElementType::getDefaultColor(int typeClass, const QString& typeName, int typeId, Application::ExecutionContext executionContext)
 {
-	if(useUserDefaults) {
+	if(executionContext == Application::ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("defaults/color");
 		settings.beginGroup(QString::number(typeClass));
@@ -102,7 +102,7 @@ void ElementType::setDefaultColor(int typeClass, const QString& typeName, const 
 	settings.beginGroup("defaults/color");
 	settings.beginGroup(QString::number(typeClass));
 
-	if(getDefaultColor(typeClass, typeName, 0, false) != color)
+	if(getDefaultColor(typeClass, typeName, 0, Application::ExecutionContext::Scripting) != color)
 		settings.setValue(typeName, QVariant::fromValue((QColor)color));
 	else
 		settings.remove(typeName);

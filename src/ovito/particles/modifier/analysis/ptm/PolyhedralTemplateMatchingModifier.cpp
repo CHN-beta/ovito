@@ -72,15 +72,15 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 void PolyhedralTemplateMatchingModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Define the structure types.
-	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER);
-	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC);
-	createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP);
-	createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC);
-	createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO)->setEnabled(false);
-	createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC)->setEnabled(false);
-	createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND)->setEnabled(false);
-	createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND)->setEnabled(false);
-	createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE)->setEnabled(false);
+	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
+	createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
+	createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
+	createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE, executionContext)->setEnabled(false);
 
 	// Define the ordering types.
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/crystalanalysis/objects/SlipSurfaceVis.h>
 #include <ovito/crystalanalysis/modifier/microstructure/SimplifyMicrostructureModifier.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "DislocImporter.h"
@@ -91,7 +92,7 @@ void DislocImporter::setupPipeline(PipelineSceneNode* pipeline, FileSource* impo
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
+void DislocImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading disloc file %1").arg(fileHandle().toString()));
 
@@ -99,21 +100,20 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 	if(filename.isEmpty())
 		throw Exception(tr("The disloc file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
-	// Create the container structures for holding the loaded data.
-	auto frameData = std::make_shared<DislocFrameData>(dataset());
-	MicrostructureData& microstructure = frameData->microstructure();
-
 	// Fix disloc specific data.
 	std::vector<Vector3> latticeVectors;
 	std::vector<Vector3> transformedLatticeVectors;
 	size_t segmentCount = 0;
+
+	/// The loaded microstructure.
+	MicrostructureData microstructure(dataset());
 
 	// Temporary data structure.
 	std::vector<std::pair<qlonglong,qlonglong>> slipSurfaceMap;
 
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
 	NetCDFExclusiveAccess locker(this);
-	if(!locker.isLocked()) return {};
+	if(!locker.isLocked()) return;
 
 	int root_ncid = 0;
 	try {
@@ -182,9 +182,9 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 		NCERR(nc_get_vara_double(root_ncid, cell_origin_var, startp, countp, cellMatrix.column(3).data()));
 #endif
 		NCERR(nc_get_vara_int(root_ncid, cell_pbc_var, startp, countp, cellPbc));
-		frameData->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
-		frameData->setSimulationCell(cellMatrix);
-		frameData->microstructure().setCell(OORef<SimulationCellObject>::create(dataset(), frameData->simulationCell(), cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
+		simulationCell()->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
+		simulationCell()->setCellMatrix(cellMatrix);
+		microstructure.setCell(DataOORef<SimulationCellObject>::create(dataset(), executionContext(), cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
 
 		// Read lattice orientation matrix.
 		int lattice_orientation_var;
@@ -195,14 +195,14 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 #else
 		NCERR(nc_get_var_double(root_ncid, lattice_orientation_var, latticeOrientation.elements()));
 #endif
-		if(strcmp(lattice_structure_str.get(), "bcc") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::BCC, latticeOrientation);
-		else if(strcmp(lattice_structure_str.get(), "fcc") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
-		else if(strcmp(lattice_structure_str.get(), "fcc_perfect") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
+		if(strcmp(lattice_structure_str.get(), "bcc") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::BCC, latticeOrientation);
+		else if(strcmp(lattice_structure_str.get(), "fcc") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
+		else if(strcmp(lattice_structure_str.get(), "fcc_perfect") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
 		else throw Exception(tr("File parsing error. Unknown lattice structure type: %1").arg(lattice_structure_str.get()));
 
 		// Create microstructure regions.
 		int emptyRegion = microstructure.createRegion(0);
-		int crystalRegion = microstructure.createRegion(frameData->latticeStructure());
+		int crystalRegion = microstructure.createRegion(latticeStructure());
 
 		// Read node list.
 		int nodal_ids_var, nodal_positions_var;
@@ -403,7 +403,7 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 	// Connect half-edges of slip faces.
 	connectSlipFaces(microstructure, slipSurfaceMap);
 
-	frameData->setStatus(tr("Number of nodes: %1\nNumber of segments: %2")
+	state().setStatus(tr("Number of nodes: %1\nNumber of segments: %2")
 		.arg(microstructure.vertexCount())
 		.arg(segmentCount));
 
@@ -418,7 +418,8 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 			qDebug() << "Detected violation of Burgers vector conservation at location" << microstructure.vertexPosition(vertex) << "(" << microstructure.countDislocationArms(vertex) << "arms; delta_b =" << sum << ")";
 	}
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /*************************************************************************************
@@ -536,6 +537,7 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 	}
 }
 
+#if 0
 /******************************************************************************
 * Inserts the data loaded by the FrameLoader into the provided data collection.
 * This function is called by the system from the main thread after the
@@ -612,6 +614,7 @@ OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollec
 
 	return output;
 }
+#endif
 
 }	// End of namespace
 }	// End of namespace

@@ -217,7 +217,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 * Adds a property object to the container, replacing any preexisting property 
 * in the container with the same type. 
 ******************************************************************************/
-void PropertyContainer::createProperty(const PropertyObject* property)
+PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
 	OVITO_CHECK_POINTER(property);
 
@@ -255,6 +255,7 @@ void PropertyContainer::createProperty(const PropertyObject* property)
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		addProperty(property);
 	}
+	return const_cast<PropertyObject*>(property);
 }
 
 /******************************************************************************

@@ -87,6 +87,12 @@ public:
 	/// from the x-axis interval set for this data table.
 	ConstPropertyPtr getXValues() const;
 
+	/// Creates a property for the y-values of the data points.
+	PropertyObject* createYProperty(const QString& name, int dataType, size_t componentCount, bool initializeMemory, QStringList componentNames = QStringList()) {
+		PropertyPtr property = DataTable::OOClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, 0, name, initializeMemory, DataTable::YProperty, std::move(componentNames));
+		return createProperty(std::move(property));
+	}
+
 private:
 
 	/// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.

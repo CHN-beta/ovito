@@ -290,7 +290,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), url);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), Application::ExecutionContext::Interactive, url);
 		if(!fileSource->dataset()->taskManager().waitForFuture(importerFuture))
 			return false;
 
@@ -300,12 +300,10 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	}
 	else {
 		// Caller has provided a specific importer type.
-		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
+		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset(), Application::ExecutionContext::Interactive));
 		if(!fileImporter)
 			return false;
 	}
-	// Load user-defined default import settings.
-	fileImporter->loadUserDefaults(Application::instance()->executionContext());
 
 	// The importer must be a FileSourceImporter.
 	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileImporter);
@@ -319,7 +317,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	for(OvitoClassPtr clazz = &newImporter->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
 		OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
 		if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-			OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance(nullptr));
+			OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
 			if(editor) {
 				if(!editor->inspectNewFile(newImporter, url, mainWindow()))
 					return false;

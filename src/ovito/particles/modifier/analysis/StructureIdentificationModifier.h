@@ -140,10 +140,14 @@ protected:
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// Inserts a structure type into the list.
-	void addStructureType(ElementType* type) { _structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type); }
+	void addStructureType(ElementType* type) { 
+		// Make sure the numeric type ID is unique.
+		OVITO_ASSERT(std::none_of(structureTypes().begin(), structureTypes().end(), [&](const ElementType* t) { return t->numericId() == type->numericId(); }));
+		_structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type); 
+	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType);
+	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, Application::ExecutionContext executionContext);
 
 private:
 

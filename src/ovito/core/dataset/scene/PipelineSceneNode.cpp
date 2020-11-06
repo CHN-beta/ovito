@@ -228,6 +228,13 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 			}
 		}
 	}
+	else if(field == PROPERTY_FIELD(replacedVisElements)) {
+		OVITO_ASSERT(false);
+	}
+	else if(field == PROPERTY_FIELD(replacementVisElements)) {
+		// Reset pipeline cache if a new replacement for a visual element is assigned.
+		invalidatePipelineCache();
+	}
 	SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
@@ -475,6 +482,22 @@ void PipelineSceneNode::loadFromStreamComplete(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
+* Returns the internal replacement for the given data vis element.
+* If there is no replacement, the original vis element is returned.
+******************************************************************************/
+DataVis* PipelineSceneNode::getReplacementVisElement(DataVis* vis) const 
+{
+	OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
+	OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
+	OVITO_ASSERT(vis);
+	int index = replacedVisElements().indexOf(vis);
+	if(index >= 0)
+		return replacementVisElements()[index];
+	else
+		return vis;
+}
+
+/******************************************************************************
 * Replaces the given visual element in this pipeline's output with an
 * independent copy.
 ******************************************************************************/
@@ -484,14 +507,11 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 	OVITO_ASSERT(!replacedVisElements().contains(visElement));
 	OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
 
-	OORef<DataVis> clonedVisElement;
-	{
-		UndoSuspender noUndo(this);
+	// Clone the visual element.
+	OORef<DataVis> clonedVisElement = CloneHelper().cloneObject(visElement, true);
+	DataVis* newVis = clonedVisElement.get();
 
-		// Clone the visual element.
-		CloneHelper cloneHelper;
-		clonedVisElement = cloneHelper.cloneObject(visElement, true);
-	}
+	// Make sure the scene gets notified that the pipeline is changing if the operation is being undone.
 	if(dataset()->undoStack().isRecording())
 		dataset()->undoStack().push(std::make_unique<TargetChangedUndoOperation>(this));
 
@@ -501,19 +521,20 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 	int index = replacementVisElements().indexOf(visElement);
 	if(index == -1) {
 		_replacedVisElements.push_back(this, PROPERTY_FIELD(replacedVisElements), visElement);
-		_replacementVisElements.push_back(this, PROPERTY_FIELD(replacementVisElements), clonedVisElement);
+		_replacementVisElements.push_back(this, PROPERTY_FIELD(replacementVisElements), std::move(clonedVisElement));
 	}
 	else {
-		_replacementVisElements.set(this, PROPERTY_FIELD(replacementVisElements), index, clonedVisElement);
+		_replacementVisElements.set(this, PROPERTY_FIELD(replacementVisElements), index, std::move(clonedVisElement));
 	}
 	OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
 
+	// Make sure the scene gets notified that the pipeline is changing if the operation is being redone.
 	if(dataset()->undoStack().isRecording())
 		dataset()->undoStack().push(std::make_unique<TargetChangedRedoOperation>(this));
 
 	notifyTargetChanged();
 
-	return clonedVisElement;
+	return newVis;
 }
 
 }	// End of namespace

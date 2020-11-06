@@ -56,6 +56,14 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 	_axialRatio(sqrt(8.0/3.0)),
 	_pushStrainTensorsForward(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ElasticStrainModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Create the structure types.
 	ParticleType::PredefinedStructureType predefTypes[] = {
 			ParticleType::PredefinedStructureType::OTHER,
@@ -67,13 +75,15 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 	};
 	OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
 	for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-		OORef<MicrostructurePhase> stype = new MicrostructurePhase(dataset);
+		DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
 		stype->setNumericId(id);
 		stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
 		stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-		stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
-		addStructureType(stype);
+		stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id, executionContext));
+		addStructureType(std::move(stype));
 	}
+
+	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

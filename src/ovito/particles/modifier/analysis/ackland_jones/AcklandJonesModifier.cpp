@@ -47,11 +47,11 @@ AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentifi
 void AcklandJonesModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
-	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
-	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
-	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
-	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
+	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
+	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
+	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
 	
 	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }

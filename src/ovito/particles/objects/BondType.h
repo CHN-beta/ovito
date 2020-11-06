@@ -43,7 +43,7 @@ public:
 	Q_INVOKABLE BondType(DataSet* dataset);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(int propertyType) override;
+	virtual void initializeType(int propertyType, Application::ExecutionContext executionContext) override;
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -65,10 +65,10 @@ public:
 	static Color getDefaultBondColorForId(BondsObject::Type typeClass, int bondTypeId);
 
 	/// Returns the default color for a named bond type.
-	static Color getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults = true);
+	static Color getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, Application::ExecutionContext executionContext);
 
 	/// Returns the default radius for a named bond type.
-	static FloatType getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults = true);
+	static FloatType getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, Application::ExecutionContext executionContext);
 
 private:
 

@@ -107,7 +107,10 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 			OVITO_ASSERT(_dataset != nullptr || record.classInfo->clazz == &DataSet::OOClass() || !record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()));
 
 			// Create an instance of the object class.
-			record.object = record.classInfo->clazz->createInstance(_dataset);
+			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
+				record.object = record.classInfo->clazz->createInstance(_dataset, _executionContext);
+			else
+				record.object = record.classInfo->clazz->createInstance();
 
 			// When deserializing a DataSet, use it as the context for all subsequently deserialized objects.
 			if(record.classInfo->clazz == &DataSet::OOClass()) {

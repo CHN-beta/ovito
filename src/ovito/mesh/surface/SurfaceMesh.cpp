@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,17 +43,28 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMesh, regions, "Regions");
 SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomainDataObject(dataset, title),
 	_spaceFillingRegion(0)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SurfaceMesh::loadUserDefaults(Application::ExecutionContext executionContext)
+{
 	// Attach a visualization element for rendering the surface mesh.
-	addVisElement(new SurfaceMeshVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the vertex properties.
-	setVertices(new SurfaceMeshVertices(dataset));
+	setVertices(DataOORef<SurfaceMeshVertices>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the face properties.
-	setFaces(new SurfaceMeshFaces(dataset));
+	setFaces(DataOORef<SurfaceMeshFaces>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the region properties.
-	setRegions(new SurfaceMeshRegions(dataset));
+	setRegions(DataOORef<SurfaceMeshRegions>::create(dataset(), executionContext));
+
+	PeriodicDomainDataObject::loadUserDefaults(executionContext);
 }
 
 /******************************************************************************

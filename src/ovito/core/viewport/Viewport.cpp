@@ -384,6 +384,9 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget
 		// Update viewport when the camera has been replaced by another scene node.
 		updateViewportTitle();
 	}
+	else if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+		updateViewport();
+	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 

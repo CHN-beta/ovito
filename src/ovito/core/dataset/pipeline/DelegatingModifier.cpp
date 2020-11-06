@@ -83,14 +83,14 @@ TimeInterval DelegatingModifier::validityInterval(const PipelineEvaluationReques
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName)
+void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Find the delegate type that corresponds to the given name string.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
 		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset()));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext));
 			setDelegate(delegate);
 			break;
 		}
@@ -178,13 +178,15 @@ TimeInterval MultiDelegatingModifier::validityInterval(const PipelineEvaluationR
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
 ******************************************************************************/
-void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType)
+void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, Application::ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Generate the list of delegate objects.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-		_delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(dataset())));
+	if(delegates().empty()) {
+		for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
+			_delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext)));
+		}
 	}
 }
 

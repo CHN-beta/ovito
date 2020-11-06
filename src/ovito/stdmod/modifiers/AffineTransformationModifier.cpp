@@ -61,7 +61,7 @@ AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : M
 void AffineTransformationModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Generate the list of delegate objects.
-	createModifierDelegates(AffineTransformationModifierDelegate::OOClass());
+	createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), executionContext);
 	
 	MultiDelegatingModifier::loadUserDefaults(executionContext);
 }

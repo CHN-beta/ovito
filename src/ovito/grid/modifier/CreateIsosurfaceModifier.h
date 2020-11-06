@@ -103,15 +103,15 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, const SimulationCellObject* simCell, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties) :
+		ComputeIsosurfaceEngine(DataSet* dataset, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, const SimulationCellObject* simCell, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties) :
 			Engine(validityInterval),
 			_gridShape(gridShape),
 			_property(std::move(property)),
 			_vectorComponent(std::max(vectorComponent, 0)),
-			_mesh(property->dataset(), simCell),
+			_mesh(dataset, simCell),
 			_isolevel(isolevel),
 			_auxiliaryProperties(std::move(auxiliaryProperties)),
-			_histogram(DataTable::OOClass().createUserProperty(property->dataset(), 64, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty)) {}
+			_histogram(DataTable::OOClass().createUserProperty(dataset, 64, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty)) {}
 			
 		/// Computes the modifier's results.
 		virtual void perform() override;

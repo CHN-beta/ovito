@@ -104,12 +104,17 @@ public:
 	/// \brief Determines if an object is an instance of the class or one of its subclasses.
 	bool isMember(const OvitoObject* obj) const;
 
-	/// \brief Creates an instance of the class.
+	/// \brief Creates an instance of a class that is not derived from RefTarget.
+	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
+	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
+	OORef<OvitoObject> createInstance() const;
+
+	/// \brief Creates an instance of a RefMaker-derived class.
 	/// \param dataset The dataset the newly created object will belong to.
 	///                This may only be NULL when creating an instance of a class that is not derived from RefTarget.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-	OORef<OvitoObject> createInstance(DataSet* dataset) const;
+	OORef<RefTarget> createInstance(DataSet* dataset, Application::ExecutionContext executionContext) const;
 
 	/// Compares two types.
 	bool operator==(const OvitoClass& other) const { return (this == &other); }
@@ -207,6 +212,7 @@ protected:
 	static OvitoClass* _firstMetaClass;
 
 	friend class PluginManager;
+	friend class RefTarget; 	// Give RefTarget::clone() access to low-level method createInstanceImpl().
 };
 
 /// \brief Static cast operator for OvitoClass pointers.

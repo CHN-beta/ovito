@@ -54,12 +54,12 @@ ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentification
 void ChillPlusModifier::loadUserDefaults(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
-    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
-    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE);
-    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE);
-    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE);
-    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE);
-    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE);
+    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, executionContext);
+    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, executionContext);
+    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, executionContext);
+    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, executionContext);
+    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, executionContext);
 
 	StructureIdentificationModifier::loadUserDefaults(executionContext);
 }

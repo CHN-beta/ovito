@@ -37,21 +37,21 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, const QUrl& url)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const QUrl& url)
 {
 	if(!url.isValid())
 		dataset->throwException(tr("Invalid path or URL."));
 
 	// Resolve filename if it contains a wildcard.
-	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset](std::vector<QUrl>&& urls) {
+	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset, executionContext](std::vector<QUrl>&& urls) {
 		if(urls.empty())
 			dataset->throwException(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
 		return Application::instance()->fileManager()->fetchUrl(dataset->taskManager(), urls.front())
-			.then(dataset->executor(), [dataset, url = urls.front()](const FileHandle& file) {
+			.then(dataset->executor(), [dataset, executionContext, url = urls.front()](const FileHandle& file) {
 				// Detect file format.
-				return autodetectFileFormat(dataset, file);
+				return autodetectFileFormat(dataset, executionContext, file);
 			});
 	});
 }
@@ -59,13 +59,13 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file)
+OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const FileHandle& file)
 {
 	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
 			if(importerClass->checkFileFormat(file)) {
-				return static_object_cast<FileImporter>(importerClass->createInstance(dataset));
+				return static_object_cast<FileImporter>(importerClass->createInstance(dataset, executionContext));
 			}
 		}
 		catch(const Exception&) {

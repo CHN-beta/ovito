@@ -82,7 +82,7 @@ void SliceModifier::loadUserDefaults(Application::ExecutionContext executionCont
 	if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
 
 	// Generate the list of delegate objects.
-	createModifierDelegates(SliceModifierDelegate::OOClass());
+	createModifierDelegates(SliceModifierDelegate::OOClass(), executionContext);
 
 	MultiDelegatingModifier::loadUserDefaults(executionContext);
 

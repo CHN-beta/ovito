@@ -688,8 +688,6 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
 bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
-		qDebug() << "Data collection changed dataCollectionFrame()=" << dataCollectionFrame();
-
 		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
 			// The user has modified one of the editable proxy objects attached to the data collection.
 			// Apply the changes made to the proxy objects to the actual data objects.
@@ -703,12 +701,18 @@ bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 			// Re-attach the updated data collection to the FileSource.
 			setDataCollection(state.data());
 			_updatingEditableProxies = false;
-		}
 
-		// Invalidate pipeline cache, except at the current animation time. 
-		// Here we use the updated data collection.
-		if(dataCollectionFrame() >= 0)
-			pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
+			// Invalidate pipeline cache, except at the current animation time. 
+			// Here we use the updated data collection.
+			if(dataCollectionFrame() >= 0)
+				pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
+		}
+		else {
+			// When the data collection was change by a script, then we simply invalidate the pipeline cache
+			// and inform the scene that the pipeline must be re-evaluated.
+			pipelineCache().invalidate();
+			notifyTargetChanged();
+		}
 	}
 	return CachingPipelineObject::referenceEvent(source, event);
 }

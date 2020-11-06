@@ -282,14 +282,14 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	StructureIdentificationEngine::applyResults(time, modApp, state);
 
 	// Output defect mesh.
-	SurfaceMesh* defectMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-defect-mesh"), modApp, DislocationAnalysisModifier::tr("Defect mesh"));
+	SurfaceMesh* defectMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-defect-mesh"), modApp, Application::instance()->executionContext(), DislocationAnalysisModifier::tr("Defect mesh"));
 	defectMesh().transferTo(defectMeshObj);
 	defectMeshObj->setDomain(state.getObject<SimulationCellObject>());
 	defectMeshObj->setVisElement(modifier->defectMeshVis());
 
 	// Output interface mesh.
 	if(outputInterfaceMesh()) {
-		SurfaceMesh* interfaceMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-interface-mesh"), modApp, DislocationAnalysisModifier::tr("Interface mesh"));
+		SurfaceMesh* interfaceMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-interface-mesh"), modApp, Application::instance()->executionContext(), DislocationAnalysisModifier::tr("Interface mesh"));
 		interfaceMeshObj->setTopology(outputInterfaceMesh());
 		interfaceMeshObj->vertices()->createProperty(_outputInterfaceMeshVerts);
 		interfaceMeshObj->setSpaceFillingRegion(defectMesh().spaceFillingRegion());
@@ -300,11 +300,11 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	// Output cluster graph.
 	if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())
 		state.removeObject(oldClusterGraph);
-	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(modApp);
+	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(modApp, Application::instance()->executionContext());
 	clusterGraphObj->setStorage(clusterGraph());
 
 	// Output dislocations.
-	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(modApp);
+	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(modApp, Application::instance()->executionContext());
 	dislocationsObj->setStorage(dislocationNetwork());
 	while(!dislocationsObj->crystalStructures().empty())
 		dislocationsObj->removeCrystalStructure(dislocationsObj->crystalStructures().size()-1);
@@ -365,7 +365,7 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 		dislocationLengthsProperty[entry.first->numericId()] = entry.second;
 	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
 	boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
-	DataTable* lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+	DataTable* lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), modApp, Application::instance()->executionContext(), DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
 	PropertyObject* xProperty = lengthTableObj->expectMutableProperty(DataTable::XProperty);
 	for(const auto& entry : dislocationLengths)
 		xProperty->addElementType(entry.first);
@@ -374,7 +374,7 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
 	for(const auto& entry : segmentCounts)
 		dislocationCountsProperty[entry.first->numericId()] = entry.second;
-	DataTable* countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), modApp, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+	DataTable* countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), modApp, Application::instance()->executionContext(), DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
 	countTableObj->insertProperty(0, xProperty);
 
 	// Output particle properties.

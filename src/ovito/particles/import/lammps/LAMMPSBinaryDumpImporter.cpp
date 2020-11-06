@@ -308,6 +308,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep), dataSource());
 
 	setProgressMaximum(header.natoms);
+	setParticleCount(header.natoms);
 
 	// LAMMPS only stores the outer bounding box of the simulation cell in the dump file.
 	// We have to determine the size of the actual triclinic cell.

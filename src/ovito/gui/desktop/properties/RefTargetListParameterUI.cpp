@@ -179,7 +179,7 @@ void RefTargetListParameterUI::openSubEditor()
 				_subEditor = PropertiesEditor::create(selection);
 			}
 			else if(_defaultEditorClass) {
-				_subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance(nullptr));
+				_subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance());
 			}
 			else {
 				return;
