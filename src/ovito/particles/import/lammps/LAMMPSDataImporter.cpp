@@ -231,7 +231,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create atom types.
 			for(int i = 1; i <= natomtypes; i++)
-				addNumericType(typeProperty.storage(), i, {}, ParticleType::OOClass());
+				addNumericType(typeProperty.property(), i, {}, ParticleType::OOClass());
 
 			if(natoms != 0) {
 				stream.readLine();
@@ -339,9 +339,9 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						atomTypeName = words[1];
 				}
 
-				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty.storage(), atomType, atomTypeName, ParticleType::OOClass()));
+				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty.property(), atomType, atomTypeName, ParticleType::OOClass()));
 				if(mass != 0 && mass != type->mass())
-					static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(mass);
+					static_object_cast<ParticleType>(typeProperty.property()->makeMutable(type))->setMass(mass);
 			}
 		}
 		else if(keyword.startsWith("Pair Coeffs")) {
@@ -377,7 +377,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create bond types.
 			for(int i = 1; i <= nbondtypes; i++)
-				addNumericType(typeProperty.storage(), i, {}, BondType::OOClass());
+				addNumericType(typeProperty.property(), i, {}, BondType::OOClass());
 
 			setProgressMaximum(nbonds);
 			int* bondType = typeProperty.begin();
@@ -426,7 +426,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create angle types.
 			for(int i = 1; i <= nangletypes; i++)
-				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
+				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(nangles);
 			int* angleType = typeProperty.begin();
@@ -467,7 +467,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create dihedral types.
 			for(int i = 1; i <= ndihedraltypes; i++)
-				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
+				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(ndihedrals);
 			int* dihedralType = typeProperty.begin();
@@ -508,7 +508,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create improper types.
 			for(int i = 1; i <= nimpropertypes; i++)
-				addNumericType(typeProperty.storage(), i, {}, ElementType::OOClass());
+				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
 
 			setProgressMaximum(nimpropers);
 			int* improperType = typeProperty.begin();

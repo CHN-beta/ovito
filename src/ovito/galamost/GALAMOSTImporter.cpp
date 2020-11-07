@@ -369,7 +369,7 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 				FloatType eps_a, eps_b, eps_c;
 				stream >> typeName >> a >> b >> c >> eps_a >> eps_b >> eps_c;
 				stream.skipWhiteSpace();
-				for(const ElementType* type : typeProperty.storage()->elementTypes()) {
+				for(const ElementType* type : typeProperty.property()->elementTypes()) {
 					if(type->name() == typeName) {
 						if(typesAsphericalShape.size() <= type->numericId()) typesAsphericalShape.resize(type->numericId()+1, Vector3::Zero());
 						typesAsphericalShape[type->numericId()] = Vector3(a/2,b/2,c/2);
@@ -391,10 +391,10 @@ bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, cons
 			QString typeName;
 			for(size_t i = 0; i < topologyProperty.size(); i++) {
 				stream >> typeName >> topologyProperty[i][0] >> topologyProperty[i][1];
-				typeProperty[i] = addNamedType(typeProperty.storage(), typeName, BondType::OOClass())->numericId();
+				typeProperty[i] = addNamedType(typeProperty.property(), typeName, BondType::OOClass())->numericId();
 				stream.skipWhiteSpace();
 			}
-			typeProperty.storage()->sortElementTypesByName();
+			typeProperty.property()->sortElementTypesByName();
 			_currentProperty = nullptr;
 		}
 		if(stream.status() == QTextStream::ReadPastEnd)

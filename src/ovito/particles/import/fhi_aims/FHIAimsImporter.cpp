@@ -129,7 +129,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
 						throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 					pos = cell * pos;
 				}
-				typeProperty[i] = addNamedType(typeProperty.storage(), QLatin1String(atomTypeName), ParticleType::OOClass())->numericId();
+				typeProperty[i] = addNamedType(typeProperty.property(), QLatin1String(atomTypeName), ParticleType::OOClass())->numericId();
 				break;
 			}
 		}
@@ -138,7 +138,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
 	// Since we created particle types on the go while reading the particles, the ordering of the type list
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeProperty.storage()->sortElementTypesByName();
+	typeProperty.property()->sortElementTypesByName();
 
 	// Set simulation cell.
 	if(lattVecCount == 3) {

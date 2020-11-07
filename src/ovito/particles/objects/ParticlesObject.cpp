@@ -482,8 +482,8 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
 		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
 
-		if(newBondTypeProperty && !newBondTypeProperty.storage()->elementType(bondType->numericId()))
-			newBondTypeProperty.storage()->addElementType(bondType);
+		if(newBondTypeProperty && !newBondTypeProperty.property()->elementType(bondType->numericId()))
+			newBondTypeProperty.property()->addElementType(bondType);
 
 		// Copy bonds information into the extended arrays.
 		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {

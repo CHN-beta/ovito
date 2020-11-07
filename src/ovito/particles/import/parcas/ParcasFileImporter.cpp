@@ -245,7 +245,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     for(int i = mintype; i <= maxtype; i++) {
     	stream.read(types[i - mintype].data(), 4);
     	types[i - mintype][4] = '\0';
-		addNumericType(typeProperty.storage(), i, QString::fromUtf8(types[i - mintype].data()).trimmed(), ParticleType::OOClass());
+		addNumericType(typeProperty.property(), i, QString::fromUtf8(types[i - mintype].data()).trimmed(), ParticleType::OOClass());
     }
 
 	// The actual header is now parsed. Check the offsets.

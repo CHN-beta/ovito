@@ -210,8 +210,8 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
 			// Add the registered atom types.
 			for(int i = 0; i < ntypes; i++) {
-				const ElementType* type = addNamedType(typeProperty.storage(), type_names[i], ParticleType::OOClass());
-				static_object_cast<ParticleType>(typeProperty.storage()->makeMutable(type))->setMass(type_masses[i]);
+				const ElementType* type = addNamedType(typeProperty.property(), type_names[i], ParticleType::OOClass());
+				static_object_cast<ParticleType>(typeProperty.property()->makeMutable(type))->setMass(type_masses[i]);
 			}
 
 			// Parse atom definitions.
@@ -221,7 +221,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 				// Parse atom type name.
 				const char* token_end = line;
 				while(*token_end > ' ') ++token_end;
-				int typeId = addNamedType(typeProperty.storage(), QLatin1String(line, token_end), ParticleType::OOClass())->numericId();
+				int typeId = addNamedType(typeProperty.property(), QLatin1String(line, token_end), ParticleType::OOClass())->numericId();
 				typeProperty[i] = typeId;
 				if(typeId >= 1 && typeId <= type_masses.size())
 					massProperty[i] = type_masses[typeId-1];

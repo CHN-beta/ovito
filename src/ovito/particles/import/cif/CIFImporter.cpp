@@ -139,7 +139,7 @@ void CIFImporter::FrameLoader::loadFile()
 			posIter->y() = pos.y;
 			posIter->z() = pos.z;
 			++posIter;
-			*typeIter++ = addNamedType(typeProperty.storage(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str(), ParticleType::OOClass())->numericId();
+			*typeIter++ = addNamedType(typeProperty.property(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str(), ParticleType::OOClass())->numericId();
 			if(site.occ != 1) hasOccupancy = true;
 		}
 		if(isCanceled()) return;
@@ -156,7 +156,7 @@ void CIFImporter::FrameLoader::loadFile()
 		// Since we created particle types on the go while reading the particles, the type ordering
 		// depends on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
-		typeProperty.storage()->sortElementTypesByName();
+		typeProperty.property()->sortElementTypesByName();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {

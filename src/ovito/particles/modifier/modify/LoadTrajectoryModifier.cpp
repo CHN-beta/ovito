@@ -290,7 +290,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		// If the trajectory file contains bond topology, completely replace all existing bonds 
 		// from the topology dataset with the new set of bonds. 
 		if(trajectoryBonds->getProperty(BondsObject::TopologyProperty)) {
-			if(OORef<BondsObject> oldBonds = particles->bonds()) {
+			if(particles->bonds()) {
 				// Replace the property arrays, but make sure BondType instances  
 				// as well as the visual elements from the topology dataset are preserved.
 				particles->makeBondsMutable()->setContent(trajectoryBonds->elementCount(), trajectoryBonds->properties());

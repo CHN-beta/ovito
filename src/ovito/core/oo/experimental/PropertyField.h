@@ -33,8 +33,10 @@
 
 namespace Ovito {
 
+namespace detail {
+
 /**
- * \brief RefMaker derived classes use this implement properties and reference fields.
+ * \brief Base class for property fields of RefMaker derived classes.
  */
 class OVITO_CORE_EXPORT PropertyFieldBase
 {
@@ -44,10 +46,10 @@ protected:
 	static void generateTargetChangedEvent(RefMaker* owner, const PropertyFieldDescriptor& descriptor, ReferenceEvent::Type eventType = ReferenceEvent::TargetChanged);
 
 	/// Generates a notification event to inform the dependents of the field's owner that it has changed.
-	static void generatePropertyChangedEvent(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
+	static void generatePropertyChangedEvent(RefMaker* owner, const PropertyFieldDescriptor& descriptor) const;
 
 	/// Indicates whether undo records should be created.
-	static bool isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
+	static bool isUndoRecordingActive(RefMaker* owner, const PropertyFieldDescriptor& descriptor) const;
 
 	/// Puts a record on the undo stack.
 	static void pushUndoRecord(RefMaker* owner, std::unique_ptr<UndoableOperation>&& operation);
@@ -62,8 +64,10 @@ protected:
 	
 		/// Constructor.
 		PropertyFieldOperation(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
+		
 		/// Access to the object whose property was changed.
 		RefMaker* owner() const;
+		
 		/// Access to the descriptor of the reference field whose value has changed.
 		const PropertyFieldDescriptor& descriptor() const { return _descriptor; }
 	
@@ -72,90 +76,89 @@ protected:
 		/// The object whose property has been changed.
 		/// This is only used if the owner is not the DataSet, because that would create a circular reference.
 		OORef<OvitoObject> _owner;
-		/// The descriptor of the reference field whose value has changed.
+
+		/// The descriptor of the reference field that has changed.
 		const PropertyFieldDescriptor& _descriptor;
 	};
 };
 
 /**
- * \brief Stores a non-animatable property of a RefTarget derived class, which is not serializable.
+ * \brief Property field that stores a simple value that may not be serializable.
  */
-template<typename property_data_type>
+template<typename T>
 class RuntimePropertyField : public PropertyFieldBase
 {
 public:
-	using property_type = property_data_type;
 
-	// Pick the QVariant data type used to wrap the property type.
-	// If the property type is an enum, then use 'int'.
-	// If the property is 'Color', then use 'QColor'.
-	// Otherwise just use the property type.
-	using qvariant_type = std::conditional_t<std::is_enum<property_data_type>::value, int,
-		std::conditional_t<std::is_same<property_data_type, Color>::value, QColor, property_data_type>>;
+	/// The type of value stored in this property field.
+	using element_type = T;
 
-	// For enum types, the QVariant data type must always be set to 'int'.
-	static_assert(!std::is_enum<property_type>::value || std::is_same<qvariant_type, int>::value, "QVariant data type must be 'int' for enum property types.");
-	// For color properties, the QVariant data type must always be set to 'QColor'.
-	static_assert(!std::is_same<property_type, Color>::value || std::is_same<qvariant_type, QColor>::value, "QVariant data type must be 'QColor' for color property types.");
+	// Pick the QVariant data type used to wrap the property's C++ data type.
+	// If the property's C++ type is an enum, then use 'int'.
+	// If the property's C++ type is 'Color', then use 'QColor'.
+	// Otherwise just use the property's C++ type directly.
+	using qvariant_type = std::conditional_t<std::is_enum<T>::value, int, std::conditional_t<std::is_same<T, Color>::value, QColor, T>>;
 
-	/// Forwarding constructor.
+	// Make sure that for any enum type the QVariant data type 'int' is used.
+	static_assert(!std::is_enum<T>::value || std::is_same<qvariant_type, int>::value, "QVariant data type must be 'int' for enum property types.");
+	// Make sure that for a color property the QVariant data type 'QColor' is used.
+	static_assert(!std::is_same<T, Color>::value || std::is_same<qvariant_type, QColor>::value, "QVariant data type must be 'QColor' for color property types.");
+
+	/// Forwarding constructor that initializes the property field's value.
 	template<class... Args>
-	explicit RuntimePropertyField(Args&&... args) : PropertyFieldBase(), _value(std::forward<Args>(args)...) {}
+	explicit RuntimePropertyField(Args&&... args) : _value(std::forward<Args>(args)...) {}
 
-	/// Changes the value of the property. Handles undo and sends a notification message.
-	template<typename T>
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, T&& newValue) {
-		OVITO_ASSERT(owner != nullptr);
+	/// Changes the value of the property field. Handles undo and sends a notification message.
+	template<typename U>
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, U&& newValue) {
+		OVITO_CHECK_OBJECT_POINTER(owner);
 		if(isEqualToCurrentValue(get(), newValue)) return;
 		if(isUndoRecordingActive(owner, descriptor))
 			pushUndoRecord(owner, std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
-		mutableValue() = std::forward<T>(newValue);
+		mutableValue() = std::forward<U>(newValue);
 		valueChangedInternal(owner, descriptor);
 	}
 
-	/// Changes the value of the property. Handles undo and sends a notification message.
-	template<typename T = qvariant_type>
-	std::enable_if_t<QMetaTypeId2<T>::Defined>
+	/// Sets the value of this property field to the value stored in the given QVariant.
+	/// This method handles undo and sends a notification message.
+	template<typename U = qvariant_type>
+	std::enable_if_t<QMetaTypeId2<U>::Defined>
 	setQVariant(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const QVariant& newValue) {
-		if(newValue.canConvert<qvariant_type>()) {
-			set(owner, descriptor, static_cast<property_type>(newValue.value<qvariant_type>()));
-		}
-		else {
-			OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", qPrintable(QString("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(QMetaType::typeName(qMetaTypeId<qvariant_type>()))));
-		}
+		OVITO_ASSERT_MSG(newValue.canConvert<qvariant_type>(), "RuntimePropertyField::setQVariant()", qPrintable(QString("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(QMetaType::typeName(qMetaTypeId<qvariant_type>()))));
+		set(owner, descriptor, newValue.value<qvariant_type>());
 	}
 
 	/// Changes the value of the property. Handles undo and sends a notification message.
-	template<typename T = qvariant_type>
-	std::enable_if_t<!QMetaTypeId2<T>::Defined>
+	template<typename U = qvariant_type>
+	std::enable_if_t<!QMetaTypeId2<U>::Defined>
 	setQVariant(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const QVariant& newValue) {
 		OVITO_ASSERT_MSG(false, "RuntimePropertyField::setQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
 	}
 
 	/// Returns the internal value stored in this property field as a QVariant.
-	template<typename T = qvariant_type>
-	std::enable_if_t<QMetaTypeId2<T>::Defined, QVariant>
+	template<typename U = qvariant_type>
+	std::enable_if_t<QMetaTypeId2<U>::Defined, QVariant>
 	getQVariant() const {
 		return QVariant::fromValue<qvariant_type>(static_cast<qvariant_type>(this->get()));
 	}
 
 	/// Returns the internal value stored in this property field as a QVariant.
-	template<typename T = qvariant_type>
+	template<typename U = qvariant_type>
 	std::enable_if_t<!QMetaTypeId2<T>::Defined, QVariant>
 	getQVariant() const {
 		OVITO_ASSERT_MSG(false, "RuntimePropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
 		return {};
 	}
 
-	/// Returns the internal value stored in this property field.
-	inline const property_type& get() const { return _value; }
+	/// Reads the current value of this property field.
+	inline const T& get() const { return _value; }
 
-	/// Returns a reference to the internal value stored in this property field.
-	/// Warning: Do not use this function unless you know what you are doing!
-	inline property_type& mutableValue() { return _value; }
+	/// Returns a reference to the internal value storage of this property field, which allows to manipulate the
+	/// value from the outside. WARNING: Do not use this function unless you know what you are doing!
+	inline T& mutableValue() { return _value; }
 
-	/// Cast the property field to the property value.
-	inline operator const property_type&() const { return get(); }
+	/// Conversion operator that reads out the current value of this property field.
+	inline operator const T&() const { return get(); }
 
 private:
 
@@ -168,14 +171,14 @@ private:
 	}
 
 	/// Helper function that tests if the new value is equal to the current value of the property field.
-	template<typename T = property_type>
-	static inline std::enable_if_t<boost::has_equal_to<const T&>::value, bool>
-	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return oldValue == newValue; }
+	template<typename U = T>
+	static inline std::enable_if_t<boost::has_equal_to<const U&>::value, bool>
+	isEqualToCurrentValue(const U& oldValue, const U& newValue) { return oldValue == newValue; }
 
 	/// Helper function that tests if the new value is equal to the current value of the property field.
-	template<typename T = property_type>
-	static inline std::enable_if_t<!boost::has_equal_to<const T&>::value, bool>
-	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return false; }
+	template<typename U = T>
+	static inline std::enable_if_t<!boost::has_equal_to<const U&>::value, bool>
+	isEqualToCurrentValue(const U& oldValue, const U& newValue) { return false; }
 
 	/// This undo class records a change to the property value.
 	class PropertyChangeOperation : public PropertyFieldOperation
@@ -200,15 +203,15 @@ private:
 		/// The property field that has been changed.
 		RuntimePropertyField& _field;
 		/// The old value of the property.
-		property_type _oldValue;
+		T _oldValue;
 	};
 
-	/// The internal property value.
-	property_type _value;
+	/// The internal storage of the property value.
+	T _value;
 };
 
 /**
- * \brief Stores a non-animatable property of a RefTarget derived class.
+ * \brief Property field storing a simple value that is serializable.
  */
 template<typename property_data_type>
 class PropertyField : public RuntimePropertyField<property_data_type>
@@ -230,13 +233,13 @@ public:
 	}
 };
 
-// Template specialization for size_t property fields.
+// Template specialization for serialization of property fields holding a size_t value.
 template<>
 inline void PropertyField<size_t>::saveToStream(SaveStream& stream) const {
 	stream.writeSizeT(this->get());
 }
 
-// Template specialization for size_t property fields.
+// Template specialization for deserialization of property fields holding a size_t value.
 template<>
 inline void PropertyField<size_t>::loadFromStream(LoadStream& stream) {
 	stream.readSizeT(this->mutableValue());

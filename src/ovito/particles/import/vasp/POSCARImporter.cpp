@@ -260,9 +260,9 @@ void POSCARImporter::FrameLoader::loadFile()
 	for(int atype = 1; atype <= atomCounts.size(); atype++) {
 		int typeId = atype;
 		if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
-			typeId = addNamedType(typeProperty.storage(), atomTypeNames[atype-1], ParticleType::OOClass())->numericId();
+			typeId = addNamedType(typeProperty.property(), atomTypeNames[atype-1], ParticleType::OOClass())->numericId();
 		else
-			addNumericType(typeProperty.storage(), atype, {}, ParticleType::OOClass());
+			addNumericType(typeProperty.property(), atype, {}, ParticleType::OOClass());
 		for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
 			*a = typeId;
 			if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -441,7 +441,7 @@ PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextRea
 
 		if(!setProgressValueIntermittent(i)) return nullptr;
 	}
-	return fieldArray.storage();
+	return fieldArray.property();
 }
 
 }	// End of namespace

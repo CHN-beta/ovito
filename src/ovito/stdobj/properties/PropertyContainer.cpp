@@ -267,6 +267,7 @@ void PropertyContainer::setContent(size_t newElementCount, const QVector<Propert
 {
 	// Lengths of new property arrays must be consistent.
 	for(const auto& property : newProperties) {
+		OVITO_ASSERT(!properties().contains(property));
 		if(property->size() != newElementCount) {
 			OVITO_ASSERT(false);
 			throwException(tr("Cannot add new %1 property '%2': Array length does not match number of elements in the parent container.").arg(getOOMetaClass().propertyClassDisplayName()).arg(property->name()));

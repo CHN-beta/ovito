@@ -155,11 +155,11 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 		// Write the Y column(s).
 		for(const ConstPropertyAccess<void,true>& array : outputProperties) {
 			for(size_t col = 0; col < array.componentCount(); col++) {
-				if(array.storage()->dataType() == PropertyObject::Int)
+				if(array.dataType() == PropertyObject::Int)
 					textStream() << *reinterpret_cast<const int*>(array.cdata(row, col)) << " ";
-				else if(array.storage()->dataType() == PropertyObject::Int64)
+				else if(array.dataType() == PropertyObject::Int64)
 					textStream() << *reinterpret_cast<const qlonglong*>(array.cdata(row, col)) << " ";
-				else if(array.storage()->dataType() == PropertyObject::Float)
+				else if(array.dataType() == PropertyObject::Float)
 					textStream() << *reinterpret_cast<const FloatType*>(array.cdata(row, col)) << " ";
 				else
 					textStream() << "<?> ";

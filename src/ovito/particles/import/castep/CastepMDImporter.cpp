@@ -170,13 +170,13 @@ void CastepMDImporter::FrameLoader::loadFile()
 
 	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-		return addNamedType(typeProperty.storage(), typeName, ParticleType::OOClass())->numericId();
+		return addNamedType(typeProperty.property(), typeName, ParticleType::OOClass())->numericId();
 	});
 
 	// Since we created particle types on the go while reading the particles, the particle type ordering
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeProperty.storage()->sortElementTypesByName();
+	typeProperty.property()->sortElementTypesByName();
 
 	if(velocities.size() == coords.size()) {
 		PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
