@@ -67,7 +67,7 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	if(Application::instance()->headlessMode())
 		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
@@ -98,15 +98,15 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	AmbientOcclusionRenderer* renderer = new AmbientOcclusionRenderer(dataset(), QSize(resolution, resolution));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AmbientOcclusionEngine>(dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, boundingBox, std::move(radii), renderer);
+	return std::make_shared<AmbientOcclusionEngine>(executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, boundingBox, std::move(radii), renderer);
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(Application::ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 		const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer) :
-	Engine(validityInterval),
+	Engine(executionContext, validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
 	_positions(std::move(positions)),

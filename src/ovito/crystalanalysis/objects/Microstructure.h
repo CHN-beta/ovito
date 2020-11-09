@@ -46,11 +46,8 @@ public:
 		SLIP_FACET = 2
 	};
 
-	/// Constructor creating an empty microstructure.
-	MicrostructureData(DataSet* dataset, const SimulationCellObject* cell = nullptr);
-
 	/// Constructor that adopts the data from the given pipeline data object into this structure.
-	explicit MicrostructureData(const SurfaceMesh* mo);
+	explicit MicrostructureData(const Microstructure* mo);
 
 	/// Returns the Burgers vector of a dislocation mesh face or the slip vector of a slip facet.
 	const Vector3& burgersVector(face_index face) const {
@@ -102,7 +99,7 @@ public:
 	/// Determines the number of dislocation arms connected to the given mesh vertex.
 	int countDislocationArms(vertex_index vertex) const {
 		int armCount = 0;
-		for(edge_index e = firstVertexEdge(vertex); e != HalfEdgeMesh::InvalidIndex; e = nextVertexEdge(e)) {
+		for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshData::InvalidIndex; e = nextVertexEdge(e)) {
 			if(isPhysicalDislocationEdge(e)) armCount++;
 		}
 		return armCount;
@@ -145,6 +142,10 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE Microstructure(DataSet* dataset) : SurfaceMesh(dataset) {}
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Microstructure"); }

@@ -72,7 +72,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -82,16 +82,17 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(DataSet* dataset, ConstPropertyPtr positions,
+		ComputePolyhedraEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
-				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, const SimulationCellObject* simCell) :
+				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh) :
+			Engine(executionContext),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_particleTypes(std::move(particleTypes)),
 			_particleIdentifiers(std::move(particleIdentifiers)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_mesh(dataset, simCell) {}
+			_mesh(std::move(mesh)) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -99,14 +100,8 @@ private:
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-		/// Returns the generated surface mesh.
-		const SurfaceMeshData& mesh() const { return _mesh; }
-
-		/// Returns the generated surface mesh.
-		SurfaceMeshData& mesh() { return _mesh; }
-
 		/// Returns the simulation cell geometry.
-		const SimulationCellObject* cell() const { return mesh().cell(); }
+		const SimulationCellObject* cell() const { return _mesh->domain(); }
 
 	private:
 
@@ -117,8 +112,8 @@ private:
 		ConstPropertyPtr _bondTopology;
 		ConstPropertyPtr _bondPeriodicImages;
 
-		/// The output mesh.
-		SurfaceMeshData _mesh;
+		/// The generated mesh structure.
+		DataOORef<SurfaceMesh> _mesh;
 	};
 
 	/// The vis element for rendering the polyhedra.

@@ -86,7 +86,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
     // Get the current positions.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -109,7 +109,8 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
         radii = particles->inputParticleRadii();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(dataset(),
+    return std::make_shared<VoroTopAnalysisEngine>(executionContext, 
+                                                   dataset(),
                                                    particles,
                                                    input.stateValidity(),
                                                    posProperty,

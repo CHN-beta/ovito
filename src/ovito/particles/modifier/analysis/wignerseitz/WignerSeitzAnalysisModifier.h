@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -65,10 +65,10 @@ private:
 	public:
 
 		/// Constructor.
-		WignerSeitzAnalysisEngine(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		WignerSeitzAnalysisEngine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
 				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
-			RefConfigEngineBase(validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(executionContext, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
 				nullptr, nullptr, affineMapping, false),
 			_typeProperty(std::move(typeProperty)),
 			_ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),

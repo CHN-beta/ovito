@@ -70,7 +70,7 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get the input particles.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -87,14 +87,14 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == CutoffRange) {
-		return std::make_shared<ExpandSelectionCutoffEngine>(particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
+		return std::make_shared<ExpandSelectionCutoffEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
 	}
 	else if(mode() == NearestNeighbors) {
-		return std::make_shared<ExpandSelectionNearestEngine>(particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
+		return std::make_shared<ExpandSelectionNearestEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
 	}
 	else if(mode() == BondedNeighbors) {
 		particles->expectBonds()->verifyIntegrity();
-		return std::make_shared<ExpandSelectionBondedEngine>(particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+		return std::make_shared<ExpandSelectionBondedEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
 	}
 	else {
 		throwException(tr("Invalid selection expansion mode."));

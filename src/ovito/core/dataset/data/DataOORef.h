@@ -38,10 +38,8 @@ class DataOORef
 {
 private:
 
-    using ReferencePtr = OORef<std::remove_const_t<DataObjectClass>>;
-
     /// The internal smart-pointer to the DataObject, which keeps the object instance alive.
-    ReferencePtr _ref;
+    OORef<DataObjectClass> _ref;
 
 	template<class U> friend class DataOORef;
 
@@ -60,7 +58,7 @@ public:
     DataOORef(std::nullptr_t) noexcept {}
 
     /// Initialization constructor.
-    DataOORef(DataObjectClass* p) noexcept : _ref(p) {
+    DataOORef(const DataObjectClass* p) noexcept : _ref(p) {
         if(_ref) _ref->incrementDataReferenceCount();
     }
 
@@ -69,9 +67,9 @@ public:
         if(_ref) _ref->incrementDataReferenceCount();
     }
 
-    /// Construct an immutable reference from a mutable reference.
-    template<class U = std::enable_if<std::is_const<DataObjectClass>::value, std::remove_const_t<DataObjectClass>>>
-    DataOORef(const DataOORef<U>& rhs) noexcept : _ref(rhs._ref.get()) {
+    /// Conversion constructor.
+    template<class U>
+    DataOORef(const DataOORef<U>& rhs) noexcept : _ref(rhs._ref) {
         if(_ref) _ref->incrementDataReferenceCount();
     }
 
@@ -80,8 +78,9 @@ public:
         OVITO_ASSERT(!rhs._ref);
     }
 
-    /// Move constructor from standard OORef.
-    DataOORef(ReferencePtr&& rhs) noexcept : _ref(std::move(rhs)) {
+    /// Move and conversion constructor from a OORef.
+    template<class U>
+    DataOORef(OORef<U>&& rhs) noexcept : _ref(std::move(rhs)) {
         if(_ref) _ref->incrementDataReferenceCount();
     }
 
@@ -128,8 +127,9 @@ public:
     	return *this;
     }
 
-    /// Move assignment operator with standard OORef.
-    DataOORef& operator=(ReferencePtr&& rhs) noexcept {
+    /// Move assignment operator with OORef.
+    template<class U>
+    DataOORef& operator=(OORef<U>&& rhs) noexcept {
     	DataOORef(std::move(rhs)).swap(*this);
     	return *this;
     }
@@ -169,6 +169,7 @@ public:
 		return DataOORef(OORef<DataObjectClass>::create(dataset, executionContext, std::forward<Args>(args)...));
 	}
 
+#if 0
     /// Turns a read-only reference to a data object into a read-write reference.
     /// If the data object is referenced by some other third-party, make a copy of the 
     /// object, which can be safely modified.
@@ -177,6 +178,7 @@ public:
             return std::move(_ref);
         return CloneHelper().cloneObject(_ref, false);
     }
+#endif
 
     /// Returns a copy of the data object, which can be safely modified.
     DataOORef<std::remove_const_t<DataObjectClass>> makeCopy() const {
@@ -192,6 +194,44 @@ public:
     static DataOORef<std::remove_const_t<DataObjectClass>> makeDeepCopy(const DataObjectClass* obj) {
         return CloneHelper().cloneObject(obj, true);
     }
+
+    template<class T, class U> friend DataOORef<T> static_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T, class U> friend DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) noexcept;
 };
+
+template<class T> T* get_pointer(const DataOORef<T>& p) noexcept
+{
+    return p.get();
+}
+
+template<class T, class U> DataOORef<T> static_pointer_cast(const DataOORef<U>& p) noexcept
+{
+    return static_cast<T*>(p.get());
+}
+
+template<class T, class U> DataOORef<T> static_pointer_cast(DataOORef<U>&& p) noexcept
+{
+    return static_pointer_cast<T>(std::move(p._ref));
+}
+
+template<class T, class U> DataOORef<T> const_pointer_cast(const DataOORef<U>& p) noexcept
+{
+    return const_cast<T*>(p.get());
+}
+
+template<class T, class U> DataOORef<T> dynamic_pointer_cast(const DataOORef<U>& p) noexcept
+{
+    return qobject_cast<T*>(p.get());
+}
+
+template<class T, class U> DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) noexcept
+{
+    return dynamic_pointer_cast<T>(std::move(p._ref));
+}
+
+template<class T> QDebug operator<<(QDebug debug, const DataOORef<T>& p)
+{
+	return debug << p.get();
+}
 
 }	// End of namespace

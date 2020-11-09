@@ -86,7 +86,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	size_t numberOfStrips = 0;
 	size_t numberOfPolys = 0;
 	size_t numberOfCells = 0;
-	SurfaceMeshData::vertex_index vertexBaseIndex = HalfEdgeMesh::InvalidIndex;
+	SurfaceMeshData::vertex_index vertexBaseIndex = SurfaceMeshData::InvalidIndex;
 	std::vector<PropertyPtr> cellDataArrays;
 
 	// Parse the elements of the XML file.

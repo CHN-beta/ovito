@@ -72,7 +72,7 @@ void SlipSurfaceVis::PrepareMeshEngine::determineVisibleFaces()
     // output triangle mesh.
 	HalfEdgeMesh::size_type faceCount = inputMesh().faceCount();
     _faceSubset.resize(faceCount);
-	for(HalfEdgeMesh::face_index face = 0; face < faceCount; face++) {
+	for(face_index face = 0; face < faceCount; face++) {
         _faceSubset[face] = _microstructure.isSlipSurfaceFace(face);
     }
 }

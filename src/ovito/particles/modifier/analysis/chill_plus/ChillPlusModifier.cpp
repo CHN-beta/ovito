@@ -68,7 +68,7 @@ void ChillPlusModifier::loadUserDefaults(Application::ExecutionContext execution
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -82,7 +82,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
+    return std::make_shared<ChillPlusEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 }
 
 /******************************************************************************

@@ -168,7 +168,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const PipelineEvaluatio
 	}
 	else {
 		// Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
-		return createEngine(request, modApp, input).then(executor(), [this, request = request, input = input, modApp = QPointer<AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
+		return createEngine(request, modApp, input, Application::instance()->executionContext()).then(executor(), [this, request = request, input = input, modApp = QPointer<AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
 			// Create the asynchronous task object and start running the engine.
 			auto task = std::make_shared<EngineExecutionTask>(this, std::move(modApp), std::move(request), std::move(engine), std::move(input));
 			task->go();

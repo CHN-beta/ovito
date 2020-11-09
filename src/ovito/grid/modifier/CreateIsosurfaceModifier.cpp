@@ -121,7 +121,7 @@ void CreateIsosurfaceModifier::initializeModifier(ModifierApplication* modApp)
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	if(!subject())
 		throwException(tr("No input voxel grid set."));
@@ -146,6 +146,8 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 		throwException(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
 	if(sourceProperty().vectorComponent() >= (int)property->componentCount())
 		throwException(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
+	if(property->dataType() != PropertyObject::Float)
+		throwException(tr("Wrong data type. Can construct isosurface only for floating-point values."));
 
 	for(size_t dim = 0; dim < 3; dim++)
 		if(voxelGrid->shape()[dim] <= 1)
@@ -163,9 +165,23 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 		}
 	}
 
+	// Create an empty surface mesh object.
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Isosurface"));
+	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("isosurface")));
+	mesh->setDataSource(modApp);
+	mesh->setDomain(voxelGrid->domain());
+	mesh->setVisElement(surfaceMeshVis());
+
+	// Create an empty data table for the field value histogram.
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), executionContext, DataTable::Histogram, sourceProperty().nameWithComponent());
+	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("isosurface-histogram")));
+	histogram->setDataSource(modApp);
+	histogram->setAxisLabelX(sourceProperty().nameWithComponent());
+	
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ComputeIsosurfaceEngine>(dataset(), validityInterval, voxelGrid->shape(), property,
-			sourceProperty().vectorComponent(), voxelGrid->domain(), isolevel, std::move(auxiliaryProperties));
+	return std::make_shared<ComputeIsosurfaceEngine>(executionContext, validityInterval, voxelGrid->shape(), property,
+			sourceProperty().vectorComponent(), std::move(mesh), isolevel, std::move(auxiliaryProperties),
+			std::move(histogram));
 }
 
 /******************************************************************************
@@ -174,20 +190,12 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 {
 	setProgressText(tr("Constructing isosurface"));
-	OVITO_ASSERT(cell());
-
-	if(cell()->is2D())
-		throw Exception(tr("Cannot construct isosurfaces for two-dimensional voxel grids."));
-	if(property()->dataType() != PropertyObject::Float)
-		throw Exception(tr("Wrong data type. Can construct isosurface only for floating-point values."));
-	if(property()->size() != _gridShape[0] * _gridShape[1] * _gridShape[2])
-		throw Exception(tr("Input voxel property has wrong array size, which is incompatible with the grid's dimensions."));
 
 	// Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
 	ConstPropertyAccess<FloatType, true> data(property());
     auto getFieldValue = [
 			_data = data.cbegin() + _vectorComponent,
-			_pbcFlags = cell()->pbcFlags(),
+			_pbcFlags = _mesh->domain() ? _mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
 			_gridShape = _gridShape,
 			_dataStride = data.componentCount()
 			](int i, int j, int k) -> FloatType {
@@ -218,47 +226,55 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1]) * _dataStride];
     };
 
-	MarchingCubes mc(mesh(), _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
+	SurfaceMeshData mesh(std::move(_mesh));
+	MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
 	if(!mc.generateIsosurface(_isolevel, *this))
 		return;
 
 	// Copy field values from voxel grid to surface mesh vertices.
-	if(!transferPropertiesFromGridToMesh(*this, mesh(), auxiliaryProperties(), cell(), _gridShape))
+	if(!transferPropertiesFromGridToMesh(*this, mesh, auxiliaryProperties(), _gridShape, executionContext()))
 		return;
 
 	// Transform mesh vertices from orthogonal grid space to world space.
-	const AffineTransformation tm = cell()->matrix() * Matrix3(
+	const AffineTransformation tm = mesh.cell()->cellMatrix() * Matrix3(
 		FloatType(1) / _gridShape[0], 0, 0,
 		0, FloatType(1) / _gridShape[1], 0,
 		0, 0, FloatType(1) / _gridShape[2]) *
 		AffineTransformation::translation(Vector3(0.5, 0.5, 0.5));
-	mesh().transformVertices(tm);
+	mesh.transformVertices(tm);
 
 	// Flip surface orientation if cell matrix is a mirror transformation.
 	if(tm.determinant() < 0)
-		mesh().flipFaces();
+		mesh.flipFaces();
 	if(isCanceled())
 		return;
 
-	if(!mesh().connectOppositeHalfedges())
+	if(!mesh.connectOppositeHalfedges())
 		throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
 	if(isCanceled())
 		return;
+	_mesh = mesh.take();
 
 	// Determine min-max range of input field values.
 	// Only used for informational purposes for the user.
+	FloatType minValue =  FLOATTYPE_MAX;
+	FloatType maxValue = -FLOATTYPE_MAX;
 	for(FloatType v : data.componentRange(_vectorComponent)) {
-		updateMinMax(v);
+		if(v < minValue) minValue = v;
+		if(v > maxValue) maxValue = v;
 	}
 
 	// Compute a histogram of the input field values.
-	PropertyAccess<qlonglong> histogramData(histogram());
-	FloatType binSize = (maxValue() - minValue()) / histogramData.size();
+	_histogram->setElementCount(64);
+	PropertyAccess<qlonglong> histogramData = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, true);
+	FloatType binSize = (maxValue - minValue) / histogramData.size();
 	int histogramSizeMin1 = histogramData.size() - 1;
 	for(FloatType v : data.componentRange(_vectorComponent)) {
-		int binIndex = (v - minValue()) / binSize;
+		int binIndex = (v - minValue) / binSize;
 		histogramData[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
 	}
+	_histogram->setIntervalStart(minValue);
+	_histogram->setIntervalEnd(maxValue);
 
 	// Release data that is no longer needed to reduce memory footprint.
 	_property.reset();
@@ -270,40 +286,25 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 ******************************************************************************/
 void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
-	CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(modApp->modifier());
-
-	// Look up the input grid.
-	if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.expectLeafObject(modifier->subject()))) {
-		// Create the output mesh data object.
-		SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("isosurface"), modApp, Application::ExecutionContext::Scripting, tr("Isosurface"));
-		mesh().transferTo(meshObj);
-		meshObj->setDomain(voxelGrid->domain());
-		meshObj->setVisElement(modifier->surfaceMeshVis());
-	}
-
-	// Output a data table with the field value histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("isosurface-histogram"), modApp, Application::ExecutionContext::Scripting, DataTable::Histogram, modifier->sourceProperty().nameWithComponent(), histogram());
-	table->setAxisLabelX(modifier->sourceProperty().nameWithComponent());
-	table->setIntervalStart(minValue());
-	table->setIntervalEnd(maxValue());
-
-	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Field value range: [%1, %2]").arg(minValue()).arg(maxValue())));
+	state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
+	state.addObjectWithUniqueId<DataTable>(_histogram);
+	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Field value range: [%1, %2]")
+		.arg(_histogram->intervalStart())
+		.arg(_histogram->intervalEnd())));
 }
 
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject* cell, VoxelGrid::GridDimensions gridShape)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext)
 {
-	OVITO_ASSERT(cell);
-
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
 	for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
 		PropertyPtr vertexProperty;
 		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
 			// Input voxel property is also a standard property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()), true);
+			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()), true, executionContext);
 			OVITO_ASSERT(vertexProperty->dataType() == fieldProperty->dataType());
 			OVITO_ASSERT(vertexProperty->stride() == fieldProperty->stride());
 		}
@@ -311,11 +312,11 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 			// Input property name is that of a standard property for mesh vertices.
 			// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 			QString newPropertyName = fieldProperty->name() + tr("_field");
-			vertexProperty = mesh.createVertexProperty(fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), newPropertyName, true, fieldProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), true, fieldProperty->componentNames());
 		}
 		else {
 			// Input property is a user property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), fieldProperty->name(), true, fieldProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), true, fieldProperty->componentNames());
 		}
 		propertyMapping.emplace_back(fieldProperty, std::move(vertexProperty));
 	}
@@ -327,7 +328,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 			size_t cornerIndices[8];
 			FloatType cornerWeights[8];
 			const Point3& p = mesh.vertexPosition(vertexIndex);
-			OVITO_ASSERT(mesh.firstVertexEdge(vertexIndex) != HalfEdgeMesh::InvalidIndex);
+			OVITO_ASSERT(mesh.firstVertexEdge(vertexIndex) != SurfaceMesh::InvalidIndex);
 			Vector3 x0, x1;
 			Vector3I x0_vc, x1_vc;
 			for(size_t dim = 0; dim < 3; dim++) {
@@ -336,7 +337,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 				FloatType fl = std::floor(p[dim]);
 				x1[dim] = p[dim] - fl;
 				x0[dim] = FloatType(1) - x1[dim];
-				if(!cell->hasPbc(dim)) {
+				if(!mesh.hasPbc(dim)) {
 					x0_vc[dim] = qBound(0, (int)fl, (int)gridShape[dim] - 1);
 					x1_vc[dim] = qBound(0, (int)fl + 1, (int)gridShape[dim] - 1);
 				}

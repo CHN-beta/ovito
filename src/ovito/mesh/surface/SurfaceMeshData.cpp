@@ -29,95 +29,41 @@
 
 namespace Ovito { namespace Mesh {
 
+constexpr SurfaceMeshData::size_type SurfaceMeshData::InvalidIndex;
+
 /******************************************************************************
-* Constructor creating an empty surface mesh.
+* Constructor that takes an existing SurfaceMesh object.
 ******************************************************************************/
-SurfaceMeshData::SurfaceMeshData(DataSet* dataset, const SimulationCellObject* cell) :
-	_dataset(dataset),
-    _topology(std::make_shared<HalfEdgeMesh>()),
-	_cell(cell)
+SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* mesh) : 
+	_mesh(mesh),
+	_topology(mesh ? mesh->topology() : nullptr),
+	_vertices(mesh ? mesh->vertices() : nullptr),
+	_faces(mesh ? mesh->faces() : nullptr),
+	_regions(mesh ? mesh->regions() : nullptr)
 {
-    createVertexProperty(SurfaceMeshVertices::PositionProperty);
-    OVITO_ASSERT(_vertexCoords != nullptr);
 }
 
 /******************************************************************************
-* Constructor that adopts the data from the given pipeline data object into
-* this structure.
+* Releases the SurfaceMesh after it was modified.
 ******************************************************************************/
-SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* sm) :
-	_dataset(sm->dataset()),
-    _topology(sm->topology()),
-	_cell(sm->domain()),
-    _spaceFillingRegion(sm->spaceFillingRegion())
+const SurfaceMesh* SurfaceMeshData::take() 
 {
-	OVITO_ASSERT(_topology);
-	for(const PropertyObject* property : sm->vertices()->properties()) {
-	    addVertexProperty(property);
+	if(_mesh) {
+		// Release the topology sub-object and write it back to the parent SurfaceMesh.
+		if(topology() != mesh()->topology()) 
+			mutableMesh()->setTopology(std::move(_topology));
+		// Release the sub-object property containers and write them back to the parent SurfaceMesh.
+		const SurfaceMeshVertices* vertices = static_object_cast<SurfaceMeshVertices>(_vertices.take());
+		if(vertices != _mesh->vertices()) 
+			mutableMesh()->setVertices(std::move(vertices));
+		const SurfaceMeshFaces* faces = static_object_cast<SurfaceMeshFaces>(_faces.take());
+		if(faces != _mesh->faces()) 
+			mutableMesh()->setFaces(std::move(faces));
+		const SurfaceMeshRegions* regions = static_object_cast<SurfaceMeshRegions>(_regions.take());
+		if(regions != _mesh->regions()) 
+			mutableMesh()->setRegions(std::move(regions));
 	}
-	for(const PropertyObject* property : sm->faces()->properties()) {
-	    addFaceProperty(property);
-	}
-	_regionCount = sm->regions()->elementCount();
-	for(const PropertyObject* property : sm->regions()->properties()) {
-	    addRegionProperty(property);
-	}
-    OVITO_ASSERT(_vertexCoords != nullptr);
-}
-
-/******************************************************************************
-* Copies the data stored in this structure to the given pipeline data object.
-******************************************************************************/
-void SurfaceMeshData::transferTo(SurfaceMesh* sm) const
-{
-	sm->setTopology(topology());
-    sm->setSpaceFillingRegion(spaceFillingRegion());
-
-	// Gather list of property objects and assign them to the SurfaceMesh's vertex property container.
-	QVector<PropertyObject*> vertexProperties;
-	for(const auto& property : _vertexProperties)
-		vertexProperties.push_back(const_cast<PropertyObject*>(property.property().get()));
-	for(const auto& property : _mutableVertexProperties)
-		vertexProperties.push_back(property.property());
-	sm->makeVerticesMutable()->setContent(vertexCount(), std::move(vertexProperties));
-
-	// Gather list of property objects and assign them to the SurfaceMesh's face property container.
-	QVector<PropertyObject*> faceProperties;
-	for(const auto& property : _faceProperties)
-		faceProperties.push_back(const_cast<PropertyObject*>(property.property().get()));
-	for(const auto& property : _mutableFaceProperties)
-		faceProperties.push_back(property.property());
-	sm->makeFacesMutable()->setContent(faceCount(), std::move(faceProperties));
-
-	// Gather list of property objects and assign them to the SurfaceMesh's region property container.
-	QVector<PropertyObject*> regionProperties;
-	for(const auto& property : _regionProperties)
-		regionProperties.push_back(const_cast<PropertyObject*>(property.property().get()));
-	for(const auto& property : _mutableRegionProperties)
-		regionProperties.push_back(property.property());
-	sm->makeRegionsMutable()->setContent(regionCount(), std::move(regionProperties));
-}
-
-/******************************************************************************
-* Swaps the contents of two surface meshes.
-******************************************************************************/
-void SurfaceMeshData::swap(SurfaceMeshData& other)
-{
-	_topology.swap(other._topology);
-	std::swap(_cell, other._cell);
-	_vertexProperties.swap(other._vertexProperties);
-	_faceProperties.swap(other._faceProperties);
-	_regionProperties.swap(other._regionProperties);
-	std::swap(_regionCount, other._regionCount);
-	std::swap(_spaceFillingRegion, other._spaceFillingRegion);
-	std::swap(_vertexCoords, other._vertexCoords);
-	std::swap(_faceRegions, other._faceRegions);
-	std::swap(_burgersVectors, other._burgersVectors);
-	std::swap(_crystallographicNormals, other._crystallographicNormals);
-	std::swap(_faceTypes, other._faceTypes);
-	std::swap(_regionPhases, other._regionPhases);
-	std::swap(_regionVolumes, other._regionVolumes);
-	std::swap(_regionSurfaceAreas, other._regionSurfaceAreas);
+	return _mesh;
 }
 
 /******************************************************************************
@@ -125,8 +71,6 @@ void SurfaceMeshData::swap(SurfaceMeshData& other)
 ******************************************************************************/
 bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, FloatType lambda)
 {
-    OVITO_ASSERT(isVertexPropertyMutable(SurfaceMeshVertices::PositionProperty));
-
 	// This is the implementation of the mesh smoothing algorithm:
 	//
 	// Gabriel Taubin
@@ -143,11 +87,11 @@ bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, 
 
             // Go in positive direction around vertex, facet by facet.
             edge_index currentEdge = firstVertexEdge(vertex);
-            if(currentEdge != HalfEdgeMesh::InvalidIndex) {
+            if(currentEdge != InvalidIndex) {
                 int numManifoldEdges = 0;
                 do {
-                    OVITO_ASSERT(currentEdge != HalfEdgeMesh::InvalidIndex);
-                    OVITO_ASSERT(adjacentFace(currentEdge) != HalfEdgeMesh::InvalidIndex);
+                    OVITO_ASSERT(currentEdge != InvalidIndex);
+                    OVITO_ASSERT(adjacentFace(currentEdge) != InvalidIndex);
                     d += edgeVector(currentEdge);
                     numManifoldEdges++;
                     currentEdge = oppositeEdge(prevFaceEdge(currentEdge));
@@ -161,7 +105,7 @@ bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, 
 
         // Apply computed displacements.
         auto d = displacements.cbegin();
-        for(Point3& vertex : vertexCoordsRange())
+        for(Point3& vertex : mutableVertexPositions())
             vertex += *d++;
     };
 
@@ -191,7 +135,7 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 {
 	// Determine which vertex is closest to the test point.
 	FloatType closestDistanceSq = FLOATTYPE_MAX;
-	vertex_index closestVertex = HalfEdgeMesh::InvalidIndex;
+	vertex_index closestVertex = InvalidIndex;
 	Vector3 closestNormal, closestVector;
 	region_index closestRegion = spaceFillingRegion();
     size_type vcount = vertexCount();
@@ -199,10 +143,10 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 		// Determine the first adjacent edge which has an adjacent face.
 		edge_index firstEdge = firstVertexEdge(vindex);
 		if(!faceSubset.empty()) {
-			while(firstEdge != HalfEdgeMesh::InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
+			while(firstEdge != InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
 				firstEdge = nextVertexEdge(firstEdge);
 		}
-		if(firstEdge == HalfEdgeMesh::InvalidIndex) continue;
+		if(firstEdge == InvalidIndex) continue;
 
 		// Compute distance from query point to vertex.
 		Vector3 r = wrapVector(vertexPosition(vindex) - location);
@@ -215,7 +159,7 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 	}
 
 	// If the surface is degenerate, any point is inside the space-filling region.
-	if(closestVertex == HalfEdgeMesh::InvalidIndex)
+	if(closestVertex == InvalidIndex)
 		return spaceFillingRegion();
 
 	// Check if any edge is closer to the test point than the closest vertex.
@@ -246,10 +190,10 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the the query point.
 			if(pseudoNormal.dot(c) > -epsilon || !hasOppositeFace(adjacentFace(edge))) {
 				closestDistanceSq = distSq;
-				closestVertex = HalfEdgeMesh::InvalidIndex;
+				closestVertex = InvalidIndex;
 				closestVector = c;
 				closestNormal = pseudoNormal;
-				closestRegion = _faceRegions ? _faceRegions[adjacentFace(edge)] : 0;
+				closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(edge)) : 0;
 			}
 		}
 	}
@@ -293,16 +237,16 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 				if(planeDist * planeDist < closestDistanceSq) {
 					closestDistanceSq = planeDist * planeDist;
 					closestVector = normal * planeDist;
-					closestVertex = HalfEdgeMesh::InvalidIndex;
+					closestVertex = InvalidIndex;
 					closestNormal = normal;
-					closestRegion = _faceRegions ? _faceRegions[face] : 0;
+					closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
 				}
 			}
 		}
 	}
 
 	// If a vertex is closest, we still have to compute the local pseudo-normal at the vertex.
-	if(closestVertex != HalfEdgeMesh::InvalidIndex) {
+	if(closestVertex != InvalidIndex) {
 		const Point3& closestVertexPos = vertexPosition(closestVertex);
 
 		// A vertex may have multiple pseudo-normals if it is part of multiple manifolds.
@@ -314,10 +258,10 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 		for(;;) {
 			// Skip edges that are no adjacent to a visible face.
 			if(!faceSubset.empty()) {
-				while(firstEdge != HalfEdgeMesh::InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
+				while(firstEdge != InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
 					firstEdge = nextVertexEdge(firstEdge);
 			}
-			if(firstEdge == HalfEdgeMesh::InvalidIndex) break;
+			if(firstEdge == InvalidIndex) break;
 
 			if(std::find(visitedEdges.cbegin(), visitedEdges.cend(), firstEdge) == visitedEdges.cend()) {
 				// Compute vertex pseudo-normal by averaging the normal vectors of adjacent faces.
@@ -340,7 +284,7 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 					edge1v = edge2v;
 				}
 				while(edge != firstEdge);
-				closestRegion = _faceRegions ? _faceRegions[adjacentFace(firstEdge)] : 0;
+				closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(firstEdge)) : 0;
 
 				// We can stop if pseudo-normal is facing away from query point.
 				if(closestNormal.dot(closestVector) > -epsilon) 
@@ -434,7 +378,7 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 		return;
 
 	// Create the initial tetrahedron.
-	HalfEdgeMesh::vertex_index tetverts[4];
+	vertex_index tetverts[4];
 	for(size_t i = 0; i < 4; i++) {
         tetverts[i] = createVertex(vecs[tetrahedraCorners[i]]);
 	}
@@ -446,7 +390,7 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 	createFace({tetverts[1], tetverts[2], tetverts[3]}, region);
 	// Connect opposite half-edges to link the four faces together.
 	for(size_t i = 0; i < 4; i++)
-		topology()->connectOppositeHalfedges(tetverts[i]);
+		mutableTopology()->connectOppositeHalfedges(tetverts[i]);
 
 	if(vecs.size() == 4)
 		return;	// If the input point set consists only of 4 points, then we are done after constructing the initial tetrahedron.
@@ -504,10 +448,10 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 		}
 
 		// Find an edge that borders the newly created hole in the mesh.
-		HalfEdgeMesh::edge_index firstBorderEdge = HalfEdgeMesh::InvalidIndex;
-		for(auto face = originalFaceCount; face < faceCount() && firstBorderEdge == HalfEdgeMesh::InvalidIndex; face++) {
-			HalfEdgeMesh::edge_index e = firstFaceEdge(face);
-			OVITO_ASSERT(e != HalfEdgeMesh::InvalidIndex);
+		edge_index firstBorderEdge = InvalidIndex;
+		for(auto face = originalFaceCount; face < faceCount() && firstBorderEdge == InvalidIndex; face++) {
+			edge_index e = firstFaceEdge(face);
+			OVITO_ASSERT(e != InvalidIndex);
 			do {
 				if(!hasOppositeEdge(e)) {
 					firstBorderEdge = e;
@@ -517,15 +461,15 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 			}
 			while(e != firstFaceEdge(face));
 		}
-		OVITO_ASSERT(firstBorderEdge != HalfEdgeMesh::InvalidIndex); // If this assert fails, then there was no hole in the mesh.
+		OVITO_ASSERT(firstBorderEdge != InvalidIndex); // If this assert fails, then there was no hole in the mesh.
 
 		// Create new faces that connects the edges at the horizon (i.e. the border of the hole) with
 		// the selected vertex.
-		HalfEdgeMesh::vertex_index vertex = createVertex(*furthestPoint);
-		HalfEdgeMesh::edge_index borderEdge = firstBorderEdge;
-		HalfEdgeMesh::face_index previousFace = HalfEdgeMesh::InvalidIndex;
-		HalfEdgeMesh::face_index firstFace = HalfEdgeMesh::InvalidIndex;
-		HalfEdgeMesh::face_index newFace;
+		vertex_index vertex = createVertex(*furthestPoint);
+		edge_index borderEdge = firstBorderEdge;
+		face_index previousFace = InvalidIndex;
+		face_index firstFace = InvalidIndex;
+		face_index newFace;
 		do {
 			newFace = createFace({ vertex2(borderEdge), vertex1(borderEdge), vertex }, region);
 			linkOppositeEdges(firstFaceEdge(newFace), borderEdge);
@@ -568,38 +512,37 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 ******************************************************************************/
 void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
 {
-	const HalfEdgeMesh& topology = *this->topology();
-	HalfEdgeMesh::size_type faceCount = topology.faceCount();
+	size_type faceCount = this->faceCount();
 	OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);
 
 	// Create output vertices.
 	auto baseVertexCount = outputMesh.vertexCount();
 	auto baseFaceCount = outputMesh.faceCount();
-	outputMesh.setVertexCount(baseVertexCount + topology.vertexCount());
-	SurfaceMeshData::vertex_index vidx = 0;
+	outputMesh.setVertexCount(baseVertexCount + vertexCount());
+	vertex_index vidx = 0;
 	for(auto p = outputMesh.vertices().begin() + baseVertexCount; p != outputMesh.vertices().end(); ++p)
 		*p = vertexPosition(vidx++);
 
 	// Transfer faces from surface mesh to output triangle mesh.
-	for(HalfEdgeMesh::face_index face = 0; face < faceCount; face++) {
+	for(face_index face = 0; face < faceCount; face++) {
 		if(!faceSubset.empty() && !faceSubset[face]) continue;
 
 		// Determine whether opposite triangles should be created for the current source face. 
-		bool createOppositeFace = autoGenerateOppositeFaces && (!topology.hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[topology.oppositeFace(face)]));
+		bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
 
 		// Go around the edges of the face to triangulate the general polygon (assuming it is convex).
-		HalfEdgeMesh::edge_index faceEdge = topology.firstFaceEdge(face);
-		HalfEdgeMesh::vertex_index baseVertex = topology.vertex2(faceEdge);
-		HalfEdgeMesh::edge_index edge1 = topology.nextFaceEdge(faceEdge);
-		HalfEdgeMesh::edge_index edge2 = topology.nextFaceEdge(edge1);
+		edge_index faceEdge = firstFaceEdge(face);
+		vertex_index baseVertex = vertex2(faceEdge);
+		edge_index edge1 = nextFaceEdge(faceEdge);
+		edge_index edge2 = nextFaceEdge(edge1);
 		while(edge2 != faceEdge) {
 			TriMeshFace& outputFace = outputMesh.addFace();
-			outputFace.setVertices(baseVertex + baseVertexCount, topology.vertex2(edge1) + baseVertexCount, topology.vertex2(edge2) + baseVertexCount);
-			outputFace.setEdgeVisibility(edge1 == topology.nextFaceEdge(faceEdge), true, false);
+			outputFace.setVertices(baseVertex + baseVertexCount, vertex2(edge1) + baseVertexCount, vertex2(edge2) + baseVertexCount);
+			outputFace.setEdgeVisibility(edge1 == nextFaceEdge(faceEdge), true, false);
 			if(originalFaceMap)
 				originalFaceMap->push_back(face);
 			edge1 = edge2;
-			edge2 = topology.nextFaceEdge(edge2);
+			edge2 = nextFaceEdge(edge2);
 			if(edge2 == faceEdge)
 				outputFace.setEdgeVisible(2);
 			if(createOppositeFace) {
@@ -617,7 +560,7 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 		// Compute mesh face normals.
 		std::vector<Vector3> faceNormals(faceCount);
 		auto faceNormal = faceNormals.begin();
-		for(HalfEdgeMesh::face_index face = 0; face < faceCount; face++, ++faceNormal) {
+		for(face_index face = 0; face < faceCount; face++, ++faceNormal) {
 			if(!faceSubset.empty() && !faceSubset[face])
 				faceNormal->setZero();
 			else
@@ -628,18 +571,18 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 		std::vector<Vector3> newFaceNormals(faceCount);
 		auto oldFaceNormal = faceNormals.begin();
 		auto newFaceNormal = newFaceNormals.begin();
-		for(HalfEdgeMesh::face_index face = 0; face < faceCount; face++, ++oldFaceNormal, ++newFaceNormal) {
+		for(face_index face = 0; face < faceCount; face++, ++oldFaceNormal, ++newFaceNormal) {
 			*newFaceNormal = *oldFaceNormal;
 			if(!faceSubset.empty() && !faceSubset[face]) continue;
 
-			HalfEdgeMesh::edge_index faceEdge = topology.firstFaceEdge(face);
-			HalfEdgeMesh::edge_index edge = faceEdge;
+			edge_index faceEdge = firstFaceEdge(face);
+			edge_index edge = faceEdge;
 			do {
-				HalfEdgeMesh::edge_index oe = topology.oppositeEdge(edge);
-				if(oe != HalfEdgeMesh::InvalidIndex) {
-					*newFaceNormal += faceNormals[topology.adjacentFace(oe)];
+				edge_index oe = oppositeEdge(edge);
+				if(oe != InvalidIndex) {
+					*newFaceNormal += faceNormals[adjacentFace(oe)];
 				}
-				edge = topology.nextFaceEdge(edge);
+				edge = nextFaceEdge(edge);
 			}
 			while(edge != faceEdge);
 
@@ -652,20 +595,20 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 		// Helper method that calculates the mean normal at a surface mesh vertex.
 		// The method takes an half-edge incident on the vertex as input (instead of the vertex itself),
 		// because the method will only take into account incident faces belonging to one manifold.
-		auto calculateNormalAtVertex = [&](HalfEdgeMesh::edge_index startEdge) {
+		auto calculateNormalAtVertex = [&](edge_index startEdge) {
 			Vector3 normal = Vector3::Zero();
-			HalfEdgeMesh::edge_index edge = startEdge;
+			edge_index edge = startEdge;
 			do {
-				normal += faceNormals[topology.adjacentFace(edge)];
-				edge = topology.oppositeEdge(topology.nextFaceEdge(edge));
-				if(edge == HalfEdgeMesh::InvalidIndex) break;
+				normal += faceNormals[adjacentFace(edge)];
+				edge = oppositeEdge(nextFaceEdge(edge));
+				if(edge == InvalidIndex) break;
 			}
 			while(edge != startEdge);
-			if(edge == HalfEdgeMesh::InvalidIndex) {
-				edge = topology.oppositeEdge(startEdge);
-				while(edge != HalfEdgeMesh::InvalidIndex) {
-					normal += faceNormals[topology.adjacentFace(edge)];
-					edge = topology.oppositeEdge(topology.prevFaceEdge(edge));
+			if(edge == InvalidIndex) {
+				edge = oppositeEdge(startEdge);
+				while(edge != InvalidIndex) {
+					normal += faceNormals[adjacentFace(edge)];
+					edge = oppositeEdge(prevFaceEdge(edge));
 				}
 			}
 			return normal;
@@ -674,15 +617,15 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 		// Compute normal at each face vertex of the output mesh.
 		outputMesh.setHasNormals(true);
 		auto outputNormal = outputMesh.normals().begin() + (baseFaceCount * 3);
-		for(HalfEdgeMesh::face_index face = 0; face < faceCount; face++) {
+		for(face_index face = 0; face < faceCount; face++) {
 			if(!faceSubset.empty() && !faceSubset[face]) continue;
 
-			bool createOppositeFace = autoGenerateOppositeFaces && (!topology.hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[topology.oppositeFace(face)])) ;
+			bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)])) ;
 
 			// Go around the edges of the face.
-			HalfEdgeMesh::edge_index faceEdge = topology.firstFaceEdge(face);
-			HalfEdgeMesh::edge_index edge1 = topology.nextFaceEdge(faceEdge);
-			HalfEdgeMesh::edge_index edge2 = topology.nextFaceEdge(edge1);
+			edge_index faceEdge = firstFaceEdge(face);
+			edge_index edge1 = nextFaceEdge(faceEdge);
+			edge_index edge2 = nextFaceEdge(edge1);
 			Vector3 baseNormal = calculateNormalAtVertex(faceEdge);
 			Vector3 normal1 = calculateNormalAtVertex(edge1);
 			while(edge2 != faceEdge) {
@@ -696,7 +639,7 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 					*outputNormal++ = -baseNormal;
 				}
 				normal1 = normal2;
-				edge2 = topology.nextFaceEdge(edge2);
+				edge2 = nextFaceEdge(edge2);
 			}
 		}
 		OVITO_ASSERT(outputNormal == outputMesh.normals().end());
@@ -711,9 +654,9 @@ Vector3 SurfaceMeshData::computeFaceNormal(face_index face) const
 	Vector3 faceNormal = Vector3::Zero();
 
 	// Go around the edges of the face to triangulate the general polygon.
-	HalfEdgeMesh::edge_index faceEdge = firstFaceEdge(face);
-	HalfEdgeMesh::edge_index edge1 = nextFaceEdge(faceEdge);
-	HalfEdgeMesh::edge_index edge2 = nextFaceEdge(edge1);
+	edge_index faceEdge = firstFaceEdge(face);
+	edge_index edge1 = nextFaceEdge(faceEdge);
+	edge_index edge2 = nextFaceEdge(edge1);
 	Point3 base = vertexPosition(vertex2(faceEdge));
 	Vector3 e1 = wrapVector(vertexPosition(vertex2(edge1)) - base);
 	while(edge2 != faceEdge) {
@@ -748,7 +691,7 @@ void SurfaceMeshData::joinCoplanarFaces(FloatType thresholdAngle)
 		edge_index edge = faceEdge;
 		do {
 			edge_index opp_edge = oppositeEdge(edge);
-			if(opp_edge != HalfEdgeMesh::InvalidIndex) {
+			if(opp_edge != InvalidIndex) {
 				face_index adj_face = adjacentFace(opp_edge);
 				OVITO_ASSERT(adj_face >= 0 && adj_face < faceNormals.size());
 				if(adj_face > face) {
@@ -757,23 +700,24 @@ void SurfaceMeshData::joinCoplanarFaces(FloatType thresholdAngle)
 					const Vector3& normal2 = faceNormals[adj_face];
 					if(normal1.dot(normal2) > dotThreshold) {
 						// Eliminate this half-edge pair and join the two faces.
+						SurfaceMeshTopology* topo = mutableTopology();
 						for(edge_index currentEdge = nextFaceEdge(edge); currentEdge != edge; currentEdge = nextFaceEdge(currentEdge)) {
 							OVITO_ASSERT(adjacentFace(currentEdge) == face);
-							topology()->setAdjacentFace(currentEdge, adj_face);
+							topo->setAdjacentFace(currentEdge, adj_face);
 						}
-						topology()->setFirstFaceEdge(adj_face, nextFaceEdge(opp_edge));
-						topology()->setFirstFaceEdge(face, edge);
-						topology()->setNextFaceEdge(prevFaceEdge(edge), nextFaceEdge(opp_edge));
-						topology()->setPrevFaceEdge(nextFaceEdge(opp_edge), prevFaceEdge(edge));
-						topology()->setNextFaceEdge(prevFaceEdge(opp_edge), nextFaceEdge(edge));
-						topology()->setPrevFaceEdge(nextFaceEdge(edge), prevFaceEdge(opp_edge));
-						topology()->setNextFaceEdge(edge, opp_edge);
-						topology()->setNextFaceEdge(opp_edge, edge);
-						topology()->setPrevFaceEdge(edge, opp_edge);
-						topology()->setPrevFaceEdge(opp_edge, edge);
-						topology()->setAdjacentFace(opp_edge, face);
+						topo->setFirstFaceEdge(adj_face, nextFaceEdge(opp_edge));
+						topo->setFirstFaceEdge(face, edge);
+						topo->setNextFaceEdge(prevFaceEdge(edge), nextFaceEdge(opp_edge));
+						topo->setPrevFaceEdge(nextFaceEdge(opp_edge), prevFaceEdge(edge));
+						topo->setNextFaceEdge(prevFaceEdge(opp_edge), nextFaceEdge(edge));
+						topo->setPrevFaceEdge(nextFaceEdge(edge), prevFaceEdge(opp_edge));
+						topo->setNextFaceEdge(edge, opp_edge);
+						topo->setNextFaceEdge(opp_edge, edge);
+						topo->setPrevFaceEdge(edge, opp_edge);
+						topo->setPrevFaceEdge(opp_edge, edge);
+						topo->setAdjacentFace(opp_edge, face);
 						OVITO_ASSERT(adjacentFace(edge) == face);
-						OVITO_ASSERT(topology()->countFaceEdges(face) == 2);
+						OVITO_ASSERT(topo->countFaceEdges(face) == 2);
 						faceNormals[face] = faceNormals[faceCount() - 1];
 						deleteFace(face);
 						nextFace = face;
@@ -807,25 +751,26 @@ SurfaceMeshData::edge_index SurfaceMeshData::splitFace(edge_index edge1, edge_in
 	edge_index edge2_successor = nextFaceEdge(edge2);
 
 	// Create the new pair of half-edges.
-	edge_index new_e = topology()->createEdge(v1, v2, old_f, edge1);
+	SurfaceMeshTopology* topo = mutableTopology();
+	edge_index new_e = topo->createEdge(v1, v2, old_f, edge1);
 	edge_index new_oe = createOppositeEdge(new_e, new_f);
 
 	// Rewire edge sequence of the primary face.
 	OVITO_ASSERT(prevFaceEdge(new_e) == edge1);
 	OVITO_ASSERT(nextFaceEdge(edge1) == new_e);
-	topology()->setNextFaceEdge(new_e, edge2_successor);
-	topology()->setPrevFaceEdge(edge2_successor, new_e);
+	topo->setNextFaceEdge(new_e, edge2_successor);
+	topo->setPrevFaceEdge(edge2_successor, new_e);
 
 	// Rewire edge sequence of the secondary face.
-	topology()->setNextFaceEdge(edge2, new_oe);
-	topology()->setPrevFaceEdge(new_oe, edge2);
-	topology()->setNextFaceEdge(new_oe, edge1_successor);
-	topology()->setPrevFaceEdge(edge1_successor, new_oe);
+	topo->setNextFaceEdge(edge2, new_oe);
+	topo->setPrevFaceEdge(new_oe, edge2);
+	topo->setNextFaceEdge(new_oe, edge1_successor);
+	topo->setPrevFaceEdge(edge1_successor, new_oe);
 
 	// Connect the edges with the newly created secondary face.
 	edge_index e = edge1_successor;
 	do {
-		topology()->setAdjacentFace(e, new_f);
+		topo->setAdjacentFace(e, new_f);
 		e = nextFaceEdge(e);
 	}
 	while(e != new_oe);
@@ -833,7 +778,7 @@ SurfaceMeshData::edge_index SurfaceMeshData::splitFace(edge_index edge1, edge_in
 	OVITO_ASSERT(adjacentFace(new_oe) == new_f);
 
 	// Make the newly created edge the leading edge of the original face.
-	topology()->setFirstFaceEdge(old_f, new_e);
+	topo->setFirstFaceEdge(old_f, new_e);
 
 	return new_e;
 }
@@ -874,28 +819,29 @@ void SurfaceMeshData::makeQuadrilateralFaces()
 		// Check if the adjacent face exists and is also a triangle.
 		edge = longestEdge;
 		edge_index opp_edge = oppositeEdge(edge);
-		if(opp_edge != HalfEdgeMesh::InvalidIndex) {
+		if(opp_edge != InvalidIndex) {
 			face_index adj_face = adjacentFace(opp_edge);
 			if(adj_face > face && topology()->countFaceEdges(adj_face) == 3) {
 
 				// Eliminate this half-edge pair and join the two faces.
+				SurfaceMeshTopology* topo = mutableTopology();
 				for(edge_index currentEdge = nextFaceEdge(edge); currentEdge != edge; currentEdge = nextFaceEdge(currentEdge)) {
-					OVITO_ASSERT(adjacentFace(currentEdge) == face);
-					topology()->setAdjacentFace(currentEdge, adj_face);
+					OVITO_ASSERT(topo->adjacentFace(currentEdge) == face);
+					topo->setAdjacentFace(currentEdge, adj_face);
 				}
-				topology()->setFirstFaceEdge(adj_face, nextFaceEdge(opp_edge));
-				topology()->setFirstFaceEdge(face, edge);
-				topology()->setNextFaceEdge(prevFaceEdge(edge), nextFaceEdge(opp_edge));
-				topology()->setPrevFaceEdge(nextFaceEdge(opp_edge), prevFaceEdge(edge));
-				topology()->setNextFaceEdge(prevFaceEdge(opp_edge), nextFaceEdge(edge));
-				topology()->setPrevFaceEdge(nextFaceEdge(edge), prevFaceEdge(opp_edge));
-				topology()->setNextFaceEdge(edge, opp_edge);
-				topology()->setNextFaceEdge(opp_edge, edge);
-				topology()->setPrevFaceEdge(edge, opp_edge);
-				topology()->setPrevFaceEdge(opp_edge, edge);
-				topology()->setAdjacentFace(opp_edge, face);
+				topo->setFirstFaceEdge(adj_face, topo->nextFaceEdge(opp_edge));
+				topo->setFirstFaceEdge(face, edge);
+				topo->setNextFaceEdge(topo->prevFaceEdge(edge), topo->nextFaceEdge(opp_edge));
+				topo->setPrevFaceEdge(topo->nextFaceEdge(opp_edge), topo->prevFaceEdge(edge));
+				topo->setNextFaceEdge(topo->prevFaceEdge(opp_edge), topo->nextFaceEdge(edge));
+				topo->setPrevFaceEdge(topo->nextFaceEdge(edge), topo->prevFaceEdge(opp_edge));
+				topo->setNextFaceEdge(edge, opp_edge);
+				topo->setNextFaceEdge(opp_edge, edge);
+				topo->setPrevFaceEdge(edge, opp_edge);
+				topo->setPrevFaceEdge(opp_edge, edge);
+				topo->setAdjacentFace(opp_edge, face);
 				OVITO_ASSERT(adjacentFace(edge) == face);
-				OVITO_ASSERT(topology()->countFaceEdges(face) == 2);
+				OVITO_ASSERT(topo->countFaceEdges(face) == 2);
 				deleteFace(face);
 				nextFace = face;
 			}
@@ -910,7 +856,7 @@ void SurfaceMeshData::makeQuadrilateralFaces()
 void SurfaceMeshData::deleteIsolatedVertices()
 {
 	for(vertex_index vertex = vertexCount() - 1; vertex >= 0; vertex--) {
-		if(firstVertexEdge(vertex) == HalfEdgeMesh::InvalidIndex) {
+		if(firstVertexEdge(vertex) == InvalidIndex) {
 			deleteVertex(vertex);
 		}
 	}

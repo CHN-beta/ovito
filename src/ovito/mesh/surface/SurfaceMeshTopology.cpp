@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,16 +22,41 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
-#include "HalfEdgeMesh.h"
+#include "SurfaceMeshTopology.h"
 
 namespace Ovito { namespace Mesh {
 
-constexpr HalfEdgeMesh::size_type HalfEdgeMesh::InvalidIndex;
+IMPLEMENT_OVITO_CLASS(SurfaceMeshTopology);
+
+constexpr SurfaceMeshTopology::size_type SurfaceMeshTopology::InvalidIndex;
+
+/******************************************************************************
+* Creates a copy of a topology structure.
+******************************************************************************/
+OORef<RefTarget> SurfaceMeshTopology::clone(bool deepCopy, CloneHelper& cloneHelper) const
+{
+	// Let the base class create an instance of this class.
+	OORef<SurfaceMeshTopology> clone = static_object_cast<SurfaceMeshTopology>(DataObject::clone(deepCopy, cloneHelper));
+
+	// Copy internal data.
+    clone->_vertexEdges = _vertexEdges;
+    clone->_faceEdges = _faceEdges;
+	clone->_oppositeFaces = _oppositeFaces;
+	clone->_edgeFaces = _edgeFaces;
+	clone->_edgeVertices = _edgeVertices;
+	clone->_nextVertexEdges = _nextVertexEdges;
+	clone->_nextFaceEdges = _nextFaceEdges;
+	clone->_prevFaceEdges = _prevFaceEdges;
+	clone->_oppositeEdges = _oppositeEdges;
+	clone->_nextManifoldEdges = _nextManifoldEdges;
+
+	return clone;
+}
 
 /******************************************************************************
 * Removes all faces, edges and vertices from this mesh.
 ******************************************************************************/
-void HalfEdgeMesh::clear()
+void SurfaceMeshTopology::clear()
 {
 	_vertexEdges.clear();
 	_faceEdges.clear();
@@ -46,30 +71,22 @@ void HalfEdgeMesh::clear()
 }
 
 /******************************************************************************
-* Adds a new vertex to the mesh.
-* Returns the index of the newly created vertex.
-******************************************************************************/
-HalfEdgeMesh::vertex_index HalfEdgeMesh::createVertex()
-{
-	vertex_index newIndex = vertexCount();
-	_vertexEdges.push_back(InvalidIndex);
-	return newIndex;
-}
-
-/******************************************************************************
 * Adds several new vertices to the mesh.
+* Returns the index of the first newly-created vertex.
 ******************************************************************************/
-void HalfEdgeMesh::createVertices(size_type n)
+SurfaceMeshTopology::vertex_index SurfaceMeshTopology::createVertices(size_type n)
 {
 	OVITO_ASSERT(n >= 0);
+	vertex_index newIndex = vertexCount();
 	_vertexEdges.resize(_vertexEdges.size() + n, InvalidIndex);
+	return newIndex;
 }
 
 /******************************************************************************
 * Internal method that creates a new face without edges.
 * Returns the index of the new face.
 ******************************************************************************/
-HalfEdgeMesh::face_index HalfEdgeMesh::createFace()
+SurfaceMeshTopology::face_index SurfaceMeshTopology::createFace()
 {
 	face_index newIndex = faceCount();
 	_faceEdges.push_back(InvalidIndex);
@@ -81,7 +98,7 @@ HalfEdgeMesh::face_index HalfEdgeMesh::createFace()
 * Creates a new half-edge between two vertices and adjacent to the given face.
 * Returns the index of the new half-edge.
 ******************************************************************************/
-HalfEdgeMesh::edge_index HalfEdgeMesh::createEdge(vertex_index vertex1, vertex_index vertex2, face_index face, edge_index insertAfterEdge)
+SurfaceMeshTopology::edge_index SurfaceMeshTopology::createEdge(vertex_index vertex1, vertex_index vertex2, face_index face, edge_index insertAfterEdge)
 {
 	OVITO_ASSERT(vertex1 >= 0 && vertex1 < vertexCount());
 	OVITO_ASSERT(vertex2 >= 0 && vertex2 < vertexCount());
@@ -135,7 +152,7 @@ HalfEdgeMesh::edge_index HalfEdgeMesh::createEdge(vertex_index vertex1, vertex_i
 * Returns true if every half-edge has an opposite half-edge, i.e. if the mesh
 * is closed after this method returns.
 ******************************************************************************/
-bool HalfEdgeMesh::connectOppositeHalfedges()
+bool SurfaceMeshTopology::connectOppositeHalfedges()
 {
 	bool isClosed = true;
 	auto v2 = _edgeVertices.cbegin();
@@ -170,7 +187,7 @@ bool HalfEdgeMesh::connectOppositeHalfedges()
 * Links each half-edge leaving from the given vertex to an opposite (reverse)
 * half-edge leading back to the vertex.
 ******************************************************************************/
-void HalfEdgeMesh::connectOppositeHalfedges(vertex_index vert)
+void SurfaceMeshTopology::connectOppositeHalfedges(vertex_index vert)
 {
 	for(edge_index edge = firstVertexEdge(vert); edge != InvalidIndex; edge = _nextVertexEdges[edge]) {
 		if(hasOppositeEdge(edge)) continue;
@@ -190,7 +207,7 @@ void HalfEdgeMesh::connectOppositeHalfedges(vertex_index vert)
 * The method may only be called on a closed mesh.
 * Returns the number of vertices that were duplicated by the method.
 ******************************************************************************/
-HalfEdgeMesh::size_type HalfEdgeMesh::makeManifold(const std::function<void(vertex_index)>& vertexDuplicationFunc)
+SurfaceMeshTopology::size_type SurfaceMeshTopology::makeManifold(const std::function<void(vertex_index)>& vertexDuplicationFunc)
 {
 	size_type numSharedVertices = 0;
 	size_type oldVertexCount = vertexCount();
@@ -327,7 +344,7 @@ HalfEdgeMesh::size_type HalfEdgeMesh::makeManifold(const std::function<void(vert
 * of another vertex. Moves the opposite half-edge to the new vertex as well
 * by default.
 ******************************************************************************/
-void HalfEdgeMesh::transferEdgeToVertex(edge_index edge, vertex_index oldVertex, vertex_index newVertex, bool updateOppositeEdge)
+void SurfaceMeshTopology::transferEdgeToVertex(edge_index edge, vertex_index oldVertex, vertex_index newVertex, bool updateOppositeEdge)
 {
 	OVITO_ASSERT(edge >= 0 && edge < edgeCount());
 	OVITO_ASSERT(oldVertex >= 0 && oldVertex < vertexCount());
@@ -345,7 +362,7 @@ void HalfEdgeMesh::transferEdgeToVertex(edge_index edge, vertex_index oldVertex,
 /******************************************************************************
 * Removes a half-edge from a vertex' list of half-edges.
 ******************************************************************************/
-void HalfEdgeMesh::removeEdgeFromVertex(vertex_index vertex, edge_index edge)
+void SurfaceMeshTopology::removeEdgeFromVertex(vertex_index vertex, edge_index edge)
 {
 	OVITO_ASSERT(edge >= 0 && edge < edgeCount());
 	OVITO_ASSERT(vertex >= 0 && vertex < vertexCount());
@@ -371,7 +388,7 @@ void HalfEdgeMesh::removeEdgeFromVertex(vertex_index vertex, edge_index edge)
 * Determines whether the mesh represents a closed two-dimensional manifold,
 * i.e., every half-edge is linked to an opposite half-edge.
 ******************************************************************************/
-bool HalfEdgeMesh::isClosed() const
+bool SurfaceMeshTopology::isClosed() const
 {
 	return std::find(_oppositeEdges.cbegin(), _oppositeEdges.cend(), InvalidIndex) == _oppositeEdges.cend();
 }
@@ -379,7 +396,7 @@ bool HalfEdgeMesh::isClosed() const
 /******************************************************************************
 * Flips the orientation of all faces in the mesh.
 ******************************************************************************/
-void HalfEdgeMesh::flipFaces()
+void SurfaceMeshTopology::flipFaces()
 {
 	for(edge_index firstFaceEdge : _faceEdges) {
 		if(firstFaceEdge == InvalidIndex) continue;
@@ -401,11 +418,11 @@ void HalfEdgeMesh::flipFaces()
 
 /******************************************************************************
 * Converts the half-edge mesh to a triangle mesh.
-* Note that the HalfEdgeMesh structure holds only the mesh topology and no
+* Note that the SurfaceMeshTopology structure holds only the mesh topology and no
 * vertex coordinates. Thus, it is the respondisbility of the caller to assign
 * coordinates to the vertices of the generated TriMesh.
 ******************************************************************************/
-void HalfEdgeMesh::convertToTriMesh(TriMesh& output) const
+void SurfaceMeshTopology::convertToTriMesh(TriMesh& output) const
 {
 	// Create output vertices.
 	output.setVertexCount(vertexCount());
@@ -441,7 +458,7 @@ void HalfEdgeMesh::convertToTriMesh(TriMesh& output) const
 * The half-edges of the face are also disconnected from their respective
 * opposite half-edges and deleted by this method.
 ******************************************************************************/
-void HalfEdgeMesh::deleteFace(face_index face)
+void SurfaceMeshTopology::deleteFace(face_index face)
 {
 	OVITO_ASSERT(!hasOppositeFace(face));
 
@@ -502,7 +519,7 @@ void HalfEdgeMesh::deleteFace(face_index face)
 * Holes in the mesh will be left behind at the location of the deleted faces.
 * The half-edges of the faces are also disconnected from their respective opposite half-edges and deleted by this method.
 ******************************************************************************/
-void HalfEdgeMesh::deleteFaces(const boost::dynamic_bitset<>& mask)
+void SurfaceMeshTopology::deleteFaces(const boost::dynamic_bitset<>& mask)
 {
 	OVITO_ASSERT(mask.size() == faceCount());
 
@@ -576,7 +593,7 @@ void HalfEdgeMesh::deleteFaces(const boost::dynamic_bitset<>& mask)
 * This method assumes that the half-edge is not connected to any part of the mesh.
 * Returns the successor edge along the face's boundary.
 ******************************************************************************/
-HalfEdgeMesh::edge_index HalfEdgeMesh::deleteEdge(edge_index edge)
+SurfaceMeshTopology::edge_index SurfaceMeshTopology::deleteEdge(edge_index edge)
 {
 	// Make sure the edge is no longer connected to other parts of the mesh.
 	OVITO_ASSERT(!hasOppositeEdge(edge));
@@ -661,7 +678,7 @@ HalfEdgeMesh::edge_index HalfEdgeMesh::deleteEdge(edge_index edge)
 /******************************************************************************
 * Deletes all half-edges from the mesh for which the bit is set in the given mask array.
 ******************************************************************************/
-void HalfEdgeMesh::deleteEdges(const boost::dynamic_bitset<>& mask)
+void SurfaceMeshTopology::deleteEdges(const boost::dynamic_bitset<>& mask)
 {
 	// Build a mapping from old edge indices to new indices. 
 	std::vector<edge_index> remapping(edgeCount());
@@ -767,7 +784,7 @@ void HalfEdgeMesh::deleteEdges(const boost::dynamic_bitset<>& mask)
 * Deletes a vertex from the mesh.
 * This method assumes that the vertex is not connected to any part of the mesh.
 ******************************************************************************/
-void HalfEdgeMesh::deleteVertex(vertex_index vertex)
+void SurfaceMeshTopology::deleteVertex(vertex_index vertex)
 {
 	OVITO_ASSERT(firstVertexEdge(vertex) == InvalidIndex);
 	if(vertex < vertexCount() - 1) {
@@ -789,7 +806,7 @@ void HalfEdgeMesh::deleteVertex(vertex_index vertex)
 /******************************************************************************
 * Inserts a vertex in the midle of an existing edge.
 ******************************************************************************/
-void HalfEdgeMesh::splitEdge(edge_index edge, vertex_index vertex)
+void SurfaceMeshTopology::splitEdge(edge_index edge, vertex_index vertex)
 {
 	OVITO_ASSERT(nextManifoldEdge(edge) == InvalidIndex);
 

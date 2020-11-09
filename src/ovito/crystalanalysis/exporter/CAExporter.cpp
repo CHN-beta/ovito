@@ -237,7 +237,7 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 	if(defectMesh && defectMesh->topology()->isClosed()) {
 		defectMesh->verifyMeshIntegrity();
 		const PropertyObject* vertexCoords = defectMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty);
-		ConstHalfEdgeMeshPtr topology = defectMesh->topology();
+		const SurfaceMeshTopology* topology = defectMesh->topology();
 
 		// Serialize list of vertices.
 		textStream() << "DEFECT_MESH_VERTICES " << vertexCoords->size() << "\n";
@@ -247,8 +247,8 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 
 		// Serialize list of facets.
 		textStream() << "DEFECT_MESH_FACETS " << topology->faceCount() << "\n";
-		for(HalfEdgeMesh::face_index face = 0; face < topology->faceCount(); face++) {
-			HalfEdgeMesh::edge_index e = topology->firstFaceEdge(face);
+		for(SurfaceMesh::face_index face = 0; face < topology->faceCount(); face++) {
+			SurfaceMesh::edge_index e = topology->firstFaceEdge(face);
 			do {
 				textStream() << topology->vertex1(e) << " ";
 				e = topology->nextFaceEdge(e);
@@ -258,8 +258,8 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 		}
 
 		// Serialize face adjacency information.
-		for(HalfEdgeMesh::face_index face = 0; face < topology->faceCount(); face++) {
-			HalfEdgeMesh::edge_index e = topology->firstFaceEdge(face);
+		for(SurfaceMesh::face_index face = 0; face < topology->faceCount(); face++) {
+			SurfaceMesh::edge_index e = topology->firstFaceEdge(face);
 			do {
 				textStream() << topology->adjacentFace(topology->oppositeEdge(e)) << " ";
 				e = topology->nextFaceEdge(e);

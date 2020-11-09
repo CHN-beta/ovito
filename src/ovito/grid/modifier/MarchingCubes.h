@@ -61,10 +61,10 @@ private:
     void computeIntersectionPoints(FloatType iso, Task& promise);
 
     /// Adds triangles to the mesh.
-    void addTriangle(int i, int j, int k, const signed char* trig, signed char n, HalfEdgeMesh::vertex_index v12 = HalfEdgeMesh::InvalidIndex);
+    void addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshData::vertex_index v12 = SurfaceMeshData::InvalidIndex);
 
     /// Adds a vertex on the current horizontal edge.
-    HalfEdgeMesh::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u) {
+    SurfaceMeshData::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -74,7 +74,7 @@ private:
     }
 
     /// Adds a vertex on the current longitudinal edge.
-    HalfEdgeMesh::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u) {
+    SurfaceMeshData::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -84,7 +84,7 @@ private:
     }
 
     /// Adds a vertex on the current vertical edge.
-    HalfEdgeMesh::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u) {
+    SurfaceMeshData::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -94,10 +94,10 @@ private:
     }
 
     /// Adds a vertex inside the current cube.
-    HalfEdgeMesh::vertex_index createCenterVertex(int i, int j, int k);
+    SurfaceMeshData::vertex_index createCenterVertex(int i, int j, int k);
 
     /// Accesses the pre-computed vertex on a lower edge of a specific cube.
-    HalfEdgeMesh::vertex_index getEdgeVert(int i, int j, int k, int axis) const {
+    SurfaceMeshData::vertex_index getEdgeVert(int i, int j, int k, int axis) const {
         OVITO_ASSERT(i >= 0 && i <= _size_x);
         OVITO_ASSERT(j >= 0 && j <= _size_y);
         OVITO_ASSERT(k >= 0 && k <= _size_z);
@@ -122,7 +122,7 @@ private:
                           ///< This option is used by the VoxelGridSliceModifierDelegate to construct the slice plane.
 
     /// Vertices created along cube edges.
-    std::vector<HalfEdgeMesh::vertex_index> _cubeVerts;
+    std::vector<SurfaceMeshData::vertex_index> _cubeVerts;
 
     FloatType     _cube[8];   ///< values of the implicit function on the active cube
     unsigned char _lut_entry; ///< cube sign representation in [0..255]

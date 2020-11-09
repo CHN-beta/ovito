@@ -117,7 +117,7 @@ void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDesc
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -133,7 +133,7 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 	// Get particle types if needed.
 	const PropertyObject* typeProperty = outputOrderingTypes() ? particles->expectProperty(ParticlesObject::TypeProperty) : nullptr;
 
-	return std::make_shared<PTMEngine>(dataset(), posProperty, particles, typeProperty, simCell,
+	return std::make_shared<PTMEngine>(executionContext, dataset(), posProperty, particles, typeProperty, simCell,
 			structureTypes(), orderingTypes(), selectionProperty,
 			outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
 }
@@ -141,10 +141,10 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
 		const QVector<ElementType*>& structureTypes, const QVector<ElementType*>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
-	StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
+	StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
 	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
 	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
 	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),

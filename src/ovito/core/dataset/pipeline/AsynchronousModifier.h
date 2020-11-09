@@ -47,8 +47,8 @@ public:
 	public:
 
 		/// Constructor.
-		explicit Engine(const TimeInterval& validityInterval = TimeInterval::infinite()) :
-			_validityInterval(validityInterval) {}
+		explicit Engine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+			_executionContext(executionContext), _validityInterval(validityInterval) {}
 
 #ifdef Q_OS_LINUX
 		/// Destructor.
@@ -78,7 +78,13 @@ public:
 		/// Changes the validity interval of the computation results.
 		void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
+		/// Returns the type of context the engine is running in (interactive or scripting).
+		Application::ExecutionContext executionContext() const { return _executionContext; }
+
 	private:
+
+		/// The type of context the engine is running in (interactive or scripting).
+		Application::ExecutionContext _executionContext;
 
 		/// The validity time interval of the stored computation results.
 		TimeInterval _validityInterval;
@@ -110,7 +116,7 @@ protected:
 	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) = 0;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) = 0;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.

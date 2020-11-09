@@ -26,6 +26,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "VoxelGridSliceModifierDelegate.h"
@@ -102,15 +103,21 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			if(cell->is2D())
 				continue;
 
-			// The slice plane does NOT exist in a periodic domain.
+			// The slice plane does NOT exist in a periodic domain. 
+			// Remove any periodic boundary conditions from the surface mesh domain cell.
 			if(cell->hasPbc()) {
-				DataOORef<SimulationCellObject> nonPeriodicCell = std::move(cell).makeMutable();
-				nonPeriodicCell->setPbcFlags(false, false, false);
-				cell = std::move(nonPeriodicCell);
+				DataOORef<SimulationCellObject> nonperiodicCell = cell.makeCopy();
+				nonperiodicCell->setPbcFlags(false, false, false);
+				cell = std::move(nonperiodicCell);
 			}
 
+			// Create an empty surface mesh object.
+			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, Application::instance()->executionContext(), tr("Volume slice"));
+			meshObj->setDomain(cell);
+			meshObj->setVisElement(surfaceMeshVis());
+
 			// Construct cross section mesh using a special version of the marching cubes algorithm.
-			SurfaceMeshData mesh(dataset(), cell);
+			SurfaceMeshData mesh(meshObj);
 
 			// The level of subdivision.
 			const int resolution = 2;
@@ -157,7 +164,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 
 			// Copy field values from voxel grid to surface mesh vertices.
 			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager());
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, cell, gridShape);
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, gridShape, Application::instance()->executionContext());
 
 			// Transform mesh vertices from orthogonal grid space to world space.
 			const AffineTransformation tm = cell->matrix() * Matrix3(
@@ -170,11 +177,6 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			// Flip surface orientation if cell matrix is a mirror transformation.
 			if(tm.determinant() < 0)
 				mesh.flipFaces();
-			
-			// Create the output mesh data object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, Application::ExecutionContext::Scripting, tr("Volume slice"));
-			mesh.transferTo(meshObj);
-			meshObj->setVisElement(surfaceMeshVis());
 		}
 	}
 

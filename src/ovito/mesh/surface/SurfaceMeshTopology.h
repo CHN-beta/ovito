@@ -24,6 +24,7 @@
 
 
 #include <ovito/mesh/Mesh.h>
+#include <ovito/core/dataset/data/DataObject.h>
 #include <boost/iterator/counting_iterator.hpp>
 
 namespace Ovito { namespace Mesh {
@@ -43,8 +44,12 @@ namespace Ovito { namespace Mesh {
  * and faces. The embedding of the mesh into three-dimensional space, i.e. the vertex coordinates,
  * are not managed by the class and must be kept in a separate data array.
  */
-class OVITO_MESH_EXPORT HalfEdgeMesh
+class OVITO_MESH_EXPORT SurfaceMeshTopology : public DataObject
 {
+    Q_OBJECT
+	OVITO_CLASS(SurfaceMeshTopology)
+	Q_CLASSINFO("DisplayName", "Surface mesh topology");
+
 public:
 
     /// Data type used for list indices and counting vertices/edges/faces.
@@ -64,8 +69,8 @@ public:
 
 public:
 
-    /// Default constructor.
-    HalfEdgeMesh() = default;
+	/// Constructor creating an empty SurfaceMeshTopology object.
+	Q_INVOKABLE SurfaceMeshTopology(DataSet* dataset) : DataObject(dataset) {}
 
     /// Removes all faces, edges and vertices from this mesh.
     void clear();
@@ -97,12 +102,13 @@ public:
     /// Returns an iterator that points beyond last edge of the mesh topology.
 	auto end_edges() const { return boost::make_counting_iterator<size_type>(edgeCount()); }
 
+    /// Adds several new vertices to the mesh.
+    /// Returns the index of the first newly-created vertex.
+    vertex_index createVertices(size_type n);
+
     /// Adds a new vertex to the mesh.
     /// Returns the index of the newly-created vertex.
-    vertex_index createVertex();
-
-    /// Adds several new vertices to the mesh.
-    void createVertices(size_type n);
+    vertex_index createVertex() { return createVertices(1); }
 
     /// Internal method that creates a new face without any edges.
     /// Returns the index of the new face.
@@ -351,6 +357,11 @@ public:
     /// Inserts a vertex in the midle of an existing edge.
     void splitEdge(edge_index edge, vertex_index vertex);
 
+protected:
+
+	/// Creates a copy of this object.
+	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
+
 private:
 
     /// Disconnects a half-edge from a vertex and adds it to the list of half-edges of another vertex.
@@ -426,12 +437,6 @@ private:
     /// Stores the half-edge leading to the next manifold at each half-edge.
     std::vector<edge_index> _nextManifoldEdges;
 };
-
-/// Typically, meshes are shallow copied. That's why we use a shared_ptr to hold on to them.
-using HalfEdgeMeshPtr = std::shared_ptr<HalfEdgeMesh>;
-
-/// This pointer type is used to indicate that we only need read-only access to the mesh data.
-using ConstHalfEdgeMeshPtr = std::shared_ptr<const HalfEdgeMesh>;
 
 }	// End of namespace
 }	// End of namespace

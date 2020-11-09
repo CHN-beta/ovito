@@ -177,7 +177,7 @@ void DislocationAnalysisModifier::loadUserDefaults(Application::ExecutionContext
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier inputs.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -205,6 +205,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DislocationAnalysisEngine>(
+			executionContext, 
 			dataset(), 
 			particles,
 			posProperty,

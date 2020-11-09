@@ -60,7 +60,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -70,7 +70,9 @@ private:
 	public:
 
 		/// Constructor.
-		DisplacementEngine(DataSet* dataset,
+		DisplacementEngine(
+				Application::ExecutionContext executionContext, 
+				DataSet* dataset,
 				const TimeInterval& validityInterval, 
 				ConstPropertyPtr positions, 
 				const SimulationCellObject* simCell,
@@ -81,7 +83,7 @@ private:
 				ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, 
 				bool useMinimumImageConvention) :
-			RefConfigEngineBase(validityInterval, positions, simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
 			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),

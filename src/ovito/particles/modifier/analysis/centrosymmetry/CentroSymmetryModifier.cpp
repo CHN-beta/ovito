@@ -63,7 +63,7 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -80,8 +80,14 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	if(numNeighbors() % 2)
 		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
+	// Create an empty data table for the CSP value histogram to be computed.
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), executionContext, DataTable::Line, tr("CSP distribution"));
+	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
+	histogram->setDataSource(modApp);
+	histogram->setAxisLabelX(tr("CSP"));
+
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CentroSymmetryEngine>(dataset(), particles, posProperty, simCell, numNeighbors(), mode());
+	return std::make_shared<CentroSymmetryEngine>(executionContext, dataset(), particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
 }
 
 /******************************************************************************
@@ -107,13 +113,15 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 		return;
 
 	// Determine histogram bin size based on maximum CSP value.
-	const size_t numHistogramBins = _cspHistogram->size();
+	const size_t numHistogramBins = 100;
 	FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
 	if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
-	_cspHistogramRange = cspHistogramBinSize * numHistogramBins;
-
+	
 	// Perform binning of CSP values.
-	PropertyAccess<qlonglong> histogramCounts(_cspHistogram);
+	_histogram->setElementCount(numHistogramBins);
+	_histogram->setIntervalStart(0);
+	_histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
+	PropertyAccess<qlonglong> histogramCounts = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, true);
 	for(FloatType cspValue : cspArray) {
 		OVITO_ASSERT(cspValue >= 0);
 		int binIndex = cspValue / cspHistogramBinSize;
@@ -179,18 +187,14 @@ FloatType CentroSymmetryModifier::computeCSP(NearestNeighborFinder& neighFinder,
 void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
-
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	OVITO_ASSERT(csp()->size() == particles->elementCount());
+	// Output per-particle CSP values.
 	particles->createProperty(csp());
 
-	// Output CSP histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("csp-centrosymmetry"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("CSP distribution"), cspHistogram());
-	table->setAxisLabelX(tr("CSP"));
-	table->setIntervalStart(0);
-	table->setIntervalEnd(cspHistogramRange());
+	// Output CSP distribution histogram.
+	state.addObjectWithUniqueId<DataTable>(_histogram);
 }
 
 }	// End of namespace

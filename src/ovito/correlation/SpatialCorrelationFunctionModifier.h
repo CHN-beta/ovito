@@ -89,7 +89,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -99,7 +99,8 @@ private:
 	public:
 
 		/// Constructor.
-		CorrelationAnalysisEngine(DataSet* dataset,
+		CorrelationAnalysisEngine(Application::ExecutionContext executionContext, 
+								  DataSet* dataset,
 								  ConstPropertyPtr positions,
 								  ConstPropertyPtr sourceProperty1,
 								  size_t vecComponent1,
@@ -112,6 +113,7 @@ private:
 								  FloatType neighCutoff,
 								  int numberOfNeighBins,
 								  AveragingDirectionType averagingDirection) :
+			Engine(executionContext),
 			_positions(std::move(positions)),
 			_sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
 			_sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),

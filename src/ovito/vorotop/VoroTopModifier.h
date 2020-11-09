@@ -67,7 +67,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -77,9 +77,9 @@ private:
 	public:
 
 		/// Constructor.
-		VoroTopAnalysisEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+		VoroTopAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
 							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const QVector<ElementType*>& structureTypes) :
-			StructureIdentificationEngine(dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+			StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_filterFile(filterFile),
 			_filter(std::move(filter)),
 			_radii(std::move(radii)) {}

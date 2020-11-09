@@ -83,15 +83,15 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 					if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
 						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false, Application::instance()->executionContext());
 						size_t numSelectedFaces = 0;
-						HalfEdgeMeshPtr topology = outputMesh->topology();
+						const SurfaceMeshTopology* topology = outputMesh->topology();
 						auto firstFaceEdge = topology->firstFaceEdges().cbegin();
 						OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
 						for(int& selected : faceSelectionProperty) {
-							HalfEdgeMesh::edge_index ffe = *firstFaceEdge++;
-							HalfEdgeMesh::edge_index e = ffe;
+							SurfaceMesh::edge_index ffe = *firstFaceEdge++;
+							SurfaceMesh::edge_index e = ffe;
 							selected = 1;
 							do {
-								HalfEdgeMesh::vertex_index ev = topology->vertex2(e);
+								SurfaceMesh::vertex_index ev = topology->vertex2(e);
 								if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
 									selected = 0;
 									break;

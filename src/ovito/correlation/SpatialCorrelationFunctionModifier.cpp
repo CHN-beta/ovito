@@ -159,7 +159,7 @@ void SpatialCorrelationFunctionModifier::initializeModifier(ModifierApplication*
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get the source data.
 	if(sourceProperty1().isNull())
@@ -188,7 +188,8 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CorrelationAnalysisEngine>(dataset(),
+	return std::make_shared<CorrelationAnalysisEngine>(executionContext, 
+													   dataset(),
 													   posProperty,
 													   property1,
 													   std::max(0, sourceProperty1().vectorComponent()),

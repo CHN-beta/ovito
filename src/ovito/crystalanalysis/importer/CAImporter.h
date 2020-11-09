@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/mesh/surface/HalfEdgeMesh.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 

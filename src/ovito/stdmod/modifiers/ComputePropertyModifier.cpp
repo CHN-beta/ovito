@@ -111,7 +111,7 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor& f
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(modApp);
 
@@ -154,7 +154,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	else {
 		// Allocate new data array.
 		if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements(), Application::instance()->executionContext(), objectPath);
+			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements(), executionContext, objectPath);
 		}
 		else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
 			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), 0, outputProperty().name(), onlySelectedElements());
@@ -184,7 +184,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	TimeInterval validityInterval = input.stateValidity();
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	auto engine = delegate()->createEngine(request.time(), input,
+	auto engine = delegate()->createEngine(executionContext, request.time(), input,
 			objectPath, std::move(outp),
 			std::move(selectionProperty),
 			expressions());
@@ -214,6 +214,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputePropertyModifierDelegate::createEngine(
+				Application::ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -223,6 +224,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 {
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<PropertyComputeEngine>(
+			executionContext,
 			input.stateValidity(),
 			time,
 			input,
@@ -238,6 +240,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 * Constructor.
 ******************************************************************************/
 ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
+		Application::ExecutionContext executionContext,
 		const TimeInterval& validityInterval,
 		TimePoint time,
 		const PipelineFlowState& input,
@@ -247,7 +250,7 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
 		QStringList expressions,
 		int frameNumber,
 		std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
-	AsynchronousModifier::Engine(validityInterval),
+	AsynchronousModifier::Engine(executionContext, validityInterval),
 	_selectionArray(std::move(selectionProperty)),
 	_expressions(std::move(expressions)),
 	_frameNumber(frameNumber),

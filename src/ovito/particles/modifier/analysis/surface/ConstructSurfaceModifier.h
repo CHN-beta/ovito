@@ -84,7 +84,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -94,23 +94,21 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell, std::vector<ConstPropertyPtr> particleProperties) :
+		ConstructSurfaceEngineBase(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
+			Engine(executionContext),
 			_positions(positions),
 			_selection(std::move(selection)),
-			_mesh(dataset, simCell),
+			_mesh(std::move(mesh)),
 			_particleProperties(std::move(particleProperties)) {}
-
-		/// Returns the generated surface mesh.
-		const SurfaceMeshData& mesh() const { return _mesh; }
-
-		/// Returns a mutable reference to the surface mesh structure.
-		SurfaceMeshData& mesh() { return _mesh; }
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
 
 		/// Adds a summation contribution to the total surface area.
 		void addSurfaceArea(FloatType a) { _totalSurfaceArea += a; }
+
+		/// Returns the generated surface mesh.
+		DataOORef<SurfaceMesh>& mesh() { return _mesh; }
 
 		/// Returns the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
@@ -139,7 +137,7 @@ private:
 		ConstPropertyPtr _selection;
 
 		/// The generated surface mesh.
-		SurfaceMeshData _mesh;
+		DataOORef<SurfaceMesh> _mesh;
 
 		/// The computed total surface area.
 		double _totalSurfaceArea = 0;
@@ -154,13 +152,13 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, const SimulationCellObject* simCell, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(dataset, std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
+		AlphaShapeEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
 			_particleClusters(particleClusters),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
-			_totalCellVolume(simCell ? simCell->volume3D() : 0.0),
+			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
 			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
@@ -217,9 +215,9 @@ private:
 	public:
 
 		/// Constructor.
-		GaussianDensityEngine(DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
+		GaussianDensityEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
 				FloatType radiusFactor, FloatType isoLevel, int gridResolution, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(dataset, std::move(positions), std::move(selection), simCell, std::move(particleProperties)),
+			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
 			_gridResolution(gridResolution),

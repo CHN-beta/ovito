@@ -143,8 +143,8 @@ void ParaDiSImporter::FrameLoader::loadFile()
             throw Exception(tr("Invalid node record in line %1 of ParaDiS file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
         // Create node (if it hasn't been defined before) and assign parsed coordinates.
-        auto insertionResult = nodeMap.emplace(node_tag, HalfEdgeMesh::InvalidIndex);
-        if(insertionResult.first->second == HalfEdgeMesh::InvalidIndex)
+        auto insertionResult = nodeMap.emplace(node_tag, SurfaceMeshData::InvalidIndex);
+        if(insertionResult.first->second == SurfaceMeshData::InvalidIndex)
             insertionResult.first->second = microstructure.createVertex(coords);
         else
             microstructure.setVertexPosition(insertionResult.first->second, coords);
@@ -181,8 +181,8 @@ void ParaDiSImporter::FrameLoader::loadFile()
                 throw Exception(tr("Invalid segment record in line %1 of ParaDiS file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
             // Look up or create the second node connected by the segment.
-            auto insertionResult2 = nodeMap.emplace(nbr_tag, HalfEdgeMesh::InvalidIndex);
-            if(insertionResult2.first->second == HalfEdgeMesh::InvalidIndex)
+            auto insertionResult2 = nodeMap.emplace(nbr_tag, SurfaceMeshData::InvalidIndex);
+            if(insertionResult2.first->second == SurfaceMeshData::InvalidIndex)
                 insertionResult2.first->second = microstructure.createVertex(Point3::Origin());
 
             // Create the line segment connecting the two nodes.

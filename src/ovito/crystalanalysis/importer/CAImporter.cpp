@@ -138,7 +138,7 @@ void CAImporter::FrameLoader::loadFile()
 	int numClusters = 0;
 	int numClusterTransitions = 0;
 	int numDislocationSegments = 0;
-	SurfaceMeshData defectSurface(dataset());	
+	SurfaceMeshData defectSurface;
 	ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
 	std::shared_ptr<DislocationNetwork> dislocations;
 	QVector<PatternInfo> patterns;
@@ -418,6 +418,7 @@ void CAImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
+			defectSurface = DataOORef<SurfaceMesh>::create(dataset(), executionContext());
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;
 			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
@@ -432,7 +433,7 @@ void CAImporter::FrameLoader::loadFile()
 				defectSurface.createVertex(p);
 			}
 		}
-		else if(stream.lineStartsWith("DEFECT_MESH_FACETS ")) {
+		else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && defectSurface) {
 			// Read defect mesh facets.
 			int numDefectMeshFacets;
 			if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
@@ -457,11 +458,11 @@ void CAImporter::FrameLoader::loadFile()
 				int v[3];
 				if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
 					throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-				HalfEdgeMesh::edge_index edge = defectSurface.firstFaceEdge(index);
+				SurfaceMesh::edge_index edge = defectSurface.firstFaceEdge(index);
 				for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
 					if(defectSurface.hasOppositeEdge(edge)) continue;
-					HalfEdgeMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
-					if(oppositeEdge == HalfEdgeMesh::InvalidIndex)
+					SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
+					if(oppositeEdge == SurfaceMeshData::InvalidIndex)
 						throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
 					defectSurface.linkOppositeEdges(edge, oppositeEdge);
 				}
@@ -506,6 +507,9 @@ void CAImporter::FrameLoader::loadFile()
 		}
 		defectSurface.transferTo(defectSurfaceObj);
 		defectSurfaceObj->setDomain(simulationCell());
+	}
+	else {
+
 	}
 
 	// Insert cluster graph.

@@ -80,7 +80,7 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -130,6 +130,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	if(neighborMode() == CutoffRange) {
 		const PropertyObject* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(BondsObject::TopologyProperty) : nullptr;
 		return std::make_shared<CutoffClusterAnalysisEngine>(
+			executionContext,
 			dataset(),
 			particles, 
 			posProperty, 
@@ -147,6 +148,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	else if(neighborMode() == Bonding) {
 		particles->expectBonds()->verifyIntegrity();
 		return std::make_shared<BondClusterAnalysisEngine>(
+			executionContext,
 			dataset(),
 			particles, 
 			posProperty, 

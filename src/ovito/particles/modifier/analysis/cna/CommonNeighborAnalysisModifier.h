@@ -133,7 +133,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -172,8 +172,8 @@ private:
 	public:
 
 		/// Constructor.
-		FixedCNAEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-			CNAEngine(dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+		FixedCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+			CNAEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_cutoff(cutoff) {}
 
 		/// Computes the modifier's results.
@@ -215,8 +215,8 @@ private:
 	public:
 
 		/// Constructor.
-		BondCNAEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-			CNAEngine(dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+		BondCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+			CNAEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
 			_cnaIndices(BondsObject::OOClass().createUserProperty(dataset, _bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}

@@ -75,9 +75,10 @@ private:
 	public:
 
 		/// Constructor.
-		BondsEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
+		BondsEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
 				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				ConstPropertyPtr moleculeIDs) :
+					Engine(executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
 					_simCell(simCell),
@@ -141,7 +142,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.

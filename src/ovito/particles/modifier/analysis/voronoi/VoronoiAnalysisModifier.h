@@ -71,7 +71,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -81,10 +81,10 @@ private:
 	public:
 
 		/// Constructor.
-		VoronoiAnalysisEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, std::vector<FloatType> radii,
-							const SimulationCellObject* simCell,
-							bool computeIndices, bool computeBonds, bool computePolyhedra, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-			Engine(validityInterval),
+		VoronoiAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, std::vector<FloatType> radii,
+							const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
+							bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
+			Engine(executionContext, validityInterval),
 			_positions(positions),
 			_selection(std::move(selection)),
 			_particleIdentifiers(std::move(particleIdentifiers)),
@@ -94,12 +94,11 @@ private:
 			_faceThreshold(faceThreshold),
 			_relativeFaceThreshold(relativeFaceThreshold),
 			_computeBonds(computeBonds),
-			_computePolyhedra(computePolyhedra),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true)),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true, executionContext)),
 			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
 			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
-			_polyhedraMesh(dataset, simCell) {}
+			_polyhedraMesh(std::move(polyhedraMesh)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -128,13 +127,7 @@ private:
 		/// Returns the generated nearest neighbor bonds.
 		std::vector<Bond>& bonds() { return _bonds; }
 
-		/// Returns the generated surface mesh representing the Voronoi polyhedra.
-		const SurfaceMeshData& polyhedraMesh() const { return _polyhedraMesh; }
-
-		/// Returns the generated surface mesh representing the Voronoi polyhedra.
-		SurfaceMeshData& polyhedraMesh() { return _polyhedraMesh; }
-
-		const DataOORef<const SimulationCellObject>& simCell() const { return _simCell; }
+		const SimulationCellObject* simCell() const { return _simCell; }
 		const ConstPropertyPtr& positions() const { return _positions; }
 		const ConstPropertyPtr selection() const { return _selection; }
 
@@ -149,7 +142,6 @@ private:
 		ConstPropertyPtr _selection;
 		ConstPropertyPtr _particleIdentifiers;
 		bool _computeBonds;
-		bool _computePolyhedra;
 
 		const PropertyPtr _coordinationNumbers;
 		const PropertyPtr _atomicVolumes;
@@ -164,23 +156,23 @@ private:
 		/// The maximum number of edges of a Voronoi face.
 		std::atomic<int> _maxFaceOrder{0};
 
-		/// The computed polyhedral Voronoi cells as a surface mesh structure.
-		SurfaceMeshData _polyhedraMesh;
+		/// A surface mesh representing the computed polyhedral Voronoi cells.
+		DataOORef<SurfaceMesh> _polyhedraMesh;
 
 		/// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
-		PropertyPtr _adjacentCellProperty;
+		PropertyObject* _adjacentCellProperty;
 
 		/// Output mesh region property storing the indices or identifiers of the particles to which each Voronoi cell belongs. 
-		PropertyPtr _centerParticleProperty;
+		PropertyObject* _centerParticleProperty;
 
 		/// Output mesh region property storing the volume of each Voronoi cell. 
-		PropertyPtr _cellVolumeProperty;
+		PropertyObject* _cellVolumeProperty;
 
 		/// Output mesh region property storing the number of faces of each Voronoi cell. 
-		PropertyPtr _cellCoordinationProperty;
+		PropertyObject* _cellCoordinationProperty;
 
 		/// Output mesh region property storing the surface area of each Voronoi cell. 
-		PropertyPtr _surfaceAreaProperty;
+		PropertyObject* _surfaceAreaProperty;
 
 		/// The total volume of the simulation cell.
 		FloatType _simulationBoxVolume;

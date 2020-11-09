@@ -217,7 +217,7 @@ private:
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline T* dynamic_object_cast(U* obj) {
+inline T* dynamic_object_cast(U* obj) noexcept {
 	return qobject_cast<T*>(obj);
 }
 
@@ -228,7 +228,7 @@ inline T* dynamic_object_cast(U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline const T* dynamic_object_cast(const U* obj) {
+inline const T* dynamic_object_cast(const U* obj) noexcept {
 	return qobject_cast<const T*>(obj);
 }
 
@@ -240,7 +240,7 @@ inline const T* dynamic_object_cast(const U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline T* static_object_cast(U* obj) {
+inline T* static_object_cast(U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<T*>(obj);
@@ -254,35 +254,58 @@ inline T* static_object_cast(U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline const T* static_object_cast(const U* obj) {
+inline const T* static_object_cast(const U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<const T*>(obj);
 }
 
-
-/// \brief Dynamic cast operator for OORef smart pointers.
+/// \brief Dynamic cast operator for smart pointers to OVITO objects.
 ///
 /// Returns a smart pointer to the input object, cast to type \c T if the object is of type \c T
 /// (or a subclass); otherwise returns \c NULL.
 ///
-/// \relates OORef
-template<class T, class U>
-inline OORef<T> dynamic_object_cast(const OORef<U>& obj) {
-	return qobject_cast<T*>(obj.get());
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> typename Pointer>
+inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
+	return dynamic_pointer_cast<T, U>(obj);
 }
 
-/// \brief Static cast operator for smart pointers to OvitoObject derived objects.
+/// \brief Dynamic cast operator for smart pointers to OVITO objects.
+///
+/// Returns a smart pointer to the input object, cast to type \c T if the object is of type \c T
+/// (or a subclass); otherwise returns \c NULL.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> typename Pointer>
+inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
+	return dynamic_pointer_cast<T, U>(std::move(obj));
+}
+
+/// \brief Static cast operator for smart pointers to OVITO objects.
 ///
 /// Returns the given object cast to type \c T.
 /// Performs a runtime check of the object type in debug build.
 ///
-/// \relates OORef
-template<class T, class U>
-inline OORef<T> static_object_cast(const OORef<U>& obj) {
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> typename Pointer>
+inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
-	return static_pointer_cast<T>(obj);
+	return static_pointer_cast<T, U>(obj);
+}
+
+/// \brief Static cast operator for smart pointers to OVITO objects.
+///
+/// Returns the given object cast to type \c T.
+/// Performs a runtime check of the object type in debug build.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> typename Pointer>
+inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
+	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
+		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+	return static_pointer_cast<T, U>(std::move(obj));
 }
 
 }	// End of namespace

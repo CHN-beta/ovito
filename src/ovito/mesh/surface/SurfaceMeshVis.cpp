@@ -381,7 +381,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 	// corresponding opposite face.
 	if(_faceSubset.empty()) {
 		_renderFacesTwoSided = std::none_of(inputMesh().topology()->begin_faces(), inputMesh().topology()->end_faces(),
-			std::bind(&HalfEdgeMesh::hasOppositeFace, inputMesh().topology().get(), std::placeholders::_1));
+			std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh().topology(), std::placeholders::_1));
 	}
 	else {
 		_renderFacesTwoSided = std::none_of(inputMesh().topology()->begin_faces(), inputMesh().topology()->end_faces(),
@@ -560,8 +560,8 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 			// We have found a quadrilateral made of two triangles.
 
 			// Compute center of the quadrilateral.
-			HalfEdgeMesh::edge_index edge1 = _inputMesh.firstFaceEdge(originalFace);
-			HalfEdgeMesh::edge_index edge2 = _inputMesh.nextFaceEdge(edge1);
+			SurfaceMesh::edge_index edge1 = _inputMesh.firstFaceEdge(originalFace);
+			SurfaceMesh::edge_index edge2 = _inputMesh.nextFaceEdge(edge1);
 			Point3 p = _inputMesh.vertexPosition(_inputMesh.vertex1(edge1));
 			Vector3 edgeVector = _inputMesh.edgeVector(edge1) + _inputMesh.edgeVector(edge2);
 			p += FloatType(0.5) * edgeVector;
@@ -879,7 +879,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		std::vector<std::vector<Point2>> closedContours;
 
 		// Find a first edge that crosses a periodic cell boundary.
-		for(HalfEdgeMesh::face_index face : _originalFaceMap) {
+		for(SurfaceMeshData::face_index face : _originalFaceMap) {
 			// Skip faces that have already been visited.
 			if(visitedFaces[face]) continue;
 			if(isCanceled()) return;
@@ -896,7 +896,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
 					// Also skip any two-sided faces that are part of an interior interface.
 					SurfaceMeshData::face_index oppositeFace = _inputMesh.oppositeFace(face);
-					if(oppositeFace != HalfEdgeMesh::InvalidIndex) {						
+					if(oppositeFace != SurfaceMeshData::InvalidIndex) {						
 						SurfaceMeshData::region_index oppositeRegion = _inputMesh.faceRegion(oppositeFace);
 						if(oppositeRegion >= 0 && oppositeRegion < isFilledProperty.size()) {
 							if((bool)isFilledProperty[oppositeRegion] != _reverseOrientation) {
@@ -907,8 +907,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 				}
 			}
 
-			HalfEdgeMesh::edge_index startEdge = _inputMesh.firstFaceEdge(face);
-			HalfEdgeMesh::edge_index edge = startEdge;
+			SurfaceMeshData::edge_index startEdge = _inputMesh.firstFaceEdge(face);
+			SurfaceMeshData::edge_index edge = startEdge;
 			do {
 				const Point3& v1 = reducedPos[_inputMesh.vertex1(edge)];
 				const Point3& v2 = reducedPos[_inputMesh.vertex2(edge)];
@@ -1014,7 +1014,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 								isBoxCornerInside3DRegion = false;
 						}
 						else {
-							isBoxCornerInside3DRegion = *region != HalfEdgeMesh::InvalidIndex;
+							isBoxCornerInside3DRegion = *region != SurfaceMeshData::InvalidIndex;
 						}
 					}
 					else {
@@ -1062,15 +1062,15 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 /******************************************************************************
 * Traces the closed contour of the surface-boundary intersection.
 ******************************************************************************/
-std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(HalfEdgeMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const
+std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const
 {
 	OVITO_ASSERT(cell());
 	size_t dim1 = (dim + 1) % 3;
 	size_t dim2 = (dim + 2) % 3;
 	std::vector<Point2> contour;
-	HalfEdgeMesh::edge_index edge = firstEdge;
+	SurfaceMeshData::edge_index edge = firstEdge;
 	do {
-		OVITO_ASSERT(_inputMesh.adjacentFace(edge) != HalfEdgeMesh::InvalidIndex);
+		OVITO_ASSERT(_inputMesh.adjacentFace(edge) != SurfaceMeshData::InvalidIndex);
 
 		// Mark face as visited.
 		visitedFaces[_inputMesh.adjacentFace(edge)] = true;
@@ -1125,7 +1125,7 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(HalfEdgeM
 		}
 
 		edge = _inputMesh.oppositeEdge(edge);
-		if(edge == HalfEdgeMesh::InvalidIndex) {
+		if(edge == SurfaceMeshData::InvalidIndex) {
 			// Mesh is not closed (not a proper manifold).
 			contour.clear();
 			break;

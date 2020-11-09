@@ -73,7 +73,7 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+    virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 private:
 
@@ -83,8 +83,8 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(dataset, fingerprint, positions, simCell, structureTypes, selection),
+        ChillPlusEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+            StructureIdentificationEngine(executionContext, dataset, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 
         /// Computes the modifier's results.

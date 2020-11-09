@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,29 +28,26 @@ namespace Ovito { namespace CrystalAnalysis {
 IMPLEMENT_OVITO_CLASS(Microstructure);
 
 /******************************************************************************
-* Constructor creating an empty microstructure.
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-MicrostructureData::MicrostructureData(DataSet* dataset, const SimulationCellObject* cell) : SurfaceMeshData(dataset, cell)
+void Microstructure::loadUserDefaults(Application::ExecutionContext executionContext)
 {
-    createFaceProperty(SurfaceMeshFaces::RegionProperty);
-    createFaceProperty(SurfaceMeshFaces::BurgersVectorProperty);
-    createFaceProperty(SurfaceMeshFaces::FaceTypeProperty);
-    createFaceProperty(SurfaceMeshFaces::CrystallographicNormalProperty);
-    createRegionProperty(SurfaceMeshRegions::PhaseProperty);
-    OVITO_ASSERT(burgersVectors());
-    OVITO_ASSERT(faceTypes());
+	SurfaceMesh::loadUserDefaults(executionContext);
+
+    faces()->createProperty(SurfaceMeshFaces::RegionProperty, false, executionContext);
+    faces()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, executionContext);
+    faces()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, executionContext);
+    faces()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, executionContext);
+    regions()->createProperty(SurfaceMeshRegions::PhaseProperty, false, executionContext);
 }
 
 /******************************************************************************
 * Constructor that adopts the data from the given pipeline data object into
 * this structure.
 ******************************************************************************/
-MicrostructureData::MicrostructureData(const SurfaceMesh* mo) : SurfaceMeshData(mo)
+MicrostructureData::MicrostructureData(const Microstructure* mo) : SurfaceMeshData(mo)
 {
-    OVITO_ASSERT(faceRegions());
-    OVITO_ASSERT(faceTypes());
-    OVITO_ASSERT(burgersVectors());
-    OVITO_ASSERT(crystallographicNormals());
 }
 
 /******************************************************************************
@@ -64,7 +61,7 @@ MicrostructureData::edge_index MicrostructureData::createDislocationSegment(vert
     // The other two face edges remain without an opposite edge partner
     // to mark them as as virtual dislocation segments, which exist only to close the face boundaries.
     linkOppositeEdges(firstFaceEdge(face1), firstFaceEdge(face2));
-    topology()->linkOppositeFaces(face1, face2);
+    linkOppositeFaces(face1, face2);
     return firstFaceEdge(face1);
 }
 
@@ -83,7 +80,7 @@ void MicrostructureData::makeContinuousDislocationLines()
         // Specifically look for 2-nodes which are part of continuous dislocation lines.
         int armCount = 0;
         edge_index arms[3];
-        for(edge_index e = firstVertexEdge(vertex); e != HalfEdgeMesh::InvalidIndex; e = nextVertexEdge(e)) {
+        for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshData::InvalidIndex; e = nextVertexEdge(e)) {
             if(isPhysicalDislocationEdge(e)) {
                 arms[armCount++] = e;
                 if(armCount == 3) break;
@@ -116,16 +113,17 @@ void MicrostructureData::makeContinuousDislocationLines()
                     edge_index virtualArm2 = nextFaceEdge(oppositeEdge(arm2));
 
                     // Rewire first edge sequence at the vertex.
-                    topology()->setNextFaceEdge(prevFaceEdge(arm1), virtualArm2);
-                    topology()->setPrevFaceEdge(virtualArm2, prevFaceEdge(arm1));
-                    topology()->setPrevFaceEdge(arm1, oppositeEdge(arm2));
-                    topology()->setNextFaceEdge(oppositeEdge(arm2), arm1);
+                    SurfaceMeshTopology* topo = mutableTopology();
+                    topo->setNextFaceEdge(prevFaceEdge(arm1), virtualArm2);
+                    topo->setPrevFaceEdge(virtualArm2, prevFaceEdge(arm1));
+                    topo->setPrevFaceEdge(arm1, oppositeEdge(arm2));
+                    topo->setNextFaceEdge(oppositeEdge(arm2), arm1);
 
                     // Rewire second edge sequence at the vertex.
-                    topology()->setNextFaceEdge(prevFaceEdge(arm2), virtualArm1);
-                    topology()->setPrevFaceEdge(virtualArm1, prevFaceEdge(arm2));
-                    topology()->setPrevFaceEdge(arm2, oppositeEdge(arm1));
-                    topology()->setNextFaceEdge(oppositeEdge(arm1), arm2);
+                    topo->setNextFaceEdge(prevFaceEdge(arm2), virtualArm1);
+                    topo->setPrevFaceEdge(virtualArm1, prevFaceEdge(arm2));
+                    topo->setPrevFaceEdge(arm2, oppositeEdge(arm1));
+                    topo->setNextFaceEdge(oppositeEdge(arm1), arm2);
 
                     face_index delFace1 = adjacentFace(oppositeEdge(arm2));
                     face_index delFace2 = adjacentFace(arm2);
@@ -138,20 +136,20 @@ void MicrostructureData::makeContinuousDislocationLines()
 
                     // Make sure the first edge of a face is always the one at the beginning of the
                     // corresponding continuous dislocation line.
-                    topology()->setFirstFaceEdge(keepFace1, firstFaceEdge(adjacentFace(virtualArm2)));
+                    topo->setFirstFaceEdge(keepFace1, firstFaceEdge(adjacentFace(virtualArm2)));
 
                     // Transfer edges of the faces that are going to be removed to the remaining faces.
                     for(edge_index currentEdge = virtualArm2; currentEdge != arm1; currentEdge = nextFaceEdge(currentEdge)) {
-                        topology()->setAdjacentFace(currentEdge, keepFace1);
+                        topo->setAdjacentFace(currentEdge, keepFace1);
                     }
                     for(edge_index currentEdge = arm2; currentEdge != virtualArm1; currentEdge = nextFaceEdge(currentEdge)) {
-                        topology()->setAdjacentFace(currentEdge, keepFace2);
+                        topo->setAdjacentFace(currentEdge, keepFace2);
                     }
 
                     // Delete one pair of faces from the mesh.
-                    topology()->setFirstFaceEdge(delFace1, HalfEdgeMesh::InvalidIndex);
-                    topology()->setFirstFaceEdge(delFace2, HalfEdgeMesh::InvalidIndex);
-                    topology()->unlinkFromOppositeFace(delFace1);
+                    topo->setFirstFaceEdge(delFace1, SurfaceMeshData::InvalidIndex);
+                    topo->setFirstFaceEdge(delFace2, SurfaceMeshData::InvalidIndex);
+                    topo->unlinkFromOppositeFace(delFace1);
 
                     // Make sure we delete the faces in an ordered fashion, starting from the back.
                     if(delFace1 < delFace2) std::swap(delFace1, delFace2);

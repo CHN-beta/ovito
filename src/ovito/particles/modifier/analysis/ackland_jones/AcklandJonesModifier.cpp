@@ -60,7 +60,7 @@ void AcklandJonesModifier::loadUserDefaults(Application::ExecutionContext execut
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -74,7 +74,7 @@ Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AcklandJonesAnalysisEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+	return std::make_shared<AcklandJonesAnalysisEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************

@@ -128,7 +128,7 @@ protected:
 		bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
 		/// Traces the closed contour of the surface-boundary intersection.
-		std::vector<Point2> traceContour(HalfEdgeMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
+		std::vector<Point2> traceContour(SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
 
 		/// Clips a 2d contour at a periodic boundary.
 		static void clipContour(std::vector<Point2>& input, std::array<bool,2> periodic, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
@@ -141,7 +141,7 @@ protected:
 
 	protected:
 
-		SurfaceMeshData _inputMesh;			///< The input surface mesh.
+		const SurfaceMeshData _inputMesh;	///< The input surface mesh.
 		bool _reverseOrientation;			///< Flag for inside-out display of the mesh.
 		bool _smoothShading;				///< Flag for interpolated-normal shading
 		bool _generateCapPolygons;			///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.

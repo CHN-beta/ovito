@@ -64,7 +64,7 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get the current positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -104,7 +104,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CoordinationAnalysisEngine>(dataset(), particles, posProperty, inputCell,
+	return std::make_shared<CoordinationAnalysisEngine>(executionContext, dataset(), particles, posProperty, inputCell,
 		cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
 }
 

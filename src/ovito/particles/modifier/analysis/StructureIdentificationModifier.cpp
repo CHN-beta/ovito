@@ -93,11 +93,12 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection) :
+StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection) :
+	Engine(executionContext),
 	_positions(std::move(positions)),
 	_simCell(simCell),
 	_selection(std::move(selection)),
-	_structures(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty, false)),
+	_structures(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty, false, executionContext)),
 	_inputFingerprint(std::move(fingerprint)) 
 {
 	// Create deep copies of the structure elements types, because data objects owned by the modifier should

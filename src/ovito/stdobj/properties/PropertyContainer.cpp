@@ -220,6 +220,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
 	OVITO_CHECK_POINTER(property);
+	OVITO_ASSERT(property->type() == 0 || getOOMetaClass().isValidStandardPropertyId(property->type()));
 
 	// Length of first property array determines number of data elements in the container.
 	if(properties().empty() && elementCount() == 0)

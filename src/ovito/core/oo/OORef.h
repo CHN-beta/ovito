@@ -155,6 +155,8 @@ private:
     T* px;
 
 	template<class U> friend class OORef;
+    template<class T, class U> OORef<T> friend static_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T, class U> OORef<T> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept
@@ -227,6 +229,14 @@ template<class T, class U> OORef<T> static_pointer_cast(const OORef<U>& p) noexc
     return static_cast<T*>(p.get());
 }
 
+template<class T, class U> OORef<T> static_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = static_cast<T*>(p.get());
+    p.px = nullptr;
+    return result;
+}
+
 template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexcept
 {
     return const_cast<T*>(p.get());
@@ -235,6 +245,15 @@ template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexce
 template<class T, class U> OORef<T> dynamic_pointer_cast(const OORef<U>& p) noexcept
 {
     return qobject_cast<T*>(p.get());
+}
+
+template<class T, class U> OORef<T> dynamic_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = qobject_cast<T*>(p.get());
+    if(result.px)
+        p.px = nullptr;
+    return result;
 }
 
 template<class T> QDebug operator<<(QDebug debug, const OORef<T>& p)

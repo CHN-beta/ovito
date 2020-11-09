@@ -75,7 +75,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 	/// Computes the centrosymmetry parameter of a single particle.
 	static FloatType computeCSP(NearestNeighborFinder& neighList, size_t particleIndex, CSPMode mode);
@@ -88,14 +88,15 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode) :
+		CentroSymmetryEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+			Engine(executionContext),
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false)),
+			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false, executionContext)),
 			_inputFingerprint(std::move(fingerprint)),
-			_cspHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty)) {}
+			_histogram(std::move(histogram)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -112,12 +113,6 @@ private:
 		/// Returns the simulation cell data.
 		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
-		/// Returns the CSP value range of the histogram.
-		FloatType cspHistogramRange() const { return _cspHistogramRange; }
-
-		/// Returns the histogram of computed CSP values.
-		const PropertyPtr& cspHistogram() const { return _cspHistogram; }
-
 	private:
 
 		const int _nneighbors;
@@ -127,8 +122,8 @@ private:
 		const PropertyPtr _csp;
 		ParticleOrderingFingerprint _inputFingerprint;
 
-		PropertyPtr _cspHistogram;
-		FloatType _cspHistogramRange;
+		/// The computed distribution of the CSP values.
+		DataOORef<DataTable> _histogram;
 	};
 
 	/// Specifies the number of nearest neighbors to take into account when computing the CSP.

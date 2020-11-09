@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -65,14 +65,14 @@ private:
 	public:
 
 		/// Constructor.
-		AtomicStrainEngine(DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		AtomicStrainEngine(Application::ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				FloatType cutoff, AffineMappingType affineMapping, bool useMinimumImageConvention,
 				bool calculateDeformationGradients, bool calculateStrainTensors,
 				bool calculateNonaffineSquaredDisplacements, bool calculateRotations, bool calculateStretchTensors,
 				bool selectInvalidParticles) :
-			RefConfigEngineBase(validityInterval, positions, simCell, refPositions, simCellRef,
+			RefConfigEngineBase(executionContext, validityInterval, positions, simCell, refPositions, simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_cutoff(cutoff),
 			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, refPositions->size(), ParticlesObject::DisplacementProperty, false)),

@@ -179,7 +179,7 @@ const ElementType* CreateBondsModifier::lookupParticleType(const PropertyObject*
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -223,7 +223,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<BondsEngine>(particles, posProperty,
+	return std::make_shared<BondsEngine>(executionContext, particles, posProperty,
 			typeProperty, simCell, cutoffMode(),
 			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), moleculeProperty);
 }

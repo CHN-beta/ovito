@@ -53,7 +53,7 @@ protected:
 	public:
 
 		/// Constructor.
-		PropertyComputeEngine(const TimeInterval& validityInterval,
+		PropertyComputeEngine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -135,6 +135,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<PropertyComputeEngine> createEngine(
+				Application::ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -217,7 +218,7 @@ protected:
 	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
 
 protected:
 

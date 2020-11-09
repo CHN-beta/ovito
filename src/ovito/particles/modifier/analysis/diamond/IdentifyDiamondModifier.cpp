@@ -62,7 +62,7 @@ void IdentifyDiamondModifier::loadUserDefaults(Application::ExecutionContext exe
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -76,7 +76,7 @@ Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(co
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DiamondIdentificationEngine>(dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+	return std::make_shared<DiamondIdentificationEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************

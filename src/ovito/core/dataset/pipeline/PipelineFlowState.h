@@ -70,6 +70,14 @@ public:
 		mutableData()->removeObject(obj);
 	}
 
+	/// \brief Replaces a data object with a new one.
+	bool replaceObject(const DataObject* oldObj, const DataObject* newObj) {
+		OVITO_ASSERT(data());
+		if(newObj != oldObj)
+			return mutableData()->replaceObject(oldObj, newObj);
+		return false;
+	}
+
 	/// \brief Gets the validity interval for this pipeline state.
 	/// \return The time interval during which the returned object is valid.
 	///         For times outside this interval the geometry pipeline has to be re-evaluated.

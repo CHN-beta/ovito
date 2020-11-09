@@ -144,7 +144,7 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 * Creates and initializes a computation engine that will compute the 
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// What is the reference frame number to use?
 	TimeInterval validityInterval = input.stateValidity();
@@ -207,7 +207,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	}
 
 	// Wait for the reference configuration to become available.
-	return refState.then(executor(), [this, request, modApp, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
+	return refState.then(executor(), [this, request, modApp, input = input, referenceFrame, executionContext, validityInterval](const PipelineFlowState& referenceInput) {
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(referenceInput.status().type() == PipelineStatus::Error)
@@ -224,7 +224,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 		}
 
 		// Let subclass create the compute engine.
-		return createEngineInternal(request, modApp, std::move(input), referenceInput, validityInterval);
+		return createEngineInternal(request, modApp, std::move(input), referenceInput, executionContext, validityInterval);
 	});
 }
 
@@ -232,12 +232,13 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 * Constructor.
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
+	Application::ExecutionContext executionContext, 
 	const TimeInterval& validityInterval,
 	ConstPropertyPtr positions, const SimulationCellObject* simCell,
 	ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 	ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 	AffineMappingType affineMapping, bool useMinimumImageConvention) :
-	Engine(validityInterval),
+	Engine(executionContext, validityInterval),
 	_positions(std::move(positions)),
 	_refPositions(std::move(refPositions)),
 	_identifiers(std::move(identifiers)),

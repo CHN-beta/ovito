@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,10 +26,10 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/simcell/PeriodicDomainDataObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
 #include "SurfaceMeshVertices.h"
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshRegions.h"
+#include "SurfaceMeshTopology.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -44,6 +44,15 @@ class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainDataObject
 
 public:
 
+    using size_type = SurfaceMeshTopology::size_type;
+    using vertex_index = SurfaceMeshTopology::vertex_index;
+    using edge_index = SurfaceMeshTopology::edge_index;
+    using face_index = SurfaceMeshTopology::face_index;
+    using region_index = int;
+
+    /// Special value used to indicate an invalid list index.
+    constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
+
 	/// Constructor creating an empty SurfaceMesh object.
 	Q_INVOKABLE SurfaceMesh(DataSet* dataset, const QString& title = QString());
 
@@ -55,8 +64,13 @@ public:
 	/// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
 	void verifyMeshIntegrity() const;
 
-	/// Returns the topology data after making sure it is not shared with any other owners.
-	const HalfEdgeMeshPtr& modifiableTopology();
+	/// Duplicates the SurfaceMeshTopology sub-object if it is shared with other surface meshes.
+	/// After this method returns, the sub-object is exclusively owned by the container and
+	/// can be safely modified without unwanted side effects.
+	SurfaceMeshTopology* makeTopologyMutable() {
+		OVITO_ASSERT(topology());
+	    return makeMutable(topology());
+	}
 
 	/// Duplicates the SurfaceMeshVertices sub-object if it is shared with other surface meshes.
 	/// After this method returns, the sub-object is exclusively owned by the container and
@@ -83,12 +97,12 @@ public:
 	}
 
 	/// Determines which spatial region contains the given location in space.
-	boost::optional<SurfaceMeshData::region_index> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON) const;
+	boost::optional<region_index> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON) const;
 
 private:
 
 	/// The data structure storing the topology of the surface mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(HalfEdgeMeshPtr, topology, setTopology);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshTopology, topology, setTopology);
 
 	/// The container holding the mesh vertex properties.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshVertices, vertices, setVertices);
@@ -101,7 +115,7 @@ private:
 
 	/// If the mesh has zero faces and is embedded in a fully periodic domain,
 	/// this indicates the volumetric region that fills the entire space.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, spaceFillingRegion, setSpaceFillingRegion);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index, spaceFillingRegion, setSpaceFillingRegion);
 };
 
 }	// End of namespace

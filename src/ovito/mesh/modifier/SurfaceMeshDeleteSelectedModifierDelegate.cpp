@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,10 +74,8 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 			OVITO_ASSERT(mesh.hasFaceRegions());
 			numRegions += mesh.regionCount();
 
-			// Make the topology and property arrays mutable.
-			mesh.makeTopologyMutable();
-			mesh.makeFacePropertiesMutable();
-			mesh.makeRegionPropertiesMutable();
+			// Remove selection property from the regions.
+			mesh.removeRegionProperty(SurfaceMeshRegions::SelectionProperty);
 
 			// Delete all faces that belong to one of the selected mesh regions.
 			boost::dynamic_bitset<> faceMask(mesh.faceCount());
@@ -99,13 +97,8 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 			}
 			mesh.deleteRegions(regionMask);
 
-			// Create a mutable copy of the SurfaceMesh.
-			SurfaceMesh* newSurface = state.makeMutable(existingSurface);
-			// Write the modified mesh back to the output object.
-			mesh.transferTo(newSurface);
-
-			// Remove selection property.
-			newSurface->makeRegionsMutable()->removeProperty(newSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty));
+			// Write SurfaceMesh back to the output pipeline state.
+			state.replaceObject(existingSurface, mesh.take());
 		}
 	}
 

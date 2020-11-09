@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ bool CoordinationPolyhedraModifier::OOMetaClass::isApplicableTo(const DataCollec
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -91,8 +91,16 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 	if(!selectionProperty)
 		throwException(tr("Please select particles first for which coordination polyhedra should be generated."));
 
+	// Create the output data object.
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Coordination polyhedra"));
+	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("coord-polyhedra")));
+	mesh->setDataSource(modApp);
+	mesh->setDomain(simCell);
+	mesh->setVisElement(surfaceMeshVis());
+
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<ComputePolyhedraEngine>(
+			executionContext, 
 			dataset(),
 			posProperty,
 			selectionProperty,
@@ -100,7 +108,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 			identifierProperty,
 			topologyProperty,
 			bondPeriodicImagesProperty,
-			simCell);
+			std::move(mesh));
 }
 
 /******************************************************************************
@@ -111,7 +119,8 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 	setProgressText(tr("Generating coordination polyhedra"));
 
 	// Create the "Region" face property.
-	mesh().createFaceProperty(SurfaceMeshFaces::RegionProperty);
+	SurfaceMeshData mesh(_mesh);
+	mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, executionContext());
 
 	// Determine number of selected particles.
 	ConstPropertyAccess<int> selectionArray(_selection);
@@ -141,14 +150,14 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 		bondVectors.push_back(p1);
 
 		// Construct the polyhedron (i.e. convex hull) from the bond vectors.
-		mesh().constructConvexHull(std::move(bondVectors));
+		mesh.constructConvexHull(std::move(bondVectors));
 
 		if(!incrementProgressValue())
 			return;
 	}
 
 	// Create the "Center particle" region property, which indicates the ID of the particle that is at the center of each coordination polyhedron.
-	PropertyAccess<qlonglong> centerProperty = mesh().createRegionProperty(PropertyObject::Int64, 1, 0, QStringLiteral("Center Particle"), false);
+	PropertyAccess<qlonglong> centerProperty = mesh.createRegionProperty(QStringLiteral("Center Particle"), PropertyObject::Int64, 1, 0, false);
 	ConstPropertyAccess<qlonglong> particleIdentifiersArray(_particleIdentifiers);
 	auto centerParticle = centerProperty.begin();
 	for(size_t i = 0; i < positionsArray.size(); i++) {
@@ -174,13 +183,8 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 ******************************************************************************/
 void CoordinationPolyhedraModifier::ComputePolyhedraEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
-	CoordinationPolyhedraModifier* modifier = static_object_cast<CoordinationPolyhedraModifier>(modApp->modifier());
-
-	// Create the output data object.
-	SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("coord-polyhedra"), modApp, Application::ExecutionContext::Scripting, tr("Coordination polyhedra"));
-	mesh().transferTo(meshObj);
-	meshObj->setDomain(state.getObject<SimulationCellObject>());
-	meshObj->setVisElement(modifier->surfaceMeshVis());
+	// Output the constructed mesh to the pipeline.
+	state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
 }
 
 }	// End of namespace

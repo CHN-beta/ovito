@@ -64,7 +64,7 @@ void CalculateDisplacementsModifier::loadUserDefaults(Application::ExecutionCont
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -89,7 +89,8 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 	const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DisplacementEngine>(dataset(),
+	return std::make_shared<DisplacementEngine>(
+			executionContext, dataset(),
 			validityInterval, posProperty, inputCell,
 			particles, refPosProperty, refCell,
 			identifierProperty, refIdentifierProperty,
