@@ -49,7 +49,7 @@ public:
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,
 			std::vector<Matrix3> preferredCrystalOrientations,
-			bool onlyPerfectDislocations, int defectMeshSmoothingLevel,
+			bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh,
 			int lineSmoothingLevel, FloatType linePointInterval,
 			bool doOutputInterfaceMesh);
 
@@ -75,7 +75,7 @@ public:
 	void setClusterGraph(std::shared_ptr<ClusterGraph> graph) { _clusterGraph = std::move(graph); }
 
 	/// Returns the defect interface.
-	const HalfEdgeMeshPtr& outputInterfaceMesh() const { return _outputInterfaceMesh; }
+	const DataOORef<SurfaceMeshTopology>& outputInterfaceMesh() const { return _outputInterfaceMesh; }
 
 	/// Returns the extracted dislocations.
 	const std::shared_ptr<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
@@ -110,13 +110,13 @@ private:
 	ConstPropertyPtr _crystalClusters;
 
 	/// The defect mesh produced by the modifier.
-	SurfaceMeshData _defectMesh;
+	DataOORef<SurfaceMesh> _defectMesh;
 
 	/// Indicates whether the engine should output the generated interface mesh to the pipeline for debugging purposes.
 	bool _doOutputInterfaceMesh;
 
 	/// This stores the interface mesh produced by the modifier for visualization purposes.
-	HalfEdgeMeshPtr _outputInterfaceMesh;
+	DataOORef<SurfaceMeshTopology> _outputInterfaceMesh;
 
 	/// Stores the vertex coordinates of the interface output mesh.
 	PropertyPtr _outputInterfaceMeshVerts;

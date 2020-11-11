@@ -48,7 +48,7 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		ConstPropertyPtr particleSelection,
 		ConstPropertyPtr crystalClusters,
 		std::vector<Matrix3> preferredCrystalOrientations,
-		bool onlyPerfectDislocations, int defectMeshSmoothingLevel,
+		bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh,
 		int lineSmoothingLevel, FloatType linePointInterval,
 		bool doOutputInterfaceMesh) :
 	StructureIdentificationModifier::StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
@@ -65,7 +65,7 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 	_lineSmoothingLevel(lineSmoothingLevel),
 	_linePointInterval(linePointInterval),
 	_doOutputInterfaceMesh(doOutputInterfaceMesh),
-	_defectMesh(dataset)
+	_defectMesh(std::move(defectMesh))
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	setDislocationNetwork(_dislocationTracer->network());
@@ -283,10 +283,7 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	StructureIdentificationEngine::applyResults(time, modApp, state);
 
 	// Output defect mesh.
-	SurfaceMesh* defectMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-defect-mesh"), modApp, Application::instance()->executionContext(), DislocationAnalysisModifier::tr("Defect mesh"));
-	defectMesh().transferTo(defectMeshObj);
-	defectMeshObj->setDomain(state.getObject<SimulationCellObject>());
-	defectMeshObj->setVisElement(modifier->defectMeshVis());
+	state.addObjectWithUniqueId<SurfaceMesh>(_defectMesh);
 
 	// Output interface mesh.
 	if(outputInterfaceMesh()) {

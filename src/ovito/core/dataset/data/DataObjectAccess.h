@@ -30,7 +30,11 @@
 namespace Ovito {
 
 /**
- * \brief Utility class that manages shared/exclusive access to a DataObject.
+ * \brief Utility class that manages read/write access to a DataObject. 
+ * 
+ * Initially, after the DataObject is first loaded into the accessor, it only provides read ("const") access to the object.
+ * If needed, a call to makeMutable() can be used at any time to request write access to the data object.
+ * The accessor class automatically takes care of cloning the original data object if necessary to make it safe to modify.
  */
 template<typename DataObjectClass>
 class DataObjectAccess
@@ -42,6 +46,21 @@ public:
         _constObject(object), 
         _mutableObject(object && object->isSafeToModify() ? object : nullptr) {}
 
+	/// Releases the data object from the accessor and returns it to the caller.
+	OORef<const DataObjectClass> take() noexcept {
+        _mutableObject.reset();
+        return std::move(_constObject);
+    }
+
+    /// Releases the current data object from this accessor and loads a new one.
+    void reset(const DataObjectClass* object = nullptr) noexcept {
+        _constObject = object;
+        if(object && object->isSafeToModify())
+            _mutableObject = object;
+        else
+            _mutableObject.reset();
+    }
+
     /// Returns a mutable version of the referenced data object that is safe to modify.
     /// Makes a shallow copy of the data object if necessary.
     inline DataObjectClass* makeMutable() {
@@ -50,7 +69,8 @@ public:
             if(_constObject->isSafeToModify())
                 _mutableObject = const_pointer_cast<DataObjectClass>(_constObject);
             else
-                _mutableObject = CloneHelper().cloneObject(_constObject, false);
+                _constObject = _mutableObject = CloneHelper().cloneObject(_constObject, false);
+            OVITO_ASSERT(_mutableObject->isSafeToModify());
         }
         return _mutableObject;
     }
@@ -80,7 +100,13 @@ public:
 
 private:
 
+    /// Pointer to the read-only data object, which keeps the object alive.
+    /// This pointer is always up to date.
     OORef<const DataObjectClass> _constObject;
+
+    /// Pointer to the data object after it has been made mutable.
+    /// If the data object is still read-only, because it is shared by multiple owners, then
+    /// this pointer is null. Otherwise it points to the same object as the read-only pointer.
     OORef<DataObjectClass> _mutableObject;
 };
 

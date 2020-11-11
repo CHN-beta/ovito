@@ -29,6 +29,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
@@ -203,6 +204,13 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 	const PropertyObject* clusterProperty = nullptr;
 #endif
 
+	// Create an empty surface mesh object.
+	DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Defect mesh"));
+	defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
+	defectMesh->setDataSource(modApp);
+	defectMesh->setDomain(simCell);
+	defectMesh->setVisElement(defectMeshVis());
+
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DislocationAnalysisEngine>(
 			executionContext, 
@@ -219,6 +227,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 			std::move(preferredCrystalOrientations),
 			onlyPerfectDislocations(),
 			defectMeshSmoothingLevel(),
+			std::move(defectMesh),
 			lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
 			lineCoarseningEnabled() ? linePointInterval() : 0,
 			outputInterfaceMesh());

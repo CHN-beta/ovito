@@ -46,24 +46,29 @@ SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* mesh) :
 /******************************************************************************
 * Releases the SurfaceMesh after it was modified.
 ******************************************************************************/
-const SurfaceMesh* SurfaceMeshData::take() 
+OORef<const SurfaceMesh> SurfaceMeshData::take() noexcept
 {
 	if(_mesh) {
+
 		// Release the topology sub-object and write it back to the parent SurfaceMesh.
-		if(topology() != mesh()->topology()) 
-			mutableMesh()->setTopology(std::move(_topology));
+		auto topology = _topology.take();
+		if(topology != mesh()->topology()) 
+			mutableMesh()->setTopology(std::move(topology));
+
 		// Release the sub-object property containers and write them back to the parent SurfaceMesh.
-		const SurfaceMeshVertices* vertices = static_object_cast<SurfaceMeshVertices>(_vertices.take());
+		auto vertices = static_object_cast<const SurfaceMeshVertices>(_vertices.take());
 		if(vertices != _mesh->vertices()) 
 			mutableMesh()->setVertices(std::move(vertices));
-		const SurfaceMeshFaces* faces = static_object_cast<SurfaceMeshFaces>(_faces.take());
+
+		auto faces = static_object_cast<const SurfaceMeshFaces>(_faces.take());
 		if(faces != _mesh->faces()) 
 			mutableMesh()->setFaces(std::move(faces));
-		const SurfaceMeshRegions* regions = static_object_cast<SurfaceMeshRegions>(_regions.take());
+
+		auto regions = static_object_cast<const SurfaceMeshRegions>(_regions.take());
 		if(regions != _mesh->regions()) 
 			mutableMesh()->setRegions(std::move(regions));
 	}
-	return _mesh;
+	return _mesh.take();
 }
 
 /******************************************************************************

@@ -133,7 +133,7 @@ private:
 		ConstPropertyPtr _property;
 
 		/// The surface mesh produced by the modifier.
-		DataOORef<SurfaceMesh> _mesh;
+		DataOORef<const SurfaceMesh> _mesh;
 
 		/// The computed histogram of the input field values.
 		DataOORef<DataTable> _histogram;

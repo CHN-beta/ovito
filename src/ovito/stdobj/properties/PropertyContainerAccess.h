@@ -51,11 +51,25 @@ public:
 	/// Destructor.
 	~PropertyContainerAccess() {
 		// Make sure we don't leave a modified container in an inconsistent state.
-		take();
+		reset();
 	}
 
-	/// Returns the modified property container.
-	const PropertyContainer* take() {
+    /// Releases the current container from this accessor and loads a new one.
+    void reset(const PropertyContainer* newContainer = nullptr) noexcept {
+		OVITO_ASSERT(newContainer == nullptr || newContainer != container());
+		if(container()) {
+			// Write changed element count back to the old container before releasing it.
+			if(container()->elementCount() != _elementCount)
+				mutableContainer()->setElementCount(_elementCount);
+		}
+		_container.reset(newContainer);
+		_elementCount = newContainer ? newContainer->elementCount() : 0;
+		_cachedPointers = { getPropertyMemory(CachedPropertyTypes)... };
+		_mutableCachedPointers.fill(nullptr);
+    }
+
+	/// Releases the current property container and returns it to the caller.
+	OORef<const PropertyContainer> take() {
 		if(container()) {
 			// Write changed element count back to the container before releasing it.
 			if(container()->elementCount() != _elementCount)
@@ -64,7 +78,7 @@ public:
 			_mutableCachedPointers.fill(nullptr);
 			_allPropertiesMutable = false;
 		}
-		return _container;
+		return _container.take();
 	}
 
 	/// Returns the number of data elements in each of the property arrays.
@@ -232,19 +246,27 @@ public:
 	void copyElement(size_t fromIndex, size_t toIndex) {
 		OVITO_ASSERT(fromIndex < elementCount());
 		OVITO_ASSERT(toIndex < elementCount());
-		OVITO_ASSERT(false); // to be implemented
-
-//            for(auto& prop : _mutableVertexProperties) {
-//                OVITO_ASSERT(prop.size() == vertexCount());
-//                std::memcpy(prop.data(vertex, 0), prop.cdata(prop.size() - 1, 0), prop.stride());
-//            }
+		for(PropertyObject* property : mutableProperties()) {
+			OVITO_ASSERT(property->size() == elementCount());
+			std::memcpy(property->buffer() + toIndex * property->stride(), property->cbuffer() + fromIndex * property->stride(), property->stride());
+		}
 	}
 
 	/// Reduces the size of all property arrays, removing elements for which
 	/// the corresponding bits in the bit array are set.
 	void filterResize(const boost::dynamic_bitset<>& mask) {
 		OVITO_ASSERT(mask.size() == elementCount());
-		OVITO_ASSERT(false); // to be implemented
+		for(PropertyObject* property : mutableProperties()) {
+			OVITO_ASSERT(property->size() == elementCount());
+			property->filterResize(mask);
+
+#ifdef OVITO_DEBUG
+			// Note: filterResize() should never reallocate memory.
+			auto pindex = cachedPropertyIndex(property->type());
+			if(pindex < CachedPropertyCount)
+				OVITO_ASSERT(_cachedPointers[pindex] == _mutableCachedPointers[pindex] && _cachedPointers[pindex] == property->cbuffer());
+#endif
+		}
 	}
 
     /// Exchanges the contents of this data structure with another structure.
@@ -271,7 +293,7 @@ private:
 		if(!_allPropertiesMutable) {
 			// Note: Our manipulations made to the PropertyContainer should never get recorded on the undo stack.
 			// The PropertyContainerAccess class must not be used to perform user editing actions.
-			OVITO_ASSERT(!container()->dataset()->undoStack().isRecording());
+			OVITO_ASSERT(QThread::currentThread() != container()->thread() || !container()->dataset()->undoStack().isRecording());
 
 			// Make the container and its property array mutable.
 			mutableContainer()->makePropertiesMutable();
@@ -335,12 +357,10 @@ private:
 	template<int PropertyType>
 	void* makeCachedPropertyMutable() {
 		constexpr auto pindex = cachedPropertyIndex(PropertyType);
+		static_assert(pindex < CachedPropertyCount, "This standard property is not being cached by this class template specialization.");
 		if(!_mutableCachedPointers[pindex]) {
 			if(PropertyObject* p = mutableContainer()->getMutableProperty(PropertyType)) {
 				_cachedPointers[pindex] = _mutableCachedPointers[pindex] = p->buffer();
-			}
-			else {
-				OVITO_ASSERT_MSG(false, "PropertyContainerAccess::makeCachedPropertyMutable()", "Requested property does exist in property container.");
 			}
 		}
 		return _mutableCachedPointers[pindex];

@@ -44,17 +44,19 @@ class OVITO_MESH_EXPORT SurfaceMeshData
 {
 public:
 
+    // Indexing data types:
     using size_type = SurfaceMesh::size_type;
     using vertex_index = SurfaceMesh::vertex_index;
     using edge_index = SurfaceMesh::edge_index;
     using face_index = SurfaceMesh::face_index;
     using region_index = SurfaceMesh::region_index;
 
+    // Property container access types:
     using VerticesAccess = PropertyContainerAccess<SurfaceMeshVertices::PositionProperty>;
     using FacesAccess = PropertyContainerAccess<SurfaceMeshFaces::RegionProperty>;
-    using RegionsAccess = PropertyContainerAccess<SurfaceMeshRegions::VolumeProperty, SurfaceMeshRegions::SurfaceAreaProperty>;
+    using RegionsAccess = PropertyContainerAccess<SurfaceMeshRegions::PhaseProperty, SurfaceMeshRegions::VolumeProperty, SurfaceMeshRegions::SurfaceAreaProperty>;
 
-    /// Special value used to indicate an invalid list index.
+    /// Special constant used to indicate an invalid list index (-1).
     constexpr static size_type InvalidIndex = SurfaceMesh::InvalidIndex;
 
     /// Constructor that takes an existing SurfaceMesh object.
@@ -63,11 +65,14 @@ public:
     /// Destructor. Makes sure we don't leave the modified surface mesh in an inconsistent state.
     ~SurfaceMeshData() { take(); }
 
+	/// Indicates whether this accessor contains a valid surface mesh object. 
+	explicit operator bool() const noexcept { return (bool)_mesh; }
+
 	/// Releases the SurfaceMesh after it was modified.
-	const SurfaceMesh* take();
+	OORef<const SurfaceMesh> take() noexcept;
 
     /// Exchanges the contents of this data structure with another structure.
-    void swap(SurfaceMeshData& other) {
+    void swap(SurfaceMeshData& other) noexcept {
         _mesh.swap(other._mesh);
         _topology.swap(other._topology);
         _vertices.swap(other._vertices);

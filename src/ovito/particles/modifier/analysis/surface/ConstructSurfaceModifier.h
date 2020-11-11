@@ -159,7 +159,7 @@ private:
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
 			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true) : nullptr) {}
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true, executionContext) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -205,7 +205,7 @@ private:
 		/// The total volume of the simulation cell.
 		double _totalCellVolume = 0;
 
-		/// The selection set containing the particles right on the constructed surfaces.
+		/// The selection set of particles located right on the constructed surfaces.
 		PropertyPtr _surfaceParticleSelection;
 	};
 

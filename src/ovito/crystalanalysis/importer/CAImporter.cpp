@@ -418,7 +418,22 @@ void CAImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
-			defectSurface = DataOORef<SurfaceMesh>::create(dataset(), executionContext());
+
+			// Create surface mesh.
+			SurfaceMesh* defectSurfaceObj;
+			if(const SurfaceMesh* existingSurfaceObj = state().getObject<SurfaceMesh>()) {
+				defectSurfaceObj = state().makeMutable(existingSurfaceObj);
+			}
+			else {
+				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), executionContext(), tr("Defect mesh"));
+				SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
+				vis->setShowCap(true);
+				vis->setSmoothShading(true);
+				vis->setReverseOrientation(true);
+				vis->setCapTransparency(0.5);
+				vis->setObjectTitle(tr("Defect mesh"));
+			}
+			defectSurface = SurfaceMeshData(defectSurfaceObj);
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;
 			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
@@ -489,28 +504,8 @@ void CAImporter::FrameLoader::loadFile()
 
 	simulationCell()->setCellMatrix(cell);
 	simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
-
-	// Output defect surface.
-	if(defectSurface.vertexCount()) {
-		SurfaceMesh* defectSurfaceObj;
-		if(const SurfaceMesh* existingSurfaceObj = state().getObject<SurfaceMesh>()) {
-			defectSurfaceObj = state().makeMutable(existingSurfaceObj);
-		}
-		else {
-			defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), executionContext(), tr("Defect mesh"));
-			SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
-			vis->setShowCap(true);
-			vis->setSmoothShading(true);
-			vis->setReverseOrientation(true);
-			vis->setCapTransparency(0.5);
-			vis->setObjectTitle(tr("Defect mesh"));
-		}
-		defectSurface.transferTo(defectSurfaceObj);
-		defectSurfaceObj->setDomain(simulationCell());
-	}
-	else {
-
-	}
+	if(defectSurface)
+		defectSurface.setCell(simulationCell());
 
 	// Insert cluster graph.
 	if(clusterGraph) {

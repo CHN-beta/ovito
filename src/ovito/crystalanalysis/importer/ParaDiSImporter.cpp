@@ -63,7 +63,14 @@ void ParaDiSImporter::FrameLoader::loadFile()
     setProgressMaximum(stream.underlyingSize());
 
 	// Create the container structures for holding the loaded data.
-	MicrostructureData microstructure(dataset());
+	Microstructure* microstructureObj;
+	if(const Microstructure* existingMicrostructure = state().getObject<Microstructure>()) {
+		microstructureObj = state().makeMutable(existingMicrostructure);
+	}
+	else {
+		microstructureObj = state().createObject<Microstructure>(dataSource(), executionContext());
+	}
+	MicrostructureData microstructure(microstructureObj);
 
     Vector3 minCoordinates = Vector3::Zero();
     Vector3 maxCoordinates = Vector3::Zero();

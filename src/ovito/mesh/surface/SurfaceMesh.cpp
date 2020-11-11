@@ -45,7 +45,7 @@ constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 * Constructs an empty surface mesh object.
 ******************************************************************************/
 SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomainDataObject(dataset, title),
-	_spaceFillingRegion(0)
+	_spaceFillingRegion(SurfaceMesh::InvalidIndex)
 {
 }
 
