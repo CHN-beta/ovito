@@ -106,7 +106,7 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(dataset(), particles, posProperty,
+	return std::make_shared<ElasticStrainEngine>(executionContext, dataset(), particles, posProperty,
 			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
 			calculateDeformationGradients(), calculateStrainTensors(),
 			latticeConstant(), axialRatio(), pushStrainTensorsForward());

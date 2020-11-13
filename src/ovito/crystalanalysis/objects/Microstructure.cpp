@@ -46,14 +46,14 @@ void Microstructure::loadUserDefaults(Application::ExecutionContext executionCon
 * Constructor that adopts the data from the given pipeline data object into
 * this structure.
 ******************************************************************************/
-MicrostructureData::MicrostructureData(const Microstructure* mo) : SurfaceMeshAccess(mo)
+MicrostructureAccess::MicrostructureAccess(const Microstructure* mo) : SurfaceMeshAccess(mo)
 {
 }
 
 /******************************************************************************
 * Create a dislocation line segment between two nodal points.
 ******************************************************************************/
-MicrostructureData::edge_index MicrostructureData::createDislocationSegment(vertex_index vertex1, vertex_index vertex2, const Vector3& burgersVector, region_index region)
+MicrostructureAccess::edge_index MicrostructureAccess::createDislocationSegment(vertex_index vertex1, vertex_index vertex2, const Vector3& burgersVector, region_index region)
 {
     face_index face1 = createFace({vertex1, vertex2}, region, DISLOCATION,  burgersVector, Vector3::Zero());
     face_index face2 = createFace({vertex2, vertex1}, region, DISLOCATION, -burgersVector, Vector3::Zero());
@@ -69,7 +69,7 @@ MicrostructureData::edge_index MicrostructureData::createDislocationSegment(vert
 * Merges virtual dislocation faces to build continuous lines from individual
 * dislocation segments.
 ******************************************************************************/
-void MicrostructureData::makeContinuousDislocationLines()
+void MicrostructureAccess::makeContinuousDislocationLines()
 {
     size_t joined = 0;
 

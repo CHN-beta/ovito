@@ -71,13 +71,13 @@ DislocationNetwork::DislocationNetwork(const DislocationNetwork& other) :
 DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) :
 	_clusterGraph(std::make_shared<ClusterGraph>())
 {
-	MicrostructureData microstructure(microstructureObj);
+	MicrostructureAccess microstructure(microstructureObj);
 
 	// Create clusters from microstructure regions.
 	const auto regionCount = microstructure.regionCount();
 	ConstPropertyAccess<int> phaseProperty = microstructure.regionProperty(SurfaceMeshRegions::PhaseProperty);
 	ConstPropertyAccess<Matrix3> latticeCorrespondonceProperty = microstructure.regionProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
-	for(MicrostructureData::region_index inputRegion = 1; inputRegion < regionCount; inputRegion++) {
+	for(MicrostructureAccess::region_index inputRegion = 1; inputRegion < regionCount; inputRegion++) {
 		Cluster* cluster = _clusterGraph->createCluster(inputRegion);
 		if(phaseProperty)
 			cluster->structure = phaseProperty[inputRegion];
@@ -89,10 +89,10 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 	// line. For each visited edge, we store the ID of the output dislocation line.
 	// The sign of the ID number indicates whether the input edge and the output line
 	// have the same or reverse orientation.
-	std::unordered_map<MicrostructureData::edge_index, int> visitedEdges;
+	std::unordered_map<MicrostructureAccess::edge_index, int> visitedEdges;
 
 	const auto edgeCount = microstructure.edgeCount();
-	for(MicrostructureData::edge_index inputEdge = 0; inputEdge < edgeCount; inputEdge++) {
+	for(MicrostructureAccess::edge_index inputEdge = 0; inputEdge < edgeCount; inputEdge++) {
 		// Ignore non-dislocation edges.
 		if(!microstructure.isPhysicalDislocationEdge(inputEdge)) continue;
 		// Start at an arbitrary segment of the input network which has not been converted yet.
@@ -105,16 +105,16 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 		outputSegment->line.push_back(microstructure.vertexPosition(microstructure.vertex1(inputEdge)));
 		outputSegment->coreSize.push_back(3);
 		// Extend output line along one direction until we hit a higher order node or an already converted segment.
-		MicrostructureData::edge_index currentEdge = inputEdge;
+		MicrostructureAccess::edge_index currentEdge = inputEdge;
 		for(;;) {
 			Point3 unwrappedPos2 = outputSegment->line.back() + microstructure.wrapVector(microstructure.vertexPosition(microstructure.vertex2(currentEdge)) - outputSegment->line.back());
 			outputSegment->line.push_back(unwrappedPos2);
 			outputSegment->coreSize.push_back(3);
 			visitedEdges.emplace(currentEdge, outputSegment->id + 1);
 			visitedEdges.emplace(microstructure.oppositeEdge(currentEdge), -(outputSegment->id + 1));
-			MicrostructureData::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
+			MicrostructureAccess::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
 			int armCount = 0;
-			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+			for(MicrostructureAccess::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 				if(!microstructure.isPhysicalDislocationEdge(e)) continue;
 				armCount++;
 				if(e != microstructure.oppositeEdge(currentEdge)) nextEdge = e;
@@ -134,9 +134,9 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 		currentEdge = microstructure.oppositeEdge(inputEdge);
 		OVITO_ASSERT(microstructure.isPhysicalDislocationEdge(inputEdge));
 		for(;;) {
-			MicrostructureData::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
+			MicrostructureAccess::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
 			int armCount = 0;
-			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+			for(MicrostructureAccess::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 				if(!microstructure.isPhysicalDislocationEdge(e)) continue;
 				armCount++;
 				if(e != microstructure.oppositeEdge(currentEdge)) nextEdge = e;
@@ -159,10 +159,10 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 
 	// Join dislocation lines at nodes with three or more arms.
 	const auto vertexCount = microstructure.vertexCount();
-	for(MicrostructureData::edge_index vertex = 0; vertex < vertexCount; vertex++) {
+	for(MicrostructureAccess::edge_index vertex = 0; vertex < vertexCount; vertex++) {
 		if(microstructure.countDislocationArms(vertex) >= 3) {
 			DislocationNode* headNode = nullptr;
-			for(MicrostructureData::edge_index edge = microstructure.firstVertexEdge(vertex); edge != SurfaceMeshAccess::InvalidIndex; edge = microstructure.nextVertexEdge(edge)) {
+			for(MicrostructureAccess::edge_index edge = microstructure.firstVertexEdge(vertex); edge != SurfaceMeshAccess::InvalidIndex; edge = microstructure.nextVertexEdge(edge)) {
 				if(!microstructure.isPhysicalDislocationEdge(edge)) continue;
 				OVITO_ASSERT(visitedEdges.find(edge) != visitedEdges.end());
 				int edgeInfo = visitedEdges[edge];

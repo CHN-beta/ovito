@@ -88,7 +88,7 @@ protected:
 	private:
 
 		/// Connects the slip faces to form two-dimensional manifolds.
-		static void connectSlipFaces(MicrostructureData& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap);
+		static void connectSlipFaces(MicrostructureAccess& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap);
 
 		/// Sets the type of crystal ("fcc", "bcc", etc.)
 		void setLatticeStructure(ParticleType::PredefinedStructureType latticeStructure, const Matrix3& latticeOrientation) {

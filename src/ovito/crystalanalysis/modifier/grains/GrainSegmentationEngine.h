@@ -220,6 +220,7 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine1(
+			Application::ExecutionContext executionContext, 
 			DataSet* dataset, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,
@@ -432,11 +433,13 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine2(
+			Application::ExecutionContext executionContext, 
 			DataSet* dataset, 
 			std::shared_ptr<GrainSegmentationEngine1> engine1,
 			FloatType mergingThreshold, 
 			bool adoptOrphanAtoms, 
 			size_t minGrainAtomCount) :
+		Engine(executionContext),
 		_engine1(std::move(engine1)),
 		_numParticles(_engine1->_numParticles),
 		_mergingThreshold(mergingThreshold),

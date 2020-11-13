@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,8 @@ private:
 	public:
 
 		/// Constructor.
-		SimplifyMicrostructureEngine(const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
+		SimplifyMicrostructureEngine(Application::ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
+			Engine(executionContext),
 			_microstructure(microstructureObj),
             _smoothingLevel(smoothingLevel),
             _kPB(kPB),
@@ -88,19 +89,13 @@ private:
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-		/// Returns the output microstructure.
-		const MicrostructureData& microstructure() const { return _microstructure; }
-
-		/// Returns the input simulation cell.
-		const SimulationCellObject* cell() const { return microstructure().cell(); }
-
 	private:
 
         /// Performs one iteration of the smoothing algorithm.
-        void smoothMeshIteration(FloatType prefactor);
+        void smoothMeshIteration(MicrostructureAccess& microstructureData, FloatType prefactor);
 
 		/// The microstructure modified by the modifier.
-		MicrostructureData _microstructure;
+		DataOORef<const Microstructure> _microstructure;
         int _smoothingLevel;
         FloatType _kPB;
         FloatType _lambda;

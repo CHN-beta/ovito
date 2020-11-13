@@ -121,13 +121,13 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 		std::deque<Point3> line(2);
 		microstructureObj->verifyMeshIntegrity();
 		const PropertyObject* phaseProperty = microstructureObj->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-		MicrostructureData mdata(microstructureObj);
+		const MicrostructureAccess mdata(microstructureObj);
 		// Since every dislocation line is represented by a pair two directed lines in the data structure,
 		// make sure we render only every other dislocation line (the "even" ones).
-		for(MicrostructureData::face_index face = 0; face < mdata.faceCount(); face += 2) {
+		for(MicrostructureAccess::face_index face = 0; face < mdata.faceCount(); face += 2) {
 			if(mdata.isDislocationFace(face)) {
 				const Vector3& b = mdata.burgersVector(face);
-				MicrostructureData::region_index region = mdata.faceRegion(face);
+				MicrostructureAccess::region_index region = mdata.faceRegion(face);
 
 				// Determine if the display of dislocations of this type is enabled.
 				int phaseId = mdata.regionPhase(region);
@@ -145,7 +145,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 				}
 
 				// Walk along the sequence of segments that make up the continous dislocation line.
-				MicrostructureData::edge_index edge = mdata.firstFaceEdge(face);
+				MicrostructureAccess::edge_index edge = mdata.firstFaceEdge(face);
 				Point3 p = mdata.vertexPosition(mdata.vertex1(edge));
 				do {
 					line[0] = p;
@@ -154,7 +154,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 					clipDislocationLine(line, *cellObject, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
 						outputSegments.push_back({ { p1, p2 }, b, region, face });
 					});
-					MicrostructureData::vertex_index v1 = mdata.vertex1(edge);
+					MicrostructureAccess::vertex_index v1 = mdata.vertex1(edge);
 					edge = mdata.nextFaceEdge(edge);
 					if(mdata.vertex2(edge) == v1) break;	// Reached end of continuous dislocation line.
 				}

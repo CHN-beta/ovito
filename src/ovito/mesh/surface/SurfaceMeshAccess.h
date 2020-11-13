@@ -53,7 +53,7 @@ public:
 
     // Property container access types:
     using VerticesAccess = PropertyContainerAccess<SurfaceMeshVertices::PositionProperty>;
-    using FacesAccess = PropertyContainerAccess<SurfaceMeshFaces::RegionProperty>;
+    using FacesAccess = PropertyContainerAccess<SurfaceMeshFaces::RegionProperty, SurfaceMeshFaces::BurgersVectorProperty, SurfaceMeshFaces::FaceTypeProperty, SurfaceMeshFaces::CrystallographicNormalProperty>;
     using RegionsAccess = PropertyContainerAccess<SurfaceMeshRegions::PhaseProperty, SurfaceMeshRegions::VolumeProperty, SurfaceMeshRegions::SurfaceAreaProperty>;
 
     /// Special constant used to indicate an invalid list index (-1).
@@ -242,7 +242,7 @@ public:
     vertex_index createVertices(CoordinatesIterator begin, CoordinatesIterator end) {
         auto nverts = std::distance(begin, end);
         vertex_index startIndex = createVertices(nverts);
-	    std::copy(begin, end, std::advance(std::begin(mutableVertexPositions()), startIndex));
+	    std::copy(std::move(begin), std::move(end), std::next(std::begin(mutableVertexPositions()), startIndex));
         return startIndex;
     }
 

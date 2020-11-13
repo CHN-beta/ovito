@@ -376,16 +376,19 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 	if(isCanceled()) return;
 	nextProgressSubStep();
 
+	// Create accessor for the input mesh data.
+	const SurfaceMeshAccess inputMeshData(inputMesh());
+
 	// Determine wheter we can simply use two-sided rendering to display faces.
 	// This will be the case case if there is no visible mesh face that has a 
 	// corresponding opposite face.
 	if(_faceSubset.empty()) {
-		_renderFacesTwoSided = std::none_of(inputMesh().topology()->begin_faces(), inputMesh().topology()->end_faces(),
-			std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh().topology(), std::placeholders::_1));
+		_renderFacesTwoSided = std::none_of(inputMeshData.topology()->begin_faces(), inputMeshData.topology()->end_faces(),
+			std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMeshData.topology(), std::placeholders::_1));
 	}
 	else {
-		_renderFacesTwoSided = std::none_of(inputMesh().topology()->begin_faces(), inputMesh().topology()->end_faces(),
-			[this](SurfaceMeshAccess::face_index face) { return _faceSubset[face] && inputMesh().hasOppositeFace(face) && _faceSubset[inputMesh().oppositeFace(face)]; });
+		_renderFacesTwoSided = std::none_of(inputMeshData.topology()->begin_faces(), inputMeshData.topology()->end_faces(),
+			[&](SurfaceMeshAccess::face_index face) { return _faceSubset[face] && inputMeshData.hasOppositeFace(face) && _faceSubset[inputMeshData.oppositeFace(face)]; });
 	}
 
 	if(isCanceled()) return;
@@ -424,7 +427,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 	ColorA defaultFaceColor(_surfaceColor);
 	ColorA selectionColor(1,0,0,1);
 
-	if(ConstPropertyAccess<Color> colorProperty = _inputMesh.faceProperty(SurfaceMeshFaces::ColorProperty)) {
+	if(ConstPropertyAccess<Color> colorProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
 		// The "Color" property of mesh faces has the highest priority.
 		// If it is present, use its information to color the triangle faces.
 		_surfaceMesh.setHasFaceColors(true);
@@ -433,10 +436,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 			*meshFaceColor++ = colorProperty[originalFace];
 		}
 	}
-	else if(ConstPropertyAccess<Color> colorProperty = _inputMesh.regionProperty(SurfaceMeshRegions::ColorProperty)) {
+	else if(ConstPropertyAccess<Color> colorProperty = _inputMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty)) {
 		// If the "Color" property of mesh regions is present, use it information to color the 
 		// mesh faces according to the region they belong to.
-		if(ConstPropertyAccess<int> regionProperty = _inputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)) {
+		if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
 			_surfaceMesh.setHasFaceColors(true);
 			size_t regionCount = colorProperty.size();
 			auto meshFaceColor = _surfaceMesh.faceColors().begin();
@@ -450,7 +453,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 		}
 	}
 
-	if(ConstPropertyAccess<int> selectionProperty = _inputMesh.faceProperty(SurfaceMeshFaces::SelectionProperty)) {
+	if(ConstPropertyAccess<int> selectionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
 		// The "Selection" property of mesh faces has the highest priority.
 		// If it is present, use it to highlight selected mesh faces.
 		if(!_surfaceMesh.hasFaceColors()) {
@@ -464,10 +467,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 			++meshFaceColor;
 		}
 	}
-	else if(ConstPropertyAccess<int> selectionProperty = _inputMesh.regionProperty(SurfaceMeshRegions::SelectionProperty)) {
+	else if(ConstPropertyAccess<int> selectionProperty = _inputMesh->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
 		// If the "Selection" property of mesh regions is present, use it information to highlight the 
 		// mesh faces that belong to selected regions.
-		if(ConstPropertyAccess<int> regionProperty = _inputMesh.faceProperty(SurfaceMeshFaces::RegionProperty)) {
+		if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
 			if(!_surfaceMesh.hasFaceColors()) {
 				_surfaceMesh.setHasFaceColors(true);
 				boost::fill(_surfaceMesh.faceColors(), defaultFaceColor);
@@ -489,7 +492,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 ******************************************************************************/
 void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 {
-	if(ConstPropertyAccess<Color> colorProperty = _inputMesh.vertexProperty(SurfaceMeshVertices::ColorProperty)) {
+	if(ConstPropertyAccess<Color> colorProperty = _inputMesh->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
 		OVITO_ASSERT(colorProperty.size() == _surfaceMesh.vertexCount());
 		if(colorProperty.size() == _surfaceMesh.vertexCount()) {
 			_surfaceMesh.setHasVertexColors(true);
@@ -508,8 +511,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 
 	beginProgressSubStepsWithWeights({1,1,1,1,1,1});
 
+	// Create accessor for the input mesh data.
+	const SurfaceMeshAccess inputMeshData(inputMesh());
+
 	// Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-	_inputMesh.convertToTriMesh(_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
+	inputMeshData.convertToTriMesh(_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
 	// Check for early abortion.
 	if(isCanceled())
@@ -529,11 +535,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	nextProgressSubStep();
 
 	// Convert vertex positions to reduced coordinates and transfer them to the output mesh.
-	OVITO_ASSERT(_surfaceMesh.vertices().size() == _inputMesh.vertexCount());
+	OVITO_ASSERT(_surfaceMesh.vertices().size() == inputMeshData.vertexCount());
 	if(cell()) {
 		SurfaceMeshAccess::vertex_index vidx = 0;
 		for(Point3& p : _surfaceMesh.vertices()) {
-			p = cell()->absoluteToReduced(_inputMesh.vertexPosition(vidx++));
+			p = cell()->absoluteToReduced(inputMeshData.vertexPosition(vidx++));
 			OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
 		}
 	}
@@ -839,9 +845,12 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 {
 	OVITO_ASSERT(cell());
 
+	// Create accessor for the input mesh data.
+	const SurfaceMeshAccess inputMeshData(inputMesh());
+
 	// Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
-    PropertyAccess<int> isFilledProperty(_inputMesh.regionProperty(SurfaceMeshRegions::IsFilledProperty));
-	bool hasRegions = isFilledProperty && _inputMesh.hasFaceRegions();
+    ConstPropertyAccess<int> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
+	bool hasRegions = isFilledProperty && inputMeshData.hasFaceRegions();
 	bool flipCapNormal = (cell()->matrix().determinant() < 0);
 
 	// Convert vertex positions to reduced coordinates.
@@ -849,10 +858,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 	if(flipCapNormal)
 		invCellMatrix.column(0) = -invCellMatrix.column(0);
 
-	std::vector<Point3> reducedPos(_inputMesh.vertexCount());
+	std::vector<Point3> reducedPos(inputMeshData.vertexCount());
 	SurfaceMeshAccess::vertex_index vidx = 0;
 	for(Point3& p : reducedPos)
-		p = invCellMatrix * _inputMesh.vertexPosition(vidx++);
+		p = invCellMatrix * inputMeshData.vertexPosition(vidx++);
 
 	int isBoxCornerInside3DRegion = -1;
 
@@ -872,7 +881,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		}
 
 		// Used to keep track of already visited faces during the current pass.
-		std::vector<bool> visitedFaces(_inputMesh.faceCount(), false);
+		std::vector<bool> visitedFaces(inputMeshData.faceCount(), false);
 
 		// The lists of 2d contours generated by clipping the 3d surface mesh.
 		std::vector<std::vector<Point2>> openContours;
@@ -887,7 +896,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
 			// Determine whether the mesh face is bordering a filled or an empty region.
 			if(hasRegions) {
-				SurfaceMeshAccess::region_index region = _inputMesh.faceRegion(face);
+				SurfaceMeshAccess::region_index region = inputMeshData.faceRegion(face);
 				if(region >= 0 && region < isFilledProperty.size()) {
 					if((bool)isFilledProperty[region] == _reverseOrientation) {
 						// Skip faces that are adjacent to an empty volumetric region.
@@ -895,9 +904,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 					}
 
 					// Also skip any two-sided faces that are part of an interior interface.
-					SurfaceMeshAccess::face_index oppositeFace = _inputMesh.oppositeFace(face);
+					SurfaceMeshAccess::face_index oppositeFace = inputMeshData.oppositeFace(face);
 					if(oppositeFace != SurfaceMeshAccess::InvalidIndex) {						
-						SurfaceMeshAccess::region_index oppositeRegion = _inputMesh.faceRegion(oppositeFace);
+						SurfaceMeshAccess::region_index oppositeRegion = inputMeshData.faceRegion(oppositeFace);
 						if(oppositeRegion >= 0 && oppositeRegion < isFilledProperty.size()) {
 							if((bool)isFilledProperty[oppositeRegion] != _reverseOrientation) {
 								continue;
@@ -907,19 +916,19 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 				}
 			}
 
-			SurfaceMeshAccess::edge_index startEdge = _inputMesh.firstFaceEdge(face);
+			SurfaceMeshAccess::edge_index startEdge = inputMeshData.firstFaceEdge(face);
 			SurfaceMeshAccess::edge_index edge = startEdge;
 			do {
-				const Point3& v1 = reducedPos[_inputMesh.vertex1(edge)];
-				const Point3& v2 = reducedPos[_inputMesh.vertex2(edge)];
+				const Point3& v1 = reducedPos[inputMeshData.vertex1(edge)];
+				const Point3& v2 = reducedPos[inputMeshData.vertex2(edge)];
 				if(v2[dim] - v1[dim] >= FloatType(0.5)) {
-					std::vector<Point2> contour = traceContour(edge, reducedPos, visitedFaces, dim);
+					std::vector<Point2> contour = traceContour(inputMeshData, edge, reducedPos, visitedFaces, dim);
 					if(contour.empty())
 						throw Exception(tr("Surface mesh is not a proper manifold."));
 					clipContour(contour, std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }}, openContours, closedContours);
 					break;
 				}
-				edge = _inputMesh.nextFaceEdge(edge);
+				edge = inputMeshData.nextFaceEdge(edge);
 			}
 			while(edge != startEdge);
 		}
@@ -1005,7 +1014,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		else {
 			if(isBoxCornerInside3DRegion == -1) {
 				if(closedContours.empty()) {
-					if(boost::optional<SurfaceMeshAccess::region_index> region = _inputMesh.locatePoint(cell()->cellOrigin(), 0, _faceSubset)) {
+					if(boost::optional<SurfaceMeshAccess::region_index> region = inputMeshData.locatePoint(cell()->cellOrigin(), 0, _faceSubset)) {
 						if(hasRegions) {
 							if(*region >= 0 && *region < isFilledProperty.size()) {
 								isBoxCornerInside3DRegion = (bool)isFilledProperty[*region];
@@ -1062,7 +1071,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 /******************************************************************************
 * Traces the closed contour of the surface-boundary intersection.
 ******************************************************************************/
-std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const
+std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const
 {
 	OVITO_ASSERT(cell());
 	size_t dim1 = (dim + 1) % 3;
@@ -1070,14 +1079,14 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(SurfaceMe
 	std::vector<Point2> contour;
 	SurfaceMeshAccess::edge_index edge = firstEdge;
 	do {
-		OVITO_ASSERT(_inputMesh.adjacentFace(edge) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(inputMeshData.adjacentFace(edge) != SurfaceMeshAccess::InvalidIndex);
 
 		// Mark face as visited.
-		visitedFaces[_inputMesh.adjacentFace(edge)] = true;
+		visitedFaces[inputMeshData.adjacentFace(edge)] = true;
 
 		// Compute intersection point.
-		Point3 v1 = reducedPos[_inputMesh.vertex1(edge)];
-		Point3 v2 = reducedPos[_inputMesh.vertex2(edge)];
+		Point3 v1 = reducedPos[inputMeshData.vertex1(edge)];
+		Point3 v2 = reducedPos[inputMeshData.vertex2(edge)];
 		Vector3 delta = v2 - v1;
 		OVITO_ASSERT(delta[dim] >= FloatType(0.5));
 
@@ -1117,14 +1126,14 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(SurfaceMe
 		// Find the face edge that crosses the boundary in the reverse direction.
 		FloatType v1d = v2[dim];
 		for(;;) {
-			edge = _inputMesh.nextFaceEdge(edge);
-			FloatType v2d = reducedPos[_inputMesh.vertex2(edge)][dim];
+			edge = inputMeshData.nextFaceEdge(edge);
+			FloatType v2d = reducedPos[inputMeshData.vertex2(edge)][dim];
 			if(v2d - v1d <= FloatType(-0.5))
 				break;
 			v1d = v2d;
 		}
 
-		edge = _inputMesh.oppositeEdge(edge);
+		edge = inputMeshData.oppositeEdge(edge);
 		if(edge == SurfaceMeshAccess::InvalidIndex) {
 			// Mesh is not closed (not a proper manifold).
 			contour.clear();

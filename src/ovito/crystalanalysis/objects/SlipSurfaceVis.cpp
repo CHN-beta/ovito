@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ SlipSurfaceVis::SlipSurfaceVis(DataSet* dataset) : SurfaceMeshVis(dataset)
 ******************************************************************************/
 SlipSurfaceVis::PrepareMeshEngine::PrepareMeshEngine(const SurfaceMesh* microstructure, QVector<Plane3> cuttingPlanes, bool smoothShading) :
         SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, std::move(cuttingPlanes), smoothShading, Color(1,1,1), false),
-        _microstructure(microstructure)
+        _microstructure(static_object_cast<Microstructure>(microstructure))
 {
     if(const PropertyObject* phaseProperty = microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty)) {
         for(const ElementType* type : phaseProperty->elementTypes()) {
@@ -70,9 +70,9 @@ void SlipSurfaceVis::PrepareMeshEngine::determineVisibleFaces()
 {
     // Determine which faces of the input surface mesh should be included in the
     // output triangle mesh.
-	HalfEdgeMesh::size_type faceCount = inputMesh().faceCount();
+	SurfaceMesh::size_type faceCount = _microstructure.faceCount();
     _faceSubset.resize(faceCount);
-	for(face_index face = 0; face < faceCount; face++) {
+	for(SurfaceMesh::face_index face = 0; face < faceCount; face++) {
         _faceSubset[face] = _microstructure.isSlipSurfaceFace(face);
     }
 }

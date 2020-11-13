@@ -67,7 +67,7 @@ protected:
 	private:
 
 		/// The input microstructure data.
-		MicrostructureData _microstructure;
+		MicrostructureAccess _microstructure;
 
 		/// Mapping of microstructure phases to standard crystal types.
 		std::map<int,ParticleType::PredefinedStructureType> _phaseStructureTypes;

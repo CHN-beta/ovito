@@ -34,20 +34,21 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
+		Application::ExecutionContext executionContext,
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
 		ConstPropertyPtr positions, const SimulationCellObject* simCell,
 		int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
 		bool calculateDeformationGradients, bool calculateStrainTensors,
 		FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
-	StructureIdentificationModifier::StructureIdentificationEngine(dataset, std::move(fingerprint), positions, simCell, {}),
+	StructureIdentificationModifier::StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, {}),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations))),
 	_inputCrystalStructure(inputCrystalStructure),
 	_latticeConstant(latticeConstant),
 	_pushStrainTensorsForward(pushStrainTensorsForward),
 	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Volumetric Strain"), false)),
-	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticStrainTensorProperty, false) : nullptr),
-	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, false) : nullptr)
+	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticStrainTensorProperty, false, executionContext) : nullptr),
+	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, false, executionContext) : nullptr)
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {

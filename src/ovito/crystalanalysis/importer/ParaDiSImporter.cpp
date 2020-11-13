@@ -70,7 +70,7 @@ void ParaDiSImporter::FrameLoader::loadFile()
 	else {
 		microstructureObj = state().createObject<Microstructure>(dataSource(), executionContext());
 	}
-	MicrostructureData microstructure(microstructureObj);
+	MicrostructureAccess microstructure(microstructureObj);
 
     Vector3 minCoordinates = Vector3::Zero();
     Vector3 maxCoordinates = Vector3::Zero();
@@ -123,7 +123,7 @@ void ParaDiSImporter::FrameLoader::loadFile()
     }
 
     // Mapping from unique node IDs (domain ID + local index) to global node index.
-    std::map<std::pair<int,int>, MicrostructureData::vertex_index> nodeMap;
+    std::map<std::pair<int,int>, MicrostructureAccess::vertex_index> nodeMap;
 
     // Absolute Burgers vector component of 1/2<111>-type dislocations.
     FloatType bmag111 = 0;
@@ -220,14 +220,14 @@ void ParaDiSImporter::FrameLoader::loadFile()
     if(std::abs(bmag110 - sqrt(1.0/2.0)) < 1e-4) {
         setLatticeStructure(ParticleType::PredefinedStructureType::FCC);
         FloatType scaleFactor = 0.5 / sqrt(1.0/2.0);
-        for(MicrostructureData::face_index face = 0; face < microstructure.faceCount(); face++) {
+        for(MicrostructureAccess::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }
     else if(std::abs(bmag111 - sqrt(1.0/3.0)) < 1e-4) {
         setLatticeStructure(ParticleType::PredefinedStructureType::BCC);
         FloatType scaleFactor = 0.5 / sqrt(1.0/3.0);
-        for(MicrostructureData::face_index face = 0; face < microstructure.faceCount(); face++) {
+        for(MicrostructureAccess::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }

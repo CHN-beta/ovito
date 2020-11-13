@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -71,7 +71,7 @@ Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEn
 		throwException(tr("No microstructure found in the modifier's input."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<SimplifyMicrostructureEngine>(microstructure, smoothingLevel(), kPB(), lambda());
+	return std::make_shared<SimplifyMicrostructureEngine>(executionContext, microstructure, smoothingLevel(), kPB(), lambda());
 }
 
 /******************************************************************************
@@ -89,24 +89,26 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::perform()
 	FloatType mu = FloatType(1) / (_kPB - FloatType(1)/_lambda);
 	setProgressMaximum(_smoothingLevel);
 
+	MicrostructureAccess microstructureData(_microstructure);
 	for(int iteration = 0; iteration < _smoothingLevel; iteration++) {
 		if(!setProgressValue(iteration)) return;
-		smoothMeshIteration(_lambda);
-		smoothMeshIteration(mu);
+		smoothMeshIteration(microstructureData, _lambda);
+		smoothMeshIteration(microstructureData, mu);
 	}
+	_microstructure = static_object_cast<const Microstructure>(microstructureData.take());
 }
 
 /******************************************************************************
 * Performs one iteration of the smoothing algorithm.
 ******************************************************************************/
-void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIteration(FloatType prefactor)
+void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIteration(MicrostructureAccess& microstructureData, FloatType prefactor)
 {
 #if 0
 	// Compute displacement for each vertex.
-	std::vector<Vector3> displacements(microstructure()->vertexCount(), Vector3::Zero());
-	std::vector<int> edgeCount(microstructure()->vertexCount(), 0);
+	std::vector<Vector3> displacements(microstructureData.vertexCount(), Vector3::Zero());
+	std::vector<int> edgeCount(microstructureData.vertexCount(), 0);
 
-    for(Microstructure::Face* face : microstructure()->faces()) {
+    for(Microstructure::Face* face : microstructureData.faces()) {
         if(face->isSlipSurfaceFace() && face->isEvenFace()) {
             Microstructure::Edge* edge = face->edges();
             do {
@@ -142,10 +144,11 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIte
 ******************************************************************************/
 void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
-	 // Output simplified microstructure to the pipeline state, overwriting the input microstructure.
-	if(const Microstructure* microstructureObj = state.getObject<Microstructure>()) {
-        microstructure().transferTo(state.makeMutable(microstructureObj));
-    }
+	// Output simplified microstructure to the pipeline state, overwriting the input microstructure.
+	if(const Microstructure* existingMicrostructure = state.getObject<Microstructure>())
+		state.replaceObject(existingMicrostructure, _microstructure);
+	else
+		state.addObject(_microstructure);
 }
 
 }	// End of namespace

@@ -434,6 +434,7 @@ void CAImporter::FrameLoader::loadFile()
 				vis->setObjectTitle(tr("Defect mesh"));
 			}
 			defectSurface = SurfaceMeshAccess(defectSurfaceObj);
+			defectSurface.clearMesh();
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;
 			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)

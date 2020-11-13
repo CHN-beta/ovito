@@ -262,7 +262,10 @@ void DislocationAnalysisEngine::perform()
 	if(_outputInterfaceMesh) {
 		_outputInterfaceMesh->setTopology(interfaceMesh().topology());
 		_outputInterfaceMesh->setSpaceFillingRegion(_defectMesh->spaceFillingRegion());
+		_outputInterfaceMesh->makeVerticesMutable()->setElementCount(interfaceMesh().vertexCount());
 		_outputInterfaceMesh->makeVerticesMutable()->createProperty(interfaceMesh().vertexProperty(SurfaceMeshVertices::PositionProperty));
+		_outputInterfaceMesh->makeFacesMutable()->setElementCount(interfaceMesh().faceCount());
+		_outputInterfaceMesh->makeRegionsMutable()->setElementCount(interfaceMesh().regionCount());
 	}
 
 	// Release data that is no longer needed.

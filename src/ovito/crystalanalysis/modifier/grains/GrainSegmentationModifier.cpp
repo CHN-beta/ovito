@@ -130,6 +130,7 @@ Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<GrainSegmentationEngine1>(
+			executionContext, 
 			dataset(),
 			particles,
 			posProperty,

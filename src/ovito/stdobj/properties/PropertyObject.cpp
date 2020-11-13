@@ -656,7 +656,9 @@ bool PropertyObject::equals(const PropertyObject& other) const
 void PropertyObject::makeWritableFromPython()
 {
 	if(!isSafeToModify())
-		throwException(tr("Modifying the values of this property is not allowed, because it is currently shared by more than one property container or data collection. Please explicitly request a mutable version of the property by using the '_' notation."));
+		throwException(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
+						"Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
+						"See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
 	_isWritableFromPython++;
 }
 
