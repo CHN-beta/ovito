@@ -161,7 +161,6 @@ public:
 
 	/// Deletes a number of elements from the end of each property array.
 	void truncateElements(size_t numElementsToTruncate) {
-		OVITO_ASSERT(numElementsToTruncate != 0);
 		OVITO_ASSERT(numElementsToTruncate <= _elementCount);
 
 		// Truncate each property array.

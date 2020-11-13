@@ -46,7 +46,7 @@ void Microstructure::loadUserDefaults(Application::ExecutionContext executionCon
 * Constructor that adopts the data from the given pipeline data object into
 * this structure.
 ******************************************************************************/
-MicrostructureData::MicrostructureData(const Microstructure* mo) : SurfaceMeshData(mo)
+MicrostructureData::MicrostructureData(const Microstructure* mo) : SurfaceMeshAccess(mo)
 {
 }
 
@@ -80,7 +80,7 @@ void MicrostructureData::makeContinuousDislocationLines()
         // Specifically look for 2-nodes which are part of continuous dislocation lines.
         int armCount = 0;
         edge_index arms[3];
-        for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshData::InvalidIndex; e = nextVertexEdge(e)) {
+        for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshAccess::InvalidIndex; e = nextVertexEdge(e)) {
             if(isPhysicalDislocationEdge(e)) {
                 arms[armCount++] = e;
                 if(armCount == 3) break;
@@ -147,8 +147,8 @@ void MicrostructureData::makeContinuousDislocationLines()
                     }
 
                     // Delete one pair of faces from the mesh.
-                    topo->setFirstFaceEdge(delFace1, SurfaceMeshData::InvalidIndex);
-                    topo->setFirstFaceEdge(delFace2, SurfaceMeshData::InvalidIndex);
+                    topo->setFirstFaceEdge(delFace1, SurfaceMeshAccess::InvalidIndex);
+                    topo->setFirstFaceEdge(delFace2, SurfaceMeshAccess::InvalidIndex);
                     topo->unlinkFromOppositeFace(delFace1);
 
                     // Make sure we delete the faces in an ordered fashion, starting from the back.

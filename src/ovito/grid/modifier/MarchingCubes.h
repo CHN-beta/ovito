@@ -24,7 +24,7 @@
 
 
 #include <ovito/grid/Grid.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 
 namespace Ovito { namespace Grid {
@@ -37,12 +37,12 @@ class OVITO_GRID_EXPORT MarchingCubes
 public:
 
     // Constructor
-    MarchingCubes(SurfaceMeshData& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false);
+    MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false);
 
     bool generateIsosurface(FloatType iso, Task& task);
 
     /// Returns the generated surface mesh.
-    const SurfaceMeshData& mesh() const { return _outputMesh; }
+    const SurfaceMeshAccess& mesh() const { return _outputMesh; }
 
 private:
 
@@ -61,10 +61,10 @@ private:
     void computeIntersectionPoints(FloatType iso, Task& promise);
 
     /// Adds triangles to the mesh.
-    void addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshData::vertex_index v12 = SurfaceMeshData::InvalidIndex);
+    void addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex);
 
     /// Adds a vertex on the current horizontal edge.
-    SurfaceMeshData::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u) {
+    SurfaceMeshAccess::vertex_index createEdgeVertexX(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -74,7 +74,7 @@ private:
     }
 
     /// Adds a vertex on the current longitudinal edge.
-    SurfaceMeshData::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u) {
+    SurfaceMeshAccess::vertex_index createEdgeVertexY(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -84,7 +84,7 @@ private:
     }
 
     /// Adds a vertex on the current vertical edge.
-    SurfaceMeshData::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u) {
+    SurfaceMeshAccess::vertex_index createEdgeVertexZ(int i, int j, int k, FloatType u) {
         OVITO_ASSERT(i >= 0 && i < _size_x);
         OVITO_ASSERT(j >= 0 && j < _size_y);
         OVITO_ASSERT(k >= 0 && k < _size_z);
@@ -94,10 +94,10 @@ private:
     }
 
     /// Adds a vertex inside the current cube.
-    SurfaceMeshData::vertex_index createCenterVertex(int i, int j, int k);
+    SurfaceMeshAccess::vertex_index createCenterVertex(int i, int j, int k);
 
     /// Accesses the pre-computed vertex on a lower edge of a specific cube.
-    SurfaceMeshData::vertex_index getEdgeVert(int i, int j, int k, int axis) const {
+    SurfaceMeshAccess::vertex_index getEdgeVert(int i, int j, int k, int axis) const {
         OVITO_ASSERT(i >= 0 && i <= _size_x);
         OVITO_ASSERT(j >= 0 && j <= _size_y);
         OVITO_ASSERT(k >= 0 && k <= _size_z);
@@ -122,7 +122,7 @@ private:
                           ///< This option is used by the VoxelGridSliceModifierDelegate to construct the slice plane.
 
     /// Vertices created along cube edges.
-    std::vector<SurfaceMeshData::vertex_index> _cubeVerts;
+    std::vector<SurfaceMeshAccess::vertex_index> _cubeVerts;
 
     FloatType     _cube[8];   ///< values of the implicit function on the active cube
     unsigned char _lut_entry; ///< cube sign representation in [0..255]
@@ -131,7 +131,7 @@ private:
     signed char _subconfig;   ///< subconfiguration of the active cube
 
     /// The generated surface mesh.
-    SurfaceMeshData& _outputMesh;
+    SurfaceMeshAccess& _outputMesh;
 
 #ifdef FLOATTYPE_FLOAT
     static constexpr FloatType _epsilon = FloatType(1e-12);

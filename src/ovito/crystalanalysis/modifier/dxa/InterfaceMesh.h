@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include "ElasticMapping.h"
 
 namespace Ovito { namespace CrystalAnalysis {
@@ -37,7 +37,7 @@ class DislocationTracer;			// defined in DislocationTracer.h
 /**
  * The interface mesh that separates the 'bad' crystal regions from the 'good' crystal regions.
  */
-class InterfaceMesh : public SurfaceMeshData
+class InterfaceMesh : public SurfaceMeshAccess
 {
 public:
 
@@ -158,8 +158,10 @@ public:
 public:
 
 	/// Constructor.
-	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshData(dataset, elasticMapping.structureAnalysis().cell()),
-		_elasticMapping(elasticMapping) {}
+	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset, Application::ExecutionContext::Scripting)),
+		_elasticMapping(elasticMapping) {
+			setCell(elasticMapping.structureAnalysis().cell());
+		}
 
 	/// Returns the mapping from the physical configuration of the system
 	/// to the stress-free imaginary configuration.
@@ -179,7 +181,7 @@ public:
 	bool createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<qlonglong> crystalClusters, Task& progress);
 
 	/// Generates the nodes and facets of the defect mesh based on the interface mesh.
-	bool generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshData& defectMesh, Task& progress);
+	bool generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshAccess& defectMesh, Task& progress);
 
 	/// Returns the list of extra per-vertex infos kept by the interface mesh.
 	std::vector<Vertex>& vertices() { return _vertices; }

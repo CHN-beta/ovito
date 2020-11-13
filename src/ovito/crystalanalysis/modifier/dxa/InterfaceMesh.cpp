@@ -82,7 +82,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 #endif
 			return 0;
 		}
-		else return SurfaceMeshData::InvalidIndex;
+		else return SurfaceMeshAccess::InvalidIndex;
 	};
 
 	// Transfer cluster vectors from tessellation edges to mesh edges.
@@ -120,7 +120,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 	OVITO_ASSERT(regionCount() == 1);
 
 	// Construct a one-sided surface mesh.
-	ManifoldConstructionHelper manifoldConstructor(executionContext(), tessellation(), *this, alpha, false, structureAnalysis().positions());
+	ManifoldConstructionHelper manifoldConstructor(Application::ExecutionContext::Scripting, tessellation(), *this, alpha, false, structureAnalysis().positions());
 	if(!manifoldConstructor.construct(tetrahedronRegion, promise, prepareMeshFace))
 		return false;
 
@@ -136,11 +136,11 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 	// Copy the topology from the HalfEdgeMesh fields to the internal data structures of the InterfaceMesh.
 	for(vertex_index v = 0; v < vertexCount(); v++) {
 		_vertices[v]._pos = vertexPosition(v);
-		if(firstVertexEdge(v) != SurfaceMeshData::InvalidIndex)
+		if(firstVertexEdge(v) != SurfaceMeshAccess::InvalidIndex)
 			_vertices[v]._edges = &_edges[firstVertexEdge(v)];
 	}
 	for(face_index f = 0; f < faceCount(); f++) {
-		if(firstFaceEdge(f) != SurfaceMeshData::InvalidIndex)
+		if(firstFaceEdge(f) != SurfaceMeshAccess::InvalidIndex)
 			_faces[f]._edges = &_edges[firstFaceEdge(f)];
 	}
 	for(edge_index e = 0; e < edgeCount(); e++) {
@@ -150,7 +150,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 		_edges[e]._face = &_faces[adjacentFace(e)];
 		_edges[e]._nextFaceEdge = &_edges[nextFaceEdge(e)];
 		_edges[e]._prevFaceEdge = &_edges[prevFaceEdge(e)];
-		if(nextVertexEdge(e) != SurfaceMeshData::InvalidIndex)
+		if(nextVertexEdge(e) != SurfaceMeshAccess::InvalidIndex)
 			_edges[e]._nextVertexEdge = &_edges[nextVertexEdge(e)];
 	}
 
@@ -192,15 +192,15 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 /******************************************************************************
 * Generates the nodes and facets of the defect mesh based on the interface mesh.
 ******************************************************************************/
-bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshData& defectMesh, Task& progress)
+bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshAccess& defectMesh, Task& progress)
 {
 	// Adopt all vertices from the interface mesh to the defect mesh.
-	defectMesh.createVertices(vertexCoords(), vertexCoords() + vertexCount());
+	defectMesh.createVertices(std::begin(vertexPositions()), std::end(vertexPositions()));
 	defectMesh.setSpaceFillingRegion(spaceFillingRegion());
 	defectMesh.setCell(cell());
 
 	// Copy faces and half-edges.
-	std::vector<face_index> faceMap(faceCount(), SurfaceMeshData::InvalidIndex);
+	std::vector<face_index> faceMap(faceCount(), SurfaceMeshAccess::InvalidIndex);
 	auto faceMapIter = faceMap.begin();
 	std::vector<vertex_index> faceVertices;
 	face_index face_o_idx = 0;
@@ -217,7 +217,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
 		}
 
 		// Collect the vertices of the current face.
-		OVITO_ASSERT(firstFaceEdge(face_o_idx) != SurfaceMeshData::InvalidIndex);
+		OVITO_ASSERT(firstFaceEdge(face_o_idx) != SurfaceMeshAccess::InvalidIndex);
 		faceVertices.clear();
 		edge_index edge_o = firstFaceEdge(face_o_idx);
 		do {
@@ -234,7 +234,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
 	// Link opposite half-edges.
 	auto face_c = faceMap.cbegin();
 	for(face_index face_o = 0; face_o < faceMap.size(); face_o++, ++face_c) {
-		if(*face_c == SurfaceMeshData::InvalidIndex) continue;
+		if(*face_c == SurfaceMeshAccess::InvalidIndex) continue;
 		edge_index edge_o = firstFaceEdge(face_o);
 		edge_index edge_c = defectMesh.firstFaceEdge(*face_c);
 		do {
@@ -242,9 +242,9 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
 			OVITO_ASSERT(vertex2(edge_o) == defectMesh.vertex2(edge_c));
 			if(hasOppositeEdge(edge_o) && !defectMesh.hasOppositeEdge(edge_c)) {
 				face_index oppositeFace = faceMap[adjacentFace(oppositeEdge(edge_o))];
-				if(oppositeFace != SurfaceMeshData::InvalidIndex) {
+				if(oppositeFace != SurfaceMeshAccess::InvalidIndex) {
 					edge_index oppositeEdge = defectMesh.findEdge(oppositeFace, defectMesh.vertex2(edge_c), defectMesh.vertex1(edge_c));
-					OVITO_ASSERT(oppositeEdge != SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(oppositeEdge != SurfaceMeshAccess::InvalidIndex);
 					defectMesh.linkOppositeEdges(edge_c, oppositeEdge);
 				}
 			}

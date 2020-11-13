@@ -410,7 +410,7 @@ void DislocImporter::FrameLoader::loadFile()
 	// Verify dislocation network (Burgers vector conservation at nodes).
 	for(MicrostructureData::vertex_index vertex = 0; vertex < microstructure.vertexCount(); vertex++) {
 		Vector3 sum = Vector3::Zero();
-		for(auto e = microstructure.firstVertexEdge(vertex); e != SurfaceMeshData::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+		for(auto e = microstructure.firstVertexEdge(vertex); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 			if(microstructure.isPhysicalDislocationEdge(e))
 				sum += microstructure.burgersVector(microstructure.adjacentFace(e));
 		}
@@ -431,7 +431,7 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 	MicrostructureData::size_type edgeCount = microstructure.edgeCount();
 	for(MicrostructureData::edge_index edge1 = 0; edge1 < edgeCount; edge1++) {
 		// Only process edges which haven't been linked to their neighbors yet.
-		if(microstructure.nextManifoldEdge(edge1) != SurfaceMeshData::InvalidIndex) continue;
+		if(microstructure.nextManifoldEdge(edge1) != SurfaceMeshAccess::InvalidIndex) continue;
 		MicrostructureData::face_index face1 = microstructure.adjacentFace(edge1);
 		if(!microstructure.isSlipSurfaceFace(face1)) continue;
 
@@ -439,9 +439,9 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 		MicrostructureData::vertex_index vertex1 = microstructure.vertex1(edge1);
 		MicrostructureData::vertex_index vertex2 = microstructure.vertex2(edge1);
 		MicrostructureData::edge_index oppositeEdge1 = microstructure.findEdge(microstructure.oppositeFace(face1), vertex2, vertex1);
-		OVITO_ASSERT(oppositeEdge1 != SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) == SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) == SurfaceMeshData::InvalidIndex);
+		OVITO_ASSERT(oppositeEdge1 != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) == SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) == SurfaceMeshAccess::InvalidIndex);
 
 		// At an edge, either 1, 2, or 3 slip surface manifolds can meet.
 		// Here, we will link them together in the right order.
@@ -449,42 +449,42 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 		const std::pair<qulonglong,qulonglong>& edgeVertexCodes = slipSurfaceMap[face1];
 
 		// Find the other two manifolds meeting at the current edge (if they exist).
-		MicrostructureData::edge_index edge2 = SurfaceMeshData::InvalidIndex;
-		MicrostructureData::edge_index edge3 = SurfaceMeshData::InvalidIndex;
-		MicrostructureData::edge_index oppositeEdge2 = SurfaceMeshData::InvalidIndex;
-		MicrostructureData::edge_index oppositeEdge3 = SurfaceMeshData::InvalidIndex;
-		for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(vertex1); e != SurfaceMeshData::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+		MicrostructureData::edge_index edge2 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureData::edge_index edge3 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureData::edge_index oppositeEdge2 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureData::edge_index oppositeEdge3 = SurfaceMeshAccess::InvalidIndex;
+		for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(vertex1); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 			MicrostructureData::face_index face2 = microstructure.adjacentFace(e);
 			if(microstructure.vertex2(e) == vertex2 && microstructure.isSlipSurfaceFace(face2) && face2 != face1) {
 				const std::pair<qulonglong,qulonglong>& edgeVertexCodes2 = slipSurfaceMap[face2];
 				if(edgeVertexCodes.second == edgeVertexCodes2.first) {
 					OVITO_ASSERT(edgeVertexCodes.first != edgeVertexCodes2.second);
-					OVITO_ASSERT(edge2 == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(edge2 == SurfaceMeshAccess::InvalidIndex);
 					OVITO_ASSERT(!microstructure.hasOppositeEdge(e));
-					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshAccess::InvalidIndex);
 					edge2 = e;
 					oppositeEdge2 = microstructure.findEdge(microstructure.oppositeFace(face2), vertex2, vertex1);
-					OVITO_ASSERT(oppositeEdge2 != SurfaceMeshData::InvalidIndex);
-					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge2) == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(oppositeEdge2 != SurfaceMeshAccess::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge2) == SurfaceMeshAccess::InvalidIndex);
 				}
 				else {
 					OVITO_ASSERT(edgeVertexCodes.first == edgeVertexCodes2.second);
-					OVITO_ASSERT(edge3 == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(edge3 == SurfaceMeshAccess::InvalidIndex);
 					OVITO_ASSERT(!microstructure.hasOppositeEdge(e));
-					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshAccess::InvalidIndex);
 					edge3 = e;
 					oppositeEdge3 = microstructure.findEdge(microstructure.oppositeFace(face2), vertex2, vertex1);
-					OVITO_ASSERT(oppositeEdge3 != SurfaceMeshData::InvalidIndex);
-					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge3) == SurfaceMeshData::InvalidIndex);
+					OVITO_ASSERT(oppositeEdge3 != SurfaceMeshAccess::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge3) == SurfaceMeshAccess::InvalidIndex);
 				}
 			}
 		}
 
-		if(edge2 != SurfaceMeshData::InvalidIndex) {
+		if(edge2 != SurfaceMeshAccess::InvalidIndex) {
 			microstructure.linkOppositeEdges(edge1, oppositeEdge2);
 			microstructure.setNextManifoldEdge(edge1, edge2);
 			microstructure.setNextManifoldEdge(oppositeEdge2, oppositeEdge1);
-			if(edge3 != SurfaceMeshData::InvalidIndex) {
+			if(edge3 != SurfaceMeshAccess::InvalidIndex) {
 				microstructure.linkOppositeEdges(edge2, oppositeEdge3);
 				microstructure.linkOppositeEdges(edge3, oppositeEdge1);
 				microstructure.setNextManifoldEdge(edge2, edge3);
@@ -506,7 +506,7 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 			}
 		}
 		else {
-			if(edge3 != SurfaceMeshData::InvalidIndex) {
+			if(edge3 != SurfaceMeshAccess::InvalidIndex) {
 				microstructure.linkOppositeEdges(edge1, oppositeEdge3);
 				microstructure.linkOppositeEdges(oppositeEdge1, edge3);
 				microstructure.setNextManifoldEdge(edge1, edge3);
@@ -526,14 +526,14 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 			}
 		}
 
-		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) != SurfaceMeshData::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) != SurfaceMeshAccess::InvalidIndex);
 		OVITO_ASSERT(microstructure.vertex2(microstructure.nextManifoldEdge(edge1)) == vertex2);
 		OVITO_ASSERT(microstructure.vertex1(microstructure.nextManifoldEdge(edge1)) == vertex1);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) != SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(edge2 == SurfaceMeshData::InvalidIndex || microstructure.nextManifoldEdge(edge2) != SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(oppositeEdge2 == SurfaceMeshData::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge2) != SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(edge3 == SurfaceMeshData::InvalidIndex || microstructure.nextManifoldEdge(edge3) != SurfaceMeshData::InvalidIndex);
-		OVITO_ASSERT(oppositeEdge3 == SurfaceMeshData::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge3) != SurfaceMeshData::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(edge2 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(edge2) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(oppositeEdge2 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge2) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(edge3 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(edge3) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(oppositeEdge3 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge3) != SurfaceMeshAccess::InvalidIndex);
 	}
 }
 

@@ -226,7 +226,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1]) * _dataStride];
     };
 
-	SurfaceMeshData mesh(std::move(_mesh));
+	SurfaceMeshAccess mesh(std::move(_mesh));
 	MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
 	if(!mc.generateIsosurface(_isolevel, *this))
 		return;
@@ -296,7 +296,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(TimePoint t
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext)
 {
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;

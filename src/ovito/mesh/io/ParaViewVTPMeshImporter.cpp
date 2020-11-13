@@ -72,7 +72,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 
 	// Create the container for the mesh data to be loaded.
 	std::shared_ptr<SurfaceMeshFrameData> frameData = std::make_shared<SurfaceMeshFrameData>();
-	SurfaceMeshData& mesh = frameData->mesh();
+	SurfaceMeshAccess& mesh = frameData->mesh();
 
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -86,7 +86,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	size_t numberOfStrips = 0;
 	size_t numberOfPolys = 0;
 	size_t numberOfCells = 0;
-	SurfaceMeshData::vertex_index vertexBaseIndex = SurfaceMeshData::InvalidIndex;
+	SurfaceMeshAccess::vertex_index vertexBaseIndex = SurfaceMeshAccess::InvalidIndex;
 	std::vector<PropertyPtr> cellDataArrays;
 
 	// Parse the elements of the XML file.
@@ -147,7 +147,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			// Parse child <DataArray> element containing the connectivity information.
 			if(!xml.readNextStartElement())
 				break;
-			PropertyPtr connectivityArray = parseDataArray(xml, qMetaTypeId<SurfaceMeshData::vertex_index>());
+			PropertyPtr connectivityArray = parseDataArray(xml, qMetaTypeId<SurfaceMeshAccess::vertex_index>());
 			if(!connectivityArray)
 				break;
 			// Make sure the data array has the expected data layout.
@@ -169,7 +169,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			}
 
 			// Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
-			ConstPropertyAccess<SurfaceMeshData::vertex_index> vertexIndices(connectivityArray);
+			ConstPropertyAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
 			int previousOffset = 0;
 			for(int offset : ConstPropertyAccess<int>(offsetsArray)) {
 				if(offset < previousOffset + 3 || offset > vertexIndices.size()) {

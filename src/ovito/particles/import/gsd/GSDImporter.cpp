@@ -24,7 +24,7 @@
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
@@ -539,19 +539,19 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definit
 /******************************************************************************
 * Recursive helper function that tessellates a corner face.
 ******************************************************************************/
-static void tessellateCornerFacet(SurfaceMeshData::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshData& mesh, std::vector<Vector3>& vertexNormals, const Point3& center)
+static void tessellateCornerFacet(SurfaceMeshAccess::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshAccess& mesh, std::vector<Vector3>& vertexNormals, const Point3& center)
 {
 	if(recursiveDepth <= 1) return;
 
 	// List of edges that should be split during the next iteration.
-	std::set<SurfaceMeshData::edge_index> edgeList;
+	std::set<SurfaceMeshAccess::edge_index> edgeList;
 
 	// List of faces that should be subdivided during the next iteration.
-	std::vector<SurfaceMeshData::face_index> faceList, faceList2;
+	std::vector<SurfaceMeshAccess::face_index> faceList, faceList2;
 
 	// Initialize lists.
 	faceList.push_back(seedFace);
-	SurfaceMeshData::edge_index e = mesh.firstFaceEdge(seedFace);
+	SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(seedFace);
 	do {
 		edgeList.insert(e);
 		e = mesh.nextFaceEdge(e);
@@ -562,26 +562,26 @@ static void tessellateCornerFacet(SurfaceMeshData::face_index seedFace, int recu
 	for(int iteration = 1; iteration < recursiveDepth; iteration++) {
 
 		// Create new vertices at the midpoints of the existing edges.
-		for(SurfaceMeshData::edge_index edge : edgeList) {
+		for(SurfaceMeshAccess::edge_index edge : edgeList) {
 			Point3 midpoint = mesh.vertexPosition(mesh.vertex1(edge));
 			midpoint += mesh.vertexPosition(mesh.vertex2(edge)) - Point3::Origin();
 			Vector3 normal = (midpoint * FloatType(0.5)) - center;
 			normal.normalizeSafely();
-			SurfaceMeshData::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius);
+			SurfaceMeshAccess::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius);
 			vertexNormals.push_back(normal);
 		}
 		edgeList.clear();
 
 		// Subdivide the faces.
-		for(SurfaceMeshData::face_index face : faceList) {
+		for(SurfaceMeshAccess::face_index face : faceList) {
 			int order = mesh.topology()->countFaceEdges(face) / 2;
-			SurfaceMeshData::edge_index e = mesh.firstFaceEdge(face);
+			SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
 			for(int i = 0; i < order; i++) {
-				SurfaceMeshData::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
+				SurfaceMeshAccess::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
 				e = mesh.splitFace(e, edge2);
 				// Put edges and the sub-face itself into the list so that
 				// they get refined during the next iteration of the algorithm.
-				SurfaceMeshData::edge_index oe = mesh.oppositeEdge(e);
+				SurfaceMeshAccess::edge_index oe = mesh.oppositeEdge(e);
 				for(int j = 0; j < 3; j++) {
 					edgeList.insert((oe < mesh.oppositeEdge(oe)) ? oe : mesh.oppositeEdge(oe));
 					oe = mesh.nextFaceEdge(oe);
@@ -619,7 +619,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 
 	// Construct the convex hull of the vertices.
 	// This yields a half-edge surface mesh data structure.
-	SurfaceMeshData mesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
+	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
 	mesh.constructConvexHull(std::move(vertices));
 	mesh.joinCoplanarFaces();
 
@@ -627,22 +627,22 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 	FloatType roundingRadius = definition.value("rounding_radius").toDouble();
 	std::vector<Vector3> vertexNormals;
 	if(roundingRadius > 0) {
-		SurfaceMeshData roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
+		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
 
 		// Maps edges of the old mesh to edges of the new mesh.
-		std::vector<SurfaceMeshData::edge_index> edgeMapping(mesh.edgeCount());
+		std::vector<SurfaceMeshAccess::edge_index> edgeMapping(mesh.edgeCount());
 
 		// Copy the faces of the existing mesh over to the new mesh data structure.
-		SurfaceMeshData::size_type originalFaceCount = mesh.faceCount();
-		for(SurfaceMeshData::face_index face = 0; face <originalFaceCount; face++) {
+		SurfaceMeshAccess::size_type originalFaceCount = mesh.faceCount();
+		for(SurfaceMeshAccess::face_index face = 0; face <originalFaceCount; face++) {
 
 			// Compute the offset by which the face needs to be extruded outward.
 			Vector3 faceNormal = mesh.computeFaceNormal(face);
 			Vector3 offset = faceNormal * roundingRadius;
 
 			// Duplicate the vertices and shift them along the extrusion vector.
-			SurfaceMeshData::size_type faceVertexCount = 0;
-			SurfaceMeshData::edge_index e = mesh.firstFaceEdge(face);
+			SurfaceMeshAccess::size_type faceVertexCount = 0;
+			SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
 			do {
 				roundedMesh.createVertex(mesh.vertexPosition(mesh.vertex1(e)) + offset);
 				vertexNormals.push_back(faceNormal);
@@ -652,10 +652,10 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 			while(e != mesh.firstFaceEdge(face));
 
 			// Connect the duplicated vertices by a new face.
-			SurfaceMeshData::face_index new_f = roundedMesh.createFace(roundedMesh.topology()->end_vertices() - faceVertexCount, roundedMesh.topology()->end_vertices());
+			SurfaceMeshAccess::face_index new_f = roundedMesh.createFace(roundedMesh.topology()->end_vertices() - faceVertexCount, roundedMesh.topology()->end_vertices());
 
 			// Register the newly created edges.
-			SurfaceMeshData::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
+			SurfaceMeshAccess::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
 			do {
 				edgeMapping[e] = new_e;
 				e = mesh.nextFaceEdge(e);
@@ -665,14 +665,14 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 		}
 
 		// Insert new faces in between two faces that share an edge.
-		for(SurfaceMeshData::edge_index e = 0; e < mesh.edgeCount(); e++) {
+		for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
 			// Skip every other half-edge.
 			if(e > mesh.oppositeEdge(e)) continue;
 
-			SurfaceMeshData::edge_index edge = edgeMapping[e];
-			SurfaceMeshData::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
+			SurfaceMeshAccess::edge_index edge = edgeMapping[e];
+			SurfaceMeshAccess::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
 
-			SurfaceMeshData::face_index new_f = roundedMesh.createFace({
+			SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({
 				roundedMesh.vertex2(edge),
 				roundedMesh.vertex1(edge),
 				roundedMesh.vertex2(opposite_edge),
@@ -683,23 +683,23 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 		}
 
 		// Fill in the holes at the vertices of the old mesh.
-		for(SurfaceMeshData::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
-			SurfaceMeshData::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
-			SurfaceMeshData::edge_index border_edges[2] = {
+		for(SurfaceMeshAccess::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
+			SurfaceMeshAccess::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
+			SurfaceMeshAccess::edge_index border_edges[2] = {
 				roundedMesh.nextFaceEdge(new_edge),
 				roundedMesh.prevFaceEdge(new_edge)
 			};
-			SurfaceMeshData::vertex_index corner_vertices[2] = {
+			SurfaceMeshAccess::vertex_index corner_vertices[2] = {
 				mesh.vertex1(original_edge),
 				mesh.vertex2(original_edge)
 			};
 			for(int i = 0; i < 2; i++) {
-				SurfaceMeshData::edge_index e = border_edges[i];
+				SurfaceMeshAccess::edge_index e = border_edges[i];
 				if(roundedMesh.hasOppositeEdge(e)) continue;
-				SurfaceMeshData::face_index new_f = roundedMesh.createFace({});
-				SurfaceMeshData::edge_index edge = e;
+				SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({});
+				SurfaceMeshAccess::edge_index edge = e;
 				do {
-					SurfaceMeshData::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
+					SurfaceMeshAccess::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
 					edge = roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(edge)))));
 				}
 				while(edge != e);
@@ -710,13 +710,13 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 		}
 
 		// Tessellate the inserted edge elements.
-		for(SurfaceMeshData::edge_index e = 0; e < mesh.edgeCount(); e++) {
+		for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
 			// Skip every other half-edge.
 			if(e > mesh.oppositeEdge(e)) continue;
 
-			SurfaceMeshData::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
-			SurfaceMeshData::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
-			SurfaceMeshData::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
+			SurfaceMeshAccess::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
+			SurfaceMeshAccess::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
+			SurfaceMeshAccess::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
 
 			for(int i = 1; i < (1<<(_roundingResolution-1)); i++) {
 				edge2 = roundedMesh.splitFace(edge1, edge2);

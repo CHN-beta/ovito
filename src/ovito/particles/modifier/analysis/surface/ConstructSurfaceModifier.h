@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
@@ -191,10 +191,10 @@ private:
 		ConstPropertyPtr _particleClusters;
 
 		/// Number of filled regions that have been identified.
-		SurfaceMeshData::size_type _filledRegionCount = 0;
+		SurfaceMeshAccess::size_type _filledRegionCount = 0;
 
 		/// Number of empty regions that have been identified.
-		SurfaceMeshData::size_type _emptyRegionCount = 0;
+		SurfaceMeshAccess::size_type _emptyRegionCount = 0;
 
 		/// The computed total volume of filled regions.
 		double _totalFilledVolume = 0;

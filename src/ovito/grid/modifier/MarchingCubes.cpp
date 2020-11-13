@@ -29,7 +29,7 @@ namespace Ovito { namespace Grid {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MarchingCubes::MarchingCubes(SurfaceMeshData& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain) :
+MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain) :
     _outputMesh(outputMesh),
     _pbcFlags(outputMesh.cell()->pbcFlags()),
     _infiniteDomain(infiniteDomain),
@@ -37,12 +37,12 @@ MarchingCubes::MarchingCubes(SurfaceMeshData& outputMesh, int size_x, int size_y
     _size_y(size_y + (_pbcFlags[1] ? 0 : 1)),
     _size_z(size_z + (_pbcFlags[2] ? 0 : 1)),
     getFieldValue(std::move(field)),
-    _cubeVerts(_size_x * _size_y * _size_z * 3, SurfaceMeshData::InvalidIndex),
+    _cubeVerts(_size_x * _size_y * _size_z * 3, SurfaceMeshAccess::InvalidIndex),
     _lowerIsSolid(lowerIsSolid)
 {
     OVITO_ASSERT(outputMesh.cell());
     OVITO_ASSERT(outputMesh.regionCount() == 0);
-    OVITO_ASSERT(outputMesh.spaceFillingRegion() == SurfaceMeshData::InvalidIndex);
+    OVITO_ASSERT(outputMesh.spaceFillingRegion() == SurfaceMeshAccess::InvalidIndex);
 }
 
 /******************************************************************************
@@ -97,10 +97,10 @@ void MarchingCubes::computeIntersectionPoints(FloatType isolevel, Task& task)
                 if(std::abs(cube[4]) < _epsilon) cube[4] = _epsilon;
 
                 if(_lowerIsSolid) {
-                    if(cube[0] > 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshData::InvalidIndex);
+                    if(cube[0] > 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
                 }
                 else {
-                    if(cube[0] < 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshData::InvalidIndex);
+                    if(cube[0] < 0) _outputMesh.setSpaceFillingRegion(SurfaceMeshAccess::InvalidIndex);
                 }
                 if(cube[1]*cube[0] < 0) createEdgeVertexX(i,j,k, cube[0] / (cube[0] - cube[1]));
                 if(cube[3]*cube[0] < 0) createEdgeVertexY(i,j,k, cube[0] / (cube[0] - cube[3]));
@@ -298,7 +298,7 @@ bool MarchingCubes::testInterior(signed char s)
 ******************************************************************************/
 void MarchingCubes::processCube(int i, int j, int k)
 {
-    SurfaceMeshData::vertex_index v12 = SurfaceMeshData::InvalidIndex;
+    SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex;
     _case   = cases[_lut_entry][0];
     _config = cases[_lut_entry][1];
     _subconfig = 0;
@@ -610,9 +610,9 @@ void MarchingCubes::processCube(int i, int j, int k)
 /******************************************************************************
 * Adds triangles to the mesh.
 ******************************************************************************/
-void MarchingCubes::addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshData::vertex_index v12)
+void MarchingCubes::addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshAccess::vertex_index v12)
 {
-    SurfaceMeshData::vertex_index tv[3];
+    SurfaceMeshAccess::vertex_index tv[3];
 
     for(int t = 0; t < 3 * n; t++) {
         switch(trig[t]) {
@@ -631,7 +631,7 @@ void MarchingCubes::addTriangle(int i, int j, int k, const signed char* trig, si
             case 12: tv[t % 3] = v12; break;
             default: break;
         }
-        OVITO_ASSERT_MSG(tv[t%3] != SurfaceMeshData::InvalidIndex, "Marching cubes", "invalid triangle");
+        OVITO_ASSERT_MSG(tv[t%3] != SurfaceMeshAccess::InvalidIndex, "Marching cubes", "invalid triangle");
 
         if(t%3 == 2) {
             if(_lowerIsSolid)
@@ -645,15 +645,15 @@ void MarchingCubes::addTriangle(int i, int j, int k, const signed char* trig, si
 /******************************************************************************
 * Adds a vertex inside the current cube.
 ******************************************************************************/
-SurfaceMeshData::vertex_index MarchingCubes::createCenterVertex(int i, int j, int k)
+SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, int k)
 {
     int u = 0;
     Point3 p = Point3::Origin();
 
     // Computes the average of the intersection points of the cube
     auto addPosition = [this, &p, &u](int i, int j, int k, int axis) {
-        SurfaceMeshData::vertex_index v = getEdgeVert(i, j, k, axis);
-        if(v != SurfaceMeshData::InvalidIndex) {
+        SurfaceMeshAccess::vertex_index v = getEdgeVert(i, j, k, axis);
+        if(v != SurfaceMeshAccess::InvalidIndex) {
             const Point3& vp = mesh().vertexPosition(v);
             p.x() += vp.x();
             p.y() += vp.y();

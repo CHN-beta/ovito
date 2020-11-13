@@ -219,7 +219,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	nextProgressSubStep();
 
-	SurfaceMeshData mesh(this->mesh());
+	SurfaceMeshAccess mesh(this->mesh());
 
 	// Predefine the filled spatial regions if there is already a particle cluster assignement. 
 	if(_identifyRegions && particleClusters()) {
@@ -229,7 +229,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		if(particleClusters()->size() != 0) {
 			maxClusterId = qBound<qlonglong>(0, 
 				*boost::max_element(ConstPropertyAccess<qlonglong>(particleClusters())), 
-				std::numeric_limits<SurfaceMeshData::region_index>::max() - 1);
+				std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1);
 		}
 
 		// Create one region in the output mesh for each particle cluster.
@@ -237,7 +237,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 	}
 
 	// Helper function that determines which spatial region a filled Delaunay cell belongs to.
-	auto tetrahedronRegion = [&,clusters = ConstPropertyAccess<qlonglong>(_identifyRegions ? particleClusters() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshData::region_index {
+	auto tetrahedronRegion = [&,clusters = ConstPropertyAccess<qlonglong>(_identifyRegions ? particleClusters() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
 		if(clusters) {
 			// Decide which particle cluster the Delaunay cell belongs to.
 			// We need a tie-breaker in case the four vertex atoms belong to different clusters.
@@ -255,7 +255,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	// This callback function is called for every surface facet created by the manifold construction helper.
 	PropertyAccess<int> surfaceParticleSelectionArray(surfaceParticleSelection());
-	auto prepareMeshFace = [&](SurfaceMeshData::face_index face, const std::array<size_t,3>& vertexIndices, const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles, DelaunayTessellation::CellHandle cell) {
+	auto prepareMeshFace = [&](SurfaceMeshAccess::face_index face, const std::array<size_t,3>& vertexIndices, const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles, DelaunayTessellation::CellHandle cell) {
 		// Mark the face's corner particles as belonging to the surface.
 		if(surfaceParticleSelectionArray) {
 			for(size_t vi : vertexIndices) {
@@ -267,7 +267,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	// This callback function is called for every surface vertex created by the manifold construction helper.
 	std::vector<size_t> vertexToParticleMap;
-	auto prepareMeshVertex = [&](SurfaceMeshData::vertex_index vertex, size_t particleIndex) {
+	auto prepareMeshVertex = [&](SurfaceMeshAccess::vertex_index vertex, size_t particleIndex) {
 		OVITO_ASSERT(vertex == vertexToParticleMap.size());
 		vertexToParticleMap.push_back(particleIndex);
 	};
@@ -334,7 +334,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 	nextProgressSubStep();
 
 	// Make sure every mesh vertex is only part of one surface manifold.
-	SurfaceMeshData::size_type duplicatedVertices = mesh.makeManifold();
+	SurfaceMeshAccess::size_type duplicatedVertices = mesh.makeManifold();
 
 	nextProgressSubStep();
 	if(!mesh.smoothMesh(_smoothingLevel, *this))
@@ -348,12 +348,12 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 		// Compute surface area (total and per region) by summing up the triangle face areas.
 		setProgressMaximum(mesh.faceCount());
-		for(SurfaceMeshData::edge_index edge : mesh.firstFaceEdges()) {
+		for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
 			if(!incrementProgressValue()) return;
 			const Vector3& e1 = mesh.edgeVector(edge);
 			const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
 			FloatType faceArea = e1.cross(e2).length() / 2;
-			SurfaceMeshData::region_index region = mesh.faceRegion(mesh.adjacentFace(edge));
+			SurfaceMeshAccess::region_index region = mesh.faceRegion(mesh.adjacentFace(edge));
 			surfaceAreaProperty[region] += faceArea;
 
 			// Only count surface area of outer surface, which is bordering an empty region.
@@ -363,15 +363,15 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		}
 
 		// Compute total volumes.
-		for(SurfaceMeshData::region_index region = 0; region < _filledRegionCount; region++)
+		for(SurfaceMeshAccess::region_index region = 0; region < _filledRegionCount; region++)
 			_totalFilledVolume += mesh.regionVolume(region);
-		for(SurfaceMeshData::region_index region = _filledRegionCount; region < mesh.regionCount(); region++)
+		for(SurfaceMeshAccess::region_index region = _filledRegionCount; region < mesh.regionCount(); region++)
 			_totalEmptyVolume += mesh.regionVolume(region);
 	}
 	else {
 		// Compute total surface area by summing up the triangle face areas.
 		setProgressMaximum(mesh.faceCount());
-		for(SurfaceMeshData::edge_index edge : mesh.firstFaceEdges()) {
+		for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
 			if(!incrementProgressValue()) return;
 			const Vector3& e1 = mesh.edgeVector(edge);
 			const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));
@@ -530,7 +530,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	}
 
 	// Construct isosurface of the density field.
-	SurfaceMeshData mesh(this->mesh());
+	SurfaceMeshAccess mesh(this->mesh());
 	MarchingCubes mc(mesh, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
 	if(!mc.generateIsosurface(_isoLevel, *this))
 		return;
@@ -614,7 +614,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	nextProgressSubStep();
 
 	// Compute surface area (only total) by summing up the triangle face areas.
-	for(SurfaceMeshData::edge_index edge : mesh.firstFaceEdges()) {
+	for(SurfaceMeshAccess::edge_index edge : mesh.firstFaceEdges()) {
 		if(isCanceled()) return;
 		const Vector3& e1 = mesh.edgeVector(edge);
 		const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge));

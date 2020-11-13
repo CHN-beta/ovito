@@ -112,9 +112,9 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 			outputSegment->coreSize.push_back(3);
 			visitedEdges.emplace(currentEdge, outputSegment->id + 1);
 			visitedEdges.emplace(microstructure.oppositeEdge(currentEdge), -(outputSegment->id + 1));
-			MicrostructureData::edge_index nextEdge = SurfaceMeshData::InvalidIndex;
+			MicrostructureData::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
 			int armCount = 0;
-			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshData::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 				if(!microstructure.isPhysicalDislocationEdge(e)) continue;
 				armCount++;
 				if(e != microstructure.oppositeEdge(currentEdge)) nextEdge = e;
@@ -134,9 +134,9 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 		currentEdge = microstructure.oppositeEdge(inputEdge);
 		OVITO_ASSERT(microstructure.isPhysicalDislocationEdge(inputEdge));
 		for(;;) {
-			MicrostructureData::edge_index nextEdge = SurfaceMeshData::InvalidIndex;
+			MicrostructureData::edge_index nextEdge = SurfaceMeshAccess::InvalidIndex;
 			int armCount = 0;
-			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshData::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+			for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(microstructure.vertex2(currentEdge)); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 				if(!microstructure.isPhysicalDislocationEdge(e)) continue;
 				armCount++;
 				if(e != microstructure.oppositeEdge(currentEdge)) nextEdge = e;
@@ -162,7 +162,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 	for(MicrostructureData::edge_index vertex = 0; vertex < vertexCount; vertex++) {
 		if(microstructure.countDislocationArms(vertex) >= 3) {
 			DislocationNode* headNode = nullptr;
-			for(MicrostructureData::edge_index edge = microstructure.firstVertexEdge(vertex); edge != SurfaceMeshData::InvalidIndex; edge = microstructure.nextVertexEdge(edge)) {
+			for(MicrostructureData::edge_index edge = microstructure.firstVertexEdge(vertex); edge != SurfaceMeshAccess::InvalidIndex; edge = microstructure.nextVertexEdge(edge)) {
 				if(!microstructure.isPhysicalDislocationEdge(edge)) continue;
 				OVITO_ASSERT(visitedEdges.find(edge) != visitedEdges.end());
 				int edgeInfo = visitedEdges[edge];

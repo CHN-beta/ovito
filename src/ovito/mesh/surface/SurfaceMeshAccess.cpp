@@ -24,17 +24,17 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include "SurfaceMeshData.h"
+#include "SurfaceMeshAccess.h"
 #include "SurfaceMesh.h"
 
 namespace Ovito { namespace Mesh {
 
-constexpr SurfaceMeshData::size_type SurfaceMeshData::InvalidIndex;
+constexpr SurfaceMeshAccess::size_type SurfaceMeshAccess::InvalidIndex;
 
 /******************************************************************************
 * Constructor that takes an existing SurfaceMesh object.
 ******************************************************************************/
-SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* mesh) : 
+SurfaceMeshAccess::SurfaceMeshAccess(const SurfaceMesh* mesh) : 
 	_mesh(mesh),
 	_topology(mesh ? mesh->topology() : nullptr),
 	_vertices(mesh ? mesh->vertices() : nullptr),
@@ -46,7 +46,7 @@ SurfaceMeshData::SurfaceMeshData(const SurfaceMesh* mesh) :
 /******************************************************************************
 * Releases the SurfaceMesh after it was modified.
 ******************************************************************************/
-OORef<const SurfaceMesh> SurfaceMeshData::take() noexcept
+OORef<const SurfaceMesh> SurfaceMeshAccess::take() noexcept
 {
 	if(_mesh) {
 
@@ -74,7 +74,7 @@ OORef<const SurfaceMesh> SurfaceMeshData::take() noexcept
 /******************************************************************************
 * Fairs a closed triangle mesh.
 ******************************************************************************/
-bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, FloatType lambda)
+bool SurfaceMeshAccess::smoothMesh(int numIterations, Task& task, FloatType k_PB, FloatType lambda)
 {
 	// This is the implementation of the mesh smoothing algorithm:
 	//
@@ -136,7 +136,7 @@ bool SurfaceMeshData::smoothMesh(int numIterations, Task& task, FloatType k_PB, 
 * Signed Distance Computation Using the Angle Weighted Pseudonormal
 * IEEE Transactions on Visualization and Computer Graphics 11 (2005), Page 243
 ******************************************************************************/
-boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
+boost::optional<SurfaceMeshAccess::region_index> SurfaceMeshAccess::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
 {
 	// Determine which vertex is closest to the test point.
 	FloatType closestDistanceSq = FLOATTYPE_MAX;
@@ -171,7 +171,7 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 	size_type edgeCount = this->edgeCount();
 	for(edge_index edge = 0; edge < edgeCount; edge++) {
 		if(!faceSubset.empty() && !faceSubset[adjacentFace(edge)]) continue;
-		OVITO_ASSERT_MSG(hasOppositeEdge(edge), "SurfaceMeshData::locatePoint()", "Surface mesh is not fully closed. This should not happen.");
+		OVITO_ASSERT_MSG(hasOppositeEdge(edge), "SurfaceMeshAccess::locatePoint()", "Surface mesh is not fully closed. This should not happen.");
 		const Point3& p1 = vertexPosition(vertex1(edge));
 		const Point3& p2 = vertexPosition(vertex2(edge));
 		Vector3 edgeDir = wrapVector(p2 - p1);
@@ -311,10 +311,10 @@ boost::optional<SurfaceMeshData::region_index> SurfaceMeshData::locatePoint(cons
 * Constructs the convex hull from a set of points and adds the resulting
 * polyhedron to the mesh.
 ******************************************************************************/
-void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType epsilon)
+void SurfaceMeshAccess::constructConvexHull(std::vector<Point3> vecs, FloatType epsilon)
 {
 	// Create a new spatial region for the polyhedron in the output mesh.
-	SurfaceMeshData::region_index region = createRegion();
+	SurfaceMeshAccess::region_index region = createRegion();
 
 	if(vecs.size() < 4) return;	// Convex hull requires at least 4 input points.
 
@@ -515,7 +515,7 @@ void SurfaceMeshData::constructConvexHull(std::vector<Point3> vecs, FloatType ep
 /******************************************************************************
 * Triangulates the polygonal faces of this mesh and outputs the results as a TriMesh object.
 ******************************************************************************/
-void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+void SurfaceMeshAccess::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
 {
 	size_type faceCount = this->faceCount();
 	OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);
@@ -654,7 +654,7 @@ void SurfaceMeshData::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, 
 /******************************************************************************
 * Computes the unit normal vector of a mesh face.
 ******************************************************************************/
-Vector3 SurfaceMeshData::computeFaceNormal(face_index face) const
+Vector3 SurfaceMeshAccess::computeFaceNormal(face_index face) const
 {
 	Vector3 faceNormal = Vector3::Zero();
 
@@ -678,7 +678,7 @@ Vector3 SurfaceMeshData::computeFaceNormal(face_index face) const
 /******************************************************************************
 * Joins adjacent faces that are coplanar.
 ******************************************************************************/
-void SurfaceMeshData::joinCoplanarFaces(FloatType thresholdAngle)
+void SurfaceMeshAccess::joinCoplanarFaces(FloatType thresholdAngle)
 {
 	FloatType dotThreshold = std::cos(thresholdAngle);
 
@@ -740,7 +740,7 @@ void SurfaceMeshData::joinCoplanarFaces(FloatType thresholdAngle)
 /******************************************************************************
 * Splits a face along the edge given by two vertices of the face.
 ******************************************************************************/
-SurfaceMeshData::edge_index SurfaceMeshData::splitFace(edge_index edge1, edge_index edge2)
+SurfaceMeshAccess::edge_index SurfaceMeshAccess::splitFace(edge_index edge1, edge_index edge2)
 {
 	OVITO_ASSERT(adjacentFace(edge1) == adjacentFace(edge2));
 	OVITO_ASSERT(nextFaceEdge(edge1) != edge2);
@@ -791,7 +791,7 @@ SurfaceMeshData::edge_index SurfaceMeshData::splitFace(edge_index edge1, edge_in
 /******************************************************************************
 * Joins pairs of triangular faces to form quadrilateral faces.
 ******************************************************************************/
-void SurfaceMeshData::makeQuadrilateralFaces()
+void SurfaceMeshAccess::makeQuadrilateralFaces()
 {
 	// Visit each triangular face and its adjacent faces.
 	for(face_index face = 0; face < faceCount(); ) {
@@ -858,7 +858,7 @@ void SurfaceMeshData::makeQuadrilateralFaces()
 /******************************************************************************
 * Deletes all vertices from the mesh which are not connected to any half-edge.
 ******************************************************************************/
-void SurfaceMeshData::deleteIsolatedVertices()
+void SurfaceMeshAccess::deleteIsolatedVertices()
 {
 	for(vertex_index vertex = vertexCount() - 1; vertex >= 0; vertex--) {
 		if(firstVertexEdge(vertex) == InvalidIndex) {

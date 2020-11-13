@@ -29,7 +29,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -160,19 +160,19 @@ private:
 		DataOORef<SurfaceMesh> _polyhedraMesh;
 
 		/// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
-		PropertyObject* _adjacentCellProperty;
+		PropertyObject* _adjacentCellProperty = nullptr;
 
 		/// Output mesh region property storing the indices or identifiers of the particles to which each Voronoi cell belongs. 
-		PropertyObject* _centerParticleProperty;
+		PropertyObject* _centerParticleProperty = nullptr;
 
 		/// Output mesh region property storing the volume of each Voronoi cell. 
-		PropertyObject* _cellVolumeProperty;
+		PropertyObject* _cellVolumeProperty = nullptr;
 
 		/// Output mesh region property storing the number of faces of each Voronoi cell. 
-		PropertyObject* _cellCoordinationProperty;
+		PropertyObject* _cellCoordinationProperty = nullptr;
 
 		/// Output mesh region property storing the surface area of each Voronoi cell. 
-		PropertyObject* _surfaceAreaProperty;
+		PropertyObject* _surfaceAreaProperty = nullptr;
 
 		/// The total volume of the simulation cell.
 		FloatType _simulationBoxVolume;

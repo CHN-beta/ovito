@@ -117,7 +117,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			meshObj->setVisElement(surfaceMeshVis());
 
 			// Construct cross section mesh using a special version of the marching cubes algorithm.
-			SurfaceMeshData mesh(meshObj);
+			SurfaceMeshAccess mesh(meshObj);
 
 			// The level of subdivision.
 			const int resolution = 2;

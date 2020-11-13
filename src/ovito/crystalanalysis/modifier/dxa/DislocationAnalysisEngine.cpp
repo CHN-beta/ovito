@@ -48,9 +48,8 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		ConstPropertyPtr particleSelection,
 		ConstPropertyPtr crystalClusters,
 		std::vector<Matrix3> preferredCrystalOrientations,
-		bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh,
-		int lineSmoothingLevel, FloatType linePointInterval,
-		bool doOutputInterfaceMesh) :
+		bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
+		int lineSmoothingLevel, FloatType linePointInterval) :
 	StructureIdentificationModifier::StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
 	_simCellVolume(simCell->volume3D()),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
@@ -64,8 +63,8 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 	_defectMeshSmoothingLevel(defectMeshSmoothingLevel),
 	_lineSmoothingLevel(lineSmoothingLevel),
 	_linePointInterval(linePointInterval),
-	_doOutputInterfaceMesh(doOutputInterfaceMesh),
-	_defectMesh(std::move(defectMesh))
+	_defectMesh(std::move(defectMesh)),
+	_outputInterfaceMesh(std::move(outputInterfaceMesh))
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	setDislocationNetwork(_dislocationTracer->network());
@@ -235,7 +234,8 @@ void DislocationAnalysisEngine::perform()
 
 	// Generate the defect mesh.
 	nextProgressSubStep();
-	if(!_interfaceMesh->generateDefectMesh(*_dislocationTracer, _defectMesh, *this))
+	SurfaceMeshAccess defectMeshAccess(_defectMesh);
+	if(!_interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshAccess, *this))
 		return;
 
 #if 0
@@ -245,7 +245,7 @@ void DislocationAnalysisEngine::perform()
 	nextProgressSubStep();
 
 	// Post-process surface mesh.
-	if(_defectMeshSmoothingLevel > 0 && !_defectMesh.smoothMesh(_defectMeshSmoothingLevel, *this))
+	if(_defectMeshSmoothingLevel > 0 && !defectMeshAccess.smoothMesh(_defectMeshSmoothingLevel, *this))
 		return;
 
 	nextProgressSubStep();
@@ -259,9 +259,10 @@ void DislocationAnalysisEngine::perform()
 	endProgressSubSteps();
 
 	// Return the results of the compute engine.
-	if(_doOutputInterfaceMesh) {
-		_outputInterfaceMesh = interfaceMesh().topology();
-		_outputInterfaceMeshVerts = interfaceMesh().vertexProperty(SurfaceMeshVertices::PositionProperty);
+	if(_outputInterfaceMesh) {
+		_outputInterfaceMesh->setTopology(interfaceMesh().topology());
+		_outputInterfaceMesh->setSpaceFillingRegion(_defectMesh->spaceFillingRegion());
+		_outputInterfaceMesh->makeVerticesMutable()->createProperty(interfaceMesh().vertexProperty(SurfaceMeshVertices::PositionProperty));
 	}
 
 	// Release data that is no longer needed.
@@ -286,14 +287,8 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	state.addObjectWithUniqueId<SurfaceMesh>(_defectMesh);
 
 	// Output interface mesh.
-	if(outputInterfaceMesh()) {
-		SurfaceMesh* interfaceMeshObj = state.createObject<SurfaceMesh>(QStringLiteral("dxa-interface-mesh"), modApp, Application::instance()->executionContext(), DislocationAnalysisModifier::tr("Interface mesh"));
-		interfaceMeshObj->setTopology(outputInterfaceMesh());
-		interfaceMeshObj->vertices()->createProperty(_outputInterfaceMeshVerts);
-		interfaceMeshObj->setSpaceFillingRegion(defectMesh().spaceFillingRegion());
-		interfaceMeshObj->setDomain(state.getObject<SimulationCellObject>());
-		interfaceMeshObj->setVisElement(modifier->interfaceMeshVis());
-	}
+	if(_outputInterfaceMesh)
+		state.addObjectWithUniqueId<SurfaceMesh>(_outputInterfaceMesh);
 
 	// Output cluster graph.
 	if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())

@@ -49,18 +49,14 @@ public:
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,
 			std::vector<Matrix3> preferredCrystalOrientations,
-			bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh,
-			int lineSmoothingLevel, FloatType linePointInterval,
-			bool doOutputInterfaceMesh);
+			bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
+			int lineSmoothingLevel, FloatType linePointInterval);
 
 	/// Computes the modifier's results and stores them in this object for later retrieval.
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
 	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
-
-	/// Returns the generated defect mesh.
-	const SurfaceMeshData& defectMesh() const { return _defectMesh; }
 
 	/// Returns the array of atom cluster IDs.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -73,9 +69,6 @@ public:
 
 	/// Sets the created cluster graph.
 	void setClusterGraph(std::shared_ptr<ClusterGraph> graph) { _clusterGraph = std::move(graph); }
-
-	/// Returns the defect interface.
-	const DataOORef<SurfaceMeshTopology>& outputInterfaceMesh() const { return _outputInterfaceMesh; }
 
 	/// Returns the extracted dislocations.
 	const std::shared_ptr<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
@@ -112,14 +105,8 @@ private:
 	/// The defect mesh produced by the modifier.
 	DataOORef<SurfaceMesh> _defectMesh;
 
-	/// Indicates whether the engine should output the generated interface mesh to the pipeline for debugging purposes.
-	bool _doOutputInterfaceMesh;
-
 	/// This stores the interface mesh produced by the modifier for visualization purposes.
-	DataOORef<SurfaceMeshTopology> _outputInterfaceMesh;
-
-	/// Stores the vertex coordinates of the interface output mesh.
-	PropertyPtr _outputInterfaceMeshVerts;
+	DataOORef<SurfaceMesh> _outputInterfaceMesh;
 
 	/// This stores the cached atom-to-cluster assignments computed by the modifier.
 	PropertyPtr _atomClusters;

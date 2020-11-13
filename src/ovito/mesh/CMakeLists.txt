@@ -24,7 +24,7 @@ SET(SourceFiles
 	tri/TriMeshObject.cpp
 	tri/TriMeshVis.cpp
 	surface/SurfaceMesh.cpp
-	surface/SurfaceMeshData.cpp
+	surface/SurfaceMeshAccess.cpp
 	surface/RenderableSurfaceMesh.cpp
 	surface/SurfaceMeshVis.cpp
 	surface/SurfaceMeshTopology.cpp

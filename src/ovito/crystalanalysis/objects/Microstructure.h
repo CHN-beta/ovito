@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -35,7 +35,7 @@ namespace Ovito { namespace CrystalAnalysis {
  * The class is used in the implementation of algorithms to build up or operate on microstructure
  * data.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT MicrostructureData : public SurfaceMeshData
+class OVITO_CRYSTALANALYSIS_EXPORT MicrostructureData : public SurfaceMeshAccess
 {
 public:
 
@@ -99,7 +99,7 @@ public:
 	/// Determines the number of dislocation arms connected to the given mesh vertex.
 	int countDislocationArms(vertex_index vertex) const {
 		int armCount = 0;
-		for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshData::InvalidIndex; e = nextVertexEdge(e)) {
+		for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshAccess::InvalidIndex; e = nextVertexEdge(e)) {
 			if(isPhysicalDislocationEdge(e)) armCount++;
 		}
 		return armCount;
@@ -114,7 +114,7 @@ public:
 	/// Creates a new face without any edges.
 	/// Returns the index of the new face.
 	face_index createFace(std::initializer_list<vertex_index> vertices, region_index faceRegion, MicrostructureFaceType faceType, const Vector3& burgersVector, const Vector3& slipFacetNormal) {
-		face_index fidx = SurfaceMeshData::createFace(std::move(vertices), faceRegion);
+		face_index fidx = SurfaceMeshAccess::createFace(std::move(vertices), faceRegion);
 		faceTypes()[fidx] = faceType;
 		burgersVectors()[fidx] = burgersVector;
 		crystallographicNormals()[fidx] = slipFacetNormal;

@@ -25,7 +25,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -88,7 +88,7 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext);
+	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext);
 
 protected:
 

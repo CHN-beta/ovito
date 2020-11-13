@@ -211,6 +211,16 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 	defectMesh->setDomain(simCell);
 	defectMesh->setVisElement(defectMeshVis());
 
+	// Create an empty surface mesh object for the optional interface mesh.
+	DataOORef<SurfaceMesh> interfaceMesh;
+	if(outputInterfaceMesh()) {
+		interfaceMesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Interface mesh"));
+		interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
+		interfaceMesh->setDataSource(modApp);
+		interfaceMesh->setDomain(simCell);
+		interfaceMesh->setVisElement(interfaceMeshVis());
+	}
+
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DislocationAnalysisEngine>(
 			executionContext, 
@@ -228,9 +238,9 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 			onlyPerfectDislocations(),
 			defectMeshSmoothingLevel(),
 			std::move(defectMesh),
+			std::move(interfaceMesh),
 			lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
-			lineCoarseningEnabled() ? linePointInterval() : 0,
-			outputInterfaceMesh());
+			lineCoarseningEnabled() ? linePointInterval() : 0);
 }
 
 }	// End of namespace

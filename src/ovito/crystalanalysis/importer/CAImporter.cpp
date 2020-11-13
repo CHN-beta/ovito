@@ -138,7 +138,7 @@ void CAImporter::FrameLoader::loadFile()
 	int numClusters = 0;
 	int numClusterTransitions = 0;
 	int numDislocationSegments = 0;
-	SurfaceMeshData defectSurface;
+	SurfaceMeshAccess defectSurface;
 	ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
 	std::shared_ptr<DislocationNetwork> dislocations;
 	QVector<PatternInfo> patterns;
@@ -433,7 +433,7 @@ void CAImporter::FrameLoader::loadFile()
 				vis->setCapTransparency(0.5);
 				vis->setObjectTitle(tr("Defect mesh"));
 			}
-			defectSurface = SurfaceMeshData(defectSurfaceObj);
+			defectSurface = SurfaceMeshAccess(defectSurfaceObj);
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;
 			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
@@ -477,7 +477,7 @@ void CAImporter::FrameLoader::loadFile()
 				for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
 					if(defectSurface.hasOppositeEdge(edge)) continue;
 					SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
-					if(oppositeEdge == SurfaceMeshData::InvalidIndex)
+					if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
 						throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
 					defectSurface.linkOppositeEdges(edge, oppositeEdge);
 				}

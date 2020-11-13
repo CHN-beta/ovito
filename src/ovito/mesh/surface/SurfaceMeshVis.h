@@ -25,7 +25,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
@@ -98,7 +98,7 @@ protected:
 		virtual void perform() override;
 
 		/// Returns the input surface mesh.
-		const SurfaceMeshData& inputMesh() const { return _inputMesh; }
+		const SurfaceMeshAccess& inputMesh() const { return _inputMesh; }
 
 	protected:
 
@@ -141,7 +141,7 @@ protected:
 
 	protected:
 
-		const SurfaceMeshData _inputMesh;	///< The input surface mesh.
+		const SurfaceMeshAccess _inputMesh;	///< The input surface mesh.
 		bool _reverseOrientation;			///< Flag for inside-out display of the mesh.
 		bool _smoothShading;				///< Flag for interpolated-normal shading
 		bool _generateCapPolygons;			///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.

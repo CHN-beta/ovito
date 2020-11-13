@@ -172,9 +172,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	_simulationBoxVolume = _simCell->volume3D();
 
 	// Stores the starting vertex index and the vertex count for each Voronoi polyhedron. 
-	std::vector<std::pair<SurfaceMeshData::vertex_index, SurfaceMeshData::size_type>> polyhedraVertices;
+	std::vector<std::pair<SurfaceMeshAccess::vertex_index, SurfaceMeshAccess::size_type>> polyhedraVertices;
 
-	SurfaceMeshData polyhedraMesh(_polyhedraMesh);
+	SurfaceMeshAccess polyhedraMesh(_polyhedraMesh);
 	if(_polyhedraMesh) {
 
 		// Create the "Region" mesh face property.
@@ -261,8 +261,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		FloatType cellFaceArea = 0;
 
 		// Create Voronoi cell mesh vertices.
-		SurfaceMeshData::vertex_index meshVertexBaseIndex;
-		SurfaceMeshData::region_index meshRegionIndex = index;
+		SurfaceMeshAccess::vertex_index meshVertexBaseIndex;
+		SurfaceMeshAccess::region_index meshRegionIndex = index;
 		if(_polyhedraMesh) {
 			const Point3& center = positionsArray[index];
 			QMutexLocker locker(bondMutex);
@@ -287,7 +287,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 					FloatType area = 0;
 
 					// Create Voronoi cell mesh face.
-					SurfaceMeshData::face_index meshFace;
+					SurfaceMeshAccess::face_index meshFace;
 					if(_polyhedraMesh) {
 						QMutexLocker locker(bondMutex);
 						meshFace = polyhedraMesh.createFace({}, meshRegionIndex);
@@ -597,39 +597,39 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		// Merge mesh vertices that are shared by adjacent Voronoi polyhedra.
 
 		// Initialize disjoint set data structure to keep track which vertices have been merged with which.
-		std::vector<SurfaceMeshData::vertex_index> parents(polyhedraMesh.vertexCount());
-		std::vector<SurfaceMeshData::vertex_index> ranks(polyhedraMesh.vertexCount(), 0);
-		std::iota(parents.begin(), parents.end(), (SurfaceMeshData::vertex_index)0);
+		std::vector<SurfaceMeshAccess::vertex_index> parents(polyhedraMesh.vertexCount());
+		std::vector<SurfaceMeshAccess::vertex_index> ranks(polyhedraMesh.vertexCount(), 0);
+		std::iota(parents.begin(), parents.end(), (SurfaceMeshAccess::vertex_index)0);
 
 		// Iterate over all Voronoi faces.
-		for(SurfaceMeshData::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
+		for(SurfaceMeshAccess::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
 			if(!setProgressValueIntermittent(face)) return;
-			SurfaceMeshData::region_index region = polyhedraMesh.faceRegion(face);
+			SurfaceMeshAccess::region_index region = polyhedraMesh.faceRegion(face);
 
 			// We know for each Voronoi face which Voronoi polyhedron is on the other side. 
-			SurfaceMeshData::region_index adjacentRegion = adjacentCellArray[face];
+			SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
 			// Skip faces that are at the outer surface.
 			if(adjacentRegion < 0) continue;
 			// Skip faces that belong to a periodic polyhedron.	
 			if(adjacentRegion == region) continue;
 
 			// Iterate over all vertices of the current Voronoi face.
-			SurfaceMeshData::edge_index ffe = polyhedraMesh.firstFaceEdge(face);
-			SurfaceMeshData::edge_index edge = ffe;
+			SurfaceMeshAccess::edge_index ffe = polyhedraMesh.firstFaceEdge(face);
+			SurfaceMeshAccess::edge_index edge = ffe;
 			do {
 				// Get the coordinates of the current vertex.
-				SurfaceMeshData::vertex_index vertex = polyhedraMesh.vertex2(edge);
+				SurfaceMeshAccess::vertex_index vertex = polyhedraMesh.vertex2(edge);
 				const Point3& vertex_pos = polyhedraMesh.vertexPosition(vertex);
 
 				// Iterate over all vertices of the adjacent Voronoi cell.
 				FloatType longest_dist = 0;
 				FloatType shortest_dist = std::numeric_limits<FloatType>::max();
-				SurfaceMeshData::vertex_index closest_vertex = SurfaceMeshData::InvalidIndex;
-				for(SurfaceMeshData::vertex_index other_vertex = polyhedraVertices[adjacentRegion].first, end_vertex = other_vertex + polyhedraVertices[adjacentRegion].second; other_vertex != end_vertex; ++other_vertex) {
+				SurfaceMeshAccess::vertex_index closest_vertex = SurfaceMeshAccess::InvalidIndex;
+				for(SurfaceMeshAccess::vertex_index other_vertex = polyhedraVertices[adjacentRegion].first, end_vertex = other_vertex + polyhedraVertices[adjacentRegion].second; other_vertex != end_vertex; ++other_vertex) {
 
 					// Check if vertex has an adjacent face leading back to the current Voronoi cell.
 					bool isCandidateVertex = false;
-					for(SurfaceMeshData::edge_index adj_edge = polyhedraMesh.firstVertexEdge(other_vertex); adj_edge != SurfaceMeshData::InvalidIndex; adj_edge = polyhedraMesh.nextVertexEdge(adj_edge)) {
+					for(SurfaceMeshAccess::edge_index adj_edge = polyhedraMesh.firstVertexEdge(other_vertex); adj_edge != SurfaceMeshAccess::InvalidIndex; adj_edge = polyhedraMesh.nextVertexEdge(adj_edge)) {
 						if(adjacentCellArray[polyhedraMesh.adjacentFace(adj_edge)] == region) {
 							isCandidateVertex = true;
 							break;
@@ -647,7 +647,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 						closest_vertex = other_vertex;
 					}
 				}
-				OVITO_ASSERT(closest_vertex != SurfaceMeshData::InvalidIndex);
+				OVITO_ASSERT(closest_vertex != SurfaceMeshAccess::InvalidIndex);
 
 				// Determine a threshold distance for testing whether the two vertices should be merged.
 				FloatType distance_threshold = sqrt(longest_dist) * FloatType(1e-9);
@@ -655,12 +655,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 					// Merge the two vertices.
 
 					// Find root and make root as parent (path compression)
-					SurfaceMeshData::vertex_index parentA = parents[vertex];
+					SurfaceMeshAccess::vertex_index parentA = parents[vertex];
 					while(parentA != parents[parentA]) {
 						parentA = parents[parentA];
 					}
 					parents[vertex] = parentA;
-					SurfaceMeshData::vertex_index parentB = parents[closest_vertex];
+					SurfaceMeshAccess::vertex_index parentB = parents[closest_vertex];
 					while(parentB != parents[parentB]) {
 						parentB = parents[parentB];
 					}
@@ -688,15 +688,15 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		nextProgressSubStep();
 
 		// Transfer edges from vertices that are going to be deleted to ramining vertices.
-		for(SurfaceMeshData::edge_index edge = 0; edge < polyhedraMesh.edgeCount(); edge++) {
-			SurfaceMeshData::vertex_index new_vertex = parents[polyhedraMesh.vertex2(edge)];
+		for(SurfaceMeshAccess::edge_index edge = 0; edge < polyhedraMesh.edgeCount(); edge++) {
+			SurfaceMeshAccess::vertex_index new_vertex = parents[polyhedraMesh.vertex2(edge)];
 			polyhedraMesh.transferFaceBoundaryToVertex(edge, new_vertex);
 			if(isCanceled()) return;
 		}
 		nextProgressSubStep();
 
 		// Delete unused vertices.
-		for(SurfaceMeshData::vertex_index vertex = polyhedraMesh.vertexCount() - 1; vertex >= 0; vertex--) {
+		for(SurfaceMeshAccess::vertex_index vertex = polyhedraMesh.vertexCount() - 1; vertex >= 0; vertex--) {
 			if(parents[vertex] != vertex) {
 				polyhedraMesh.deleteVertex(vertex);
 				if(isCanceled()) return;
@@ -706,12 +706,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		setProgressMaximum(polyhedraMesh.faceCount());
 
 		// Connect pairs of internal Voronoi faces.
-		for(SurfaceMeshData::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
+		for(SurfaceMeshAccess::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
 			if(polyhedraMesh.hasOppositeFace(face)) continue;
 			if(!setProgressValueIntermittent(face)) return;
 
 			// We know for each Voronoi face which Voronoi polyhedron is on the other side.
-			SurfaceMeshData::region_index adjacentRegion = adjacentCellArray[face];
+			SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
 			// Skip faces that belong to the outer surface.
 			if(adjacentRegion < 0) continue;
 			// Periodic polyhedra pose a problem.	
@@ -719,16 +719,16 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 				throw Exception(tr("Cannot generate polyhedron mesh for this input, because at least one Voronoi cell is touching a periodic image of itself. To avoid this error you can try to use the Replicate modifier or turn off periodic boundary conditions for the simulation cell."));
 			}
 
-			SurfaceMeshData::edge_index first_edge = polyhedraMesh.firstFaceEdge(face);
-			SurfaceMeshData::vertex_index vertex1 = polyhedraMesh.vertex1(first_edge);
-			SurfaceMeshData::vertex_index vertex2 = polyhedraMesh.vertex2(first_edge);
+			SurfaceMeshAccess::edge_index first_edge = polyhedraMesh.firstFaceEdge(face);
+			SurfaceMeshAccess::vertex_index vertex1 = polyhedraMesh.vertex1(first_edge);
+			SurfaceMeshAccess::vertex_index vertex2 = polyhedraMesh.vertex2(first_edge);
 
 			// Iterate over all edges/faces adjacent to one of the vertices.
-			for(SurfaceMeshData::edge_index edge = polyhedraMesh.firstVertexEdge(vertex1); edge != SurfaceMeshData::InvalidIndex; edge = polyhedraMesh.nextVertexEdge(edge)) {
-				SurfaceMeshData::face_index adjacentFace = polyhedraMesh.adjacentFace(edge);
+			for(SurfaceMeshAccess::edge_index edge = polyhedraMesh.firstVertexEdge(vertex1); edge != SurfaceMeshAccess::InvalidIndex; edge = polyhedraMesh.nextVertexEdge(edge)) {
+				SurfaceMeshAccess::face_index adjacentFace = polyhedraMesh.adjacentFace(edge);
 				if(polyhedraMesh.faceRegion(adjacentFace) != adjacentRegion) continue;
-				SurfaceMeshData::edge_index oppositeEdge = polyhedraMesh.findEdge(adjacentFace, vertex2, vertex1);
-				if(oppositeEdge != SurfaceMeshData::InvalidIndex) {
+				SurfaceMeshAccess::edge_index oppositeEdge = polyhedraMesh.findEdge(adjacentFace, vertex2, vertex1);
+				if(oppositeEdge != SurfaceMeshAccess::InvalidIndex) {
 					OVITO_ASSERT(!polyhedraMesh.hasOppositeFace(adjacentFace));
 					polyhedraMesh.linkOppositeFaces(face, adjacentFace);
 					break;

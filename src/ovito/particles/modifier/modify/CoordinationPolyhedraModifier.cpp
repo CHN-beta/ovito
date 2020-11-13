@@ -119,7 +119,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 	setProgressText(tr("Generating coordination polyhedra"));
 
 	// Create the "Region" face property.
-	SurfaceMeshData mesh(_mesh);
+	SurfaceMeshAccess mesh(_mesh);
 	mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, executionContext());
 
 	// Determine number of selected particles.

@@ -24,7 +24,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "SurfaceMesh.h"
 #include "SurfaceMeshVis.h"
-#include "SurfaceMeshData.h"
+#include "SurfaceMeshAccess.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -114,7 +114,7 @@ void SurfaceMesh::verifyMeshIntegrity() const
 boost::optional<SurfaceMesh::region_index> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
 {
 	verifyMeshIntegrity();
-	return SurfaceMeshData(this).locatePoint(location, epsilon);
+	return SurfaceMeshAccess(this).locatePoint(location, epsilon);
 }
 
 }	// End of namespace

@@ -40,7 +40,7 @@ namespace Ovito { namespace Mesh {
 /**
  * Utility class that provides efficient access to the data of a surface mesh object.
  */
-class OVITO_MESH_EXPORT SurfaceMeshData
+class OVITO_MESH_EXPORT SurfaceMeshAccess
 {
 public:
 
@@ -60,10 +60,10 @@ public:
     constexpr static size_type InvalidIndex = SurfaceMesh::InvalidIndex;
 
     /// Constructor that takes an existing SurfaceMesh object.
-    explicit SurfaceMeshData(const SurfaceMesh* mesh = nullptr);
+    explicit SurfaceMeshAccess(const SurfaceMesh* mesh = nullptr);
 
     /// Destructor. Makes sure we don't leave the modified surface mesh in an inconsistent state.
-    ~SurfaceMeshData() { take(); }
+    ~SurfaceMeshAccess() { take(); }
 
 	/// Indicates whether this accessor contains a valid surface mesh object. 
 	explicit operator bool() const noexcept { return (bool)_mesh; }
@@ -72,7 +72,7 @@ public:
 	OORef<const SurfaceMesh> take() noexcept;
 
     /// Exchanges the contents of this data structure with another structure.
-    void swap(SurfaceMeshData& other) noexcept {
+    void swap(SurfaceMeshAccess& other) noexcept {
         _mesh.swap(other._mesh);
         _topology.swap(other._topology);
         _vertices.swap(other._vertices);
@@ -195,6 +195,18 @@ public:
 
     /// Determines the number of manifolds adjacent to a half-edge.
     int countManifolds(edge_index edge) const { return topology()->countManifolds(edge); }
+
+    /// Resets the surface mesh structure by discarding all existing vertices, faces and regions.
+    void clearMesh() {
+        mutableVertices().truncateElements(vertexCount());
+        mutableFaces().truncateElements(faceCount());
+        mutableRegions().truncateElements(regionCount());
+        mutableTopology()->clear();
+        mutableMesh()->setSpaceFillingRegion(InvalidIndex);
+        OVITO_ASSERT(vertexCount() == 0);
+        OVITO_ASSERT(faceCount() == 0);
+        OVITO_ASSERT(regionCount() == 0);
+    }
 
     /// Returns the position of the i-th mesh vertex.
     const Point3& vertexPosition(vertex_index vertex) const {
