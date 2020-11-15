@@ -100,7 +100,7 @@ VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGrid::loadUserDefaults(Application::ExecutionContext executionContext)
+void VoxelGrid::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create and attach a default visualization element for rendering the grid.
 	if(!visElement()) {
@@ -112,7 +112,7 @@ void VoxelGrid::loadUserDefaults(Application::ExecutionContext executionContext)
 		setVisElement(std::move(gridVis));
 	}
 
-	PropertyContainer::loadUserDefaults(executionContext);
+	PropertyContainer::initializeObject(executionContext);
 }
 
 /******************************************************************************

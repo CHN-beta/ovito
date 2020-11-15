@@ -90,7 +90,7 @@ public:
 	/// Creates a property for the y-values of the data points.
 	PropertyObject* createYProperty(const QString& name, int dataType, size_t componentCount, bool initializeMemory, QStringList componentNames = QStringList()) {
 		PropertyPtr property = DataTable::OOClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, 0, name, initializeMemory, DataTable::YProperty, std::move(componentNames));
-		return createProperty(std::move(property));
+		return const_cast<PropertyObject*>(createProperty(std::move(property)));
 	}
 
 private:

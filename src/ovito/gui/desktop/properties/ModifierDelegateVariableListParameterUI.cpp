@@ -193,11 +193,10 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
-		OVITO_ASSERT(false); // No implemented yet.
-		
-	//	QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
-	//	ModifierDelegateParameterUI::populateComboBox(comboBox, static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
-	//		newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
+		QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
+		QComboBox* comboBox = _delegateBoxes[listIndex];
+		ModifierDelegateParameterUI::populateComboBox(comboBox, static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
+			newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
 	}
 	ParameterUI::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }

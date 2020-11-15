@@ -273,6 +273,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 			throw ex.prependGeneralMessage(tr("Parsing error in line %1 of oxDNA configuration file (nucleotide index %2).").arg(stream.lineNumber()).arg(i));
 		}
 	}
+	columnParser.reset();
 
 	// Detect if there are more simulation frames following in the file.
 	if(!stream.eof())

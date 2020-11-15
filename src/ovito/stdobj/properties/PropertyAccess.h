@@ -33,9 +33,63 @@ namespace Ovito { namespace StdObj {
 namespace detail {
 
 // Base class that stores a pointer to an underlying PropertyObject.
-template<class PointerType>
+template<class PointerType, bool Writable>
 class PropertyAccessBase
 {
+protected:
+
+	/// (Smart-)pointer to the PropertyObject whose data is being accessed.
+	PointerType _property{};	
+
+	/// Constructor that creates an invalid access object not associated with any property object.
+	PropertyAccessBase() noexcept = default;
+
+	/// Constructor that associates the access object with a property object (may be null).
+	PropertyAccessBase(PointerType property) noexcept : _property(std::move(property)) {
+#ifdef OVITO_DEBUG
+		if(this->_property) {
+			if(Writable) this->_property->prepareWriteAccess();
+			else this->_property->prepareReadAccess();
+		}
+#endif
+	}
+
+	/// Copy construction (only available for read-only accessors).
+	PropertyAccessBase(const PropertyAccessBase& other) : _property(other._property) {
+#ifdef OVITO_DEBUG
+		if(this->_property) {
+			if(Writable) this->_property->prepareWriteAccess();
+			else this->_property->prepareReadAccess();
+		}
+#endif
+	}
+
+	/// Copy assignment.
+	PropertyAccessBase& operator=(const PropertyAccessBase& other) {
+		this->_property = other._property;
+#ifdef OVITO_DEBUG
+		if(this->_property) {
+			if(Writable) this->_property->prepareWriteAccess();
+			else this->_property->prepareReadAccess();
+		}
+#endif
+		return *this;
+	}
+
+	/// Move construction.
+	PropertyAccessBase(PropertyAccessBase&& other) noexcept : _property(std::exchange(other._property, nullptr)) {}
+
+	/// Move assignment.
+	PropertyAccessBase& operator=(PropertyAccessBase&& other) noexcept {
+		this->_property = std::exchange(other._property, nullptr);
+		return *this;
+	}
+
+#ifdef OVITO_DEBUG
+	/// Destructor sets the internal storage pointer to null to easier detect invalid memory access.
+	~PropertyAccessBase() { reset(); }
+#endif
+
 public:
 
 	/// \brief Returns the number of elements in the property array.
@@ -86,29 +140,19 @@ public:
 
 	/// \brief Detaches the accessor object from the underlying PropertyStorage.
 	void reset() {
+#ifdef OVITO_DEBUG
+		if(this->_property) {
+			if(Writable) this->_property->finishWriteAccess();
+			else this->_property->finishReadAccess();
+		}
+#endif
 		this->_property = nullptr;
 	}
-
-protected:
-
-	/// Constructor that creates an invalid access object not associated with any property object.
-	PropertyAccessBase() {}
-
-	/// Constructor that associates the access object with a property object (may be null).
-	PropertyAccessBase(PointerType property) : _property(std::move(property)) {}
-
-#ifdef OVITO_DEBUG
-	/// Destructor sets the internal storage pointer to null to easier detect invalid memory access.
-	~PropertyAccessBase() { reset(); }
-#endif
-
-	/// Pointer to the PropertyObject that stores the data being accessed.
-	PointerType _property{nullptr};
 };
 
 // Base class that allows read access to the data elements of the underlying PropertyObject.
-template<typename T, class PointerType>
-class ReadOnlyPropertyAccessBase : public PropertyAccessBase<PointerType>
+template<typename T, class PointerType, bool Writable = false>
+class ReadOnlyPropertyAccessBase : public PropertyAccessBase<PointerType, Writable>
 {
 public:
 
@@ -160,15 +204,15 @@ protected:
 	ReadOnlyPropertyAccessBase() {}
 
 	/// Constructor that associates the access object with a PropertyObject (may be null).
-	ReadOnlyPropertyAccessBase(PointerType property) : PropertyAccessBase<PointerType>(std::move(property)) {
+	ReadOnlyPropertyAccessBase(PointerType property) : PropertyAccessBase<PointerType, Writable>(std::move(property)) {
 		OVITO_ASSERT(!this->_property || this->_property->stride() == sizeof(T));
 		OVITO_ASSERT(!this->_property || this->_property->dataType() == PropertyStoragePrimitiveDataType<T>::value);
 	}
 };
 
 // Base class that allows read access to the individual components of vector elements of the underlying PropertyObject.
-template<typename T, class PointerType>
-class ReadOnlyPropertyAccessBaseTable : public PropertyAccessBase<PointerType>
+template<typename T, class PointerType, bool Writable = false>
+class ReadOnlyPropertyAccessBaseTable : public PropertyAccessBase<PointerType, Writable>
 {
 public:
 
@@ -205,7 +249,7 @@ protected:
 	ReadOnlyPropertyAccessBaseTable() {}
 
 	/// Constructor that associates the access object with a PropertyStorage (may be null).
-	ReadOnlyPropertyAccessBaseTable(PointerType property) : PropertyAccessBase<PointerType>(std::move(property)) {
+	ReadOnlyPropertyAccessBaseTable(PointerType property) : PropertyAccessBase<PointerType, Writable>(std::move(property)) {
 		OVITO_ASSERT(!this->_property || this->_property->stride() == sizeof(T) * this->_property->componentCount());
 		OVITO_ASSERT(!this->_property || this->_property->dataType() == qMetaTypeId<T>());
 		OVITO_ASSERT(!this->_property || this->_property->dataTypeSize() == sizeof(T));
@@ -213,8 +257,8 @@ protected:
 };
 
 // Base class that allows read access to the raw data of the underlying PropertyObject.
-template<class PointerType>
-class ReadOnlyPropertyAccessBaseTable<void, PointerType> : public PropertyAccessBase<PointerType>
+template<class PointerType, bool Writable>
+class ReadOnlyPropertyAccessBaseTable<void, PointerType, Writable> : public PropertyAccessBase<PointerType, Writable>
 {
 public:
 
@@ -251,12 +295,12 @@ public:
 protected:
 
 	// Inherit constructors from base class.
-	using PropertyAccessBase<PointerType>::PropertyAccessBase;
+	using PropertyAccessBase<PointerType, Writable>::PropertyAccessBase;
 };
 
 // Base class that allows read/write access to the data elements of the underlying PropertyObject.
 template<typename T, class PointerType>
-class ReadWritePropertyAccessBase : public ReadOnlyPropertyAccessBase<T, PointerType>
+class ReadWritePropertyAccessBase : public ReadOnlyPropertyAccessBase<T, PointerType, true>
 {
 public:
 
@@ -322,12 +366,12 @@ public:
 protected:
 
 	// Inherit constructors from base class.
-	using ReadOnlyPropertyAccessBase<T, PointerType>::ReadOnlyPropertyAccessBase;
+	using ReadOnlyPropertyAccessBase<T, PointerType, true>::ReadOnlyPropertyAccessBase;
 };
 
 // Base class that allows read/write access to the individual components of the vector elements of the underlying PropertyObject.
 template<typename T, class PointerType>
-class ReadWritePropertyAccessBaseTable : public ReadOnlyPropertyAccessBaseTable<T, PointerType>
+class ReadWritePropertyAccessBaseTable : public ReadOnlyPropertyAccessBaseTable<T, PointerType, true>
 {
 public:
 
@@ -378,12 +422,12 @@ public:
 protected:
 
 	// Inherit constructors from base class.
-	using ReadOnlyPropertyAccessBaseTable<T, PointerType>::ReadOnlyPropertyAccessBaseTable;
+	using ReadOnlyPropertyAccessBaseTable<T, PointerType, true>::ReadOnlyPropertyAccessBaseTable;
 };
 
 // Base class that allows read/write access to the raw data of the underlying PropertyObject.
 template<class PointerType>
-class ReadWritePropertyAccessBaseTable<void, PointerType> : public ReadOnlyPropertyAccessBaseTable<void, PointerType>
+class ReadWritePropertyAccessBaseTable<void, PointerType> : public ReadOnlyPropertyAccessBaseTable<void, PointerType, true>
 {
 public:
 
@@ -424,7 +468,7 @@ public:
 protected:
 
 	// Inherit constructors from base class.
-	using ReadOnlyPropertyAccessBaseTable<void, PointerType>::ReadOnlyPropertyAccessBaseTable;
+	using ReadOnlyPropertyAccessBaseTable<void, PointerType, true>::ReadOnlyPropertyAccessBaseTable;
 };
 
 } // End of namespace detail.
@@ -445,7 +489,7 @@ class ConstPropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::
 public:
 
 	/// Constructs an accessor object not associated yet with any PropertyObject.
-	ConstPropertyAccess() {}
+	ConstPropertyAccess() = default;
 
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccess(const PropertyObject* propertyObj) 
@@ -472,7 +516,7 @@ class ConstPropertyAccessAndRef : public std::conditional_t<TableMode, Ovito::St
 public:
 
 	/// Constructs an accessor object not associated yet with any PropertyObject.
-	ConstPropertyAccessAndRef() {}
+	ConstPropertyAccessAndRef() = default;
 
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccessAndRef(ConstPropertyPtr property)
@@ -512,7 +556,7 @@ class PropertyAccess : public std::conditional_t<TableMode, Ovito::StdObj::detai
 public:
 
 	/// Constructs an accessor object not associated yet with any PropertyObject.
-	PropertyAccess() {}
+	PropertyAccess() = default;
 
 	/// Constructs a read/write accessor for the data in a PropertyObject.
 	PropertyAccess(const PropertyPtr& property) 
@@ -521,6 +565,18 @@ public:
 	/// Constructs a read/write accessor for the data in a PropertyObject.
 	PropertyAccess(PropertyObject* property) 
 		: ParentType(property) {}
+
+	/// Forbid copy construction.
+	PropertyAccess(const PropertyAccess& other) = delete;
+
+	/// Allow move construction.
+	PropertyAccess(PropertyAccess&& other) = default;
+
+	/// Forbid copy assignment.
+	PropertyAccess& operator=(const PropertyAccess& other) = delete;
+
+	/// Allow move assignment.
+	PropertyAccess& operator=(PropertyAccess&& other) = default;
 
 	/// When the PropertyAccess object goes out of scope, an automatic change message is sent by the
 	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccess object.
@@ -542,14 +598,26 @@ class PropertyAccessAndRef : public std::conditional_t<TableMode, Ovito::StdObj:
 public:
 
 	/// Constructs an accessor object not associated yet with any PropertyStorage.
-	PropertyAccessAndRef() {}
+	PropertyAccessAndRef() = default;
 
 	/// Constructs a read/write accessor for the data in a PropertyStorage.
 	PropertyAccessAndRef(PropertyPtr property) 
 		: ParentType(std::move(property)) {}
 
-	/// When the PropertyAccess object goes out of scope, an automatic change message is sent by the
-	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccess object.
+	/// Forbid copy construction.
+	PropertyAccessAndRef(const PropertyAccessAndRef& other) = delete;
+
+	/// Allow move construction.
+	PropertyAccessAndRef(PropertyAccessAndRef&& other) = default;
+
+	/// Forbid copy assignment.
+	PropertyAccessAndRef& operator=(const PropertyAccessAndRef& other) = delete;
+
+	/// Allow move assignment.
+	PropertyAccessAndRef& operator=(PropertyAccessAndRef&& other) = default;
+
+	/// When the PropertyAccessAndRef object goes out of scope, an automatic change message is sent by the
+	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccessAndRef object.
 	~PropertyAccessAndRef() {
 		if(property())
 			property()->notifyTargetChanged();

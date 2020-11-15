@@ -284,6 +284,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 
 				// Sort the particle type list since we created particles on the go and their order depends on the occurrence of types in the file.
 				columnParser.sortElementTypes();
+				columnParser.reset();
 
 				// Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
 				bool reducedCoordinates = false;

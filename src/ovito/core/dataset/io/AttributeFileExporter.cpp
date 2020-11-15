@@ -71,7 +71,7 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 *****************************************************************************/
-void AttributeFileExporter::loadUserDefaults(Application::ExecutionContext executionContext)
+void AttributeFileExporter::initializeObject(Application::ExecutionContext executionContext)
 {
 	if(executionContext == Application::ExecutionContext::Interactive) {
 		// This exporter is typically used to export attributes as functions of time.
@@ -85,7 +85,7 @@ void AttributeFileExporter::loadUserDefaults(Application::ExecutionContext execu
 		settings.endGroup();
 	}
 
-	FileExporter::loadUserDefaults(executionContext);
+	FileExporter::initializeObject(executionContext);
 }
 
 /******************************************************************************

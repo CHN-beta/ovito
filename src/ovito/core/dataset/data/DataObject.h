@@ -114,13 +114,6 @@ public:
 		return nullptr;
 	}
 
-	/// \brief Returns the number of strong references to this data object.
-	int numberOfStrongReferences() const {
-		// Note: This method is not thread-safe. Must be called from the main thread only.
-		OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-		return _dataReferenceCount.loadRelaxed();
-	}
-
 	/// Determines if it is safe to modify this data object without unwanted sideeffects.
 	/// Returns true if there is only one exclusive owner of this data object (if any).
 	/// Returns false if there are multiple references to this data object from several

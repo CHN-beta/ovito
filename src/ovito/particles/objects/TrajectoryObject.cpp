@@ -96,7 +96,7 @@ TrajectoryObject::TrajectoryObject(DataSet* dataset) : PropertyContainer(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TrajectoryObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void TrajectoryObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -105,7 +105,7 @@ void TrajectoryObject::loadUserDefaults(Application::ExecutionContext executionC
 	if(!visElement())
 		setVisElement(OORef<TrajectoryVis>::create(dataset(), executionContext));
 
-	PropertyContainer::loadUserDefaults(executionContext);
+	PropertyContainer::initializeObject(executionContext);
 }
 
 }	// End of namespace

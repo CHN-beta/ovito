@@ -274,6 +274,8 @@ void CFGImporter::FrameLoader::loadFile()
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
 	columnParser.sortElementTypes();
+	columnParser.reset();
+
 	if(header.isExtendedFormat)
 		typeProperty.property()->sortElementTypesByName();
 

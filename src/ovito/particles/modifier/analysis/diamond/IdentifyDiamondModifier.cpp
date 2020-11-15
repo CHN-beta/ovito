@@ -44,7 +44,7 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(DataSet* dataset) : StructureId
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void IdentifyDiamondModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void IdentifyDiamondModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
 	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -55,7 +55,7 @@ void IdentifyDiamondModifier::loadUserDefaults(Application::ExecutionContext exe
 	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, executionContext);
 	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, executionContext);
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -56,7 +56,7 @@ CameraObject::CameraObject(DataSet* dataset) : AbstractCameraObject(dataset), _i
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CameraObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void CameraObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	setFovController(ControllerManager::createFloatController(dataset(), executionContext));
 	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
@@ -64,7 +64,7 @@ void CameraObject::loadUserDefaults(Application::ExecutionContext executionConte
 	zoomController()->setFloatValue(0, 200);
 	addVisElement(OORef<CameraVis>::create(dataset(), executionContext));
 
-	AbstractCameraObject::loadUserDefaults(executionContext);
+	AbstractCameraObject::initializeObject(executionContext);
 }
 
 /******************************************************************************

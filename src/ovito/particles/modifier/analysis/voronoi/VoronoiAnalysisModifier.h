@@ -66,7 +66,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
 	
 protected:
 
@@ -158,21 +158,6 @@ private:
 
 		/// A surface mesh representing the computed polyhedral Voronoi cells.
 		DataOORef<SurfaceMesh> _polyhedraMesh;
-
-		/// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
-		PropertyObject* _adjacentCellProperty = nullptr;
-
-		/// Output mesh region property storing the indices or identifiers of the particles to which each Voronoi cell belongs. 
-		PropertyObject* _centerParticleProperty = nullptr;
-
-		/// Output mesh region property storing the volume of each Voronoi cell. 
-		PropertyObject* _cellVolumeProperty = nullptr;
-
-		/// Output mesh region property storing the number of faces of each Voronoi cell. 
-		PropertyObject* _cellCoordinationProperty = nullptr;
-
-		/// Output mesh region property storing the surface area of each Voronoi cell. 
-		PropertyObject* _surfaceAreaProperty = nullptr;
 
 		/// The total volume of the simulation cell.
 		FloatType _simulationBoxVolume;

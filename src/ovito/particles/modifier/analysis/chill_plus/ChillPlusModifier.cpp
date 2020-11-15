@@ -51,7 +51,7 @@ ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentification
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ChillPlusModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void ChillPlusModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
     createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -61,7 +61,7 @@ void ChillPlusModifier::loadUserDefaults(Application::ExecutionContext execution
     createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, executionContext);
     createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, executionContext);
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

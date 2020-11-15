@@ -244,6 +244,9 @@ public:
 	/// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
 	void sortElementTypes();
 
+	/// \brief Explicitly release the target properties written to by this class.
+	void reset() { _properties.clear(); }
+
 private:
 
 	/// Parse a single field from a text line.
@@ -260,7 +263,7 @@ private:
 
 	/// Indicates whether the file parsing is happening in an interactive GUI or in the context of a running script.
 	Application::ExecutionContext _executionContext;
-
+	
 	struct TargetPropertyRecord {
 		PropertyObject* property = nullptr;
 		PropertyAccess<void,true> propertyArray;
@@ -276,8 +279,8 @@ private:
 		int lastTypeId = -1;
 	};
 
-	/// Specifies the destinations for the column data.
-	QVector<TargetPropertyRecord> _properties;
+	/// Mapping of input file columns to target memory.
+	std::vector<TargetPropertyRecord> _properties;
 
 	/// Indicates that the element names of at least one typed property are read from 
 	/// a separate file column.

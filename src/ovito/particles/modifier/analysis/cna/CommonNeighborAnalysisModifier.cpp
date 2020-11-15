@@ -56,7 +56,7 @@ CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CommonNeighborAnalysisModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void CommonNeighborAnalysisModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
 	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -65,7 +65,7 @@ void CommonNeighborAnalysisModifier::loadUserDefaults(Application::ExecutionCont
 	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
 	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

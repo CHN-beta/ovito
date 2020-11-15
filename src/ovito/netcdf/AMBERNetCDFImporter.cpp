@@ -554,6 +554,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 					return;
 			}
 			OVITO_ASSERT(remaining == 0);
+			propertyArray.reset();
 
 			// Create particles types if this is the typed property.
 			if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {

@@ -171,6 +171,7 @@ void IMDImporter::FrameLoader::loadFile()
 			throw ex.prependGeneralMessage(tr("Parsing error in line %1 of IMD file.").arg(headerLineNumber + i));
 		}
 	}
+	columnParser.reset();
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)

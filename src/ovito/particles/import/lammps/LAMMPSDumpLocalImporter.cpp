@@ -268,6 +268,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
 				// Sort the element types since we created them on the go while parsing the file. Otherwise their order be dependent on the first occurrence of element types in the file.
 				columnParser.sortElementTypes();
+				columnParser.reset();
 
 				// If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
 				// uses 1-based atom IDs and OVITO uses 0-based indices.

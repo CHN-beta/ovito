@@ -267,6 +267,12 @@ protected:
 	/// Replaces the current reference target with a new target. Handles undo recording.
 	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget);
 
+	/// Replaces the current reference target with a new target. Handles undo recording.
+	void setInternalOORef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget> newTarget);
+
+	/// Replaces the current reference target with a new target. Handles undo recording.
+	void setInternalDataRef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject> newTarget);
+
 	/// Replaces the target stored in the reference field.
 	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*& inactiveTarget, bool generateNotificationEvents = true);
 
@@ -336,11 +342,24 @@ public:
 	operator RefTargetType*() const { return reinterpret_cast<RefTargetType*>(_pointer); }
 
 	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	/// The old reference target will be released and the new reference target
-	/// will be bound to this reference field.
-	/// This operator automatically handles undo so the value change can be undone.
 	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTargetType* newPointer) {
 		SingleReferenceFieldBase::setInternal(owner, descriptor, newPointer);
+	}
+
+	/// Write access to the RefTarget pointer. Changes the value of the reference field.
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTargetType> newPointer) {
+		SingleReferenceFieldBase::setInternalOORef(owner, descriptor, std::move(newPointer));
+	}
+
+	/// Write access to the RefTarget pointer. Changes the value of the reference field.
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<RefTargetType> newPointer) {
+		set(owner, descriptor, OORef<const RefTargetType>(std::move(newPointer)));
+	}
+
+	/// Write access to the RefTarget pointer. Changes the value of the reference field.
+	template<class U = RefTargetType>
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const U> newPointer) {
+		SingleReferenceFieldBase::setInternalDataRef(owner, descriptor, std::move(newPointer));
 	}
 
 	/// Overloaded arrow operator; implements pointer semantics.

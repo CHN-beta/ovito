@@ -60,7 +60,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;
 
 	/// Returns the aspect ratio (height/width) of the rendered image.
 	FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }

@@ -377,6 +377,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
 	// Sort the particle type list since we created particles on the go and their order depends on the occurrence of types in the file.
 	columnParser.sortElementTypes();
+	columnParser.reset();
 
 	if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
 		Box3 boundingBox;

@@ -48,13 +48,13 @@ LoadTrajectoryModifier::LoadTrajectoryModifier(DataSet* dataset) : Modifier(data
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void LoadTrajectoryModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void LoadTrajectoryModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the file source object, which will be responsible for loading
 	// and caching the trajectory data.
 	setTrajectorySource(OORef<FileSource>::create(dataset(), executionContext));
 
-	Modifier::loadUserDefaults(executionContext);
+	Modifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

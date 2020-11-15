@@ -52,7 +52,7 @@ AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AssignColorModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void AssignColorModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	if(!colorController())
 		setColorController(ControllerManager::createColorController(dataset(), executionContext));
@@ -67,7 +67,7 @@ void AssignColorModifier::loadUserDefaults(Application::ExecutionContext executi
 		setKeepSelection(false);
 	}
 
-	DelegatingModifier::loadUserDefaults(executionContext);
+	DelegatingModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

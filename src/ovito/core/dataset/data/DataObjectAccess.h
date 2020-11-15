@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief Utility class that manages read/write access to a DataObject. 
+ * \brief Utility class that manages read/write access to a DataObject and implements copy-on-write semantics.
  * 
  * Initially, after the DataObject is first loaded into the accessor, it only provides read ("const") access to the object.
  * If needed, a call to makeMutable() can be used at any time to request write access to the data object.

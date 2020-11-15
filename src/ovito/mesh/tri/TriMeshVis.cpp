@@ -53,11 +53,11 @@ TriMeshVis::TriMeshVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TriMeshVis::loadUserDefaults(Application::ExecutionContext executionContext)
+void TriMeshVis::initializeObject(Application::ExecutionContext executionContext)
 {
 	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 
-	DataVis::loadUserDefaults(executionContext);
+	DataVis::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -204,6 +204,11 @@ template<class T> T* get_pointer(const DataOORef<T>& p) noexcept
     return p.get();
 }
 
+template<class T> void swap(DataOORef<T>& lhs, DataOORef<T>& rhs) noexcept
+{
+	lhs.swap(rhs);
+}
+
 template<class T, class U> DataOORef<T> static_pointer_cast(const DataOORef<U>& p) noexcept
 {
     return static_cast<T*>(p.get());

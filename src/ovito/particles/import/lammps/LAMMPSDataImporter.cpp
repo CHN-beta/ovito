@@ -209,16 +209,14 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 	// Create standard particle properties.
 	particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, true, executionContext());
-	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
+	PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, true, executionContext());
 
 	// Atom type mass table.
 	std::vector<FloatType> massTable(natomtypes, 0.0);
 	bool hasTypeMasses = false;
 
-	/// Maps atom IDs to indices.
-	std::unordered_map<qlonglong,size_t> atomIdMap;
-	atomIdMap.reserve(natoms);
+	/// Lookup table that maps unique atom IDs to indices.
+	std::unordered_map<qlonglong, size_t> atomIdMap;
 
 	// Read identifier strings one by one in free-form part of data file.
 	QByteArray keyword = QByteArray(stream.line()).trimmed();
@@ -231,7 +229,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create atom types.
 			for(int i = 1; i <= natomtypes; i++)
-				addNumericType(typeProperty.property(), i, {}, ParticleType::OOClass());
+				addNumericType(typeProperty, i, {}, ParticleType::OOClass());
 
 			if(natoms != 0) {
 				stream.readLine();
@@ -262,19 +260,28 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Parse data in the Atoms section line by line:
 				InputColumnReader columnParser(columnMapping, particles(), executionContext());
 				try {
-					const int* atomType = typeProperty.cbegin();
-					const qlonglong* atomId = identifierProperty.cbegin();
-					for(size_t i = 0; i < (size_t)natoms; i++, ++atomType, ++atomId) {
+					for(size_t i = 0; i < (size_t)natoms; i++) {
 						if(!setProgressValueIntermittent(i)) return;
 						if(i != 0) stream.readLine();
 						columnParser.readElement(i, stream.line());
-						if(*atomType < 1 || *atomType > natomtypes)
-							throw Exception(tr("Atom type out of range in Atoms section of LAMMPS data file at line %1.").arg(stream.lineNumber()));
-						atomIdMap.insert(std::make_pair(*atomId, i));
 					}
 				}
 				catch(Exception& ex) {
 					throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
+				}
+				columnParser.reset();
+
+				// Range-check atom types.
+				for(const int t : ConstPropertyAccess<int>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
+					if(t < 1 || t > natomtypes)
+						throw Exception(tr("Atom type out of range in Atoms section of LAMMPS data file. Encountered atom type %1 but number of atom types in this file is %2.").arg(t).arg(natomtypes));
+				}
+
+				// Build look-up map of atom identifiers.
+				atomIdMap.reserve(natoms);
+				size_t index = 0;
+				for(const qlonglong id : ConstPropertyAccess<qlonglong>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
+					atomIdMap.emplace(id, index++);
 				}
 
 				// Some LAMMPS data files contain per-particle diameter information.
@@ -339,9 +346,9 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						atomTypeName = words[1];
 				}
 
-				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty.property(), atomType, atomTypeName, ParticleType::OOClass()));
+				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty, atomType, atomTypeName, ParticleType::OOClass()));
 				if(mass != 0 && mass != type->mass())
-					static_object_cast<ParticleType>(typeProperty.property()->makeMutable(type))->setMass(mass);
+					static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(mass);
 			}
 		}
 		else if(keyword.startsWith("Pair Coeffs")) {
@@ -409,6 +416,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				if(*bondType < 1 || *bondType > nbondtypes)
 					throw Exception(tr("Bond type out of range in Bonds section of LAMMPS data file at line %1.").arg(stream.lineNumber()));
 			}
+			typeProperty.reset();
+			bondTopologyProperty.reset();
+			identifierProperty.reset();
+
 			generateBondPeriodicImageProperty();
 		}
 		else if(keyword.startsWith("Angles")) {
@@ -552,7 +563,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 	// Assign masses to particles based on their type.
 	if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
 		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
-		boost::transform(typeProperty, massProperty.begin(), [&](int atomType) {
+		boost::transform(ConstPropertyAccess<int>(typeProperty), massProperty.begin(), [&](int atomType) {
 			return massTable[atomType - 1];
 		});
 	}
@@ -977,18 +988,17 @@ Future<LAMMPSDataImporter::LAMMPSAtomStyle> LAMMPSDataImporter::inspectFileHeade
 			}
 
 			// Read lines one by one in free-form part of data file until we find the 'Atoms' section.
-			for(;;) {
-				if(stream.eof()) break;
-				const char* line = stream.readLineTrimLeft();
+			while(!stream.eof()) {
 				if(stream.lineStartsWithToken("Atoms", true)) {
 					// Try to guess the LAMMPS atom style from the 'Atoms' keyword line or the first data line.
 					LAMMPSAtomStyle atomStyle = AtomStyle_Unknown;
 					std::vector<LAMMPSAtomStyle> atomSubStyles;
-					QByteArray keyword = QByteArray(line).trimmed();
+					QByteArray keyword = QByteArray(stream.line()).trimmed();
 					stream.readLine();
 					detectAtomStyle(stream.readLine(), keyword, atomStyle, atomSubStyles);
 					return atomStyle;
 				}
+				stream.readLineTrimLeft();
 			}
 			return AtomStyle_Unknown;
 		});

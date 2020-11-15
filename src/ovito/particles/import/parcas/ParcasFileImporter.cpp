@@ -193,6 +193,8 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
     if(natoms > std::numeric_limits<int>::max())
     	throw Exception(tr("PARCAS file parsing error: File contains %1 atoms. OVITO can handle only %2 atoms.").arg(natoms).arg(std::numeric_limits<int>::max()));
+    size_t numAtoms = (size_t)natoms;
+	setParticleCount(numAtoms);
 
 	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue((int)frame_num), dataSource());
 	state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), dataSource());
@@ -234,8 +236,6 @@ void ParcasFileImporter::FrameLoader::loadFile()
 	simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
 	// Create the required standard properties.
-    size_t numAtoms = (size_t)natoms;
-	setParticleCount(numAtoms);
 	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
@@ -294,6 +294,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
 		// Update progress indicator.
 		if(!setProgressValueIntermittent(i)) return;
 	}
+	posProperty.reset();
+	typeProperty.reset();
+	identifierProperty.reset();
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)

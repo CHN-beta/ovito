@@ -86,7 +86,7 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(DataSet* dataset) : Str
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void DislocationAnalysisModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void DislocationAnalysisModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the vis elements.
 	setDislocationVis(OORef<DislocationVis>::create(dataset(), executionContext));
@@ -172,7 +172,7 @@ void DislocationAnalysisModifier::loadUserDefaults(Application::ExecutionContext
 	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 43, tr("<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f), 0.0f), Color(1,0,1)));
 	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 44, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

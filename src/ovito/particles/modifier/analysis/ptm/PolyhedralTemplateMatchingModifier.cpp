@@ -69,7 +69,7 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void PolyhedralTemplateMatchingModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void PolyhedralTemplateMatchingModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Define the structure types.
 	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -99,7 +99,7 @@ void PolyhedralTemplateMatchingModifier::loadUserDefaults(Application::Execution
 	orderingTypes()[PTMAlgorithm::ORDERING_ZINCBLENDE_WURTZITE]->setName(tr("Zincblende/Wurtzite"));
 	orderingTypes()[PTMAlgorithm::ORDERING_BORON_NITRIDE]->setName(tr("Boron/Nitride"));
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

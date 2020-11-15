@@ -103,7 +103,7 @@ void ModifierListModel::insertModifier(int index, PipelineListModel* pipelineMod
 		OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset));
 		OVITO_CHECK_OBJECT_POINTER(modifier);
 		// Load user-defined default parameters.
-		modifier->loadUserDefaults();
+		modifier->initializeObject();
 		// Apply it to the data pipeline.
 		pipelineModel->applyModifiers({modifier});
 	});

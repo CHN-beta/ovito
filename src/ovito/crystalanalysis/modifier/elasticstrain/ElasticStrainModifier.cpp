@@ -62,7 +62,7 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ElasticStrainModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void ElasticStrainModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
 	ParticleType::PredefinedStructureType predefTypes[] = {
@@ -83,7 +83,7 @@ void ElasticStrainModifier::loadUserDefaults(Application::ExecutionContext execu
 		addStructureType(std::move(stype));
 	}
 
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -43,7 +43,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CalculateDisplacementsModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void CalculateDisplacementsModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create vis element for vectors.
 	setVectorVis(OORef<VectorVis>::create(dataset(), executionContext));
@@ -58,7 +58,7 @@ void CalculateDisplacementsModifier::loadUserDefaults(Application::ExecutionCont
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
 
-	ReferenceConfigurationModifier::loadUserDefaults(executionContext);
+	ReferenceConfigurationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -405,6 +405,27 @@ public:
         mutableRegions().setPropertyValue<SurfaceMeshRegions::VolumeProperty,FloatType>(region, vol);
     }
 
+    /// Sets the stored total surface area of the i-th region.
+    void setRegionSurfaceArea(region_index region, FloatType area) {
+        OVITO_ASSERT(regions().hasProperty<SurfaceMeshRegions::SurfaceAreaProperty>());
+        OVITO_ASSERT(region >= 0 && region < regionCount());
+        mutableRegions().setPropertyValue<SurfaceMeshRegions::SurfaceAreaProperty,FloatType>(region, area);
+    }
+
+    /// Returns the total surface area of the i-th region.
+    FloatType regionSurfaceArea(region_index region) const {
+        OVITO_ASSERT(regions().hasProperty<SurfaceMeshRegions::SurfaceAreaProperty>());
+        OVITO_ASSERT(region >= 0 && region < regionCount());
+        return regions().getPropertyValue<SurfaceMeshRegions::SurfaceAreaProperty,FloatType>(region);
+    }
+
+	/// Returns the phase ID of the given region.
+	int regionPhase(region_index region) const {
+        OVITO_ASSERT(regions().hasProperty<SurfaceMeshRegions::PhaseProperty>());
+		OVITO_ASSERT(region >= 0 && region < regionCount());
+		return regions().getPropertyValue<SurfaceMeshRegions::PhaseProperty, int>(region);
+	}
+
     /// Links two opposite half-edges together.
     void linkOppositeEdges(edge_index edge1, edge_index edge2) {
         mutableTopology()->linkOppositeEdges(edge1, edge2);

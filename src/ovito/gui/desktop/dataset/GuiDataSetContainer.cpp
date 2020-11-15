@@ -214,7 +214,7 @@ bool GuiDataSetContainer::askForSaveChanges()
 bool GuiDataSetContainer::fileNew()
 {
 	OORef<DataSet> newSet = new DataSet();
-	newSet->loadUserDefaults(Application::instance()->executionContext());
+	newSet->initializeObject(Application::instance()->executionContext());
 	setCurrentSet(newSet);
 	return true;
 }

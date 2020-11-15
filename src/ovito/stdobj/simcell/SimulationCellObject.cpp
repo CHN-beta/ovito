@@ -47,13 +47,13 @@ SET_PROPERTY_FIELD_UNITS(SimulationCellObject, cellMatrix, WorldParameterUnit);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SimulationCellObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void SimulationCellObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the simulation box.
 	if(!visElement())
 		setVisElement(OORef<SimulationCellVis>::create(dataset(), executionContext));
 
-	DataObject::loadUserDefaults(executionContext);
+	DataObject::initializeObject(executionContext);
 }
 
 /******************************************************************************

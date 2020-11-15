@@ -168,7 +168,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 				OVITO_ASSERT(field->singleStorageAccessFunc != nullptr);
 				const SingleReferenceFieldBase& sourceField = field->singleStorageAccessFunc(this);
 				// Clone reference target.
-				OORef<RefTarget> clonedReference;
+				OORef<const RefTarget> clonedReference;
 				if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
 					clonedReference = static_cast<RefTarget*>(sourceField);
 				else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
@@ -178,7 +178,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 				else
 					clonedReference = cloneHelper.copyReference(static_cast<RefTarget*>(sourceField), deepCopy);
 				// Store in reference field of destination object.
-				field->singleStorageAccessFunc(clone).setInternal(clone, *field, clonedReference);
+				field->singleStorageAccessFunc(clone).setInternalOORef(clone, *field, std::move(clonedReference));
 			}
 			else {
 				OVITO_ASSERT(field->vectorStorageAccessFunc != nullptr);
@@ -187,7 +187,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 				VectorReferenceFieldBase& destField = field->vectorStorageAccessFunc(clone);
 				destField.clear(clone, *field);
 				for(int i = 0; i < sourceField.size(); i++) {
-					OORef<RefTarget> clonedReference;
+					OORef<const RefTarget> clonedReference;
 					// Clone reference target.
 					if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
 						clonedReference = static_cast<RefTarget*>(sourceField[i]);
@@ -198,7 +198,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 					else
 						clonedReference = cloneHelper.copyReference(static_cast<RefTarget*>(sourceField[i]), deepCopy);
 					// Store in reference field of destination object.
-					destField.insertInternal(clone, *field, clonedReference);
+					destField.insertInternal(clone, *field, std::move(clonedReference));
 				}
 			}
 		}

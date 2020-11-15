@@ -31,7 +31,6 @@
 
 namespace Ovito {
 	namespace StdObj {
-
         class PropertyObject;
         class PropertyContainer;
         class PropertyContainerClass;
@@ -44,7 +43,6 @@ namespace Ovito {
         class InputColumnMapping;
         template<class PropertyContainerType> class TypedInputColumnMapping;
         class InputColumnReader;
-        class PropertyContainerImportData;
         class SimulationCellObject;
         class SimulationCellVis;
         class DataTable;

@@ -292,9 +292,10 @@ void InputColumnMappingDialog::onSavePreset()
 		settings.endArray();
 
 		// Let the user give a name.
+		bool ok;
 		QString name = QInputDialog::getItem(this, tr("Save Column Mapping"),
-			tr("Please enter a name for the column mapping preset:"), presetNames, -1, true);
-		if(name.isEmpty()) return;
+			tr("Please enter a name for the column mapping preset:"), presetNames, -1, true, &ok);
+		if(name.isEmpty() || !ok) return;
 
 		// Serialize mapping and add it to the list.
 		int index = presetNames.indexOf(name);
@@ -349,9 +350,10 @@ void InputColumnMappingDialog::onLoadPreset()
 			throw Exception(tr("You have not saved any presets so far which can be loaded."));
 
 		// Let the user pick a preset.
+		bool ok;
 		QString name = QInputDialog::getItem(this, tr("Load Column Mapping"),
-			tr("Select the column mapping to load:"), presetNames, 0, false);
-		if(name.isEmpty()) return;
+			tr("Select the column mapping to load:"), presetNames, 0, false, &ok);
+		if(name.isEmpty() || !ok) return;
 
 		// Load preset.
 		InputColumnMapping mapping(_containerClass);

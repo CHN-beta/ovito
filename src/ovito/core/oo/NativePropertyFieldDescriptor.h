@@ -122,7 +122,8 @@ public:
 /// The third parameter is the name of the setter method to be created for this reference field.
 #define DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(type, name, setterName, flags) \
 	public: \
-		void setterName(const type* obj) { _##name.set(this, PROPERTY_FIELD(name), obj); } \
+		template<typename U> \
+		void setterName(U&& obj) { _##name.set(this, PROPERTY_FIELD(name), std::forward<U>(obj)); } \
 		DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags)
 
 /// Adds a settable reference field to a class definition.

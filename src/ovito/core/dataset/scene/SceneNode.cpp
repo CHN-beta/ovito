@@ -61,7 +61,7 @@ SceneNode::SceneNode(DataSet* dataset) : RefTarget(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SceneNode::loadUserDefaults(Application::ExecutionContext executionContext)
+void SceneNode::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Assign random color to node.
 	static std::default_random_engine rng;
@@ -70,7 +70,7 @@ void SceneNode::loadUserDefaults(Application::ExecutionContext executionContext)
 	// Create a transformation controller for the node.
 	setTransformationController(ControllerManager::createTransformationController(dataset(), executionContext));
 
-	RefTarget::loadUserDefaults(executionContext);
+	RefTarget::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -55,11 +55,11 @@ VoxelGridVis::VoxelGridVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGridVis::loadUserDefaults(Application::ExecutionContext executionContext)
+void VoxelGridVis::initializeObject(Application::ExecutionContext executionContext)
 {
 	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 
-	DataVis::loadUserDefaults(executionContext);
+	DataVis::initializeObject(executionContext);
 }
 
 /******************************************************************************

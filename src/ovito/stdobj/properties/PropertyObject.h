@@ -412,10 +412,7 @@ public:
 
 	/// Puts the property array back into the default read-only state.
 	/// In the read-only state, the Python binding layer will not permit write access to the property's internal data.
-	void makeReadOnlyFromPython() {
-		OVITO_ASSERT(_isWritableFromPython > 0);
-		_isWritableFromPython--;
-	}
+	void makeReadOnlyFromPython();
 
 	/// Returns whether this data object wants to be shown in the pipeline editor
 	/// under the data source section.
@@ -431,6 +428,40 @@ public:
 
 	/// Returns the display title of this property object in the user interface.
 	virtual QString objectTitle() const override;
+
+	/// Informs the property object that a read accessor is becoming active.
+	inline void prepareReadAccess() const {
+#ifdef OVITO_DEBUG
+		if(_activeAccessors.fetchAndAddAcquire(1) == -1) {
+			OVITO_ASSERT_MSG(false, "PropertyObject::prepareReadAccess()", "Property cannot be read from while it is locked for write access.");
+		}
+#endif
+	}
+
+	/// Informs the property object that a read accessor is done.
+	inline void finishReadAccess() const {
+#ifdef OVITO_DEBUG
+		int oldValue = _activeAccessors.fetchAndSubRelease(1);
+		OVITO_ASSERT(oldValue > 0);
+#endif
+	}
+
+	/// Informs the property object that a read/write accessor is becoming active.
+	inline void prepareWriteAccess() const {
+#ifdef OVITO_DEBUG
+		if(_activeAccessors.fetchAndStoreAcquire(-1) != 0) {
+			OVITO_ASSERT_MSG(false, "PropertyObject::prepareWriteAccess()", "Property cannot be locked for write acccess while it is already locked.");
+		}
+#endif
+	}
+
+	/// Informs the property object that a write accessor is done.
+	inline void finishWriteAccess() const {
+#ifdef OVITO_DEBUG
+		int oldValue = _activeAccessors.fetchAndStoreRelease(0);
+		OVITO_ASSERT(oldValue == -1);
+#endif
+	}
 
 protected:
 
@@ -487,6 +518,12 @@ private:
 	/// This is a special flag used by the Python bindings to indicate that
 	/// this property object has been temporarily put into a writable state.
 	int _isWritableFromPython = 0;
+
+#ifdef OVITO_DEBUG
+	/// In the debug builds, this counter keeps track of how many read or write accessors 
+	/// to this property are currently active.
+	mutable QAtomicInteger<int> _activeAccessors = 0;
+#endif
 };
 
 /// Smart-pointer to a PropertyObject.

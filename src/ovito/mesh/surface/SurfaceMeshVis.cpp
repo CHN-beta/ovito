@@ -79,12 +79,12 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMeshVis::loadUserDefaults(Application::ExecutionContext executionContext)
+void SurfaceMeshVis::initializeObject(Application::ExecutionContext executionContext)
 {
 	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 	setCapTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 
-	TransformingDataVis::loadUserDefaults(executionContext);
+	TransformingDataVis::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -405,7 +405,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 
 	if(_generateCapPolygons) {
 		nextProgressSubStep();
-		if(cell())
+		if(cell() && cell()->volume3D() > FLOATTYPE_EPSILON)
 			buildCapTriangleMesh();
 	}
 

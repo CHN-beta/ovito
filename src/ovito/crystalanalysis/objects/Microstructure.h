@@ -120,12 +120,6 @@ public:
 		setCrystallographicNormal(fidx, slipFacetNormal);
 		return fidx;
 	}
-
-	/// Returns the phase ID of the given region.
-	int regionPhase(region_index region) const {
-		OVITO_ASSERT(region >= 0 && region < regionCount());
-		return regions().getPropertyValue<SurfaceMeshRegions::PhaseProperty, int>(region);
-	}
 };
 
 /**
@@ -144,7 +138,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Microstructure"); }

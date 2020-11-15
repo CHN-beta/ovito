@@ -144,7 +144,7 @@ OORef<DataCollection> ParaViewVTRSimulationCellImporter::RectilinearGridFrameDat
 		SimulationCellObject* cell = output->createObject<SimulationCellObject>(fileSource, simulationCell());
 
 		// Initialize the simulation cell and its vis element with default values.
-		cell->loadUserDefaults(Application::instance()->executionContext());
+		cell->initializeObject(Application::instance()->executionContext());
 
 		// Set up the vis element for the simulation cell.
 		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(cell->visElement())) {

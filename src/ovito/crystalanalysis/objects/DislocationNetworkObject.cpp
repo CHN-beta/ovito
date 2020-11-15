@@ -47,7 +47,7 @@ DislocationNetworkObject::DislocationNetworkObject(DataSet* dataset) : PeriodicD
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void DislocationNetworkObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void DislocationNetworkObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the dislocation lines.
 	if(!visElement())
@@ -60,7 +60,7 @@ void DislocationNetworkObject::loadUserDefaults(Application::ExecutionContext ex
 	defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
 	addCrystalStructure(std::move(defaultStructure));
 
-	PeriodicDomainDataObject::loadUserDefaults(executionContext);
+	PeriodicDomainDataObject::initializeObject(executionContext);
 }
 
 /******************************************************************************

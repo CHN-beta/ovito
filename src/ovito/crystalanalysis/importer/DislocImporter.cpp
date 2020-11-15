@@ -85,7 +85,7 @@ void DislocImporter::setupPipeline(PipelineSceneNode* pipeline, FileSource* impo
 	// Insert a SimplyMicrostructureModifier into the data pipeline by default.
 //	OORef<SimplifyMicrostructureModifier> modifier = new SimplifyMicrostructureModifier(pipeline->dataset());
 //	if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-//		modifier->loadUserDefaults();
+//		modifier->initializeObject();
 //	pipeline->applyModifier(modifier);
 }
 

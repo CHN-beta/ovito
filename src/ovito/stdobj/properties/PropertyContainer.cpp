@@ -217,7 +217,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 * Adds a property object to the container, replacing any preexisting property 
 * in the container with the same type. 
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
+const PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
 	OVITO_CHECK_POINTER(property);
 	OVITO_ASSERT(property->type() == 0 || getOOMetaClass().isValidStandardPropertyId(property->type()));
@@ -256,7 +256,7 @@ PropertyObject* PropertyContainer::createProperty(const PropertyObject* property
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		addProperty(property);
 	}
-	return const_cast<PropertyObject*>(property);
+	return property;
 }
 
 /******************************************************************************
@@ -332,6 +332,7 @@ std::vector<size_t> PropertyContainer::sortById()
 		invertedPermutation[permutation[i]] = i;
 		if(permutation[i] != i) isAlreadySorted = false;
 	}
+	ids.reset();
 	if(isAlreadySorted) return {};
 
 	// Re-order all values in the property arrays.

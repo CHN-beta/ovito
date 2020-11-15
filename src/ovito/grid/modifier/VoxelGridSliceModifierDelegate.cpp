@@ -48,7 +48,7 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGridSliceModifierDelegate::loadUserDefaults(Application::ExecutionContext executionContext)
+void VoxelGridSliceModifierDelegate::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the vis element for rendering the mesh.
 	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
@@ -58,7 +58,7 @@ void VoxelGridSliceModifierDelegate::loadUserDefaults(Application::ExecutionCont
 	surfaceMeshVis()->setSurfaceIsClosed(false);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
 
-	SliceModifierDelegate::loadUserDefaults(executionContext);
+	SliceModifierDelegate::initializeObject(executionContext);
 }
 
 /******************************************************************************

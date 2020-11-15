@@ -48,7 +48,7 @@ BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void BondsObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void BondsObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -57,7 +57,7 @@ void BondsObject::loadUserDefaults(Application::ExecutionContext executionContex
 	if(!visElement())
 		setVisElement(OORef<BondsVis>::create(dataset(), executionContext));
 
-	PropertyContainer::loadUserDefaults(executionContext);
+	PropertyContainer::initializeObject(executionContext);
 }
 
 /******************************************************************************

@@ -58,7 +58,7 @@ ParticlesObject::ParticlesObject(DataSet* dataset) : PropertyContainer(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ParticlesObject::loadUserDefaults(Application::ExecutionContext executionContext)
+void ParticlesObject::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -67,7 +67,7 @@ void ParticlesObject::loadUserDefaults(Application::ExecutionContext executionCo
 	if(!visElement())
 		setVisElement(OORef<ParticlesVis>::create(dataset(), executionContext));
 
-	PropertyContainer::loadUserDefaults(executionContext);
+	PropertyContainer::initializeObject(executionContext);
 }
 
 /******************************************************************************

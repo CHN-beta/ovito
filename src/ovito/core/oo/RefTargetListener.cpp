@@ -54,4 +54,3 @@ bool VectorRefTargetListenerBase::referenceEvent(RefTarget* source, const Refere
 }
 
 }	// End of namespace
-

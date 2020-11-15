@@ -118,7 +118,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
 	
 	/// Find all atoms that are nearest neighbors of the given pair of atoms.
 	static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors);

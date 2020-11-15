@@ -196,7 +196,6 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 	// Create target properties as defined by the mapping.
 	for(int i = 0; i < (int)mapping.size(); i++) {
 
-		PropertyObject* property = nullptr;
 		const PropertyReference& pref = mapping[i].property;
 
 		int vectorComponent = std::max(0, pref.vectorComponent());
@@ -205,9 +204,11 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 		TargetPropertyRecord rec;
 
 		if(dataType != QMetaType::Void) {
+
 			if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
 				_container->throwException(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
+			PropertyObject* property;
 			if(pref.type() != PropertyObject::GenericUserProperty) {
 				// Create standard property.
 				property = container->createProperty(pref.type(), true, executionContext);
@@ -234,12 +235,28 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 			}
 
 			OVITO_ASSERT(vectorComponent < (int)property->componentCount());
+
+			rec.property = property;
 			rec.vectorComponent = vectorComponent;
+			rec.count = rec.property->size();
+			rec.numericElementTypes = true;
+			rec.dataType = rec.property->dataType();
+			rec.stride = rec.property->stride();
+			
+			// Create a property memory accessor, but one per property.
+			auto sharedTargetProperty = std::find_if(_properties.begin(), _properties.end(), [&](const TargetPropertyRecord& other) { return other.property == property; });
+			if(sharedTargetProperty == _properties.end()) {
+				rec.propertyArray = PropertyAccess<void,true>(rec.property);
+				rec.data = reinterpret_cast<uint8_t*>(rec.propertyArray.data(rec.vectorComponent));
+			}
+			else {
+				rec.data = reinterpret_cast<uint8_t*>(sharedTargetProperty->propertyArray.data(rec.vectorComponent));
+			}
+			OVITO_ASSERT(container->properties().contains(rec.property));
 		}
 
 		// Build list of target properties for fast look up during parsing.
-		rec.property = property;
-		_properties.push_back(rec);
+		_properties.push_back(std::move(rec));
 	}
 
 	// Remove properties from the container which are not being parsed.
@@ -248,19 +265,6 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 			const PropertyObject* property = container->properties()[index];
 			if(std::none_of(_properties.cbegin(), _properties.cend(), [&](const TargetPropertyRecord& rec) { return rec.property == property; }))
 				container->removeProperty(property);
-		}
-	}
-
-	// Finalize the property records.
-	for(TargetPropertyRecord& rec : _properties) {
-		if(rec.property) {
-			rec.count = rec.property->size();
-			rec.numericElementTypes = true;
-			rec.dataType = rec.property->dataType();
-			rec.stride = rec.property->stride();
-			rec.propertyArray = PropertyAccess<void,true>(rec.property);
-			rec.data = reinterpret_cast<uint8_t*>(rec.propertyArray.data(rec.vectorComponent));
-			OVITO_ASSERT(container->properties().contains(rec.property));
 		}
 	}
 }

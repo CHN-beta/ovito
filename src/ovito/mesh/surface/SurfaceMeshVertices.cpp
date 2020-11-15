@@ -127,7 +127,7 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMeshVertices::loadUserDefaults(Application::ExecutionContext executionContext)
+void SurfaceMeshVertices::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -135,7 +135,7 @@ void SurfaceMeshVertices::loadUserDefaults(Application::ExecutionContext executi
 	// Create the standard 'Position' property.
 	createProperty(SurfaceMeshVertices::PositionProperty, false, executionContext);
 
-	PropertyContainer::loadUserDefaults(executionContext);
+	PropertyContainer::initializeObject(executionContext);
 }
 
 }	// End of namespace

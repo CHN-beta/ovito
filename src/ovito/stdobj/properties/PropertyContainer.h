@@ -133,7 +133,7 @@ public:
 	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory = false, QStringList componentNames = QStringList());
 
 	/// Adds a property object to the container, replacing any preexisting property in the container with the same type. 
-	PropertyObject* createProperty(const PropertyObject* property);
+	const PropertyObject* createProperty(const PropertyObject* property);
 
 	/// Sets the current number of data elements stored in the container.
 	/// The lengths of the property arrays will be adjusted accordingly.

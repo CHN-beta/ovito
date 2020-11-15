@@ -169,7 +169,7 @@ OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, Application::Execu
 	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(dataset));
 
 	// Initialize the parameters of the new object to default values.
-	obj->loadUserDefaults(executionContext);
+	obj->initializeObject(executionContext);
 
 	return obj;
 }

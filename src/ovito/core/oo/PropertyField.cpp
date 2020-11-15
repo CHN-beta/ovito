@@ -326,6 +326,85 @@ void SingleReferenceFieldBase::setInternal(RefMaker* owner, const PropertyFieldD
 }
 
 /******************************************************************************
+* Replaces the current reference target with a new target. Handles undo recording.
+******************************************************************************/
+void SingleReferenceFieldBase::setInternalOORef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget> newTarget)
+{
+	if(_pointer == newTarget) 
+		return;	// Nothing to change.
+
+    // Check object type
+	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
+		OVITO_ASSERT_MSG(false, "SingleReferenceFieldBase::setInternal()", "Tried to create a reference to an incompatible object for this reference field.");
+		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
+	}
+
+	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
+	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleReferenceFieldBase::setInternal()",
+			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
+				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
+
+	// This overload of setInternal() taking a OORef may not be used to set weak reference fields.
+	OVITO_ASSERT(!descriptor.isWeakReference());
+
+	if(isUndoRecordingActive(owner, descriptor)) {
+		if(descriptor.targetClass()->isDerivedFrom(DataObject::OOClass())) {
+			auto op = std::make_unique<SetReferenceOperation<DataOORef<const DataObject>>>(owner, static_object_cast<DataObject>(std::move(newTarget)), *this, descriptor);
+			op->redo();
+			pushUndoRecord(owner, std::move(op));
+		}
+		else {
+			auto op = std::make_unique<SetReferenceOperation<OORef<const RefTarget>>>(owner, std::move(newTarget), *this, descriptor);
+			op->redo();
+			pushUndoRecord(owner, std::move(op));
+		}
+	}
+	else {
+		if(descriptor.targetClass()->isDerivedFrom(DataObject::OOClass())) {
+			DataOORef<const DataObject> newTargetRef = static_object_cast<DataObject>(std::move(newTarget));
+			swapReference(owner, descriptor, newTargetRef);
+		}
+		else {
+			swapReference(owner, descriptor, newTarget);
+		}
+	}
+}
+
+/******************************************************************************
+* Replaces the current reference target with a new target. Handles undo recording.
+******************************************************************************/
+void SingleReferenceFieldBase::setInternalDataRef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject> newTarget)
+{
+	if(_pointer == newTarget) 
+		return;	// Nothing to change.
+
+    // Check object type
+	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
+		OVITO_ASSERT_MSG(false, "SingleReferenceFieldBase::setInternal()", "Tried to create a reference to an incompatible object for this reference field.");
+		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
+	}
+
+	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
+	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleReferenceFieldBase::setInternal()",
+			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
+				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
+
+	// This overload of setInternal() taking a DataOORef may not be used to set weak reference fields.
+	OVITO_ASSERT(!descriptor.isWeakReference());
+	// This overload of setInternal() taking a DataOORef may not be used to set a reference to a non-DataObject type.
+	OVITO_ASSERT(descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()));
+
+	if(isUndoRecordingActive(owner, descriptor)) {
+		auto op = std::make_unique<SetReferenceOperation<DataOORef<const DataObject>>>(owner, std::move(newTarget), *this, descriptor);
+		op->redo();
+		pushUndoRecord(owner, std::move(op));
+	}
+	else {
+		swapReference(owner, descriptor, newTarget);
+	}
+}
+
+/******************************************************************************
 * Removes a target from the list reference field.
 ******************************************************************************/
 void VectorReferenceFieldBase::removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, RefTarget const*& deadStorage, bool generateNotificationEvents)

@@ -257,7 +257,7 @@ public:
 	///
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext);
+	virtual void initializeObject(Application::ExecutionContext executionContext);
 
 	/////////////////////////// Runtime reference field access //////////////////////////////
 

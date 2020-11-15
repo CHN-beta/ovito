@@ -74,7 +74,7 @@ SliceModifier::SliceModifier(DataSet* dataset) : MultiDelegatingModifier(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SliceModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void SliceModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	setNormalController(ControllerManager::createVector3Controller(dataset(), executionContext));
 	setDistanceController(ControllerManager::createFloatController(dataset(), executionContext));
@@ -84,7 +84,7 @@ void SliceModifier::loadUserDefaults(Application::ExecutionContext executionCont
 	// Generate the list of delegate objects.
 	createModifierDelegates(SliceModifierDelegate::OOClass(), executionContext);
 
-	MultiDelegatingModifier::loadUserDefaults(executionContext);
+	MultiDelegatingModifier::initializeObject(executionContext);
 
 	// Create the vis element for the plane.
 	setPlaneVis(OORef<TriMeshVis>::create(dataset(), executionContext));

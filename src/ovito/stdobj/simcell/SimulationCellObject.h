@@ -78,7 +78,7 @@ public:
 	
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;
 
 	/// Returns inverse of the simulation cell matrix.
 	/// This matrix maps the simulation cell to the unit cube ([0,1]^3).

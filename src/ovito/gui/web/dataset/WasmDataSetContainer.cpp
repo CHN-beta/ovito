@@ -126,7 +126,7 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 	}
 
 	// Load user-defined default settings for the importer.
-	importer->loadUserDefaults();
+	importer->initializeObject();
 
 	// Specify how the file's data should be inserted into the current scene.
 	FileImporter::ImportMode importMode = FileImporter::ResetScene;

@@ -48,7 +48,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void loadUserDefaults(Application::ExecutionContext executionContext) override;
+	virtual void initializeObject(Application::ExecutionContext executionContext) override;
 	
 	/// Returns whether this camera is a target camera directory at a target object.
 	bool isTargetCamera() const;

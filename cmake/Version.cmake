@@ -30,9 +30,10 @@ SET(OVITO_VERSION_REVISION		"2")
 # Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
 #
-# Format version 30006 - OVITO 3.2.1: TimeAveragingModifier changed
+# Format version 30006 - OVITO ver>3.2.1: TimeAveragingModifier changed.
+# Format version 30007 - OVITO ver>3.3.2: New DataObject framework. Removed PropertyStorage class.
 #
-SET(OVITO_FILE_FORMAT_VERSION	"30006")
+SET(OVITO_FILE_FORMAT_VERSION	"30007")
 
 # Extract revision number from Git repository in order to tag development builds of OVITO.
 FIND_PACKAGE(Git)

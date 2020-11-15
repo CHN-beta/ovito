@@ -51,7 +51,7 @@ CombineDatasetsModifier::CombineDatasetsModifier(DataSet* dataset) : MultiDelega
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CombineDatasetsModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void CombineDatasetsModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Generate the list of delegate objects.
 	createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), executionContext);
@@ -61,7 +61,7 @@ void CombineDatasetsModifier::loadUserDefaults(Application::ExecutionContext exe
 	if(!secondaryDataSource())
 		setSecondaryDataSource(OORef<FileSource>::create(dataset(), executionContext));
 
-	MultiDelegatingModifier::loadUserDefaults(executionContext);
+	MultiDelegatingModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

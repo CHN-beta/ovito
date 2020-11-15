@@ -44,7 +44,7 @@ AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentifi
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AcklandJonesModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void AcklandJonesModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Create the structure types.
 	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -53,7 +53,7 @@ void AcklandJonesModifier::loadUserDefaults(Application::ExecutionContext execut
 	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
 	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
 	
-	StructureIdentificationModifier::loadUserDefaults(executionContext);
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

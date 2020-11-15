@@ -43,12 +43,18 @@ private:
 
 	using this_type = OORef;
 
+    T* px = nullptr;
+
+	template<class U> friend class OORef;
+    template<class T, class U> OORef<T> friend static_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T, class U> OORef<T> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
+
 public:
 
     using element_type = T;
 
     /// Default constructor.
-    OORef() noexcept : px(nullptr) {}
+    OORef() noexcept = default;
 
     /// Null constructor.
     OORef(std::nullptr_t) noexcept : px(nullptr) {}
@@ -146,17 +152,9 @@ public:
     template<typename... Args>
 	static this_type create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
 		this_type obj(new T(dataset, std::forward<Args>(args)...));
-        obj->loadUserDefaults(executionContext);
+        obj->initializeObject(executionContext);
         return obj;
 	}
-
-private:
-
-    T* px;
-
-	template<class U> friend class OORef;
-    template<class T, class U> OORef<T> friend static_pointer_cast(OORef<U>&& p) noexcept;
-    template<class T, class U> OORef<T> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept

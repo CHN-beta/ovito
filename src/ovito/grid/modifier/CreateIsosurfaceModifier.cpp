@@ -57,7 +57,7 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(DataSet* dataset) : Asynchron
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CreateIsosurfaceModifier::loadUserDefaults(Application::ExecutionContext executionContext)
+void CreateIsosurfaceModifier::initializeObject(Application::ExecutionContext executionContext)
 {
 	setIsolevelController(ControllerManager::createFloatController(dataset(), executionContext));
 
@@ -67,7 +67,7 @@ void CreateIsosurfaceModifier::loadUserDefaults(Application::ExecutionContext ex
 	surfaceMeshVis()->setSmoothShading(true);
 	surfaceMeshVis()->setObjectTitle(tr("Isosurface"));
 
-	AsynchronousModifier::loadUserDefaults(executionContext);
+	AsynchronousModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

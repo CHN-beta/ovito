@@ -406,7 +406,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 					OVITO_ASSERT(fieldEntry.field->isVector() == ((fieldEntry.field->flags() & PROPERTY_FIELD_VECTOR) != 0));
 					OVITO_ASSERT(fieldEntry.targetClass->isDerivedFrom(*fieldEntry.field->targetClass()));
 					if(!fieldEntry.field->isVector()) {
-						OORef<RefTarget> target = stream.loadObject<RefTarget>();
+						OORef<const RefTarget> target = stream.loadObject<RefTarget>();
 						if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
 							throwException(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
 								.arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()).arg(fieldEntry.targetClass->name()).arg(target->getOOClass().name()));
@@ -414,7 +414,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 #if 0
 						qDebug() << "  Reference field" << fieldEntry.identifier << " contains" << target;
 #endif
-						fieldEntry.field->singleStorageAccessFunc(this).setInternal(this, *fieldEntry.field, target);
+						fieldEntry.field->singleStorageAccessFunc(this).setInternalOORef(this, *fieldEntry.field, std::move(target));
 					}
 					else {
 						// Get storage address of member variable.
@@ -426,7 +426,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 						stream >> numEntries;
 						OVITO_ASSERT(numEntries >= 0);
 						for(qint32 i = 0; i < numEntries; i++) {
-							OORef<RefTarget> target = stream.loadObject<RefTarget>();
+							OORef<const RefTarget> target = stream.loadObject<RefTarget>();
 							if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
 								throwException(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
 									.arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name(), fieldEntry.targetClass->name(), target->getOOClass().name()));
@@ -434,7 +434,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 #if 0
 							qDebug() << "  Vector reference field" << fieldEntry.identifier << " contains" << target;
 #endif
-							refField.insertInternal(this, *fieldEntry.field, target);
+							refField.insertInternal(this, *fieldEntry.field, std::move(target));
 						}
 					}
 				}
@@ -539,16 +539,16 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 * This function is recursive, i.e., it also loads default parameter values for
 * referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 ******************************************************************************/
-void RefMaker::loadUserDefaults(Application::ExecutionContext executionContext)
+void RefMaker::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Iterate over all property fields in the class hierarchy.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 		if(field->flags().testFlag(PROPERTY_FIELD_MEMORIZE)) {
 			if(field->isReferenceField()) {
-				// If it's a reference field, recursively call loadUserDefaults() on the reference object(s).
+				// If it's a reference field, recursively call initializeObject() on the reference object(s).
 				if(!field->isVector()) {
 					if(RefTarget* target = getReferenceField(*field)) {
-						target->loadUserDefaults(executionContext);
+						target->initializeObject(executionContext);
 
 						if(executionContext == Application::ExecutionContext::Interactive) {
 							// If it's a controller type, load default controller value.
@@ -575,7 +575,7 @@ void RefMaker::loadUserDefaults(Application::ExecutionContext executionContext)
 				else {
 					const QVector<RefTarget*>& list = getVectorReferenceField(*field);
 					for(RefTarget* target : list) {
-						if(target) target->loadUserDefaults(executionContext);
+						if(target) target->initializeObject(executionContext);
 					}
 				}
 			}

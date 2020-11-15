@@ -121,10 +121,14 @@ public:
 		updateElementCount();
 		
 		// Insert the property object into the wrapped container.
-		PropertyObject* insertedProperty = mutableContainer()->createProperty(property);
+		const PropertyObject* insertedProperty = mutableContainer()->createProperty(property);
 
 		// Update our array memory pointers corresponding to this property.
-		updateMutablePropertyPointer(insertedProperty);
+		auto pindex = cachedPropertyIndex(insertedProperty->type());
+		if(pindex < CachedPropertyCount) {
+			_cachedPointers[pindex] = insertedProperty->cbuffer();
+			_mutableCachedPointers[pindex] = nullptr;
+		}
     }
 
 	/// Removes a property from the container.

@@ -88,7 +88,7 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void RenderSettings::loadUserDefaults(Application::ExecutionContext executionContext)
+void RenderSettings::initializeObject(Application::ExecutionContext executionContext)
 {
 	// Setup default background color.
 	setBackgroundColorController(ControllerManager::createColorController(dataset(), executionContext));
@@ -103,7 +103,7 @@ void RenderSettings::loadUserDefaults(Application::ExecutionContext executionCon
 	if(rendererClass)
 		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), executionContext)));
 
-	RefTarget::loadUserDefaults(executionContext);
+	RefTarget::initializeObject(executionContext);
 }
 
 /******************************************************************************

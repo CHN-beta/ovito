@@ -133,6 +133,9 @@ protected:
 	/// \brief Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
+	/// Interprets the comment line of an extended XYZ file.
+	static ParticleInputColumnMapping parseExtendedXYZColumnSpecification(const QString& commentLine);
+
 private:
 
 	/// The user-defined mapping of input file columns to OVITO's particle properties.

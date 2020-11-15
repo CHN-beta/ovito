@@ -160,7 +160,7 @@ void WasmApplication::postStartupInitialization()
 	// Create an empty dataset if nothing has been loaded.
 	if(datasetContainer()->currentSet() == nullptr) {
 		OORef<DataSet> newSet = new DataSet();
-		newSet->loadUserDefaults();
+		newSet->initializeObject();
 		datasetContainer()->setCurrentSet(newSet);
 
 		// Import sample data.

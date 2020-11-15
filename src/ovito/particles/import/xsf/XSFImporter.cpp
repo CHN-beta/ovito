@@ -284,6 +284,7 @@ void XSFImporter::FrameLoader::loadFile()
 				}
 			}
 			columnParser.sortElementTypes();
+			columnParser.reset();
 
 			// Give numeric atom types chemical names.
 			if(PropertyObject* typeProperty = particles()->getMutableProperty(ParticlesObject::TypeProperty)) {

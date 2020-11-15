@@ -232,7 +232,6 @@ void XYZImporter::FrameLoader::loadFile()
 
 	setParticleCount(numParticlesLong);
 	setProgressMaximum(numParticlesLong);
-	QString fileExcerpt = stream.lineString();
 
 	// Regular expression for whitespace characters.
 	QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -397,53 +396,9 @@ void XYZImporter::FrameLoader::loadFile()
 		simulationCell()->setPbcFlags(true, true, true);
 	}
 
-	if(_columnMapping.empty()) {
-		// Auto-generate column mapping when Extended XYZ Properties key is present.
-		// Format is described at http://jrkermode.co.uk/quippy/io.html#extendedxyz
-		// Example: Properties=species:S:1:pos:R:3 for atomic species (1 column, string property)
-		// and atomic positions (3 columns, real property)
-		if((index = commentLine.indexOf(QStringLiteral("properties="), 0, Qt::CaseInsensitive)) >= 0) {
-			QString propertiesStr = commentLine.mid(index + 11);
-			propertiesStr = propertiesStr.left(propertiesStr.indexOf(ws_re));
-			QStringList fields = propertiesStr.split(":");
-
-			int col = 0;
-			for(int i = 0; i < fields.size() / 3; i++) {
-				QString propName = (fields[3 * i + 0]);
-				QString propTypeStr = (fields[3 * i + 1]).left(1);
-				QByteArray propTypeBA = propTypeStr.toUtf8();
-				char propType = propTypeBA.data()[0];
-				int nCols = (int)fields[3 * i + 2].toInt();
-				switch(propType) {
-				case 'I':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(_columnMapping, col, propName, PropertyObject::Int, k);
-						col++;
-					}
-					break;
-				case 'R':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(_columnMapping, col, propName, PropertyObject::Float, k);
-						col++;
-					}
-					break;
-				case 'L':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(_columnMapping, col, propName, PropertyObject::Int, k);
-						col++;
-					}
-					break;
-				case 'S':
-					for(int k = 0; k < nCols; k++) {
-						if(!mapVariableToProperty(_columnMapping, col, propName, qMetaTypeId<char>(), k) && k == 0)
-							qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
-						col++;
-					}
-					break;
-				}
-			}
-		}
-	}
+	// If this is an extended XYZ file, extract the column mapping from the comment line.
+	if(_columnMapping.empty())
+		_columnMapping = parseExtendedXYZColumnSpecification(commentLine);
 
 	// In script mode, assume standard set of XYZ columns unless the user has specified otherwise or
 	// the file constains column metadata.
@@ -472,6 +427,7 @@ void XYZImporter::FrameLoader::loadFile()
 	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now according to their names.
 	columnParser.sortElementTypes();
+	columnParser.reset();
 
 	PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
 	if(posProperty && numParticlesLong != 0) {
@@ -523,6 +479,67 @@ void XYZImporter::FrameLoader::loadFile()
 }
 
 /******************************************************************************
+* Interprets the comment line of an extended XYZ file.
+******************************************************************************/
+ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(const QString& commentLine)
+{
+	ParticleInputColumnMapping mapping;
+
+	// Auto-generate column mapping when Extended XYZ Properties key is present.
+	// Format is described at http://jrkermode.co.uk/quippy/io.html#extendedxyz
+	// Example: Properties=species:S:1:pos:R:3 for atomic species (1 column, string property)
+	// and atomic positions (3 columns, real property)
+	int index = commentLine.indexOf(QStringLiteral("properties="), 0, Qt::CaseInsensitive);
+	if(index >= 0) {
+
+		// Regular expression for whitespace characters.
+		QRegularExpression ws_re(QStringLiteral("\\s+"));
+
+		QString propertiesStr = commentLine.mid(index + 11);
+		propertiesStr = propertiesStr.left(propertiesStr.indexOf(ws_re));
+		QStringList fields = propertiesStr.split(":");
+
+		int col = 0;
+		for(int i = 0; i < fields.size() / 3; i++) {
+			QString propName = (fields[3 * i + 0]);
+			QString propTypeStr = (fields[3 * i + 1]).left(1);
+			QByteArray propTypeBA = propTypeStr.toUtf8();
+			char propType = propTypeBA.data()[0];
+			int nCols = (int)fields[3 * i + 2].toInt();
+			switch(propType) {
+			case 'I':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+					col++;
+				}
+				break;
+			case 'R':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Float, k);
+					col++;
+				}
+				break;
+			case 'L':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+					col++;
+				}
+				break;
+			case 'S':
+				for(int k = 0; k < nCols; k++) {
+					if(!mapVariableToProperty(mapping, col, propName, qMetaTypeId<char>(), k) && k == 0)
+						qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
+					col++;
+				}
+				break;
+			}
+		}
+	}
+
+	return mapping;
+}
+
+/******************************************************************************
 * Inspects the header of the given file and returns the number of file columns.
 ******************************************************************************/
 Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& frame)
@@ -546,7 +563,11 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 
 			// Parse the comment line.
 			stream.readLine();
-			fileExcerpt += stream.lineString();
+			QString commentLine = stream.lineString();
+			fileExcerpt += commentLine;
+
+			// If this is an extended XYZ file, extract the column mapping from the comment line.
+			ParticleInputColumnMapping detectedColumnMapping = parseExtendedXYZColumnSpecification(commentLine);
 
 			// Read first few lines of the atom data and add them to the file excerpt.
 			for(size_t i = 0; i < 5 && !stream.eof(); i++) {
@@ -556,8 +577,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 			if(!stream.eof()) 
 				fileExcerpt += QStringLiteral("...\n");
 
-			ParticleInputColumnMapping detectedColumnMapping;
-//			detectedColumnMapping.resize(lineString.split(ws_re, QString::SkipEmptyParts).size());
+			detectedColumnMapping.resize(stream.lineString().split(ws_re, QString::SkipEmptyParts).size());
 			detectedColumnMapping.setFileExcerpt(fileExcerpt);
 
 			// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume

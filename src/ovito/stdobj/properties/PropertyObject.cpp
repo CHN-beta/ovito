@@ -78,6 +78,7 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
 	OORef<PropertyObject> clone = static_object_cast<PropertyObject>(DataObject::clone(deepCopy, cloneHelper));
 
 	// Copy internal data.
+	prepareReadAccess();
 	clone->_type = _type;
 	clone->_name = _name;
 	clone->_dataType = _dataType;
@@ -90,6 +91,7 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
 	clone->_data.reset(new uint8_t[_numElements * _stride]);
 	std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
 	OVITO_ASSERT(clone->identifier() == clone->name());
+	finishReadAccess();
 
 	return clone;
 }
@@ -99,6 +101,7 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
 ******************************************************************************/
 void PropertyObject::resize(size_t newSize, bool preserveData)
 {
+	prepareWriteAccess();
 	if(newSize > _capacity || newSize < _capacity * 3 / 4 || !_data) {
 		std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newSize * _stride]);
 		if(preserveData)
@@ -111,6 +114,7 @@ void PropertyObject::resize(size_t newSize, bool preserveData)
 		std::memset(_data.get() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
 	}
 	_numElements = newSize;
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -118,6 +122,7 @@ void PropertyObject::resize(size_t newSize, bool preserveData)
 ******************************************************************************/
 void PropertyObject::growCapacity(size_t newSize)
 {
+	prepareWriteAccess();
 	OVITO_ASSERT(newSize >= _numElements);
 	OVITO_ASSERT(newSize > _capacity);
 	size_t newCapacity = (newSize < 1024)
@@ -127,6 +132,7 @@ void PropertyObject::growCapacity(size_t newSize)
 	std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
 	_data.swap(newBuffer);
 	_capacity = newCapacity;
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -174,24 +180,32 @@ void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomput
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 
-	stream.beginChunk(0x01);
-	stream.beginChunk(0x02);
-	stream << _name;
-	stream << _type;
-	stream << QByteArray(QMetaType::typeName(_dataType));
-	stream.writeSizeT(_dataTypeSize);
-	stream.writeSizeT(_stride);
-	stream.writeSizeT(_componentCount);
-	stream << _componentNames;
-	if(excludeRecomputableData) {
-		stream.writeSizeT(0);
+	prepareReadAccess();
+	try {
+		stream.beginChunk(0x01);
+		stream.beginChunk(0x02);
+		stream << _name;
+		stream << _type;
+		stream << QByteArray(QMetaType::typeName(_dataType));
+		stream.writeSizeT(_dataTypeSize);
+		stream.writeSizeT(_stride);
+		stream.writeSizeT(_componentCount);
+		stream << _componentNames;
+		if(excludeRecomputableData) {
+			stream.writeSizeT(0);
+		}
+		else {
+			stream.writeSizeT(_numElements);
+			stream.write(_data.get(), _stride * _numElements);
+		}
+		stream.endChunk();
+		stream.endChunk();
+		finishReadAccess();
 	}
-	else {
-		stream.writeSizeT(_numElements);
-		stream.write(_data.get(), _stride * _numElements);
+	catch(...) {
+		finishReadAccess();
+		throw;
 	}
-	stream.endChunk();
-	stream.endChunk();
 }
 
 /******************************************************************************
@@ -262,6 +276,7 @@ void PropertyObject::replicate(size_t n, bool replicateValues)
 	OVITO_ASSERT(n >= 1);
 	if(n <= 1) return;
 
+	prepareWriteAccess();
 	size_t oldSize = _numElements;
 	std::unique_ptr<uint8_t[]> oldData = std::move(_data);
 
@@ -279,6 +294,7 @@ void PropertyObject::replicate(size_t n, bool replicateValues)
 		// Copy just one replica of the data from the old memory buffer to the new one.
 		std::memcpy(_data.get(), oldData.get(), oldSize * stride());
 	}
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -292,61 +308,74 @@ void PropertyObject::filterResize(const boost::dynamic_bitset<>& mask)
 
 	// Optimize filter operation for the most common property types.
 	if(dataType() == PropertyObject::Float && stride() == sizeof(FloatType)) {
+		prepareWriteAccess();
 		// Single float
 		auto src = reinterpret_cast<const FloatType*>(cbuffer());
 		auto dst = reinterpret_cast<FloatType*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<FloatType*>(buffer()), true);
 	}
 	else if(dataType() == PropertyObject::Int && stride() == sizeof(int)) {
 		// Single integer
+		prepareWriteAccess();
 		auto src = reinterpret_cast<const int*>(cbuffer());
 		auto dst = reinterpret_cast<int*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<int*>(buffer()), true);
 	}
 	else if(dataType() == PropertyObject::Int64 && stride() == sizeof(qlonglong)) {
 		// Single 64-bit integer
+		prepareWriteAccess();
 		auto src = reinterpret_cast<const qlonglong*>(cbuffer());
 		auto dst = reinterpret_cast<qlonglong*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<qlonglong*>(buffer()), true);
 	}
 	else if(dataType() == PropertyObject::Float && stride() == sizeof(Point3)) {
 		// Triple float (may actually be four floats when SSE instructions are enabled).
+		prepareWriteAccess();
 		auto src = reinterpret_cast<const Point3*>(cbuffer());
 		auto dst = reinterpret_cast<Point3*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<Point3*>(buffer()), true);
 	}
 	else if(dataType() == PropertyObject::Float && stride() == sizeof(Color)) {
 		// Triple float
+		prepareWriteAccess();
 		auto src = reinterpret_cast<const Color*>(cbuffer());
 		auto dst = reinterpret_cast<Color*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<Color*>(buffer()), true);
 	}
 	else if(dataType() == PropertyObject::Int && stride() == sizeof(Point3I)) {
 		// Triple int.
+		prepareWriteAccess();
 		auto src = reinterpret_cast<const Point3I*>(cbuffer());
 		auto dst = reinterpret_cast<Point3I*>(buffer());
 		for(size_t i = 0; i < s; ++i, ++src) {
 			if(!mask.test(i)) *dst++ = *src;
 		}
+		finishWriteAccess();
 		resize(dst - reinterpret_cast<Point3I*>(buffer()), true);
 	}
 	else {
 		// Generic case:
+		prepareWriteAccess();
 		const uint8_t* src = _data.get();
 		uint8_t* dst = _data.get();
 		size_t stride = this->stride();
@@ -356,6 +385,7 @@ void PropertyObject::filterResize(const boost::dynamic_bitset<>& mask)
 				dst += stride;
 			}
 		}
+		finishWriteAccess();
 		resize((dst - _data.get()) / stride, true);
 	}
 }
@@ -366,6 +396,7 @@ void PropertyObject::filterResize(const boost::dynamic_bitset<>& mask)
 ******************************************************************************/
 OORef<PropertyObject> PropertyObject::filterCopy(const boost::dynamic_bitset<>& mask) const
 {
+	prepareReadAccess();
 	OVITO_ASSERT(size() == mask.size());
 
 	size_t s = size();
@@ -440,6 +471,7 @@ OORef<PropertyObject> PropertyObject::filterCopy(const boost::dynamic_bitset<>& 
 		}
 		OVITO_ASSERT(dst == copy->_data.get() + newSize * stride);
 	}
+	finishReadAccess();
 	return copy;
 }
 
@@ -452,6 +484,8 @@ void PropertyObject::mappedCopyFrom(const PropertyObject& source, const std::vec
 	OVITO_ASSERT(source.size() == mapping.size());
 	OVITO_ASSERT(stride() == source.stride());
 	OVITO_ASSERT(&source != this);
+	prepareWriteAccess();
+	source.prepareReadAccess();
 
 	// Optimize copying operation for the most common property types.
 	if(stride() == sizeof(FloatType)) {
@@ -518,6 +552,9 @@ void PropertyObject::mappedCopyFrom(const PropertyObject& source, const std::vec
 			std::memcpy(dst + stride * mapping[i], src, stride);
 		}
 	}
+
+	source.finishReadAccess();
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -529,6 +566,8 @@ void PropertyObject::mappedCopyTo(PropertyObject& destination, const std::vector
 	OVITO_ASSERT(destination.size() == mapping.size());
 	OVITO_ASSERT(this->stride() == destination.stride());
 	OVITO_ASSERT(&destination != this);
+	prepareReadAccess();
+	destination.prepareWriteAccess();
 
 	// Optimize copying operation for the most common property types.
 	if(stride() == sizeof(FloatType)) {
@@ -596,6 +635,8 @@ void PropertyObject::mappedCopyTo(PropertyObject& destination, const std::vector
 			dst += stride;
 		}
 	}
+	destination.finishWriteAccess();
+	finishReadAccess();
 }
 
 /******************************************************************************
@@ -616,8 +657,13 @@ void PropertyObject::copyFrom(const PropertyObject& source)
 	OVITO_ASSERT(this->dataType() == source.dataType());
 	OVITO_ASSERT(this->stride() == source.stride());
 	OVITO_ASSERT(this->size() == source.size());
-	if(&source != this)
+	if(&source != this) {
+		prepareWriteAccess();
+		source.prepareReadAccess();
 		std::memcpy(buffer(), source.cbuffer(), this->stride() * this->size());
+		source.finishReadAccess();
+		finishWriteAccess();
+	}
 }
 
 /******************************************************************************
@@ -630,7 +676,11 @@ void PropertyObject::copyRangeFrom(const PropertyObject& source, size_t sourceIn
 	OVITO_ASSERT(this->stride() == source.stride());
 	OVITO_ASSERT(sourceIndex + count <= source.size());
 	OVITO_ASSERT(destIndex + count <= this->size());
+	prepareWriteAccess();
+	source.prepareReadAccess();
 	std::memcpy(buffer() + destIndex * this->stride(), source.cbuffer() + sourceIndex * source.stride(), this->stride() * count);
+	source.finishReadAccess();
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -639,13 +689,23 @@ void PropertyObject::copyRangeFrom(const PropertyObject& source, size_t sourceIn
 ******************************************************************************/
 bool PropertyObject::equals(const PropertyObject& other) const
 {
-	if(this->type() != other.type()) return false;
-	if(this->type() == GenericUserProperty && this->name() != other.name()) return false;
-	if(this->dataType() != other.dataType()) return false;
-	if(this->size() != other.size()) return false;
-	if(this->componentCount() != other.componentCount()) return false;
-	OVITO_ASSERT(this->stride() == other.stride());
-	return std::equal(this->cbuffer(), this->cbuffer() + this->size() * this->stride(), other.cbuffer());
+	prepareReadAccess();
+	other.prepareReadAccess();
+
+	bool result = [&]() {
+		if(this->type() != other.type()) return false;
+		if(this->type() == GenericUserProperty && this->name() != other.name()) return false;
+		if(this->dataType() != other.dataType()) return false;
+		if(this->size() != other.size()) return false;
+		if(this->componentCount() != other.componentCount()) return false;
+		OVITO_ASSERT(this->stride() == other.stride());
+		return std::equal(this->cbuffer(), this->cbuffer() + this->size() * this->stride(), other.cbuffer());
+	}();
+
+	other.finishReadAccess();
+	finishReadAccess();
+
+	return result;
 }
 
 /******************************************************************************
@@ -655,11 +715,26 @@ bool PropertyObject::equals(const PropertyObject& other) const
 ******************************************************************************/
 void PropertyObject::makeWritableFromPython()
 {
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	if(!isSafeToModify())
 		throwException(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
 						"Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
 						"See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
 	_isWritableFromPython++;
+}
+
+/******************************************************************************
+* Puts the property array back into the default read-only state.
+* In the read-only state, the Python binding layer will not permit write 
+* access to the property's internal data.
+******************************************************************************/
+void PropertyObject::makeReadOnlyFromPython()
+{
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+
+	OVITO_ASSERT(_isWritableFromPython > 0);
+	_isWritableFromPython--;
 }
 
 /******************************************************************************
@@ -755,12 +830,15 @@ void PropertyObject::convertDataType(int newDataType)
 	default:
 		OVITO_ASSERT(false); // Unsupported data type
 	}
+	oldData.reset();
 
+	prepareWriteAccess();
 	_dataType = newDataType;
 	_dataTypeSize = newDataTypeSize;
 	_stride = newStride;
 	_capacity = _numElements;
 	_data = std::move(newData);
+	finishWriteAccess();
 }
 
 /******************************************************************************
@@ -797,8 +875,8 @@ void PropertyObject::sortElementTypesByName()
 
 #if 0
 	// NOTE: No longer reassigning numeric IDs to the types here, because the new requirement is
-	// that the numeric ID of an existing ElementType never changes once it has been created.
-	// Otherwise the editable proxy objects would become out of sync.
+	// that the numeric ID of an existing ElementType never changes once the type has been created.
+	// Otherwise, the editable proxy objects would become out of sync.
 
 	// Build map of IDs.
 	std::vector<int> mapping(elementTypes().size() + 1);
