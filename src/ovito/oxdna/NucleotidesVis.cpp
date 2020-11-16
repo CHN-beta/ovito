@@ -25,7 +25,6 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
@@ -60,8 +59,8 @@ Box3 NucleotidesVis::boundingBox(TimePoint time, const std::vector<const DataObj
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,	// Position property + revision number
-		VersionedDataObjectRef,	// Nucleotide axis property + revision number
+		WeakDataObjectRef,	// Position property + revision number
+		WeakDataObjectRef,	// Nucleotide axis property + revision number
 		FloatType 				// Default particle radius
 	>;
 
@@ -231,13 +230,13 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 	using NucleotidesCacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
 		QPointer<PipelineSceneNode>,// The scene node
-		VersionedDataObjectRef,		// Position property + revision number
-		VersionedDataObjectRef,		// Color property + revision number
-		VersionedDataObjectRef,		// Strand property + revision number
-		VersionedDataObjectRef,		// Transparency property + revision number
-		VersionedDataObjectRef,		// Selection property + revision number
-		VersionedDataObjectRef,		// Nucleotide axis property + revision number
-		VersionedDataObjectRef,		// Nucleotide normal property + revision number
+		WeakDataObjectRef,		// Position property + revision number
+		WeakDataObjectRef,		// Color property + revision number
+		WeakDataObjectRef,		// Strand property + revision number
+		WeakDataObjectRef,		// Transparency property + revision number
+		WeakDataObjectRef,		// Selection property + revision number
+		WeakDataObjectRef,		// Nucleotide axis property + revision number
+		WeakDataObjectRef,		// Nucleotide normal property + revision number
 		FloatType,					// Default particle radius
 		FloatType					// Cylinder radius
 	>;

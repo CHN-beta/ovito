@@ -25,7 +25,6 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 

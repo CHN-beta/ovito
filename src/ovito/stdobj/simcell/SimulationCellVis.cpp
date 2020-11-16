@@ -27,7 +27,6 @@
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include "SimulationCellVis.h"
 #include "SimulationCellObject.h"
 
@@ -116,7 +115,7 @@ void SimulationCellVis::renderWireframe(TimePoint time, const SimulationCellObje
 	// The key type used for caching the geometry primitive:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// The SimulationCellObject
+		WeakDataObjectRef,		// The SimulationCellObject
 		ColorA						// The wireframe color.
 	>;
 
@@ -187,7 +186,7 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 	// The key type used for caching the geometry primitive:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// The simulation cell + revision number
+		WeakDataObjectRef,		// The simulation cell + revision number
 		FloatType, Color			// Line width + color
 	>;
 

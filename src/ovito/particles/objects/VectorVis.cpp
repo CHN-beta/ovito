@@ -26,7 +26,6 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include "VectorVis.h"
@@ -100,8 +99,8 @@ Box3 VectorVis::boundingBox(TimePoint time, const std::vector<const DataObject*>
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// Vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
+		WeakDataObjectRef,		// Vector property + revision number
+		WeakDataObjectRef,		// Particle position property + revision number
 		FloatType,					// Scaling factor
 		FloatType,					// Arrow width
 		Vector3						// Offset
@@ -191,14 +190,14 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// Vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
+		WeakDataObjectRef,		// Vector property + revision number
+		WeakDataObjectRef,		// Particle position property + revision number
 		FloatType,					// Scaling factor
 		FloatType,					// Arrow width
 		ColorA,						// Arrow color + alpha
 		bool,						// Reverse arrow direction
 		ArrowPosition,				// Arrow position
-		VersionedDataObjectRef		// Vector color property + revision number
+		WeakDataObjectRef		// Vector color property + revision number
 	>;
 
 	// Determine effective color including alpha value.

@@ -265,7 +265,7 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 		// The key type used for caching the geometry primitive:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			VersionedDataObjectRef,		// Camera object + revision number
+			WeakDataObjectRef,		// Camera object + revision number
 			Color						// Display color
 		>;
 

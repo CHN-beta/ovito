@@ -90,6 +90,7 @@ namespace Ovito {
 	class ConstDataObjectPath;
 	class DataObjectPath;
 	template<class T> class DataOORef;
+	using WeakDataObjectRef = QPointer<const DataObject>;
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;

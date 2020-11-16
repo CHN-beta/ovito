@@ -138,15 +138,20 @@ public:
 		return this->_property;
 	}
 
-	/// \brief Detaches the accessor object from the underlying PropertyStorage.
-	void reset() {
+	/// \brief Moves the internal PropertyPtr out of this object.
+	PointerType take() {
+		return reset();
+	}
+
+	/// \brief Detaches the accessor object from the underlying property object.
+	PointerType reset() {
 #ifdef OVITO_DEBUG
 		if(this->_property) {
 			if(Writable) this->_property->finishWriteAccess();
 			else this->_property->finishReadAccess();
 		}
 #endif
-		this->_property = nullptr;
+		return std::exchange(this->_property, nullptr);
 	}
 };
 
@@ -529,11 +534,6 @@ public:
 	/// Constructs a read-only accessor for the data in a PropertyObject.
 	ConstPropertyAccessAndRef(const PropertyObject* property)
 		: ParentType(ConstPropertyPtr(property)) {}
-
-	/// \brief Moves the internal PropertyPtr out of this object.
-	ConstPropertyPtr take() {
-		return std::move(this->_property);
-	}
 };
 
 /**
@@ -608,11 +608,6 @@ public:
 
 	/// Allow move assignment.
 	PropertyAccessAndRef& operator=(PropertyAccessAndRef&& other) = default;
-
-	/// \brief Closes read-write access to the property and moves it out of this access object.
-	PropertyPtr take() {
-		return std::move(this->_property);
-	}
 };
 
 }	// End of namespace

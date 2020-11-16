@@ -29,7 +29,6 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
@@ -173,7 +172,7 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
 	// The key type used for caching the surface primitive:
 	using SurfaceCacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// Mesh object
+		WeakDataObjectRef,		// Mesh object
 		ColorA,						// Surface color
 		ColorA,						// Cap color
 		bool						// Edge highlighting

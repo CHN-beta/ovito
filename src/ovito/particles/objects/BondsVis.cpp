@@ -26,7 +26,6 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
@@ -79,10 +78,10 @@ Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>&
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// Bond topology property + revision number
-		VersionedDataObjectRef,		// Bond PBC vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		VersionedDataObjectRef,		// Simulation cell + revision number
+		WeakDataObjectRef,		// Bond topology property + revision number
+		WeakDataObjectRef,		// Bond PBC vector property + revision number
+		WeakDataObjectRef,		// Particle position property + revision number
+		WeakDataObjectRef,		// Simulation cell + revision number
 		FloatType					// Bond width
 	>;
 
@@ -177,17 +176,17 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// Bond topology property + revision number
-		VersionedDataObjectRef,		// Bond PBC vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		VersionedDataObjectRef,		// Particle color property + revision number
-		VersionedDataObjectRef,		// Particle type property + revision number
-		VersionedDataObjectRef,		// Particle radius property + revision number
-		VersionedDataObjectRef,		// Bond color property + revision number
-		VersionedDataObjectRef,		// Bond type property + revision number
-		VersionedDataObjectRef,		// Bond selection property + revision number
-		VersionedDataObjectRef,		// Bond transparency + revision number
-		VersionedDataObjectRef,		// Simulation cell + revision number
+		WeakDataObjectRef,		// Bond topology property + revision number
+		WeakDataObjectRef,		// Bond PBC vector property + revision number
+		WeakDataObjectRef,		// Particle position property + revision number
+		WeakDataObjectRef,		// Particle color property + revision number
+		WeakDataObjectRef,		// Particle type property + revision number
+		WeakDataObjectRef,		// Particle radius property + revision number
+		WeakDataObjectRef,		// Bond color property + revision number
+		WeakDataObjectRef,		// Bond type property + revision number
+		WeakDataObjectRef,		// Bond selection property + revision number
+		WeakDataObjectRef,		// Bond transparency + revision number
+		WeakDataObjectRef,		// Simulation cell + revision number
 		FloatType,					// Bond width
 		Color,						// Bond color
 		bool						// Use particle colors

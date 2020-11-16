@@ -24,7 +24,6 @@
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -186,8 +185,8 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,	// Source object + revision number
-		VersionedDataObjectRef,	// Simulation cell geometry
+		WeakDataObjectRef,	// Source object + revision number
+		WeakDataObjectRef,	// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling
@@ -245,9 +244,9 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 	// The key type used for caching the rendering primitives:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,// The scene renderer
-		VersionedDataObjectRef,	// Source object + revision number
-		VersionedDataObjectRef,	// Renderable object + revision number
-		VersionedDataObjectRef,	// Simulation cell geometry
+		WeakDataObjectRef,	// Source object + revision number
+		WeakDataObjectRef,	// Renderable object + revision number
+		WeakDataObjectRef,	// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling

@@ -25,7 +25,6 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TrajectoryVis.h"
 
@@ -68,9 +67,9 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObje
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// The data object + revision number
+		WeakDataObjectRef,		// The data object + revision number
 		FloatType,					// Line width
-		VersionedDataObjectRef		// Simulation cell + revision number
+		WeakDataObjectRef		// Simulation cell + revision number
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -113,11 +112,11 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// The trajectory data object + revision number
+		WeakDataObjectRef,		// The trajectory data object + revision number
 		FloatType,					// Line width
 		Color,						// Line color,
 		FloatType,					// End frame
-		VersionedDataObjectRef		// Simulation cell
+		WeakDataObjectRef		// Simulation cell
 	>;
 
 	// The data structure stored in the vis cache.

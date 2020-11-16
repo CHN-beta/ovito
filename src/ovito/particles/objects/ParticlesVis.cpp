@@ -26,7 +26,6 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
@@ -69,10 +68,10 @@ Box3 ParticlesVis::boundingBox(TimePoint time, const std::vector<const DataObjec
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,	// Position property + revision number
-		VersionedDataObjectRef,	// Radius property + revision number
-		VersionedDataObjectRef,	// Type property + revision number
-		VersionedDataObjectRef,	// Aspherical shape property + revision number
+		WeakDataObjectRef,	// Position property + revision number
+		WeakDataObjectRef,	// Radius property + revision number
+		WeakDataObjectRef,	// Type property + revision number
+		WeakDataObjectRef,	// Aspherical shape property + revision number
 		FloatType 				// Default particle radius
 	>;
 
@@ -519,8 +518,8 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		using ParticleCacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
 			QPointer<PipelineSceneNode>,// The scene node
-			VersionedDataObjectRef,		// Position property + revision number
-			VersionedDataObjectRef		// Particle type property + revision number
+			WeakDataObjectRef,		// Position property + revision number
+			WeakDataObjectRef		// Particle type property + revision number
 		>;
 		// The data structure stored in the vis cache.
 		struct ParticleCacheValue {
@@ -548,9 +547,9 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		// The type of lookup key used for caching the particle positions, orientations and shapes:
 		using PositionCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
-			VersionedDataObjectRef,		// Position property + revision number
-			VersionedDataObjectRef,		// Aspherical shape property + revision number
-			VersionedDataObjectRef		// Orientation property + revision number
+			WeakDataObjectRef,		// Position property + revision number
+			WeakDataObjectRef,		// Aspherical shape property + revision number
+			WeakDataObjectRef		// Orientation property + revision number
 		>;
 		bool& positionsUpToDate = dataset()->visCache().get<bool>(PositionCacheKey(
 			visCache.particlePrimitive,
@@ -562,8 +561,8 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		using RadiiCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
 			FloatType,							// Default particle radius
-			VersionedDataObjectRef,				// Radius property + revision number
-			VersionedDataObjectRef				// Type property + revision number
+			WeakDataObjectRef,				// Radius property + revision number
+			WeakDataObjectRef				// Type property + revision number
 		>;
 		bool& radiiUpToDate = dataset()->visCache().get<bool>(RadiiCacheKey(
 			visCache.particlePrimitive,
@@ -574,10 +573,10 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		// The type of lookup key used for caching the particle colors:
 		using ColorCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
-			VersionedDataObjectRef,		// Type property + revision number
-			VersionedDataObjectRef,		// Color property + revision number
-			VersionedDataObjectRef,		// Selection property + revision number
-			VersionedDataObjectRef		// Transparency property + revision number
+			WeakDataObjectRef,		// Type property + revision number
+			WeakDataObjectRef,		// Color property + revision number
+			WeakDataObjectRef,		// Selection property + revision number
+			WeakDataObjectRef		// Transparency property + revision number
 		>;
 		bool& colorsUpToDate = dataset()->visCache().get<bool>(ColorCacheKey(
 			visCache.particlePrimitive,
@@ -590,7 +589,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		using ShapeMeshCacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
 			QPointer<PipelineSceneNode>,// The scene node
-			VersionedDataObjectRef		// Particle type property + revision number
+			WeakDataObjectRef		// Particle type property + revision number
 		>;
 		// The data structure stored in the vis cache.
 		struct ShapeMeshCacheValue {
@@ -625,12 +624,12 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 			using ParticleInfoCacheKey = std::tuple<
 				std::shared_ptr<MeshPrimitive>,	// The rendering primitive
 				FloatType,						// Default particle radius
-				VersionedDataObjectRef,		// Position property + revision number
-				VersionedDataObjectRef,		// Orientation property + revision number
-				VersionedDataObjectRef,		// Color property + revision number
-				VersionedDataObjectRef,		// Selection property + revision number
-				VersionedDataObjectRef,		// Transparency property + revision number
-				VersionedDataObjectRef		// Radius property + revision number
+				WeakDataObjectRef,		// Position property + revision number
+				WeakDataObjectRef,		// Orientation property + revision number
+				WeakDataObjectRef,		// Color property + revision number
+				WeakDataObjectRef,		// Selection property + revision number
+				WeakDataObjectRef,		// Transparency property + revision number
+				WeakDataObjectRef		// Radius property + revision number
 			>;
 			bool& particleInfoUpToDate = dataset()->visCache().get<bool>(ParticleInfoCacheKey(
 				meshVisCache->shapeMeshPrimitives.front(),
@@ -860,12 +859,12 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		// The key type used for caching the sphere rendering primitive:
 		using SpherocylinderCacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			VersionedDataObjectRef,		// Position property + revision number
-			VersionedDataObjectRef,		// Type property + revision number
-			VersionedDataObjectRef,		// Selection property + revision number
-			VersionedDataObjectRef,		// Color property + revision number
-			VersionedDataObjectRef,		// Apherical shape property + revision number
-			VersionedDataObjectRef,		// Orientation property + revision number
+			WeakDataObjectRef,		// Position property + revision number
+			WeakDataObjectRef,		// Type property + revision number
+			WeakDataObjectRef,		// Selection property + revision number
+			WeakDataObjectRef,		// Color property + revision number
+			WeakDataObjectRef,		// Apherical shape property + revision number
+			WeakDataObjectRef,		// Orientation property + revision number
 			FloatType,					// Default particle radius
 			ParticleShape				// Display shape
 		>;

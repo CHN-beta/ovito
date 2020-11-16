@@ -25,7 +25,6 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "TriMeshVis.h"
 
@@ -83,7 +82,7 @@ void TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& ob
 		// The key type used for caching the rendering primitive:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			VersionedDataObjectRef,		// Mesh object
+			WeakDataObjectRef,		// Mesh object
 			ColorA,						// Display color
 			bool						// Edge highlighting
 		>;
