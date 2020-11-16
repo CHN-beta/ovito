@@ -122,7 +122,7 @@ protected Q_SLOTS:
 private:
 
 	/// The current dataset being edited by the user.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataSet, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The list of running compute tasks.
 	TaskManager _taskManager;
@@ -140,5 +140,3 @@ private:
 };
 
 }	// End of namespace
-
-

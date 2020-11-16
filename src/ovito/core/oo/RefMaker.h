@@ -30,9 +30,6 @@
 
 namespace Ovito {
 
-class SingleReferenceFieldBase;		// defined in PropertyFieldDescriptor.h
-class VectorReferenceFieldBase;		// defined in PropertyFieldDescriptor.h
-
 /**
  * \brief Exception that is thrown when trying to create a cyclic reference.
  *
@@ -226,7 +223,7 @@ public:
 	/// \brief Returns true if this object is an instance of a RefTarget derived class.
 	virtual bool isRefTarget() const { return false; }
 
-	/////////////////////////// Runtime property field access ///////////////////////////////
+	/////////////////////////// Property field access ///////////////////////////////
 
 	/// \brief Returns the value stored in a non-animatable property field of this RefMaker object.
 	/// \param field The descriptor of a property field defined by this RefMaker derived class.
@@ -247,6 +244,11 @@ public:
 	/// \param other The source object. Must be of the same class type as this instance.
 	void copyPropertyFieldValue(const PropertyFieldDescriptor& field, const RefMaker& other);
 
+	/// \brief Returns the target object a reference field of this RefMaker is pointing to.
+	/// \param field The descriptor of a reference property field defined by this RefMaker derived class.
+	/// \return The current value of the reference field.
+	RefTarget* getReferenceFieldTarget(const PropertyFieldDescriptor& field) const;
+
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
 	///
@@ -260,14 +262,6 @@ public:
 	virtual void initializeObject(Application::ExecutionContext executionContext);
 
 	/////////////////////////// Runtime reference field access //////////////////////////////
-
-	/// \brief Looks up a reference field.
-	/// \param field The descriptor of a reference field defined in this RefMaker derived class.
-	/// \return The field object for this RefMaker instance and the specified field.
-	/// \sa getVectorReferenceField()
-	/// \sa OvitoClass::firstPropertyField()
-	/// \sa OvitoClass::findPropertyField()
-	const SingleReferenceFieldBase& getReferenceField(const PropertyFieldDescriptor& field) const;
 
 	/// \brief Looks up a vector reference field.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
@@ -311,13 +305,7 @@ public:
 	const QPointer<DataSet>& dataset() const { return _dataset; }
 
 	/// \brief Changes the dataset this object belongs to.
-	void setDataset(QPointer<DataSet> dataset) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-		_dataset.swap(dataset);
-#else
-		_dataset = std::move(dataset);
-#endif
-	}
+	void setDataset(QPointer<DataSet> dataset) { _dataset.swap(dataset); }
 
 	///////////////////////////// Exceptions & Errors ///////////////////////////////
 
@@ -338,7 +326,9 @@ private:
 	QPointer<DataSet> _dataset;
 
 	friend class RefTarget;
-	friend class SingleReferenceFieldBase;
+	friend class SingleOORefFieldBase;
+	friend class SingleWeakRefFieldBase;
+	friend class SingleDataRefFieldBase;
 	friend class VectorReferenceFieldBase;
 	friend class PropertyFieldBase;
 };

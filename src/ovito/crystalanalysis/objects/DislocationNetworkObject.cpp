@@ -28,7 +28,7 @@ namespace Ovito { namespace CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationNetworkObject);
 DEFINE_PROPERTY_FIELD(DislocationNetworkObject, storage);
-DEFINE_REFERENCE_FIELD(DislocationNetworkObject, crystalStructures);
+DEFINE_VECTOR_REFERENCE_FIELD(DislocationNetworkObject, crystalStructures);
 SET_PROPERTY_FIELD_LABEL(DislocationNetworkObject, crystalStructures, "Crystal structures");
 
 /// Holds a shared, empty instance of the DislocationNetwork class,

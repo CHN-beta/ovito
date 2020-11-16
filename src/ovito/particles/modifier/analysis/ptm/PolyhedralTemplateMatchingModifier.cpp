@@ -42,7 +42,7 @@ DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputInteratomicDista
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputOrientation);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputDeformationGradient);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputOrderingTypes);
-DEFINE_REFERENCE_FIELD(PolyhedralTemplateMatchingModifier, orderingTypes);
+DEFINE_VECTOR_REFERENCE_FIELD(PolyhedralTemplateMatchingModifier, orderingTypes);
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, rmsdCutoff, "RMSD cutoff");
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, outputRmsd, "Output RMSD values");
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, outputInteratomicDistance, "Output interatomic distance");

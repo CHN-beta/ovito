@@ -44,10 +44,11 @@ SurfaceMeshAccess::SurfaceMeshAccess(const SurfaceMesh* mesh) :
 }
 
 /******************************************************************************
-* Releases the SurfaceMesh after it was modified.
+* Releases the current mesh from this accessor and loads a new one.
 ******************************************************************************/
-OORef<const SurfaceMesh> SurfaceMeshAccess::take() noexcept
+OORef<const SurfaceMesh> SurfaceMeshAccess::reset(const SurfaceMesh* newMesh) noexcept
 {
+	OVITO_ASSERT(newMesh == nullptr || newMesh != this->mesh());
 	if(_mesh) {
 
 		// Release the topology sub-object and write it back to the parent SurfaceMesh.
@@ -68,7 +69,15 @@ OORef<const SurfaceMesh> SurfaceMeshAccess::take() noexcept
 		if(regions != _mesh->regions()) 
 			mutableMesh()->setRegions(std::move(regions));
 	}
-	return _mesh.take();
+	OORef<const SurfaceMesh> oldMesh = _mesh.take();
+
+	_mesh.reset(newMesh);
+	_topology.reset(newMesh ? newMesh->topology() : nullptr);
+	_vertices.reset(newMesh ? newMesh->vertices() : nullptr);
+	_faces.reset(newMesh ? newMesh->faces() : nullptr);
+	_regions.reset(newMesh ? newMesh->regions() : nullptr);
+
+	return oldMesh;
 }
 
 /******************************************************************************

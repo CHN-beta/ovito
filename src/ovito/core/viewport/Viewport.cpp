@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,8 +53,8 @@ DEFINE_PROPERTY_FIELD(Viewport, isGridVisible);
 DEFINE_PROPERTY_FIELD(Viewport, stereoscopicMode);
 DEFINE_PROPERTY_FIELD(Viewport, viewportTitle);
 DEFINE_REFERENCE_FIELD(Viewport, viewNode);
-DEFINE_REFERENCE_FIELD(Viewport, overlays);
-DEFINE_REFERENCE_FIELD(Viewport, underlays);
+DEFINE_VECTOR_REFERENCE_FIELD(Viewport, overlays);
+DEFINE_VECTOR_REFERENCE_FIELD(Viewport, underlays);
 SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleChanged);
 
 /******************************************************************************

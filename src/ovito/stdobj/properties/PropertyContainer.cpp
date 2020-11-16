@@ -28,7 +28,7 @@
 namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainer);
-DEFINE_REFERENCE_FIELD(PropertyContainer, properties);
+DEFINE_VECTOR_REFERENCE_FIELD(PropertyContainer, properties);
 DEFINE_PROPERTY_FIELD(PropertyContainer, elementCount);
 DEFINE_PROPERTY_FIELD(PropertyContainer, title);
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, properties, "Properties");

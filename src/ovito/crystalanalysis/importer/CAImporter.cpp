@@ -433,7 +433,7 @@ void CAImporter::FrameLoader::loadFile()
 				vis->setCapTransparency(0.5);
 				vis->setObjectTitle(tr("Defect mesh"));
 			}
-			defectSurface = SurfaceMeshAccess(defectSurfaceObj);
+			defectSurface.reset(defectSurfaceObj);
 			defectSurface.clearMesh();
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;

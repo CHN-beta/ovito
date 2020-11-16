@@ -26,7 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RefTargetListParameterUI);
-DEFINE_REFERENCE_FIELD(RefTargetListParameterUI, targets);
+DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 
 /******************************************************************************
 * The constructor.

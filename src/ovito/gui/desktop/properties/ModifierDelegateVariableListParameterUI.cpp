@@ -29,7 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ModifierDelegateVariableListParameterUI);
-DEFINE_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates);
+DEFINE_VECTOR_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates);
 
 /******************************************************************************
 * Constructor.

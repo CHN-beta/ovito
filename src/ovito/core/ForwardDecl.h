@@ -73,8 +73,10 @@ namespace Ovito {
 	class PropertyFieldBase;
 	template<typename property_data_type> class RuntimePropertyField;
 	template<typename property_data_type> class PropertyField;
-	class SingleReferenceFieldBase;
-	template<typename RefTargetType> class ReferenceField;
+	class SingleWeakRefFieldBase;
+	class SingleOORefFieldBase;
+	class SingleDataRefFieldBase;
+	template<typename T> class ReferenceField;
 	class VectorReferenceFieldBase;
 	template<typename RefTargetType> class VectorReferenceField;
 	class DataSet;

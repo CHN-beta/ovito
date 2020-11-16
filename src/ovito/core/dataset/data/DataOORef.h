@@ -168,18 +168,7 @@ public:
 	static DataOORef create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
 		return DataOORef(OORef<DataObjectClass>::create(dataset, executionContext, std::forward<Args>(args)...));
 	}
-
-#if 0
-    /// Turns a read-only reference to a data object into a read-write reference.
-    /// If the data object is referenced by some other third-party, make a copy of the 
-    /// object, which can be safely modified.
-    DataOORef<std::remove_const_t<DataObjectClass>> makeMutable() && {
-        if(!_ref || _ref->isSafeToModify())
-            return std::move(_ref);
-        return CloneHelper().cloneObject(_ref, false);
-    }
-#endif
-
+    
     /// Returns a copy of the data object, which can be safely modified.
     DataOORef<std::remove_const_t<DataObjectClass>> makeCopy() const {
         return CloneHelper().cloneObject(_ref, false);

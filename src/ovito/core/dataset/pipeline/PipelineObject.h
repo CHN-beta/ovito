@@ -78,7 +78,7 @@ public:
 
 	/// Returns the data collection that is managed by this object (if it is a data source).
 	/// The returned data collection will be displayed under the data source in the pipeline editor.
-	virtual DataCollection* getSourceDataCollection() const { return nullptr; }
+	virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
 };
 
 }	// End of namespace

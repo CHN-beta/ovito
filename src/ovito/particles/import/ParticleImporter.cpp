@@ -92,7 +92,7 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 		}
 		else {
 			particles()->setBonds(DataOORef<BondsObject>::create(dataset(), executionContext()));
-			_bonds = particles()->bonds();
+			_bonds = particles()->makeBondsMutable();
 			_bonds->setDataSource(dataSource());
 		}
 	}
@@ -110,7 +110,7 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 		}
 		else {
 			particles()->setAngles(DataOORef<AnglesObject>::create(dataset(), executionContext()));
-			_angles = particles()->angles();
+			_angles = particles()->makeAnglesMutable();
 			_angles->setDataSource(dataSource());
 		}
 	}
@@ -128,7 +128,7 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 		}
 		else {
 			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset(), executionContext()));
-			_dihedrals = particles()->dihedrals();
+			_dihedrals = particles()->makeDihedralsMutable();
 			_dihedrals->setDataSource(dataSource());
 		}
 	}
@@ -146,7 +146,7 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 		}
 		else {
 			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset(), executionContext()));
-			_impropers = particles()->impropers();
+			_impropers = particles()->makeImpropersMutable();
 			_impropers->setDataSource(dataSource());
 		}
 	}

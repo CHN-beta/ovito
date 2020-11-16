@@ -85,10 +85,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ImageInfo, imageInfo, setImageInfo);
 
 	/// The instance of the plugin renderer class.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SceneRenderer, renderer, setRenderer, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneRenderer>, renderer, setRenderer, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls the background color of the rendered image.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, backgroundColorController, setBackgroundColorController, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, backgroundColorController, setBackgroundColorController, PROPERTY_FIELD_MEMORIZE);
 
 	/// The width of the output image in pixels.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, outputImageWidth, setOutputImageWidth, PROPERTY_FIELD_MEMORIZE);

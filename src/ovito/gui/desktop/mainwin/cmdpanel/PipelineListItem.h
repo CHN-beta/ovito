@@ -96,7 +96,7 @@ protected:
 private:
 
 	/// The object represented by this item in the list box.
-	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget, object, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, object, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The type of this list item.
 	PipelineItemType _itemType;

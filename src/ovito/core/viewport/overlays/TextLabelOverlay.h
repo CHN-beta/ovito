@@ -111,7 +111,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
 	/// The PipelineSceneNode providing global attributes that can be reference in the text.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode, sourceNode, setSourceNode, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, sourceNode, setSourceNode, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

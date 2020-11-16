@@ -106,6 +106,8 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			}
 		}
 	}
+	posProperty.reset();
+	selProperty.reset();
 
 	// Make sure we can safely modify the particles object.
 	ParticlesObject* outputParticles = state.makeMutable(inputParticles);

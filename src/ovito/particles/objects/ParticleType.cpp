@@ -126,23 +126,23 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, A
 		return false;
 
 	// Check if the FileSource has provided some useful data.
-	const PipelineFlowState& state = stateFuture.result();
+	PipelineFlowState state = stateFuture.result();
 	if(state.status().type() == PipelineStatus::Error) {
 		operation.cancel();
 		return false;
 	}
 	if(!state)
 		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
-	const TriMeshObject* meshObj = state.expectObject<TriMeshObject>();
+	TriMeshObject* meshObj = state.expectMutableObject<TriMeshObject>();
 	if(!meshObj->mesh())
 		throwException(tr("The loaded geometry file does not contain a valid mesh."));
+
+	// Show sharp edges of the mesh.
+	meshObj->modifiableMesh()->determineEdgeVisibility();
 
 	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	noUndo.reset();
 	setShapeMesh(meshObj);
-
-	// Show sharp edges of the mesh.
-	shapeMesh()->modifiableMesh()->determineEdgeVisibility();
 
     return !operation.isCanceled();
 }

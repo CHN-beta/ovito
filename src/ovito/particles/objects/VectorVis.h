@@ -114,7 +114,7 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ArrowPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 
 	/// Controls the transparency of the arrows.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, transparencyController, setTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
 	/// Controls the displacement offset to be applied to all arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
@@ -154,7 +154,7 @@ private:
 	OORef<VectorVis> _visElement;
 
 	/// The vector property.
-	OORef<PropertyObject> _vectorProperty;
+	DataOORef<const PropertyObject> _vectorProperty;
 };
 
 

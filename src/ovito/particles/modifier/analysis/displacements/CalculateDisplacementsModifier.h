@@ -109,7 +109,7 @@ private:
 	};
 
 	/// The vis element for rendering the displacement vectors.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(VectorVis, vectorVis, setVectorVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<VectorVis>, vectorVis, setVectorVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

@@ -165,26 +165,27 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 		if(field->isReferenceField()) {
 			if(!field->isVector()) {
-				OVITO_ASSERT(field->singleStorageAccessFunc != nullptr);
-				const SingleReferenceFieldBase& sourceField = field->singleStorageAccessFunc(this);
+				OVITO_ASSERT(field->_singleReferenceReadFunc != nullptr);
+				OVITO_ASSERT(field->_singleReferenceWriteFuncRef != nullptr);
+				const RefTarget* originalTarget = field->_singleReferenceReadFunc(this);
 				// Clone reference target.
-				OORef<const RefTarget> clonedReference;
+				OORef<RefTarget> clonedReference;
 				if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
-					clonedReference = static_cast<RefTarget*>(sourceField);
+					clonedReference = originalTarget;
 				else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
-					clonedReference = cloneHelper.cloneObject(static_cast<RefTarget*>(sourceField), deepCopy);
+					clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
 				else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
-					clonedReference = cloneHelper.cloneObject(static_cast<RefTarget*>(sourceField), true);
+					clonedReference = cloneHelper.cloneObject(originalTarget, true);
 				else
-					clonedReference = cloneHelper.copyReference(static_cast<RefTarget*>(sourceField), deepCopy);
+					clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
 				// Store in reference field of destination object.
-				field->singleStorageAccessFunc(clone).setInternalOORef(clone, *field, std::move(clonedReference));
+				field->_singleReferenceWriteFuncRef(clone, std::move(clonedReference));
 			}
 			else {
-				OVITO_ASSERT(field->vectorStorageAccessFunc != nullptr);
+				OVITO_ASSERT(field->_vectorStorageAccessFunc != nullptr);
 				// Clone all reference targets in the source vector.
-				const VectorReferenceFieldBase& sourceField = field->vectorStorageAccessFunc(this);
-				VectorReferenceFieldBase& destField = field->vectorStorageAccessFunc(clone);
+				const VectorReferenceFieldBase& sourceField = field->_vectorStorageAccessFunc(this);
+				VectorReferenceFieldBase& destField = field->_vectorStorageAccessFunc(clone);
 				destField.clear(clone, *field);
 				for(int i = 0; i < sourceField.size(); i++) {
 					OORef<const RefTarget> clonedReference;

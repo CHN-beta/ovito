@@ -86,10 +86,10 @@ public:
 private:
 
 	/// The sub-controller for rolling.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, rollController, setRollController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, rollController, setRollController);
 
 	/// The target scene node to look at.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SceneNode, targetNode, setTargetNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, targetNode, setTargetNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Stores the cached position of the source node.
 	Vector3 _sourcePos;

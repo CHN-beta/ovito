@@ -33,11 +33,12 @@ namespace Ovito {
 ******************************************************************************/
 DataCollection* PipelineFlowState::mutableData()
 {
-    if(_data && !_data->isSafeToModify()) {
+    OVITO_ASSERT(_data);
+    if(!_data->isSafeToModify()) {
         _data = CloneHelper().cloneObject(_data.get(), false);
 		OVITO_ASSERT(_data->isSafeToModify());
     }
-    return _data.get();
+    return const_cast<DataCollection*>(_data.get());
 }
 
 /******************************************************************************

@@ -88,7 +88,7 @@ bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent
 			if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
 				// The parameter value object stored in the reference field of the edited object
 				// has been replaced by another one, so update our own reference to the parameter value object.
-				if(editObject()->getReferenceField(*propertyField()) != parameterObject())
+				if(editObject()->getReferenceFieldTarget(*propertyField()) != parameterObject())
 					resetUI();
 			}
 		}
@@ -116,7 +116,7 @@ void PropertyParameterUI::resetUI()
 		OVITO_ASSERT(editObject() == NULL || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
 
 		// Bind this parameter UI to the parameter object of the new edited object.
-		setParameterObject(editObject()->getReferenceField(*propertyField()));
+		setParameterObject(editObject()->getReferenceFieldTarget(*propertyField()));
 	}
 	else {
 		setParameterObject(nullptr);

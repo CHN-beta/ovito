@@ -366,7 +366,7 @@ void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousC
 * Special method used by the FileSource class to replace the contents of the pipeline
 * cache with a data collection modified by the user.
 ******************************************************************************/
-void PipelineCache::overrideCache(DataCollection* dataCollection, const TimeInterval& keepInterval)
+void PipelineCache::overrideCache(const DataCollection* dataCollection, const TimeInterval& keepInterval)
 {
 	OVITO_ASSERT(dataCollection != nullptr);
 	OVITO_ASSERT(!keepInterval.isEmpty());

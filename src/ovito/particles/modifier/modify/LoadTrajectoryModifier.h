@@ -111,7 +111,7 @@ private:
 	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
 
 	/// The source for trajectory data.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

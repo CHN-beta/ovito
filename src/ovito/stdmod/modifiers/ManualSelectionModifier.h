@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -98,7 +98,7 @@ public:
 private:
 
 	/// The per-application data of the modifier.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ElementSelectionSet, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ElementSelectionSet>, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
 };
 
 }	// End of namespace

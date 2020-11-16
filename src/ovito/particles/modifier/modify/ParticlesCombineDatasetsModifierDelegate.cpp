@@ -222,9 +222,9 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	if(primaryBonds || secondaryBonds) {
 		// Create the primary bonds object if it doesn't exist yet.
 		if(!primaryBonds) {
-			primaryBonds = new BondsObject(dataset());
-			particles->setBonds(primaryBonds);
-			particles->bonds()->setVisElements(secondaryBonds->visElements());
+			particles->setBonds(DataOORef<BondsObject>::create(dataset(), Application::instance()->executionContext()));
+			particles->makeBondsMutable()->setVisElements(secondaryBonds->visElements());
+			primaryBonds = particles->bonds();
 		}
 		mergeTopologyLists(primaryBonds, secondaryBonds, BondsObject::TopologyProperty);
 	}
@@ -235,9 +235,9 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	if(primaryAngles || secondaryAngles) {
 		// Create the primary angles object if it doesn't exist yet.
 		if(!primaryAngles) {
-			primaryAngles = new AnglesObject(dataset());
-			particles->setAngles(primaryAngles);
-			particles->angles()->setVisElements(secondaryAngles->visElements());
+			particles->setAngles(DataOORef<AnglesObject>::create(dataset(), Application::instance()->executionContext()));
+			particles->makeAnglesMutable()->setVisElements(secondaryAngles->visElements());
+			primaryAngles = particles->angles();
 		}
 		mergeTopologyLists(primaryAngles, secondaryAngles, AnglesObject::TopologyProperty);
 	}
@@ -248,9 +248,9 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	if(primaryDihedrals || secondaryDihedrals) {
 		// Create the primary dihedrals object if it doesn't exist yet.
 		if(!primaryDihedrals) {
-			primaryDihedrals = new DihedralsObject(dataset());
-			particles->setDihedrals(primaryDihedrals);
-			particles->dihedrals()->setVisElements(secondaryDihedrals->visElements());
+			particles->setDihedrals(DataOORef<DihedralsObject>::create(dataset(), Application::instance()->executionContext()));
+			particles->makeDihedralsMutable()->setVisElements(secondaryDihedrals->visElements());
+			primaryDihedrals = particles->dihedrals();
 		}
 		mergeTopologyLists(primaryDihedrals, secondaryDihedrals, DihedralsObject::TopologyProperty);
 	}
@@ -261,9 +261,9 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	if(primaryImpropers || secondaryImpropers) {
 		// Create the primary impropers object if it doesn't exist yet.
 		if(!primaryImpropers) {
-			primaryImpropers = new ImpropersObject(dataset());
-			particles->setImpropers(primaryImpropers);
-			particles->impropers()->setVisElements(secondaryImpropers->visElements());
+			particles->setImpropers(DataOORef<ImpropersObject>::create(dataset(), Application::instance()->executionContext()));
+			particles->makeImpropersMutable()->setVisElements(secondaryImpropers->visElements());
+			primaryImpropers = particles->impropers();
 		}
 		mergeTopologyLists(primaryImpropers, secondaryImpropers, ImpropersObject::TopologyProperty);
 	}

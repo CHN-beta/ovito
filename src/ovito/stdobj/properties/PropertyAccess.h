@@ -577,13 +577,6 @@ public:
 
 	/// Allow move assignment.
 	PropertyAccess& operator=(PropertyAccess&& other) = default;
-
-	/// When the PropertyAccess object goes out of scope, an automatic change message is sent by the
-	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccess object.
-	~PropertyAccess() {
-		if(property())
-			property()->notifyTargetChanged();
-	}
 };
 
 /**
@@ -616,17 +609,8 @@ public:
 	/// Allow move assignment.
 	PropertyAccessAndRef& operator=(PropertyAccessAndRef&& other) = default;
 
-	/// When the PropertyAccessAndRef object goes out of scope, an automatic change message is sent by the
-	/// the PropertyObject, assuming that its contents have been modified by the user of the PropertyAccessAndRef object.
-	~PropertyAccessAndRef() {
-		if(property())
-			property()->notifyTargetChanged();
-	}
-
 	/// \brief Closes read-write access to the property and moves it out of this access object.
 	PropertyPtr take() {
-		if(this->_property)
-			this->_property->notifyTargetChanged();
 		return std::move(this->_property);
 	}
 };

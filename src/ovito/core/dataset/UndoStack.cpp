@@ -31,7 +31,7 @@ namespace Ovito {
 * Increments the suspend count of the undo stack associated with the given
 * object.
 ******************************************************************************/
-UndoSuspender::UndoSuspender(const RefMaker* object)
+UndoSuspender::UndoSuspender(const RefMaker* object) noexcept
 {
 	OVITO_CHECK_OBJECT_POINTER(object);
 	if(object->dataset() && QThread::currentThread() == object->thread()) {

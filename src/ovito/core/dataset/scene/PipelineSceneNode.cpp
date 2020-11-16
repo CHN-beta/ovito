@@ -36,9 +36,9 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PipelineSceneNode);
 DEFINE_REFERENCE_FIELD(PipelineSceneNode, dataProvider);
-DEFINE_REFERENCE_FIELD(PipelineSceneNode, visElements);
-DEFINE_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
-DEFINE_REFERENCE_FIELD(PipelineSceneNode, replacementVisElements);
+DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, visElements);
+DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
+DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacementVisElements);
 DEFINE_PROPERTY_FIELD(PipelineSceneNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, dataProvider, "Pipeline object");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");

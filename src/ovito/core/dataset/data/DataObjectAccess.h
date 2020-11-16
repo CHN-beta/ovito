@@ -36,19 +36,40 @@ namespace Ovito {
  * If needed, a call to makeMutable() can be used at any time to request write access to the data object.
  * The accessor class automatically takes care of cloning the original data object if necessary to make it safe to modify.
  */
-template<typename DataObjectClass>
+template<template<typename> typename Reference, typename DataObjectClass>
 class DataObjectAccess
 {
 public:
 
+    /// Default constructor.
+    DataObjectAccess() noexcept = default;
+
     /// Constructor taking an externally owned data object.
     DataObjectAccess(const DataObjectClass* object) noexcept : 
         _constObject(object), 
-        _mutableObject(object && object->isSafeToModify() ? object : nullptr) {}
+        _mutableObject((object && object->isSafeToModify()) ? const_cast<DataObjectClass*>(object) : nullptr) {}
+
+    /// Copying not allowed, because it would lead to a shared ownership.
+    DataObjectAccess(const DataObjectAccess& other) = delete;
+
+    /// Move constructor
+    DataObjectAccess(DataObjectAccess&& other) noexcept : 
+        _constObject(std::move(other._constObject)), 
+        _mutableObject(std::exchange(other._mutableObject, nullptr)) {}
+
+    /// Copy assignment not allowed, because it would lead to a shared ownership.
+    DataObjectAccess& operator=(const DataObjectAccess& other) = delete;
+
+    /// Move assignement operator.
+    DataObjectAccess& operator=(DataObjectAccess&& other) noexcept {
+        _constObject.swap(other._constObject);
+        std::swap(_mutableObject, other._mutableObject);
+        return *this;
+    }
 
 	/// Releases the data object from the accessor and returns it to the caller.
-	OORef<const DataObjectClass> take() noexcept {
-        _mutableObject.reset();
+	Reference<const DataObjectClass> take() noexcept {
+        _mutableObject = nullptr;
         return std::move(_constObject);
     }
 
@@ -56,9 +77,9 @@ public:
     void reset(const DataObjectClass* object = nullptr) noexcept {
         _constObject = object;
         if(object && object->isSafeToModify())
-            _mutableObject = object;
+            _mutableObject = const_cast<DataObjectClass*>(object);
         else
-            _mutableObject.reset();
+            _mutableObject = nullptr;
     }
 
     /// Returns a mutable version of the referenced data object that is safe to modify.
@@ -66,10 +87,9 @@ public:
     inline DataObjectClass* makeMutable() {
         OVITO_ASSERT(_constObject);
         if(!_mutableObject) {
-            if(_constObject->isSafeToModify())
-                _mutableObject = const_pointer_cast<DataObjectClass>(_constObject);
-            else
-                _constObject = _mutableObject = CloneHelper().cloneObject(_constObject, false);
+            if(!_constObject->isSafeToModify())
+                _constObject = CloneHelper().cloneObject(_constObject.get(), false);
+            _mutableObject = const_cast<DataObjectClass*>(_constObject.get());
             OVITO_ASSERT(_mutableObject->isSafeToModify());
         }
         return _mutableObject;
@@ -95,19 +115,19 @@ public:
     /// Swaps to two instance of this class.
     inline void swap(DataObjectAccess& rhs) noexcept {
     	_constObject.swap(rhs._constObject);
-    	_mutableObject.swap(rhs._mutableObject);
+        std::swap(_mutableObject, rhs._mutableObject);
     }
 
 private:
 
     /// Pointer to the read-only data object, which keeps the object alive.
     /// This pointer is always up to date.
-    OORef<const DataObjectClass> _constObject;
+    Reference<const DataObjectClass> _constObject;
 
     /// Pointer to the data object after it has been made mutable.
     /// If the data object is still read-only, because it is shared by multiple owners, then
     /// this pointer is null. Otherwise it points to the same object as the read-only pointer.
-    OORef<DataObjectClass> _mutableObject;
+    DataObjectClass* _mutableObject = nullptr;
 };
 
 }	// End of namespace

@@ -74,7 +74,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 				if(!field->isReferenceField()) continue;
 				if(!field->flags().testFlag(PROPERTY_FIELD_OPEN_SUBEDITOR)) continue;
 				if(!field->isVector()) {
-					if(RefTarget* subobject = editObject()->getReferenceField(*field)) {
+					if(RefTarget* subobject = editObject()->getReferenceFieldTarget(*field)) {
 						// Open editor for this sub-object.
 						if(subEditorIter != _subEditors.end() && (*subEditorIter)->editObject() != nullptr
 								&& (*subEditorIter)->editObject()->getOOClass() == subobject->getOOClass()) {

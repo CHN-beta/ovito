@@ -31,17 +31,17 @@ namespace Ovito {
 
 /// Constructor	for a property field that stores a non-animatable property.
 PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, const char* identifier, PropertyFieldFlags flags,
-	void (*_propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
-	QVariant (*_propertyStorageReadFunc)(const RefMaker*),
-	void (*_propertyStorageWriteFunc)(RefMaker*, const QVariant&),
-	void (*_propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
-	void (*_propertyStorageLoadFunc)(RefMaker*, LoadStream&))
+	void (*propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
+	QVariant (*propertyStorageReadFunc)(const RefMaker*),
+	void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
+	void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
+	void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&))
 	: _definingClassDescriptor(definingClass), _identifier(identifier), _flags(flags),
-		propertyStorageCopyFunc(_propertyStorageCopyFunc),
-		propertyStorageReadFunc(_propertyStorageReadFunc),
-		propertyStorageWriteFunc(_propertyStorageWriteFunc),
-		propertyStorageSaveFunc(_propertyStorageSaveFunc),
-		propertyStorageLoadFunc(_propertyStorageLoadFunc)
+		_propertyStorageCopyFunc(propertyStorageCopyFunc),
+		_propertyStorageReadFunc(propertyStorageReadFunc),
+		_propertyStorageWriteFunc(propertyStorageWriteFunc),
+		_propertyStorageSaveFunc(propertyStorageSaveFunc),
+		_propertyStorageLoadFunc(propertyStorageLoadFunc)
 {
 	OVITO_ASSERT(_identifier != nullptr);
 	OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
@@ -55,11 +55,11 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
 }
 
 /// Constructor	for a property field that stores a single reference to a RefTarget.
-PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, SingleReferenceFieldBase& (*_storageAccessFunc)(const RefMaker*))
-	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), singleStorageAccessFunc(_storageAccessFunc)
+PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, RefTarget* (*singleReferenceReadFunc)(const RefMaker*), void (*singleReferenceWriteFunc)(RefMaker*, const RefTarget*), void (*singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>))
+	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), _singleReferenceReadFunc(singleReferenceReadFunc), _singleReferenceWriteFunc(singleReferenceWriteFunc), _singleReferenceWriteFuncRef(singleReferenceWriteFuncRef)
 {
 	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(singleStorageAccessFunc != nullptr);
+	OVITO_ASSERT(_singleReferenceReadFunc != nullptr && _singleReferenceWriteFunc != nullptr);
 	OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
 	OVITO_ASSERT(definingClass != nullptr);
 	OVITO_ASSERT(targetClass != nullptr);
@@ -72,11 +72,11 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, O
 }
 
 /// Constructor	for a property field that stores a vector of references to RefTarget objects.
-PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, VectorReferenceFieldBase& (*_storageAccessFunc)(const RefMaker*))
-	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), vectorStorageAccessFunc(_storageAccessFunc)
+PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, VectorReferenceFieldBase& (*storageAccessFunc)(const RefMaker*))
+	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), _vectorStorageAccessFunc(storageAccessFunc)
 {
 	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(vectorStorageAccessFunc != nullptr);
+	OVITO_ASSERT(_vectorStorageAccessFunc != nullptr);
 	OVITO_ASSERT(_flags.testFlag(PROPERTY_FIELD_VECTOR));
 	OVITO_ASSERT(definingClass != nullptr);
 	OVITO_ASSERT(targetClass != nullptr);

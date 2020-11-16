@@ -64,7 +64,7 @@ public:
 private:
 
 	/// Controls the transparency of the grid's faces.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, transparencyController, setTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
 	/// Controls whether the grid lines should be highlighted.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightGridLines, setHighlightGridLines);

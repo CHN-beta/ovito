@@ -98,10 +98,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
 
 	/// This controller stores the field of view of the camera if it uses a perspective projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, fovController, setFovController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, fovController, setFovController);
 
 	/// This controller stores the field of view of the camera if it uses an orthogonal projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, zoomController, setZoomController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
 };
 
 /**

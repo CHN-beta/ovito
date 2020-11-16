@@ -132,7 +132,7 @@ void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjec
 	}
 	else {
 		// Create and initialize a new proxy.
-		DataOORef<ElementType> newProxy = DataOORef<ElementType>::makeCopy(self);
+		OORef<ElementType> newProxy = OORef<ElementType>::makeCopy(self);
 		OVITO_ASSERT(newProxy->numericId() == self->numericId());
 		OVITO_ASSERT(newProxy->enabled() == self->enabled());
 

@@ -35,11 +35,11 @@ void Microstructure::initializeObject(Application::ExecutionContext executionCon
 {
 	SurfaceMesh::initializeObject(executionContext);
 
-    faces()->createProperty(SurfaceMeshFaces::RegionProperty, false, executionContext);
-    faces()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, executionContext);
-    faces()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, executionContext);
-    faces()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, executionContext);
-    regions()->createProperty(SurfaceMeshRegions::PhaseProperty, false, executionContext);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty, false, executionContext);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, executionContext);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, executionContext);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, executionContext);
+    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty, false, executionContext);
 }
 
 /******************************************************************************

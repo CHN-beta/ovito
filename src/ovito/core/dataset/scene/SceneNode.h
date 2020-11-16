@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -261,7 +261,7 @@ private:
 	SceneNode* _parentNode = nullptr;
 
 	/// Transformation matrix controller.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, transformationController, setTransformationController, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, transformationController, setTransformationController, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
 	/// The name of this scene node.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, nodeName, setNodeName);
@@ -271,7 +271,7 @@ private:
 
 	/// Stores the target node this scene node is bound to using a look
 	/// at controller or null if this scene node is not bound to a target node.
-	DECLARE_REFERENCE_FIELD_FLAGS(SceneNode, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Contains all child nodes.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);

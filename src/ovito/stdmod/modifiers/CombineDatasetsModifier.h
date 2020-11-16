@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -125,7 +125,7 @@ protected:
 private:
 
 	/// The source for particle data to be merged into the pipeline.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

@@ -102,16 +102,16 @@ public:
 private:
 
 	/// The data structure storing the topology of the surface mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshTopology, topology, setTopology);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshTopology>, topology, setTopology);
 
 	/// The container holding the mesh vertex properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshVertices, vertices, setVertices);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshVertices>, vertices, setVertices);
 
 	/// The container holding the mesh face properties.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshFaces, faces, setFaces);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshFaces>, faces, setFaces);
 
 	/// The container holding the properties of the volumetric regions enclosed by the mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(SurfaceMeshRegions, regions, setRegions);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const SurfaceMeshRegions>, regions, setRegions);
 
 	/// If the mesh has zero faces and is embedded in a fully periodic domain,
 	/// this indicates the volumetric region that fills the entire space.

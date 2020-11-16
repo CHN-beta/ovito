@@ -29,7 +29,7 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
 DEFINE_PROPERTY_FIELD(DataObject, dataSource);
-DEFINE_REFERENCE_FIELD(DataObject, visElements);
+DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
 DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
@@ -212,7 +212,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 	for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
 		if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			if(!field->isVector()) {
-				if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceField(*field).getInternal())) {
+				if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(*field))) {
 					OVITO_ASSERT(self->hasReferenceTo(subObject));
 					dataPath.push_back(subObject);
 					subObject->updateEditableProxies(state, dataPath);

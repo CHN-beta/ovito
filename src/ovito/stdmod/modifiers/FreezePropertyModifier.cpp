@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_UNITS(FreezePropertyModifier, freezeTime, TimeParameterUnit);
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifierApplication);
 DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, property);
 DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, identifiers);
-DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, cachedVisElements);
+DEFINE_VECTOR_REFERENCE_FIELD(FreezePropertyModifierApplication, cachedVisElements);
 SET_MODIFIER_APPLICATION_TYPE(FreezePropertyModifier, FreezePropertyModifierApplication);
 
 /******************************************************************************

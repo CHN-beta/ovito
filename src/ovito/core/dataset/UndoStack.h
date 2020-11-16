@@ -513,13 +513,13 @@ private:
  */
 class OVITO_CORE_EXPORT UndoSuspender {
 public:
-	UndoSuspender(UndoStack& undoStack) : _suspendCount(&undoStack._suspendCount) { 
+	UndoSuspender(UndoStack& undoStack) noexcept : _suspendCount(&undoStack._suspendCount) { 
 		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoSuspender::UndoSuspender()", "This method must only be called from the main thread.");
 		++(*_suspendCount); 
 	}
-	UndoSuspender(const RefMaker* object);
+	UndoSuspender(const RefMaker* object) noexcept;
 	~UndoSuspender() { reset(); }
-	void reset() {
+	void reset() noexcept {
 		if(_suspendCount) {
 			OVITO_ASSERT_MSG((*_suspendCount) > 0, "UndoStack::resume()", "resume() has been called more often than suspend().");
 			--(*_suspendCount);

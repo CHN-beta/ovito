@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
-DEFINE_REFERENCE_FIELD(ViewportConfiguration, viewports);
+DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
 DEFINE_PROPERTY_FIELD(ViewportConfiguration, orbitCenterMode);
@@ -41,7 +41,7 @@ DEFINE_PROPERTY_FIELD(ViewportConfiguration, userOrbitCenter);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportSuspender::ViewportSuspender(RefMaker* object) : ViewportSuspender(object->dataset()->viewportConfig())
+ViewportSuspender::ViewportSuspender(RefMaker* object) noexcept : ViewportSuspender(object->dataset()->viewportConfig())
 {
 }
 

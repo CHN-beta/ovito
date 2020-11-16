@@ -393,7 +393,7 @@ private:
 private:
 
 	/// The property container wrapped by this class.
-	DataObjectAccess<PropertyContainer> _container;
+	DataObjectAccess<OORef, PropertyContainer> _container;
 
 	/// The number of data elements stored in each property arrray of the container.
 	size_t _elementCount = 0;

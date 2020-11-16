@@ -214,6 +214,7 @@ template<typename property_data_type>
 class PropertyField : public RuntimePropertyField<property_data_type>
 {
 public:
+
 	using property_type = property_data_type;
 
 	/// Constructor.
@@ -243,153 +244,168 @@ inline void PropertyField<size_t>::loadFromStream(LoadStream& stream) {
 }
 
 /**
- * \brief Manages a pointer to a RefTarget derived class held by a RefMaker derived class.
+ * \brief Manages a weak reference to a RefTarget derived class held by a RefMaker derived class.
  */
-class OVITO_CORE_EXPORT SingleReferenceFieldBase : public PropertyFieldBase
+class OVITO_CORE_EXPORT SingleWeakRefFieldBase : public PropertyFieldBase
 {
 public:
 
-	/// Constructor.
-	SingleReferenceFieldBase() = default;
+	/// The fancy pointer type.
+	using pointer = RefTarget*;
 
-	/// Returns the RefTarget pointer.
-	inline operator RefTarget*() const {
-		return _pointer;
+#ifdef OVITO_DEBUG
+	/// Destructor.
+	~SingleWeakRefFieldBase() {
+		if(_pointer)
+			qDebug() << "Reference field value:" << get();
+		OVITO_ASSERT_MSG(!_pointer, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
 	}
+#endif
 
 	/// Returns the RefTarget pointer.
-	inline RefTarget* getInternal() const {
+	inline std::pointer_traits<pointer>::element_type* get() const noexcept {
 		return _pointer;
 	}
 
 protected:
 
 	/// Replaces the current reference target with a new target. Handles undo recording.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget);
-
-	/// Replaces the current reference target with a new target. Handles undo recording.
-	void setInternalOORef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget> newTarget);
-
-	/// Replaces the current reference target with a new target. Handles undo recording.
-	void setInternalDataRef(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject> newTarget);
+	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget);
 
 	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*& inactiveTarget, bool generateNotificationEvents = true);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, bool generateNotificationEvents = true);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>& inactiveTarget, bool generateNotificationEvents = true);
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget);
 
 	/// The actual pointer to the reference target.
-	RefTarget* _pointer = nullptr;
+	pointer _pointer = nullptr;
 
 	friend class RefMaker;
 	friend class RefTarget;
-
-private:
-
-	template<typename ReferenceType>
-	class SetReferenceOperation : public PropertyFieldOperation
-	{
-	private:
-
-		/// The reference target that is currently not assigned to the reference field.
-		/// This is stored here so that we can restore it on a call to undo().
-		ReferenceType _inactiveTarget;
-
-		/// The reference field whose value has changed.
-		SingleReferenceFieldBase& _reffield;
-
-	public:
-		
-		SetReferenceOperation(RefMaker* owner, ReferenceType oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
-		
-		virtual void undo() override { 
-			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
-		}
-
-		virtual QString displayName() const override {
-				return QStringLiteral("Setting reference field <%1> of %2 to object %3")
-					.arg(descriptor().identifier())
-					.arg(owner()->getOOClass().name())
-					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
-		}
-	};
 };
 
 /**
- * \brief Templated version of the SingleReferenceFieldBase class.
+ * \brief Manages a reference to a RefTarget derived class held by a RefMaker derived class.
  */
-template<typename RefTargetType>
-class ReferenceField : public SingleReferenceFieldBase
+class OVITO_CORE_EXPORT SingleOORefFieldBase : public PropertyFieldBase
 {
 public:
-	using target_type = RefTargetType;
+
+	/// The fancy pointer type.
+	using pointer = OORef<RefTarget>;
 
 #ifdef OVITO_DEBUG
-	/// Destructor that releases all referenced objects.
-	~ReferenceField() {
+	/// Destructor.
+	~SingleOORefFieldBase() {
 		if(_pointer)
-			qDebug() << "Reference field value:" << _pointer;
+			qDebug() << "Reference field value:" << get();
 		OVITO_ASSERT_MSG(!_pointer, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
 	}
 #endif
 
-	/// Read access to the RefTarget derived pointer.
-	operator RefTargetType*() const { return reinterpret_cast<RefTargetType*>(_pointer); }
-
-	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTargetType* newPointer) {
-		SingleReferenceFieldBase::setInternal(owner, descriptor, newPointer);
+	/// Returns the RefTarget pointer.
+	inline std::pointer_traits<pointer>::element_type* get() const noexcept {
+		return _pointer.get();
 	}
 
-	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTargetType> newPointer) {
-		SingleReferenceFieldBase::setInternalOORef(owner, descriptor, std::move(newPointer));
-	}
+protected:
 
-	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<RefTargetType> newPointer) {
-		set(owner, descriptor, OORef<const RefTargetType>(std::move(newPointer)));
-	}
+	/// Replaces the current reference target with a new target. Handles undo recording.
+	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget);
 
-	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	template<class U = RefTargetType>
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const U> newPointer) {
-		SingleReferenceFieldBase::setInternalDataRef(owner, descriptor, std::move(newPointer));
-	}
+	/// Replaces the target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget);
 
-	/// Overloaded arrow operator; implements pointer semantics.
-	/// Just use this operator as you would with a normal C++ pointer.
-	RefTargetType* operator->() const {
-		OVITO_ASSERT_MSG(_pointer, "ReferenceField operator->", "Tried to make a call to a NULL pointer.");
-		return reinterpret_cast<RefTargetType*>(_pointer);
-	}
+	/// The actual pointer to the reference target.
+	pointer _pointer{};
 
-	/// Dereference operator; implements pointer semantics.
-	/// Just use this operator as you would with a normal C++ pointer.
-	RefTargetType& operator*() const {
-		OVITO_ASSERT_MSG(_pointer, "ReferenceField operator*", "Tried to dereference a NULL pointer.");
-		return *reinterpret_cast<RefTargetType*>(_pointer);
-	}
-
-	/// Returns true if the internal pointer is non-null.
-	operator bool() const { return _pointer != nullptr; }
+	friend class RefMaker;
+	friend class RefTarget;
 };
 
-/// \brief Dynamic casting function for reference fields.
-///
-/// Returns the given object cast to type \c T if the object is of type \c T
-/// (or of a subclass); otherwise returns \c NULL.
-///
-/// \relates ReferenceField
-template<class T, class U>
-inline T* dynamic_object_cast(const ReferenceField<U>& field) {
-	return dynamic_object_cast<T,U>(field.value());
-}
+/**
+ * \brief Generic class template for reference fields of RefMaker derived classes.
+ */
+template<typename T>
+class ReferenceField {};
+
+/**
+ * \brief Class template specialization for weak object reference fields.
+ */
+template<typename T>
+class ReferenceField<T*> : public SingleWeakRefFieldBase
+{
+public:
+
+	/// The fancy pointer type.
+	using pointer = T*;
+	/// The type of object referenced by this field.
+	using target_object_type = std::remove_const_t<T>;
+
+	/// Read access to the RefTarget derived pointer.
+	operator T*() const noexcept { return get(); }
+
+	/// Returns true if the reference is non-null.
+	operator bool() const noexcept { return (bool)SingleWeakRefFieldBase::_pointer; }
+
+	/// Write access to the RefTarget pointer. Changes the value of the reference field.
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newPointer) {
+		SingleWeakRefFieldBase::setInternal(owner, descriptor, std::move(newPointer));
+	}
+
+	/// Returns the target currently being referenced by the reference field.
+	inline T* get() const noexcept { return static_object_cast<target_object_type>(SingleWeakRefFieldBase::get()); }
+
+	/// Arrow operator.
+	T* operator->() const noexcept {
+		OVITO_ASSERT_MSG(SingleWeakRefFieldBase::get(), "ReferenceField operator->", "Tried to dereference a null reference.");
+		return get();
+	}
+
+	/// Dereference operator.
+	T& operator*() const noexcept {
+		OVITO_ASSERT_MSG(SingleWeakRefFieldBase::get(), "ReferenceField operator*", "Tried to dereference a null reference.");
+		return *get();
+	}
+};
+
+/**
+ * \brief Class template specialization for OORef<> based object reference fields.
+ */
+template<typename T>
+class ReferenceField<OORef<T>> : public SingleOORefFieldBase
+{
+public:
+
+	/// The fancy pointer type.
+	using pointer = OORef<T>;
+	/// The type of object referenced by this field.
+	using target_object_type = std::remove_const_t<T>;
+
+	/// Read access to the RefTarget derived pointer.
+	operator T*() const noexcept { return get(); }
+
+	/// Returns true if the reference is non-null.
+	operator bool() const noexcept { return (bool)SingleOORefFieldBase::_pointer; }
+
+	/// Write access to the RefTarget pointer. Changes the value of the reference field.
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newPointer) {
+		SingleOORefFieldBase::setInternal(owner, descriptor, std::move(newPointer));
+	}
+
+	/// Returns the target currently being referenced by the reference field.
+	inline T* get() const noexcept { return static_object_cast<target_object_type>(SingleOORefFieldBase::get()); }
+
+	/// Arrow operator.
+	T* operator->() const noexcept {
+		OVITO_ASSERT_MSG(SingleOORefFieldBase::get(), "ReferenceField operator->", "Tried to dereference a null reference.");
+		return get();
+	}
+
+	/// Dereference operator.
+	T& operator*() const noexcept {
+		OVITO_ASSERT_MSG(SingleOORefFieldBase::get(), "ReferenceField operator*", "Tried to dereference a null reference.");
+		return *get();
+	}
+};
 
 /**
  * \brief Manages a list of references to RefTarget objects held by a RefMaker derived class.
@@ -578,7 +594,7 @@ template<typename RefTargetType>
 class VectorReferenceField : public VectorReferenceFieldBase
 {
 public:
-	using target_type = RefTargetType;
+	using target_object_type = RefTargetType;
 
 	typedef QVector<RefTargetType*> RefTargetVector;
 	typedef QVector<const RefTargetType*> ConstRefTargetVector;

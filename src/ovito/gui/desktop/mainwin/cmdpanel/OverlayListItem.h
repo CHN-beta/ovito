@@ -73,7 +73,7 @@ protected:
 private:
 
 	/// The overlay represented by this item in the list box.
-	DECLARE_REFERENCE_FIELD_FLAGS(ViewportOverlay, overlay, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(ViewportOverlay*, overlay, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The type of this list item.
 	OverlayItemType _itemType;

@@ -155,6 +155,16 @@ public:
         obj->initializeObject(executionContext);
         return obj;
 	}
+
+    /// Returns a shallow copy of the object, which can be safely modified.
+    OORef<std::remove_const_t<T>> makeCopy() const {
+        return CloneHelper().cloneObject(px, false);
+    }
+
+    /// Makes a shallow copy of an object.
+    static OORef<std::remove_const_t<T>> makeCopy(const T* obj) {
+        return CloneHelper().cloneObject(obj, false);
+    }
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept

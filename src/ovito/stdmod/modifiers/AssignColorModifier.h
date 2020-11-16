@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -110,7 +110,7 @@ public:
 protected:
 
 	/// This controller stores the color to be assigned.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, colorController, setColorController, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, colorController, setColorController, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls whether the input selection is preserved.
 	/// If false, the selection is cleared by the modifier.

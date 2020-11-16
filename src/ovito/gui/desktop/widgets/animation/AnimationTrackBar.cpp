@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -218,8 +218,8 @@ void AnimationTrackBar::findControllers(RefTarget* target)
 	for(const PropertyFieldDescriptor* field : target->getOOMetaClass().propertyFields()) {
 		if(field->isReferenceField() && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			hasSubAnimatables = true;
-			if(field->isVector() == false) {
-				if(RefTarget* subTarget = target->getReferenceField(*field)) {
+			if(!field->isVector()) {
+				if(RefTarget* subTarget = target->getReferenceFieldTarget(*field)) {
 					findControllers(subTarget);
 					addController(subTarget, target, field);
 				}

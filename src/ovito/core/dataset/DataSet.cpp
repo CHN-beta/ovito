@@ -45,7 +45,7 @@ DEFINE_REFERENCE_FIELD(DataSet, animationSettings);
 DEFINE_REFERENCE_FIELD(DataSet, sceneRoot);
 DEFINE_REFERENCE_FIELD(DataSet, selection);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
-DEFINE_REFERENCE_FIELD(DataSet, globalObjects);
+DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, animationSettings, "Animation Settings");
 SET_PROPERTY_FIELD_LABEL(DataSet, sceneRoot, "Scene");

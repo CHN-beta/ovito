@@ -120,9 +120,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		ConstPropertyAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
 
 		// Replicate bond property values.
-		outputParticles->makeBondsMutable();
-		outputParticles->bonds()->makePropertiesMutable();
-		outputParticles->bonds()->replicate(numCopies);
+		outputParticles->makeBondsMutable()->makePropertiesMutable();
+		outputParticles->makeBondsMutable()->replicate(numCopies);
 		for(PropertyObject* property : outputParticles->bonds()->properties()) {
 			OVITO_ASSERT(property->size() == newBondCount);
 
@@ -188,9 +187,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldAngleCount = outputParticles->angles()->elementCount();
 
 		// Replicate angle property values.
-		outputParticles->makeAnglesMutable();
-		outputParticles->angles()->makePropertiesMutable();
-		outputParticles->angles()->replicate(numCopies);
+		outputParticles->makeAnglesMutable()->makePropertiesMutable();
+		outputParticles->makeAnglesMutable()->replicate(numCopies);
 		for(PropertyObject* property : outputParticles->angles()->properties()) {
 			size_t destinationIndex = 0;
 			Point3I image;
@@ -235,9 +233,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldDihedralCount = outputParticles->dihedrals()->elementCount();
 
 		// Replicate dihedral property values.
-		outputParticles->makeDihedralsMutable();
-		outputParticles->dihedrals()->makePropertiesMutable();
-		outputParticles->dihedrals()->replicate(numCopies);
+		outputParticles->makeDihedralsMutable()->makePropertiesMutable();
+		outputParticles->makeDihedralsMutable()->replicate(numCopies);
 		for(PropertyObject* property : outputParticles->dihedrals()->properties()) {
 			size_t destinationIndex = 0;
 			Point3I image;
@@ -282,9 +279,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldImproperCount = outputParticles->impropers()->elementCount();
 
 		// Replicate improper property values.
-		outputParticles->makeImpropersMutable();
-		outputParticles->impropers()->makePropertiesMutable();
-		outputParticles->impropers()->replicate(numCopies);
+		outputParticles->makeImpropersMutable()->makePropertiesMutable();
+		outputParticles->makeImpropersMutable()->replicate(numCopies);
 		for(PropertyObject* property : outputParticles->impropers()->properties()) {
 			size_t destinationIndex = 0;
 			Point3I image;

@@ -63,13 +63,16 @@ public:
     explicit SurfaceMeshAccess(const SurfaceMesh* mesh = nullptr);
 
     /// Destructor. Makes sure we don't leave the modified surface mesh in an inconsistent state.
-    ~SurfaceMeshAccess() { take(); }
+    ~SurfaceMeshAccess() { reset(); }
 
 	/// Indicates whether this accessor contains a valid surface mesh object. 
 	explicit operator bool() const noexcept { return (bool)_mesh; }
 
+    /// Releases the current mesh from this accessor and loads a new one.
+    OORef<const SurfaceMesh> reset(const SurfaceMesh* newMesh = nullptr) noexcept;
+
 	/// Releases the SurfaceMesh after it was modified.
-	OORef<const SurfaceMesh> take() noexcept;
+	OORef<const SurfaceMesh> take() noexcept { return reset(); }
 
     /// Exchanges the contents of this data structure with another structure.
     void swap(SurfaceMeshAccess& other) noexcept {
@@ -629,8 +632,8 @@ protected:
 
 private:
 
-    DataObjectAccess<SurfaceMesh> _mesh;                   ///< The surface mesh data object managed by this class.
-    DataObjectAccess<SurfaceMeshTopology> _topology;       ///< The topology of the surface mesh.
+    DataObjectAccess<OORef, SurfaceMesh> _mesh;                   ///< The surface mesh data object managed by this class.
+    DataObjectAccess<OORef, SurfaceMeshTopology> _topology;       ///< The topology of the surface mesh.
     VerticesAccess _vertices;   ///< Provides access to the vertex property container of the surface mesh.
     FacesAccess _faces;         ///< Provides access to the face property container of the surface mesh.
     RegionsAccess _regions;     ///< Provides access to the region property container of the surface mesh.

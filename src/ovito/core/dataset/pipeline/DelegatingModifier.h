@@ -156,7 +156,7 @@ protected:
 protected:
 
 	/// The modifier delegate.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ModifierDelegate, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
 /**

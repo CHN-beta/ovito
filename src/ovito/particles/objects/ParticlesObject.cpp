@@ -415,13 +415,13 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 	// Check if there are existing bonds.
 	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
 		// Create the bonds object.
-		setBonds(DataOORef<BondsObject>::create(dataset(), executionContext));
-		bonds()->setElementCount(newBonds.size());
+		DataOORef<BondsObject> bonds = DataOORef<BondsObject>::create(dataset(), executionContext);
+		bonds->setElementCount(newBonds.size());
 
 		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext);
-		PropertyAccess<Vector3I> periodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
-		PropertyObject* bondTypeProperty = bondType ? bonds()->createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
+		PropertyAccess<ParticleIndexPair> topologyProperty = bonds->createProperty(BondsObject::TopologyProperty, false, executionContext);
+		PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
+		PropertyObject* bondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
 
 		// Copy data into property arrays.
 		auto t = topologyProperty.begin();
@@ -447,8 +447,13 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
 			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
 			OVITO_ASSERT(!bondTypeProperty || bprop->type() != BondsObject::TypeProperty);
-			bonds()->createProperty(bprop);
+			bonds->createProperty(bprop);
 		}
+
+		if(bondsVis)
+			bonds->setVisElement(bondsVis);
+
+		setBonds(std::move(bonds));
 	}
 	else {
 		BondsObject* bonds = makeBondsMutable();
@@ -528,10 +533,10 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 			// Copy bond property data.
 			propertyObject->mappedCopyFrom(*bprop, mapping);
 		}
-	}
 
-	if(bondsVis)
-		bonds()->setVisElement(bondsVis);
+		if(bondsVis)
+			bonds->setVisElement(bondsVis);
+	}
 }
 
 /******************************************************************************

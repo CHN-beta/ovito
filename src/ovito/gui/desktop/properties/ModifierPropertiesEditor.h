@@ -87,7 +87,7 @@ private:
 	QPointer<StatusWidget> _statusLabel;
 
 	/// The modifier application being edited.
-	DECLARE_REFERENCE_FIELD_FLAGS(ModifierApplication, modifierApplication, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(ModifierApplication*, modifierApplication, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
 }	// End of namespace

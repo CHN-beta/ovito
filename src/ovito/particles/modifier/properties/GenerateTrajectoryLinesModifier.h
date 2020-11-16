@@ -97,7 +97,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
 
 	/// The vis element for rendering the trajectory lines.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TrajectoryVis, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 /**
@@ -116,7 +116,7 @@ public:
 private:
 
 	/// The cached trajectory line data.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TrajectoryObject, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

@@ -149,13 +149,13 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelPropertyReference, sourceProperty, setSourceProperty);
 
 	/// This controller stores the level at which to create the isosurface.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, isolevelController, setIsolevelController, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, isolevelController, setIsolevelController, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls whether auxiliary field values should be copied over from the grid to the generated isosurface vertices.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
 
 	/// The vis element for rendering the surface.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshVis, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 }	// End of namespace

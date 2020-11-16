@@ -51,7 +51,7 @@ public:
 
 	/// Returns the list of data objects that are managed by this data source.
 	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
-	virtual DataCollection* getSourceDataCollection() const override { return dataCollection(); }
+	virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
 
 protected:
 
@@ -61,7 +61,7 @@ protected:
 private:
 
 	/// The data collection owned by this source.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataCollection, dataCollection, setDataCollection);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DataCollection>, dataCollection, setDataCollection);
 };
 
 }	// End of namespace

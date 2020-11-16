@@ -31,7 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataCollection);
-DEFINE_REFERENCE_FIELD(DataCollection, objects);
+DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
 /******************************************************************************
@@ -183,13 +183,14 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 ******************************************************************************/
 DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 {
-	OVITO_ASSERT(obj != nullptr);
+	OVITO_CHECK_OBJECT_POINTER(obj);
 	OVITO_ASSERT(contains(obj));
 	if(!obj->isSafeToModify()) {
 		OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
-		if(replaceObject(obj, clone)) {
-			OVITO_ASSERT(clone->isSafeToModify());
-			return clone;
+		DataObject* clonedObj = clone.get();
+		if(replaceObject(obj, std::move(clone))) {
+			OVITO_ASSERT(clonedObj->isSafeToModify());
+			return clonedObj;
 		}
 	}
 	return const_cast<DataObject*>(obj);

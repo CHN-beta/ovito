@@ -382,13 +382,13 @@ protected:
 private:
 
 	/// This controller stores the start value of the color scale.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, startValueController, setStartValueController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, startValueController, setStartValueController);
 
 	/// This controller stores the end value of the color scale.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, endValueController, setEndValueController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, endValueController, setEndValueController);
 
 	/// This object converts property values to colors.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(ColorCodingGradient, colorGradient, setColorGradient);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ColorCodingGradient>, colorGradient, setColorGradient);
 
 	/// The input property that is used as data source for the coloring.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);

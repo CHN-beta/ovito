@@ -75,7 +75,7 @@ bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName
 SaveStream& operator<<(SaveStream& stream, const InputColumnMapping& m)
 {
 	stream.beginChunk(0x02);
-	stream << m.containerClass();
+	stream << static_cast<const OvitoClassPtr&>(m.containerClass());
 	stream.writeSizeT(m.size());
 	for(const InputColumnInfo& col : m) {
 		stream << col.property;
@@ -118,7 +118,9 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
 		}
 	}
 	else {
-		stream >> m._containerClass;
+		OvitoClassPtr clazz;
+		stream >> clazz;
+		m._containerClass = static_cast<PropertyContainerClassPtr>(clazz);
 		m.resize(stream.readSizeT());
 		for(InputColumnInfo& col : m) {
 			stream >> col.property;

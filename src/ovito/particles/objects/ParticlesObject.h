@@ -186,16 +186,16 @@ public:
 private:
 
 	/// The bonds list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(BondsObject, bonds, setBonds);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const BondsObject>, bonds, setBonds);
 
 	/// The angles list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(AnglesObject, angles, setAngles);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const AnglesObject>, angles, setAngles);
 
 	/// The dihedrals list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DihedralsObject, dihedrals, setDihedrals);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DihedralsObject>, dihedrals, setDihedrals);
 
 	/// The impropers list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(ImpropersObject, impropers, setImpropers);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const ImpropersObject>, impropers, setImpropers);
 };
 
 /**

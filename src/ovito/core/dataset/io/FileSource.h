@@ -90,7 +90,7 @@ public:
 
 	/// Returns the list of data objects that are managed by this data source.
 	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
-	virtual DataCollection* getSourceDataCollection() const override { return dataCollection(); }
+	virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
 
 	/// \brief Scans the external data file(s) to find all contained frames.
 	/// This method is an implementation detail. Please use the high-level method updateListOfFrames() instead.
@@ -143,7 +143,7 @@ private:
 private:
 
 	/// The associated importer object that is responsible for parsing the input file.
-	DECLARE_REFERENCE_FIELD_FLAGS(FileSourceImporter, importer, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_UNDO);
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, importer, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_UNDO);
 
 	/// The list of source files (may include wild-card patterns).
 	DECLARE_PROPERTY_FIELD_FLAGS(std::vector<QUrl>, sourceUrls, PROPERTY_FIELD_NO_UNDO);
@@ -158,7 +158,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackStartTime, setPlaybackStartTime);
 
 	/// Stores the master copy of the loaded data collection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataCollection, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Controls the automatic generation of a file name pattern in the GUI.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);

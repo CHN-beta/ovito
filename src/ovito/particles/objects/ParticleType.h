@@ -134,7 +134,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 
 	/// An optional user-defined shape used for rendering particles of this type.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriMeshObject>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);

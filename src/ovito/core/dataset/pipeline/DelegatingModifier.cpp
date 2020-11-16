@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(DelegatingModifier);
 DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 
 IMPLEMENT_OVITO_CLASS(MultiDelegatingModifier);
-DEFINE_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
+DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 
 /******************************************************************************
 * Returns the modifier to which this delegate belongs.

@@ -203,7 +203,8 @@ private:
 	// These classes also require direct access to the reference counter since they
 	// don't make use of the OORef smart-pointer class.
 	friend class VectorReferenceFieldBase;
-	friend class SingleReferenceFieldBase;
+	friend class SingleOORefFieldBase;
+	friend class SingleDataRefFieldBase;
 
 	// These classes need to access the protected serialization functions.
 	friend class ObjectSaveStream;
@@ -260,9 +261,15 @@ inline const T* static_object_cast(const U* obj) noexcept {
 	return static_cast<const T*>(obj);
 }
 
-/// \brief Dynamic cast operator for smart pointers to OVITO objects.
+/// \brief Turns a pointer to a const object into a pointer to a non-const object.
+template<class T>
+T* const_pointer_cast(const T* p) noexcept {
+    return const_cast<T*>(p);
+}
+
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
 ///
-/// Returns a smart pointer to the input object, cast to type \c T if the object is of type \c T
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
 /// (or a subclass); otherwise returns \c NULL.
 ///
 /// \relates OORef, DataOORef
@@ -271,9 +278,9 @@ inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 	return dynamic_pointer_cast<T, U>(obj);
 }
 
-/// \brief Dynamic cast operator for smart pointers to OVITO objects.
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
 ///
-/// Returns a smart pointer to the input object, cast to type \c T if the object is of type \c T
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
 /// (or a subclass); otherwise returns \c NULL.
 ///
 /// \relates OORef, DataOORef
@@ -282,7 +289,7 @@ inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
 	return dynamic_pointer_cast<T, U>(std::move(obj));
 }
 
-/// \brief Static cast operator for smart pointers to OVITO objects.
+/// \brief Static cast operator for fancy pointers to OVITO objects.
 ///
 /// Returns the given object cast to type \c T.
 /// Performs a runtime check of the object type in debug build.
@@ -295,7 +302,7 @@ inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 	return static_pointer_cast<T, U>(obj);
 }
 
-/// \brief Static cast operator for smart pointers to OVITO objects.
+/// \brief Static cast operator for fancy pointers to OVITO objects.
 ///
 /// Returns the given object cast to type \c T.
 /// Performs a runtime check of the object type in debug build.

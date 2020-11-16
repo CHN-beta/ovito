@@ -154,10 +154,10 @@ private:
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE);
 
 	/// The active viewport. May be NULL.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
 	/// The maximized viewport or NULL.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
 	/// Controls around which point the viewport camera should orbit.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OrbitCenterMode, orbitCenterMode, setOrbitCenterMode, PROPERTY_FIELD_NO_UNDO);
@@ -186,8 +186,8 @@ private:
  */
 class OVITO_CORE_EXPORT ViewportSuspender {
 public:
-	ViewportSuspender(ViewportConfiguration* vpconf) : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
-	ViewportSuspender(RefMaker* object);
+	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
+	ViewportSuspender(RefMaker* object) noexcept;
 	~ViewportSuspender() { _vpconf.resumeViewportUpdates(); }
 private:
 	ViewportConfiguration& _vpconf;

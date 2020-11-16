@@ -134,7 +134,7 @@ private:
 	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, std::vector<const DataObject*>& objectStack) const;
 
 	/// The terminal object of the pipeline that outputs the data to be rendered by this PipelineSceneNode.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(PipelineObject, dataProvider, setDataProvider);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PipelineObject>, dataProvider, setDataProvider);
 
 	/// The transient list of display objects that render the node's data in the viewports.
 	/// This list is for internal caching purposes only and is rebuilt every time the node's

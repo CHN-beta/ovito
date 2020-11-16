@@ -268,7 +268,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		UndoSuspender noUndo(dataset());
 
 		// Store generated trajectory lines in the ModifierApplication.
-		OORef<TrajectoryObject> trajObj = new TrajectoryObject(dataset());
+		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset(), Application::instance()->executionContext());
 
 		// Copy re-ordered trajectory points.
 		trajObj->setElementCount(pointData.size());
@@ -331,7 +331,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 
 		noUndo.reset(); // The trajectory line generation should be an undoable operation.
 
-		myModApp->setTrajectoryData(trajObj);
+		myModApp->setTrajectoryData(std::move(trajObj));
 	}
 	return true;
 }

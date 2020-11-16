@@ -44,7 +44,7 @@ SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand field(s)");
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierApplication);
-DEFINE_REFERENCE_FIELD(ComputePropertyModifierApplication, cachedVisElements);
+DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModifierApplication, cachedVisElements);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableNames);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifierApplication, delegateInputVariableNames);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableTable);

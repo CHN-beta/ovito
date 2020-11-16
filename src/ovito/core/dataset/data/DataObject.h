@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/oo/DataRefFieldBase.h>
 
 namespace Ovito {
 
@@ -134,7 +135,7 @@ public:
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 				if(!field->isVector()) {
-					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceField(*field).getInternal())) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(*field))) {
 						if(fn(subObject))
 							return true;
 					}
@@ -208,7 +209,7 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
 
 	/// The attached editable proxy object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
 
 	/// The current number of strong references to this DataObject that exist.
 	mutable QAtomicInt _dataReferenceCount{0};
@@ -217,8 +218,8 @@ private:
 	template<typename DataObjectClass> friend class DataOORef;
 
 	// These classes also require direct access to the shared ownership counter.
+	friend class SingleDataRefFieldBase;
 	friend class VectorReferenceFieldBase;
-	friend class SingleReferenceFieldBase;
 };
 
 /// A pointer to a DataObject-derived metaclass.

@@ -284,18 +284,4 @@ extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& 
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz);
 
-/// \brief Writes a reference to an OvitoObject derived class type to the stream.
-/// \relates SaveStream
-///
-/// \param stream The destination stream.
-/// \param clazz The OvitoObject class type
-/// \return The destination stream.
-/// \throw Exception if an I/O error has occurred.
-template<class OvitoSubclass>
-auto operator<<(SaveStream& stream, const OvitoSubclass* const clazz)
-	-> std::enable_if_t<std::is_base_of<OvitoClass, OvitoSubclass>::value, SaveStream&>
-{
-	return stream << static_cast<const OvitoClassPtr&>(clazz);
-}
-
 }	// End of namespace

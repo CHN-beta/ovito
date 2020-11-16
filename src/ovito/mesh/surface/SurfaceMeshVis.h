@@ -187,10 +187,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
 
 	/// Controls the transparency of the surface mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, surfaceTransparencyController, setSurfaceTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, surfaceTransparencyController, setSurfaceTransparencyController);
 
 	/// Controls the transparency of the surface cap mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, capTransparencyController, setCapTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, capTransparencyController, setCapTransparencyController);
 
 	/// Internal field indicating whether the surface meshes rendered by this viz element are closed or not.
 	/// Depending on this setting, the UI will show the cap polygon option to the user.

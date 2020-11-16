@@ -28,7 +28,7 @@
 namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyObject);
-DEFINE_REFERENCE_FIELD(PropertyObject, elementTypes);
+DEFINE_VECTOR_REFERENCE_FIELD(PropertyObject, elementTypes);
 DEFINE_PROPERTY_FIELD(PropertyObject, title);
 SET_PROPERTY_FIELD_LABEL(PropertyObject, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");
@@ -944,7 +944,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		DataOORef<PropertyObject> newProxy = DataOORef<PropertyObject>::create(self->dataset(), Application::ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), Application::ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy object for the element types, which have already been created by

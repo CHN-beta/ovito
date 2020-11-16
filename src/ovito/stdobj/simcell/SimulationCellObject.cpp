@@ -110,7 +110,7 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 	}
 	else {
 		// Create and initialize a new proxy.
-		DataOORef<SimulationCellObject> newProxy = DataOORef<SimulationCellObject>::create(dataset(), Application::ExecutionContext::Scripting);
+		OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(dataset(), Application::ExecutionContext::Scripting);
 		newProxy->setPbcFlags(pbcFlags());
 		newProxy->setIs2D(is2D());
 		newProxy->setCellMatrix(cellMatrix());

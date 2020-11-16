@@ -29,7 +29,7 @@ IMPLEMENT_OVITO_CLASS(MicrostructurePhase);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, shortName);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, dimensionality);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, crystalSymmetryClass);
-DEFINE_REFERENCE_FIELD(MicrostructurePhase, burgersVectorFamilies);
+DEFINE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, burgersVectorFamilies);
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, shortName, "Short name");
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, dimensionality, "Dimensionality");
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, crystalSymmetryClass, "Symmetry class");

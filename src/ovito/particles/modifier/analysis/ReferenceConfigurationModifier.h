@@ -167,7 +167,7 @@ protected:
 protected:
 
 	/// The reference configuration.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Controls the whether the homogeneous deformation of the simulation cell is eliminated from the calculated displacement vectors.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineMappingType, affineMapping, setAffineMapping, PROPERTY_FIELD_MEMORIZE);
