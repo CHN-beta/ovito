@@ -46,8 +46,8 @@ private:
     T* px = nullptr;
 
 	template<class U> friend class OORef;
-    template<class T, class U> OORef<T> friend static_pointer_cast(OORef<U>&& p) noexcept;
-    template<class T, class U> OORef<T> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T2, class U> OORef<T2> friend static_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T2, class U> OORef<T2> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
 
 public:
 
@@ -155,16 +155,6 @@ public:
         obj->initializeObject(executionContext);
         return obj;
 	}
-
-    /// Returns a shallow copy of the object, which can be safely modified.
-    OORef<std::remove_const_t<T>> makeCopy() const {
-        return CloneHelper().cloneObject(px, false);
-    }
-
-    /// Makes a shallow copy of an object.
-    static OORef<std::remove_const_t<T>> makeCopy(const T* obj) {
-        return CloneHelper().cloneObject(obj, false);
-    }
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept

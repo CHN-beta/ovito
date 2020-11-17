@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
-#include <ovito/core/oo/DataRefFieldBase.h>
 
 namespace Ovito {
 
@@ -218,7 +217,6 @@ private:
 	template<typename DataObjectClass> friend class DataOORef;
 
 	// These classes also require direct access to the shared ownership counter.
-	friend class SingleDataRefFieldBase;
 	friend class VectorReferenceFieldBase;
 };
 

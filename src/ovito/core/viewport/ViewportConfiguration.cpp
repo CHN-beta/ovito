@@ -62,10 +62,10 @@ ViewportConfiguration::ViewportConfiguration(DataSet* dataset) : RefTarget(datas
 void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(activeViewport)) {
-		Q_EMIT activeViewportChanged(_activeViewport);
+		Q_EMIT activeViewportChanged(activeViewport());
 	}
 	else if(field == PROPERTY_FIELD(maximizedViewport)) {
-		Q_EMIT maximizedViewportChanged(_maximizedViewport);
+		Q_EMIT maximizedViewportChanged(maximizedViewport());
 	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }

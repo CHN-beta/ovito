@@ -244,167 +244,73 @@ inline void PropertyField<size_t>::loadFromStream(LoadStream& stream) {
 }
 
 /**
- * \brief Manages a weak reference to a RefTarget derived class held by a RefMaker derived class.
- */
-class OVITO_CORE_EXPORT SingleWeakRefFieldBase : public PropertyFieldBase
-{
-public:
-
-	/// The fancy pointer type.
-	using pointer = RefTarget*;
-
-#ifdef OVITO_DEBUG
-	/// Destructor.
-	~SingleWeakRefFieldBase() {
-		if(_pointer)
-			qDebug() << "Reference field value:" << get();
-		OVITO_ASSERT_MSG(!_pointer, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
-	}
-#endif
-
-	/// Returns the RefTarget pointer.
-	inline std::pointer_traits<pointer>::element_type* get() const noexcept {
-		return _pointer;
-	}
-
-protected:
-
-	/// Replaces the current reference target with a new target. Handles undo recording.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget);
-
-	/// The actual pointer to the reference target.
-	pointer _pointer = nullptr;
-
-	friend class RefMaker;
-	friend class RefTarget;
-};
-
-/**
  * \brief Manages a reference to a RefTarget derived class held by a RefMaker derived class.
  */
-class OVITO_CORE_EXPORT SingleOORefFieldBase : public PropertyFieldBase
+template<typename T>
+class OVITO_CORE_EXPORT SingleReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
 	/// The fancy pointer type.
-	using pointer = OORef<RefTarget>;
+	using pointer = T;
 
 #ifdef OVITO_DEBUG
 	/// Destructor.
-	~SingleOORefFieldBase() {
-		if(_pointer)
-			qDebug() << "Reference field value:" << get();
-		OVITO_ASSERT_MSG(!_pointer, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
-	}
+	~SingleReferenceFieldBase();
 #endif
 
-	/// Returns the RefTarget pointer.
-	inline std::pointer_traits<pointer>::element_type* get() const noexcept {
-		return _pointer.get();
-	}
+	/// Returns a raw, untyped pointer to the currently referenced object.
+	inline typename std::pointer_traits<pointer>::element_type* get() const noexcept { return to_address(_target); }
 
 protected:
 
 	/// Replaces the current reference target with a new target. Handles undo recording.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget);
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget);
 
 	/// Replaces the target stored in the reference field.
 	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget);
 
-	/// The actual pointer to the reference target.
-	pointer _pointer{};
+	/// Obtains the object address represented by a fancy pointer.
+	template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
+ 	template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
 
-	friend class RefMaker;
-	friend class RefTarget;
+	/// The actual fancy pointer value.
+	pointer _target{};
 };
+
+/// This utility class template maps a specific fancy pointer type to a corresponding base-object pointer type.   
+template<typename T> struct SelectGenericReferenceType {};
+template<typename T> struct SelectGenericReferenceType<T*> { using type = RefTarget*; };
+template<typename T> struct SelectGenericReferenceType<OORef<T>> { using type = OORef<RefTarget>; };
+template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { using type = DataOORef<const DataObject>; };
 
 /**
  * \brief Generic class template for reference fields of RefMaker derived classes.
  */
 template<typename T>
-class ReferenceField {};
-
-/**
- * \brief Class template specialization for weak object reference fields.
- */
-template<typename T>
-class ReferenceField<T*> : public SingleWeakRefFieldBase
+class ReferenceField : public SingleReferenceFieldBase<typename SelectGenericReferenceType<T>::type>
 {
 public:
 
 	/// The fancy pointer type.
-	using pointer = T*;
+	using fancy_pointer = T;
+	/// The raw object pointer type.
+	using raw_pointer = typename std::pointer_traits<fancy_pointer>::element_type*;
 	/// The type of object referenced by this field.
-	using target_object_type = std::remove_const_t<T>;
+	using target_object_type = std::remove_const_t<typename std::pointer_traits<fancy_pointer>::element_type>;
+	/// The generic base class type.
+	using base_class = SingleReferenceFieldBase<typename SelectGenericReferenceType<T>::type>;
 
-	/// Read access to the RefTarget derived pointer.
-	operator T*() const noexcept { return get(); }
-
-	/// Returns true if the reference is non-null.
-	operator bool() const noexcept { return (bool)SingleWeakRefFieldBase::_pointer; }
+	/// Returns true if the reference value is non-null.
+	inline operator bool() const noexcept { return (bool)base_class::_target; }
 
 	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newPointer) {
-		SingleWeakRefFieldBase::setInternal(owner, descriptor, std::move(newPointer));
+	inline void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, fancy_pointer newPointer) {
+		base_class::set(owner, descriptor, std::move(newPointer));
 	}
 
-	/// Returns the target currently being referenced by the reference field.
-	inline T* get() const noexcept { return static_object_cast<target_object_type>(SingleWeakRefFieldBase::get()); }
-
-	/// Arrow operator.
-	T* operator->() const noexcept {
-		OVITO_ASSERT_MSG(SingleWeakRefFieldBase::get(), "ReferenceField operator->", "Tried to dereference a null reference.");
-		return get();
-	}
-
-	/// Dereference operator.
-	T& operator*() const noexcept {
-		OVITO_ASSERT_MSG(SingleWeakRefFieldBase::get(), "ReferenceField operator*", "Tried to dereference a null reference.");
-		return *get();
-	}
-};
-
-/**
- * \brief Class template specialization for OORef<> based object reference fields.
- */
-template<typename T>
-class ReferenceField<OORef<T>> : public SingleOORefFieldBase
-{
-public:
-
-	/// The fancy pointer type.
-	using pointer = OORef<T>;
-	/// The type of object referenced by this field.
-	using target_object_type = std::remove_const_t<T>;
-
-	/// Read access to the RefTarget derived pointer.
-	operator T*() const noexcept { return get(); }
-
-	/// Returns true if the reference is non-null.
-	operator bool() const noexcept { return (bool)SingleOORefFieldBase::_pointer; }
-
-	/// Write access to the RefTarget pointer. Changes the value of the reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newPointer) {
-		SingleOORefFieldBase::setInternal(owner, descriptor, std::move(newPointer));
-	}
-
-	/// Returns the target currently being referenced by the reference field.
-	inline T* get() const noexcept { return static_object_cast<target_object_type>(SingleOORefFieldBase::get()); }
-
-	/// Arrow operator.
-	T* operator->() const noexcept {
-		OVITO_ASSERT_MSG(SingleOORefFieldBase::get(), "ReferenceField operator->", "Tried to dereference a null reference.");
-		return get();
-	}
-
-	/// Dereference operator.
-	T& operator*() const noexcept {
-		OVITO_ASSERT_MSG(SingleOORefFieldBase::get(), "ReferenceField operator*", "Tried to dereference a null reference.");
-		return *get();
-	}
+	/// Returns the target object currently being referenced by the reference field.
+	inline raw_pointer get() const noexcept { return static_object_cast<target_object_type>(base_class::get()); }
 };
 
 /**

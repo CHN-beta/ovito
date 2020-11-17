@@ -326,11 +326,9 @@ private:
 	QPointer<DataSet> _dataset;
 
 	friend class RefTarget;
-	friend class SingleOORefFieldBase;
-	friend class SingleWeakRefFieldBase;
-	friend class SingleDataRefFieldBase;
 	friend class VectorReferenceFieldBase;
 	friend class PropertyFieldBase;
+	template<typename T> friend class SingleReferenceFieldBase;
 };
 
 }	// End of namespace

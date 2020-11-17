@@ -33,19 +33,19 @@ namespace Ovito {
  * \brief Strong object smart-pointer to a DataObject, which ensures that the DataObject is not being modified
  *        while being referenced by multiple pointers.
  */
-template<typename DataObjectClass>
+template<typename T>
 class DataOORef
 {
 private:
 
     /// The internal smart-pointer to the DataObject, which keeps the object instance alive.
-    OORef<DataObjectClass> _ref;
+    OORef<T> _ref;
 
 	template<class U> friend class DataOORef;
 
 public:
 
-    using element_type = DataObjectClass;
+    using element_type = T;
 
     /// Default constructor.
 #ifndef MSVC
@@ -58,7 +58,7 @@ public:
     DataOORef(std::nullptr_t) noexcept {}
 
     /// Initialization constructor.
-    DataOORef(const DataObjectClass* p) noexcept : _ref(p) {
+    DataOORef(const T* p) noexcept : _ref(p) {
         if(_ref) _ref->incrementDataReferenceCount();
     }
 
@@ -96,7 +96,7 @@ public:
     }
 
     /// Copy assignment operator.
-    DataOORef& operator=(DataObjectClass* rhs) {
+    DataOORef& operator=(T* rhs) {
     	DataOORef(rhs).swap(*this);
     	return *this;
     }
@@ -138,23 +138,23 @@ public:
     	DataOORef().swap(*this);
     }
 
-    void reset(DataObjectClass* rhs) {
+    void reset(T* rhs) {
     	DataOORef(rhs).swap(*this);
     }
 
-    inline DataObjectClass* get() const noexcept {
+    inline T* get() const noexcept {
     	return _ref.get();
     }
 
-    inline operator DataObjectClass*() const noexcept {
+    inline operator T*() const noexcept {
     	return _ref.get();
     }
 
-    inline DataObjectClass& operator*() const noexcept {
+    inline T& operator*() const noexcept {
     	return *_ref;
     }
 
-    inline DataObjectClass* operator->() const noexcept {
+    inline T* operator->() const noexcept {
     	OVITO_ASSERT(_ref);
     	return _ref.get();
     }
@@ -166,26 +166,26 @@ public:
     /// Factory method instantiating a new data object and returning a smart-pointer to it.
     template<typename... Args>
 	static DataOORef create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
-		return DataOORef(OORef<DataObjectClass>::create(dataset, executionContext, std::forward<Args>(args)...));
+		return DataOORef(OORef<T>::create(dataset, executionContext, std::forward<Args>(args)...));
 	}
     
     /// Returns a copy of the data object, which can be safely modified.
-    DataOORef<std::remove_const_t<DataObjectClass>> makeCopy() const {
+    DataOORef<std::remove_const_t<T>> makeCopy() const {
         return CloneHelper().cloneObject(_ref, false);
     }
 
     /// Makes a shallow copy of a data object.
-    static DataOORef<std::remove_const_t<DataObjectClass>> makeCopy(const DataObjectClass* obj) {
+    static DataOORef<std::remove_const_t<T>> makeCopy(const T* obj) {
         return CloneHelper().cloneObject(obj, false);
     }
 
     /// Makes a deep copy of a data object and its children.
-    static DataOORef<std::remove_const_t<DataObjectClass>> makeDeepCopy(const DataObjectClass* obj) {
+    static DataOORef<std::remove_const_t<T>> makeDeepCopy(const T* obj) {
         return CloneHelper().cloneObject(obj, true);
     }
 
-    template<class T, class U> friend DataOORef<T> static_pointer_cast(DataOORef<U>&& p) noexcept;
-    template<class T, class U> friend DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> static_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> dynamic_pointer_cast(DataOORef<U>&& p) noexcept;
 };
 
 template<class T> T* get_pointer(const DataOORef<T>& p) noexcept

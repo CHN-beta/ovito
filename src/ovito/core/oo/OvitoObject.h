@@ -203,8 +203,6 @@ private:
 	// These classes also require direct access to the reference counter since they
 	// don't make use of the OORef smart-pointer class.
 	friend class VectorReferenceFieldBase;
-	friend class SingleOORefFieldBase;
-	friend class SingleDataRefFieldBase;
 
 	// These classes need to access the protected serialization functions.
 	friend class ObjectSaveStream;

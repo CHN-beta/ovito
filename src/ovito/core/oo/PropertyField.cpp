@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include "PropertyField.h"
-#include "DataRefFieldBase.h"
 
 namespace Ovito {
 
@@ -112,137 +111,112 @@ RefMaker* PropertyFieldBase::PropertyFieldOperation::owner() const
 	return static_cast<RefMaker*>(_owner.get());
 }
 
+#ifdef OVITO_DEBUG
 /******************************************************************************
-* Replaces the target stored in the reference field.
+* Destructor.
 ******************************************************************************/
-void SingleWeakRefFieldBase::swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget)
+template<typename T> SingleReferenceFieldBase<T>::~SingleReferenceFieldBase()
 {
-	OVITO_CHECK_POINTER(this);
-	OVITO_CHECK_OBJECT_POINTER(owner);
-	OVITO_ASSERT(!descriptor.isVector());
-	OVITO_ASSERT(descriptor.isWeakReference());
+	if(_target)
+		qDebug() << "Reference field value:" << get();
+	OVITO_ASSERT_MSG(!_target, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
+}
+#endif
 
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
-		throw CyclicReferenceError();
+/******************************************************************************
+* Replaces the current reference target with a new target. Handles undo recording.
+******************************************************************************/
+template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget)
+{
+	if(_target == newTarget) 
+		return;	// Nothing to change.
 
-	pointer oldTarget = _pointer;
-	if(oldTarget) {
-		OVITO_CHECK_OBJECT_POINTER(oldTarget);
+    // Check object type
+	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
+		OVITO_ASSERT_MSG(false, "SingleReferenceFieldBase::set()", "Tried to create a reference to an incompatible object for this reference field.");
+		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
+	}
 
-		// Reset internal pointer now so that we can use hasReferenceTo() below to check whether
-		// any other references to the old target object exist.
-		_pointer = nullptr;
+	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
+	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleReferenceFieldBase::set()",
+			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
+				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
 
-		// Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
-		if(!owner->hasReferenceTo(oldTarget)) {
-			bool success = QObject::disconnect(oldTarget, &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-			OVITO_ASSERT(success);
+	class SetReferenceOperation : public PropertyFieldOperation
+	{
+	private:
+
+		/// The reference target that is currently not assigned to the reference field.
+		/// This is stored here so that we can restore it on a call to undo().
+		pointer _inactiveTarget;
+
+		/// The reference field whose value has changed.
+		SingleReferenceFieldBase& _reffield;
+
+	public:
+		
+		SetReferenceOperation(RefMaker* owner, pointer oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
+			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
+		
+		virtual void undo() override { 
+			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
 		}
+
+		virtual QString displayName() const override {
+				return QStringLiteral("Setting reference field <%1> of %2 to point to %3")
+					.arg(descriptor().identifier())
+					.arg(owner()->getOOClass().name())
+					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
+		}
+	};
+
+	if(isUndoRecordingActive(owner, descriptor)) {
+		auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
+		op->redo();
+		pushUndoRecord(owner, std::move(op));
 	}
-
-	// Swap pointer values.
-	_pointer = inactiveTarget;
-	inactiveTarget = oldTarget;
-
-	if(_pointer) {
-		OVITO_CHECK_OBJECT_POINTER(_pointer);
-
-		// Create a Qt signal/slot connection.
-		QObject::connect(_pointer, &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+	else {
+		swapReference(owner, descriptor, newTarget);
 	}
-
-	// Inform owner object.
-	owner->referenceReplaced(descriptor, inactiveTarget, _pointer, -1);
-
-	// Emit object-changed signal.
-	generateTargetChangedEvent(owner, descriptor);
-
-	// Emit additional signal if SET_PROPERTY_FIELD_CHANGE_EVENT macro was used for this property field.
-	if(descriptor.extraChangeEventType() != 0)
-		generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor.extraChangeEventType()));
 }
 
 /******************************************************************************
 * Replaces the target stored in the reference field.
 ******************************************************************************/
-void SingleOORefFieldBase::swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget)
+template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget)
 {
 	OVITO_CHECK_POINTER(this);
 	OVITO_CHECK_OBJECT_POINTER(owner);
 	OVITO_ASSERT(!descriptor.isVector());
-	OVITO_ASSERT(!descriptor.isWeakReference());
+	OVITO_ASSERT((descriptor.isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
 	// Check for cyclic references.
 	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
 		throw CyclicReferenceError();
 
-	pointer oldTarget(std::move(_pointer));
-	OVITO_ASSERT(!_pointer);
+	// Move the old pointer value into a local temporary.
+	pointer oldTarget = std::exchange(_target, nullptr);
+	OVITO_ASSERT(!_target);
 
-	if(oldTarget) {
-		// Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
-		if(!owner->hasReferenceTo(oldTarget)) {
-			bool success = QObject::disconnect(oldTarget.get(), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-			OVITO_ASSERT(success);
-		}
+	// Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
+	if(oldTarget && !owner->hasReferenceTo(oldTarget)) {
+		bool success = QObject::disconnect(to_address(oldTarget), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
+		OVITO_ASSERT(success);
 	}
 
-	_pointer = std::move(inactiveTarget);
-	inactiveTarget = std::move(oldTarget);
-
-	if(_pointer) {
-		// Create a Qt signal/slot connection.
-		QObject::connect(_pointer.get(), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
-	}
-
-	// Inform owner object.
-	owner->referenceReplaced(descriptor, inactiveTarget.get(), _pointer.get(), -1);
-
-	// Emit object-changed signal.
-	generateTargetChangedEvent(owner, descriptor);
-
-	// Emit additional signal if SET_PROPERTY_FIELD_CHANGE_EVENT macro was used for this property field.
-	if(descriptor.extraChangeEventType() != 0)
-		generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor.extraChangeEventType()));
-}
-
-/******************************************************************************
-* Replaces the target stored in the reference field.
-******************************************************************************/
-void SingleDataRefFieldBase::swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer& inactiveTarget)
-{
-	OVITO_CHECK_POINTER(this);
-	OVITO_CHECK_OBJECT_POINTER(owner);
-	OVITO_ASSERT(!descriptor.isVector());
-	OVITO_ASSERT(!descriptor.isWeakReference());
-	OVITO_ASSERT(descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()));
-
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
-		throw CyclicReferenceError();
-
-	pointer oldTarget(std::move(_pointer));
-	OVITO_ASSERT(!_pointer);
-
-	if(oldTarget) {
-		// Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
-		if(!owner->hasReferenceTo(oldTarget)) {
-			bool success = QObject::disconnect(oldTarget.get(), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-			OVITO_ASSERT(success);
-		}
-	}
-
-	_pointer = std::move(inactiveTarget);
+	// Exchange pointer values.
+	_target = std::move(inactiveTarget);
 	inactiveTarget = std::move(oldTarget);
 	
-	if(_pointer) {
-		// Create a Qt signal/slot connection.
-		QObject::connect(_pointer.get(), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
-	}
+	// Create a Qt signal/slot connection to the newly referenced object.
+	if(_target)
+		QObject::connect(to_address(_target), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 
-	// Inform owner object.
-	owner->referenceReplaced(descriptor, const_cast<DataObject*>(inactiveTarget.get()), const_cast<DataObject*>(_pointer.get()), -1);
+	// Inform owner object about the changed reference value.
+	owner->referenceReplaced(descriptor, 
+		const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))), 
+		const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_target))), 
+		-1);
 
 	// Emit object-changed signal.
 	generateTargetChangedEvent(owner, descriptor);
@@ -252,186 +226,10 @@ void SingleDataRefFieldBase::swapReference(RefMaker* owner, const PropertyFieldD
 		generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor.extraChangeEventType()));
 }
 
-/******************************************************************************
-* Replaces the current reference target with a new target. Handles undo recording.
-******************************************************************************/
-void SingleWeakRefFieldBase::setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget)
-{
-	if(_pointer == newTarget) 
-		return;	// Nothing to change.
-
-    // Check object type
-	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
-		OVITO_ASSERT_MSG(false, "SingleWeakRefFieldBase::setInternal()", "Tried to create a reference to an incompatible object for this reference field.");
-		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
-	}
-
-	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleWeakRefFieldBase::setInternal()",
-			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
-				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
-
-	OVITO_ASSERT(descriptor.isWeakReference());
-
-	class SetReferenceOperation : public PropertyFieldOperation
-	{
-	private:
-
-		/// The reference target that is currently not assigned to the reference field.
-		/// This is stored here so that we can restore it on a call to undo().
-		pointer _inactiveTarget;
-
-		/// The reference field whose value has changed.
-		SingleWeakRefFieldBase& _reffield;
-
-	public:
-		
-		SetReferenceOperation(RefMaker* owner, pointer oldTarget, SingleWeakRefFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
-		
-		virtual void undo() override { 
-			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
-		}
-
-		virtual QString displayName() const override {
-				return QStringLiteral("Setting reference field <%1> of %2 to object %3")
-					.arg(descriptor().identifier())
-					.arg(owner()->getOOClass().name())
-					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
-		}
-	};
-
-	if(isUndoRecordingActive(owner, descriptor)) {
-		OVITO_ASSERT(!descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()));
-		auto op = std::make_unique<SetReferenceOperation>(owner, newTarget, *this, descriptor);
-		op->redo();
-		pushUndoRecord(owner, std::move(op));
-	}
-	else {
-		swapReference(owner, descriptor, newTarget);
-	}
-}
-
-/******************************************************************************
-* Replaces the current reference target with a new target. Handles undo recording.
-******************************************************************************/
-void SingleOORefFieldBase::setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget)
-{
-	if(_pointer == newTarget) 
-		return;	// Nothing to change.
-
-    // Check object type
-	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
-		OVITO_ASSERT_MSG(false, "SingleOORefFieldBase::setInternal()", "Tried to create a reference to an incompatible object for this reference field.");
-		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
-	}
-
-	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleOORefFieldBase::setInternal()",
-			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
-				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
-
-	OVITO_ASSERT(!descriptor.isWeakReference());
-
-	class SetReferenceOperation : public PropertyFieldOperation
-	{
-	private:
-
-		/// The reference target that is currently not assigned to the reference field.
-		/// This is stored here so that we can restore it on a call to undo().
-		pointer _inactiveTarget;
-
-		/// The reference field whose value has changed.
-		SingleOORefFieldBase& _reffield;
-
-	public:
-		
-		SetReferenceOperation(RefMaker* owner, pointer oldTarget, SingleOORefFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
-		
-		virtual void undo() override { 
-			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
-		}
-
-		virtual QString displayName() const override {
-				return QStringLiteral("Setting reference field <%1> of %2 to object %3")
-					.arg(descriptor().identifier())
-					.arg(owner()->getOOClass().name())
-					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
-		}
-	};
-
-	if(isUndoRecordingActive(owner, descriptor)) {
-		auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
-		op->redo();
-		pushUndoRecord(owner, std::move(op));
-	}
-	else {
-		swapReference(owner, descriptor, newTarget);
-	}
-}
-
-/******************************************************************************
-* Replaces the current reference target with a new target. Handles undo recording.
-******************************************************************************/
-void SingleDataRefFieldBase::setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, pointer newTarget)
-{
-	if(_pointer == newTarget) 
-		return;	// Nothing to change.
-
-    // Check object type
-	if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor.targetClass())) {
-		OVITO_ASSERT_MSG(false, "SingleDataRefFieldBase::setInternal()", "Tried to create a reference to an incompatible object for this reference field.");
-		owner->throwException(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor.targetClass()->name(), newTarget->getOOClass().name()));
-	}
-
-	// Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-	OVITO_ASSERT_MSG(descriptor.automaticUndo() == false || owner->isRefTarget(), "SingleDataRefFieldBase::setInternal()",
-			qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
-				.arg(descriptor.identifier()).arg(descriptor.definingClass()->name())));
-
-	// This overload of setInternal() taking a DataOORef may not be used to set weak reference fields.
-	OVITO_ASSERT(!descriptor.isWeakReference());
-	// This overload of setInternal() taking a DataOORef may not be used to set a reference to a non-DataObject type.
-	OVITO_ASSERT(descriptor.targetClass()->isDerivedFrom(DataObject::OOClass()));
-
-	class SetReferenceOperation : public PropertyFieldOperation
-	{
-	private:
-
-		/// The reference target that is currently not assigned to the reference field.
-		/// This is stored here so that we can restore it on a call to undo().
-		pointer _inactiveTarget;
-
-		/// The reference field whose value has changed.
-		SingleDataRefFieldBase& _reffield;
-
-	public:
-		
-		SetReferenceOperation(RefMaker* owner, pointer oldTarget, SingleDataRefFieldBase& reffield, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
-		
-		virtual void undo() override { 
-			_reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
-		}
-
-		virtual QString displayName() const override {
-				return QStringLiteral("Setting reference field <%1> of %2 to object %3")
-					.arg(descriptor().identifier())
-					.arg(owner()->getOOClass().name())
-					.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>");
-		}
-	};
-
-	if(isUndoRecordingActive(owner, descriptor)) {
-		auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
-		op->redo();
-		pushUndoRecord(owner, std::move(op));
-	}
-	else {
-		swapReference(owner, descriptor, newTarget);
-	}
-}
+// Instantiate base class template for the fancy pointer base types needed.
+template class SingleReferenceFieldBase<RefTarget*>;
+template class SingleReferenceFieldBase<OORef<RefTarget>>;
+template class SingleReferenceFieldBase<DataOORef<const DataObject>>;
 
 /******************************************************************************
 * Removes a target from the list reference field.

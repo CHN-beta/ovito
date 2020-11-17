@@ -176,22 +176,26 @@ void GSDImporter::FrameLoader::loadFile()
 	if(particleTypeNames.empty())
 		particleTypeNames.push_back(QByteArrayLiteral("A"));
 
-	// Read particle positions.
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-	gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
-	if(isCanceled()) return;
+	{
+		// Read particle positions.
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
+		if(isCanceled()) return;
+	}
 
-	// Create particle types.
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-	for(int i = 0; i < particleTypeNames.size(); i++)
-		addNumericType(typeProperty.property(), i, QString::fromUtf8(particleTypeNames[i]), ParticleType::OOClass());
+	{
+		// Create particle types.
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		for(int i = 0; i < particleTypeNames.size(); i++)
+			addNumericType(typeProperty.property(), i, QString::fromUtf8(particleTypeNames[i]), ParticleType::OOClass());
 
-	// Read particle types.
-	if(gsd.hasChunk("particles/typeid", frameNumber))
-		gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
-	else
-		typeProperty.fill(0);
-	if(isCanceled()) return;
+		// Read particle types.
+		if(gsd.hasChunk("particles/typeid", frameNumber))
+			gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
+		else
+			typeProperty.fill(0);
+		if(isCanceled()) return;
+	}
 
 	// Parse particle shape information.
 	QByteArrayList particleTypeShapes = gsd.readStringTable("particles/type_shapes", frameNumber);
@@ -206,14 +210,12 @@ void GSDImporter::FrameLoader::loadFile()
 	readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles());
 	readOptionalProperty(gsd, "particles/velocity", frameNumber, ParticlesObject::VelocityProperty, particles());
 	readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles());
-	PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles());
-	if(radiusProperty) {
+	if(PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles())) {
 		// Convert particle diameters to radii.
 		for(FloatType& r : radiusProperty)
 			r /= 2;
 	}
-	PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles());
-	if(orientationProperty) {
+	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles())) {
 		// Convert quaternion representation from GSD format to OVITO's internal format.
 		// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
 		for(Quaternion& q : orientationProperty)
@@ -260,6 +262,7 @@ void GSDImporter::FrameLoader::loadFile()
 				throw Exception(tr("Nonexistent atom tag in bond list in GSD file."));
 			bond[1] = *bondTopoPtr++;
 		}
+		bondTopologyProperty.reset();
 		generateBondPeriodicImageProperty();
 		if(isCanceled()) return;
 
