@@ -331,7 +331,7 @@ public:
 	/// The vector container type.
 	using container = QVector<pointer>;
 	/// The size/index data type.
-	using size_type = typename container::size_type;
+	using size_type = container::size_type;
 
 #ifdef OVITO_DEBUG
 	/// Destructor.
@@ -407,6 +407,8 @@ public:
 	using base_class = VectorReferenceFieldBase<typename SelectGenericReferenceType<T>::type>;
 	/// The container type for typed fancy pointers.
 	using container = QVector<fancy_pointer>;
+	/// The size/index data type.
+	using size_type = container::size_type;
 
 	/// Replaces one of the references with a new target object.
 	inline void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i, fancy_pointer newPointer) {
