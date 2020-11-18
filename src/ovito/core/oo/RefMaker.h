@@ -249,6 +249,34 @@ public:
 	/// \return The current value of the reference field.
 	RefTarget* getReferenceFieldTarget(const PropertyFieldDescriptor& field) const;
 
+	/// \brief Returns the number of target objects in a vector reference field of this RefMaker.
+	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
+	/// \return The length of the vector.
+	int getVectorReferenceFieldSize(const PropertyFieldDescriptor& field) const;
+
+	/// \brief Returns the i-th target object from a vector reference field of this RefMaker.
+	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
+	/// \param index The index into the reference target list of the field.
+	/// \return The referenced target object.
+	RefTarget* getVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index) const;
+
+	/// \brief Replaces the i-th object from a vector reference field of this RefMaker with a different target.
+	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
+	/// \param index The index into the reference target list of the field.
+	/// \param target The new target to replace the old one with.
+	void setVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index, const RefTarget* target);
+
+	/// \brief Removes the i-th target object from a vector reference field of this RefMaker.
+	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
+	/// \param index The index into the reference target list of the field.
+	void removeVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index);
+
+	/// \brief Determines if an object is among the targets of a vector reference field of this RefMaker.
+	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
+	/// \param target The object to look for in the reference field.
+	/// \return True if the object is found in the list of referenced targets.
+	bool vectorReferenceFieldContains(const PropertyFieldDescriptor& field, const RefTarget* target) const;
+
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
 	///
@@ -260,16 +288,6 @@ public:
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 	virtual void initializeObject(Application::ExecutionContext executionContext);
-
-	/////////////////////////// Runtime reference field access //////////////////////////////
-
-	/// \brief Looks up a vector reference field.
-	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
-	/// \return The field object for this RefMaker instance and the specified vector field.
-	/// \sa getReferenceField()
-	/// \sa OvitoClass::firstPropertyField()
-	/// \sa OvitoClass::findPropertyField()
-	const VectorReferenceFieldBase& getVectorReferenceField(const PropertyFieldDescriptor& field) const;
 
 	////////////////////////////// Dependencies //////////////////////////////////
 
@@ -326,9 +344,9 @@ private:
 	QPointer<DataSet> _dataset;
 
 	friend class RefTarget;
-	friend class VectorReferenceFieldBase;
 	friend class PropertyFieldBase;
 	template<typename T> friend class SingleReferenceFieldBase;
+	template<typename T> friend class VectorReferenceFieldBase;
 };
 
 }	// End of namespace

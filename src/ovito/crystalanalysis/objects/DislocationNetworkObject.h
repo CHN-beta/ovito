@@ -65,8 +65,8 @@ public:
 	void removeCrystalStructure(int index) { _crystalStructures.remove(this, PROPERTY_FIELD(crystalStructures), index); }
 
 	/// Returns the crystal structure with the given ID, or null if no such structure exists.
-	MicrostructurePhase* structureById(int id) const {
-		for(MicrostructurePhase* stype : crystalStructures())
+	const MicrostructurePhase* structureById(int id) const {
+		for(const MicrostructurePhase* stype : crystalStructures())
 			if(stype->numericId() == id)
 				return stype;
 		return nullptr;
@@ -81,7 +81,7 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
 
 	/// List of crystal structures.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, crystalStructures, setCrystalStructures);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const MicrostructurePhase>, crystalStructures, setCrystalStructures);
 };
 
 }	// End of namespace

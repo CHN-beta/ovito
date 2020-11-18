@@ -864,11 +864,8 @@ void PropertyObject::sortElementTypesByName()
 			[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; }))
 		return;
 
-	// This is to keep the element types alive during the assignment to the vector reference field below.
-	std::vector<DataOORef<ElementType>> typeRefs(elementTypes().begin(), elementTypes().end());
-
 	// Reorder types by name.
-	QVector<ElementType*> types = elementTypes();
+	DataRefVector<ElementType> types = elementTypes();
 	std::sort(types.begin(), types.end(), 
 		[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; });
 	setElementTypes(std::move(types));
@@ -900,10 +897,7 @@ void PropertyObject::sortElementTypesByName()
 ******************************************************************************/
 void PropertyObject::sortElementTypesById()
 {
-	// This is to keep the element types alive during the assignment to the vector reference field below.
-	std::vector<DataOORef<ElementType>> typeRefs(elementTypes().begin(), elementTypes().end());
-
-	QVector<ElementType*> types = elementTypes();
+	DataRefVector<ElementType> types = elementTypes();
 	std::sort(types.begin(), types.end(), 
 		[](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
 	setElementTypes(std::move(types));
@@ -937,7 +931,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 		// Add element types that are non-existing in the actual property object.
 		// Note: Currently this should never happen, because file parser never
 		// remove element types.
-		for(ElementType* proxyType : proxy->elementTypes()) {
+		for(const ElementType* proxyType : proxy->elementTypes()) {
 			OVITO_ASSERT(std::any_of(self->elementTypes().begin(), self->elementTypes().end(), [proxyType](const ElementType* type) { return type->editableProxy() == proxyType; }));
 		}
 	}

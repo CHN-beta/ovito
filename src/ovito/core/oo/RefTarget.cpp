@@ -182,24 +182,25 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 				field->_singleReferenceWriteFuncRef(clone, std::move(clonedReference));
 			}
 			else {
-				OVITO_ASSERT(field->_vectorStorageAccessFunc != nullptr);
+				// Remove any preexisting references from the field of the cloned object.
+				clone->clearReferenceField(*field);
+
 				// Clone all reference targets in the source vector.
-				const VectorReferenceFieldBase& sourceField = field->_vectorStorageAccessFunc(this);
-				VectorReferenceFieldBase& destField = field->_vectorStorageAccessFunc(clone);
-				destField.clear(clone, *field);
-				for(int i = 0; i < sourceField.size(); i++) {
-					OORef<const RefTarget> clonedReference;
+				int count = getVectorReferenceFieldSize(*field);
+				for(int i = 0; i < count; i++) {
+					const RefTarget* originalTarget = getVectorReferenceFieldTarget(*field, i);
+					OORef<RefTarget> clonedReference;
 					// Clone reference target.
 					if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
-						clonedReference = static_cast<RefTarget*>(sourceField[i]);
+						clonedReference = originalTarget;
 					else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_CLONE))
-						clonedReference = cloneHelper.cloneObject(static_cast<RefTarget*>(sourceField[i]), deepCopy);
+						clonedReference = cloneHelper.cloneObject(originalTarget, deepCopy);
 					else if(field->flags().testFlag(PROPERTY_FIELD_ALWAYS_DEEP_COPY))
-						clonedReference = cloneHelper.cloneObject(static_cast<RefTarget*>(sourceField[i]), true);
+						clonedReference = cloneHelper.cloneObject(originalTarget, true);
 					else
-						clonedReference = cloneHelper.copyReference(static_cast<RefTarget*>(sourceField[i]), deepCopy);
+						clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
 					// Store in reference field of destination object.
-					destField.insertInternal(clone, *field, std::move(clonedReference));
+					field->_vectorReferenceInsertFunc(clone, i, std::move(clonedReference));
 				}
 			}
 		}

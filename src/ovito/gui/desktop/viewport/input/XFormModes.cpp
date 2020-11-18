@@ -260,7 +260,7 @@ void MoveMode::doXForm()
 /******************************************************************************
 * Applies the current transformation to a set of nodes.
 ******************************************************************************/
-void MoveMode::applyXForm(const QVector<SceneNode*>& nodeSet, FloatType multiplier)
+void MoveMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier)
 {
 	for(SceneNode* node : nodeSet) {
 		OVITO_CHECK_OBJECT_POINTER(node);
@@ -363,7 +363,7 @@ void RotateMode::doXForm()
 /******************************************************************************
 * Applies the current transformation to a set of nodes.
 ******************************************************************************/
-void RotateMode::applyXForm(const QVector<SceneNode*>& nodeSet, FloatType multiplier)
+void RotateMode::applyXForm(const OORefVector<SceneNode>& nodeSet, FloatType multiplier)
 {
 	for(SceneNode* node : nodeSet) {
 		OVITO_CHECK_OBJECT_POINTER(node);

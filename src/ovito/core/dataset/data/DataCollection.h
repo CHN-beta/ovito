@@ -393,7 +393,7 @@ private:
 private:
 
 	/// Stores the list of data objects.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataObject, objects, setObjects);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const DataObject>, objects, setObjects);
 };
 
 }	// End of namespace

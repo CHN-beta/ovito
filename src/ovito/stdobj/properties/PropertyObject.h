@@ -480,7 +480,7 @@ protected:
 private:
 
 	/// Contains the list of defined "types" if this is a typed property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, elementTypes, setElementTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
 
 	/// The user-interface title of this property.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);

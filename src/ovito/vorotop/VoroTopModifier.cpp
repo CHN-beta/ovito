@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2017 Emanuel A. Lazar
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -69,11 +69,11 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
     // Rebuild structure types list.
     setStructureTypes({});
     for(int i = 0; i < filter->structureTypeCount(); i++) {
-        OORef<ParticleType> stype(new ParticleType(dataset()));
+        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), executionContext);
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
         stype->initializeType(ParticlesObject::StructureTypeProperty, executionContext);
-        addStructureType(stype);
+        addStructureType(std::move(stype));
     }
 
     // Filter file was successfully loaded. Accept it as the new filter.

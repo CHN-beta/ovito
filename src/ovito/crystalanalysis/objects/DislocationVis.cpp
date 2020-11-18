@@ -163,10 +163,10 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	OORef<RenderableDislocationLines> renderableLines = new RenderableDislocationLines(this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), Application::instance()->executionContext(), this, dataObject);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
-	flowState.addObject(renderableLines);
+	flowState.addObject(std::move(renderableLines));
 
 	return std::move(flowState);
 }
@@ -749,7 +749,7 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 	if(dislocationObj()) {
 		if(segmentIndex >= 0 && segmentIndex < dislocationObj()->segments().size()) {
 			DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
-			MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
+			const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
 			QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), structure);
 			str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
 			Vector3 transformedVector = segment->burgersVector.toSpatialVector();

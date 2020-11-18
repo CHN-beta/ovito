@@ -505,7 +505,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		}
 
 		// Initialize property values of new bonds.
-		for(PropertyObject* bondPropertyObject : bonds->properties()) {
+		for(PropertyObject* bondPropertyObject : bonds->makePropertiesMutable()) {
 			if(bondPropertyObject->type() == BondsObject::ColorProperty) {
 				const std::vector<ColorA>& colors = inputBondColors(true);
 				OVITO_ASSERT(colors.size() == bondPropertyObject->size());

@@ -136,7 +136,7 @@ void ColorCodingModifier::initializeModifier(ModifierApplication* modApp)
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
 			PropertyReference bestProperty;
-			for(PropertyObject* property : container->properties()) {
+			for(const PropertyObject* property : container->properties()) {
 				bestProperty = PropertyReference(delegate()->inputContainerClass(), property, (property->componentCount() > 1) ? 0 : -1);
 			}
 			if(!bestProperty.isNull())

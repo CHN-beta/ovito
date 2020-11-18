@@ -225,8 +225,9 @@ void AnimationTrackBar::findControllers(RefTarget* target)
 				}
 			}
 			else {
-				for(RefTarget* subTarget : target->getVectorReferenceField(*field).targets()) {
-					if(subTarget) {
+				int count = target->getVectorReferenceFieldSize(*field);
+				for(int i = 0; i < count; i++) {
+					if(RefTarget* subTarget = target->getVectorReferenceFieldTarget(*field, i)) {
 						findControllers(subTarget);
 						addController(subTarget, target, field);
 					}

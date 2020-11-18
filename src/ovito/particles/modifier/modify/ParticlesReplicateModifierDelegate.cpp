@@ -75,7 +75,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 
 	// Replicate particle property values.
 	Box3I newImages = mod->replicaRange();
-	for(PropertyObject* property : outputParticles->properties()) {
+	for(PropertyObject* property : outputParticles->makePropertiesMutable()) {
 		OVITO_ASSERT(property->size() == newParticleCount);
 
 		// Shift particle positions by the periodicity vector.
@@ -120,9 +120,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		ConstPropertyAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
 
 		// Replicate bond property values.
-		outputParticles->makeBondsMutable()->makePropertiesMutable();
-		outputParticles->makeBondsMutable()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->bonds()->properties()) {
+		BondsObject* mutableBonds = outputParticles->makeBondsMutable();
+		mutableBonds->replicate(numCopies);
+		for(PropertyObject* property : mutableBonds->makePropertiesMutable()) {
 			OVITO_ASSERT(property->size() == newBondCount);
 
 			size_t destinationIndex = 0;
@@ -187,9 +187,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldAngleCount = outputParticles->angles()->elementCount();
 
 		// Replicate angle property values.
-		outputParticles->makeAnglesMutable()->makePropertiesMutable();
-		outputParticles->makeAnglesMutable()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->angles()->properties()) {
+		AnglesObject* mutableAngles = outputParticles->makeAnglesMutable();
+		mutableAngles->replicate(numCopies);
+		for(PropertyObject* property : mutableAngles->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 
@@ -233,9 +233,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldDihedralCount = outputParticles->dihedrals()->elementCount();
 
 		// Replicate dihedral property values.
-		outputParticles->makeDihedralsMutable()->makePropertiesMutable();
-		outputParticles->makeDihedralsMutable()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->dihedrals()->properties()) {
+		DihedralsObject* mutableDihedrals = outputParticles->makeDihedralsMutable();
+		mutableDihedrals->replicate(numCopies);
+		for(PropertyObject* property : mutableDihedrals->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 
@@ -279,9 +279,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldImproperCount = outputParticles->impropers()->elementCount();
 
 		// Replicate improper property values.
-		outputParticles->makeImpropersMutable()->makePropertiesMutable();
-		outputParticles->makeImpropersMutable()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->impropers()->properties()) {
+		ImpropersObject* mutableImpropers = outputParticles->makeImpropersMutable();
+		mutableImpropers->replicate(numCopies);
+		for(PropertyObject* property : mutableImpropers->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 

@@ -536,7 +536,7 @@ void CAImporter::FrameLoader::loadFile()
 		for(int i = 0; i < patterns.size(); i++) {
 			DataOORef<MicrostructurePhase> pattern;
 			if(dislocationNetwork->crystalStructures().size() > i+1) {
-				pattern = dislocationNetwork->crystalStructures()[i+1];
+				pattern = dislocationNetwork->makeMutable<MicrostructurePhase>(dislocationNetwork->crystalStructures()[i+1]);
 			}
 			else {
 				pattern = DataOORef<MicrostructurePhase>::create(dataset(), executionContext());
@@ -552,9 +552,9 @@ void CAImporter::FrameLoader::loadFile()
 
 			// Update Burgers vector families.
 			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-				OORef<BurgersVectorFamily> family;
+				DataOORef<BurgersVectorFamily> family;
 				if(j < pattern->burgersVectorFamilies().size()) {
-					family = pattern->burgersVectorFamilies()[j];
+					family = pattern->makeMutable<BurgersVectorFamily>(pattern->burgersVectorFamilies()[j]);
 				}
 				else {
 					family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());

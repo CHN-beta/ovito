@@ -139,14 +139,14 @@ private:
 	/// The transient list of display objects that render the node's data in the viewports.
 	/// This list is for internal caching purposes only and is rebuilt every time the node's
 	/// pipeline is newly evaluated.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// List of weak references to visual elements coming from the pipeline which shall be replaced with
 	/// independent versions owned by this pipeline.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis*, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
 	/// Visual elements owned by the pipeline itself, which replace the ones generated within the pipeline.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Activates the precomputation of the pipeline results for all animation frames.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);

@@ -125,7 +125,7 @@ protected:
 private:
 
 	/// Holds the references to the selected scene nodes.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET);
 
 	/// Indicates that there is a pending change event in the event queue.
 	bool _selectionChangeInProgress = false;

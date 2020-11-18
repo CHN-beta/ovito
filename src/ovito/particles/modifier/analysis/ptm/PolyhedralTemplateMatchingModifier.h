@@ -70,7 +70,7 @@ private:
 
 		/// Constructor.
 		PTMEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
-				const QVector<ElementType*>& structureTypes, const QVector<ElementType*>& orderingTypes, ConstPropertyPtr selection,
+				const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 				bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 
 		/// Computes the modifier's results.
@@ -145,7 +145,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputOrderingTypes, setOutputOrderingTypes, PROPERTY_FIELD_MEMORIZE);
 
 	/// Contains the list of ordering types recognized by this analysis modifier.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, orderingTypes, setOrderingTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, orderingTypes, setOrderingTypes);
 };
 
 }	// End of namespace

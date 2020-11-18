@@ -165,7 +165,7 @@ protected:
 private:
 
 	/// The list of RefTargets which are being monitored by this listener.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget*, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 };
 
 /**
@@ -187,7 +187,10 @@ public:
 	/// \brief Sets the list of targets this listener should listen to.
 	/// \param newTargets The new list of targets.
 	/// \sa targets()
-	void setTargets(const QVector<T*>& newTargets) { VectorRefTargetListenerBase::setTargets(reinterpret_cast<const QVector<RefTarget*>&>(newTargets)); }
+	template<typename U>
+	void setTargets(U&& newTargets) { 
+		VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
+	}
 
 	/// \brief Adds a new object to the list of targets this listener should listen to.
 	void push_back(T* target) { VectorRefTargetListenerBase::push_back(target); }

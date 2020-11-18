@@ -90,7 +90,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	// Note: Using index-based instead of range-based for-loop here, because the 
 	// object list gets modified within the loop.
 	for(int idx = 0; idx < state.data()->objects().size(); idx++) {
-		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx])) {
+		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx].get())) {
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
 

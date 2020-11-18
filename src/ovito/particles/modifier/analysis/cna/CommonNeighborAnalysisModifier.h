@@ -172,7 +172,7 @@ private:
 	public:
 
 		/// Constructor.
-		FixedCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+		FixedCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
 			CNAEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_cutoff(cutoff) {}
 
@@ -215,7 +215,7 @@ private:
 	public:
 
 		/// Constructor.
-		BondCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+		BondCNAEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
 			CNAEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),

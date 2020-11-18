@@ -122,7 +122,7 @@ public:
 	/// Duplicates any property objects that are shared with other containers.
 	/// After this method returns, all property objects are exclusively owned by the container and
 	/// can be safely modified without unwanted side effects.
-	void makePropertiesMutable();
+	QVector<PropertyObject*> makePropertiesMutable();
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
@@ -145,7 +145,7 @@ public:
 
 	/// Replaces the property arrays in this property container with a new set of properties.
 	/// Existing element types of typed properties will be preserved by the method. 
-	void setContent(size_t newElementCount, const QVector<PropertyObject*>& newProperties);
+	void setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties);
 
 	/// Duplicates all data elements by extending the property arrays and replicating the existing data N times.
 	void replicate(size_t n, bool replicatePropertyValues = true);
@@ -169,7 +169,7 @@ protected:
 private:
 
 	/// Holds the list of properties.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(PropertyObject, properties, setProperties);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const PropertyObject>, properties, setProperties);
 
 	/// Keeps track of the number of data elements this property container contains.
 	DECLARE_PROPERTY_FIELD(size_t, elementCount);

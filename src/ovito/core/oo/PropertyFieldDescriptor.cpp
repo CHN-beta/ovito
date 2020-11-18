@@ -72,11 +72,15 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, O
 }
 
 /// Constructor	for a property field that stores a vector of references to RefTarget objects.
-PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, VectorReferenceFieldBase& (*storageAccessFunc)(const RefMaker*))
-	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), _vectorStorageAccessFunc(storageAccessFunc)
+PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, 
+		int (*vectorReferenceCountFunc)(const RefMaker*), RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int), void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
+		void (*vectorReferenceRemoveFunc)(RefMaker*, int), void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>))
+	: _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), 
+		_vectorReferenceCountFunc(vectorReferenceCountFunc), _vectorReferenceGetFunc(vectorReferenceGetFunc), _vectorReferenceSetFunc(vectorReferenceSetFunc),
+		_vectorReferenceRemoveFunc(vectorReferenceRemoveFunc), _vectorReferenceInsertFunc(vectorReferenceInsertFunc)
 {
 	OVITO_ASSERT(_identifier != nullptr);
-	OVITO_ASSERT(_vectorStorageAccessFunc != nullptr);
+	OVITO_ASSERT(_vectorReferenceCountFunc != nullptr && _vectorReferenceGetFunc != nullptr);
 	OVITO_ASSERT(_flags.testFlag(PROPERTY_FIELD_VECTOR));
 	OVITO_ASSERT(definingClass != nullptr);
 	OVITO_ASSERT(targetClass != nullptr);

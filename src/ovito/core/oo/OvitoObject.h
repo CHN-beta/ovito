@@ -200,10 +200,6 @@ private:
 	// Give OORef smart-pointer class access to the internal reference counter.
 	template<class T> friend class OORef;
 
-	// These classes also require direct access to the reference counter since they
-	// don't make use of the OORef smart-pointer class.
-	friend class VectorReferenceFieldBase;
-
 	// These classes need to access the protected serialization functions.
 	friend class ObjectSaveStream;
 	friend class ObjectLoadStream;

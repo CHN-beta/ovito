@@ -285,7 +285,7 @@ protected:
 	void adjustProjectionForRenderFrame(ViewProjectionParameters& params);
 
 	/// Renders the viewport overlays to an image buffer.
-	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const QVector<ViewportOverlay*>& layers, SynchronousOperation& operation);
+	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation);
 
 private Q_SLOTS:
 
@@ -326,10 +326,10 @@ private:
 	DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);
 
 	/// The list of layers which are painted above the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(ViewportOverlay, overlays);
+	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, overlays);
 
 	/// The list of layers which are painted under the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(ViewportOverlay, underlays);
+	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, underlays);
 
 	/// This flag is true during the rendering phase.
 	bool _isRendering = false;

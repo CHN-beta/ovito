@@ -93,7 +93,7 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection) :
+StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
 	Engine(executionContext),
 	_positions(std::move(positions)),
 	_simCell(simCell),

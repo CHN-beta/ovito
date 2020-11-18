@@ -25,6 +25,8 @@
 #include "PropertyContainer.h"
 #include "PropertyAccess.h"
 
+#include <boost/range/algorithm_ext/is_sorted.hpp>
+
 namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainer);
@@ -95,11 +97,13 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 * After this method returns, all property objects are exclusively owned by the container and
 * can be safely modified without unwanted side effects.
 ******************************************************************************/
-void PropertyContainer::makePropertiesMutable()
+QVector<PropertyObject*> PropertyContainer::makePropertiesMutable()
 {
-	for(int i = properties().size() - 1; i >= 0; i--) {
-		makeMutable(properties()[i]);
+	QVector<PropertyObject*> result;
+	for(const PropertyObject* property : properties()) {
+		result.push_back(makeMutable(property));
 	}
+	return result;
 }
 
 /******************************************************************************
@@ -111,11 +115,8 @@ void PropertyContainer::setElementCount(size_t count)
 	if(count == elementCount())
 		return;
 
-	// Make sure the property arrays can be safely modified.
-    makePropertiesMutable();
-
-	// Resize the arrays.
-	for(PropertyObject* prop : properties())
+	// Make sure the property arrays can be safely modified and resize each array.
+	for(PropertyObject* prop : makePropertiesMutable())
 		prop->resize(count, true);
 
 	// Update internal element counter.
@@ -137,10 +138,8 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 		return 0;	// Nothing to delete.
 
     // Make sure the property arrays can be safely modified.
-    makePropertiesMutable();
-
 	// Filter the property arrays and reduce their lengths.
-	for(PropertyObject* property : properties()) {
+	for(PropertyObject* property : makePropertiesMutable()) {
         OVITO_ASSERT(property->size() == oldElementCount);
         property->filterResize(mask);
         OVITO_ASSERT(property->size() == newElementCount);
@@ -264,10 +263,10 @@ const PropertyObject* PropertyContainer::createProperty(const PropertyObject* pr
 * properties. Existing element types of typed properties will be preserved by 
 * the method. 
 ******************************************************************************/
-void PropertyContainer::setContent(size_t newElementCount, const QVector<PropertyObject*>& newProperties)
+void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties)
 {
 	// Lengths of new property arrays must be consistent.
-	for(const auto& property : newProperties) {
+	for(const PropertyObject* property : newProperties) {
 		OVITO_ASSERT(!properties().contains(property));
 		if(property->size() != newElementCount) {
 			OVITO_ASSERT(false);
@@ -282,7 +281,7 @@ void PropertyContainer::setContent(size_t newElementCount, const QVector<Propert
 	_elementCount.set(this, PROPERTY_FIELD(elementCount), newElementCount);
 
 	// Insertion phase:
-	_properties.set(this, PROPERTY_FIELD(properties), newProperties);
+	_properties.setTargets(this, PROPERTY_FIELD(properties), std::move(newProperties));
 }
 
 /******************************************************************************
@@ -298,10 +297,8 @@ void PropertyContainer::replicate(size_t n, bool replicatePropertyValues)
 	if(newCount / n != elementCount())
 		throwException(tr("Replicate operation failed: Maximum number of elements exceeded."));
 
-	// Make sure the property arrays can be safely modified.
-    makePropertiesMutable();
-
-	for(PropertyObject* property : properties())
+	// Make sure the property arrays can be safely modified and replicate the values in each of them.
+	for(PropertyObject* property : makePropertiesMutable())
 		property->replicate(n, replicatePropertyValues);
 
 	setElementCount(newCount);
@@ -336,11 +333,11 @@ std::vector<size_t> PropertyContainer::sortById()
 	if(isAlreadySorted) return {};
 
 	// Re-order all values in the property arrays.
-	CloneHelper cloneHelper;
-	for(const PropertyPtr& prop : properties()) {
-		OORef<PropertyObject> copy = cloneHelper.cloneObject(prop.get(), false);
-		prop->mappedCopyFrom(*copy, invertedPermutation);
+	for(PropertyObject* prop : makePropertiesMutable()) {
+		prop->reorderElements(permutation);
 	}
+
+	OVITO_ASSERT(boost::range::is_sorted(ConstPropertyAccess<qlonglong>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
 
 	return invertedPermutation;
 }

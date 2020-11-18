@@ -71,7 +71,7 @@ void ModifierDelegateVariableListParameterUI::resetUI()
 {
 	// Create our own copy of the list of delegates of the modifier.
 	if(editObject())
-		_delegates.set(this, PROPERTY_FIELD(delegates), static_object_cast<MultiDelegatingModifier>(editObject())->delegates());
+		_delegates.setTargets(this, PROPERTY_FIELD(delegates), static_object_cast<MultiDelegatingModifier>(editObject())->delegates());
 	else
 		_delegates.clear(this, PROPERTY_FIELD(delegates));
 
@@ -91,7 +91,7 @@ void ModifierDelegateVariableListParameterUI::updateUI()
 	ParameterUI::updateUI();
 
 	MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(editObject());
-	OVITO_ASSERT(!modifier || modifier->delegates() == delegates());
+	OVITO_ASSERT(!modifier || boost::range::equal(modifier->delegates(), delegates()));
 	OVITO_ASSERT(modifier || delegates().empty());
 	OVITO_ASSERT(_delegateBoxes.size() == delegates().size());
 
@@ -117,7 +117,7 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
 			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
-				OVITO_ASSERT(refevent.oldTarget() == _delegates[refevent.index()]);
+				OVITO_ASSERT(refevent.oldTarget() == delegates()[refevent.index()]);
 				_delegates.remove(this, PROPERTY_FIELD(delegates), refevent.index());
 			}
 		}
@@ -270,7 +270,7 @@ void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 
 	undoableTransaction(tr("Select modifier input"), [&]() {
 		MultiDelegatingModifier* modifier = static_object_cast<MultiDelegatingModifier>(editObject());
-		OVITO_ASSERT(modifier->delegates() == delegates());
+		OVITO_ASSERT(boost::range::equal(modifier->delegates(), delegates()));
 
 		ModifierDelegate* oldDelegate = delegates()[delegateIndex];
 		if(!oldDelegate || &oldDelegate->getOOClass() != delegateType || oldDelegate->inputDataObject() != ref) {

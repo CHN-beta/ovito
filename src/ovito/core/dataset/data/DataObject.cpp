@@ -223,10 +223,9 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 			}
 			else {
 				// Note: Making a copy of the vector, because 'self' may get replaced or deleted at any time!
-				const QVector<RefTarget*> list = self->getVectorReferenceField(*field);
-				for(const RefTarget* target : list) {
-					if(const DataObject* subObject = static_object_cast<DataObject>(target)) {
-						OVITO_ASSERT(self->hasReferenceTo(subObject));
+				int count = self->getVectorReferenceFieldSize(*field);
+				for(int i = 0; i < count; i++) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(*field, i))) {
 						dataPath.push_back(subObject);
 						subObject->updateEditableProxies(state, dataPath);
 						dataPath.pop_back();

@@ -66,6 +66,7 @@ public:
 		_elementCount = newContainer ? newContainer->elementCount() : 0;
 		_cachedPointers = { getPropertyMemory(CachedPropertyTypes)... };
 		_mutableCachedPointers.fill(nullptr);
+		_allPropertiesMutable = false;
     }
 
 	/// Releases the current property container and returns it to the caller.
@@ -129,6 +130,8 @@ public:
 			_cachedPointers[pindex] = insertedProperty->cbuffer();
 			_mutableCachedPointers[pindex] = nullptr;
 		}
+		// We don't know if the newly inserted property is mutable.
+		_allPropertiesMutable = false;
     }
 
 	/// Removes a property from the container.
@@ -148,12 +151,12 @@ public:
 		OVITO_ASSERT(numAdditionalElements != 0);
 
 		// Extend each property array.
-		for(PropertyObject* prop : mutableProperties()) {
+		for(const PropertyObject* prop : mutableProperties()) {
 			OVITO_ASSERT(prop->size() == _elementCount);
-			if(prop->grow(numAdditionalElements)) {
+			if(const_cast<PropertyObject*>(prop)->grow(numAdditionalElements)) {
 				// If the growing of the property array triggered a memory reallocation,
 				// then we need to update our cached pointer corresponding to this standard property.
-				updateMutablePropertyPointer(prop);
+				updateMutablePropertyPointer(const_cast<PropertyObject*>(prop));
 			}
 		}
 
@@ -168,9 +171,9 @@ public:
 		OVITO_ASSERT(numElementsToTruncate <= _elementCount);
 
 		// Truncate each property array.
-		for(PropertyObject* prop : mutableProperties()) {
+		for(const PropertyObject* prop : mutableProperties()) {
 			OVITO_ASSERT(prop->size() == _elementCount);
-			prop->truncate(numElementsToTruncate);
+			const_cast<PropertyObject*>(prop)->truncate(numElementsToTruncate);
 		}
 
 		// Decrement our internal element counter.
@@ -249,9 +252,9 @@ public:
 	void copyElement(size_t fromIndex, size_t toIndex) {
 		OVITO_ASSERT(fromIndex < elementCount());
 		OVITO_ASSERT(toIndex < elementCount());
-		for(PropertyObject* property : mutableProperties()) {
+		for(const PropertyObject* property : mutableProperties()) {
 			OVITO_ASSERT(property->size() == elementCount());
-			std::memcpy(property->buffer() + toIndex * property->stride(), property->cbuffer() + fromIndex * property->stride(), property->stride());
+			std::memcpy(const_cast<PropertyObject*>(property)->buffer() + toIndex * property->stride(), property->cbuffer() + fromIndex * property->stride(), property->stride());
 		}
 	}
 
@@ -259,9 +262,9 @@ public:
 	/// the corresponding bits in the bit array are set.
 	void filterResize(const boost::dynamic_bitset<>& mask) {
 		OVITO_ASSERT(mask.size() == elementCount());
-		for(PropertyObject* property : mutableProperties()) {
+		for(const PropertyObject* property : mutableProperties()) {
 			OVITO_ASSERT(property->size() == elementCount());
-			property->filterResize(mask);
+			const_cast<PropertyObject*>(property)->filterResize(mask);
 
 #ifdef OVITO_DEBUG
 			// Note: filterResize() should never reallocate memory.
@@ -291,7 +294,7 @@ private:
     PropertyContainer* mutableContainer() { return _container.makeMutable(); }
 
 	/// Prepares all property objects in the container for write access.
-	const QVector<PropertyObject*>& mutableProperties() {
+	const auto& mutableProperties() {
 		OVITO_ASSERT(container());
 		if(!_allPropertiesMutable) {
 			// Note: Our manipulations made to the PropertyContainer should never get recorded on the undo stack.
@@ -308,6 +311,13 @@ private:
 
 			_allPropertiesMutable = true;
 		}
+#ifdef OVITO_DEBUG
+		else {
+			// Verify that all properties are indeed mutable.
+			for(const PropertyObject* property : container()->properties())
+				OVITO_ASSERT(property->isSafeToModify());
+		}
+#endif
 		return container()->properties();
 	}
 
@@ -345,12 +355,12 @@ private:
 		if(_elementCount != container()->elementCount()) {
 			mutableContainer()->setElementCount(_elementCount);
 
-			// Update pointers to mutable property memory.
+			// Update internal pointers to mutable property memory.
 			_mutableCachedPointers = { getMutablePropertyMemory(CachedPropertyTypes)... }; 
 			// Also update pointers to immutable property memory.
 			std::copy(std::begin(_mutableCachedPointers), std::end(_mutableCachedPointers), std::begin(_cachedPointers));
 
-			// PropertyContainer::setElementCount() makes all properties mutable. 
+			// PropertyContainer::setElementCount() makes all properties mutable if the container's element count is being updated. 
 			_allPropertiesMutable = true;
 		}
 	}

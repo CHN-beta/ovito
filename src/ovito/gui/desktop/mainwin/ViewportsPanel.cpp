@@ -187,7 +187,7 @@ void ViewportsPanel::resizeEvent(QResizeEvent* event)
 void ViewportsPanel::layoutViewports()
 {
 	if(!_viewportConfig) return;
-	const QVector<Viewport*>& viewports = _viewportConfig->viewports();
+	const auto& viewports = _viewportConfig->viewports();
 	Viewport* maximizedViewport = _viewportConfig->maximizedViewport();
 
 	// Count the number of visible windows.

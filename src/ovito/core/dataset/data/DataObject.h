@@ -140,9 +140,9 @@ public:
 					}
 				}
 				else {
-					const QVector<RefTarget*>& list = getVectorReferenceField(*field);
-					for(const RefTarget* target : list) {
-						if(const DataObject* subObject = static_object_cast<DataObject>(target)) {
+					int count = getVectorReferenceFieldSize(*field);
+					for(int i = 0; i < count; i++) {
+						if(const DataObject* subObject = static_object_cast<DataObject>(getVectorReferenceFieldTarget(*field, i))) {
 							if(fn(subObject))
 								return true;
 						}
@@ -202,7 +202,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
 
 	/// The attached visual elements that are responsible for rendering this object's data.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
 	/// The pipeline object that created this data object (may be null).
 	DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
@@ -215,9 +215,6 @@ private:
 
 	// Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
 	template<typename DataObjectClass> friend class DataOORef;
-
-	// These classes also require direct access to the shared ownership counter.
-	friend class VectorReferenceFieldBase;
 };
 
 /// A pointer to a DataObject-derived metaclass.

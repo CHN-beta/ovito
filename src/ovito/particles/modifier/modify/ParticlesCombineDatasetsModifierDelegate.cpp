@@ -78,7 +78,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	// Extend all property arrays of primary dataset and copy data from secondary set if it contains a matching property.
 	if(secondaryParticleCount != 0) {
 		particles->setElementCount(totalParticleCount);
-		for(PropertyObject* prop : particles->properties()) {
+		for(PropertyObject* prop : particles->makePropertiesMutable()) {
 			OVITO_ASSERT(prop->size() == totalParticleCount);
 
 			// Find corresponding property in second dataset.
@@ -153,7 +153,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 			primaryElements = primaryMutableElements;
 			primaryMutableElements->makePropertiesMutable();
 			primaryMutableElements->setElementCount(totalElementCount);
-			for(PropertyObject* prop : primaryMutableElements->properties()) {
+			for(PropertyObject* prop : primaryMutableElements->makePropertiesMutable()) {
 				OVITO_ASSERT(prop->size() == totalElementCount);
 
 				// Find corresponding property in second dataset.

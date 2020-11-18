@@ -174,8 +174,8 @@ void OverlayCommandPage::onItemSelectionChanged()
 	_propertiesPanel->setEditObject(layer);
 	if(layer) {
 		_deleteLayerAction->setEnabled(true);
-		const QVector<ViewportOverlay*> overlays = overlayListModel()->selectedViewport()->overlays();
-		const QVector<ViewportOverlay*> underlays = overlayListModel()->selectedViewport()->underlays();
+		const auto& overlays = overlayListModel()->selectedViewport()->overlays();
+		const auto& underlays = overlayListModel()->selectedViewport()->underlays();
 		_moveLayerUpAction->setEnabled(!overlays.contains(layer) || overlays.indexOf(layer) < overlays.size() - 1);
 		_moveLayerDownAction->setEnabled(!underlays.contains(layer) || underlays.indexOf(layer) > 0);
 		_toggleLayerStateAction->setEnabled(true);

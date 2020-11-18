@@ -626,7 +626,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 /******************************************************************************
 * Renders the viewport layers to an image buffer.
 ******************************************************************************/
-void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const QVector<ViewportOverlay*>& layers, SynchronousOperation& operation)
+void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
 {
 	// Let layers paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
 	QImage paintBuffer(vpSize, QImage::Format_ARGB32_Premultiplied);

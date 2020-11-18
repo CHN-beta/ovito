@@ -70,7 +70,7 @@ void FreezePropertyModifier::initializeModifier(ModifierApplication* modApp)
 	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
-			for(PropertyObject* property : container->properties()) {
+			for(const PropertyObject* property : container->properties()) {
 				setSourceProperty(PropertyReference(subject().dataClass(), property));
 				setDestinationProperty(sourceProperty());
 				break;
@@ -227,7 +227,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 	// Replace vis elements of output property with cached ones and cache any new elements.
 	// This is required to avoid losing the output property's display settings
 	// each time the modifier is re-evaluated or when serializing the modifier application.
-	QVector<DataVis*> currentVisElements = outputProperty->visElements();
+	OORefVector<DataVis> currentVisElements = outputProperty->visElements();
 	// Replace with cached vis elements if they are of the same class type.
 	for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
 		if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {

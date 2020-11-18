@@ -230,10 +230,10 @@ void ViewportMenu::onCreateCamera()
 				cameraObj->setFieldOfView(0, _viewport->fieldOfView());
 
 			// Create an object node with a data source for the camera.
-			OORef<DataCollection> cameraDataCollection = new DataCollection(_viewport->dataset());
+			DataOORef<DataCollection> cameraDataCollection = DataOORef<DataCollection>::create(_viewport->dataset(), Application::ExecutionContext::Interactive);
 			cameraDataCollection->addObject(cameraObj);
-			OORef<StaticSource> cameraSource = new StaticSource(_viewport->dataset(), cameraDataCollection);
-			cameraNode = new PipelineSceneNode(_viewport->dataset());
+			OORef<StaticSource> cameraSource = OORef<StaticSource>::create(_viewport->dataset(), Application::ExecutionContext::Interactive, std::move(cameraDataCollection));
+			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset(), Application::ExecutionContext::Interactive);
 			cameraNode->setDataProvider(cameraSource);
 
 			// Give the new node a name.

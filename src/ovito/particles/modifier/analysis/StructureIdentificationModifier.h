@@ -60,7 +60,7 @@ public:
 	public:
 
 		/// Constructor.
-		StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection = {});
+		StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
@@ -131,6 +131,13 @@ public:
 	/// Constructor.
 	StructureIdentificationModifier(DataSet* dataset);
 
+	/// Returns an existing structure type managed by the modifier.
+	ElementType* structureTypeById(int id) const {
+		for(ElementType* type : structureTypes())
+			if(type->numericId() == id) return type;
+		return nullptr;
+	}
+
 protected:
 
 	/// Saves the class' contents to the given stream.
@@ -152,7 +159,7 @@ protected:
 private:
 
 	/// Contains the list of structure types recognized by this analysis modifier.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, structureTypes, setStructureTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, structureTypes, setStructureTypes);
 
 	/// Controls whether analysis should take into account only selected particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);

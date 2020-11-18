@@ -84,7 +84,7 @@ void PolyhedralTemplateMatchingModifier::initializeObject(Application::Execution
 
 	// Define the ordering types.
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-		DataOORef<ParticleType> otype = DataOORef<ParticleType>::create(dataset(), executionContext);
+		OORef<ParticleType> otype = OORef<ParticleType>::create(dataset(), executionContext);
 		otype->setNumericId(id);
 		otype->setColor({0.75f, 0.75f, 0.75f});
 		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
@@ -142,7 +142,7 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 * Compute engine constructor.
 ******************************************************************************/
 PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
-		const QVector<ElementType*>& structureTypes, const QVector<ElementType*>& orderingTypes, ConstPropertyPtr selection,
+		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 	StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
 	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),

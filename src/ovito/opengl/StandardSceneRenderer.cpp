@@ -56,7 +56,7 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 		_offscreenContext.reset(new QOpenGLContext());
 		_offscreenContext->setFormat(OpenGLSceneRenderer::getDefaultSurfaceFormat());
 		// It should share its resources with the viewport renderer.
-		const QVector<Viewport*>& viewports = renderDataset()->viewportConfig()->viewports();
+		const auto& viewports = renderDataset()->viewportConfig()->viewports();
 		if(!viewports.empty() && viewports.front()->window()) {
 			viewports.front()->window()->makeOpenGLContextCurrent();
 			_offscreenContext->setShareContext(QOpenGLContext::currentContext());

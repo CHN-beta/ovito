@@ -69,14 +69,14 @@ public:
 	void setLongName(const QString& name) { setName(name); }
 
 	/// Adds a new family to this phase's list of Burgers vector families.
-	void addBurgersVectorFamily(BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
+	void addBurgersVectorFamily(const BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
 
 	/// Removes a family from this lattice pattern's list of Burgers vector families.
 	void removeBurgersVectorFamily(int index) { _burgersVectorFamilies.remove(this, PROPERTY_FIELD(burgersVectorFamilies), index); }
 
 	/// Returns the default Burgers vector family, which is assigned to dislocation segments that
 	/// don't belong to any family.
-	BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
+	const BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
 
 	/// Returns the display color to be used for a given Burgers vector.
 	static Color getBurgersVectorColor(const QString& latticeName, const Vector3& b);
@@ -96,7 +96,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
 
 	/// List of Burgers vector families defined for the phase if it is crystalline.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
 };
 
 }	// End of namespace

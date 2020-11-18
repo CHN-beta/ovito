@@ -274,7 +274,7 @@ private:
 	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Contains all child nodes.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// This node's cached world transformation matrix.
 	/// It contains the transformation of the parent node.

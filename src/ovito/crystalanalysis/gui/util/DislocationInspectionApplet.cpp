@@ -186,10 +186,10 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
 	}
 	else if(role == Qt::DecorationRole && index.column() == 1) {
 		if(_dislocationObj) {
-			DislocationSegment* segment = _dislocationObj->segments()[index.row()];
-			MicrostructurePhase* crystalStructure = _dislocationObj->structureById(segment->burgersVector.cluster()->structure);
-			BurgersVectorFamily* family = crystalStructure->defaultBurgersVectorFamily();
-			for(BurgersVectorFamily* f : crystalStructure->burgersVectorFamilies()) {
+			const DislocationSegment* segment = _dislocationObj->segments()[index.row()];
+			const MicrostructurePhase* crystalStructure = _dislocationObj->structureById(segment->burgersVector.cluster()->structure);
+			const BurgersVectorFamily* family = crystalStructure->defaultBurgersVectorFamily();
+			for(const BurgersVectorFamily* f : crystalStructure->burgersVectorFamilies()) {
 				if(f->isMember(segment->burgersVector.localVec(), crystalStructure)) {
 					family = f;
 					break;

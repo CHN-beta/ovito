@@ -101,7 +101,11 @@ public:
 
 	/// Constructor	for a property field that stores a vector of references to RefTarget objects.
 	PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
-		VectorReferenceFieldBase& (*storageAccessFunc)(const RefMaker*));
+		int (*vectorReferenceCountFunc)(const RefMaker*),
+		RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int),
+		void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
+		void (*vectorReferenceRemoveFunc)(RefMaker*, int),
+		void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>));
 
 	/// Returns the unique identifier of the reference field.
 	const char* identifier() const { return _identifier; }
@@ -196,14 +200,26 @@ protected:
 	/// Accessor function returning the referenced target object for a RefMaker instance.
 	RefTarget* (*_singleReferenceReadFunc)(const RefMaker*) = nullptr;
 
-	/// Accessor function settings the referenced target object for a RefMaker instance.
+	/// Accessor function setting the referenced target object for a RefMaker instance.
 	void (*_singleReferenceWriteFunc)(RefMaker*, const RefTarget*) = nullptr;
 
-	/// Accessor function settings the referenced target object for a RefMaker instance.
+	/// Accessor function setting the referenced target object for a RefMaker instance.
 	void (*_singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>) = nullptr;
 
-	/// Stores a pointer to the function that return the vector reference field for a RefMaker instance.
-	VectorReferenceFieldBase& (*_vectorStorageAccessFunc)(const RefMaker*) = nullptr;
+	/// Accessor function returning the number of referenced target objects in a vector reference field.
+	int (*_vectorReferenceCountFunc)(const RefMaker*) = nullptr;
+
+	/// Accessor function returning the i-th referenced target object for a vector reference field.
+	RefTarget* (*_vectorReferenceGetFunc)(const RefMaker*, int) = nullptr;
+
+	/// Accessor function replacing the i-th referenced target object from a vector reference field.
+	void (*_vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*) = nullptr;
+
+	/// Accessor function erasing the i-th referenced target object from a vector reference field.
+	void (*_vectorReferenceRemoveFunc)(RefMaker*, int) = nullptr;
+
+	/// Accessor function insertings a target object into a vector reference field.
+	void (*_vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>) = nullptr;
 
 	/// The human-readable name of this property field. It will be used
 	/// as label text in the user interface.

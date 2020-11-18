@@ -96,8 +96,9 @@ void DefaultPropertiesEditor::updateSubEditors()
 					}
 				}
 				else {
-					for(RefTarget* subobject : editObject()->getVectorReferenceField(*field).targets()) {
-						if(subobject) {
+					int count = editObject()->getVectorReferenceFieldSize(*field);
+					for(int i = 0; i < count; i++) {
+						if(RefTarget* subobject = editObject()->getVectorReferenceFieldTarget(*field, i)) {
 							// Open editor for this sub-object.
 							if(subEditorIter != _subEditors.end() && (*subEditorIter)->editObject() != nullptr
 									&& (*subEditorIter)->editObject()->getOOClass() == subobject->getOOClass()) {

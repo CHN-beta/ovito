@@ -83,7 +83,7 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+        ChillPlusEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
             StructureIdentificationEngine(executionContext, dataset, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 

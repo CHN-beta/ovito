@@ -238,7 +238,6 @@ private:
 
 	friend class RefMaker;
 	friend class CloneHelper;
-	friend class VectorReferenceFieldBase;
 };
 
 }	// End of namespace

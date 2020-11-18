@@ -64,7 +64,7 @@ void SelectTypeModifier::initializeModifier(ModifierApplication* modApp)
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
-			for(PropertyObject* property : container->properties()) {
+			for(const PropertyObject* property : container->properties()) {
 				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
 					if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);

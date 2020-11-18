@@ -215,7 +215,7 @@ protected:
 protected:
 
 	/// List of modifier delegates.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(ModifierDelegate, delegates, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegates, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

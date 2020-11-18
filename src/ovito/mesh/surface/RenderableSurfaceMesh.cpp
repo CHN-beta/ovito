@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,20 +31,6 @@ DEFINE_PROPERTY_FIELD(RenderableSurfaceMesh, capPolygonsMesh);
 DEFINE_PROPERTY_FIELD(RenderableSurfaceMesh, materialColors);
 DEFINE_PROPERTY_FIELD(RenderableSurfaceMesh, originalFaceMap);
 DEFINE_PROPERTY_FIELD(RenderableSurfaceMesh, backfaceCulling);
-
-/******************************************************************************
-* Initialization constructor.
-******************************************************************************/
-RenderableSurfaceMesh::RenderableSurfaceMesh(TransformingDataVis* creator, const DataObject* sourceData, TriMesh surfaceMesh, TriMesh capPolygonsMesh, bool backfaceCulling) :
-	TransformedDataObject(creator, sourceData),
-	_surfaceMesh(std::move(surfaceMesh)),
-	_capPolygonsMesh(std::move(capPolygonsMesh)),
-	_backfaceCulling(backfaceCulling)
-{
-	// Adopt the ID string from the original data object.
-	if(sourceData)
-		setIdentifier(sourceData->identifier());
-}
 
 }	// End of namespace
 }	// End of namespace

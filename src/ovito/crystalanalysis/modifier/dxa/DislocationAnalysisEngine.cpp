@@ -43,7 +43,7 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		Application::ExecutionContext executionContext, 
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
-		ConstPropertyPtr positions, const SimulationCellObject* simCell, const QVector<ElementType*>& structureTypes,
+		ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes,
 		int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 		ConstPropertyPtr particleSelection,
 		ConstPropertyPtr crystalClusters,
@@ -309,14 +309,14 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	dislocationsObj->setDomain(state.getObject<SimulationCellObject>());
 	dislocationsObj->setVisElement(modifier->dislocationVis());
 
-	std::map<BurgersVectorFamily*,FloatType> dislocationLengths;
-	std::map<BurgersVectorFamily*,int> segmentCounts;
-	std::map<BurgersVectorFamily*,MicrostructurePhase*> dislocationCrystalStructures;
-	MicrostructurePhase* defaultStructure = dislocationsObj->structureById(modifier->inputCrystalStructure());
-	BurgersVectorFamily* defaultFamily = nullptr;
+	std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
+	std::map<const BurgersVectorFamily*,int> segmentCounts;
+	std::map<const BurgersVectorFamily*,const MicrostructurePhase*> dislocationCrystalStructures;
+	const MicrostructurePhase* defaultStructure = dislocationsObj->structureById(modifier->inputCrystalStructure());
+	const BurgersVectorFamily* defaultFamily = nullptr;
 	if(defaultStructure) {
 		defaultFamily = defaultStructure->defaultBurgersVectorFamily();
-		for(BurgersVectorFamily* family : defaultStructure->burgersVectorFamilies()) {
+		for(const BurgersVectorFamily* family : defaultStructure->burgersVectorFamilies()) {
 			dislocationLengths[family] = 0;
 			segmentCounts[family] = 0;
 			dislocationCrystalStructures[family] = defaultStructure;
@@ -333,12 +333,12 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 
 		Cluster* cluster = segment->burgersVector.cluster();
 		OVITO_ASSERT(cluster != nullptr);
-		MicrostructurePhase* structure = dislocationsObj->structureById(cluster->structure);
+		const MicrostructurePhase* structure = dislocationsObj->structureById(cluster->structure);
 		if(structure == nullptr) continue;
-		BurgersVectorFamily* family = defaultFamily;
+		const BurgersVectorFamily* family = defaultFamily;
 		if(structure == defaultStructure) {
 			family = structure->defaultBurgersVectorFamily();
-			for(BurgersVectorFamily* f : structure->burgersVectorFamilies()) {
+			for(const BurgersVectorFamily* f : structure->burgersVectorFamilies()) {
 				if(f->isMember(segment->burgersVector.localVec(), structure)) {
 					family = f;
 					break;
@@ -388,7 +388,7 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), modApp);
 
 	for(const auto& dlen : dislocationLengths) {
-		MicrostructurePhase* structure = dislocationCrystalStructures[dlen.first];
+		const MicrostructurePhase* structure = dislocationCrystalStructures[dlen.first];
 		QString bstr;
 		if(dlen.first->burgersVector() != Vector3::Zero()) {
 			bstr = DislocationVis::formatBurgersVector(dlen.first->burgersVector(), structure);

@@ -243,8 +243,17 @@ inline void PropertyField<size_t>::loadFromStream(LoadStream& stream) {
 	stream.readSizeT(this->mutableValue());
 }
 
+/// This utility class template maps a specific fancy pointer type to the right general fancy pointer type. 
+///    T*                 ->  RefTarget*
+///    OORef<T>           ->  OORef<RefTarget>
+///    DataOORef<const T> ->  DataOORef<const DataObject>
+template<typename T> struct SelectGenericReferenceType {};
+template<typename T> struct SelectGenericReferenceType<T*> { using type = RefTarget*; };
+template<typename T> struct SelectGenericReferenceType<OORef<T>> { using type = OORef<RefTarget>; };
+template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { using type = DataOORef<const DataObject>; };
+
 /**
- * \brief Manages a reference to a RefTarget derived class held by a RefMaker derived class.
+ * \brief Stores a fancy pointer to a RefTarget object held by a RefMaker class.
  */
 template<typename T>
 class OVITO_CORE_EXPORT SingleReferenceFieldBase : public PropertyFieldBase
@@ -278,14 +287,8 @@ protected:
 	pointer _target{};
 };
 
-/// This utility class template maps a specific fancy pointer type to a corresponding base-object pointer type.   
-template<typename T> struct SelectGenericReferenceType {};
-template<typename T> struct SelectGenericReferenceType<T*> { using type = RefTarget*; };
-template<typename T> struct SelectGenericReferenceType<OORef<T>> { using type = OORef<RefTarget>; };
-template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { using type = DataOORef<const DataObject>; };
-
 /**
- * \brief Generic class template for reference fields of RefMaker derived classes.
+ * \brief Class template for reference fields of RefMaker derived classes.
  */
 template<typename T>
 class ReferenceField : public SingleReferenceFieldBase<typename SelectGenericReferenceType<T>::type>
@@ -310,291 +313,148 @@ public:
 	}
 
 	/// Returns the target object currently being referenced by the reference field.
-	inline raw_pointer get() const noexcept { return static_object_cast<target_object_type>(base_class::get()); }
+	inline raw_pointer get() const noexcept { 
+		return static_object_cast<target_object_type>(base_class::get()); 
+	}
 };
 
 /**
- * \brief Manages a list of references to RefTarget objects held by a RefMaker derived class.
+ * \brief Stores a list of fancy pointers to RefTarget objects held by a RefMaker class.
  */
+template<typename T>
 class OVITO_CORE_EXPORT VectorReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
-	/// Returns the stored references as a QVector.
-	operator const QVector<RefTarget*>&() const { return pointers; }
+	/// The fancy pointer type.
+	using pointer = T;
+	/// The vector container type.
+	using container = QVector<pointer>;
+	/// The size/index data type.
+	using size_type = typename container::size_type;
 
-	/// Returns the reference target at index position i.
-	RefTarget* operator[](int i) const { return pointers[i]; }
+#ifdef OVITO_DEBUG
+	/// Destructor.
+	~VectorReferenceFieldBase();
+#endif
 
-	/// Returns the number of objects in the vector reference field.
-	int size() const { return pointers.size(); }
-
-	/// Returns true if the vector has size 0; otherwise returns false.
-	bool empty() const { return pointers.empty(); }
-
-	/// Returns true if the vector contains an occurrence of value; otherwise returns false.
-	bool contains(const RefTarget* value) const { return pointers.contains(const_cast<RefTarget*>(value)); }
-
-	/// Returns the index position of the first occurrence of value in the vector,
-	/// searching forward from index position from. Returns -1 if no item matched.
-	int indexOf(const RefTarget* value, int from = 0) const { return pointers.indexOf(const_cast<RefTarget*>(value), from); }
-
-	/// Returns the stored references as a QVector.
-	const QVector<RefTarget*>& targets() const { return pointers; }
+	/// Returns a raw, untyped pointer to the i-th object in the vector.
+	inline typename std::pointer_traits<pointer>::element_type* get(size_type i) const noexcept { return to_address(_targets[i]); }
 
 	/// Clears all references and sets the vector size to zero.
 	void clear(RefMaker* owner, const PropertyFieldDescriptor& descriptor);
 
-	/// Removes the element at index position i.
-	void remove(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i);
+	/// Removes the reference at index position i.
+	void remove(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i);
+
+	/// Returns the number of objects in the vector reference field.
+	inline size_type size() const noexcept { return _targets.size(); }
+
+	/// Returns true if the vector has size 0; otherwise returns false.
+	inline bool empty() const noexcept { return _targets.empty(); }
+
+	/// Returns true if the vector contains an occurrence of value; otherwise returns false.
+	bool contains(const RefTarget* value) const noexcept { return indexOf(value) != -1; }
+
+	/// Returns the index position of the first occurrence of value in the vector,
+	/// searching forward from index position from. Returns -1 if no item matched.
+	size_type indexOf(const RefTarget* value, size_type from = 0) const noexcept { 
+		for(size_type i = from; i < _targets.size(); i++)
+			if(_targets[i] == value) return i;
+		return -1;
+	}
 
 protected:
 
-	/// The actual pointer list to the reference targets.
-	QVector<RefTarget*> pointers;
+	/// Replaces one of the references with a new target object.
+	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i, pointer newTarget);
 
-	/// Replaces a reference in the vector.
-	void setInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i, const RefTarget* object);
+	/// Inserts or add a reference target to the internal list.
+	size_type insert(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i, pointer newTarget);
 
-	/// Adds a reference target to the internal list.
-	int insertInternal(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTarget* newTarget, int index = -1);
+	/// Replaces the i-th target stored in the reference field.
+	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type index, pointer& inactiveTarget);
 
-	/// Removes a target from the list reference field.
-	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, RefTarget const*& deadStorage, bool generateNotificationEvents = true);
+	/// Removes the i-th target from the vector reference field.
+	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type index, pointer& inactiveTarget);
 
-	/// Removes a target from the list reference field.
-	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, OORef<const RefTarget>& deadStorage, bool generateNotificationEvents = true);
+	/// Adds the target to the vector reference field.
+	size_type addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type index, pointer& target);
 
-	/// Removes a target from the list reference field.
-	void removeReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int index, DataOORef<const DataObject>& deadStorage, bool generateNotificationEvents = true);
+	/// Obtains the object address represented by a fancy pointer.
+	template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
+ 	template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
 
-	/// Adds the target to the list reference field.
-	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*&& target, int index);
-
-	/// Adds the target to the list reference field.
-	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>&& target, int index);
-
-	/// Adds the target to the list reference field.
-	int addReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>&& target, int index);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, RefTarget const*& inactiveTarget, int index, bool generateNotificationEvents = true);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, OORef<const RefTarget>& inactiveTarget, int index, bool generateNotificationEvents = true);
-
-	/// Replaces the target stored in the reference field.
-	void swapReference(RefMaker* owner, const PropertyFieldDescriptor& descriptor, DataOORef<const DataObject>& inactiveTarget, int index, bool generateNotificationEvents = true);
-
-private:
-
-	template<typename ReferenceType>
-	class InsertReferenceOperation : public PropertyFieldOperation
-	{
-	public:
-    	InsertReferenceOperation(RefMaker* owner, ReferenceType target, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _target(std::move(target)), _reffield(reffield), _index(index) {}
-
-		virtual void undo() override {
-			OVITO_ASSERT(!_target);
-			_reffield.removeReference(owner(), descriptor(), _index, _target);
-		}
-
-		virtual void redo() override {
-			_index = _reffield.addReference(owner(), descriptor(), std::move(_target), _index);
-			OVITO_ASSERT(!_target);
-		}
-
-		int insertionIndex() const { return _index; }
-
-		virtual QString displayName() const override {
-			return QStringLiteral("Insert ref to %1 into vector field <%2> of %3")
-				.arg(_target ? _target->getOOClass().name() : "<null>")
-				.arg(descriptor().identifier())
-				.arg(owner()->getOOClass().name());
-		}
-
-
-	private:
-		/// The target that has been added into the vector reference field.
-	    ReferenceType _target;
-		/// The vector reference field to which the reference has been added.
-		VectorReferenceFieldBase& _reffield;
-		/// The position at which the target has been inserted into the vector reference field.
-		int _index;
-	};
-
-	template<typename ReferenceType>
-	class RemoveReferenceOperation : public PropertyFieldOperation
-	{
-	public:
-    	RemoveReferenceOperation(RefMaker* owner, VectorReferenceFieldBase& reffield, int index, const PropertyFieldDescriptor& descriptor) :
-			PropertyFieldOperation(owner, descriptor), _reffield(reffield), _index(index) {}
-
-		virtual void undo() override {
-			_index = _reffield.addReference(owner(), descriptor(), std::move(_target), _index);
-			OVITO_ASSERT(!_target);
-		}
-
-		virtual void redo() override {
-			OVITO_ASSERT(!_target);
-			_reffield.removeReference(owner(), descriptor(), _index, _target);
-		}
-
-		virtual QString displayName() const override {
-			return QStringLiteral("Remove ref to %1 from vector field <%2> of %3")
-				.arg(_target ? _target->getOOClass().name() : "<null>")
-				.arg(descriptor().identifier())
-				.arg(owner()->getOOClass().name());
-		}
-
-	private:
-		/// The target that has been removed from the vector reference field.
-	    ReferenceType _target;
-		/// The vector reference field from which the reference has been removed.
-		VectorReferenceFieldBase& _reffield;
-		/// The position at which the target has been removed from the vector reference field.
-		int _index;
-	};
-
-	template<typename ReferenceType>
-	class ReplaceReferenceOperation : public PropertyFieldOperation
-	{
-	private:
-
-		/// The reference target that is currently not assigned to the reference field.
-		/// This is stored here so that we can restore it on a call to undo().
-		ReferenceType _inactiveTarget;
-
-		/// The reference field whose value has changed.
-		VectorReferenceFieldBase& _reffield;
-
-		/// The list position at which the target has been replaced.
-		int _index;
-
-	public:
-		
-		ReplaceReferenceOperation(RefMaker* owner, ReferenceType oldTarget, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor& descriptor, int index) :
-			PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield), _index(index) {}
-		
-		virtual void undo() override { 
-			_reffield.swapReference(owner(), descriptor(), _inactiveTarget, _index); 
-		}
-
-		virtual QString displayName() const override {
-			return QStringLiteral("Replacing ref with %1 in vector field <%2> of %3")
-				.arg(_inactiveTarget ? _inactiveTarget->getOOClass().name() : "<null>")
-				.arg(descriptor().identifier())
-				.arg(owner()->getOOClass().name());
-		}
-	};
-
-	friend class RefMaker;
-	friend class RefTarget;
+	/// The actual list of fancy pointers.
+	container _targets;
 };
 
 /**
- * \brief Templated version of the VectorReferenceFieldBase class.
+ * \brief Class template for vector reference fields of RefMaker derived classes.
  */
-template<typename RefTargetType>
-class VectorReferenceField : public VectorReferenceFieldBase
+template<typename T>
+class VectorReferenceField : public VectorReferenceFieldBase<typename SelectGenericReferenceType<T>::type>
 {
 public:
-	using target_object_type = RefTargetType;
 
-	typedef QVector<RefTargetType*> RefTargetVector;
-	typedef QVector<const RefTargetType*> ConstRefTargetVector;
-	typedef typename RefTargetVector::ConstIterator ConstIterator;
-	typedef typename RefTargetVector::const_iterator const_iterator;
-	typedef typename RefTargetVector::const_pointer const_pointer;
-	typedef typename RefTargetVector::const_reference const_reference;
-	typedef typename RefTargetVector::difference_type difference_type;
-	typedef typename RefTargetVector::size_type size_type;
-	typedef typename RefTargetVector::value_type value_type;
+	/// The fancy pointer type.
+	using fancy_pointer = T;
+	/// The raw object pointer type.
+	using raw_pointer = typename std::pointer_traits<fancy_pointer>::element_type*;
+	/// The type of object referenced by this field.
+	using target_object_type = std::remove_const_t<typename std::pointer_traits<fancy_pointer>::element_type>;
+	/// The generic base class type.
+	using base_class = VectorReferenceFieldBase<typename SelectGenericReferenceType<T>::type>;
+	/// The container type for typed fancy pointers.
+	using container = QVector<fancy_pointer>;
 
-#ifdef OVITO_DEBUG
-	/// Destructor that releases all referenced objects.
-	~VectorReferenceField() {
-		OVITO_ASSERT_MSG(pointers.empty(), "~VectorReferenceField()", "Owner object of vector reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
+	/// Replaces one of the references with a new target object.
+	inline void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i, fancy_pointer newPointer) {
+		base_class::set(owner, descriptor, i, std::move(newPointer));
 	}
-#endif
-
-	/// Returns the stored references as a QVector.
-	operator const RefTargetVector&() const { return targets(); }
-
-	/// Returns the reference target at index position i.
-	RefTargetType* operator[](int i) const { return static_object_cast<RefTargetType>(pointers[i]); }
 
 	/// Inserts a reference at the end of the vector.
-	void push_back(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTargetType* object) { insertInternal(owner, descriptor, object); }
-
-	/// Inserts a reference at index position i in the vector.
-	/// If i is 0, the value is prepended to the vector.
-	/// If i is size() or negative, the value is appended to the vector.
-	void insert(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i, const RefTargetType* object) { insertInternal(owner, descriptor, object, i); }
-
-	/// Replaces a reference in the vector.
-	/// This method removes the reference at index i and inserts the new reference at the same index.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, int i, const RefTargetType* object) {
-		setInternal(owner, descriptor, i, object);
+	void push_back(RefMaker* owner, const PropertyFieldDescriptor& descriptor, fancy_pointer newPointer) { 
+		base_class::insert(owner, descriptor, -1, std::move(newPointer)); 
 	}
 
-	/// Returns an STL-style iterator pointing to the first item in the vector.
-	const_iterator begin() const { return targets().begin(); }
+	/// Inserts or add a reference target to the vector reference field.
+	size_type insert(RefMaker* owner, const PropertyFieldDescriptor& descriptor, size_type i, fancy_pointer newPointer) {
+		return base_class::insert(owner, descriptor, i, std::move(newPointer)); 
+	}
 
-	/// Returns an STL-style iterator pointing to the imaginary item after the last item in the vector.
-	const_iterator end() const { return targets().end(); }
+	/// Returns the i-th target object currently being referenced by the vector reference field.
+	inline raw_pointer get(size_type i) const noexcept { 
+		return static_object_cast<target_object_type>(base_class::get(i)); 
+	}
 
-	/// Returns an STL-style iterator pointing to the first item in the vector.
-	const_iterator constBegin() const { return begin(); }
+	/// Returns the stored list of object references.
+	const container& targets() const { return reinterpret_cast<const container&>(base_class::_targets); }
 
-	/// Returns a const STL-style iterator pointing to the imaginary item after the last item in the vector.
-	const_iterator constEnd() const { return end(); }
-
-	/// Returns the first reference stored in this vector reference field.
-	RefTargetType* front() const { return targets().front(); }
-
-	/// Returns the last reference stored in this vector reference field.
-	RefTargetType* back() const { return targets().back(); }
-
-	/// Finds the first object stored in this vector reference field that is of the given type.
-	/// or can be cast to the given type. Returns NULL if no such object is in the list.
-	template<class Clazz>
-	Clazz* firstOf() const {
-		for(const_iterator i = constBegin(); i != constEnd(); ++i) {
-			Clazz* obj = dynamic_object_cast<Clazz>(*i);
-			if(obj) return obj;
+	/// Replaces the list of object references stored in this vector reference field.
+	template<typename U>
+	void setTargets(RefMaker* owner, const PropertyFieldDescriptor& descriptor, U&& newTargets) {
+		size_type i = 0;
+		// Insert targets from the new vector. Replace existing targets up to the length 
+		// of the existing vector. Append additional targets if the new vector is longer than the old one.
+		for(auto&& t : newTargets) {
+			if(i < this->size()) set(owner, descriptor, i, t);
+			else push_back(owner, descriptor, t);
+			i++;
 		}
-		return nullptr;
+		// Remove excess items from the old vector.
+		for(size_type j = this->size() - 1; j >= i; j--)
+			remove(owner, descriptor, j);
 	}
-
-	/// Copies the references of another vector reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const VectorReferenceField& other) {
-		for(int i = 0; i < other.size() && i < this->size(); i++)
-			set(owner, descriptor, i, other[i]);
-		for(int i = this->size(); i < other.size(); i++)
-			push_back(owner, descriptor, other[i]);
-		for(int i = this->size() - 1; i >= other.size(); i--)
-			remove(owner, descriptor, i);
-	}
-
-	/// Assigns the given list of targets to this vector reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const RefTargetVector& other) {
-		for(int i = 0; i < other.size() && i < this->size(); i++)
-			set(owner, descriptor, i, other[i]);
-		for(int i = this->size(); i < other.size(); i++)
-			push_back(owner, descriptor, other[i]);
-		for(int i = this->size() - 1; i >= other.size(); i--)
-			remove(owner, descriptor, i);
-	}
-
-	/// Assigns the given list of targets to this vector reference field.
-	void set(RefMaker* owner, const PropertyFieldDescriptor& descriptor, const ConstRefTargetVector& other) {
-		set(owner, descriptor, reinterpret_cast<const RefTargetVector&>(other));
-	}
-
-	/// Returns the stored references as a QVector.
-	const RefTargetVector& targets() const { return reinterpret_cast<const RefTargetVector&>(pointers); }
 };
+
+/// Vector container type used by vector reference fields with T* regular pointers.
+template<typename T> using WeakRefVector = typename VectorReferenceField<T*>::container;
+
+/// Vector container type used by vector reference fields with OORef<T> fancy pointers.
+template<typename T> using OORefVector = typename VectorReferenceField<OORef<T>>::container;
+
+/// Vector container type used by vector reference fields with DataOORef<const T> fancy pointers.
+template<typename T> using DataRefVector = typename VectorReferenceField<DataOORef<const T>>::container;
 
 }	// End of namespace

@@ -93,7 +93,7 @@ void HistogramModifier::initializeModifier(ModifierApplication* modApp)
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
-			for(PropertyObject* property : container->properties()) {
+			for(const PropertyObject* property : container->properties()) {
 				bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
 			}
 			if(!bestProperty.isNull()) {

@@ -167,7 +167,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 			// Replace vis elements of output property with cached ones and cache any new vis elements.
 			// This is required to avoid losing the output property's display settings
 			// each time the modifier is re-evaluated or when serializing the modifier.
-			QVector<DataVis*> currentVisElements = outp->visElements();
+			OORefVector<DataVis> currentVisElements = outp->visElements();
 			// Replace with cached vis elements if they are of the same class type.
 			for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
 				if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {
