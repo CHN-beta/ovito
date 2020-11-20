@@ -229,4 +229,60 @@ template<class T> QDebug operator<<(QDebug debug, const DataOORef<T>& p)
 	return debug << p.get();
 }
 
+template<class T, class U> inline bool operator==(const DataOORef<T>& a, const DataOORef<U>& b) noexcept
+{
+    return a.get() == b.get();
+}
+
+template<class T, class U> inline bool operator!=(const DataOORef<T>& a, const DataOORef<U>& b) noexcept
+{
+    return a.get() != b.get();
+}
+
+template<class T, class U> inline bool operator==(const DataOORef<T>& a, U* b) noexcept
+{
+    return a.get() == b;
+}
+
+template<class T, class U> inline bool operator!=(const DataOORef<T>& a, U* b) noexcept
+{
+    return a.get() != b;
+}
+
+template<class T, class U> inline bool operator==(T* a, const DataOORef<U>& b) noexcept
+{
+    return a == b.get();
+}
+
+template<class T, class U> inline bool operator!=(T* a, const DataOORef<U>& b) noexcept
+{
+    return a != b.get();
+}
+
+template<class T> inline bool operator==(const DataOORef<T>& p, std::nullptr_t) noexcept
+{
+    return p.get() == nullptr;
+}
+
+template<class T> inline bool operator==(std::nullptr_t, const DataOORef<T>& p) noexcept
+{
+    return p.get() == nullptr;
+}
+
+template<class T> inline bool operator!=(const DataOORef<T>& p, std::nullptr_t) noexcept
+{
+    return p.get() != nullptr;
+}
+
+template<class T> inline bool operator!=(std::nullptr_t, const DataOORef<T>& p) noexcept
+{
+    return p.get() != nullptr;
+}
+
+template<class T> inline bool operator<(const DataOORef<T>& a, const DataOORef<T>& b) noexcept
+{
+    return std::less<T*>()(a.get(), b.get());
+}
+
+
 }	// End of namespace
