@@ -350,7 +350,7 @@ public:
 
 	/// Returns the element type with the given human-readable name, or NULL if no such type exists.
 	const ElementType* elementType(const QLatin1String& name) const {
-		OVITO_ASSERT(!name.isEmpty());
+		OVITO_ASSERT(name.size() != 0);
 		for(const ElementType* type : elementTypes())
 			if(type->name() == name)
 				return type;

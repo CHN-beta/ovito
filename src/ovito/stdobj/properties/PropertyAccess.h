@@ -365,7 +365,7 @@ public:
 	void copyFrom(const ReadOnlyPropertyAccessBase<T, PointerType2>& source) {
 		OVITO_ASSERT(this->_property);
 		OVITO_ASSERT(source._property);
-		this->_property->copyFrom(*source_property);
+		this->_property->copyFrom(*source._property);
 	}
 
 protected:
