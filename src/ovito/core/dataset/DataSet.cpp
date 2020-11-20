@@ -498,7 +498,7 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 		renderer->endRender();
 
 		// Free visual element resources to avoid clogging the memory in cases where render() gets called repeatedly from a script.
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Scripting)
+		if(Application::instance()->executionContext() == ExecutionContext::Scripting)
 			visCache().discardUnusedObjects();
 	}
 	catch(Exception& ex) {

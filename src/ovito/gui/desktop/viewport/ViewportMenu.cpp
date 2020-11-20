@@ -221,7 +221,7 @@ void ViewportMenu::onCreateCamera()
 			QVector<OvitoClassPtr> cameraTypes = PluginManager::instance().listClasses(AbstractCameraObject::OOClass());
 			if(cameraTypes.empty())
 				_viewport->throwException(tr("OVITO has been built without support for camera objects."));
-			OORef<AbstractCameraObject> cameraObj = static_object_cast<AbstractCameraObject>(cameraTypes.front()->createInstance(_viewport->dataset(), Application::ExecutionContext::Interactive));
+			OORef<AbstractCameraObject> cameraObj = static_object_cast<AbstractCameraObject>(cameraTypes.front()->createInstance(_viewport->dataset(), ExecutionContext::Interactive));
 
 			cameraObj->setPerspectiveCamera(_viewport->isPerspectiveProjection());
 			if(_viewport->isPerspectiveProjection())
@@ -230,10 +230,10 @@ void ViewportMenu::onCreateCamera()
 				cameraObj->setFieldOfView(0, _viewport->fieldOfView());
 
 			// Create an object node with a data source for the camera.
-			DataOORef<DataCollection> cameraDataCollection = DataOORef<DataCollection>::create(_viewport->dataset(), Application::ExecutionContext::Interactive);
+			DataOORef<DataCollection> cameraDataCollection = DataOORef<DataCollection>::create(_viewport->dataset(), ExecutionContext::Interactive);
 			cameraDataCollection->addObject(cameraObj);
-			OORef<StaticSource> cameraSource = OORef<StaticSource>::create(_viewport->dataset(), Application::ExecutionContext::Interactive, std::move(cameraDataCollection));
-			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset(), Application::ExecutionContext::Interactive);
+			OORef<StaticSource> cameraSource = OORef<StaticSource>::create(_viewport->dataset(), ExecutionContext::Interactive, std::move(cameraDataCollection));
+			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset(), ExecutionContext::Interactive);
 			cameraNode->setDataProvider(cameraSource);
 
 			// Give the new node a name.

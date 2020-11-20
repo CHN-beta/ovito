@@ -203,7 +203,7 @@ void AnimationSettings::setAnimationPlayback(bool on)
 {
 	if(on) {
 		bool reverse = false;
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			if(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
 				reverse = true;
 		}

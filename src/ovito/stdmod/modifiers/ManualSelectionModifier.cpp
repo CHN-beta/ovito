@@ -25,6 +25,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/Application.h>
 #include "ManualSelectionModifier.h"
 
 namespace Ovito { namespace StdMod {

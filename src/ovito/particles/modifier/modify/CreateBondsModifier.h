@@ -75,7 +75,7 @@ private:
 	public:
 
 		/// Constructor.
-		BondsEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
+		BondsEngine(ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
 				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				ConstPropertyPtr moleculeIDs) :
 					Engine(executionContext),
@@ -125,7 +125,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(ModifierApplication* modApp) override;
@@ -142,7 +142,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.

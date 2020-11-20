@@ -40,7 +40,7 @@ AnglesObject::AnglesObject(DataSet* dataset) : PropertyContainer(dataset)
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;

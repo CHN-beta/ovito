@@ -74,7 +74,7 @@ public:
 	Q_INVOKABLE ParticleType(DataSet* dataset);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(int propertyType, Application::ExecutionContext executionContext) override;
+	virtual void initializeType(int propertyType, ExecutionContext executionContext) override;
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -100,7 +100,7 @@ public:
 	}
 
 	/// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
-	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, Application::ExecutionContext executionContext, const FileImporterClass* importerType = nullptr);
+	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType = nullptr);
 
 	//////////////////////////////////// Default settings ////////////////////////////////
 
@@ -117,13 +117,13 @@ public:
 	}
 
 	/// Returns the default color for a named particle type.
-	static Color getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext);
+	static Color getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
 
 	/// Changes the default color for a named particle type.
 	static void setDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, const Color& color);
 
 	/// Returns the default radius for a named particle type.
-	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext);
+	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
 
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius);

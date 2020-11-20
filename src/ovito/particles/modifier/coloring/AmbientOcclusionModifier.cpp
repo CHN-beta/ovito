@@ -67,7 +67,7 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	if(Application::instance()->headlessMode())
 		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
@@ -104,7 +104,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(Application::ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 		const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer) :
 	Engine(executionContext, validityInterval),
 	_resolution(resolution),

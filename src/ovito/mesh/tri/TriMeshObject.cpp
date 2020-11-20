@@ -41,7 +41,7 @@ TriMeshObject::TriMeshObject(DataSet* dataset) : DataObject(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TriMeshObject::initializeObject(Application::ExecutionContext executionContext)
+void TriMeshObject::initializeObject(ExecutionContext executionContext)
 {
 	if(!visElement())
 		setVisElement(OORef<TriMeshVis>::create(dataset(), executionContext));

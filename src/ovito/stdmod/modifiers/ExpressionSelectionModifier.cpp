@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "ExpressionSelectionModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -46,7 +47,7 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 ExpressionSelectionModifier::ExpressionSelectionModifier(DataSet* dataset) : DelegatingModifier(dataset)
 {
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), Application::ExecutionContext::Scripting);
+	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), ExecutionContext::Scripting);
 }
 
 /******************************************************************************

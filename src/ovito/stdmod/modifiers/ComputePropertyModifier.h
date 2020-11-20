@@ -53,7 +53,7 @@ protected:
 	public:
 
 		/// Constructor.
-		PropertyComputeEngine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval,
+		PropertyComputeEngine(ExecutionContext executionContext, const TimeInterval& validityInterval,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -135,7 +135,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<PropertyComputeEngine> createEngine(
-				Application::ExecutionContext executionContext,
+				ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -175,7 +175,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// \brief Returns the current delegate of this ComputePropertyModifier.
 	ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
@@ -218,7 +218,7 @@ protected:
 	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 protected:
 

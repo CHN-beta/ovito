@@ -48,7 +48,7 @@ BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void BondsObject::initializeObject(Application::ExecutionContext executionContext)
+void BondsObject::initializeObject(ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -79,7 +79,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 	const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
 	auto topoIter = bondTopologyProperty.begin();
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, Application::ExecutionContext::Scripting);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, ExecutionContext::Scripting);
 	for(Vector3I& pbcVec : bondPeriodicImageProperty) {
 		size_t particleIndex1 = (*topoIter)[0];
 		size_t particleIndex2 = (*topoIter)[1];
@@ -100,7 +100,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 /******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;

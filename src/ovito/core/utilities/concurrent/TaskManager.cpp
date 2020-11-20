@@ -321,9 +321,9 @@ bool TaskManager::waitForTaskUIThread(const TaskPtr& task, const TaskPtr& depend
 
 	// If this method was called as part of a script, temporarily switch to interactive mode now since
 	// the user may perform actions in the user interface while the local event loop is active.
-	bool wasCalledFromScript = (Application::instance()->executionContext() == Application::ExecutionContext::Scripting);
+	bool wasCalledFromScript = (Application::instance()->executionContext() == ExecutionContext::Scripting);
 	if(wasCalledFromScript)
-		Application::instance()->switchExecutionContext(Application::ExecutionContext::Interactive);
+		Application::instance()->switchExecutionContext(ExecutionContext::Interactive);
 
 	startLocalEventHandling();
 	eventLoop.exec();
@@ -331,7 +331,7 @@ bool TaskManager::waitForTaskUIThread(const TaskPtr& task, const TaskPtr& depend
 
 	// Restore previous execution context state.
 	if(wasCalledFromScript)
-		Application::instance()->switchExecutionContext(Application::ExecutionContext::Scripting);
+		Application::instance()->switchExecutionContext(ExecutionContext::Scripting);
 
 #ifdef Q_OS_UNIX
 	::signal(SIGINT, oldSignalHandler);

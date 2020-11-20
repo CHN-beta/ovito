@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -150,7 +150,7 @@ public:
 
     /// Factory method instantiating a new object and returning a smart-pointer to it.
     template<typename... Args>
-	static this_type create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
+	static this_type create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
 		this_type obj(new T(dataset, std::forward<Args>(args)...));
         obj->initializeObject(executionContext);
         return obj;

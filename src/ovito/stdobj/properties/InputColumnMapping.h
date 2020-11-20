@@ -219,7 +219,7 @@ public:
 	///        to the target properties.
 	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, Application::ExecutionContext executionContext, bool removeExistingProperties = true);
+	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ExecutionContext executionContext, bool removeExistingProperties = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);
@@ -262,7 +262,7 @@ private:
 	PropertyContainer* _container;
 
 	/// Indicates whether the file parsing is happening in an interactive GUI or in the context of a running script.
-	Application::ExecutionContext _executionContext;
+	ExecutionContext _executionContext;
 	
 	struct TargetPropertyRecord {
 		PropertyObject* property = nullptr;

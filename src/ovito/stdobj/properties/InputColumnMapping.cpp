@@ -190,7 +190,7 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, Application::ExecutionContext executionContext, bool removeExistingProperties)
+InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ExecutionContext executionContext, bool removeExistingProperties)
 	: _mapping(mapping), _container(container), _executionContext(executionContext)
 {
 	mapping.validate();

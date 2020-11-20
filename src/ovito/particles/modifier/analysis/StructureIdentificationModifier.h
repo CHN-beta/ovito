@@ -60,7 +60,7 @@ public:
 	public:
 
 		/// Constructor.
-		StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
+		StructureIdentificationEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
@@ -154,7 +154,7 @@ protected:
 	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, Application::ExecutionContext executionContext);
+	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
 
 private:
 

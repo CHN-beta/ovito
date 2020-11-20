@@ -56,7 +56,7 @@ public:
 	Q_INVOKABLE VoroTopModifier(DataSet* dataset);
 
 	/// Loads a new filter definition into the modifier.
-	bool loadFilterDefinition(const QString& filepath, Promise<>&& operation, Application::ExecutionContext executionContext);
+	bool loadFilterDefinition(const QString& filepath, Promise<>&& operation, ExecutionContext executionContext);
 
 	/// Returns the VoroTop filter definition cached from the last analysis run.
 	const std::shared_ptr<Filter>& filter() const { return _filter; }
@@ -67,7 +67,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -77,7 +77,7 @@ private:
 	public:
 
 		/// Constructor.
-		VoroTopAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+		VoroTopAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
 							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
 			StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_filterFile(filterFile),

@@ -62,7 +62,7 @@ ReplicateModifier::ReplicateModifier(DataSet* dataset) : MultiDelegatingModifier
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ReplicateModifier::initializeObject(Application::ExecutionContext executionContext)
+void ReplicateModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Generate the list of delegate objects.
 	createModifierDelegates(ReplicateModifierDelegate::OOClass(), executionContext);

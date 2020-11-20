@@ -226,7 +226,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 
 	// Check if periodic cell boundary crossing have been precomputed or not.
 	if(time > unwrappedUpToTime()) {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive)
 			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Please press 'Update' to unwrap the particle trajectories now.")));
 		else
 			throwException(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));

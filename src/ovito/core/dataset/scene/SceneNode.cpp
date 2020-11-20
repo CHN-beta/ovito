@@ -28,8 +28,9 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/oo/CloneHelper.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -61,7 +62,7 @@ SceneNode::SceneNode(DataSet* dataset) : RefTarget(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SceneNode::initializeObject(Application::ExecutionContext executionContext)
+void SceneNode::initializeObject(ExecutionContext executionContext)
 {
 	// Assign random color to node.
 	static std::default_random_engine rng;

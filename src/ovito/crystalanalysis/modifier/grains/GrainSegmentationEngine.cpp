@@ -50,7 +50,7 @@ constexpr int GrainSegmentationEngine1::MAX_DISORDERED_NEIGHBORS; // Definition 
 * Constructor.
 ******************************************************************************/
 GrainSegmentationEngine1::GrainSegmentationEngine1(
-			Application::ExecutionContext executionContext, 
+			ExecutionContext executionContext, 
 			DataSet* dataset, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,

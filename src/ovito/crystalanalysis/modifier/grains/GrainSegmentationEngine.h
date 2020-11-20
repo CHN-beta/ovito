@@ -220,7 +220,7 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine1(
-			Application::ExecutionContext executionContext, 
+			ExecutionContext executionContext, 
 			DataSet* dataset, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,
@@ -433,7 +433,7 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine2(
-			Application::ExecutionContext executionContext, 
+			ExecutionContext executionContext, 
 			DataSet* dataset, 
 			std::shared_ptr<GrainSegmentationEngine1> engine1,
 			FloatType mergingThreshold, 
@@ -445,7 +445,7 @@ public:
 		_mergingThreshold(mergingThreshold),
 		_adoptOrphanAtoms(adoptOrphanAtoms),
 		_minGrainAtomCount(minGrainAtomCount),
-		_atomClusters(ParticlesObject::OOClass().createStandardProperty(dataset, _numParticles, ParticlesObject::ClusterProperty, true)) {}
+		_atomClusters(ParticlesObject::OOClass().createStandardProperty(dataset, _numParticles, ParticlesObject::ClusterProperty, true, executionContext)) {}
 	
 	/// Performs the computation.
 	virtual void perform() override;

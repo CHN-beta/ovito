@@ -44,7 +44,7 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
 	/// Constructor.
-	DislocationAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+	DislocationAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 			const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,

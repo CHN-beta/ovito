@@ -74,7 +74,7 @@ SliceModifier::SliceModifier(DataSet* dataset) : MultiDelegatingModifier(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SliceModifier::initializeObject(Application::ExecutionContext executionContext)
+void SliceModifier::initializeObject(ExecutionContext executionContext)
 {
 	setNormalController(ControllerManager::createVector3Controller(dataset(), executionContext));
 	setDistanceController(ControllerManager::createFloatController(dataset(), executionContext));
@@ -330,7 +330,7 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 		}
 
 		// Create an output mesh for visualizing the cutting plane.
-		TriMeshObject* meshObj = state.createObject<TriMeshObject>(QStringLiteral("plane"), modApp, Application::ExecutionContext::Scripting);
+		TriMeshObject* meshObj = state.createObject<TriMeshObject>(QStringLiteral("plane"), modApp, ExecutionContext::Scripting);
 		meshObj->setMesh(std::move(mesh));
 		meshObj->setVisElement(planeVis());
 	}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ void ScatterPlotModifier::initializeModifier(ModifierApplication* modApp)
 	GenericPropertyModifier::initializeModifier(modApp);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
@@ -188,8 +188,8 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	}
 
 	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty, false);
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty, false);
+	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty, false, Application::instance()->executionContext());
+	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty, false, Application::instance()->executionContext());
 	out_x.property()->setName(xAxisProperty().nameWithComponent());
 	out_y.property()->setName(yAxisProperty().nameWithComponent());
 
@@ -226,7 +226,7 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	}
 
 	// Output a data table object with the scatter points.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), modApp, Application::ExecutionContext::Scripting,
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), modApp, ExecutionContext::Scripting,
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
 		out_y.take(), out_x.take());
 

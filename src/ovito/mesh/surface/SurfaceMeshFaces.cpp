@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;

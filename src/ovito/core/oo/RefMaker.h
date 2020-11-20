@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMakerClass.h>
 #include <ovito/core/oo/ReferenceEvent.h>
-#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -287,7 +286,7 @@ public:
 	///
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
-	virtual void initializeObject(Application::ExecutionContext executionContext);
+	virtual void initializeObject(ExecutionContext executionContext);
 
 	////////////////////////////// Dependencies //////////////////////////////////
 

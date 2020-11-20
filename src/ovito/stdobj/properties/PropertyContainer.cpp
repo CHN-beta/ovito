@@ -155,7 +155,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath)
 {
 	if(getOOMetaClass().isValidStandardPropertyId(typeId) == false) {
 		if(typeId == PropertyObject::GenericSelectionProperty)

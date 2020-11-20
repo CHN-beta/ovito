@@ -49,7 +49,7 @@ void TrajectoryObject::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -96,7 +96,7 @@ TrajectoryObject::TrajectoryObject(DataSet* dataset) : PropertyContainer(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TrajectoryObject::initializeObject(Application::ExecutionContext executionContext)
+void TrajectoryObject::initializeObject(ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());

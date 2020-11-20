@@ -66,7 +66,7 @@ ComputePropertyModifier::ComputePropertyModifier(DataSet* dataset) : Asynchronou
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ComputePropertyModifier::initializeObject(Application::ExecutionContext executionContext)
+void ComputePropertyModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Let this modifier act on particles by default.
 	createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), executionContext);
@@ -111,7 +111,7 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor& f
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(modApp);
 
@@ -214,7 +214,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputePropertyModifierDelegate::createEngine(
-				Application::ExecutionContext executionContext,
+				ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -240,7 +240,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 * Constructor.
 ******************************************************************************/
 ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
-		Application::ExecutionContext executionContext,
+		ExecutionContext executionContext,
 		const TimeInterval& validityInterval,
 		TimePoint time,
 		const PipelineFlowState& input,

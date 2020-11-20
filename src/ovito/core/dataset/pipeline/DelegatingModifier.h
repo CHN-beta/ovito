@@ -148,7 +148,7 @@ protected:
 
 	/// Creates a default delegate for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext);
 
 	/// Lets the modifier's delegate operate on a pipeline flow state.
 	void applyDelegate(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
@@ -207,7 +207,7 @@ protected:
 
 	/// Creates the list of delegate objects for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createModifierDelegates(const OvitoClass& delegateType, Application::ExecutionContext executionContext);
+	void createModifierDelegates(const OvitoClass& delegateType, ExecutionContext executionContext);
 
 	/// Lets the registered modifier delegates operate on a pipeline flow state.
 	void applyDelegates(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});

@@ -355,7 +355,7 @@ public:
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
+	DataObjectType* createObject(const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
 		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, executionContext, std::forward<Args>(args)...);
 	}
 
@@ -363,7 +363,7 @@ public:
 	/// assign a unique identifier to the object, assigns the given data source object, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Application::ExecutionContext executionContext, Args&&... args) {
+	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
 		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, executionContext, std::forward<Args>(args)...);
 	}
 

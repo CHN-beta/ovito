@@ -56,7 +56,7 @@ void VoxelGrid::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -100,7 +100,7 @@ VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGrid::initializeObject(Application::ExecutionContext executionContext)
+void VoxelGrid::initializeObject(ExecutionContext executionContext)
 {
 	// Create and attach a default visualization element for rendering the grid.
 	if(!visElement()) {

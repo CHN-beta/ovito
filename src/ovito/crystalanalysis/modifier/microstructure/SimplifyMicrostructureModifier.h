@@ -66,7 +66,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -76,7 +76,7 @@ private:
 	public:
 
 		/// Constructor.
-		SimplifyMicrostructureEngine(Application::ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
+		SimplifyMicrostructureEngine(ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
 			Engine(executionContext),
 			_microstructure(microstructureObj),
             _smoothingLevel(smoothingLevel),

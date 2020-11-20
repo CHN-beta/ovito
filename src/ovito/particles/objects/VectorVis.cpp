@@ -77,7 +77,7 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VectorVis::initializeObject(Application::ExecutionContext executionContext)
+void VectorVis::initializeObject(ExecutionContext executionContext)
 {
 	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 

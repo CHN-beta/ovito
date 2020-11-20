@@ -56,7 +56,7 @@ void DataTable::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard data table properties.
 ******************************************************************************/
-PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -114,7 +114,7 @@ ConstPropertyPtr DataTable::getXValues() const
 	}
 	else if(const PropertyObject* yProperty = getY()) {
 		if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false);
+			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false, ExecutionContext::Scripting);
 			xdata.property()->setName(axisLabelX());
 			FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
 			FloatType x = intervalStart() + binSize * FloatType(0.5);

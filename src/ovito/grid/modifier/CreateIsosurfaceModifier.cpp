@@ -57,7 +57,7 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(DataSet* dataset) : Asynchron
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CreateIsosurfaceModifier::initializeObject(Application::ExecutionContext executionContext)
+void CreateIsosurfaceModifier::initializeObject(ExecutionContext executionContext)
 {
 	setIsolevelController(ControllerManager::createFloatController(dataset(), executionContext));
 
@@ -98,7 +98,7 @@ void CreateIsosurfaceModifier::initializeModifier(ModifierApplication* modApp)
 	AsynchronousModifier::initializeModifier(modApp);
 
 	// Use the first available voxel grid from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
 			setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
@@ -106,7 +106,7 @@ void CreateIsosurfaceModifier::initializeModifier(ModifierApplication* modApp)
 	}
 
 	// Use the first available property from the input grid as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
 			for(const PropertyObject* property : grid->properties()) {
@@ -121,7 +121,7 @@ void CreateIsosurfaceModifier::initializeModifier(ModifierApplication* modApp)
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	if(!subject())
 		throwException(tr("No input voxel grid set."));
@@ -296,7 +296,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(TimePoint t
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ExecutionContext executionContext)
 {
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;

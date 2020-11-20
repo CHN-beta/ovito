@@ -401,7 +401,7 @@ OORef<PropertyObject> PropertyObject::filterCopy(const boost::dynamic_bitset<>& 
 
 	size_t s = size();
 	size_t newSize = size() - mask.count();
-	OORef<PropertyObject> copy = OORef<PropertyObject>::create(dataset(), Application::ExecutionContext::Scripting, newSize, dataType(), componentCount(), stride(), name(), false, type(), componentNames());
+	OORef<PropertyObject> copy = OORef<PropertyObject>::create(dataset(), ExecutionContext::Scripting, newSize, dataType(), componentCount(), stride(), name(), false, type(), componentNames());
 
 	// Optimize filter operation for the most common property types.
 	if(dataType() == PropertyObject::Float && stride() == sizeof(FloatType)) {
@@ -938,7 +938,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), Application::ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy object for the element types, which have already been created by

@@ -83,7 +83,7 @@ TimeInterval DelegatingModifier::validityInterval(const PipelineEvaluationReques
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext)
+void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
@@ -178,7 +178,7 @@ TimeInterval MultiDelegatingModifier::validityInterval(const PipelineEvaluationR
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
 ******************************************************************************/
-void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, Application::ExecutionContext executionContext)
+void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 

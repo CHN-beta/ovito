@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -65,7 +65,7 @@ private:
 	public:
 
 		/// Constructor.
-		WignerSeitzAnalysisEngine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		WignerSeitzAnalysisEngine(ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
 				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
 			RefConfigEngineBase(executionContext, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,

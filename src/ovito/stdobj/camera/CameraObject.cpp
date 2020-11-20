@@ -29,6 +29,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "CameraObject.h"
 
 namespace Ovito { namespace StdObj {
@@ -56,7 +57,7 @@ CameraObject::CameraObject(DataSet* dataset) : AbstractCameraObject(dataset), _i
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CameraObject::initializeObject(Application::ExecutionContext executionContext)
+void CameraObject::initializeObject(ExecutionContext executionContext)
 {
 	setFovController(ControllerManager::createFloatController(dataset(), executionContext));
 	fovController()->setFloatValue(0, FLOATTYPE_PI/4);

@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(Microstructure);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void Microstructure::initializeObject(Application::ExecutionContext executionContext)
+void Microstructure::initializeObject(ExecutionContext executionContext)
 {
 	SurfaceMesh::initializeObject(executionContext);
 

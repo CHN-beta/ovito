@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 /******************************************************************************
 * Creates a storage object for standard vertex properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t vertexCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t vertexCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -127,7 +127,7 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMeshVertices::initializeObject(Application::ExecutionContext executionContext)
+void SurfaceMeshVertices::initializeObject(ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());

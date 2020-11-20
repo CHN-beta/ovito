@@ -29,6 +29,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "VoxelGridSliceModifierDelegate.h"
 #include "MarchingCubes.h"
 
@@ -48,7 +49,7 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGridSliceModifierDelegate::initializeObject(Application::ExecutionContext executionContext)
+void VoxelGridSliceModifierDelegate::initializeObject(ExecutionContext executionContext)
 {
 	// Create the vis element for rendering the mesh.
 	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));

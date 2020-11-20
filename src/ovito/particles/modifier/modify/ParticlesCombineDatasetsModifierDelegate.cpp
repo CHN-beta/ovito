@@ -28,6 +28,7 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "ParticlesCombineDatasetsModifierDelegate.h"
 
 namespace Ovito { namespace Particles {

@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS(SimulationCellObject, cellMatrix, WorldParameterUnit);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SimulationCellObject::initializeObject(Application::ExecutionContext executionContext)
+void SimulationCellObject::initializeObject(ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the simulation box.
 	if(!visElement())
@@ -110,7 +110,7 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 	}
 	else {
 		// Create and initialize a new proxy.
-		OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(dataset(), Application::ExecutionContext::Scripting);
+		OORef<SimulationCellObject> newProxy = OORef<SimulationCellObject>::create(dataset(), ExecutionContext::Scripting);
 		newProxy->setPbcFlags(pbcFlags());
 		newProxy->setIs2D(is2D());
 		newProxy->setCellMatrix(cellMatrix());

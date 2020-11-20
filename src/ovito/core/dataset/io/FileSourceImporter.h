@@ -118,7 +118,7 @@ public:
 		PipelineObject* dataSource() const { return _dataSource; }
 
 		/// Returns type of execution context (interactive/scripting) in which the frame loading was triggered.
-		Application::ExecutionContext executionContext() const { return _executionContext; }
+		ExecutionContext executionContext() const { return _executionContext; }
 
 		/// File parser implementations call this method to indicate that the input file contains
 		/// additional frames stored back to back with the currently loaded one.
@@ -153,7 +153,7 @@ public:
 		QPointer<PipelineObject> _dataSource;
 
 		/// Type of execution context (interactive/scripting) in which the frame loading was triggered.
-		Application::ExecutionContext _executionContext = Application::instance()->executionContext();
+		ExecutionContext _executionContext = Application::instance()->executionContext();
 
 		/// Flag that is set by the parser to indicate that the input file contains more than one animation frame.
 		bool _additionalFramesDetected = false;

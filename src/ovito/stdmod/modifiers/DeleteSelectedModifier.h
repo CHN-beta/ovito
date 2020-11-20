@@ -70,7 +70,7 @@ public:
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE DeleteSelectedModifier(DataSet* dataset) : MultiDelegatingModifier(dataset) {
 		// Generate the list of delegate objects.
-		createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), Application::ExecutionContext::Scripting);
+		createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), ExecutionContext::Scripting);
 	}
 };
 

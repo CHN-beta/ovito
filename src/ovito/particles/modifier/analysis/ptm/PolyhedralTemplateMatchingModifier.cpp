@@ -69,7 +69,7 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void PolyhedralTemplateMatchingModifier::initializeObject(Application::ExecutionContext executionContext)
+void PolyhedralTemplateMatchingModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Define the structure types.
 	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -117,7 +117,7 @@ void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDesc
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -141,14 +141,14 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
 		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 	StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
 	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
 	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
-	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true) : nullptr),
-	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true) : nullptr),
+	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true, executionContext) : nullptr),
+	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true, executionContext) : nullptr),
 	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
 	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, tr("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
 	_rmsdHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
@@ -382,7 +382,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(TimePoint time,
 	}
 
 	// Output RMSD histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
 	table->setAxisLabelX(tr("RMSD"));
 	table->setIntervalStart(0);
 	table->setIntervalEnd(rmsdHistogramRange());

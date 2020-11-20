@@ -51,7 +51,7 @@ ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentification
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ChillPlusModifier::initializeObject(Application::ExecutionContext executionContext)
+void ChillPlusModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Create the structure types.
     createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
@@ -68,7 +68,7 @@ void ChillPlusModifier::initializeObject(Application::ExecutionContext execution
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();

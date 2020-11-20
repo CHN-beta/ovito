@@ -521,7 +521,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 
 							// Create editable proxy objects for the data objects in the loaded collection.
 							OVITO_ASSERT(state.data()->isSafeToModify());
-							if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+							if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 								_updatingEditableProxies = true;
 								ConstDataObjectPath dataPath = { state.data() };
 								state.data()->updateEditableProxies(state, dataPath);
@@ -688,7 +688,7 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
 bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			// The user has modified one of the editable proxy objects attached to the data collection.
 			// Apply the changes made to the proxy objects to the actual data objects.
 			UndoSuspender noUndo(this);

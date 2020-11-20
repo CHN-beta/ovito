@@ -53,8 +53,8 @@ RefTargetExecutor::WorkEventBase::WorkEventBase(const RefTarget* obj) :
 void RefTargetExecutor::WorkEventBase::activateExecutionContext()
 {
     if(Application* app = Application::instance()) {
-        Application::ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(static_cast<Application::ExecutionContext>(_executionContext));
+        ExecutionContext previousContext = app->executionContext();
+        app->switchExecutionContext(static_cast<ExecutionContext>(_executionContext));
         _executionContext = static_cast<int>(previousContext);
 
         // In the current implementation, deferred work is always executed without undo recording.
@@ -70,8 +70,8 @@ void RefTargetExecutor::WorkEventBase::activateExecutionContext()
 void RefTargetExecutor::WorkEventBase::restoreExecutionContext()
 {
     if(Application* app = Application::instance()) {
-        Application::ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(static_cast<Application::ExecutionContext>(_executionContext));
+        ExecutionContext previousContext = app->executionContext();
+        app->switchExecutionContext(static_cast<ExecutionContext>(_executionContext));
         _executionContext = static_cast<int>(previousContext);
 
         // Restore undo recording state.

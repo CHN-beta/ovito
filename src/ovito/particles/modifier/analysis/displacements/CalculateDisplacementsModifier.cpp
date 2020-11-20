@@ -43,7 +43,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CalculateDisplacementsModifier::initializeObject(Application::ExecutionContext executionContext)
+void CalculateDisplacementsModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Create vis element for vectors.
 	setVectorVis(OORef<VectorVis>::create(dataset(), executionContext));
@@ -64,7 +64,7 @@ void CalculateDisplacementsModifier::initializeObject(Application::ExecutionCont
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();

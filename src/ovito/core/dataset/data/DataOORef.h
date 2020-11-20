@@ -166,7 +166,7 @@ public:
 
     /// Factory method instantiating a new data object and returning a smart-pointer to it.
     template<typename... Args>
-	static DataOORef create(DataSet* dataset, Application::ExecutionContext executionContext, Args&&... args) {
+	static DataOORef create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
 		return DataOORef(OORef<T>::create(dataset, executionContext, std::forward<Args>(args)...));
 	}
     

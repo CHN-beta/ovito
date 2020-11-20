@@ -517,7 +517,7 @@ public:
     }
 
     /// Adds a new standard vertex property to the mesh.
-    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, bool initializeMemory, Application::ExecutionContext executionContext) {
+    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
         return mutableVertices().createProperty(ptype, initializeMemory, executionContext);
     }
 
@@ -537,7 +537,7 @@ public:
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, bool initializeMemory, Application::ExecutionContext executionContext) {
+    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
         return mutableFaces().createProperty(ptype, initializeMemory, executionContext);
     }
 
@@ -557,7 +557,7 @@ public:
     }
 
     /// Adds a new standard region property to the mesh.
-    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, bool initializeMemory, Application::ExecutionContext executionContext) {
+    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
         return mutableRegions().createProperty(ptype, initializeMemory, executionContext);
     }
 

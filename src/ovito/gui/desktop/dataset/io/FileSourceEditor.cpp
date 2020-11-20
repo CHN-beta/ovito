@@ -290,7 +290,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), Application::ExecutionContext::Interactive, url);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), ExecutionContext::Interactive, url);
 		if(!fileSource->dataset()->taskManager().waitForFuture(importerFuture))
 			return false;
 
@@ -300,7 +300,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	}
 	else {
 		// Caller has provided a specific importer type.
-		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset(), Application::ExecutionContext::Interactive));
+		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset(), ExecutionContext::Interactive));
 		if(!fileImporter)
 			return false;
 	}

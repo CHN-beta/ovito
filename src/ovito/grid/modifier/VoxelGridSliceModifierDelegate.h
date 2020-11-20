@@ -66,7 +66,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// \brief Applies a slice operation to a data object.
 	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

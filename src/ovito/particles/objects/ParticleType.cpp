@@ -58,7 +58,7 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(int propertyType, Application::ExecutionContext executionContext)
+void ParticleType::initializeType(int propertyType, ExecutionContext executionContext)
 {
 	ElementType::initializeType(propertyType, executionContext);
 
@@ -95,7 +95,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, Application::ExecutionContext executionContext, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -208,9 +208,9 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 /******************************************************************************
 * Returns the default color for a particle type name.
 ******************************************************************************/
-Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext)
+Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext)
 {
-	if(executionContext == Application::ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("particles/defaults/color");
 		settings.beginGroup(QString::number((int)typeClass));
@@ -250,7 +250,7 @@ void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, cons
 	settings.beginGroup("particles/defaults/color");
 	settings.beginGroup(QString::number((int)typeClass));
 
-	if(getDefaultParticleColor(typeClass, particleTypeName, 0, Application::ExecutionContext::Scripting) != color)
+	if(getDefaultParticleColor(typeClass, particleTypeName, 0, ExecutionContext::Scripting) != color)
 		settings.setValue(particleTypeName, QVariant::fromValue((QColor)color));
 	else
 		settings.remove(particleTypeName);
@@ -259,9 +259,9 @@ void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, cons
 /******************************************************************************
 * Returns the default radius for a particle type name.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, Application::ExecutionContext executionContext)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext)
 {
-	if(executionContext == Application::ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive) {
 		QSettings settings;
 		settings.beginGroup("particles/defaults/radius");
 		settings.beginGroup(QString::number((int)typeClass));
@@ -294,7 +294,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	settings.beginGroup("particles/defaults/radius");
 	settings.beginGroup(QString::number((int)typeClass));
 
-	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, Application::ExecutionContext::Scripting) != radius)
+	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting) != radius)
 		settings.setValue(particleTypeName, QVariant::fromValue(radius));
 	else
 		settings.remove(particleTypeName);

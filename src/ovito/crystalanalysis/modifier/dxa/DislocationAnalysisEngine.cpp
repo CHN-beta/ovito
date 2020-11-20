@@ -27,6 +27,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/Application.h>
 #include "DislocationAnalysisEngine.h"
 #include "DislocationAnalysisModifier.h"
 
@@ -40,7 +41,7 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
-		Application::ExecutionContext executionContext, 
+		ExecutionContext executionContext, 
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
 		ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes,

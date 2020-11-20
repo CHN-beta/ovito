@@ -31,6 +31,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "ClusterAnalysisModifier.h"
 
 namespace Ovito { namespace Particles {
@@ -80,7 +81,7 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -100,7 +101,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 		periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
 		// If no PBC vectors are present, create ad-hoc vectors initialized to zero.
 		if(!periodicImageBondProperty)
-			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true);
+			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true, executionContext);
 	}
 
 	// Get particle masses, needed for center-of-mass calculation.
@@ -115,7 +116,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
 			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
-				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty, false));
+				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty, false, executionContext));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
 					if(iter != massMap.end()) return iter->second;
@@ -556,7 +557,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 		state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), modApp);
 
 	// Output a data table with the cluster list.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, Application::ExecutionContext::Scripting, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, ExecutionContext::Scripting, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
 	// Output centers of mass.
 	if(modifier->computeCentersOfMass() && _centersOfMass)

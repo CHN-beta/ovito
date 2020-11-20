@@ -53,7 +53,7 @@ SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomai
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMesh::initializeObject(Application::ExecutionContext executionContext)
+void SurfaceMesh::initializeObject(ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the surface mesh.
 	if(!visElement())

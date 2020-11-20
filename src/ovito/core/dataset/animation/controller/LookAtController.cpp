@@ -46,7 +46,7 @@ LookAtController::LookAtController(DataSet* dataset) : Controller(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void LookAtController::initializeObject(Application::ExecutionContext executionContext)
+void LookAtController::initializeObject(ExecutionContext executionContext)
 {
 	// Create sub-controller.
 	setRollController(ControllerManager::createFloatController(dataset(), executionContext));

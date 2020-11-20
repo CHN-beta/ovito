@@ -67,7 +67,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(ModifierApplication* modApp) override;
@@ -88,12 +88,12 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, Application::ExecutionContext executionContext);
+	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ExecutionContext executionContext);
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -103,7 +103,7 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(Application::ExecutionContext executionContext, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
+		ComputeIsosurfaceEngine(ExecutionContext executionContext, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
 			Engine(executionContext, validityInterval),
 			_gridShape(gridShape),
 			_property(std::move(property)),

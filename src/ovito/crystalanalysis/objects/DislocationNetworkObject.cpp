@@ -47,7 +47,7 @@ DislocationNetworkObject::DislocationNetworkObject(DataSet* dataset) : PeriodicD
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void DislocationNetworkObject::initializeObject(Application::ExecutionContext executionContext)
+void DislocationNetworkObject::initializeObject(ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the dislocation lines.
 	if(!visElement())

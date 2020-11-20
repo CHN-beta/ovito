@@ -62,7 +62,7 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ElasticStrainModifier::initializeObject(Application::ExecutionContext executionContext)
+void ElasticStrainModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Create the structure types.
 	ParticleType::PredefinedStructureType predefTypes[] = {
@@ -89,7 +89,7 @@ void ElasticStrainModifier::initializeObject(Application::ExecutionContext execu
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get modifier inputs.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();

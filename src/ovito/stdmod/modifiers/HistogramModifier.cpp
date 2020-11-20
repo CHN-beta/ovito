@@ -89,7 +89,7 @@ void HistogramModifier::initializeModifier(ModifierApplication* modApp)
 	GenericPropertyModifier::initializeModifier(modApp);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
@@ -314,7 +314,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	// Output a data table with the histogram data.
 	DataTable* table = state.createObject<DataTable>(
 		QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
-		modApp, Application::ExecutionContext::Scripting, DataTable::Histogram, sourceProperty().nameWithComponent(), 
+		modApp, ExecutionContext::Scripting, DataTable::Histogram, sourceProperty().nameWithComponent(), 
 		histogram.take());
 	table->setAxisLabelX(sourceProperty().nameWithComponent());
 	table->setIntervalStart(intervalStart);

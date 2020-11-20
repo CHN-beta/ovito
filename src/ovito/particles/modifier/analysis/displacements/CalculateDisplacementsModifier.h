@@ -55,12 +55,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -71,7 +71,7 @@ private:
 
 		/// Constructor.
 		DisplacementEngine(
-				Application::ExecutionContext executionContext, 
+				ExecutionContext executionContext, 
 				DataSet* dataset,
 				const TimeInterval& validityInterval, 
 				ConstPropertyPtr positions, 
@@ -85,8 +85,8 @@ private:
 				bool useMinimumImageConvention) :
 			RefConfigEngineBase(executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
-			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false, executionContext)),
+			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false, executionContext)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

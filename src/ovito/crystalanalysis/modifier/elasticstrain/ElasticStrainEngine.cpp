@@ -34,7 +34,7 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
-		Application::ExecutionContext executionContext,
+		ExecutionContext executionContext,
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
 		ConstPropertyPtr positions, const SimulationCellObject* simCell,

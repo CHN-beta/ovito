@@ -336,7 +336,7 @@ public:
 
 	/// Loads the user-defined default values of this object's parameter fields from the
 	/// application's settings store.
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;

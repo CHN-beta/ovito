@@ -70,7 +70,7 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the input particles.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();

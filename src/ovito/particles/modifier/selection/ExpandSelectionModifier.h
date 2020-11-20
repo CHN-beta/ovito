@@ -77,7 +77,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -87,7 +87,7 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+		ExpandSelectionEngine(ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
 			Engine(executionContext),
 			_numIterations(numIterations),
 			_positions(std::move(positions)),
@@ -141,7 +141,7 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionNearestEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+		ExpandSelectionNearestEngine(ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
 			ExpandSelectionEngine(executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_numNearestNeighbors(numNearestNeighbors) {}
 
@@ -159,7 +159,7 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionCutoffEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+		ExpandSelectionCutoffEngine(ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
 			ExpandSelectionEngine(executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_cutoffRange(cutoff) {}
 
@@ -177,7 +177,7 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionBondedEngine(Application::ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+		ExpandSelectionBondedEngine(ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
 			ExpandSelectionEngine(executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_bondTopology(std::move(bondTopology)) {}
 

@@ -66,7 +66,7 @@ FileExporter::FileExporter(DataSet* dataset) : RefTarget(dataset),
 	_endFrame(-1),
 	_everyNthFrame(1),
 	_floatOutputPrecision(10),
-	_ignorePipelineErrors(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
+	_ignorePipelineErrors(Application::instance()->executionContext() == ExecutionContext::Interactive)
 {
 	// Use the entire animation interval as default export interval.
 	int lastFrame = dataset->animationSettings()->timeToFrame(dataset->animationSettings()->animationInterval().end());

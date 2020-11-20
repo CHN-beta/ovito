@@ -144,7 +144,7 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 * Creates and initializes a computation engine that will compute the 
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// What is the reference frame number to use?
 	TimeInterval validityInterval = input.stateValidity();
@@ -232,7 +232,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 * Constructor.
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
-	Application::ExecutionContext executionContext, 
+	ExecutionContext executionContext, 
 	const TimeInterval& validityInterval,
 	ConstPropertyPtr positions, const SimulationCellObject* simCell,
 	ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,

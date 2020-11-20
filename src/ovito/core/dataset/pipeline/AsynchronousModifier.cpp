@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "AsynchronousModifier.h"
 
 #ifdef Q_OS_LINUX

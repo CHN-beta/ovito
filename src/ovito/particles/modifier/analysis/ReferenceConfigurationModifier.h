@@ -82,10 +82,10 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) = 0;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) = 0;
 
 	/// Base class for compute engines that make use of a reference configuration.
 	class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public Engine
@@ -93,7 +93,7 @@ protected:
 	public:
 
 		/// Constructor.
-		RefConfigEngineBase(Application::ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		RefConfigEngineBase(ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, bool useMinimumImageConvention);

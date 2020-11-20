@@ -58,7 +58,7 @@ ParticlesObject::ParticlesObject(DataSet* dataset) : PropertyContainer(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ParticlesObject::initializeObject(Application::ExecutionContext executionContext)
+void ParticlesObject::initializeObject(ExecutionContext executionContext)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
@@ -410,7 +410,7 @@ std::vector<size_t> ParticlesObject::sortById()
 /******************************************************************************
 * Adds a set of new bonds to the particle system.
 ******************************************************************************/
-void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, Application::ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
+void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	// Check if there are existing bonds.
 	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
@@ -601,7 +601,7 @@ std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 /******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
-PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;

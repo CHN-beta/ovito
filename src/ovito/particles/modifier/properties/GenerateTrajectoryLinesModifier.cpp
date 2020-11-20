@@ -74,7 +74,7 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(DataSet* datase
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void GenerateTrajectoryLinesModifier::initializeObject(Application::ExecutionContext executionContext)
+void GenerateTrajectoryLinesModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Create the vis element for rendering the trajectories created by the modifier.
 	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), executionContext));

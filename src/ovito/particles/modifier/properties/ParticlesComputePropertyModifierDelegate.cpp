@@ -81,7 +81,7 @@ void ParticlesComputePropertyModifierDelegate::setComponentCount(int componentCo
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ParticlesComputePropertyModifierDelegate::createEngine(
-				Application::ExecutionContext executionContext, 
+				ExecutionContext executionContext, 
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -116,7 +116,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 * Constructor.
 ******************************************************************************/
 ParticlesComputePropertyModifierDelegate::Engine::Engine(
-		Application::ExecutionContext executionContext, 
+		ExecutionContext executionContext, 
 		const TimeInterval& validityInterval,
 		TimePoint time,
 		PropertyPtr outputProperty,

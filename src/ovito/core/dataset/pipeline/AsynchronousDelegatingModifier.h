@@ -74,7 +74,7 @@ protected:
 
 	/// Creates a default delegate for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext);
 
 protected:
 

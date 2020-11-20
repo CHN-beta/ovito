@@ -53,7 +53,7 @@ VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModi
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation, Application::ExecutionContext executionContext)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation, ExecutionContext executionContext)
 {
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -86,7 +86,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
     // Get the current positions.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();

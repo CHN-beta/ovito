@@ -89,7 +89,7 @@ void Controller::setCurrentVector3Value(const Vector3& newValue)
 /******************************************************************************
 * Creates a new float controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<LinearFloatController>::create(dataset, executionContext);
 }
@@ -97,7 +97,7 @@ OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, App
 /******************************************************************************
 * Creates a new integer controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createIntController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createIntController(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<LinearIntegerController>::create(dataset, executionContext);
 }
@@ -105,7 +105,7 @@ OORef<Controller> ControllerManager::createIntController(DataSet* dataset, Appli
 /******************************************************************************
 * Creates a new Vector3 controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<LinearVectorController>::create(dataset, executionContext);
 }
@@ -113,7 +113,7 @@ OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, A
 /******************************************************************************
 * Creates a new position controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, ExecutionContext executionContext)
 {
 	//return new TCBPositionController(dataset);
 	return OORef<SplinePositionController>::create(dataset, executionContext);
@@ -122,7 +122,7 @@ OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, 
 /******************************************************************************
 * Creates a new rotation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<LinearRotationController>::create(dataset, executionContext);
 }
@@ -130,7 +130,7 @@ OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, 
 /******************************************************************************
 * Creates a new scaling controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<LinearScalingController>::create(dataset, executionContext);
 }
@@ -138,7 +138,7 @@ OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, A
 /******************************************************************************
 * Creates a new transformation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset, Application::ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset, ExecutionContext executionContext)
 {
 	return OORef<PRSTransformationController>::create(dataset, executionContext);
 }

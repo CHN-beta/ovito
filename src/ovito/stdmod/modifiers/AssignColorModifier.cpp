@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include "AssignColorModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -52,7 +53,7 @@ AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AssignColorModifier::initializeObject(Application::ExecutionContext executionContext)
+void AssignColorModifier::initializeObject(ExecutionContext executionContext)
 {
 	if(!colorController())
 		setColorController(ControllerManager::createColorController(dataset(), executionContext));
@@ -61,7 +62,7 @@ void AssignColorModifier::initializeObject(Application::ExecutionContext executi
 	// Let this modifier operate on particles by default.
 	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), executionContext);
 
-	if(executionContext == Application::ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive) {
 		// In the graphical program environment, we clear the
 		// selection by default to make the assigned colors visible.
 		setKeepSelection(false);

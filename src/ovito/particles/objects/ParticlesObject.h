@@ -47,7 +47,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard particle properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, Application::ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -135,7 +135,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// Deletes the particles for which bits are set in the given bit-mask.
 	/// Returns the number of deleted particles.
@@ -172,7 +172,7 @@ public:
 	const PropertyObject* expectBondsTopology() const;
 
 	/// Adds a set of new bonds to the particle system.
-	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, Application::ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
+	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a vector with the input particle colors.
 	std::vector<ColorA> inputParticleColors() const;

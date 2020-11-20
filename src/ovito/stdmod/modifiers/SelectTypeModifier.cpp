@@ -66,7 +66,7 @@ void SelectTypeModifier::initializeModifier(ModifierApplication* modApp)
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
-					if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
+					if(Application::instance()->executionContext() == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}

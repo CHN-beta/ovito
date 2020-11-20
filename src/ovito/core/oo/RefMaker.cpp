@@ -590,7 +590,7 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 * This function is recursive, i.e., it also loads default parameter values for
 * referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 ******************************************************************************/
-void RefMaker::initializeObject(Application::ExecutionContext executionContext)
+void RefMaker::initializeObject(ExecutionContext executionContext)
 {
 	// Iterate over all property fields in the class hierarchy.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
@@ -601,7 +601,7 @@ void RefMaker::initializeObject(Application::ExecutionContext executionContext)
 					if(RefTarget* target = field->_singleReferenceReadFunc(this)) {
 						target->initializeObject(executionContext);
 
-						if(executionContext == Application::ExecutionContext::Interactive) {
+						if(executionContext == ExecutionContext::Interactive) {
 							// If it's a controller type, load default controller value.
 							if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
 								QSettings settings;
@@ -634,7 +634,7 @@ void RefMaker::initializeObject(Application::ExecutionContext executionContext)
 			}
 			else {
 				// If it's a property field, load the user-defined default value.
-				if(executionContext == Application::ExecutionContext::Interactive) {
+				if(executionContext == ExecutionContext::Interactive) {
 					field->loadDefaultValue(this);
 				}
 			}

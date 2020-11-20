@@ -64,7 +64,7 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the current positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -242,7 +242,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(Time
 	particles->createProperty(coordinationNumbers());
 
 	// Output RDF histogram(s).
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, Application::ExecutionContext::Scripting, DataTable::Line, tr("Radial distribution function"), rdfY());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Radial distribution function"), rdfY());
 	table->setIntervalStart(0);
 	table->setIntervalEnd(cutoff());
 	table->setAxisLabelX(tr("Pair separation distance"));

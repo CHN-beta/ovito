@@ -26,6 +26,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "StructureIdentificationModifier.h"
 
 namespace Ovito { namespace Particles {
@@ -58,7 +59,7 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, Application::ExecutionContext executionContext)
+ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext)
 {
 	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), executionContext);
 	stype->setNumericId(id);
@@ -93,7 +94,7 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
+StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
 	Engine(executionContext),
 	_positions(std::move(positions)),
 	_simCell(simCell),
@@ -174,7 +175,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
 
 	// Output a bar chart with the type counts.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), modApp, Application::ExecutionContext::Scripting, DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), modApp, ExecutionContext::Scripting, DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
 
 	// Use the structure types as labels for the output bar chart.
 	PropertyObject* xProperty = table->expectMutableProperty(DataTable::XProperty);

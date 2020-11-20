@@ -209,9 +209,9 @@ void OverlayTypesModel::insertViewportLayer()
 				underlayIndex = vp->underlays().indexOf(item->overlay());
 			}
 			// Create an instance of the overlay class.
-			OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance(dataset, Application::ExecutionContext::Interactive));
+			OORef<ViewportOverlay> layer = static_object_cast<ViewportOverlay>(action->layerClass()->createInstance(dataset, ExecutionContext::Interactive));
 			// Initialize settings to default values.
-			layer->initializeObject(Application::instance()->executionContext());
+			layer->initializeObject(ExecutionContext::Interactive);
 			// Make sure the new overlay gets selected in the UI.
 			_overlayListModel->setNextToSelectObject(layer);
 			// Insert it into either the overlays or the underlays list.

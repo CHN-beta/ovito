@@ -67,12 +67,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -82,7 +82,7 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
+		ComputePolyhedraEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
 				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh) :
 			Engine(executionContext),

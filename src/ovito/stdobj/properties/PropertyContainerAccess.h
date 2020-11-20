@@ -92,7 +92,7 @@ public:
 	}
 
     /// Creates a new standard property in the container.
-    PropertyObject* createProperty(int ptype, bool initializeMemory, Application::ExecutionContext executionContext) {
+    PropertyObject* createProperty(int ptype, bool initializeMemory, ExecutionContext executionContext) {
 		// Write current element count back to container before allocating a new property array.
 		updateElementCount();
 		

@@ -30,6 +30,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/Application.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
 #include "RenderableSurfaceMesh.h"
@@ -78,7 +79,7 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMeshVis::initializeObject(Application::ExecutionContext executionContext)
+void SurfaceMeshVis::initializeObject(ExecutionContext executionContext)
 {
 	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 	setCapTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));

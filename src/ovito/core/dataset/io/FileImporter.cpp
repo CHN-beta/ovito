@@ -37,7 +37,7 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const QUrl& url)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const QUrl& url)
 {
 	if(!url.isValid())
 		dataset->throwException(tr("Invalid path or URL."));
@@ -59,7 +59,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Application::ExecutionContext executionContext, const FileHandle& file)
+OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file)
 {
 	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {

@@ -69,7 +69,7 @@ CreateBondsModifier::CreateBondsModifier(DataSet* dataset) : AsynchronousModifie
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CreateBondsModifier::initializeObject(Application::ExecutionContext executionContext)
+void CreateBondsModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Create the bond type that will be assigned to the newly created bonds.
 	setBondType(OORef<BondType>::create(dataset(), executionContext));
@@ -179,7 +179,7 @@ const ElementType* CreateBondsModifier::lookupParticleType(const PropertyObject*
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -324,7 +324,7 @@ void CreateBondsModifier::BondsEngine::applyResults(TimePoint time, ModifierAppl
 	state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(bondsCount), modApp);
 
 	// If the number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
-	if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		modifier->bondsVis()->setEnabled(false);
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. As a precaution, the display of bonds has been disabled. You can manually enable it again if needed.").arg(bondsCount)));
 	}

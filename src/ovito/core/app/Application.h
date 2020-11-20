@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
+#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -106,12 +107,6 @@ public:
 
 	/// Handler function for exceptions.
 	virtual void reportError(const Exception& exception, bool blocking);
-
-	/// The possibles types of contexts in which the program's actions are performed.
-	enum class ExecutionContext {
-		Interactive,	///< Actions are currently performed by the interactive user.
-		Scripting		///< Actions are currently performed by a script.
-	};
 
 	/// \brief Returns type of context in which the program's actions are currently performed.
 	/// \note It is only safe to call this method from the main thread.

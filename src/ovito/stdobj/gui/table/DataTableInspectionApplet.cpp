@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/core/app/Application.h>
 #include "DataTableInspectionApplet.h"
 
 namespace Ovito { namespace StdObj {

@@ -27,6 +27,7 @@
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/app/Application.h>
 #include "DislocationVis.h"
 #include "RenderableDislocationLines.h"
 

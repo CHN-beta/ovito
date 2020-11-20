@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/app/Application.h>
 #include "InteractiveMolecularDynamicsModifier.h"
 
 #include <QtEndian>
@@ -244,7 +245,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false, Application::instance()->executionContext());
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return static_cast<Point3>(p); });
 
 				// Notify pipeline system that this modifier has new results. 

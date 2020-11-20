@@ -53,7 +53,7 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const PipelineEval
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, Application::ExecutionContext executionContext)
+void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 

@@ -24,6 +24,7 @@
 #include <ovito/core/oo/OvitoObject.h>
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ObjectLoadStream.h"
 
@@ -32,7 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-ObjectLoadStream::ObjectLoadStream(QDataStream& source, SynchronousOperation operation) : LoadStream(source, std::move(operation))
+ObjectLoadStream::ObjectLoadStream(QDataStream& source, SynchronousOperation operation) : LoadStream(source, std::move(operation)),
+	_executionContext(Application::instance()->executionContext())
 {
 	qint64 oldPos = filePosition();
 

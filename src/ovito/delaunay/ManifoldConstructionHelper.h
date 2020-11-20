@@ -58,7 +58,7 @@ public:
 public:
 
 	/// Constructor.
-	ManifoldConstructionHelper(Application::ExecutionContext executionContext, DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
+	ManifoldConstructionHelper(ExecutionContext executionContext, DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
 			const PropertyObject* positions) : _executionContext(executionContext), _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
 	/// Returns the number of filled regions that have been identified.
@@ -1031,7 +1031,7 @@ private:
 
 		// Construct convex hull of remaining line segments.
 		if(!_convexHullMesh)
-			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), Application::ExecutionContext::Scripting));
+			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ExecutionContext::Scripting));
 		else
 			_convexHullMesh.clearMesh();
 		_convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));
@@ -1070,7 +1070,7 @@ private:
 	FloatType _alpha;
 
 	/// Indicates whether this algorithm is executed in an interactive or a scripting context.
-	Application::ExecutionContext _executionContext;
+	ExecutionContext _executionContext;
 
 	/// Controls the grouping of Delaunay cells into volumetric regions and the generation
 	/// of a two-sided surface mesh.

@@ -622,7 +622,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 
 	// Construct the convex hull of the vertices.
 	// This yields a half-edge surface mesh data structure.
-	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
+	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
 	mesh.constructConvexHull(std::move(vertices));
 	mesh.joinCoplanarFaces();
 
@@ -630,7 +630,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 	FloatType roundingRadius = definition.value("rounding_radius").toDouble();
 	std::vector<Vector3> vertexNormals;
 	if(roundingRadius > 0) {
-		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), Application::ExecutionContext::Scripting));
+		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
 
 		// Maps edges of the old mesh to edges of the new mesh.
 		std::vector<SurfaceMeshAccess::edge_index> edgeMapping(mesh.edgeCount());

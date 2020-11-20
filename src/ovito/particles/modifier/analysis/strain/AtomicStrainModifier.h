@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, Application::ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -65,7 +65,7 @@ private:
 	public:
 
 		/// Constructor.
-		AtomicStrainEngine(Application::ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		AtomicStrainEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				FloatType cutoff, AffineMappingType affineMapping, bool useMinimumImageConvention,
@@ -75,15 +75,15 @@ private:
 			RefConfigEngineBase(executionContext, validityInterval, positions, simCell, refPositions, simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_cutoff(cutoff),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, refPositions->size(), ParticlesObject::DisplacementProperty, false)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, refPositions->size(), ParticlesObject::DisplacementProperty, false, executionContext)),
 			_shearStrains(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Shear Strain"), false)),
 			_volumetricStrains(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Volumetric Strain"), false)),
-			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StrainTensorProperty, false) : nullptr),
-			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty, false) : nullptr),
+			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StrainTensorProperty, false, executionContext) : nullptr),
+			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty, false, executionContext) : nullptr),
 			_nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Nonaffine Squared Displacement"), false) : nullptr),
-			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::SelectionProperty, false) : nullptr),
-			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::RotationProperty, false) : nullptr),
-			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StretchTensorProperty, false) : nullptr),
+			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::SelectionProperty, false, executionContext) : nullptr),
+			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::RotationProperty, false, executionContext) : nullptr),
+			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StretchTensorProperty, false, executionContext) : nullptr),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

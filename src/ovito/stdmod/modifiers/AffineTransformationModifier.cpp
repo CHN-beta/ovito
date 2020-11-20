@@ -58,7 +58,7 @@ AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : M
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AffineTransformationModifier::initializeObject(Application::ExecutionContext executionContext)
+void AffineTransformationModifier::initializeObject(ExecutionContext executionContext)
 {
 	// Generate the list of delegate objects.
 	createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), executionContext);

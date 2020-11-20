@@ -72,7 +72,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -82,7 +82,7 @@ private:
 	public:
 
 		/// Constructor.
-		ClusterAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology) :
+		ClusterAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology) :
 			Engine(executionContext),
 			_positions(positions),
 			_masses(std::move(masses)),
@@ -167,7 +167,7 @@ private:
 	public:
 
 		/// Constructor.
-		CutoffClusterAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology, FloatType cutoff) :
+		CutoffClusterAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology, FloatType cutoff) :
 			ClusterAnalysisEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), std::move(masses), simCell, sortBySize, unwrapParticleCoordinates, computeCentersOfMass, computeRadiusOfGyration, std::move(selection), std::move(periodicImageBondProperty), std::move(bondTopology)),
 			_cutoff(cutoff) {}
 
@@ -188,7 +188,7 @@ private:
 	public:
 
 		/// Constructor.
-		BondClusterAnalysisEngine(Application::ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology) :
+		BondClusterAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCellObject* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology) :
 			ClusterAnalysisEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), std::move(masses), simCell, sortBySize, unwrapParticleCoordinates, computeCentersOfMass, computeRadiusOfGyration, std::move(selection), std::move(periodicImageBondProperty), std::move(bondTopology)) {}
 
 		/// Performs the actual clustering algorithm.

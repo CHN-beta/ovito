@@ -143,7 +143,7 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 * Creates an instance of this object class.
 * Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, Application::ExecutionContext executionContext) const
+OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ExecutionContext executionContext) const
 {
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());

@@ -51,7 +51,7 @@ PRSTransformationController::PRSTransformationController(DataSet* dataset) : Con
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void PRSTransformationController::initializeObject(Application::ExecutionContext executionContext)
+void PRSTransformationController::initializeObject(ExecutionContext executionContext)
 {
 	// Create sub-controllers.
 	setPositionController(ControllerManager::createPositionController(dataset(), executionContext));

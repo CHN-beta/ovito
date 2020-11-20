@@ -42,7 +42,7 @@ TargetObject::TargetObject(DataSet* dataset) : DataObject(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TargetObject::initializeObject(Application::ExecutionContext executionContext)
+void TargetObject::initializeObject(ExecutionContext executionContext)
 {
 	addVisElement(OORef<TargetVis>::create(dataset(), executionContext));
 

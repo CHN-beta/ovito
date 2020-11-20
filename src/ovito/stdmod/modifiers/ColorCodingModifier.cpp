@@ -78,7 +78,7 @@ ColorCodingModifier::ColorCodingModifier(DataSet* dataset) : DelegatingModifier(
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ColorCodingModifier::initializeObject(Application::ExecutionContext executionContext)
+void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 {
 	setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), executionContext));
 	setStartValueController(ControllerManager::createFloatController(dataset(), executionContext));
@@ -87,7 +87,7 @@ void ColorCodingModifier::initializeObject(Application::ExecutionContext executi
 	// Let this modifier act on particles by default.
 	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), executionContext);
 
-	if(executionContext == Application::ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive) {
 		// Load the default gradient type set by the user.
 		QSettings settings;
 		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
@@ -132,7 +132,7 @@ void ColorCodingModifier::initializeModifier(ModifierApplication* modApp)
 	DelegatingModifier::initializeModifier(modApp);
 
 	// When the modifier is inserted, automatically select the most recently added property from the input.
-	if(sourceProperty().isNull() && delegate() && Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+	if(sourceProperty().isNull() && delegate() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
 			PropertyReference bestProperty;

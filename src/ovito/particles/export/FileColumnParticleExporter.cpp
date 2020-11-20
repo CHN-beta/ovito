@@ -32,11 +32,11 @@ IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 *****************************************************************************/
-void FileColumnParticleExporter::initializeObject(Application::ExecutionContext executionContext)
+void FileColumnParticleExporter::initializeObject(ExecutionContext executionContext)
 {
 	ParticleExporter::initializeObject(executionContext);
 
-	if(executionContext == Application::ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive) {
 		// Restore last output column mapping.
 		QSettings settings;
 		settings.beginGroup("exporter/particles/");

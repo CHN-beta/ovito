@@ -275,7 +275,7 @@ void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 		ModifierDelegate* oldDelegate = delegates()[delegateIndex];
 		if(!oldDelegate || &oldDelegate->getOOClass() != delegateType || oldDelegate->inputDataObject() != ref) {
 			// Create the new delegate object.
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset(), Application::ExecutionContext::Interactive));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset(), ExecutionContext::Interactive));
 			// Set which input data object the delegate should operate on.
 			delegate->setInputDataObject(ref);
 			// Activate the new delegate.

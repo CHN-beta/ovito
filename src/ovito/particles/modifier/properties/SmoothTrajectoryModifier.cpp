@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "SmoothTrajectoryModifier.h"
 
 namespace Ovito { namespace Particles {

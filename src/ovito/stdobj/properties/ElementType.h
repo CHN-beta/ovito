@@ -43,7 +43,7 @@ public:
 	Q_INVOKABLE ElementType(DataSet* dataset);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(int propertyType, Application::ExecutionContext executionContext);
+	virtual void initializeType(int propertyType, ExecutionContext executionContext);
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -69,7 +69,7 @@ public:
 	static const Color& getDefaultColorForId(int typeClass, int typeId);
 
 	/// Returns the default color for a named element type.
-	static Color getDefaultColor(int typeClass, const QString& typeName, int typeId, Application::ExecutionContext executionContext);
+	static Color getDefaultColor(int typeClass, const QString& typeName, int typeId, ExecutionContext executionContext);
 
 	/// Changes the default color for a named element type.
 	static void setDefaultColor(int typeClass, const QString& typeName, const Color& color);

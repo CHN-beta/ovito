@@ -73,7 +73,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;	
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// Decides whether a preliminary viewport update is performed after the modifier has been
 	/// evaluated but before the entire pipeline evaluation is complete.
@@ -84,7 +84,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, Application::ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -94,7 +94,7 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
+		ConstructSurfaceEngineBase(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
 			Engine(executionContext),
 			_positions(positions),
 			_selection(std::move(selection)),
@@ -152,7 +152,7 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
+		AlphaShapeEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
 			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
 			_particleClusters(particleClusters),
 			_probeSphereRadius(probeSphereRadius),
@@ -215,7 +215,7 @@ private:
 	public:
 
 		/// Constructor.
-		GaussianDensityEngine(Application::ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
+		GaussianDensityEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
 				FloatType radiusFactor, FloatType isoLevel, int gridResolution, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
 			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
 			_radiusFactor(radiusFactor),

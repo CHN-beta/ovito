@@ -78,7 +78,7 @@ public:
 
 	/// Loads the user-defined default values of this object's parameter fields from the
 	/// application's settings store.
-	virtual void initializeObject(Application::ExecutionContext executionContext) override;
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
