@@ -446,7 +446,7 @@ public:
 		}
 		// Remove excess items from the old vector.
 		for(size_type j = this->size() - 1; j >= i; j--)
-			remove(owner, descriptor, j);
+			this->remove(owner, descriptor, j);
 	}
 };
 

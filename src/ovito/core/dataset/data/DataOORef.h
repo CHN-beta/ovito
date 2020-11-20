@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/oo/OORef.h>
+#include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
 
