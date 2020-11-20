@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,33 +25,20 @@ uniform mat4 modelview_matrix;
 uniform mat4 projection_matrix;
 uniform mat4 modelviewprojection_matrix;
 uniform vec3 cubeVerts[14];
+uniform bool is_picking_mode;
+uniform int picking_base_id;
 
-#if __VERSION__ >= 130
+// The particle data:
+in vec3 position;
+in vec4 color;
+in vec3 shape;
+in vec4 orientation;
+in float particle_radius;
 
-	// The particle data:
-	in vec3 position;
-	in vec4 color;
-	in vec3 shape;
-	in vec4 orientation;
-	in float particle_radius;
-
-	// Outputs to fragment shader
-	flat out vec4 particle_color_fs;
-	flat out mat3 particle_quadric_fs;
-	flat out vec3 particle_view_pos_fs;
-
-#else
-
-	// The particle data:
-	attribute vec3 shape;
-	attribute vec4 orientation;
-	attribute float particle_radius;
-	attribute float vertexID;
-
-	// Outputs to fragment shader
-	#define particle_view_pos_fs gl_TexCoord[1].xyz
-
-#endif
+// Outputs to fragment shader
+flat out vec4 particle_color_fs;
+flat out mat3 particle_quadric_fs;
+flat out vec3 particle_view_pos_fs;
 
 void main()
 {
@@ -86,12 +73,16 @@ void main()
 
 	mat3 view_rot = mat3(modelview_matrix) * rot;
 
-#if __VERSION__ >= 130
-
     particle_quadric_fs = view_rot * qmat * transpose(view_rot);
 
-	// Forward color to fragment shader.
-	particle_color_fs = color;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		particle_color_fs = color;
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 14); 
+	}
 
 	// Transform and project vertex.
 	int cubeCorner = gl_VertexID % 14;
@@ -99,27 +90,4 @@ void main()
 	gl_Position = modelviewprojection_matrix * vec4(position + rot * delta, 1);
 
 	particle_view_pos_fs = (modelview_matrix * vec4(position, 1)).xyz;
-
-#else
-
-    mat3 particle_quadric_fs = view_rot * qmat * transpose(view_rot);
-    gl_TexCoord[2].x = particle_quadric_fs[0][0];
-	gl_TexCoord[2].y = particle_quadric_fs[1][0];
-	gl_TexCoord[2].z = particle_quadric_fs[2][0];
-	gl_TexCoord[2].w = particle_quadric_fs[1][1];
-	gl_TexCoord[3].x = particle_quadric_fs[2][1];
-	gl_TexCoord[3].y = particle_quadric_fs[2][2];
-
-	// Forward color to fragment shader.
-	gl_FrontColor = gl_Color;
-
-	// Transform and project vertex.
-	int cubeCorner = int(mod(vertexID+0.5, 14.0));
-	vec3 delta = cubeVerts[cubeCorner] * shape2;
-
-	gl_Position = modelviewprojection_matrix * vec4(gl_Vertex.xyz + rot * delta, 1);
-
-	particle_view_pos_fs = (modelview_matrix * gl_Vertex).xyz;
-
-#endif
 }

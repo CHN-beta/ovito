@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,21 +23,11 @@
 // Inputs from calling program:
 uniform mat4 modelview_matrix;
 uniform float modelview_uniform_scale;
+uniform bool is_picking_mode;
+uniform int picking_base_id;
 
-#if __VERSION__ >= 130
-
-	in vec3 position;
-	in vec4 color;
-
-#else
-
-	#define in attribute
-	#define out varying
-	#define flat
-
-	#define color gl_Color
-
-#endif
+in vec3 position;
+in vec4 color;
 
 // The cylinder data:
 in vec3 cylinder_base;				// The position of the cylinder in model coordinates.
@@ -52,8 +42,14 @@ out vec4 cylinder_view_axis_gs;		// Transformed cylinder axis in view coordinate
 
 void main()
 {
-	// Pass color to geometry shader.
-	cylinder_color_gs = color;
+	if(!is_picking_mode) {
+		// Forward color to geometry shader.
+		cylinder_color_gs = color;
+	}
+	else {
+		// Compute color from object ID.
+		cylinder_color_gs = pickingModeColor(picking_base_id, gl_VertexID);
+	}
 
 	// Pass radius to geometry shader.
 	cylinder_radius_gs = cylinder_radius * modelview_uniform_scale;

@@ -73,9 +73,6 @@ private:
 	/// The OpenGL shader program used to render the triangles.
 	QOpenGLShaderProgram* _shader;
 
-	/// The OpenGL shader program used to render the triangles in picking mode.
-	QOpenGLShaderProgram* _pickingShader;
-
 	/// The OpenGL shader program used to render the wireframe edges.
 	QOpenGLShaderProgram* _lineShader;
 

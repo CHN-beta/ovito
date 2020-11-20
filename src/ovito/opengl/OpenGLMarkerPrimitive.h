@@ -60,7 +60,7 @@ public:
 private:
 
 	/// The number of markers stored in the class.
-	int _markerCount;
+	int _markerCount = -1;
 
 	/// The internal OpenGL vertex buffer that stores the marker positions.
 	OpenGLBuffer<Point_3<float>> _positionBuffer;
@@ -72,12 +72,7 @@ private:
 	QPointer<QOpenGLContextGroup> _contextGroup;
 
 	/// The OpenGL shader program that is used to render the markers.
-	QOpenGLShaderProgram* _shader;
-
-	/// The OpenGL shader program that is used to render the markers in picking mode.
-	QOpenGLShaderProgram* _pickingShader;
+	QOpenGLShaderProgram* _shader = nullptr;
 };
 
 }	// End of namespace
-
-

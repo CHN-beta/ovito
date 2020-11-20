@@ -78,29 +78,10 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	_overrideGLContextSharing->setChecked(settings.contains("display/share_opengl_context"));
 	_contextSharingMode->setCurrentIndex(OpenGLSceneRenderer::contextSharingEnabled() ? 0 : 1);
 
-	// OpenGL point sprites:
-	_overrideUseOfPointSprites = new QCheckBox(tr("Override usage of point sprites"), openglGroupBox);
-	_overrideUseOfPointSprites->setToolTip(tr("<p>Activate this option to explicitly control the usage of OpenGL point sprites for rendering of particles.</p>"));
-	layout2->addWidget(_overrideUseOfPointSprites, 1, 0);
-	_pointSpriteMode = new QComboBox(openglGroupBox);
-	_pointSpriteMode->setEnabled(false);
-	if(OpenGLSceneRenderer::pointSpritesEnabled(true)) {
-		_pointSpriteMode->addItem(tr("Use point sprites (default)"));
-		_pointSpriteMode->addItem(tr("Don't use point sprites"));
-	}
-	else {
-		_pointSpriteMode->addItem(tr("Use point sprites"));
-		_pointSpriteMode->addItem(tr("Don't use point sprites (default)"));
-	}
-	layout2->addWidget(_pointSpriteMode, 1, 1);
-	connect(_overrideUseOfPointSprites, &QCheckBox::toggled, _pointSpriteMode, &QComboBox::setEnabled);
-	_overrideUseOfPointSprites->setChecked(settings.contains("display/use_point_sprites"));
-	_pointSpriteMode->setCurrentIndex(OpenGLSceneRenderer::pointSpritesEnabled() ? 0 : 1);
-
 	// OpenGL geometry shaders:
 	_overrideUseOfGeometryShaders = new QCheckBox(tr("Override usage of geometry shaders"), openglGroupBox);
 	_overrideUseOfGeometryShaders->setToolTip(tr("<p>Activate this option to explicitly control the usage of OpenGL geometry shaders.</p>"));
-	layout2->addWidget(_overrideUseOfGeometryShaders, 2, 0);
+	layout2->addWidget(_overrideUseOfGeometryShaders, 1, 0);
 	_geometryShaderMode = new QComboBox(openglGroupBox);
 	_geometryShaderMode->setEnabled(false);
 	if(OpenGLSceneRenderer::geometryShadersEnabled(true)) {
@@ -111,18 +92,16 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 		_geometryShaderMode->addItem(tr("Use geometry shaders"));
 		_geometryShaderMode->addItem(tr("Don't use geometry shaders (default)"));
 	}
-	layout2->addWidget(_geometryShaderMode, 2, 1);
+	layout2->addWidget(_geometryShaderMode, 1, 1);
 	connect(_overrideUseOfGeometryShaders, &QCheckBox::toggled, _geometryShaderMode, &QComboBox::setEnabled);
 	_overrideUseOfGeometryShaders->setChecked(settings.contains("display/use_geometry_shaders"));
 	_geometryShaderMode->setCurrentIndex(OpenGLSceneRenderer::geometryShadersEnabled() ? 0 : 1);
 
 	_restartRequiredLabel = new QLabel(tr("<p style=\"font-size: small; color: #DD2222;\">Restart required for changes to take effect.</p>"));
 	_restartRequiredLabel->hide();
-	layout2->addWidget(_restartRequiredLabel, 3, 0, 1, 2);
+	layout2->addWidget(_restartRequiredLabel, 2, 0, 1, 2);
 	connect(_overrideGLContextSharing, &QCheckBox::toggled, _restartRequiredLabel, &QLabel::show);
 	connect(_contextSharingMode, &QComboBox::currentTextChanged, _restartRequiredLabel, &QLabel::show);
-	connect(_overrideUseOfPointSprites, &QCheckBox::toggled, _restartRequiredLabel, &QLabel::show);
-	connect(_pointSpriteMode, &QComboBox::currentTextChanged, _restartRequiredLabel, &QLabel::show);
 	connect(_overrideUseOfGeometryShaders, &QCheckBox::toggled, _restartRequiredLabel, &QLabel::show);
 	connect(_geometryShaderMode, &QComboBox::currentTextChanged, _restartRequiredLabel, &QLabel::show);
 
@@ -169,10 +148,6 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 		settings.setValue("display/share_opengl_context", _contextSharingMode->currentIndex() == 0);
 	else
 		settings.remove("display/share_opengl_context");
-	if(_overrideUseOfPointSprites->isChecked())
-		settings.setValue("display/use_point_sprites", _pointSpriteMode->currentIndex() == 0);
-	else
-		settings.remove("display/use_point_sprites");
 	if(_overrideUseOfGeometryShaders->isChecked())
 		settings.setValue("display/use_geometry_shaders", _geometryShaderMode->currentIndex() == 0);
 	else

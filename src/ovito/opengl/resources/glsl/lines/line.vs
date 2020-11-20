@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,23 +20,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// Inputs from calling program:
 uniform mat4 modelview_projection_matrix;
+uniform int picking_base_id;
+uniform bool is_picking_mode;
 
-#if __VERSION__ >= 130
-
-	in vec3 position;
-	in vec4 color;
-	out vec4 vertex_color_fs;
-
-#endif
+in vec3 position;
+in vec4 color;
+out vec4 vertex_color_fs;
 
 void main()
 {
-#if __VERSION__ >= 130
-	vertex_color_fs = color;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		vertex_color_fs = color;
+	}
+	else {
+		// Compute color from object ID.
+		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 2);
+	}
+
 	gl_Position = modelview_projection_matrix * vec4(position, 1.0);
-#else
-	gl_FrontColor = gl_Color;
-	gl_Position = modelview_projection_matrix * gl_Vertex;
-#endif
 }

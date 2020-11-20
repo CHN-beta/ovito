@@ -24,18 +24,12 @@ uniform mat4 modelview_projection_matrix;
 uniform bool is_perspective;
 uniform vec3 parallel_view_dir;
 uniform vec3 eye_pos;
+uniform bool is_picking_mode;
+uniform int picking_base_id;
+uniform int verticesPerElement;
 
-#if __VERSION__ >= 130
-	in vec3 position;
-	in vec4 color;
-#else
-	#define in attribute
-	#define out varying
-	#define flat
-	#define color gl_Color
-	#define position gl_Vertex
-#endif
-
+in vec3 position;
+in vec4 color;
 in vec3 cylinder_base;
 in vec3 cylinder_axis;
 
@@ -43,7 +37,14 @@ flat out vec4 vertex_color_out;
 
 void main()
 {
-	vertex_color_out = color;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		vertex_color_out = color;
+	}
+	else {
+		// Compute color from object ID.
+		vertex_color_out = pickingModeColor(picking_base_id, gl_VertexID / verticesPerElement); 
+	}	
 
 	if(cylinder_axis != vec3(0)) {
 

@@ -35,11 +35,12 @@ OpenGLImagePrimitive::OpenGLImagePrimitive(OpenGLSceneRenderer* renderer)
 {
 	_contextGroup = QOpenGLContextGroup::currentContextGroup();
 	OVITO_ASSERT(renderer->glcontext()->shareGroup() == _contextGroup);
+	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
     if(!renderer->glcontext()->isOpenGLES() || renderer->glformat().majorVersion() >= 3) {
 
         // Initialize OpenGL shader.
-        _shader = renderer->loadShaderProgram("image", ":/openglrenderer/glsl/image/image.vs", ":/openglrenderer/glsl/image/image.fs");
+        _shader = renderer->loadShaderProgram("image", prefix + "/glsl/image/image.vs", prefix + "/glsl/image/image.fs");
 
         // Create vertex buffer.
         if(!_vertexBuffer.create(QOpenGLBuffer::StaticDraw, 4))
@@ -93,10 +94,6 @@ void OpenGLImagePrimitive::renderWindow(SceneRenderer* renderer, const Point2& p
 
         // Prepare texture.
         OVITO_CHECK_OPENGL(vpRenderer, _texture.bind());
-
-        // Enable texturing when using compatibility OpenGL. In the core profile, this is enabled by default.
-        if(vpRenderer->isCoreProfile() == false && !vpRenderer->glcontext()->isOpenGLES())
-            vpRenderer->glEnable(GL_TEXTURE_2D);
 
         if(_needTextureUpdate) {
             _needTextureUpdate = false;
@@ -158,10 +155,6 @@ void OpenGLImagePrimitive::renderWindow(SceneRenderer* renderer, const Point2& p
         // Restore old state.
         if(wasDepthTestEnabled) vpRenderer->glEnable(GL_DEPTH_TEST);
         if(!wasBlendEnabled) vpRenderer->glDisable(GL_BLEND);
-
-        // Turn off texturing.
-        if(vpRenderer->isCoreProfile() == false && !vpRenderer->glcontext()->isOpenGLES())
-            vpRenderer->glDisable(GL_TEXTURE_2D);
     }
     else {
         // Disable depth testing and blending.

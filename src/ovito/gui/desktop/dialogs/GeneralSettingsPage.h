@@ -57,8 +57,6 @@ private:
 	QCheckBox* _sortModifiersByCategory;
 	QCheckBox* _overrideGLContextSharing;
 	QComboBox* _contextSharingMode;
-	QCheckBox* _overrideUseOfPointSprites;
-	QComboBox* _pointSpriteMode;
 	QCheckBox* _overrideUseOfGeometryShaders;
 	QComboBox* _geometryShaderMode;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)

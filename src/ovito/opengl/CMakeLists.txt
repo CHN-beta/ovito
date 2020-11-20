@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2020 Alexander Stukowski
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,11 +21,8 @@
 #######################################################################################
 
 # Compile resources.
-IF(NOT EMSCRIPTEN)
-	QT5_ADD_RESOURCES(ResourceFiles resources/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-ELSE()
-	QT5_ADD_RESOURCES(ResourceFiles resources_gles/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-ENDIF()
+QT5_ADD_RESOURCES(ResourceFiles resources/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
+QT5_ADD_RESOURCES(ResourceFilesGLES resources_gles/opengl_gles.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer
@@ -41,6 +38,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLSceneRenderer.cpp
 		StandardSceneRenderer.cpp
 		${ResourceFiles}
+		${ResourceFilesGLES}
 )
 
 IF(NOT OVITO_BUILD_WEBGUI AND NOT OVITO_BUILD_CONDA)

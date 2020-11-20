@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include "OpenGLBuffer.h"
-#include "OpenGLTexture.h"
 
 namespace Ovito {
 
@@ -92,90 +91,55 @@ public:
 	/// \brief Changes the display shape of particles.
 	virtual bool setParticleShape(ParticleShape shape) override { return (shape == particleShape()); }
 
-protected:
-
-	/// Creates the texture used for billboard rendering of particles.
-	void initializeBillboardTexture(OpenGLSceneRenderer* renderer);
-
-	/// Activates a texture for billboard rendering of particles.
-	void activateBillboardTexture(OpenGLSceneRenderer* renderer);
-
-	/// Deactivates the texture used for billboard rendering of spherical particles.
-	void deactivateBillboardTexture(OpenGLSceneRenderer* renderer);
-
-	/// Renders the particles using OpenGL point sprites.
-	void renderPointSprites(OpenGLSceneRenderer* renderer);
-
-	/// Renders a box for each particle using triangle strips.
-	void renderBoxes(OpenGLSceneRenderer* renderer);
-
-	/// Renders the particles using quads.
-	void renderImposters(OpenGLSceneRenderer* renderer);
+private:
 
 	/// Returns an array of particle indices, sorted back-to-front, which is used to render translucent particles.
 	std::vector<GLuint> determineRenderingOrder(OpenGLSceneRenderer* renderer);
 
-private:
-
-	/// The available techniques for rendering particles.
+	/// The implemented techniques for rendering particles.
 	enum RenderingTechnique {
-		POINT_SPRITES,	///< Use OpenGL point sprites to render imposter quads with a texture map.
-		IMPOSTER_QUADS,	///< Render explicit quad geometry made of two triangles.
+		IMPOSTER_QUADS,	///< Render quad geometry made of two triangles.
 		BOX_GEOMETRY	///< Render a box for each particle (possibly using a raytracing fragment shader to make it look spherical).
 	};
-
-	/// The maximum size (in bytes) of a single VBO buffer.
-	int _maxVBOSize = 4 * 1024 * 1024;
-
-	/// The maximum number of render elements per VBO buffer.
-	int _chunkSize = 0;
 
 	/// The number of particles stored in the class.
 	int _particleCount = -1;
 
 	/// The internal OpenGL vertex buffer that stores the particle positions.
-	std::vector<OpenGLBuffer<Point_3<float>>> _positionsBuffers;
+	OpenGLBuffer<Point_3<float>> _positionsBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the particle radii.
-	std::vector<OpenGLBuffer<float>> _radiiBuffers;
+	OpenGLBuffer<float> _radiiBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the particle colors.
-	std::vector<OpenGLBuffer<ColorAT<float>>> _colorsBuffers;
+	OpenGLBuffer<ColorAT<float>> _colorsBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the shape of aspherical particles.
-	std::vector<OpenGLBuffer<Vector_3<float>>> _shapeBuffers;
+	OpenGLBuffer<Vector_3<float>> _shapeBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the orientation of aspherical particles.
-	std::vector<OpenGLBuffer<QuaternionT<float>>> _orientationBuffers;
+	OpenGLBuffer<QuaternionT<float>> _orientationBuffer;
 
 	/// The GL context group under which the GL vertex buffers have been created.
 	QPointer<QOpenGLContextGroup> _contextGroup;
 
-	/// The OpenGL texture that is used for billboard rendering of particles.
-	OpenGLTexture _billboardTexture;
-
-#ifndef Q_OS_WASM
 	/// This array contains the start indices of primitives and is passed to glMultiDrawArrays().
 	std::vector<GLint> _primitiveStartIndices;
 
 	/// This array contains the vertex counts of primitives and is passed to glMultiDrawArrays().
 	std::vector<GLsizei> _primitiveVertexCounts;
-#else
-	/// Vertex indices passed to glDrawElements() using GL_TRIANGLES primitives.
+
+	/// OpenGL ES only: Vertex indices passed to glDrawElements() using GL_TRIANGLES primitives.
 	std::vector<GLuint> _trianglePrimitiveVertexIndices;
-#endif
 
 	/// The OpenGL shader program that is used to render the particles.
 	QOpenGLShaderProgram* _shader = nullptr;
 
-	/// The OpenGL shader program that is used to render the particles in picking mode.
-	QOpenGLShaderProgram* _pickingShader = nullptr;
-
 	/// The technique used to render particles. This depends on settings such as rendering quality, shading etc.
 	RenderingTechnique _renderingTechnique;
 
-	/// Indicates that an OpenGL geometry shader is being used.
-	bool _usingGeometryShader;
+	/// Number of OpenGL vertices per particle that must be rendered.
+	int _verticesPerParticle;
 
 	/// A copy of the particle coordinates. This is only required to render translucent
 	/// particles in the correct order from back to front.

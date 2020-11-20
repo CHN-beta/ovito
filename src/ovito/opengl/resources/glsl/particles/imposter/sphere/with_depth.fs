@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,44 +21,41 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // Input from calling program:
+uniform bool is_picking_mode;
 uniform mat4 projection_matrix;
-uniform sampler2D tex;			// The imposter texture.
 
-#if __VERSION__ >= 130
+// Input from vertex shader:
+flat in vec4 particle_color_fs;
+flat in float particle_radius_fs;	// The particle radius.
+flat in float ze0;					// The particle's Z coordinate in eye coordinates.
+in vec2 texcoords;
 
-	// Input from vertex shader:
-	flat in vec4 particle_color_fs;
-	flat in float particle_radius_fs;	// The particle radius.
-	flat in float ze0;					// The particle's Z coordinate in eye coordinates.
-	in vec2 texcoords;
-
-	out vec4 FragColor;
-
-#else
-
-	#define particle_radius_fs gl_TexCoord[1].x
-	#define ze0 gl_TexCoord[1].y
-
-	#define particle_color_fs gl_Color
-	#define FragColor gl_FragColor
-	#define texture texture2D
-	#define texcoords gl_TexCoord[0].xy
-
-#endif
+// Output fragment color:
+out vec4 FragColor;
 
 void main()
 {
+	// Test if fragment is within the unit circle.
 	vec2 shifted_coords = texcoords - vec2(0.5, 0.5);
 	float rsq = dot(shifted_coords, shifted_coords);
 	if(rsq >= 0.25) discard;
-	vec4 texValue = texture(tex, texcoords);
 
-	// Specular highlights are stored in the green channel of the texture.
-	// Modulate diffuse color with brightness value stored in the red channel of the texture.
-	FragColor = vec4(texValue.r * particle_color_fs.rgb + texValue.g, particle_color_fs.a);
+	// Calculate surface normal in view coordinate system.
+	vec3 surface_normal;
+	surface_normal.x =  2.0 * shifted_coords.x;
+	surface_normal.y = -2.0 * shifted_coords.y;
+	surface_normal.z = sqrt(1.0 - 4.0 * rsq);
+
+	if(!is_picking_mode) {
+		// Compute local surface color.
+		FragColor = shadeSurfaceColorQuick(surface_normal, particle_color_fs.rgb, particle_color_fs.a);
+	}
+	else {
+		FragColor = particle_color_fs;
+	}
 
 	// Vary the depth value across the imposter to obtain proper intersections between particles.
-	float dz = sqrt(1.0 - 4.0 * rsq) * particle_radius_fs;
+	float dz = surface_normal.z * particle_radius_fs;
 	float ze = ze0 + dz;
 	float zn = (projection_matrix[2][2] * ze + projection_matrix[3][2]) / (projection_matrix[2][3] * ze + projection_matrix[3][3]);
 	gl_FragDepth = 0.5 * (zn * gl_DepthRange.diff + (gl_DepthRange.far + gl_DepthRange.near));

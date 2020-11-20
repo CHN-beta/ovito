@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,8 +22,8 @@
 
 // Inputs from calling program:
 uniform mat4 modelview_matrix;
-
-#if __VERSION__ >= 130
+uniform bool is_picking_mode;
+uniform int picking_base_id;
 
 // The particle data:
 in vec3 position;
@@ -34,16 +34,20 @@ in float particle_radius;
 out vec4 particle_color_gs;
 out float particle_radius_gs;
 
-#endif
-
 void main()
 {
-#if __VERSION__ >= 130
-	// Forward color and radius to geometry shader.
-	particle_color_gs = color;
+	if(!is_picking_mode) {
+		// Forward color and radius to geometry shader.
+		particle_color_gs = color;
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_gs = pickingModeColor(picking_base_id, gl_VertexID);
+	}
+
+	// Forward radius to geometry shader.
 	particle_radius_gs = particle_radius;
 
 	// Transform particle center to eye coordinates.
 	gl_Position = modelview_matrix * vec4(position, 1);
-#endif
 }

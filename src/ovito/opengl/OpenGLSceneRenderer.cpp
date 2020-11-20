@@ -83,7 +83,7 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 		tempContext.setFormat(getDefaultSurfaceFormat());
 		if(!tempContext.create())
 			throw Exception(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
-								"Sometimes this may only be a temporary error due to an automatic system update taken place in the background. In this case, simply restarting the computer can help."));
+								"Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
 		if(Application::instance()->headlessMode() == false) {
 			// Create a hidden, temporary window to make the GL context current.
 			window.reset(new QWindow());
@@ -98,9 +98,9 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 			offscreenSurface.setFormat(tempContext.format());
 			offscreenSurface.create();
 			if(!offscreenSurface.isValid())
-				throw Exception(tr("Failed to create temporary offscreen surface. Cannot query OpenGL information."));
+				throw Exception(tr("Failed to create temporary offscreen rendering surface. Cannot query OpenGL information."));
 			if(!tempContext.makeCurrent(&offscreenSurface))
-				throw Exception(tr("Failed to make OpenGL context current on offscreen surface. Cannot query OpenGL information."));
+				throw Exception(tr("Failed to make OpenGL context current on offscreen rendering surface. Cannot query OpenGL information."));
 		}
 		OVITO_ASSERT(QOpenGLContext::currentContext() == &tempContext);
 	}
@@ -125,51 +125,7 @@ bool OpenGLSceneRenderer::contextSharingEnabled(bool forceDefaultSetting)
 			return userSetting.toBool();
 	}
 
-	determineOpenGLInfo();
-
-#if defined(Q_OS_OSX)
-	// On Mac OS X 10.9 with Intel graphics, using a single context for multiple viewports doesn't work very well.
-	return false;
-#elif defined(Q_OS_LINUX)
-	// On Intel graphics under Linux, sharing a single context doesn't work very well either.
-	if(_openGLVendor.contains("Intel"))
-		return false;
-#endif
-
 	// By default, all viewports of a main window use the same GL context.
-	return true;
-}
-
-/******************************************************************************
-* Determines whether OpenGL point sprites should be used or not.
-******************************************************************************/
-bool OpenGLSceneRenderer::pointSpritesEnabled(bool forceDefaultSetting)
-{
-#ifdef Q_OS_WASM
-	// Don't use point sprites on WebAssembly platform for now. 
-	return false;
-#endif
-
-	if(!forceDefaultSetting) {
-		// The user can override the use of point sprites.
-		QVariant userSetting = QSettings().value("display/use_point_sprites");
-		if(userSetting.isValid())
-			return userSetting.toBool();
-	}
-
-	determineOpenGLInfo();
-
-#if defined(Q_OS_WIN)
-	// Point sprites don't seem to work well on Intel graphics under Windows.
-	if(_openGLVendor.contains("Intel"))
-		return false;
-#elif defined(Q_OS_OSX)
-	// Point sprites don't seem to work well on ATI graphics under Mac OS X.
-	if(_openGLVendor.contains("ATI"))
-		return false;
-#endif
-
-	// Use point sprites by default.
 	return true;
 }
 
@@ -190,12 +146,6 @@ bool OpenGLSceneRenderer::geometryShadersEnabled(bool forceDefaultSetting)
 			return userSetting.toBool() && geometryShadersSupported();
 	}
 
-#ifdef Q_OS_WIN
-	// Geometry shaders don't seem to work well on AMD/ATI hardware under Windows.
-	if(_openGLVendor.contains("Radeon") || _openGLRenderer.contains("Radeon"))
-		return false;
-#endif
-
 	if(Application::instance()->guiMode())
 		return geometryShadersSupported();
 	else if(QOpenGLContext::currentContext())
@@ -212,18 +162,10 @@ QSurfaceFormat OpenGLSceneRenderer::getDefaultSurfaceFormat()
 {
 	QSurfaceFormat format;
 #ifndef Q_OS_WASM
-	format.setDepthBufferSize(24);
-	format.setSwapInterval(0);
-	format.setMajorVersion(OVITO_OPENGL_REQUESTED_VERSION_MAJOR);
-	format.setMinorVersion(OVITO_OPENGL_REQUESTED_VERSION_MINOR);
-	format.setProfile(QSurfaceFormat::CoreProfile);
-#ifdef Q_OS_WIN
-	// Always request deprecated functions to be included in the context profile on Windows
-	// to work around a compatibility issue between Qt 5.4.1 and the Intel OpenGL driver.
-	// Otherwise the driver will complain about missing #version directives in the shader programs provided by Qt.
-	format.setOption(QSurfaceFormat::DeprecatedFunctions);
-#endif
-	format.setStencilBufferSize(1);
+	if(!QCoreApplication::testAttribute(Qt::AA_UseSoftwareOpenGL)) {
+		format.setDepthBufferSize(24);
+		format.setStencilBufferSize(1);
+	}
 #else
 	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
 	format.setMajorVersion(2);
@@ -267,31 +209,6 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     initializeOpenGLFunctions();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-#if 0
-	static bool printedGLInfo = false;
-	if(!printedGLInfo) {
-		printedGLInfo = true;
-		_openGLVendor = reinterpret_cast<const char*>(_glcontext->functions()->glGetString(GL_VENDOR));
-		_openGLRenderer = reinterpret_cast<const char*>(_glcontext->functions()->glGetString(GL_RENDERER));
-		_openGLVersion = reinterpret_cast<const char*>(_glcontext->functions()->glGetString(GL_VERSION));
-		_openGLSLVersion = reinterpret_cast<const char*>(_glcontext->functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
-		_openglSupportsGeomShaders = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
-		_openglSurfaceFormat = QOpenGLContext::currentContext()->format();
-		qInfo() << "OpenGL version: " << _glcontext->format().majorVersion() << QStringLiteral(".") << _glcontext->format().minorVersion();
-		qInfo() << "OpenGL profile: " << (_glcontext->format().profile() == QSurfaceFormat::CoreProfile ? "core" : (_glcontext->format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none"));
-		qInfo() << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor());
-		qInfo() << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer());
-		qInfo() << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion());
-		qInfo() << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion());
-		qInfo() << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms();
-		qInfo() << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, _glcontext);
-		qInfo() << "isOpenGLES:" << _glcontext->isOpenGLES();
-		qInfo() << "Extensions:";
-		for(const QByteArray& e : _glcontext->extensions())
-			qInfo() << e;
-	}
-#endif
-
 	// Obtain surface format.
     OVITO_REPORT_OPENGL_ERRORS(this);
 	_glformat = _glcontext->format();
@@ -303,37 +220,27 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 		_glformat.setMinorVersion(1);
 	}
 
-#ifndef Q_OS_WASM	
-    // Obtain a functions object that allows to call OpenGL 2.0 functions in a platform-independent way.
-	_glFunctions20 = _glcontext->versionFunctions<QOpenGLFunctions_2_0>();
-	if(!_glFunctions20 || !_glFunctions20->initializeOpenGLFunctions())
-		_glFunctions20 = nullptr;
+#ifndef Q_OS_WASM
+	if(!glcontext()->isOpenGLES()) {
+		// Obtain a functions object that allows to call OpenGL 2.0 functions in a platform-independent way.
+		_glFunctions20 = _glcontext->versionFunctions<QOpenGLFunctions_2_0>();
+		if(!_glFunctions20 || !_glFunctions20->initializeOpenGLFunctions())
+			_glFunctions20 = nullptr;
 
-	// Obtain a functions object that allows to call OpenGL 3.0 functions in a platform-independent way.
-	_glFunctions30 = _glcontext->versionFunctions<QOpenGLFunctions_3_0>();
-	if(!_glFunctions30 || !_glFunctions30->initializeOpenGLFunctions())
-		_glFunctions30 = nullptr;
+		// Obtain a functions object that allows to call OpenGL 3.0 functions in a platform-independent way.
+		_glFunctions30 = _glcontext->versionFunctions<QOpenGLFunctions_3_0>();
+		if(!_glFunctions30 || !_glFunctions30->initializeOpenGLFunctions())
+			_glFunctions30 = nullptr;
 
-	// Obtain a functions object that allows to call OpenGL 3.2 core functions in a platform-independent way.
-	_glFunctions32 = _glcontext->versionFunctions<QOpenGLFunctions_3_2_Core>();
-	if(!_glFunctions32 || !_glFunctions32->initializeOpenGLFunctions())
-		_glFunctions32 = nullptr;
+		// Obtain a functions object that allows to call OpenGL 3.2 core functions in a platform-independent way.
+		_glFunctions32 = _glcontext->versionFunctions<QOpenGLFunctions_3_2_Core>();
+		if(!_glFunctions32 || !_glFunctions32->initializeOpenGLFunctions())
+			_glFunctions32 = nullptr;
 
-	if(!_glFunctions20 && !_glFunctions30 && !_glFunctions32)
-		throwException(tr("Could not resolve OpenGL functions. Invalid OpenGL context."));
+		if(!_glFunctions20 && !_glFunctions30 && !_glFunctions32)
+			throwException(tr("Could not resolve OpenGL functions. Invalid OpenGL context."));
+	}
 #endif
-
-	// Check if this context implements the core profile.
-	_isCoreProfile = (_glformat.profile() == QSurfaceFormat::CoreProfile)
-			|| (glformat().majorVersion() > 3)
-			|| (glformat().majorVersion() == 3 && glformat().minorVersion() >= 2);
-
-	// Qt reports the core profile only for OpenGL >= 3.2. Assume core profile also for 3.1 contexts.
-	if(glformat().majorVersion() == 3 && glformat().minorVersion() == 1 && _glformat.profile() != QSurfaceFormat::CompatibilityProfile)
-		_isCoreProfile = true;
-
-	// Determine whether it's okay to use point sprites.
-	_usePointSprites = pointSpritesEnabled();
 
 	// Determine whether its okay to use geometry shaders.
 	_useGeometryShaders = geometryShadersEnabled() && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
@@ -561,11 +468,12 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
-	// The OpenGL shaders are only created once per OpenGL context group.
+	// Each OpenGL shader is only created once per OpenGL context group.
 	QScopedPointer<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(id));
 	if(program)
 		return program.take();
 
+	// The program's source code hasn't been compiled so far. Do it now and cache the shader program.
 	program.reset(new QOpenGLShaderProgram(contextGroup));
 	program->setObjectName(id);
 
@@ -588,7 +496,6 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 		throw ex;
 	}
 
-	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(id) == program.data());
 	OVITO_REPORT_OPENGL_ERRORS(this);
 
 	return program.take();
@@ -599,81 +506,38 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 ******************************************************************************/
 void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename)
 {
-	// Load shader source.
-	QFile shaderSourceFile(filename);
-	if(!shaderSourceFile.open(QFile::ReadOnly))
-		throw Exception(QString("Unable to open shader source file %1.").arg(filename));
 	QByteArray shaderSource;
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
-#ifndef Q_OS_WASM
-	if((glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
-		shaderSource.append("#version 150\n");
-	else if(glformat().majorVersion() >= 3)
-		shaderSource.append("#version 130\n");
-	else
-		shaderSource.append("#version 120\n");
-#else
-	if(glformat().majorVersion() >= 3)
-		shaderSource.append("#version 300 es\n");
-#endif
+	if(!glcontext()->isOpenGLES()) {
 
-#ifndef Q_OS_WASM
+		// Inject GLSL version directive into shader source. 
+		if(shaderType == QOpenGLShader::Geometry)
+			shaderSource.append("#version 150\n");
+		else
+			shaderSource.append("#version 130\n");
 
-	// Preprocess shader source while reading it from the file.
-	//
-	// This is a workaround for some older OpenGL drivers, which do not perform the
-	// preprocessing of shader source files correctly (probably the __VERSION__ macro is not working).
-	//
-	// Here, in our own simple preprocessor implementation, we only handle
-	//    #if __VERSION__ >= 130
-	//       ...
-	//    #else
-	//       ...
-	//    #endif
-	// statements, which are used by most shaders to discriminate core and compatibility profiles.
-	bool isFiltered = false;
-	int ifstack = 0;
-	int filterstackpos = 0;
-	while(!shaderSourceFile.atEnd()) {
-		QByteArray line = shaderSourceFile.readLine();
-		if(line.contains("__VERSION__") && line.contains("130")) {
-			OVITO_ASSERT(line.contains("#if"));
-			OVITO_ASSERT(!isFiltered);
-			if(line.contains(">=") && glformat().majorVersion() < 3) isFiltered = true;
-			if(line.contains("<") && glformat().majorVersion() >= 3) isFiltered = true;
-			filterstackpos = ifstack;
-			continue;
-		}
-		else if(line.contains("#if")) {
-			ifstack++;
-		}
-		else if(line.contains("#else")) {
-			if(ifstack == filterstackpos) {
-				isFiltered = !isFiltered;
-				continue;
-			}
-		}
-		else if(line.contains("#endif")) {
-			if(ifstack == filterstackpos) {
-				filterstackpos = -1;
-				isFiltered = false;
-				continue;
-			}
-			ifstack--;
-		}
+		// Inject utilities code file, which is shared by all shaders.
+		QFile utilitiesSourceFile(QStringLiteral(":/openglrenderer/glsl/utilities.glsl"));
+		if(!utilitiesSourceFile.open(QFile::ReadOnly))
+			throw Exception(QString("Unable to open shader source file %1.").arg(utilitiesSourceFile.fileName()));
+		shaderSource.append(utilitiesSourceFile.readAll());
+	}
+	else {
+		// Using OpenGL ES context.
 
-		if(!isFiltered) {
-			shaderSource.append(line);
-		}
+		// Inject GLSL version directive into shader source. 
+		if(glformat().majorVersion() >= 3)
+			shaderSource.append("#version 300 es\n");
+
 	}
 
-#else
-
-	shaderSource += shaderSourceFile.readAll();
-
-#endif
+	// Load actual shader source code.
+	QFile shaderSourceFile(filename);
+	if(!shaderSourceFile.open(QFile::ReadOnly))
+		throw Exception(QString("Unable to open shader source file %1.").arg(filename));
+	shaderSource.append(shaderSourceFile.readAll());
 
 	// Load and compile vertex shader source.
 	if(!program->addShaderFromSourceCode(shaderType, shaderSource)) {
@@ -753,11 +617,11 @@ void OpenGLSceneRenderer::render2DPolyline(const Point2* points, int count, cons
 /******************************************************************************
 * Makes vertex IDs available to the shader.
 ******************************************************************************/
-void OpenGLSceneRenderer::activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount, bool alwaysUseVBO)
+void OpenGLSceneRenderer::activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount)
 {
 	// Older OpenGL implementations do not provide the built-in gl_VertexID shader
 	// variable. Therefore we have to provide the IDs in a vertex buffer.
-	if(glformat().majorVersion() < 3 || alwaysUseVBO) {
+	if(glformat().majorVersion() < 3) {
 		if(!_glVertexIDBuffer.isCreated() || _glVertexIDBufferSize < vertexCount) {
 			OVITO_REPORT_OPENGL_ERRORS(this);
 			if(!_glVertexIDBuffer.isCreated()) {
@@ -804,9 +668,9 @@ void OpenGLSceneRenderer::activateVertexIDs(QOpenGLShaderProgram* shader, GLint 
 /******************************************************************************
 * Disables vertex IDs.
 ******************************************************************************/
-void OpenGLSceneRenderer::deactivateVertexIDs(QOpenGLShaderProgram* shader, bool alwaysUseVBO)
+void OpenGLSceneRenderer::deactivateVertexIDs(QOpenGLShaderProgram* shader)
 {
-	if(glformat().majorVersion() < 3 || alwaysUseVBO) {
+	if(glformat().majorVersion() < 3) {
 		OVITO_CHECK_OPENGL(this, shader->disableAttributeArray("vertexID"));
 	}
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,29 +27,26 @@ uniform mat4 model_matrix;
 uniform mat4 modelview_matrix;
 uniform vec3 cubeVerts[24];
 uniform float marker_size;
+uniform int picking_base_id;
+uniform bool is_picking_mode;
 
-#if __VERSION__ >= 130
+// The marker data:
+in vec3 position;
+in vec4 color;
 
-	// The marker data:
-	in vec3 position;
-	in vec4 color;
-
-	// Outputs to fragment shader
-	flat out vec4 vertex_color_fs;
-
-#else
-
-	// The marker data:
-	attribute float vertexID;
-
-#endif
+// Outputs to fragment shader
+flat out vec4 vertex_color_fs;
 
 void main()
 {
-#if __VERSION__ >= 130
-
-	// Forward color to fragment shader.
-	vertex_color_fs = color;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		vertex_color_fs = color;
+	}
+	else {
+		// Compute color from object ID.
+		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 2);
+	}
 
 	// Determine marker size.
 	vec4 view_position = modelview_matrix * vec4(position, 1.0);
@@ -60,23 +57,6 @@ void main()
 	int cubeCorner = gl_VertexID % 24;
 	vec3 delta = cubeVerts[cubeCorner] * (w * marker_size);
 	vec3 ec_pos = (model_matrix * vec4(position, 1)).xyz;
-
-#else
-
-	// Forward color to fragment shader.
-	gl_FrontColor = gl_Color;
-
-	// Determine marker size.
-	vec4 view_position = modelview_matrix * gl_Vertex;
-	float w = projection_matrix[0][3] * view_position.x + projection_matrix[1][3] * view_position.y
-			+ projection_matrix[2][3] * view_position.z + projection_matrix[3][3];
-
-	// Transform and project vertex.
-	int cubeCorner = int(mod(vertexID+0.5, 24.0));
-	vec3 delta = cubeVerts[cubeCorner] * (w * marker_size);
-	vec3 ec_pos = (model_matrix * gl_Vertex).xyz;
-
-#endif
 
 	gl_Position = viewprojection_matrix * vec4(ec_pos + delta, 1);
 }

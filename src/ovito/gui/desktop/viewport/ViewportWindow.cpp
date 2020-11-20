@@ -425,7 +425,6 @@ void ViewportWindow::renderNow()
 			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << endl;
 			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << endl;
 			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << endl;
-			stream << "Using point sprites: " << OpenGLSceneRenderer::pointSpritesEnabled() << endl;
 			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << endl;
 			stream << "Context sharing: " << OpenGLSceneRenderer::contextSharingEnabled() << endl;
 			ex.appendDetailMessage(openGLReport);

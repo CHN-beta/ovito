@@ -65,9 +65,7 @@ public:
 	virtual void setWorldTransform(const AffineTransformation& tm) override;
 
 	/// Returns the current local-to-world transformation matrix.
-	virtual const AffineTransformation& worldTransform() const override {
-		return _modelWorldTM;
-	}
+	virtual const AffineTransformation& worldTransform() const override { return _modelWorldTM; }
 
 	/// Returns the current model-to-view transformation matrix.
 	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
@@ -110,12 +108,6 @@ public:
 	/// Returns the surface format of the current OpenGL context.
 	const QSurfaceFormat& glformat() const { return _glformat; }
 
-	/// Indicates whether the current OpenGL implementation is according to the core profile.
-	bool isCoreProfile() const { return _isCoreProfile; }
-
-	/// Indicates whether it is okay to use OpenGL point sprites. Otherwise emulate them using explicit triangle geometry.
-	bool usePointSprites() const { return _usePointSprites; }
-
 	/// Indicates whether it is okay to use GLSL geometry shaders.
 	bool useGeometryShaders() const { return _useGeometryShaders; }
 
@@ -126,10 +118,10 @@ public:
 	QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
 	/// Make sure vertex IDs are available to use by the OpenGL shader.
-	void activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount, bool alwaysUseVBO = false);
+	void activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount);
 
 	/// This needs to be called to deactivate vertex IDs, which were activated by a call to activateVertexIDs().
-	void deactivateVertexIDs(QOpenGLShaderProgram* shader, bool alwaysUseVBO = false);
+	void deactivateVertexIDs(QOpenGLShaderProgram* shader);
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingSceneRenderer class to implement the picking mechanism.
@@ -181,9 +173,6 @@ public:
 
 	/// Determines whether all viewport windows should share one GL context or not.
 	static bool contextSharingEnabled(bool forceDefaultSetting = false);
-
-	/// Determines whether OpenGL point sprites should be used or not.
-	static bool pointSpritesEnabled(bool forceDefaultSetting = false);
 
 	/// Determines whether OpenGL geometry shader programs should be used or not.
 	static bool geometryShadersEnabled(bool forceDefaultSetting = false);
@@ -285,13 +274,13 @@ private:
 #ifndef Q_OS_WASM
 
 	/// The OpenGL 2.0 functions object.
-	QOpenGLFunctions_2_0* _glFunctions20;
+	QOpenGLFunctions_2_0* _glFunctions20 = nullptr;
 
 	/// The OpenGL 3.0 functions object.
-	QOpenGLFunctions_3_0* _glFunctions30;
+	QOpenGLFunctions_3_0* _glFunctions30 = nullptr;
 
 	/// The OpenGL 3.2 core profile functions object.
-	QOpenGLFunctions_3_2_Core* _glFunctions32;
+	QOpenGLFunctions_3_2_Core* _glFunctions32 = nullptr;
 
 #endif	
 
@@ -300,12 +289,6 @@ private:
 
 	/// The OpenGL surface format.
 	QSurfaceFormat _glformat;
-
-	/// Indicates whether the current OpenGL implementation is based on the core or the compatibility profile.
-	bool _isCoreProfile = false;
-
-	/// Indicates whether it is okay to use OpenGL point sprites. Otherwise emulate them using explicit triangle geometry.
-	bool _usePointSprites = false;
 
 	/// Indicates whether it is okay to use GLSL geometry shaders.
 	bool _useGeometryShaders = false;

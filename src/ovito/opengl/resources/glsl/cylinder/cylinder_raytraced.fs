@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,14 +26,7 @@ uniform mat4 inverse_projection_matrix;
 uniform bool is_perspective;			// Specifies the projection mode.
 uniform vec2 viewport_origin;			// Specifies the transformation from screen coordinates to viewport coordinates.
 uniform vec2 inverse_viewport_size;		// Specifies the transformation from screen coordinates to viewport coordinates.
-
-#if __VERSION__ < 130
-	#define in varying
-	#define flat
-	#define FragColor gl_FragColor
-#else
-	out vec4 FragColor;
-#endif
+uniform bool is_picking_mode;
 
 // Inputs from vertex shader
 flat in vec4 cylinder_color_fs;			// The base color of the cylinder.
@@ -42,10 +35,7 @@ flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinat
 flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat in float cylinder_length;			// The length of the cylinder
 
-const float ambient = 0.4;
-const float diffuse_strength = 1.0 - ambient;
-const float shininess = 6.0;
-const vec3 specular_lightdir = normalize(vec3(-1.8, 1.5, -0.2));
+out vec4 FragColor;
 
 void main()
 {
@@ -150,9 +140,11 @@ void main()
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = ((gl_DepthRange.diff * (projected_intersection.z / projected_intersection.w)) + gl_DepthRange.near + gl_DepthRange.far) * 0.5;
 
-	surface_normal = normalize(surface_normal);
-	float diffuse = abs(surface_normal.z) * diffuse_strength;
-	float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
-
-	FragColor = vec4(cylinder_color_fs.rgb * (diffuse + ambient) + vec3(specular), cylinder_color_fs.a);
+	if(!is_picking_mode) {
+		surface_normal = normalize(surface_normal);
+		FragColor = shadeSurfaceColor(surface_normal, ray_dir, cylinder_color_fs.rgb, cylinder_color_fs.a);
+	}
+	else {
+		FragColor = cylinder_color_fs;
+	}	
 }

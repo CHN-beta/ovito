@@ -22,8 +22,6 @@
 
 uniform vec2 uvcoords[4];
 
-#if __VERSION__ >= 130
-
 in vec3 position;
 out vec2 tex_coords;
 
@@ -32,13 +30,3 @@ void main()
 	gl_Position = vec4(position.xy, 0, 1);
 	tex_coords = uvcoords[int(position.z)];
 }
-
-#else
-
-void main()
-{
-	gl_Position = vec4(gl_Vertex.xy, 0, 1);
-	gl_TexCoord[0] = vec4(uvcoords[int(gl_Vertex.z)], 0, 0);
-}
-
-#endif

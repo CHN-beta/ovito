@@ -29,7 +29,7 @@ uniform mat4 model_matrix;
 uniform mat4 modelview_matrix;
 uniform vec3 cubeVerts[24];
 uniform float marker_size;
-uniform int pickingBaseID;
+uniform int picking_base_id;
 
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
@@ -55,7 +55,7 @@ void main()
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
 	// Compute sub-object ID from vertex ID.
-	int objectID = pickingBaseID + gl_VertexID / 24;
+	int objectID = picking_base_id + gl_VertexID / 24;
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(
@@ -67,7 +67,7 @@ void main()
 #else
 
 	// Compute sub-object ID from vertex ID.
-	float objectID = float(pickingBaseID + int(vertexID) / 24);
+	float objectID = float(picking_base_id + int(vertexID) / 24);
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	vertex_color_fs = vec4(

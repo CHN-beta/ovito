@@ -61,14 +61,6 @@
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term>Override usage of points sprites</term>
-          <listitem>
-            <para>Controls whether so-called OpenGL point sprites are used to rendering particles in <link linkend="visual_elements.particles">low and medium quality mode</link>. 
-            Otherwise, program-generated quad geometries are used as rendering technique. Point sprites are typically faster but may
-            not work well on some systems.</para>
-          </listitem>
-        </varlistentry>
-        <varlistentry>
           <term>Override usage of geometry shaders</term>
           <listitem>
             <para>Controls whether OpenGL geometry shaders are used to generated geometry on the GPU when rendering particles and bonds. 

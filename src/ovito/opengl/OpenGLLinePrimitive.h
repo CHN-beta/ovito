@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,6 +44,9 @@ public:
 
 	/// \brief Returns the number of vertices stored in the buffer.
 	virtual int vertexCount() const override { return _positionsBuffer.elementCount(); }
+
+	/// \brief Returns the number of line segments stored in the buffer.
+	int lineCount() const { return vertexCount() / 2; }
 
 	/// \brief Sets the coordinates of the vertices.
 	virtual void setVertexPositions(const Point3* coordinates) override;
@@ -91,22 +94,11 @@ private:
 	/// The OpenGL shader program used to render the lines.
 	QOpenGLShaderProgram* _shader;
 
-	/// The OpenGL shader program used to render the lines in picking mode.
-	QOpenGLShaderProgram* _pickingShader;
-
 	/// The OpenGL shader program used to render thick lines.
 	QOpenGLShaderProgram* _thickLineShader;
 
-	/// The OpenGL shader program used to render thick lines in picking mode.
-	QOpenGLShaderProgram* _thickLinePickingShader;
-
 	/// The width of lines in screen space.
 	FloatType _lineWidth;
-
-	/// Indicates that an index VBO is used.
-	bool _useIndexVBO;
 };
 
 }	// End of namespace
-
-

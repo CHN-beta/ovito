@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,29 +20,18 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#if __VERSION__ >= 130
+uniform bool is_picking_mode;
 
-	in vec4 vertex_color_fs;
-	in vec3 vertex_normal_fs;
-	out vec4 FragColor;
-
-#else
-
-	#define vertex_color_fs gl_Color
-	varying vec3 vertex_normal_fs;
-	#define FragColor gl_FragColor
-
-#endif
-
-const float ambient = 0.4;
-const float diffuse_strength = 0.6;
-const float shininess = 6.0;
-const vec3 specular_lightdir = normalize(vec3(1.8, -1.5, 0.2));
+in vec4 vertex_color_fs;
+in vec3 vertex_normal_fs;
+out vec4 FragColor;
 
 void main()
 {
-	float diffuse = abs(vertex_normal_fs.z) * diffuse_strength;
-	float specular = pow(max(0.0, dot(reflect(specular_lightdir, vertex_normal_fs), vec3(0,0,1))), shininess) * 0.25;
-
-	FragColor = vec4(vertex_color_fs.rgb * (diffuse + ambient) + vec3(specular), vertex_color_fs.a);
+	if(!is_picking_mode) {
+		FragColor = shadeSurfaceColorQuick(vertex_normal_fs, vertex_color_fs.rgb, vertex_color_fs.a);
+	}
+	else {
+		FragColor = vertex_color_fs;
+	}
 }

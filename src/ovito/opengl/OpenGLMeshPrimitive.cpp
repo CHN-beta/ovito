@@ -33,11 +33,11 @@ OpenGLMeshPrimitive::OpenGLMeshPrimitive(OpenGLSceneRenderer* renderer) :
 	_contextGroup(QOpenGLContextGroup::currentContextGroup())
 {
 	OVITO_ASSERT(renderer->glcontext()->shareGroup() == _contextGroup);
+	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
 	// Initialize OpenGL shader.
-	_shader = renderer->loadShaderProgram("mesh", ":/openglrenderer/glsl/mesh/mesh.vs", ":/openglrenderer/glsl/mesh/mesh.fs");
-	_pickingShader = renderer->loadShaderProgram("mesh.picking", ":/openglrenderer/glsl/mesh/picking/mesh.vs", ":/openglrenderer/glsl/mesh/picking/mesh.fs");
-	_lineShader = renderer->loadShaderProgram("wireframe_line", ":/openglrenderer/glsl/lines/line.vs", ":/openglrenderer/glsl/lines/line.fs");
+	_shader = renderer->loadShaderProgram("mesh", prefix + "/glsl/mesh/mesh.vs", prefix + "/glsl/mesh/mesh.fs");
+	_lineShader = renderer->loadShaderProgram("wireframe_line", prefix + "/glsl/lines/line.vs", prefix + "/glsl/lines/line.fs");
 }
 
 /******************************************************************************
@@ -276,6 +276,7 @@ void OpenGLMeshPrimitive::render(SceneRenderer* renderer)
 	if(!renderer->isPicking() && _edgeLinesBuffer.isCreated()) {
 		if(!_lineShader->bind())
 			vpRenderer->throwException(QStringLiteral("Failed to bind OpenGL shader."));
+		_lineShader->setUniformValue("is_picking_mode", (bool)renderer->isPicking());
 		ColorA wireframeColor(0.1, 0.1, 0.1, _alpha);
 		if(vpRenderer->glformat().majorVersion() >= 3) {
 			OVITO_CHECK_OPENGL(vpRenderer, _lineShader->setAttributeValue("color", wireframeColor.r(), wireframeColor.g(), wireframeColor.b(), wireframeColor.a()));
@@ -342,14 +343,10 @@ void OpenGLMeshPrimitive::render(SceneRenderer* renderer)
 		OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glDisable(GL_CULL_FACE));
 	}
 
-	QOpenGLShaderProgram* shader;
-	if(!renderer->isPicking())
-		shader = _shader;
-	else
-		shader = _pickingShader;
-
+	QOpenGLShaderProgram* shader = _shader;
 	if(!shader->bind())
 		renderer->throwException(QStringLiteral("Failed to bind OpenGL shader."));
+	shader->setUniformValue("is_picking_mode", (bool)renderer->isPicking());
 
 	_vertexBuffer.bindPositions(vpRenderer, shader, offsetof(ColoredVertexWithNormal, pos));
 	if(!renderer->isPicking()) {
@@ -360,10 +357,7 @@ void OpenGLMeshPrimitive::render(SceneRenderer* renderer)
 		}
 		_vertexBuffer.bindNormals(vpRenderer, shader, offsetof(ColoredVertexWithNormal, normal));
 	}
-	else {
-		vpRenderer->activateVertexIDs(_pickingShader, _vertexBuffer.elementCount() * _vertexBuffer.verticesPerElement());
-	}
-	OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
+	vpRenderer->activateVertexIDs(shader, _vertexBuffer.elementCount() * _vertexBuffer.verticesPerElement());
 
 	size_t numInstances = !_useInstancedRendering ? 1 : _perInstanceTMs.size();
 	for(size_t instance = 0; instance < numInstances; instance++) {
@@ -394,12 +388,12 @@ void OpenGLMeshPrimitive::render(SceneRenderer* renderer)
 		}
 		else {
 			if(!_useInstancedRendering) {
-				OVITO_CHECK_OPENGL(vpRenderer, _pickingShader->setUniformValue("pickingBaseID", (GLint)vpRenderer->registerSubObjectIDs(faceCount())));
-				OVITO_CHECK_OPENGL(vpRenderer, _pickingShader->setUniformValue("vertexIdDivisor", (GLint)3));
+				OVITO_CHECK_OPENGL(vpRenderer, shader->setUniformValue("picking_base_id", (GLint)vpRenderer->registerSubObjectIDs(faceCount())));
+				OVITO_CHECK_OPENGL(vpRenderer, shader->setUniformValue("vertexIdDivisor", (GLint)3));
 			}
 			else {
-				OVITO_CHECK_OPENGL(vpRenderer, _pickingShader->setUniformValue("pickingBaseID", (GLint)vpRenderer->registerSubObjectIDs(1)));
-				OVITO_CHECK_OPENGL(vpRenderer, _pickingShader->setUniformValue("vertexIdDivisor", (GLint)faceCount()*3));
+				OVITO_CHECK_OPENGL(vpRenderer, shader->setUniformValue("picking_base_id", (GLint)vpRenderer->registerSubObjectIDs(1)));
+				OVITO_CHECK_OPENGL(vpRenderer, shader->setUniformValue("vertexIdDivisor", (GLint)faceCount()*3));
 			}
 		}
 
@@ -473,9 +467,7 @@ void OpenGLMeshPrimitive::render(SceneRenderer* renderer)
 		if(_alpha != 1.0) 
 			vpRenderer->glDisable(GL_BLEND);
 	}
-	else {
-		vpRenderer->deactivateVertexIDs(_pickingShader);
-	}
+	vpRenderer->deactivateVertexIDs(shader);
 	shader->release();
 
 	OVITO_REPORT_OPENGL_ERRORS(vpRenderer);

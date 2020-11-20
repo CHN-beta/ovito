@@ -55,6 +55,7 @@ public:
 			_elementCount = elementCount;
 			_verticesPerElement = verticesPerElement;
 			if(!_buffer.isCreated()) {
+				_isOpenGLES = QOpenGLContext::currentContext()->isOpenGLES();
 				if(!_buffer.create())
 					throw Exception(QStringLiteral("Failed to create OpenGL vertex buffer."));
 				_buffer.setUsagePattern(usagePattern);
@@ -98,46 +99,48 @@ public:
 		OVITO_ASSERT(isCreated());
 		if(elementCount() == 0)
 			return nullptr;
-#ifndef Q_OS_WASM
-		if(!_buffer.bind()) {
-			qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::map()";
-			qWarning() << "Parameters: access =" << access << "elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+		if(!_isOpenGLES) {
+			if(!_buffer.bind()) {
+				qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::map()";
+				qWarning() << "Parameters: access =" << access << "elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
+				throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+			}
+			T* data = static_cast<T*>(_buffer.map(access));
+			if(!data)
+				throw Exception(QStringLiteral("Failed to map OpenGL vertex buffer to memory."));
+			return data;
 		}
-		T* data = static_cast<T*>(_buffer.map(access));
-		if(!data)
-			throw Exception(QStringLiteral("Failed to map OpenGL vertex buffer to memory."));
-		return data;
-#else
-		// WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
-		// Need to emulate the map() method by providing a temporary memory buffer on the host. 
-		OVITO_ASSERT(access == QOpenGLBuffer::WriteOnly);
-		_temporaryBuffer.resize(elementCount() * verticesPerElement());
-		return _temporaryBuffer.data();
-#endif
+		else {
+			// WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
+			// Need to emulate the map() method by providing a temporary memory buffer on the host. 
+			OVITO_ASSERT(access == QOpenGLBuffer::WriteOnly);
+			_temporaryBuffer.resize(elementCount() * verticesPerElement());
+			return _temporaryBuffer.data();
+		}
 	}
 
 	/// Unmaps the buffer after it was mapped into the application's memory space with a previous call to map().
 	void unmap() {
 		if(elementCount() == 0)
 			return;
-#ifndef Q_OS_WASM
-		if(!_buffer.unmap())
-			throw Exception(QStringLiteral("Failed to unmap OpenGL vertex buffer from memory."));
-		_buffer.release();
-#else
-		// Upload the data in the temporary memory buffer to graphics memory.
-		if(!_buffer.bind()) {
-			qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::unmap()";
-			qWarning() << "Parameters: elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+		if(!_isOpenGLES) {
+			if(!_buffer.unmap())
+				throw Exception(QStringLiteral("Failed to unmap OpenGL vertex buffer from memory."));
+			_buffer.release();
 		}
-		OVITO_ASSERT(_temporaryBuffer.size() == _elementCount * _verticesPerElement);
-		_buffer.write(0, _temporaryBuffer.data(), sizeof(T) * _elementCount * _verticesPerElement);
-		_buffer.release();
-		// Free temporary buffer.
-		decltype(_temporaryBuffer)().swap(_temporaryBuffer);
-#endif
+		else {
+			// Upload the data in the temporary memory buffer to graphics memory.
+			if(!_buffer.bind()) {
+				qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::unmap()";
+				qWarning() << "Parameters: elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
+				throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+			}
+			OVITO_ASSERT(_temporaryBuffer.size() == _elementCount * _verticesPerElement);
+			_buffer.write(0, _temporaryBuffer.data(), sizeof(T) * _elementCount * _verticesPerElement);
+			_buffer.release();
+			// Free temporary buffer.
+			decltype(_temporaryBuffer)().swap(_temporaryBuffer);
+		}
 	}
 
 	/// Fills the vertex buffer with the given data.
@@ -308,6 +311,9 @@ public:
 
 private:
 
+	/// Indicates the use of OpenGL ES instead of desktop OpenGL.
+	bool _isOpenGLES = false;
+
 	/// The OpenGL vertex buffer.
 	QOpenGLBuffer _buffer;
 
@@ -317,11 +323,9 @@ private:
 	/// The number of vertices per element.
 	int _verticesPerElement;
 
-#ifdef Q_OS_WASM
-	// WebGL may not support memory mapping a GL buffer.
+	// OpenGL ES may not support memory mapping a GL buffer.
 	// This is a host memory buffer used to emulate the map() method on this platform.
 	std::vector<T> _temporaryBuffer; 
-#endif
 };
 
 }	// End of namespace

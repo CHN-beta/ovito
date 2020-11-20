@@ -107,14 +107,14 @@ private:
 	/// The number of mesh vertices generated per primitive.
 	int _verticesPerElement = 0;
 
+	/// Indicates whether OpenGL geometry shaders are supported.
+	bool _usingGeometryShader;
+
 	/// The OpenGL vertex buffer objects that store the vertices with normal vectors for polygon rendering.
-	std::vector<OpenGLBuffer<VertexWithNormal>> _verticesWithNormals;
+	OpenGLBuffer<VertexWithNormal> _verticesWithNormals;
 
 	/// The OpenGL vertex buffer objects that store the vertices with full element info for raytraced shader rendering.
-	std::vector<OpenGLBuffer<VertexWithElementInfo>> _verticesWithElementInfo;
-
-	/// The index of the VBO chunk currently mapped to memory.
-	int _mappedChunkIndex = -1;
+	OpenGLBuffer<VertexWithElementInfo> _verticesWithElementInfo;
 
 	/// Pointer to the memory-mapped VBO buffer.
 	VertexWithNormal* _mappedVerticesWithNormals = nullptr;
@@ -122,20 +122,8 @@ private:
 	/// Pointer to the memory-mapped VBO buffer.
 	VertexWithElementInfo* _mappedVerticesWithElementInfo = nullptr;
 
-	/// The maximum size (in bytes) of a single VBO buffer.
-	int _maxVBOSize = 4 * 1024 * 1024;
-
-	/// The maximum number of primitives per VBO buffer.
-	int _chunkSize = 0;
-
-	/// Indicates that an OpenGL geometry shader is being used.
-	bool _usingGeometryShader = false;
-
 	/// The OpenGL shader program that is used for rendering.
 	QOpenGLShaderProgram* _shader = nullptr;
-
-	/// The OpenGL shader program that is used for picking primitives.
-	QOpenGLShaderProgram* _pickingShader = nullptr;
 
 	/// Lookup table for fast cylinder geometry generation.
 	std::vector<float> _cosTable;
@@ -143,7 +131,6 @@ private:
 	/// Lookup table for fast cylinder geometry generation.
 	std::vector<float> _sinTable;
 
-#ifndef Q_OS_WASM
 	/// Primitive start indices passed to glMultiDrawArrays() using GL_TRIANGLE_STRIP primitives.
 	std::vector<GLint> _stripPrimitiveVertexStarts;
 
@@ -155,13 +142,14 @@ private:
 
 	/// Primitive vertex counts passed to glMultiDrawArrays() using GL_TRIANGLE_FAN primitives.
 	std::vector<GLsizei> _fanPrimitiveVertexCounts;
-#else
+
+	// OpenGL ES only:
+
 	/// The number of vertex indices need per element.
 	int _indicesPerElement = 0;
 
 	/// Vertex indices passed to glDrawElements() using GL_TRIANGLES primitives.
 	std::vector<GLuint> _trianglePrimitiveVertexIndices;
-#endif
 };
 
 }	// End of namespace
