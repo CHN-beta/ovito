@@ -53,16 +53,18 @@ DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, method);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, gridResolution);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, radiusFactor);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, isoValue);
+DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, computeSurfaceDistance);
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, probeSphereRadius, "Probe sphere radius");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, onlySelectedParticles, "Use only selected input particles");
-SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, selectSurfaceParticles, "Select particles at the surface");
+SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, selectSurfaceParticles, "Select particles on the surface");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, transferParticleProperties, "Transfer particle properties to surface");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, identifyRegions, "Identify volumetric regions (filled/void)");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, method, "Construction method");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, gridResolution, "Resolution");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, radiusFactor, "Radius scaling");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, isoValue, "Iso value");
+SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, computeSurfaceDistance, "Compute particle distances from surface");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, probeSphereRadius, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(ConstructSurfaceModifier, gridResolution, IntegerParameterUnit, 2, 600);
@@ -81,7 +83,8 @@ ConstructSurfaceModifier::ConstructSurfaceModifier(DataSet* dataset) : Asynchron
 	_gridResolution(50),
 	_radiusFactor(1.0),
 	_isoValue(0.6),
-	_identifyRegions(false)
+	_identifyRegions(false),
+	_computeSurfaceDistance(false)
 {
 }
 
@@ -119,8 +122,10 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	// Get particle selection flags if requested.
 	const PropertyObject* selProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
-	// Get particle cluster property.
-	const PropertyObject* clusterProperty = particles->getProperty(ParticlesObject::ClusterProperty);
+	// Get particle "Grain" property.
+	const PropertyObject* grainProperty = particles->getProperty(QStringLiteral("Grain"));
+	if(grainProperty && (grainProperty->dataType() != PropertyObject::Int64 || grainProperty->componentCount() != 1))
+		grainProperty = nullptr;
 
 	// Get simulation cell.
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
@@ -151,12 +156,13 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 		return std::make_shared<AlphaShapeEngine>(executionContext, dataset(), 
 				posProperty,
 				selProperty,
-				clusterProperty,
+				grainProperty,
 				std::move(mesh),
 				probeSphereRadius(),
 				smoothingLevel(),
 				selectSurfaceParticles(),
 				identifyRegions(),
+				computeSurfaceDistance(),
 				std::move(particleProperties));
 	}
 	else {
@@ -168,6 +174,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 				radiusFactor(),
 				isoValue(),
 				gridResolution(),
+				computeSurfaceDistance(),
 				particles->inputParticleRadii(),
 				std::move(particleProperties));
 	}
@@ -201,7 +208,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	// Algorithm is divided into several sub-steps.
 	// Assign weights to sub-steps according to estimated runtime.
-	beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2 });
+	beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2, surfaceDistances() ? 1000 : 1 });
 
 	// Generate Delaunay tessellation.
 	DelaunayTessellation tessellation;
@@ -221,30 +228,30 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	SurfaceMeshAccess mesh(this->mesh());
 
-	// Predefine the filled spatial regions if there is already a particle cluster assignement. 
-	if(_identifyRegions && particleClusters()) {
+	// Predefine the filled spatial regions if there is already a particle cluster assignment. 
+	if(_identifyRegions && particleGrains()) {
 		
 		// Determine the maximum cluster ID.
-		qlonglong maxClusterId = 0;
-		if(particleClusters()->size() != 0) {
-			maxClusterId = qBound<qlonglong>(0, 
-				*boost::max_element(ConstPropertyAccess<qlonglong>(particleClusters())), 
+		qlonglong maxGrainId = 0;
+		if(particleGrains()->size() != 0) {
+			maxGrainId = qBound<qlonglong>(0, 
+				*boost::max_element(ConstPropertyAccess<qlonglong>(particleGrains())), 
 				std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1);
 		}
 
-		// Create one region in the output mesh for each particle cluster.
-		mesh.createRegions(maxClusterId + 1);
+		// Create one region in the output mesh for each particle grain.
+		mesh.createRegions(maxGrainId + 1);
 	}
 
 	// Helper function that determines which spatial region a filled Delaunay cell belongs to.
-	auto tetrahedronRegion = [&,clusters = ConstPropertyAccess<qlonglong>(_identifyRegions ? particleClusters() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
-		if(clusters) {
+	auto tetrahedronRegion = [&,grains = ConstPropertyAccess<qlonglong>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMeshAccess::region_index {
+		if(grains) {
 			// Decide which particle cluster the Delaunay cell belongs to.
-			// We need a tie-breaker in case the four vertex atoms belong to different clusters.
+			// We need a tie-breaker in case the four vertex atoms belong to different grains.
 			qlonglong result = 0;
 			for(int v = 0; v < 4; v++) {
 				size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
-				qlonglong clusterId = clusters[particleIndex];
+				qlonglong clusterId = grains[particleIndex];
 				if(clusterId > result)
 					result = clusterId;
 			}
@@ -380,6 +387,14 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		}
 	}
 
+	if(isCanceled())
+		return;
+
+	nextProgressSubStep();
+
+	// Compute the distance of each input particle from the constructed surface.
+	computeSurfaceDistances(mesh);
+
 	endProgressSubSteps();
 
 	// Release data that is no longer needed.
@@ -406,7 +421,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
 	// Algorithm is divided into several sub-steps.
 	// Assign weights to sub-steps according to estimated runtime.
-	beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300 });
+	beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
 	// Scale the atomic radii.
 	for(FloatType& r : _particleRadii) r *= _radiusFactor;
@@ -621,11 +636,40 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 		FloatType area = e1.cross(e2).length() / 2;
 		addSurfaceArea(area);
 	}
+	if(isCanceled())
+		return;
+
+	nextProgressSubStep();
+
+	// Compute the distance of each input particle from the constructed surface.
+	computeSurfaceDistances(mesh);
 
 	endProgressSubSteps();
 
 	// Release data that is no longer needed.
 	releaseWorkingData();
+}
+
+/******************************************************************************
+* Compute the distance of each input particle from the constructed surface.
+******************************************************************************/
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistances(const SurfaceMeshAccess& mesh)
+{
+	if(!surfaceDistances())
+		return;
+	setProgressText(tr("Computing surface distances"));
+
+	// Access output array.
+	PropertyAccess<FloatType> distanceArray(surfaceDistances());
+	// Access input positions.
+	ConstPropertyAccess<Point3> positionArray(positions());
+
+	// Perform computation for each particle.
+	size_t progressChunkSize = 64;
+	parallelFor(positions()->size(), *this, [&](size_t index) {
+		auto result = mesh.locatePoint(positionArray[index], 0.0);
+		distanceArray[index] = result ? result->second : 0.0;
+	}, progressChunkSize);
 }
 
 /******************************************************************************
@@ -643,6 +687,13 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(TimePoint time, Mo
 		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 		particles->verifyIntegrity();
 		particles->createProperty(surfaceParticleSelection());
+	}
+
+	// Output computed particle distances from surface.
+	if(surfaceDistances()) {
+		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+		particles->verifyIntegrity();
+		particles->createProperty(surfaceDistances());
 	}
 
 	// Output total surface area.
@@ -683,6 +734,13 @@ void ConstructSurfaceModifier::GaussianDensityEngine::applyResults(TimePoint tim
 
 	// Output the constructed surface mesh to the pipeline.
 	state.addObjectWithUniqueId<SurfaceMesh>(mesh());
+
+	// Output computed particle distances from surface.
+	if(surfaceDistances()) {
+		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+		particles->verifyIntegrity();
+		particles->createProperty(surfaceDistances());
+	}
 
 	// Output total surface area.
 	state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), modApp);

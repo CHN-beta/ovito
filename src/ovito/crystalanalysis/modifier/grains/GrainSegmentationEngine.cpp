@@ -813,12 +813,14 @@ void GrainSegmentationEngine2::perform()
 
 	// Relabel atoms after cluster IDs have changed.
 	// Also count the number of atoms in each cluster.
-	PropertyAccess<qlonglong> atomClustersArray(atomClusters());
-	PropertyAccess<qlonglong> grainSizeArray(_grainSizes);
-	for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++) {
-		size_t gid = clusterRemapping[particleIndex];
-		atomClustersArray[particleIndex] = gid;
-		if(gid != 0) grainSizeArray[gid - 1]++;
+	{
+		PropertyAccess<qlonglong> atomClustersArray(atomClusters());
+		PropertyAccess<qlonglong> grainSizeArray(_grainSizes);
+		for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++) {
+			size_t gid = clusterRemapping[particleIndex];
+			atomClustersArray[particleIndex] = gid;
+			if(gid != 0) grainSizeArray[gid - 1]++;
+		}
 	}
 	if(isCanceled()) 
 		return;
@@ -829,7 +831,7 @@ void GrainSegmentationEngine2::perform()
 		// Determine the index remapping for reordering the grain list by size.
 		std::vector<size_t> mapping(_numClusters - 1);
 		std::iota(mapping.begin(), mapping.end(), size_t(0));
-		std::sort(mapping.begin(), mapping.end(), [&](size_t a, size_t b) {
+		std::sort(mapping.begin(), mapping.end(), [grainSizeArray = PropertyAccess<qlonglong>(_grainSizes)](size_t a, size_t b) {
 			return grainSizeArray[a] > grainSizeArray[b];
 		});
 		if(isCanceled()) 
@@ -851,7 +853,7 @@ void GrainSegmentationEngine2::perform()
 
 		// Remap per-particle grain IDs.
 
-		for(auto& id : atomClustersArray)
+		for(auto& id : PropertyAccess<qlonglong>(atomClusters()))
 			id = inverseMapping[id];
 		if(isCanceled()) 
 			return;

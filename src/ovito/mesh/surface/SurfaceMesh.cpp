@@ -81,24 +81,32 @@ void SurfaceMesh::initializeObject(ExecutionContext executionContext)
 ******************************************************************************/
 void SurfaceMesh::verifyMeshIntegrity() const
 {
+	OVITO_CHECK_OBJECT_POINTER(topology());
 	if(!topology())
 		throwException(tr("Surface mesh has no topology object attached."));
 
+	OVITO_CHECK_OBJECT_POINTER(vertices());
 	if(!vertices())
 		throwException(tr("Surface mesh has no vertex properties container attached."));
+	OVITO_CHECK_OBJECT_POINTER(vertices()->getProperty(SurfaceMeshVertices::PositionProperty));
 	if(!vertices()->getProperty(SurfaceMeshVertices::PositionProperty))
 		throwException(tr("Invalid data structure. Surface mesh is missing the position vertex property."));
+	OVITO_ASSERT(topology()->vertexCount() == vertices()->elementCount());
 	if(topology()->vertexCount() != vertices()->elementCount())
 		throwException(tr("Length of vertex property arrays of surface mesh do not match number of vertices in the mesh topology."));
 
+	OVITO_CHECK_OBJECT_POINTER(faces());
 	if(!faces())
 		throwException(tr("Surface mesh has no face properties container attached."));
+	OVITO_ASSERT(faces()->properties().empty() || topology()->faceCount() == faces()->elementCount());
 	if(!faces()->properties().empty() && topology()->faceCount() != faces()->elementCount())
 		throwException(tr("Length of face property arrays of surface mesh do not match number of faces in the mesh topology."));
 
+	OVITO_CHECK_OBJECT_POINTER(regions());
 	if(!regions())
 		throwException(tr("Surface mesh has no region properties container attached."));
 
+	OVITO_ASSERT(spaceFillingRegion() == InvalidIndex || spaceFillingRegion() >= 0);
 	if(spaceFillingRegion() != InvalidIndex && spaceFillingRegion() < 0)
 		throwException(tr("Space filling region ID set for surface mesh must not be negative."));
 
@@ -111,7 +119,7 @@ void SurfaceMesh::verifyMeshIntegrity() const
 * Determines which spatial region contains the given point in space.
 * Returns -1 if the point is exactly on a region boundary.
 ******************************************************************************/
-boost::optional<SurfaceMesh::region_index> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
+boost::optional<std::pair<SurfaceMesh::region_index, FloatType>> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
 {
 	verifyMeshIntegrity();
 	return SurfaceMeshAccess(this).locatePoint(location, epsilon);

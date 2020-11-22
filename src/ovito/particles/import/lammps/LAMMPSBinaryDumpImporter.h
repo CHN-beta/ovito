@@ -91,9 +91,6 @@ private:
 		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, bool sortParticles, const ParticleInputColumnMapping& columnMapping)
 			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), _sortParticles(sortParticles), _columnMapping(columnMapping) {}
 
-		/// Returns the file column mapping used to load the file.
-		const ParticleInputColumnMapping& columnMapping() const { return _columnMapping; }
-
 	protected:
 
 		/// Reads the frame data from the external file.

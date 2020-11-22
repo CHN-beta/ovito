@@ -445,7 +445,7 @@ public:
 		_mergingThreshold(mergingThreshold),
 		_adoptOrphanAtoms(adoptOrphanAtoms),
 		_minGrainAtomCount(minGrainAtomCount),
-		_atomClusters(ParticlesObject::OOClass().createStandardProperty(dataset, _numParticles, ParticlesObject::ClusterProperty, true, executionContext)) {}
+		_atomClusters(ParticlesObject::OOClass().createUserProperty(dataset, _numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Grain"), true)) {}
 	
 	/// Performs the computation.
 	virtual void perform() override;

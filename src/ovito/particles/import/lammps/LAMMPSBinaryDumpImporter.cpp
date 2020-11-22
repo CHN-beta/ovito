@@ -26,8 +26,10 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSBinaryDumpImporter.h"
+#include "LAMMPSTextDumpImporter.h"
 
 #include <QtEndian>
+#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -62,11 +64,14 @@ struct LAMMPSBinaryDumpHeader
 			memset(tiltFactors, 0, sizeof(tiltFactors));
 		}
 
-	int ntimestep;
+	qlonglong ntimestep;
+	int formatRevision = 0;
 	qlonglong natoms;
 	int boundaryFlags[3][2];
 	double bbox[3][2];
 	double tiltFactors[3];
+	double simulationTime = std::numeric_limits<double>::lowest();
+	QByteArray columnsString;
 	int size_one;
 	int nchunk;
 
@@ -100,10 +105,9 @@ struct LAMMPSBinaryDumpHeader
 			return qFromBigEndian(val);
 	}
 
-	// Parses a "big" LAMMPS integer (may be 32 or 64 bit, depending on currently selected data type);
-	// We downcast the result value to 32-bit int, because OVITO currently supports only 2^31 atoms anyway.
+	// Parses a "big" LAMMPS integer (may be 32 or 64 bit, depending on currently selected data type).
 	// A return value of -1 indicates a number overflow.
-	int readBigInt(QIODevice& input) {
+	qlonglong readBigInt(QIODevice& input) {
 		if(dataType == LAMMPS_SMALLSMALL) {
 			return parseInt(input);
 		}
@@ -114,7 +118,7 @@ struct LAMMPSBinaryDumpHeader
 				val = qFromLittleEndian(val);
 			else
 				val = qFromBigEndian(val);
-			if(val > (qint64)std::numeric_limits<int>::max())
+			if(val > (qint64)std::numeric_limits<qlonglong>::max())
 				return -1;
 			else
 				return val;
@@ -186,7 +190,7 @@ void LAMMPSBinaryDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSou
 				return;
 		}
 
-		// Create a new record for the time step.
+		// Create a new record for the timestep.
 		frame.label = tr("Timestep %1").arg(header.ntimestep);
 		frames.push_back(frame);
 	}
@@ -212,7 +216,38 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 			input.seek(headerPos);
 
 			ntimestep = readBigInt(input);
-			if(ntimestep < 0 || input.atEnd()) continue;
+			if(ntimestep < 0) {
+
+				// Detect newer file format, which is indicated by a negative number of timesteps followed by the magic strings "DUMPATOM" or "DUMPCUSTOM".
+				const char MAGIC_STRING_ATOM[] = "DUMPATOM";
+				const char MAGIC_STRING_CUSTOM[] = "DUMPCUSTOM";
+				if(-ntimestep != sizeof(MAGIC_STRING_ATOM)-1 && -ntimestep != sizeof(MAGIC_STRING_CUSTOM)-1)
+					continue;
+				
+				// Read magic string.
+				QByteArray magicString = input.read(-ntimestep);
+				if(magicString != MAGIC_STRING_ATOM && magicString != MAGIC_STRING_CUSTOM)
+					continue;
+
+				// Read endianess indicator and check if we assumed the right endianess for this file.
+				const int ENDIAN = 0x0001;
+				if(parseInt(input) != ENDIAN)
+					continue;
+
+				// Read format revision number.
+				const int FORMAT_REVISION = 0x0002;
+				formatRevision = parseInt(input);
+				if(formatRevision != FORMAT_REVISION) {
+					formatRevision = 0;
+					continue;
+				}
+
+				// Now read actual number of timesteps.			
+				ntimestep = readBigInt(input);
+				if(ntimestep < 0)
+					continue;
+			}
+			if(input.atEnd()) return false;
 
 			natoms = readBigInt(input);
 			if(natoms < 0 || input.atEnd()) continue;
@@ -228,18 +263,20 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 				continue;
 
 			bool isValid = true;
-			for(int i = 0; i < 3; i++) {
-				for(int j = 0; j < 2; j++) {
-					if(boundaryFlags[i][j] < 0 || boundaryFlags[i][j] > 3)
-						isValid = false;
+			if(formatRevision < 2) {
+				for(int i = 0; i < 3; i++) {
+					for(int j = 0; j < 2; j++) {
+						if(boundaryFlags[i][j] < 0 || boundaryFlags[i][j] > 3)
+							isValid = false;
+					}
 				}
-			}
 
-			if(!isValid) {
-				// Try parsing the old bounding box format now.
-				input.seek(startPos);
-				isValid = true;
-				triclinic = -1;
+				if(!isValid) {
+					// Try parsing the old bounding box format now.
+					input.seek(startPos);
+					isValid = true;
+					triclinic = -1;
+				}
 			}
 
 			// Read bounding box.
@@ -274,6 +311,28 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 			size_one = parseInt(input);
 			if(size_one <= 0 || size_one > 40) continue;
 
+			// Newer file format includes units string, columns string and time.
+			columnsString.clear();
+			if(formatRevision >= 2) {
+				// Skip reading unit style.
+				int unitStyleLen = parseInt(input);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+				input.skip(unitStyleLen);
+#else
+				(void)input.read(unitStyleLen);
+#endif
+
+				// Parse simulation time.
+				char time_flag = 0;
+				input.getChar(&time_flag);
+				if(time_flag)
+					simulationTime = readDouble(input);
+
+				// Parse data columns string.
+				int columnsLen = parseInt(input);
+				columnsString = input.read(columnsLen);
+			}
+
 			nchunk = parseInt(input);
 			if(nchunk <= 0 || nchunk > natoms) continue;
 
@@ -306,12 +365,14 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 		throw Exception(tr("Failed to read binary LAMMPS dump file: Invalid file header."));
 
 	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep), dataSource());
+	if(header.simulationTime != std::numeric_limits<double>::lowest())
+		state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime), dataSource());
 
 	setProgressMaximum(header.natoms);
 	setParticleCount(header.natoms);
 
-	// LAMMPS only stores the outer bounding box of the simulation cell in the dump file.
-	// We have to determine the size of the actual triclinic cell.
+	// LAMMPS only stores the outer bounding box dimensions of the simulation cell in the dump file.
+	// Now calculate the size of the actual triclinic cell.
 	Box3 simBox;
 	simBox.minc = Point3(header.bbox[0][0], header.bbox[1][0], header.bbox[2][0]);
 	simBox.maxc = Point3(header.bbox[0][1], header.bbox[1][1], header.bbox[2][1]);
@@ -325,6 +386,13 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 			Vector3(header.tiltFactors[1], header.tiltFactors[2], simBox.sizeZ()),
 			simBox.minc - Point3::Origin()));
 	simulationCell()->setPbcFlags(header.boundaryFlags[0][0] == 0, header.boundaryFlags[1][0] == 0, header.boundaryFlags[2][0] == 0);
+
+	// Set up column-to-property mapping.
+	QStringList fileColumnNames;
+	if(_columnMapping.empty() && !header.columnsString.isEmpty()) {
+		fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
+		_columnMapping = LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
+	}
 
 	// Parse particle data.
 	InputColumnReader columnParser(_columnMapping, particles(), executionContext());
@@ -379,23 +447,63 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 	columnParser.sortElementTypes();
 	columnParser.reset();
 
-	if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
-		Box3 boundingBox;
-		boundingBox.addPoints(posProperty);
+	// Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
+	bool reducedCoordinates = false;
+	if(!fileColumnNames.empty()) {
+		// If the dump file contains column names, then we can use them to detect 
+		// the type of particle coordinates. Reduced coordinates are found in columns
+		// "xs, ys, zs" or "xsu, ysu, zsu".
+		for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
+			if(_columnMapping[i].property.type() == ParticlesObject::PositionProperty) {
+				reducedCoordinates = (
+						fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
+						fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
+						fileColumnNames[i] == "zs" || fileColumnNames[i] == "zsu");
+				// break; Note: Do not stop the loop here, because the 'Position' particle 
+				// property may be associated with several file columns, and it's the last column that 
+				// ends up getting imported into OVITO. 
+			}
+		}
+	}
+	else {
+		// If no column names are available, use the following heuristic:
+		// Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
+		// We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
+		// wraps around particles at the periodic boundaries only occasionally.
+		if(ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+			// Compute bound box of particle positions.
+			Box3 boundingBox;
+			boundingBox.addPoints(posProperty);
+			// Check if bounding box is inside the (slightly extended) unit cube.
+			if(Box3(Point3(FloatType(-0.02)), Point3(FloatType(1.02))).containsBox(boundingBox))
+				reducedCoordinates = true;
+		}
+	}
 
-		// Find out if coordinates are given in reduced format and need to be rescaled to absolute format.
-		// Check if all atom coordinates are within the [0,1] interval.
-		// If yes, we assume reduced coordinate format.
-
-		if(Box3(Point3(-0.01), Point3(1.01)).containsBox(boundingBox)) {
-			// Convert all atom coordinates from reduced to absolute (Cartesian) format.
+	if(reducedCoordinates) {
+		// Convert all atom coordinates from reduced to absolute (Cartesian) format.
+		if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
 			const AffineTransformation simCell = simulationCell()->cellMatrix();
 			for(Point3& p : posProperty)
 				p = simCell * p;
 		}
 	}
 
-	// Detect if there are more simulation frames following in the file.
+	// If a "diameter" column was loaded and stored in the "Radius" particle property,
+	// we need to divide values by two.
+	if(!fileColumnNames.empty()) {
+		for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
+			if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
+				if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+					for(FloatType& r : radiusProperty)
+						r /= 2;
+				}
+				break;
+			}
+		}
+	}
+
+	// Detect when there are more simulation frames following in the file.
 	if(!file->atEnd())
 		signalAdditionalFrames();
 
@@ -428,10 +536,17 @@ Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(c
 			if(!header.parse(*file))
 				throw Exception(tr("Failed to parse binary LAMMPS dump file: Invalid file header."));
 
-			// Return the number of file columns.
-			ParticleInputColumnMapping mapping;
-			mapping.resize(header.size_one);
-			return mapping;
+			// Parse column names if it is a modern format file.
+			if(!header.columnsString.isEmpty()) {
+				QStringList fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
+				return LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
+			}
+			else {
+				// Return the number of file columns.
+				ParticleInputColumnMapping mapping;
+				mapping.resize(header.size_one);
+				return mapping;
+			}
 		});
 }
 

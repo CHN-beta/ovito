@@ -94,12 +94,13 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
+		ConstructSurfaceEngineBase(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
 			Engine(executionContext),
 			_positions(positions),
 			_selection(std::move(selection)),
 			_mesh(std::move(mesh)),
-			_particleProperties(std::move(particleProperties)) {}
+			_particleProperties(std::move(particleProperties)),
+			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(dataset, _positions->size(), PropertyObject::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -119,6 +120,9 @@ private:
 		/// Returns the list of particle properties to copy over to the generated mesh.
 		const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }
 
+		/// Returns the output surface distance property.
+		const PropertyPtr& surfaceDistances() const { return _surfaceDistances; }
+
 	protected:
 
 		/// Releases data that is no longer needed.
@@ -126,7 +130,10 @@ private:
 			_positions.reset();
 			_selection.reset();
 			_particleProperties.clear();
-		}	
+		}
+
+		/// Compute the distance of each input particle from the constructed surface.
+		void computeSurfaceDistances(const SurfaceMeshAccess& mesh);
 
 	private:
 
@@ -142,6 +149,9 @@ private:
 		/// The computed total surface area.
 		double _totalSurfaceArea = 0;
 
+		/// The computed distance of each particle from the constructed surface.
+		PropertyPtr _surfaceDistances;
+
 		/// The list of particle properties to copy over to the generated mesh.
 		std::vector<ConstPropertyPtr> _particleProperties;
 	};
@@ -152,9 +162,9 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleClusters, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
-			_particleClusters(particleClusters),
+		AlphaShapeEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
+			_particleGrains(std::move(particleGrains)),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
@@ -167,8 +177,8 @@ private:
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-		/// Returns the input particle cluster IDs.
-		const ConstPropertyPtr& particleClusters() const { return _particleClusters; }
+		/// Returns the input particle grain IDs.
+		const ConstPropertyPtr& particleGrains() const { return _particleGrains; }
 
 		/// Returns the selection set containing the particles at the constructed surfaces.
 		const PropertyPtr& surfaceParticleSelection() const { return _surfaceParticleSelection; }
@@ -187,8 +197,8 @@ private:
 		/// Controls the identification of disconnected spatial regions (filled and empty).
 		const bool _identifyRegions;
 
-		/// The input particle cluster property.
-		ConstPropertyPtr _particleClusters;
+		/// The input particle grain property.
+		ConstPropertyPtr _particleGrains;
 
 		/// Number of filled regions that have been identified.
 		SurfaceMeshAccess::size_type _filledRegionCount = 0;
@@ -216,8 +226,8 @@ private:
 
 		/// Constructor.
 		GaussianDensityEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
-				FloatType radiusFactor, FloatType isoLevel, int gridResolution, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), std::move(particleProperties)),
+				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
 			_gridResolution(gridResolution),
@@ -276,6 +286,9 @@ private:
 
 	/// The threshold value for constructing the isosurface of the density field (density field method).
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, isoValue, setIsoValue, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls whether the algorithm should compute the shortest distance of each particle from the constructed surface.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeSurfaceDistance, setComputeSurfaceDistance);
 };
 
 }	// End of namespace

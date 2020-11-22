@@ -82,6 +82,9 @@ public:
 	/// Inspects the header of the given file and returns the number of file columns.
 	Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
 
+	/// \brief Guesses the mapping of input file columns to particle properties.
+	static ParticleInputColumnMapping generateAutomaticColumnMapping(const QStringList& columnNames);
+
 private:
 
 	/// The format-specific task object that is responsible for reading an input file.
@@ -135,9 +138,6 @@ protected:
 
 	/// \brief Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
-
-	/// \brief Guesses the mapping of input file columns to particle properties.
-	static ParticleInputColumnMapping generateAutomaticColumnMapping(const QStringList& columnNames);
 
 private:
 
