@@ -35,7 +35,11 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), (void (QButtonGroup::*)(int))&QButtonGroup::buttonClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#endif
 
 	QRadioButton* buttonNo = new QRadioButton();
 	QRadioButton* buttonYes = new QRadioButton();
@@ -50,7 +54,11 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), (void (QButtonGroup::*)(int))&QButtonGroup::buttonClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#endif
 
 	QRadioButton* buttonNo = new QRadioButton();
 	QRadioButton* buttonYes = new QRadioButton();

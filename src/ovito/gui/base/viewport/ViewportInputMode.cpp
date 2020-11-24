@@ -122,7 +122,7 @@ void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEv
 				manager->activeMode()->mousePressEvent(vpwin, event);
 		}
 	}
-	else if(event->button() == Qt::MidButton) {
+	else if(event->button() == Qt::MiddleButton) {
 		activateTemporaryNavigationMode(manager->panMode());
 		if(manager->activeMode() == manager->panMode())
 			manager->activeMode()->mousePressEvent(vpwin, event);

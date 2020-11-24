@@ -40,7 +40,11 @@ ModifierDelegateParameterUI::ModifierDelegateParameterUI(QObject* parent, const 
 	_comboBox(new QComboBox()),
 	_delegateType(delegateType)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
+#else
 	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &ModifierDelegateParameterUI::updatePropertyValue);
+#endif
 }
 
 /******************************************************************************

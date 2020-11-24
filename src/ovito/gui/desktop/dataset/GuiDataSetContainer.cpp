@@ -143,7 +143,6 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 		dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
 		dialog.setAcceptMode(QFileDialog::AcceptSave);
 		dialog.setFileMode(QFileDialog::AnyFile);
-		dialog.setConfirmOverwrite(true);
 		dialog.setDefaultSuffix("ovito");
 
 		QSettings settings;

@@ -67,7 +67,6 @@ SaveImageFileDialog::SaveImageFileDialog(QWidget* parent, const QString& caption
 
 	setNameFilters(filterStrings);
 	setAcceptMode(QFileDialog::AcceptSave);
-	setConfirmOverwrite(true);
 	setLabelText(QFileDialog::FileType, tr("Save as type"));
 	if(_imageInfo.filename().isEmpty() == false)
 		selectFile(_imageInfo.filename());

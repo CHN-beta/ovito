@@ -320,7 +320,7 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
-	if(this->isTrajectoryFormat() == false && nextImporter->isTrajectoryFormat() == true) {
+	if(this->isTrajectoryFormat() == false && nextImporter && nextImporter->isTrajectoryFormat() == true) {
 
 		// Create a new file source for loading the trajectory.
 		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), Application::instance()->executionContext());

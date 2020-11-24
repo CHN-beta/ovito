@@ -37,6 +37,10 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+	#include <QOperatingSystemVersion>
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
@@ -99,50 +103,54 @@ void ActionManager::on_HelpOpenGLInfo_triggered()
 	textEdit->setReadOnly(true);
 	QString text;
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
-	stream << "======= System info =======" << endl;
-	stream << "Date: " << QDateTime::currentDateTime().toString() << endl;
-	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << endl;
-#if defined(Q_OS_MAC)
-	stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << endl;
-#elif defined(Q_OS_WIN)
-	stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << endl;
-#elif defined(Q_OS_LINUX)
-	stream << "OS: Linux" << endl;
+	stream << "======= System info =======\n";
+	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
+	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << "\n";
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+	stream << "OS: " <<  QOperatingSystemVersion::current().name() << "(" << QOperatingSystemVersion::current().majorVersion() << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
+#else
+	#if defined(Q_OS_MAC)
+		stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << "\n";
+	#elif defined(Q_OS_WIN)
+		stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << "\n";
+	#endif
+#endif
+#if defined(Q_OS_LINUX)
 	// Get 'uname' output.
 	QProcess unameProcess;
 	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
 	unameProcess.waitForFinished();
 	QByteArray unameOutput = unameProcess.readAllStandardOutput();
 	unameOutput.replace('\n', ' ');
-	stream << "uname output: " << unameOutput << endl;
+	stream << "uname output: " << unameOutput << "\n";
 	// Get 'lsb_release' output.
 	QProcess lsbProcess;
 	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
 	lsbProcess.waitForFinished();
 	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
 	lsbOutput.replace('\n', ' ');
-	stream << "LSB output: " << lsbOutput << endl;
+	stream << "LSB output: " << lsbOutput << "\n";
 #endif
-	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << endl;
-	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << endl;
-	stream << "Qt version: " << QT_VERSION_STR << endl;
-	stream << "Command line: " << QCoreApplication::arguments().join(' ') << endl;
-	stream << "======= OpenGL info =======" << endl;
+	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << "\n";
+	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << "\n";
+	stream << "Qt version: " << QT_VERSION_STR << "\n";
+	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+	stream << "======= OpenGL info =======" << "\n";
 	const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
-	stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << endl;
-	stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << endl;
-	stream << "Alpha: " << format.hasAlpha() << endl;
-	stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << endl;
-	stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << endl;
-	stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << endl;
-	stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << endl;
-	stream << "Depth buffer size: " << format.depthBufferSize() << endl;
-	stream << "Stencil buffer size: " << format.stencilBufferSize() << endl;
-	stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << endl;
-	stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << endl;
-	stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << endl;
-	stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << endl;
-	stream << "Context sharing enabled: " << (OpenGLSceneRenderer::contextSharingEnabled() ? "yes" : "no") << endl;
+	stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
+	stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+	stream << "Alpha: " << format.hasAlpha() << "\n";
+	stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
+	stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+	stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+	stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
+	stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
+	stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
+	stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
+	stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << "\n";
+	stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+	stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << "\n";
+	stream << "Context sharing enabled: " << (OpenGLSceneRenderer::contextSharingEnabled() ? "yes" : "no") << "\n";
 	if(!text.isEmpty())
 		textEdit->setPlainText(text);
 	else
@@ -316,7 +324,6 @@ void ActionManager::on_FileExport_triggered()
 	dialog.setNameFilters(filterStrings);
 	dialog.setAcceptMode(QFileDialog::AcceptSave);
 	dialog.setFileMode(QFileDialog::AnyFile);
-	dialog.setConfirmOverwrite(true);
 
 	// Go to the last directory used.
 	QString lastExportDirectory = settings.value("last_export_dir").toString();

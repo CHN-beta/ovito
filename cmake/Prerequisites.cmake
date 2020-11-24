@@ -22,8 +22,6 @@
 
 # Tell CMake to run Qt moc whenever necessary.
 SET(CMAKE_AUTOMOC ON)
-# As moc files are generated in the binary dir, tell CMake to always look for includes there.
-SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # The set of required Qt modules:
 LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Core Gui Xml)

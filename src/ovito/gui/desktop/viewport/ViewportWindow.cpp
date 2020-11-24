@@ -417,16 +417,16 @@ void ViewportWindow::renderNow()
 
 			QString openGLReport;
 			QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
-			stream << "OpenGL version: " << context()->format().majorVersion() << QStringLiteral(".") << context()->format().minorVersion() << endl;
-			stream << "OpenGL profile: " << (context()->format().profile() == QSurfaceFormat::CoreProfile ? "core" : (context()->format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << endl;
-			stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << endl;
-			stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << endl;
-			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << endl;
-			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << endl;
-			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << endl;
-			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << endl;
-			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << endl;
-			stream << "Context sharing: " << OpenGLSceneRenderer::contextSharingEnabled() << endl;
+			stream << "OpenGL version: " << context()->format().majorVersion() << QStringLiteral(".") << context()->format().minorVersion() << "\n";
+			stream << "OpenGL profile: " << (context()->format().profile() == QSurfaceFormat::CoreProfile ? "core" : (context()->format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+			stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << "\n";
+			stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << "\n";
+			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
+			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
+			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
+			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << "\n";
+			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << "\n";
+			stream << "Context sharing: " << OpenGLSceneRenderer::contextSharingEnabled() << "\n";
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);
