@@ -162,7 +162,6 @@ void DataTableInspectionApplet::exportDataToFile()
 	dialog.setOption(QFileDialog::DontUseNativeDialog);
 	dialog.setAcceptMode(QFileDialog::AcceptSave);
 	dialog.setFileMode(QFileDialog::AnyFile);
-	dialog.setConfirmOverwrite(true);
 
 	// Go to the last directory used.
 	QSettings settings;

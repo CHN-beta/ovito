@@ -147,9 +147,6 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	unsigned long long timestep;
 	size_t numParticles = 0;
 
@@ -188,7 +185,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 			else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
 
 				// Parse optional boundary condition flags.
-				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")).split(ws_re, QString::SkipEmptyParts);
+				QStringList tokens = FileImporter::splitString(stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")));
 				if(tokens.size() >= 3)
 					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
@@ -215,7 +212,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 			}
 			else if(stream.lineStartsWith("ITEM: BOX BOUNDS")) {
 				// Parse optional boundary condition flags.
-				QStringList tokens = stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")).split(ws_re, QString::SkipEmptyParts);
+				QStringList tokens = FileImporter::splitString(stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")));
 				if(tokens.size() >= 3)
 					simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
@@ -236,7 +233,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 			else if(stream.lineStartsWith("ITEM: ATOMS")) {
 
 				// Read the column names list.
-				QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+				QStringList tokens = FileImporter::splitString(stream.lineString());
 				OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ATOMS");
 				QStringList fileColumnNames = tokens.mid(2);
 
@@ -513,15 +510,14 @@ Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(con
 
 				if(stream.lineStartsWith("ITEM: ATOMS")) {
 					// Read the column names list.
-					QRegularExpression ws_re(QStringLiteral("\\s+"));
-					QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+					QStringList tokens = FileImporter::splitString(stream.lineString());
 					OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ATOMS");
 					QStringList fileColumnNames = tokens.mid(2);
 
 					if(fileColumnNames.isEmpty()) {
 						// If no file columns names are available, count at least the number of columns in the first atom line.
 						stream.readLine();
-						int columnCount = stream.lineString().split(ws_re, QString::SkipEmptyParts).size();
+						int columnCount = FileImporter::splitString(stream.lineString()).size();
 						detectedColumnMapping.resize(columnCount);
 					}
 					else {

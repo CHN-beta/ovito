@@ -390,7 +390,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 	// Set up column-to-property mapping.
 	QStringList fileColumnNames;
 	if(_columnMapping.empty() && !header.columnsString.isEmpty()) {
-		fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
+		fileColumnNames = FileImporter::splitString(QString::fromLatin1(header.columnsString));
 		_columnMapping = LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
 	}
 
@@ -538,7 +538,7 @@ Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(c
 
 			// Parse column names if it is a modern format file.
 			if(!header.columnsString.isEmpty()) {
-				QStringList fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
+				QStringList fileColumnNames = FileImporter::splitString(QString::fromLatin1(header.columnsString));
 				return LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
 			}
 			else {

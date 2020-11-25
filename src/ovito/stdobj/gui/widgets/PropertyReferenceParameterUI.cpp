@@ -41,7 +41,11 @@ PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor
 	_inputProperty(inputProperty),
 	_containerRef(containerClass)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(comboBox(), &QComboBox::textActivated, this, &PropertyReferenceParameterUI::updatePropertyValue);
+#else
 	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &PropertyReferenceParameterUI::updatePropertyValue);
+#endif
 
 	if(!inputProperty)
 		comboBox()->setEditable(true);
@@ -57,7 +61,11 @@ PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor
 	_inputProperty(inputProperty),
 	_containerRef(containerClass)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(comboBox(), &QComboBox::textActivated, this, &PropertyReferenceParameterUI::updatePropertyValue);
+#else
 	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &PropertyReferenceParameterUI::updatePropertyValue);
+#endif
 
 	if(!inputProperty)
 		comboBox()->setEditable(true);

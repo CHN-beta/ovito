@@ -39,7 +39,11 @@ PropertyContainerParameterUI::PropertyContainerParameterUI(QObject* parentEditor
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new QComboBox())
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(comboBox(), &QComboBox::textActivated, this, &PropertyContainerParameterUI::updatePropertyValue);
+#else
 	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &PropertyContainerParameterUI::updatePropertyValue);
+#endif
 }
 
 /******************************************************************************

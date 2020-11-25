@@ -59,14 +59,11 @@ void IMDImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	// Read first header line.
 	stream.readLine();
 	if(!stream.lineStartsWith("#F"))
 		throw Exception(tr("Not an IMD atom file."));
-	QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+	QStringList tokens = FileImporter::splitString(stream.lineString());
 	if(tokens.size() < 2 || tokens[1] != "A")
 		throw Exception(tr("Not an IMD atom file in ASCII format."));
 
@@ -81,7 +78,7 @@ void IMDImporter::FrameLoader::loadFile()
 		if(stream.line()[1] == '#') continue;
 		else if(stream.line()[1] == 'E') break;
 		else if(stream.line()[1] == 'C') {
-			QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+			QStringList tokens = FileImporter::splitString(stream.lineString());
 			columnMapping.resize(std::max(0, tokens.size() - 1));
 			for(int t = 1; t < tokens.size(); t++) {
 				const QString& token = tokens[t];

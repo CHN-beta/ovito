@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
 
-#include <QXmlDefaultHandler>
+#include <QXmlStreamReader>
 
 namespace Ovito { namespace Particles {
 
@@ -71,7 +71,7 @@ public:
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public ParticleImporter::FrameLoader, protected QXmlDefaultHandler
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
@@ -83,37 +83,10 @@ private:
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
 
-		/// Is called by the XML parser whenever a new XML element is read.
-		virtual bool startElement(const QString& namespaceURI, const QString& localName, const QString& qName, const QXmlAttributes& atts) override;
-
-		/// Is called by the XML parser whenever it has parsed an end element tag.
-		virtual bool endElement(const QString& namespaceURI, const QString& localName, const QString& qName) override;
-
-		/// Is called by the XML parser whenever it has parsed a chunk of character data.
-		virtual bool characters(const QString& ch) override;
-
-		/// Is called when a non-recoverable error is encountered during parsing of the XML file.
-		virtual bool fatalError(const QXmlParseException& exception) override;
-
 	private:
 
-		/// The dimensionality of the dataset.
-		int _dimensions = 3;
-
-		/// The number of atoms.
-		size_t _natoms = 0;
-
-		/// The number of bonds.
-		size_t _nbonds = 0;
-
-		/// The particle/bond property which is currently being parsed.
-		PropertyObject* _currentProperty = nullptr;
-
-		/// Buffer for text data read from XML file.
-		QString _characterData;
-
-		/// The number of <configuration> elements that have been parsed so far.
-		size_t _numConfigurationsRead = 0;
+		/// Parses the contents of an XML element and stores the parsed values in a target property.
+		PropertyObject* parsePropertyData(QXmlStreamReader& xml, PropertyObject* property);
 	};
 };
 

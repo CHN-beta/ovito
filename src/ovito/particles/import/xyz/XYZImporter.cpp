@@ -233,9 +233,6 @@ void XYZImporter::FrameLoader::loadFile()
 	setParticleCount(numParticlesLong);
 	setProgressMaximum(numParticlesLong);
 
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	// Extract some useful information from the comment line.
 	stream.readLine();
 	bool hasSimulationCell = false;
@@ -256,7 +253,7 @@ void XYZImporter::FrameLoader::loadFile()
 	else if((index = commentLine.indexOf("boxsize")) >= 0)
 		remainder = commentLine.mid(index + 7).trimmed();
 	if(!remainder.isEmpty()) {
-		QStringList list = remainder.split(ws_re);
+		QStringList list = FileImporter::splitString(remainder);
 		if(list.size() >= 3) {
 			bool ok1, ok2, ok3;
 			FloatType sx = (FloatType)list[0].toDouble(&ok1);
@@ -276,7 +273,7 @@ void XYZImporter::FrameLoader::loadFile()
 
 		QString latticeStr = commentLine.mid(index + 9);
 		latticeStr.truncate(latticeStr.indexOf("\""));
-		QStringList list = latticeStr.split(ws_re, QString::SkipEmptyParts);
+		QStringList list = FileImporter::splitString(latticeStr);
 		if(list.size() >= 9) {
 			for(int k = 0; k < 3; k++)
 				cellVector1[k] = (FloatType)list[k].toDouble();
@@ -291,7 +288,7 @@ void XYZImporter::FrameLoader::loadFile()
 		if(origin_index1 >= 0 || origin_index2 >= 0) {
 			QString cellOriginStr = commentLine.mid((origin_index1 >= 0) ? (origin_index1+13) : (origin_index2+8));
 			cellOriginStr.truncate(cellOriginStr.indexOf(QStringLiteral("\"")));
-			QStringList list = cellOriginStr.split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(cellOriginStr);
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellOrigin[k] = (FloatType)list[k].toDouble();
 		}
@@ -350,22 +347,22 @@ void XYZImporter::FrameLoader::loadFile()
 		// XYZ file written by Parcas MD code contain simulation cell info in comment line.
 
 		if((index = commentLine.indexOf("cell_orig ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellOrigin[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec1 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector1[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec2 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector2[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec3 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector3[k] = (FloatType)list[k].toDouble();
 		}
@@ -377,14 +374,14 @@ void XYZImporter::FrameLoader::loadFile()
 	}
 
 	if((index = commentLine.indexOf("pbc ")) >= 0) {
-		QStringList list = commentLine.mid(index + 4).split(ws_re);
+		QStringList list = FileImporter::splitString(commentLine.mid(index + 4));
 		simulationCell()->setPbcFlags((bool)list[0].toInt(), (bool)list[1].toInt(), (bool)list[2].toInt());
 	}
 	else if((index = commentLine.indexOf("pbc=\"")) >= 0) {
 		// Look for Extended XYZ PBC keyword
 		QString pbcStr = commentLine.mid(index + 5);
 		pbcStr.truncate(pbcStr.indexOf("\""));
-		QStringList list = pbcStr.split(ws_re);
+		QStringList list = FileImporter::splitString(pbcStr);
 		int pbcFlags[3] = {0, 0, 0};
 		for(int i=0; i < list.size() && i < 3; i++) {
 			QByteArray ba = list[i].toLatin1();
@@ -558,9 +555,6 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 			stream.readLine();
 			QString fileExcerpt = stream.lineString();
 
-			// Regular expression for whitespace characters.
-			QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 			// Parse the comment line.
 			stream.readLine();
 			QString commentLine = stream.lineString();
@@ -577,7 +571,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 			if(!stream.eof()) 
 				fileExcerpt += QStringLiteral("...\n");
 
-			detectedColumnMapping.resize(stream.lineString().split(ws_re, QString::SkipEmptyParts).size());
+			detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
 			detectedColumnMapping.setFileExcerpt(fileExcerpt);
 
 			// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume

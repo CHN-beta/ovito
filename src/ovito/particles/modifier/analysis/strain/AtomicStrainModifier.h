@@ -117,7 +117,7 @@ private:
 		const PropertyPtr& stretchTensors() const { return _stretchTensors; }
 
 		/// Returns the number of invalid particles for which the strain tensor could not be computed.
-		size_t numInvalidParticles() const { return _numInvalidParticles.load(); }
+		size_t numInvalidParticles() const { return _numInvalidParticles.loadAcquire(); }
 
 		/// Increments the invalid particle counter by one.
 		void addInvalidParticle() { _numInvalidParticles.fetchAndAddRelaxed(1); }

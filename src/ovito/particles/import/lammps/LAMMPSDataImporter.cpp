@@ -341,7 +341,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				while(*start && *start != '#') start++;
 				QString atomTypeName;
 				if(*start) {
-					QStringList words = QString::fromLocal8Bit(start).split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+					QStringList words = FileImporter::splitString(QString::fromLocal8Bit(start));
 					if(words.size() == 2)
 						atomTypeName = words[1];
 				}
@@ -592,14 +592,12 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 ******************************************************************************/
 bool LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyle& atomStyle, std::vector<LAMMPSAtomStyle>& atomSubStyles)
 {
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	// Data files may contain a comment string after the 'Atoms' keyword indicating the LAMMPS atom style.
 	QString atomStyleHint;
 	QStringList atomSubStyleHints;
 	int commentStart = keywordLine.indexOf('#');
 	if(commentStart != -1) {
-		QStringList tokens = QString::fromLatin1(keywordLine.data() + commentStart).split(ws_re, QString::SkipEmptyParts);
+		QStringList tokens = FileImporter::splitString(QString::fromLatin1(keywordLine.data() + commentStart));
 		if(tokens.size() >= 2) {
 			atomStyleHint = tokens[1];
 			atomSubStyleHints = tokens.mid(2);
@@ -610,7 +608,7 @@ bool LAMMPSDataImporter::detectAtomStyle(const char* firstLine, const QByteArray
 	QString str = QString::fromLatin1(firstLine);
 	commentStart = str.indexOf(QChar('#'));
 	if(commentStart >= 0) str.truncate(commentStart);
-	QStringList tokens = str.split(ws_re, QString::SkipEmptyParts);
+	QStringList tokens = FileImporter::splitString(str);
 	int count = tokens.size();
 
 	if((atomStyle == AtomStyle_Unknown || atomStyle == AtomStyle_Hybrid) && !atomStyleHint.isEmpty()) {

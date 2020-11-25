@@ -163,12 +163,12 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 	_predefTypesTable->setRootIsDecorated(true);
 	_predefTypesTable->setAllColumnsShowFocus(true);
 	_predefTypesTable->addTopLevelItem(_particleTypesItem);
-	_predefTypesTable->setFirstItemColumnSpanned(_particleTypesItem, true);
 	_predefTypesTable->addTopLevelItem(_structureTypesItem);
-	_predefTypesTable->setFirstItemColumnSpanned(_structureTypesItem, true);
 	_predefTypesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_predefTypesTable->setEditTriggers(QAbstractItemView::AllEditTriggers);
 	_predefTypesTable->setColumnWidth(0, 280);
+	_particleTypesItem->setFirstColumnSpanned(true);
+	_structureTypesItem->setFirstColumnSpanned(true);
 
 	NameColumnDelegate* nameDelegate = new NameColumnDelegate(this);
 	_predefTypesTable->setItemDelegateForColumn(0, nameDelegate);

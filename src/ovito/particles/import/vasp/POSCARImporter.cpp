@@ -65,7 +65,7 @@ bool POSCARImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 	int nAtomTypes = 0;
 	for(int i = 0; i < 2; i++) {
 		stream.readLine();
-		QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+		QStringList tokens = FileImporter::splitString(stream.lineString());
 		if(i == 0) nAtomTypes = tokens.size();
 		else if(nAtomTypes != tokens.size())
 			return false;
@@ -227,7 +227,7 @@ void POSCARImporter::FrameLoader::loadFile()
 		// The file might be in VASP 4.x format, which is the format written by ASE's write_vasp() function.
 		// Files of this format contain the chemical element names in the comment line (very first line of the file).
 		QRegularExpression ws_re(QStringLiteral("\\s+"));
-		QStringList tokens = trimmedComment.split(ws_re, QString::SkipEmptyParts);
+		QStringList tokens = FileImporter::splitString(trimmedComment);
 		// Number of tokens must match the number of atom types.
 		if(tokens.size() == atomCounts.size()) {
 			// Each token should be a one- or two-letter chemical symbol.
@@ -317,12 +317,9 @@ void POSCARImporter::FrameLoader::loadFile()
 ******************************************************************************/
 void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, QStringList& atomTypeNames, QVector<int>& atomCounts)
 {
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	for(int i = 0; i < 2; i++) {
 		stream.readLine();
-		QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+		QStringList tokens = FileImporter::splitString(stream.lineString());
 		// Try to convert string tokens to integers.
 		atomCounts.clear();
 		bool ok = true;
