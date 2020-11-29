@@ -172,19 +172,16 @@ ELSE()
 	MESSAGE("zlib library not found. OVITO will be built without I/O support for gzip compressed data files.")
 ENDIF()
 
-# Compile Qt resources, which will be linked into the executable.
-QT5_ADD_RESOURCES(ResourceFiles resources/core.qrc)
-
 # Define library target.
 OVITO_STANDARD_PLUGIN(Core
-	SOURCES ${SourceFiles} ${ResourceFiles}
+	SOURCES ${SourceFiles} resources/core.qrc
 	LIB_DEPENDENCIES Boost::boost
 	PRECOMPILED_HEADERS Core.h
 )
 
 IF(NOT EMSCRIPTEN)
 	# Qt Network module is used by the Core module, except in the wasm build.
-	TARGET_LINK_LIBRARIES(Core PUBLIC Qt5::Network)
+	TARGET_LINK_LIBRARIES(Core PUBLIC Qt::Network)
 ENDIF()
 
 # Link to zlib.

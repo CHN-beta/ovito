@@ -46,7 +46,7 @@ SET_TARGET_PROPERTIES(Ovito PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${OVITO_BINARY_
 SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "${APPNAME}")
 
 # Link Qt5.
-TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt5::Core Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2 Qt5::QuickTemplates2 Qt5::Svg)
+TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt::Core Qt::Gui Qt::Qml Qt::Quick Qt::QuickControls2 Qt::QuickTemplates2 Qt::Svg)
 
 IF(EMSCRIPTEN)
 	# Link to missing Qt libraries (the order does matter).

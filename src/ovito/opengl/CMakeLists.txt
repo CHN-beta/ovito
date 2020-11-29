@@ -20,10 +20,6 @@
 #
 #######################################################################################
 
-# Compile resources.
-QT5_ADD_RESOURCES(ResourceFiles resources/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-QT5_ADD_RESOURCES(ResourceFilesGLES resources_gles/opengl_gles.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer
 	SOURCES
@@ -37,8 +33,8 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLSharedResource.cpp
 		OpenGLSceneRenderer.cpp
 		StandardSceneRenderer.cpp
-		${ResourceFiles}
-		${ResourceFilesGLES}
+		resources/opengl.qrc
+		resources_gles/opengl_gles.qrc
 )
 
 IF(NOT OVITO_BUILD_WEBGUI AND NOT OVITO_BUILD_CONDA)

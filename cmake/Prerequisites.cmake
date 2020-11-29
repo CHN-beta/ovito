@@ -43,10 +43,13 @@ IF(OVITO_BUILD_WEBGUI)
 	ENDIF()
 ENDIF()
 
-# Find the required Qt5 modules.
-FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-	FIND_PACKAGE(Qt5${component} REQUIRED)
-ENDFOREACH()
+# Find the required Qt modules.
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	FIND_PACKAGE(Qt6 6.0 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
+ELSE()
+	FIND_PACKAGE(Qt5 5.15 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
+	SET(OVITO_QT_MAJOR_VERSION "Qt5")
+ENDIF()
 
 # This macro installs a third-party shared library or DLL in the OVITO program directory
 # so that it can be distributed together with the program.
@@ -118,14 +121,14 @@ FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 	ENDIF()
 ENDFUNCTION()
 
-# Ship the required Qt5 libraries with the program package.
+# Ship the required Qt libraries with the program package.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
 	# Install copies of the Qt libraries.
 	FILE(MAKE_DIRECTORY "${OVITO_LIBRARY_DIRECTORY}/lib")
 	FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		GET_TARGET_PROPERTY(lib Qt5::${component} LOCATION)
-		GET_TARGET_PROPERTY(lib_soname Qt5::${component} IMPORTED_SONAME_RELEASE)
+		GET_TARGET_PROPERTY(lib ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION)
+		GET_TARGET_PROPERTY(lib_soname ${OVITO_QT_MAJOR_VERSION}::${component} IMPORTED_SONAME_RELEASE)
 		CONFIGURE_FILE("${lib}" "${OVITO_LIBRARY_DIRECTORY}" COPYONLY)
 		GET_FILENAME_COMPONENT(lib_realname "${lib}" NAME)
 		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${lib_realname}" "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}")
@@ -174,7 +177,10 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_PYTHON_PACKAGE AND NOT OVITO_BUILD_CONDA)
 	# On Windows, the third-party library DLLs need to be installed in the OVITO directory.
 	# Gather Qt dynamic link libraries.
 	FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		GET_TARGET_PROPERTY(dll Qt5::${component} LOCATION_${CMAKE_BUILD_TYPE})
+		GET_TARGET_PROPERTY(dll Qt6::${component} LOCATION_${CMAKE_BUILD_TYPE})
+		IF(NOT TARGET ${OVITO_QT_MAJOR_VERSION}::${component} OR NOT dll)
+			MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: ${OVITO_QT_MAJOR_VERSION}::${component}")
+		ENDIF()
 		OVITO_INSTALL_SHARED_LIB("${dll}" ".")
 		IF(${component} MATCHES "Core")
 			GET_FILENAME_COMPONENT(QtBinaryPath ${dll} PATH)

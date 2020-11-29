@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Compile Qt resources to be embedded into the executable.
-QT5_ADD_RESOURCES(ResourceFiles resources/stdobj_gui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdObjGui
 	SOURCES
@@ -40,7 +37,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
 		widgets/PropertyReferenceParameterUI.cpp
 		widgets/PropertySelectionComboBox.cpp
 		widgets/DataTablePlotWidget.cpp
-		${ResourceFiles}
+		resources/stdobj_gui.qrc
 	PLUGIN_DEPENDENCIES StdObj
 	LIB_DEPENDENCIES Qwt
 	PRECOMPILED_HEADERS StdObjGui.h

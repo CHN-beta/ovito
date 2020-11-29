@@ -112,8 +112,13 @@ ADD_LIBRARY(Qwt SHARED ${QWT_SOURCE_FILES})
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(Qwt PROPERTIES OUTPUT_NAME "ovito_qwt")
 
-# Link to Qt5.
-TARGET_LINK_LIBRARIES(Qwt PUBLIC Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport Qt5::Concurrent)
+# Link to Qt.
+TARGET_LINK_LIBRARIES(Qwt PUBLIC 
+	${OVITO_QT_MAJOR_VERSION}::Core 
+	${OVITO_QT_MAJOR_VERSION}::Gui 
+	${OVITO_QT_MAJOR_VERSION}::Widgets 
+	${OVITO_QT_MAJOR_VERSION}::PrintSupport 
+	${OVITO_QT_MAJOR_VERSION}::Concurrent)
 
 # Some compile time flags for Qwt.
 TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL QWT_MAKEDLL)

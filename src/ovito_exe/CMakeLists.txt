@@ -60,13 +60,13 @@ ENDIF()
 SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
 
 # Link Qt5.
-TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt5::Core Qt5::Gui)
+TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt::Core Qt::Gui)
 
 # Under Linux, Qt's Xcb platform plugin will dynamically load the DBus Qt module.
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt5::DBus)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt::DBus)
 ENDIF()
 
 SET_TARGET_PROPERTIES(Ovito PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)

@@ -20,13 +20,10 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/stdmodgui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdModGui
 	SOURCES
-		${ResourceFiles}
+		resources/stdmodgui.qrc
 	PLUGIN_DEPENDENCIES 
 		StdMod
 	GUI_PLUGIN

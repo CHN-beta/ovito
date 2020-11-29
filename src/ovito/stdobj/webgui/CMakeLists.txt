@@ -20,13 +20,10 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/stdobjgui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdObjGui
 	SOURCES
-		${ResourceFiles}
+		resources/stdobjgui.qrc
 	PLUGIN_DEPENDENCIES 
 		StdObj
 	GUI_PLUGIN

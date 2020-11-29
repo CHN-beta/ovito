@@ -60,7 +60,7 @@ OVITO_STANDARD_PLUGIN(Mesh
 		${GLUSourceFiles}
 	PLUGIN_DEPENDENCIES StdObj
 	PRECOMPILED_HEADERS Mesh.h
-	LIB_DEPENDENCIES Qt5::Xml
+	LIB_DEPENDENCIES Qt::Xml
 )
 
 # Polytess code does not support unity build. Need to turn it off.

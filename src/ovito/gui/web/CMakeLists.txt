@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/gui.qrc)
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(GuiWeb
 	SOURCES
@@ -37,16 +34,16 @@ OVITO_STANDARD_PLUGIN(GuiWeb
 		properties/ParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
 		viewport/ViewportWindow.cpp
-		${ResourceFiles}
+		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		Qt5::Qml Qt5::Quick Qt5::QuickControls2 Qt5::QuickTemplates2
+		Qt::Qml Qt::Quick Qt::QuickControls2 Qt::QuickTemplates2
 	PRECOMPILED_HEADERS 
 		GUIWeb.h
 )
 
 IF(NOT EMSCRIPTEN)
-	TARGET_LINK_LIBRARIES(GuiWeb PRIVATE Qt5::Widgets)
+	TARGET_LINK_LIBRARIES(GuiWeb PRIVATE Qt::Widgets)
 ENDIF()

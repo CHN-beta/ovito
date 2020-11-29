@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/gui.qrc)
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Gui
 	SOURCES
@@ -129,13 +126,13 @@ OVITO_STANDARD_PLUGIN(Gui
 		app/GuiApplicationService.cpp
 		utilities/io/GuiFileManager.cpp
 		utilities/concurrent/ProgressDialog.cpp
-		${ResourceFiles}
+		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		Qt5::Widgets 
-		Qt5::Network
+		Qt::Widgets 
+		Qt::Network
 	PRECOMPILED_HEADERS
 		GUI.h
 )

@@ -20,16 +20,13 @@
 #
 #######################################################################################
 
-# Compile resources.
-QT5_ADD_RESOURCES(ResourceFiles resources/mesh_gui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(MeshGui
 	SOURCES
 		tri/TriMeshVisEditor.cpp
 		surface/SurfaceMeshVisEditor.cpp
 		surface/SurfaceMeshInspectionApplet.cpp
-		${ResourceFiles}
+		resources/mesh_gui.qrc
 	PLUGIN_DEPENDENCIES Mesh StdObjGui
 	GUI_PLUGIN
 	HAS_NO_EXPORTS

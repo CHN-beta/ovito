@@ -86,17 +86,17 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	IF(${ARG_GUI_PLUGIN})
 		IF(OVITO_BUILD_GUI)
 			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Gui)
-			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Widgets)
+			TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
 		ELSEIF(OVITO_BUILD_WEBGUI)
 			TARGET_LINK_LIBRARIES(${target_name} PUBLIC GuiWeb)
-			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Qml Qt5::Quick Qt5::QuickControls2 Qt5::QuickTemplates2)
+			TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2)
 		ELSE()
 			MESSAGE(FATAL_ERROR "Cannot build plugin ${target_name} marked as GUI_PLUGIN if building the GUI has been completely disabled.")
 		ENDIF()
 	ENDIF()
 
-	# Link to Qt5 libs.
-	TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Core Qt5::Gui)
+	# Link to Qt libs.
+	TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui)
 
 	# Link to other third-party libraries needed by this specific plugin.
 	TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${lib_dependencies})

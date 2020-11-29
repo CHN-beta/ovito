@@ -123,7 +123,7 @@ OVITO_STANDARD_PLUGIN(Particles
 	PRIVATE_LIB_DEPENDENCIES VoroPlusPlus OpenGLRenderer PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Particles.h
-	LIB_DEPENDENCIES Qt5::Xml
+	LIB_DEPENDENCIES Qt::Xml
 )
 
 # Build corresponding GUI plugin.

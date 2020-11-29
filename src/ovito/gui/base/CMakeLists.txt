@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/guibase.qrc)
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(GuiBase
 	SOURCES
@@ -33,7 +30,7 @@ OVITO_STANDARD_PLUGIN(GuiBase
 		viewport/ViewportInputMode.cpp
 		viewport/NavigationModes.cpp
 		viewport/SelectionMode.cpp
-		${ResourceFiles}
+		resources/guibase.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 	PRECOMPILED_HEADERS

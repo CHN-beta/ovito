@@ -20,13 +20,10 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/particlesgui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(ParticlesGui
 	SOURCES
-		${ResourceFiles}
+		resources/particlesgui.qrc
 	PLUGIN_DEPENDENCIES 
 		Particles
 	GUI_PLUGIN
