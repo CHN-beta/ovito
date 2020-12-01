@@ -155,6 +155,7 @@ bool Application::initialize()
 	qRegisterMetaType<OORef<OvitoObject>>("OORef<OvitoObject>");
 
 	// Register Qt stream operators for basic types.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<Vector2>("Ovito::Vector2");
 	qRegisterMetaTypeStreamOperators<Vector3>("Ovito::Vector3");
 	qRegisterMetaTypeStreamOperators<Vector4>("Ovito::Vector4");
@@ -170,6 +171,7 @@ bool Application::initialize()
 	qRegisterMetaTypeStreamOperators<Quaternion>("Ovito::Quaternion");
 	qRegisterMetaTypeStreamOperators<Color>("Ovito::Color");
 	qRegisterMetaTypeStreamOperators<ColorA>("Ovito::ColorA");
+#endif
 
 	// Register Qt conversion operators for custom types.
 	QMetaType::registerConverter<QColor, Color>();

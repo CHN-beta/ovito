@@ -10,40 +10,42 @@
 #include "qwt_text.h"
 #include "qwt_painter.h"
 #include "qwt_text_engine.h"
+#include "qwt_math.h"
+
 #include <qmap.h>
 #include <qfont.h>
 #include <qcolor.h>
 #include <qpen.h>
 #include <qbrush.h>
 #include <qpainter.h>
-#include <qapplication.h>
-#include <qdesktopwidget.h>
-#include <qmath.h>
 
-class QwtTextEngineDict
+namespace
 {
-public:
-    static QwtTextEngineDict &dict();
-
-    void setTextEngine( QwtText::TextFormat, QwtTextEngine * );
-
-    const QwtTextEngine *textEngine( QwtText::TextFormat ) const;
-    const QwtTextEngine *textEngine( const QString &,
-        QwtText::TextFormat ) const;
-
-private:
-    QwtTextEngineDict();
-    ~QwtTextEngineDict();
-
-    typedef QMap<int, QwtTextEngine *> EngineMap;
-
-    inline const QwtTextEngine *engine( EngineMap::const_iterator &it ) const
+    class QwtTextEngineDict
     {
-        return it.value();
-    }
+    public:
+        static QwtTextEngineDict &dict();
 
-    EngineMap d_map;
-};
+        void setTextEngine( QwtText::TextFormat, QwtTextEngine * );
+
+        const QwtTextEngine *textEngine( QwtText::TextFormat ) const;
+        const QwtTextEngine *textEngine( const QString &,
+            QwtText::TextFormat ) const;
+
+    private:
+        QwtTextEngineDict();
+        ~QwtTextEngineDict();
+
+        typedef QMap<int, QwtTextEngine *> EngineMap;
+
+        inline const QwtTextEngine *engine( EngineMap::const_iterator &it ) const
+        {
+            return it.value();
+        }
+
+        EngineMap d_map;
+    };
+}
 
 QwtTextEngineDict &QwtTextEngineDict::dict()
 {
@@ -138,8 +140,6 @@ public:
         borderRadius( 0 ),
         borderPen( Qt::NoPen ),
         backgroundBrush( Qt::NoBrush ),
-        paintAttributes( 0 ),
-        layoutAttributes( 0 ),
         textEngine( NULL )
     {
     }
@@ -169,6 +169,17 @@ public:
     QFont font;
     QSizeF textSize;
 };
+
+/*!
+   Constructor
+*/
+QwtText::QwtText()
+{
+    d_data = new PrivateData;
+    d_data->textEngine = textEngine( d_data->text, PlainText );
+
+    d_layoutCache = new LayoutCache;
+}
 
 /*!
    Constructor
@@ -363,7 +374,7 @@ QColor QwtText::usedColor( const QColor &defaultColor ) const
 */
 void QwtText::setBorderRadius( double radius )
 {
-    d_data->borderRadius = qMax( 0.0, radius );
+    d_data->borderRadius = qwtMaxF( 0.0, radius );
 }
 
 /*!
@@ -479,6 +490,18 @@ bool QwtText::testLayoutAttribute( LayoutAttribute attribute ) const
 /*!
    Find the height for a given width
 
+   \param width Width
+   \return Calculated height
+*/
+
+double QwtText::heightForWidth( double width ) const
+{
+    return heightForWidth( width, QFont() );
+}
+
+/*!
+   Find the height for a given width
+
    \param defaultFont Font, used for the calculation if the text has no font
    \param width Width
 
@@ -489,7 +512,7 @@ double QwtText::heightForWidth( double width, const QFont &defaultFont ) const
     // We want to calculate in screen metrics. So
     // we need a font that uses screen metrics
 
-    const QFont font( usedFont( defaultFont ), QApplication::desktop() );
+    const QFont font = QwtPainter::scaledFont( usedFont( defaultFont ) );
 
     double h = 0;
 
@@ -517,6 +540,16 @@ double QwtText::heightForWidth( double width, const QFont &defaultFont ) const
 /*!
    Returns the size, that is needed to render text
 
+   \return Calculated size
+*/
+QSizeF QwtText::textSize() const
+{
+    return textSize( QFont() );
+}
+
+/*!
+   Returns the size, that is needed to render text
+
    \param defaultFont Font of the text
    \return Calculated size
 */
@@ -525,7 +558,7 @@ QSizeF QwtText::textSize( const QFont &defaultFont ) const
     // We want to calculate in screen metrics. So
     // we need a font that uses screen metrics
 
-    const QFont font( usedFont( defaultFont ), QApplication::desktop() );
+    const QFont font = QwtPainter::scaledFont( usedFont( defaultFont ) );
 
     if ( !d_layoutCache->textSize.isValid()
         || d_layoutCache->font != font )
@@ -600,7 +633,7 @@ void QwtText::draw( QPainter *painter, const QRectF &rect ) const
         // We want to calculate in screen metrics. So
         // we need a font that uses screen metrics
 
-        const QFont font( painter->font(), QApplication::desktop() );
+        const QFont font = QwtPainter::scaledFont( painter->font() );
 
         double left, right, top, bottom;
         d_data->textEngine->textMargins(
@@ -671,3 +704,16 @@ const QwtTextEngine *QwtText::textEngine( QwtText::TextFormat format )
 {
     return  QwtTextEngineDict::dict().textEngine( format );
 }
+
+//! \return text().isNull()
+bool QwtText::isNull() const
+{
+    return d_data->text.isNull();
+}
+
+//! \return text().isEmpty()
+bool QwtText::isEmpty() const
+{
+    return d_data->text.isEmpty();
+}
+

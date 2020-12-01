@@ -26,6 +26,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/rendering/PickingSceneRenderer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -200,7 +201,7 @@ void ViewportWindow::mousePressEvent(QMouseEvent* event)
 	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
 
 	// Intercept mouse clicks on the viewport caption.
-	if(_contextMenuArea.contains(event->localPos())) {
+	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event))) {
 		showViewportMenu(event->pos());
 		return;
 	}
@@ -241,11 +242,11 @@ void ViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void ViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-	if(_contextMenuArea.contains(event->localPos()) && !_cursorInContextMenuArea) {
+	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea) {
 		_cursorInContextMenuArea = true;
 		viewport()->updateViewport();
 	}
-	else if(!_contextMenuArea.contains(event->localPos()) && _cursorInContextMenuArea) {
+	else if(!_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
 		_cursorInContextMenuArea = false;
 		viewport()->updateViewport();
 	}

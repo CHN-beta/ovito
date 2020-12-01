@@ -100,7 +100,7 @@ Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& 
 		settings.beginGroup("bonds/defaults/color");
 		settings.beginGroup(QString::number((int)typeClass));
 		QVariant v = settings.value(bondTypeName);
-		if(v.isValid() && v.type() == QVariant::Color)
+		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
 			return v.value<Color>();
 	}
 

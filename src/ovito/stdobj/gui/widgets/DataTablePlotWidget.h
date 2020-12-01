@@ -29,6 +29,7 @@
 
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_scale_draw.h>
+#include <qwt/qwt_text.h>
 
 class QwtPlotCurve;
 class QwtPlotLegendItem;

@@ -215,7 +215,7 @@ Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, con
 		settings.beginGroup("particles/defaults/color");
 		settings.beginGroup(QString::number((int)typeClass));
 		QVariant v = settings.value(particleTypeName);
-		if(v.isValid() && v.type() == QVariant::Color)
+		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
 			return v.value<Color>();
 	}
 

@@ -99,8 +99,8 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
 			for(const PropertyObject* prop : particles->properties()) {
 				inputParticleProperties.push_back(prop);
 			}
-			registerPropertyVariables(inputParticleProperties, 1, "@1.");
-			registerPropertyVariables(inputParticleProperties, 2, "@2.");
+			registerPropertyVariables(inputParticleProperties, 1, _T("@1."));
+			registerPropertyVariables(inputParticleProperties, 2, _T("@2."));
 		}
 	}
 }

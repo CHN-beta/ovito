@@ -120,7 +120,7 @@ public:
 	virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
 		_fence.clear();
 		if(event->button() == Qt::LeftButton) {
-			_fence.push_back(Point2(event->localPos().x(), event->localPos().y())
+			_fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
 					* (FloatType)vpwin->devicePixelRatio());
 			vpwin->viewport()->updateViewport();
 		}
@@ -130,7 +130,7 @@ public:
 	/// Handles the mouse move events for a Viewport.
 	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
 		if(!_fence.isEmpty()) {
-			_fence.push_back(Point2(event->localPos().x(), event->localPos().y())
+			_fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
 					* (FloatType)vpwin->devicePixelRatio());
 			vpwin->viewport()->updateViewport();
 		}

@@ -28,7 +28,7 @@
 namespace Ovito {
 
 // The global mutex used to serialize access to the NetCDF library functions.
-QMutex NetCDFExclusiveAccess::_netcdfMutex(QMutex::Recursive);
+QRecursiveMutex NetCDFExclusiveAccess::_netcdfMutex;
 
 /******************************************************************************
 * Constructor, which blocks until exclusive access to the NetCDF functions is

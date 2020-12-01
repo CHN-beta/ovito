@@ -1244,7 +1244,7 @@ QString ParticlePickInfo::particleInfoString(const PipelineFlowState& pipelineSt
 				}
 			}
 			else {
-				str += QStringLiteral("<%1>").arg(QMetaType::typeName(property->dataType()) ? QMetaType::typeName(property->dataType()) : "unknown");
+				str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
 			}
 		}
 	}

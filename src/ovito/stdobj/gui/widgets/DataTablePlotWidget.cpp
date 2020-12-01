@@ -152,7 +152,7 @@ void DataTablePlotWidget::updateDataPlot()
 	if(showLegend) {
 		if(!_legend) {
 			_legend = new QwtPlotLegendItem();
-			_legend->setAlignment(Qt::AlignRight | Qt::AlignTop);
+			_legend->setAlignmentInCanvas(Qt::AlignRight | Qt::AlignTop);
 			_legend->attach(this);
 		}
 	}
@@ -181,7 +181,7 @@ void DataTablePlotWidget::updateDataPlot()
 
 		// Set legend titles.
 		for(size_t cmpnt = 0; cmpnt < colCount; cmpnt++) {
-			if(cmpnt < y->componentNames().size())
+			if(cmpnt < (size_t)y->componentNames().size())
 				_spectroCurves[cmpnt]->setTitle(y->componentNames()[cmpnt]);
 			else
 				_spectroCurves[cmpnt]->setTitle(tr("Component %1").arg(cmpnt+1));
@@ -242,7 +242,7 @@ void DataTablePlotWidget::updateDataPlot()
 
 		// Set legend titles.
 		for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
-			if(cmpnt < y->componentNames().size())
+			if(cmpnt < (size_t)y->componentNames().size())
 				_curves[cmpnt]->setTitle(y->componentNames()[cmpnt]);
 			else
 				_curves[cmpnt]->setTitle(tr("Component %1").arg(cmpnt+1));

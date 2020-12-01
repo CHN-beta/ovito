@@ -234,9 +234,9 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		// Determine the maximum cluster ID.
 		qlonglong maxGrainId = 0;
 		if(particleGrains()->size() != 0) {
-			maxGrainId = qBound<qlonglong>(0, 
+			maxGrainId = qBound((qlonglong)0, 
 				*boost::max_element(ConstPropertyAccess<qlonglong>(particleGrains())), 
-				std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1);
+				static_cast<qlonglong>(std::numeric_limits<SurfaceMeshAccess::region_index>::max() - 1));
 		}
 
 		// Create one region in the output mesh for each particle grain.

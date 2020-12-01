@@ -163,7 +163,7 @@ void CreateBondsModifier::initializeModifier(ModifierApplication* modApp)
 ******************************************************************************/
 const ElementType* CreateBondsModifier::lookupParticleType(const PropertyObject* typeProperty, const QVariant& typeSpecification)
 {
-	if(typeSpecification.type() == QVariant::Int) {
+	if(getQVariantTypeId(typeSpecification) == QMetaType::Int) {
 		return typeProperty->elementType(typeSpecification.toInt());
 	}
 	else {

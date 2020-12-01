@@ -86,7 +86,7 @@ Color ElementType::getDefaultColor(int typeClass, const QString& typeName, int t
 		settings.beginGroup("defaults/color");
 		settings.beginGroup(QString::number(typeClass));
 		QVariant v = settings.value(typeName);
-		if(v.isValid() && v.type() == QVariant::Color)
+		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
 			return v.value<Color>();
 	}
 

@@ -30,6 +30,16 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+/// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
+/// The < operator for QVraiant has been removed in Qt 6. Redefining it here is an ugly hack and should be 
+/// solved in a different way in the future.
+inline bool operator<(const QVariant& a, const QVariant& b) {
+	return a.toString() < b.toString();
+}
+#endif
+
 namespace Ovito { namespace Particles {
 
 /**
@@ -65,7 +75,7 @@ public:
 	Q_ENUMS(CutoffMode);
 
 	/// The container type used to store the pair-wise cutoffs.
-	typedef QMap<QPair<QVariant,QVariant>, FloatType> PairwiseCutoffsList;
+	using PairwiseCutoffsList = QMap<QPair<QVariant,QVariant>, FloatType>;
 
 private:
 

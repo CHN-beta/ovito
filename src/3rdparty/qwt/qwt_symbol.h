@@ -11,16 +11,17 @@
 #define QWT_SYMBOL_H
 
 #include "qwt_global.h"
+
 #include <qpolygon.h>
+#include <qpen.h>
+#include <qbrush.h>
 
 class QPainter;
-class QRect;
 class QSize;
 class QBrush;
 class QPen;
 class QColor;
 class QPointF;
-class QPolygonF;
 class QPainterPath;
 class QPixmap;
 class QByteArray;
@@ -164,7 +165,7 @@ public:
     };
 
 public:
-    QwtSymbol( Style = NoSymbol );
+    explicit QwtSymbol( Style = NoSymbol );
     QwtSymbol( Style, const QBrush &, const QPen &, const QSize & );
     QwtSymbol( const QPainterPath &, const QBrush &, const QPen & );
 
@@ -222,9 +223,7 @@ protected:
         const QPointF *, int numPoints ) const;
 
 private:
-    // Disabled copy constructor and operator=
-    QwtSymbol( const QwtSymbol & );
-    QwtSymbol &operator=( const QwtSymbol & );
+    Q_DISABLE_COPY(QwtSymbol)
 
     class PrivateData;
     PrivateData *d_data;

@@ -40,7 +40,6 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 	OVITO_ASSERT_MSG(dataType == PropertyObject::Int || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
 	OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
-	_standardPropertyList.push_back(typeId);
 	if(!name.isEmpty())
 		_standardPropertyIds.insert(name, typeId);
 	_standardPropertyNames.emplace(typeId, std::move(name));

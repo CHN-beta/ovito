@@ -11,12 +11,13 @@
 #define QWT_INTERVAL_SYMBOL_H
 
 #include "qwt_global.h"
-#include <qpen.h>
-#include <qsize.h>
+#include <qnamespace.h>
 
 class QPainter;
-class QRect;
+class QPen;
+class QBrush;
 class QPointF;
+class QColor;
 
 /*!
   \brief A drawing primitive for displaying an interval like an error bar
@@ -54,7 +55,7 @@ public:
     };
 
 public:
-    QwtIntervalSymbol( Style = NoSymbol );
+    explicit QwtIntervalSymbol( Style = NoSymbol );
     QwtIntervalSymbol( const QwtIntervalSymbol & );
     virtual ~QwtIntervalSymbol();
 

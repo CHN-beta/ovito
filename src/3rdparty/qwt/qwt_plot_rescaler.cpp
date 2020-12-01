@@ -12,8 +12,10 @@
 #include "qwt_scale_div.h"
 #include "qwt_interval.h"
 #include "qwt_plot_canvas.h"
+#include "moc_qwt_plot_rescaler.cpp"
+
+#include <qmargins.h>
 #include <qevent.h>
-#include <qalgorithms.h>
 
 class QwtPlotRescaler::AxisData
 {
@@ -330,10 +332,8 @@ bool QwtPlotRescaler::eventFilter( QObject *object, QEvent *event )
 */
 void QwtPlotRescaler::canvasResizeEvent( QResizeEvent* event )
 {
-    int left, top, right, bottom;
-    canvas()->getContentsMargins( &left, &top, &right, &bottom );
-
-    const QSize marginSize( left + right, top + bottom );
+    const QMargins m = canvas()->contentsMargins();
+    const QSize marginSize( m.left() + m.right(), m.top() + m.bottom() );
 
     const QSize newSize = event->size() - marginSize;
     const QSize oldSize = event->oldSize() - marginSize;
@@ -629,3 +629,7 @@ void QwtPlotRescaler::updateScales(
         canvas->setPaintAttribute( QwtPlotCanvas::ImmediatePaint, true );
     }
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_plot_rescaler.cpp"
+#endif

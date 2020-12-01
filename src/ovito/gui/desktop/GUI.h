@@ -41,6 +41,7 @@
 #include <QtDebug>
 #include <QtGui>
 #include <QCommandLineParser>
+#include <QOpenGLWidget>
 
 /******************************************************************************
 * Forward declaration of classes.

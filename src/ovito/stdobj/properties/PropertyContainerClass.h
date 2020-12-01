@@ -117,18 +117,13 @@ public:
 	/// Returns the number of vector components per element used by the given standard property type.
 	size_t standardPropertyComponentCount(int typeId) const {
 		OVITO_ASSERT(_standardPropertyComponents.find(typeId) != _standardPropertyComponents.end());
-		return std::max(_standardPropertyComponents.find(typeId)->second.size(), 1);
+		return std::max((size_t)_standardPropertyComponents.find(typeId)->second.size(), (size_t)1);
 	}
 
 	/// Returns the list of component names for the given standard property type.
 	const QStringList& standardPropertyComponentNames(int typeId) const {
 		OVITO_ASSERT(_standardPropertyComponents.find(typeId) != _standardPropertyComponents.end());
 		return _standardPropertyComponents.find(typeId)->second;
-	}
-
-	/// Returns the list of standard property type IDs.
-	const QList<int>& standardProperties() const {
-		return _standardPropertyList;
 	}
 
 	/// Returns the mapping from standard property names to standard property type IDs.
@@ -173,9 +168,6 @@ private:
 
 	/// The name by which this property class is referred to from Python scripts.
 	QString _pythonName;
-
-	/// The list of standard property type IDs.
-	QList<int> _standardPropertyList;
 
 	/// Mapping from standard property names to standard property type IDs.
 	QMap<QString, int> _standardPropertyIds;

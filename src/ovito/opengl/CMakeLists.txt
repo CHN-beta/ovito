@@ -37,6 +37,11 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		resources_gles/opengl_gles.qrc
 )
 
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	# QOpenGLFunctions classes have been moved to the OpenGL module in Qt 6.
+	TARGET_LINK_LIBRARIES(OpenGLRenderer PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGL)
+ENDIF()
+
 IF(NOT OVITO_BUILD_WEBGUI AND NOT OVITO_BUILD_CONDA)
 	# Find OpenGL library.
 	FIND_PACKAGE(OpenGL REQUIRED)

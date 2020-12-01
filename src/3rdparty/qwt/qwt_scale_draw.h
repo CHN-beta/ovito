@@ -12,9 +12,13 @@
 
 #include "qwt_global.h"
 #include "qwt_abstract_scale_draw.h"
+
 #include <qpoint.h>
-#include <qrect.h>
-#include <qtransform.h>
+
+class QTransform;
+class QSizeF;
+class QRectF;
+class QRect;
 
 /*!
   \brief A class for drawing scales
@@ -57,7 +61,7 @@ public:
     int minLabelDist( const QFont & ) const;
 
     int minLength( const QFont & ) const;
-    virtual double extent( const QFont & ) const;
+    virtual double extent( const QFont & ) const QWT_OVERRIDE;
 
     void move( double x, double y );
     void move( const QPointF & );
@@ -90,14 +94,13 @@ public:
 protected:
     QTransform labelTransformation( const QPointF &, const QSizeF & ) const;
 
-    virtual void drawTick( QPainter *, double value, double len ) const;
-    virtual void drawBackbone( QPainter * ) const;
-    virtual void drawLabel( QPainter *, double value ) const;
+    virtual void drawTick( QPainter *,
+        double value, double len ) const QWT_OVERRIDE;
+
+    virtual void drawBackbone( QPainter * ) const QWT_OVERRIDE;
+    virtual void drawLabel( QPainter *, double value ) const QWT_OVERRIDE;
 
 private:
-    QwtScaleDraw( const QwtScaleDraw & );
-    QwtScaleDraw &operator=( const QwtScaleDraw &other );
-
     void updateMap();
 
     class PrivateData;

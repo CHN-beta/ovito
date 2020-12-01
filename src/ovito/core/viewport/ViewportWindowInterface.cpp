@@ -203,7 +203,7 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
 	_captionBuffer->renderWindow(renderer, pos, Qt::AlignLeft | Qt::AlignTop);
 
 	// Compute the area covered by the caption text.
-	return QRectF(0, 0, std::max(metrics.width(_captionBuffer->text()), 30.0) + pos.x(), metrics.height() + pos.y());
+	return QRectF(0, 0, std::max(metrics.horizontalAdvance(_captionBuffer->text()), 30.0) + pos.x(), metrics.height() + pos.y());
 }
 
 }	// End of namespace

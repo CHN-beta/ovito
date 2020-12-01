@@ -84,8 +84,8 @@ void IntegerParameterUI::updateUI()
 				QVariant val(0);
 				if(isQtPropertyUI()) {
 					val = editObject()->property(propertyName());
-					OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::Int), "IntegerParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-					if(!val.isValid() || !val.canConvert(QVariant::Int)) {
+					OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+					if(!val.isValid() || !val.canConvert<int>()) {
 						editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 					}
 				}

@@ -127,7 +127,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 			case ParticlesObject::MoleculeTypeProperty: columnName = QStringLiteral("molecule_type"); break;
 			default:
 				columnName = pref.name();
-				columnName.remove(QRegExp("[^A-Za-z\\d_]"));
+				columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
 			}
 
 			// Find matching property
@@ -152,7 +152,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 			else if(dataType == qMetaTypeId<bool>())
 				dataTypeStr = QStringLiteral("L");
 			else
-				throwException(tr("Unexpected data type '%1' for property '%2'.").arg(QMetaType::typeName(dataType) ? QMetaType::typeName(dataType) : "unknown").arg(pref.name()));
+				throwException(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
 
 			if(!propertiesStr.isEmpty()) propertiesStr += QStringLiteral(":");
 			propertiesStr += QStringLiteral("%1:%2:%3").arg(columnName).arg(dataTypeStr).arg(nCols);

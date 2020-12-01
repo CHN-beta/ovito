@@ -77,7 +77,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, Pi
 
 	// Check if expression contains an assignment ('=' operator).
 	// This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
-	if(expressionMod->expression().contains(QRegExp("[^=!><]=(?!=)")))
+	if(expressionMod->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
 		throwException(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
 
 	// The number of selected elements.

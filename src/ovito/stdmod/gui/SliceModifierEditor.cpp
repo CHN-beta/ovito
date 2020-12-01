@@ -294,7 +294,7 @@ void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QM
 {
 	ViewportInputMode::mouseMoveEvent(vpwin, event);
 
-	ViewportPickResult pickResult = vpwin->pick(event->localPos());
+	ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 	setCursor(pickResult.isValid() ? SelectionMode::selectionCursor() : QCursor());
 	if(pickResult.isValid() && _numPickedPoints < 3) {
 		_pickedPoints[_numPickedPoints] = pickResult.hitLocation();
@@ -320,7 +320,7 @@ void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin,
 			requestViewportUpdate();
 		}
 
-		ViewportPickResult pickResult = vpwin->pick(event->localPos());
+		ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 		if(pickResult.isValid()) {
 
 			// Do not select the same point twice.

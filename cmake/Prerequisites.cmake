@@ -22,9 +22,15 @@
 
 # Tell CMake to run Qt moc whenever necessary.
 SET(CMAKE_AUTOMOC ON)
+# Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
+SET(CMAKE_AUTORCC ON)
 
 # The set of required Qt modules:
 LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Core Gui Xml)
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	# QOpenGLFunctions classes have been moved to the OpenGL module in Qt 6.
+	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS OpenGL OpenGLWidgets)
+ENDIF()
 IF(OVITO_BUILD_GUI)
 	# Note: QtConcurrent and QtPrintSupport are a dependency of the Qwt library.
 	# Note: QtDBus is an indirect dependency of the Xcb platform plugin under Linux.
@@ -45,10 +51,11 @@ ENDIF()
 
 # Find the required Qt modules.
 IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	FIND_PACKAGE(Qt6 6.0 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
-ELSE()
+	FIND_PACKAGE(Qt6 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
+ELSEIF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
 	FIND_PACKAGE(Qt5 5.15 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
-	SET(OVITO_QT_MAJOR_VERSION "Qt5")
+ELSE()
+	MESSAGE(FATAL_ERROR "Invalid OVITO_QT_MAJOR_VERSION value: ${OVITO_QT_MAJOR_VERSION}. OVITO Supports only Qt5 and Qt6.")
 ENDIF()
 
 # This macro installs a third-party shared library or DLL in the OVITO program directory
@@ -177,7 +184,7 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_PYTHON_PACKAGE AND NOT OVITO_BUILD_CONDA)
 	# On Windows, the third-party library DLLs need to be installed in the OVITO directory.
 	# Gather Qt dynamic link libraries.
 	FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		GET_TARGET_PROPERTY(dll Qt6::${component} LOCATION_${CMAKE_BUILD_TYPE})
+		GET_TARGET_PROPERTY(dll ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION_${CMAKE_BUILD_TYPE})
 		IF(NOT TARGET ${OVITO_QT_MAJOR_VERSION}::${component} OR NOT dll)
 			MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: ${OVITO_QT_MAJOR_VERSION}::${component}")
 		ENDIF()

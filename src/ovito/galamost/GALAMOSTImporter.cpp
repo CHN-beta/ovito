@@ -50,7 +50,7 @@ bool GALAMOSTImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 		return false;
 	if(xml.readNext() != QXmlStreamReader::StartElement)
 		return false;
-	if(xml.name() != "galamost_xml")
+	if(xml.name().compare(QStringLiteral("galamost_xml")) != 0)
 		return false;
 	if(!xml.attributes().hasAttribute("version"))
 		return false;
@@ -81,15 +81,15 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 	size_t nbonds = 0;
 
 	/// Expect <galamost_xml> root element.
-	if(!xml.readNextStartElement() || xml.name() != "galamost_xml")
+	if(!xml.readNextStartElement() || xml.name().compare(QStringLiteral("galamost_xml")) != 0)
 		xml.raiseError(tr("Expected <galamost_xml> XML element."));
 	else {
-		if(!xml.readNextStartElement() || xml.name() != "configuration")
+		if(!xml.readNextStartElement() || xml.name().compare(QStringLiteral("configuration")) != 0)
 			xml.raiseError(tr("Expected <configuration> XML element."));
 		else {
 
 			// Parse simulation timestep.
-			QStringRef timeStepStr = xml.attributes().value(QStringLiteral("time_step"));
+			auto timeStepStr = xml.attributes().value(QStringLiteral("time_step"));
 			if(!timeStepStr.isEmpty()) {
 				bool ok;
 				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)), dataSource());
@@ -98,7 +98,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 			}
 
 			// Parse dimensionality.
-			QStringRef dimensionsStr = xml.attributes().value(QStringLiteral("dimensions"));
+			auto dimensionsStr = xml.attributes().value(QStringLiteral("dimensions"));
 			if(!dimensionsStr.isEmpty()) {
 				dimensions = dimensionsStr.toInt();
 				if(dimensions != 2 && dimensions != 3)
@@ -106,7 +106,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 			}
 
 			// Parse number of atoms.
-			QStringRef natomsStr = xml.attributes().value(QStringLiteral("natoms"));
+			auto natomsStr = xml.attributes().value(QStringLiteral("natoms"));
 			if(!natomsStr.isEmpty()) {
 				bool ok;
 				natoms = natomsStr.toULongLong(&ok);
@@ -123,24 +123,24 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 				if(isCanceled())
 					return;
 
-				if(xml.name() == "box") {
+				if(xml.name().compare(QStringLiteral("box")) == 0) {
 					// Parse box dimensions.
 					AffineTransformation cellMatrix = simulationCell()->cellMatrix();
-					QStringRef lxStr = xml.attributes().value(QStringLiteral("lx"));
+					auto lxStr = xml.attributes().value(QStringLiteral("lx"));
 					if(!lxStr.isEmpty()) {
 						bool ok;
 						cellMatrix(0,0) = (FloatType)lxStr.toDouble(&ok);
 						if(!ok)
 							throw Exception(tr("GALAMOST file parsing error. Invalid 'lx' attribute value in <%1> element: %2").arg(xml.name()).arg(lxStr));
 					}
-					QStringRef lyStr = xml.attributes().value(QStringLiteral("ly"));
+					auto lyStr = xml.attributes().value(QStringLiteral("ly"));
 					if(!lyStr.isEmpty()) {
 						bool ok;
 						cellMatrix(1,1) = (FloatType)lyStr.toDouble(&ok);
 						if(!ok)
 							throw Exception(tr("GALAMOST file parsing error. Invalid 'ly' attribute value in <%1> element: %2").arg(xml.name()).arg(lyStr));
 					}
-					QStringRef lzStr = xml.attributes().value(QStringLiteral("lz"));
+					auto lzStr = xml.attributes().value(QStringLiteral("lz"));
 					if(!lzStr.isEmpty()) {
 						bool ok;
 						cellMatrix(2,2) = (FloatType)lzStr.toDouble(&ok);
@@ -153,35 +153,35 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					simulationCell()->setCellMatrix(cellMatrix);
 					xml.skipCurrentElement();
 				}
-				else if(xml.name() == "position") {
+				else if(xml.name().compare(QStringLiteral("position")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext()));
 				}
-				else if(xml.name() == "velocity") {
+				else if(xml.name().compare(QStringLiteral("velocity")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext()));
 				}
-				else if(xml.name() == "image") {
+				else if(xml.name().compare(QStringLiteral("image")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::PeriodicImageProperty, false, executionContext()));
 				}
-				else if(xml.name() == "mass") {
+				else if(xml.name().compare(QStringLiteral("mass")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::MassProperty, false, executionContext()));
 				}
-				else if(xml.name() == "diameter") {
+				else if(xml.name().compare(QStringLiteral("diameter")) == 0) {
 					PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::RadiusProperty, false, executionContext()));
 					// Convert diamater values into radii.
 					for(FloatType& radius : PropertyAccess<FloatType>(property))
 						radius /= 2;
 				}
-				else if(xml.name() == "charge") {
+				else if(xml.name().compare(QStringLiteral("charge")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext()));
 				}
-				else if(xml.name() == "quaternion") {
+				else if(xml.name().compare(QStringLiteral("quaternion")) == 0) {
 					PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext()));
 					// Convert quaternion representation to OVITO's internal format.
 					// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
 					for(Quaternion& q : PropertyAccess<Quaternion>(property))
 						std::rotate(q.begin(), q.begin() + 1, q.end());
 				}
-				else if(xml.name() == "orientation") {
+				else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
 					DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 3, 0, QStringLiteral("Direction"), false);
 					parsePropertyData(xml, directions);
 					ConstPropertyAccess<Vector3> directionsAccess(directions);
@@ -198,7 +198,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					}
 					OVITO_ASSERT(dir == directionsAccess.cend());
 				}
-				else if(xml.name() == "type") {
+				else if(xml.name().compare(QStringLiteral("type")) == 0) {
 					QString text = xml.readElementText();
 					QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 					PropertyObject* property = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
@@ -209,13 +209,13 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					}
 					property->sortElementTypesByName();
 				}
-				else if(xml.name() == "molecule") {
+				else if(xml.name().compare(QStringLiteral("molecule")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::MoleculeProperty, false, executionContext()));
 				}
-				else if(xml.name() == "body") {
+				else if(xml.name().compare(QStringLiteral("body")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(QStringLiteral("Body"), PropertyObject::Int64, 1, 0, false));
 				}
-				else if(xml.name() == "Aspheres") {
+				else if(xml.name().compare(QStringLiteral("Aspheres")) == 0) {
 					QString text = xml.readElementText();
 					QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 					ConstPropertyAccess<int> typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
@@ -243,15 +243,15 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 						}
 					}
 				}
-				else if(xml.name() == "rotation") {
+				else if(xml.name().compare(QStringLiteral("rotation")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularVelocityProperty, false, executionContext()));
 				}
-				else if(xml.name() == "inert") {
+				else if(xml.name().compare(QStringLiteral("inert")) == 0) {
 					parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularMomentumProperty, false, executionContext()));
 				}
-				else if(xml.name() == "bond") {
+				else if(xml.name().compare(QStringLiteral("bond")) == 0) {
 					// Parse number of bonds.
-					QStringRef nbondsStr = xml.attributes().value(QStringLiteral("num"));
+					auto nbondsStr = xml.attributes().value(QStringLiteral("num"));
 					if(!nbondsStr.isEmpty()) {
 						bool ok;
 						nbonds = nbondsStr.toULongLong(&ok);

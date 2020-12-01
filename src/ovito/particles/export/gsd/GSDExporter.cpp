@@ -169,7 +169,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
                 typeNames[i] = ptype->name().toUtf8();
             if(typeNames[i].size() == 0 && i < 26)
                 typeNames[i] = QByteArray(1, 'A' + (char)i);
-            maxStringLength = std::max(maxStringLength, typeNames[i].size());
+            maxStringLength = qMax(maxStringLength, typeNames[i].size());
         }
         maxStringLength++; // Include terminating null character.
         std::vector<int8_t> typeNameBuffer(maxStringLength * typeNames.size(), 0);
@@ -289,7 +289,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
                     typeNames[i] = ptype->name().toUtf8();
                 if(typeNames[i].size() == 0 && i < 26)
                     typeNames[i] = QByteArray(1, 'A' + (char)i);
-                maxStringLength = std::max(maxStringLength, typeNames[i].size());
+                maxStringLength = qMax(maxStringLength, typeNames[i].size());
             }
             maxStringLength++; // Include terminating null character.
             std::vector<int8_t> typeNameBuffer(maxStringLength * typeNames.size(), 0);

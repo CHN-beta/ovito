@@ -146,9 +146,9 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
 	_neighborEvaluator(std::make_unique<ParticleExpressionEvaluator>())
 {
 	// Make sure we have the right number of expression strings.
-	while(_neighborExpressions.size() < this->outputProperty()->componentCount())
+	while((size_t)_neighborExpressions.size() < this->outputProperty()->componentCount())
 		_neighborExpressions.append(QString());
-	while(_neighborExpressions.size() > this->outputProperty()->componentCount())
+	while((size_t)_neighborExpressions.size() > this->outputProperty()->componentCount())
 		_neighborExpressions.pop_back();
 
 	// Determine whether any neighbor expressions are present.
@@ -176,10 +176,10 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
 	for(const PropertyObject* prop : particles->properties()) {
 		inputProperties.push_back(prop);
 	}
-	_neighborEvaluator->registerPropertyVariables(inputProperties, 1, "@");
+	_neighborEvaluator->registerPropertyVariables(inputProperties, 1, _T("@"));
 
 	// Activate neighbor mode if NumNeighbors variable is referenced in tghe central particle expression(s).
-	if(_evaluator->isVariableUsed("NumNeighbors"))
+	if(_evaluator->isVariableUsed(_T("NumNeighbors")))
 		_neighborMode = true;
 }
 
@@ -256,13 +256,13 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 		double* selfNumNeighbors = nullptr;
 		double* neighNumNeighbors = nullptr;
 		if(neighborMode()) {
-			distanceVar = neighborWorker.variableAddress("Distance");
-			deltaX = neighborWorker.variableAddress("Delta.X");
-			deltaY = neighborWorker.variableAddress("Delta.Y");
-			deltaZ = neighborWorker.variableAddress("Delta.Z");
-			selfNumNeighbors = worker.variableAddress("NumNeighbors");
-			neighNumNeighbors = neighborWorker.variableAddress("NumNeighbors");
-			if(!worker.isVariableUsed("NumNeighbors") && !neighborWorker.isVariableUsed("NumNeighbors"))
+			distanceVar = neighborWorker.variableAddress(_T("Distance"));
+			deltaX = neighborWorker.variableAddress(_T("Delta.X"));
+			deltaY = neighborWorker.variableAddress(_T("Delta.Y"));
+			deltaZ = neighborWorker.variableAddress(_T("Delta.Z"));
+			selfNumNeighbors = worker.variableAddress(_T("NumNeighbors"));
+			neighNumNeighbors = neighborWorker.variableAddress(_T("NumNeighbors"));
+			if(!worker.isVariableUsed(_T("NumNeighbors")) && !neighborWorker.isVariableUsed(_T("NumNeighbors")))
 				selfNumNeighbors = neighNumNeighbors = nullptr;
 		}
 

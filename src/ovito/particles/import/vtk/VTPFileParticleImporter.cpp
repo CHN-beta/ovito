@@ -45,14 +45,14 @@ bool VTPFileParticleImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 		return false;
 	if(xml.readNext() != QXmlStreamReader::StartElement)
 		return false;
-	if(xml.name() != "VTKFile")
+	if(xml.name().compare(QLatin1String("VTKFile")) != 0)
 		return false;
-	if(xml.attributes().value("type") != "PolyData")
+	if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
 		return false;
 
 	// Continue until we reach the <Piece> element. 
 	while(xml.readNextStartElement()) {
-		if(xml.name() == "Piece") {
+		if(xml.name().compare(QLatin1String("Piece")) == 0) {
 			// Number of lines, triangle strips, and polygons must be zero.
 			if(xml.attributes().value("NumberOfLines").toULongLong() == 0 && xml.attributes().value("NumberOfStrips").toULongLong() == 0 && xml.attributes().value("NumberOfPolys").toULongLong() == 0) {
 				// Number of vertices must match number of points.
@@ -85,18 +85,18 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 		if(isCanceled())
 			return;
 
-		if(xml.name() == "VTKFile") {
-			if(xml.attributes().value("type") != "PolyData")
+		if(xml.name().compare(QLatin1String("VTKFile")) == 0) {
+			if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
 				xml.raiseError(tr("VTK file is not of type PolyData."));
-			else if(xml.attributes().value("byte_order") != "LittleEndian")
+			else if(xml.attributes().value("byte_order").compare(QLatin1String("LittleEndian")) != 0)
 				xml.raiseError(tr("Byte order must be 'LittleEndian'. Please contact the OVITO developers to request an extension of the file parser."));
-			else if(xml.attributes().value("compressor") != "")
+			else if(xml.attributes().value("compressor").compare(QLatin1String("")) != 0)
 				xml.raiseError(tr("The parser does not support compressed data arrays. Please contact the OVITO developers to request an extension of the file parser."));
 		}
-		else if(xml.name() == "PolyData") {
+		else if(xml.name().compare(QLatin1String("PolyData")) == 0) {
 			// Do nothing. Parse child elements.
 		}
-		else if(xml.name() == "Piece") {
+		else if(xml.name().compare(QLatin1String("Piece")) == 0) {
 
 			// Parse number of lines, triangle strips and polygons.
 			if(xml.attributes().value("NumberOfLines").toULongLong() != 0
@@ -116,10 +116,10 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 			}
 			setParticleCount(numParticles);
 		}
-		else if(xml.name() == "PointData" || xml.name() == "Points" || xml.name() == "Verts") {
+		else if(xml.name().compare(QLatin1String("PointData")) == 0 || xml.name().compare(QLatin1String("Points")) == 0 || xml.name().compare(QLatin1String("Verts")) == 0) {
 			// Parse child elements.
 			while(xml.readNextStartElement() && !isCanceled()) {
-				if(xml.name() == "DataArray") {
+				if(xml.name().compare(QLatin1String("DataArray")) == 0) {
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml)) {
 						parseDataArray(property, xml);
 					}
@@ -131,7 +131,7 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 				}
 			}
 		}
-		else if(xml.name() == "CellData" || xml.name() == "Lines" || xml.name() == "Strips" || xml.name() == "Polys") {
+		else if(xml.name().compare(QLatin1String("CellData")) == 0 || xml.name().compare(QLatin1String("Lines")) == 0 || xml.name().compare(QLatin1String("Strips")) == 0 || xml.name().compare(QLatin1String("Polys")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}
@@ -163,34 +163,34 @@ PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForD
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");
 
-	if(QStringRef::compare(name, "points", Qt::CaseInsensitive) == 0 && numComponents == 3) {
+	if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "id", Qt::CaseInsensitive) == 0 && numComponents == 1) {
+	else if(name.compare(QLatin1String("id"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "type", Qt::CaseInsensitive) == 0 && numComponents == 1) {
+	else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "mass", Qt::CaseInsensitive) == 0 && numComponents == 1) {
+	else if(name.compare(QLatin1String("mass"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "radius", Qt::CaseInsensitive) == 0 && numComponents == 1) {
+	else if(name.compare(QLatin1String("radius"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::RadiusProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "v", Qt::CaseInsensitive) == 0 && numComponents == 3) {
+	else if(name.compare(QLatin1String("v"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "omega", Qt::CaseInsensitive) == 0 && numComponents == 3) {
+	else if(name.compare(QLatin1String("omega"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::AngularVelocityProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "tq", Qt::CaseInsensitive) == 0 && numComponents == 3) {
+	else if(name.compare(QLatin1String("tq"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::TorqueProperty, false, executionContext());
 	}
-	else if(QStringRef::compare(name, "density", Qt::CaseInsensitive) == 0 && numComponents == 1) {
+	else if(name.compare(QLatin1String("density"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(QStringLiteral("Density"), PropertyObject::Float, 1, 0, false);
 	}
-	else if(QStringRef::compare(name, "tensor", Qt::CaseInsensitive) == 0 && numComponents == 9) {
+	else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
 		return particles()->createProperty(QStringLiteral("Tensor"), PropertyObject::Float, 9, 0, false);
 	}
 	else {

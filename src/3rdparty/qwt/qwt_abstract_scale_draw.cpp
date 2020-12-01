@@ -8,13 +8,15 @@
  *****************************************************************************/
 
 #include "qwt_abstract_scale_draw.h"
-#include "qwt_math.h"
 #include "qwt_text.h"
 #include "qwt_painter.h"
 #include "qwt_scale_map.h"
+#include "qwt_math.h"
+
 #include <qpainter.h>
 #include <qpalette.h>
 #include <qmap.h>
+#include <qlist.h>
 #include <qlocale.h>
 
 class QwtAbstractScaleDraw::PrivateData
@@ -22,7 +24,7 @@ class QwtAbstractScaleDraw::PrivateData
 public:
     PrivateData():
         spacing( 4.0 ),
-        penWidth( 0 ),
+        penWidthF( 0.0 ),
         minExtent( 0.0 )
     {
         components = QwtAbstractScaleDraw::Backbone
@@ -41,7 +43,7 @@ public:
 
     double spacing;
     double tickLength[QwtScaleDiv::NTickTypes];
-    int penWidth;
+    qreal penWidthF;
 
     double minExtent;
 
@@ -137,24 +139,24 @@ const QwtScaleDiv& QwtAbstractScaleDraw::scaleDiv() const
 /*!
   \brief Specify the width of the scale pen
   \param width Pen width
+
   \sa penWidth()
 */
-void QwtAbstractScaleDraw::setPenWidth( int width )
+void QwtAbstractScaleDraw::setPenWidthF( qreal width )
 {
-    if ( width < 0 )
-        width = 0;
+    if ( width < 0.0 )
+        width = 0.0;
 
-    if ( width != d_data->penWidth )
-        d_data->penWidth = width;
+    d_data->penWidthF = width;
 }
 
 /*!
     \return Scale pen width
     \sa setPenWidth()
 */
-int QwtAbstractScaleDraw::penWidth() const
+qreal QwtAbstractScaleDraw::penWidthF() const
 {
-    return d_data->penWidth;
+    return d_data->penWidthF;
 }
 
 /*!
@@ -171,8 +173,8 @@ void QwtAbstractScaleDraw::draw( QPainter *painter,
     painter->save();
 
     QPen pen = painter->pen();
-    pen.setWidth( d_data->penWidth );
-    pen.setCosmetic( false );
+    pen.setWidthF( d_data->penWidthF );
+
     painter->setPen( pen );
 
     if ( hasComponent( QwtAbstractScaleDraw::Labels ) )
@@ -355,7 +357,7 @@ double QwtAbstractScaleDraw::maxTickLength() const
 {
     double length = 0.0;
     for ( int i = 0; i < QwtScaleDiv::NTickTypes; i++ )
-        length = qMax( length, d_data->tickLength[i] );
+        length = qwtMaxF( length, d_data->tickLength[i] );
 
     return length;
 }

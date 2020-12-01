@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "SpinnerWidget.h"
 
 namespace Ovito {
@@ -238,7 +239,7 @@ void SpinnerWidget::mousePressEvent(QMouseEvent* event)
 
 		OVITO_ASSERT(_lowerBtnPressed == false && _upperBtnPressed == false);
 
-		if(event->y() <= height()/2)
+		if(ViewportInputMode::getMousePosition(event).y() <= height()/2)
 			_upperBtnPressed = true;
 		else
 			_lowerBtnPressed = true;
@@ -314,7 +315,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 {
 	if(_upperBtnPressed || _lowerBtnPressed) {
 		if(_upperBtnPressed && !_lowerBtnPressed) {
-			if(event->y() > height()/2 || event->y() < 0) {
+			if(ViewportInputMode::getMousePosition(event).y() > height()/2 || ViewportInputMode::getMousePosition(event).y() < 0) {
 				_lowerBtnPressed = true;
 				_lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
 				update();
@@ -322,7 +323,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 			}
 		}
 		else if(!_upperBtnPressed && _lowerBtnPressed) {
-			if(event->y() <= height()/2 || event->y() > height()) {
+			if(ViewportInputMode::getMousePosition(event).y() <= height()/2 || ViewportInputMode::getMousePosition(event).y() > height()) {
 				_upperBtnPressed = true;
 				_lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
 				update();

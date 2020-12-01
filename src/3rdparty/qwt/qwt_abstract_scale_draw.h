@@ -12,8 +12,8 @@
 
 #include "qwt_global.h"
 #include "qwt_scale_div.h"
-#include "qwt_text.h"
 
+class QwtText;
 class QPalette;
 class QPainter;
 class QFont;
@@ -71,8 +71,8 @@ public:
     void setSpacing( double );
     double spacing() const;
 
-    void setPenWidth( int width );
-    int penWidth() const;
+    void setPenWidthF( qreal width );
+    qreal penWidthF() const;
 
     virtual void draw( QPainter *, const QPalette & ) const;
 
@@ -94,6 +94,8 @@ public:
 
     void setMinimumExtent( double );
     double minimumExtent() const;
+
+    void invalidateCache();
 
 protected:
     /*!
@@ -125,12 +127,10 @@ protected:
     */
     virtual void drawLabel( QPainter *painter, double value ) const = 0;
 
-    void invalidateCache();
     const QwtText &tickLabel( const QFont &, double value ) const;
 
 private:
-    QwtAbstractScaleDraw( const QwtAbstractScaleDraw & );
-    QwtAbstractScaleDraw &operator=( const QwtAbstractScaleDraw & );
+    Q_DISABLE_COPY(QwtAbstractScaleDraw)
 
     class PrivateData;
     PrivateData *d_data;

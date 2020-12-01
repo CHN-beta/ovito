@@ -8,7 +8,7 @@
  *****************************************************************************/
 
 #ifndef QWT_PLOT_MAGNIFIER_H
-#define QWT_PLOT_MAGNIFIER_H 1
+#define QWT_PLOT_MAGNIFIER_H
 
 #include "qwt_global.h"
 #include "qwt_magnifier.h"
@@ -43,8 +43,8 @@ public:
     QwtPlot *plot();
     const QwtPlot *plot() const;
 
-protected:
-    virtual void rescale( double factor );
+public Q_SLOTS:
+    virtual void rescale( double factor ) QWT_OVERRIDE;
 
 private:
     class PrivateData;

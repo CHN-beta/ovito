@@ -382,10 +382,10 @@ private:
 	static void getObjectsRecursiveImpl(ConstDataObjectPath& path, const DataObject::OOMetaClass& objectClass, std::vector<ConstDataObjectPath>& results);
 
 	/// Implementation detail of getObject().
-	static bool getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, ConstDataObjectPath& path);
+	static bool getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, ConstDataObjectPath& path);
 
 	/// Implementation detail of getLeafObject().
-	static const DataObject* getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, const DataObject* parent);
+	static const DataObject* getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent);
 
 	/// Implementation detail of makeAllMutableRecursive().
 	static void makeAllMutableImpl(DataObject* parent, CloneHelper& cloneHelper);

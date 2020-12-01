@@ -13,6 +13,7 @@
 #include "qwt_global.h"
 #include "qwt_text.h"
 #include "qwt_scale_draw.h"
+
 #include <qwidget.h>
 #include <qfont.h>
 #include <qcolor.h>
@@ -100,14 +101,14 @@ public:
     QwtInterval colorBarInterval() const;
     const QwtColorMap *colorMap() const;
 
-    virtual QSize sizeHint() const;
-    virtual QSize minimumSizeHint() const;
+    virtual QSize sizeHint() const QWT_OVERRIDE;
+    virtual QSize minimumSizeHint() const QWT_OVERRIDE;
 
     int titleHeightForWidth( int width ) const;
     int dimForLength( int length, const QFont &scaleFont ) const;
 
-    void drawColorBar( QPainter *painter, const QRectF & ) const;
-    void drawTitle( QPainter *painter, QwtScaleDraw::Alignment,
+    void drawColorBar( QPainter *, const QRectF & ) const;
+    void drawTitle( QPainter *, QwtScaleDraw::Alignment,
         const QRectF &rect ) const;
 
     void setAlignment( QwtScaleDraw::Alignment );
@@ -116,8 +117,9 @@ public:
     QRectF colorBarRect( const QRectF& ) const;
 
 protected:
-    virtual void paintEvent( QPaintEvent * );
-    virtual void resizeEvent( QResizeEvent * );
+    virtual void paintEvent( QPaintEvent * ) QWT_OVERRIDE;
+    virtual void resizeEvent( QResizeEvent * ) QWT_OVERRIDE;
+    virtual void changeEvent( QEvent * ) QWT_OVERRIDE;
 
     void draw( QPainter * ) const;
 

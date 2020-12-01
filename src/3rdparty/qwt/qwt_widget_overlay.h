@@ -12,9 +12,9 @@
 
 #include "qwt_global.h"
 #include <qwidget.h>
-#include <qregion.h>
 
 class QPainter;
+class QRegion;
 
 /*!
    \brief An overlay for a widget
@@ -111,7 +111,7 @@ public:
         DrawOverlay
     };
 
-    QwtWidgetOverlay( QWidget* );
+    explicit QwtWidgetOverlay( QWidget* );
     virtual ~QwtWidgetOverlay();
 
     void setMaskMode( MaskMode );
@@ -120,13 +120,14 @@ public:
     void setRenderMode( RenderMode );
     RenderMode renderMode() const;
 
+    virtual bool eventFilter( QObject *, QEvent *) QWT_OVERRIDE;
+
+public Q_SLOTS:
     void updateOverlay();
 
-    virtual bool eventFilter( QObject *, QEvent *);
-
 protected:
-    virtual void paintEvent( QPaintEvent* event );
-    virtual void resizeEvent( QResizeEvent* event );
+    virtual void paintEvent( QPaintEvent* ) QWT_OVERRIDE;
+    virtual void resizeEvent( QResizeEvent* ) QWT_OVERRIDE;
 
     virtual QRegion maskHint() const;
 

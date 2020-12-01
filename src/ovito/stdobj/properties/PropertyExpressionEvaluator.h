@@ -65,7 +65,7 @@ public:
 	size_t elementCount() const { return _elementCount; }
 
 	/// Returns the list of expressions.
-	const std::vector<std::string>& expression() const { return _expressions; }
+	const std::vector<mu::string_type>& expressions() const { return _expressions; }
 
 	/// Returns the list of available input variables.
 	QStringList inputVariableNames() const;
@@ -83,18 +83,18 @@ public:
 	const QString& indexVarName() const { return _indexVarName; }
 
 	/// Returns whether a variable is being referenced in one of the expressions.
-	bool isVariableUsed(const char* varName);
+	bool isVariableUsed(const mu::char_type* varName);
 
 	/// Returns whether the expression depends on animation time.
-	bool isTimeDependent() { return isVariableUsed("Frame"); }
+	bool isTimeDependent() { return isVariableUsed(_T("Frame")); }
 
 	/// Registers a new input variable whose value is recomputed for each data element.
 	void registerComputedVariable(const QString& variableName, std::function<double(size_t)> function, QString description = QString(), int variableClass = 0) {
 		ExpressionVariable v;
 		v.type = DERIVED_PROPERTY;
-		v.name = variableName.toStdString();
+		v.name = convertQString(variableName);
 		v.function = std::move(function);
-		v.description = description;
+		v.description = std::move(description);
 		v.variableClass = variableClass;
 		addVariable(std::move(v));
 	}
@@ -103,9 +103,9 @@ public:
 	void registerGlobalParameter(const QString& variableName, double value, QString description = QString()) {
 		ExpressionVariable v;
 		v.type = GLOBAL_PARAMETER;
-		v.name = variableName.toStdString();
+		v.name = convertQString(variableName);
 		v.value = value;
-		v.description = description;
+		v.description = std::move(description);
 		addVariable(std::move(v));
 	}
 
@@ -113,9 +113,9 @@ public:
 	void registerConstant(const QString& variableName, double value, QString description = QString()) {
 		ExpressionVariable v;
 		v.type = CONSTANT;
-		v.name = variableName.toStdString();
+		v.name = convertQString(variableName);
 		v.value = value;
-		v.description = description;
+		v.description = std::move(description);
 		addVariable(std::move(v));
 	}
 
@@ -123,14 +123,14 @@ public:
 	void registerIndexVariable(const QString& variableName, int variableClass, QString description = QString()) {
 		ExpressionVariable v;
 		v.type = ELEMENT_INDEX;
-		v.name = variableName.toStdString();
+		v.name = convertQString(variableName);
 		v.variableClass = variableClass;
-		v.description = description;
+		v.description = std::move(description);
 		addVariable(std::move(v));
 	}
 
 	/// Registers a list of expression variables that refer to input properties.
-	void registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const char* namePrefix = nullptr);
+	void registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const mu::char_type* namePrefix = nullptr);
 
 protected:
 
@@ -159,9 +159,9 @@ protected:
 		/// The type of variable.
 		ExpressionVariableType type;
 		/// The original name of the variable.
-		std::string name;
+		mu::string_type name;
 		/// The name of the variable as registered with the muparser.
-		std::string mangledName;
+		mu::string_type mangledName;
 		/// Human-readable description.
 		QString description;
 		/// A function that computes the variable's value for each data element.
@@ -188,7 +188,7 @@ public:
 		double evaluate(size_t elementIndex, size_t component);
 
 		/// Returns the storage address of a variable value.
-		double* variableAddress(const char* varName) {
+		double* variableAddress(const mu::char_type* varName) {
 			for(ExpressionVariable& var : _variables) {
 				if(var.name == varName)
 					return &var.value;
@@ -198,7 +198,7 @@ public:
 		}
 
 		// Returns whether the given variable is being referenced in one of the expressions.
-		bool isVariableUsed(const char* varName) const {
+		bool isVariableUsed(const mu::char_type* varName) const {
 			for(const ExpressionVariable& var : _variables)
 				if(var.name == varName && var.isReferenced) return true;
 			return false;
@@ -245,11 +245,29 @@ protected:
 		worker.updateVariables(0, elementIndex);
 	}
 
+	/// Helper function for converting a muParser string to a Qt string.
+	static QString convertMuString(const mu::string_type& str) {
+#if defined(_UNICODE)
+		return QString::fromStdWString(str);
+#else
+		return QString::fromStdString(str);
+#endif	
+	}
+
+	/// Helper function for converting a Qt string to a muParser string.
+	static mu::string_type convertQString(const QString& str) {
+#if defined(_UNICODE)
+		return str.toStdWString();
+#else
+		return str.toStdString();
+#endif	
+	}
+
 	/// Registers an input variable if the name does not exist yet.
 	size_t addVariable(ExpressionVariable v);
 
 	/// The list of expression that should be evaluated for each data element.
-	std::vector<std::string> _expressions;
+	std::vector<mu::string_type> _expressions;
 
 	/// The list of input variables that can be referenced in the expressions.
 	std::vector<ExpressionVariable> _variables;
@@ -261,7 +279,7 @@ protected:
 	size_t _elementCount = 0;
 
 	/// List of characters allowed in variable names.
-	static QByteArray _validVariableNameChars;
+	static mu::string_type _validVariableNameChars;
 
 	/// The maximum number of threads used to evaluate the expression.
 	size_t _maxThreadCount = 0;

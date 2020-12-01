@@ -79,7 +79,7 @@ void IMDImporter::FrameLoader::loadFile()
 		else if(stream.line()[1] == 'E') break;
 		else if(stream.line()[1] == 'C') {
 			QStringList tokens = FileImporter::splitString(stream.lineString());
-			columnMapping.resize(std::max(0, tokens.size() - 1));
+			columnMapping.resize(qMax(0, tokens.size() - 1));
 			for(int t = 1; t < tokens.size(); t++) {
 				const QString& token = tokens[t];
 				int columnIndex = t - 1;

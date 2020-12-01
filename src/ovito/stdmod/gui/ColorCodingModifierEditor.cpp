@@ -31,6 +31,7 @@
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifierEditor.h"
 
@@ -112,10 +113,10 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 			// Display a tooltip indicating the property value that corresponds to the color under the mouse cursor.
 			if(ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(_editor->editObject())) {
 				QRect cr = contentsRect();
-				FloatType t = FloatType(cr.bottom() - event->y()) / std::max(1, cr.height() - 1);
+				FloatType t = FloatType(cr.bottom() - ViewportInputMode::getMousePosition(event).y()) / std::max(1, cr.height() - 1);
 				FloatType mappedValue = modifier->startValue() + t * (modifier->endValue() - modifier->startValue());
 				QString text = tr("Value: %1").arg(mappedValue);
-				QToolTip::showText(event->globalPos(), text, this, rect());
+				QToolTip::showText(ViewportInputMode::getGlobalMousePosition(event).toPoint(), text, this, rect());
 			}
 			QLabel::mouseMoveEvent(event);
 		}

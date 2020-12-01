@@ -149,7 +149,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 			break;
 		default:
 			columnName = pref.nameWithComponent();
-			columnName.remove(QRegExp("[^A-Za-z\\d_]"));
+			columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
 		}
 		textStream() << ' ' << columnName;
 	}

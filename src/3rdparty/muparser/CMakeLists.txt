@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski and Technische Universität Darmstadt
+#  Copyright 2020 Alexander Stukowski and Technische Universität Darmstadt
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -41,6 +41,10 @@ IF(BUILD_SHARED_LIBS AND WIN32)
 ELSE()
 	TARGET_COMPILE_DEFINITIONS(muParser PUBLIC "MUPARSER_EXPORT=")
 ENDIF()
+
+# Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively 
+# use the Qt framework. In particular, Qt 6.0 requires UNICODE strings on Windows platform.
+TARGET_LINK_LIBRARIES(muParser PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core)
 
 IF(MSVC)
 	# Do not warn about missing dll-interface of members of an exported class.

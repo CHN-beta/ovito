@@ -134,6 +134,20 @@ public:
 	/// \brief Redraws all viewports.
 	void requestViewportUpdate();
 
+	/// \brief Helper method that returns the mouse cursor position stored in a QMouseEvent.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	static QPointF getMousePosition(const QMouseEvent* event) { return event->position(); }
+#else
+	static const QPointF& getMousePosition(const QMouseEvent* event) { return event->localPos(); }
+#endif
+
+	/// \brief Helper method that returns the mouse cursor position in global coordinates stored in a QMouseEvent.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	static QPointF getGlobalMousePosition(const QMouseEvent* event) { return event->globalPosition(); }
+#else
+	static const QPointF& getGlobalMousePosition(const QMouseEvent* event) { return event->globalPos(); }
+#endif
+
 public Q_SLOTS:
 
 	/// Removes this input mode from the mode stack of the ViewportInputManager.

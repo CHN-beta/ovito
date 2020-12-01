@@ -181,7 +181,7 @@ OVITO_STANDARD_PLUGIN(Core
 
 IF(NOT EMSCRIPTEN)
 	# Qt Network module is used by the Core module, except in the wasm build.
-	TARGET_LINK_LIBRARIES(Core PUBLIC Qt::Network)
+	TARGET_LINK_LIBRARIES(Core PUBLIC ${OVITO_QT_MAJOR_VERSION}::Network)
 ENDIF()
 
 # Link to zlib.

@@ -96,7 +96,7 @@ void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent
 
 	if(_viewport == nullptr) {
 		_viewport = vpwin->viewport();
-		_startPoint = event->localPos();
+		_startPoint = getMousePosition(event);
 		_oldCameraTM = _viewport->cameraTransformation();
 		_oldCameraPosition = _viewport->cameraPosition();
 		_oldCameraDirection = _viewport->cameraDirection();
@@ -140,7 +140,7 @@ void NavigationMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* 
 void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
 	if(_viewport == vpwin->viewport()) {
-		QPointF pos = event->localPos();
+		QPointF pos = getMousePosition(event);
 
 		_viewport->dataset()->undoStack().resetCurrentCompoundOperation();
 		modifyView(vpwin, _viewport, pos - _startPoint, false);
@@ -426,7 +426,7 @@ bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindowInterface* vpwin, const 
 void PickOrbitCenterMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
 	if(event->button() == Qt::LeftButton) {
-		if(pickOrbitCenter(vpwin, event->localPos()))
+		if(pickOrbitCenter(vpwin, getMousePosition(event)))
 			return;
 	}
 	ViewportInputMode::mousePressEvent(vpwin, event);
@@ -440,7 +440,7 @@ void PickOrbitCenterMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseE
 	ViewportInputMode::mouseMoveEvent(vpwin, event);
 
 	Point3 p;
-	bool isOverObject = findIntersection(vpwin, event->localPos(), p);
+	bool isOverObject = findIntersection(vpwin, getMousePosition(event), p);
 
 	if(!isOverObject && _showCursor) {
 		_showCursor = false;

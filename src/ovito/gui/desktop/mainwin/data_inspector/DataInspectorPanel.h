@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include "DataInspectionApplet.h"
 
@@ -85,7 +86,7 @@ protected Q_SLOTS:
 protected:
 
 	virtual void mouseReleaseEvent(QMouseEvent* event) override {
-		if(event->button() == Qt::LeftButton && event->y() < _tabBar->height()) {
+		if(event->button() == Qt::LeftButton && ViewportInputMode::getMousePosition(event).y() < _tabBar->height()) {
 			toggle();
 			event->accept();
 		}

@@ -277,7 +277,7 @@ ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& obj
 		// Perform a recursive path lookup of the requested object.
 		for(const DataObject* obj : objects()) {
 			result.push_back(obj);
-			if(getObjectImpl(objectClass, &pathString, result))
+			if(getObjectImpl(objectClass, pathString, result))
 				break;
 			result.pop_back();
 		}
@@ -355,7 +355,7 @@ DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClas
 /******************************************************************************
 * Implementation detail of getObject().
 ******************************************************************************/
-bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, ConstDataObjectPath& path)
+bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, ConstDataObjectPath& path)
 {
 	const DataObject* object = path.back();
 	if(pathString.isEmpty()) {
@@ -383,7 +383,7 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 			});
 		}
 		else if(object->identifier() == pathString.left(separatorPos)) {
-			QStringRef subPath = pathString.mid(separatorPos + 1);
+			QStringView subPath = pathString.mid(separatorPos + 1);
 			return object->visitSubObjects([&](const DataObject* subObject) {
 				path.push_back(subObject);
 				if(getObjectImpl(objectClass, subPath, path))
@@ -403,7 +403,7 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 {
 	if(!pathString.isEmpty()) {
 		for(const DataObject* obj : objects()) {
-			if(const DataObject* result = getLeafObjectImpl(objectClass, &pathString, obj))
+			if(const DataObject* result = getLeafObjectImpl(objectClass, pathString, obj))
 				return result;
 		}
 		return nullptr;
@@ -421,7 +421,7 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 /******************************************************************************
 * Implementation detail of getLeafObject().
 ******************************************************************************/
-const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, const DataObject* parent)
+const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent)
 {
 	if(pathString.isEmpty()) {
 		if(objectClass.isMember(parent)) return parent;
@@ -440,7 +440,7 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 				return parent;
 		}
 		else if(parent->identifier() == pathString.left(separatorPos)) {
-			QStringRef subPath = pathString.mid(separatorPos + 1);
+			QStringView subPath = pathString.mid(separatorPos + 1);
 			const DataObject* result = nullptr;
 			parent->visitSubObjects([&](const DataObject* subObject) {
 				result = getLeafObjectImpl(objectClass, subPath, subObject);

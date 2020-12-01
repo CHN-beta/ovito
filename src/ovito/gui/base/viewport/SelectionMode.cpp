@@ -42,7 +42,7 @@ void SelectionMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 {
 	if(event->button() == Qt::LeftButton) {
 		_viewport = vpwin->viewport();
-		_clickPoint = event->localPos();
+		_clickPoint = getMousePosition(event);
 	}
 	else if(event->button() == Qt::RightButton) {
 		_viewport = nullptr;
@@ -86,7 +86,7 @@ void SelectionMode::deactivated(bool temporary)
 void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
 {
 	// Change mouse cursor while hovering over an object.
-	ViewportPickResult pickResult = vpwin->pick(event->localPos());
+	ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 	setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
 
 	// Display a description of the object under the mouse cursor in the status bar.

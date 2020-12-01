@@ -56,7 +56,7 @@ private:
     bool _isLocked = false;
 
 	/// The global mutex used to serialize access to the NetCDF library functions.
-	static QMutex _netcdfMutex;
+	static QRecursiveMutex _netcdfMutex;
 };
 
 /**

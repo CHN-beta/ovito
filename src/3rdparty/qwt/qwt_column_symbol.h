@@ -12,14 +12,12 @@
 
 #include "qwt_global.h"
 #include "qwt_interval.h"
-#include <qpen.h>
-#include <qsize.h>
-#include <qrect.h>
+
+#include <qnamespace.h>
 
 class QPainter;
 class QPalette;
-class QRect;
-class QwtText;
+class QRectF;
 
 /*!
     \brief Directed rectangle representing bounding rectangle and orientation
@@ -51,24 +49,7 @@ public:
     }
 
     //! \return A normalized QRect built from the intervals
-    QRectF toRect() const
-    {
-        QRectF r( hInterval.minValue(), vInterval.minValue(),
-            hInterval.maxValue() - hInterval.minValue(),
-            vInterval.maxValue() - vInterval.minValue() );
-        r = r.normalized();
-
-        if ( hInterval.borderFlags() & QwtInterval::ExcludeMinimum )
-            r.adjust( 1, 0, 0, 0 );
-        if ( hInterval.borderFlags() & QwtInterval::ExcludeMaximum )
-            r.adjust( 0, 0, -1, 0 );
-        if ( vInterval.borderFlags() & QwtInterval::ExcludeMinimum )
-            r.adjust( 0, 1, 0, 0 );
-        if ( vInterval.borderFlags() & QwtInterval::ExcludeMaximum )
-            r.adjust( 0, 0, 0, -1 );
-
-        return r;
-    }
+    QRectF toRect() const;
 
     //! \return Orientation
     Qt::Orientation orientation() const
@@ -133,7 +114,7 @@ public:
     };
 
 public:
-    QwtColumnSymbol( Style = NoStyle );
+    explicit QwtColumnSymbol( Style = NoStyle );
     virtual ~QwtColumnSymbol();
 
     void setFrameStyle( FrameStyle );
@@ -154,6 +135,8 @@ protected:
     void drawBox( QPainter *, const QwtColumnRect & ) const;
 
 private:
+    Q_DISABLE_COPY(QwtColumnSymbol)
+
     class PrivateData;
     PrivateData* d_data;
 };

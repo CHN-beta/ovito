@@ -11,17 +11,18 @@
 #define QWT_PLOT_ITEM_H
 
 #include "qwt_global.h"
-#include "qwt_text.h"
-#include "qwt_legend_data.h"
-#include "qwt_graphic.h"
-#include <qrect.h>
-#include <qlist.h>
 #include <qmetatype.h>
 
-class QPainter;
 class QwtScaleMap;
 class QwtScaleDiv;
 class QwtPlot;
+class QwtText;
+class QwtGraphic;
+class QwtLegendData;
+class QRectF;
+class QPainter;
+class QString;
+template <typename T> class QList;
 
 /*!
   \brief Base class for items on the plot canvas
@@ -102,8 +103,8 @@ public:
         //! For QwtPlotSpectrogram
         Rtti_PlotSpectrogram,
 
-        //! For QwtPlotSvgItem
-        Rtti_PlotSVG,
+        //! For QwtPlotGraphicItem, QwtPlotSvgItem
+        Rtti_PlotGraphic,
 
         //! For QwtPlotTradingCurve
         Rtti_PlotTradingCurve,
@@ -122,6 +123,9 @@ public:
 
         //! For QwtPlotZoneItem
         Rtti_PlotZone,
+
+        //! For QwtPlotVectorField
+        Rtti_PlotVectorField,
 
         /*!
            Values >= Rtti_PlotUserItem are reserved for plot items
@@ -206,7 +210,10 @@ public:
     //! Render hints
     typedef QFlags<RenderHint> RenderHints;
 
-    explicit QwtPlotItem( const QwtText &title = QwtText() );
+    explicit QwtPlotItem();
+    explicit QwtPlotItem( const QString &title );
+    explicit QwtPlotItem( const QwtText &title );
+
     virtual ~QwtPlotItem();
 
     void attach( QwtPlot *plot );
@@ -290,9 +297,7 @@ protected:
     QwtGraphic defaultIcon( const QBrush &, const QSizeF & ) const;
 
 private:
-    // Disabled copy constructor and operator=
-    QwtPlotItem( const QwtPlotItem & );
-    QwtPlotItem &operator=( const QwtPlotItem & );
+    Q_DISABLE_COPY(QwtPlotItem)
 
     class PrivateData;
     PrivateData *d_data;

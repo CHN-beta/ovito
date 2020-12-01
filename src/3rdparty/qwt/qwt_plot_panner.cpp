@@ -10,32 +10,20 @@
 #include "qwt_plot_panner.h"
 #include "qwt_scale_div.h"
 #include "qwt_plot.h"
+#include "qwt_scale_map.h"
 #include "qwt_painter.h"
+#include "moc_qwt_plot_panner.cpp"
+
 #include <qbitmap.h>
 #include <qstyle.h>
 #include <qstyleoption.h>
+#include <qpainter.h>
 #include <qpainterpath.h>
-
-#if QT_VERSION >= 0x050000
-#if QT_VERSION < 0x050100
-#define QWT_USE_WINDOW_HANDLE 1
-#endif
-#endif
-
-#ifdef QWT_USE_WINDOW_HANDLE
-#include <qwindow.h>
-#endif
 
 static QBitmap qwtBorderMask( const QWidget *canvas, const QSize &size )
 {
 #if QT_VERSION >= 0x050000
-    qreal pixelRatio = 1.0;
-
-#ifdef QWT_USE_WINDOW_HANDLE
-    pixelRatio = canvas->windowHandle()->devicePixelRatio();
-#else
-    pixelRatio = canvas->devicePixelRatio();
-#endif
+    const qreal pixelRatio = QwtPainter::devicePixelRatio( canvas );
 #endif
 
     const QRect r( 0, 0, size.width(), size.height() );
@@ -93,11 +81,10 @@ static QBitmap qwtBorderMask( const QWidget *canvas, const QSize &size )
         const QVariant borderRadius = canvas->property( "borderRadius" );
         const QVariant frameWidth = canvas->property( "frameWidth" );
 
-        if ( borderRadius.type() == QVariant::Double
-            && frameWidth.type() == QVariant::Int )
+        if ( borderRadius.canConvert< double >() && frameWidth.canConvert< int >() )
         {
-            const double br = borderRadius.toDouble();
-            const int fw = frameWidth.toInt();
+            const double br = borderRadius.value< double >();
+            const int fw = frameWidth.value< int >();
 
             if ( br > 0.0 && fw > 0 )
             {
@@ -304,3 +291,6 @@ QPixmap QwtPlotPanner::grab() const
     return QwtPanner::grab();
 }
 
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_plot_panner.cpp"
+#endif

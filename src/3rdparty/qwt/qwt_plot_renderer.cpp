@@ -18,6 +18,7 @@
 #include "qwt_text.h"
 #include "qwt_text_label.h"
 #include "qwt_math.h"
+#include "moc_qwt_plot_renderer.cpp"
 
 #include <qpainter.h>
 #include <qpainterpath.h>
@@ -27,12 +28,11 @@
 #include <qfileinfo.h>
 #include <qimagewriter.h>
 #include <qvariant.h>
+#include <qmargins.h>
 
 #ifndef QWT_NO_SVG
 #ifdef QT_SVG_LIB
-#if QT_VERSION >= 0x040500
 #define QWT_FORMAT_SVG 1
-#endif
 #endif
 #endif
 
@@ -72,6 +72,25 @@
 #include <qpdfwriter.h>
 #endif
 
+static qreal qwtScalePenWidth( const QwtPlot* plot )
+{
+    qreal pw = 0.0;
+
+    for ( int axisId = 0; axisId < QwtPlot::axisCnt; axisId++ )
+    {
+        if ( plot->axisEnabled( axisId ) )
+            pw = qMax( pw, plot->axisScaleDraw( axisId )->penWidthF() );
+    }
+
+    return pw;
+}
+
+static QColor qwtScalePenColor( const QwtPlot* plot )
+{
+    const QPalette pal = plot->axisWidget( QwtPlot::yLeft )->palette();
+    return pal.color( QPalette::WindowText );
+}
+
 static QPainterPath qwtCanvasClip(
     const QWidget* canvas, const QRectF &canvasRect )
 {
@@ -79,10 +98,10 @@ static QPainterPath qwtCanvasClip(
     // To avoid too much rounding errors better
     // calculate it in target device resolution
 
-    int x1 = qCeil( canvasRect.left() );
-    int x2 = qFloor( canvasRect.right() );
-    int y1 = qCeil( canvasRect.top() );
-    int y2 = qFloor( canvasRect.bottom() );
+    int x1 = qwtCeil( canvasRect.left() );
+    int x2 = qwtFloor( canvasRect.right() );
+    int y1 = qwtCeil( canvasRect.top() );
+    int y2 = qwtFloor( canvasRect.bottom() );
 
     const QRect r( x1, y1, x2 - x1 - 1, y2 - y1 - 1 );
 
@@ -99,7 +118,11 @@ static QPainterPath qwtCanvasClip(
 static inline QFont qwtResolvedFont( const QWidget *widget )
 {
     QFont font = widget->font();
+#if QT_VERSION >= 0x060000
+    font.setResolveMask( QFont::AllPropertiesResolved );
+#else
     font.resolve( QFont::AllPropertiesResolved );
+#endif
 
     return font;
 }
@@ -291,7 +314,7 @@ void QwtPlotRenderer::renderDocument( QwtPlot *plot,
 
 #if QWT_PDF_WRITER
         QPdfWriter pdfWriter( fileName );
-        pdfWriter.setPageSizeMM( sizeMM );
+        pdfWriter.setPageSize( QPageSize( sizeMM, QPageSize::Millimeter ) );
         pdfWriter.setTitle( title );
         pdfWriter.setPageMargins( QMarginsF() );
         pdfWriter.setResolution( resolution );
@@ -485,9 +508,8 @@ void QwtPlotRenderer::render( QwtPlot *plot,
     {
         // subtract the contents margins
 
-        int left, top, right, bottom;
-        plot->getContentsMargins( &left, &top, &right, &bottom );
-        layoutRect.adjust( left, top, -right, -bottom );
+        const QMargins m = plot->contentsMargins();
+        layoutRect.adjust( m.left(), m.top(), -m.right(), -m.bottom() );
     }
 
     QwtPlotLayout *layout = plot->plotLayout();
@@ -514,19 +536,21 @@ void QwtPlotRenderer::render( QwtPlot *plot,
                 // the position of the backbone - otherwise we
                 // need to introduce a margin around the canvas
 
+                const qreal fw = qwtScalePenWidth( plot );
+
                 switch( axisId )
                 {
                     case QwtPlot::yLeft:
-                        layoutRect.adjust( 1, 0, 0, 0 );
+                        layoutRect.adjust( fw, 0, 0, 0 );
                         break;
                     case QwtPlot::yRight:
-                        layoutRect.adjust( 0, 0, -1, 0 );
+                        layoutRect.adjust( 0, 0, -fw, 0 );
                         break;
                     case QwtPlot::xTop:
-                        layoutRect.adjust( 0, 1, 0, 0 );
+                        layoutRect.adjust( 0, fw, 0, 0 );
                         break;
                     case QwtPlot::xBottom:
-                        layoutRect.adjust( 0, 0, 0, -1 );
+                        layoutRect.adjust( 0, 0, 0, -fw );
                         break;
                     default:
                         break;
@@ -695,8 +719,7 @@ void QwtPlotRenderer::renderLegend( const QwtPlot *plot,
   \param baseDist Base distance
   \param scaleRect Bounding rectangle for the scale
 */
-void QwtPlotRenderer::renderScale( const QwtPlot *plot,
-    QPainter *painter,
+void QwtPlotRenderer::renderScale( const QwtPlot *plot, QPainter *painter,
     int axisId, int startDist, int endDist, int baseDist,
     const QRectF &scaleRect ) const
 {
@@ -716,11 +739,15 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
     QwtScaleDraw::Alignment align;
     double x, y, w;
 
+    qreal off = 0.0;
+    if ( d_data->layoutFlags & FrameWithScales )
+        off = qwtScalePenWidth( plot );
+
     switch ( axisId )
     {
         case QwtPlot::yLeft:
         {
-            x = scaleRect.right() - 1.0 - baseDist;
+            x = scaleRect.right() - 1.0 - baseDist - off;
             y = scaleRect.y() + startDist;
             w = scaleRect.height() - startDist - endDist;
             align = QwtScaleDraw::LeftScale;
@@ -728,7 +755,7 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
         }
         case QwtPlot::yRight:
         {
-            x = scaleRect.left() + baseDist;
+            x = scaleRect.left() + baseDist + off;
             y = scaleRect.y() + startDist;
             w = scaleRect.height() - startDist - endDist;
             align = QwtScaleDraw::RightScale;
@@ -737,7 +764,7 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
         case QwtPlot::xTop:
         {
             x = scaleRect.left() + startDist;
-            y = scaleRect.bottom() - 1.0 - baseDist;
+            y = scaleRect.bottom() - 1.0 - baseDist - off;
             w = scaleRect.width() - startDist - endDist;
             align = QwtScaleDraw::TopScale;
             break;
@@ -745,7 +772,7 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
         case QwtPlot::xBottom:
         {
             x = scaleRect.left() + startDist;
-            y = scaleRect.top() + baseDist;
+            y = scaleRect.top() + baseDist + off;
             w = scaleRect.width() - startDist - endDist;
             align = QwtScaleDraw::BottomScale;
             break;
@@ -762,6 +789,11 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
     const QPointF sdPos = sd->pos();
     const double sdLength = sd->length();
 
+    const bool hasBackbone = sd->hasComponent( QwtAbstractScaleDraw::Backbone );
+
+    if ( d_data->layoutFlags & FrameWithScales )
+        sd->enableComponent( QwtAbstractScaleDraw::Backbone, false );
+
     sd->move( x, y );
     sd->setLength( w );
 
@@ -772,6 +804,7 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
     // reset previous values
     sd->move( sdPos );
     sd->setLength( sdLength );
+    sd->enableComponent( QwtAbstractScaleDraw::Backbone, hasBackbone );
 
     painter->restore();
 }
@@ -796,8 +829,15 @@ void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
     {
         painter->save();
 
-        r.adjust( -1.0, -1.0, 1.0, 1.0 );
-        painter->setPen( QPen( Qt::black ) );
+        QPen pen;
+        pen.setColor( qwtScalePenColor( plot ) );
+        pen.setWidth( qwtScalePenWidth( plot ) );
+        pen.setJoinStyle( Qt::MiterJoin );
+
+        painter->setPen( pen );
+
+        const qreal pw2 = 0.5 * pen.widthF();
+        r.adjust( -pw2, -pw2, pw2, pw2 );
 
         if ( !( d_data->discardFlags & DiscardCanvasBackground ) )
         {
@@ -844,13 +884,13 @@ void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
     {
         QPainterPath clipPath;
 
-        int frameWidth = 0;
+        double frameWidth = 0.0;
 
         if ( !( d_data->discardFlags & DiscardCanvasFrame ) )
         {
             const QVariant fw = canvas->property( "frameWidth" );
-            if ( fw.type() == QVariant::Int )
-                frameWidth = fw.toInt();
+            if ( fw.canConvert< double >() )
+                frameWidth = fw.value< double >();
 
             clipPath = qwtCanvasClip( canvas, canvasRect );
         }
@@ -887,10 +927,10 @@ void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
                 canvas->property( "frameShape" ).toInt();
 
             const QVariant borderRadius = canvas->property( "borderRadius" );
-            if ( borderRadius.type() == QVariant::Double
-                && borderRadius.toDouble() > 0.0 )
+            if ( borderRadius.canConvert< double >()
+                && borderRadius.value< double >() > 0.0 )
             {
-                const double radius = borderRadius.toDouble();
+                const double radius = borderRadius.value< double >();
 
                 QwtPainter::drawRoundedFrame( painter, canvasRect,
                     radius, radius, canvas->palette(), frameWidth, frameStyle );
@@ -979,7 +1019,7 @@ bool QwtPlotRenderer::updateCanvasMargins( QwtPlot *plot,
     {
         if ( margins[axisId] >= 0.0 )
         {
-            const int m = qCeil( margins[axisId] );
+            const int m = qwtCeil( margins[axisId] );
             plot->plotLayout()->setCanvasMargin( m, axisId);
             marginsChanged = true;
         }
@@ -1051,3 +1091,7 @@ bool QwtPlotRenderer::exportTo( QwtPlot *plot, const QString &documentName,
 
     return true;
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_plot_renderer.cpp"
+#endif

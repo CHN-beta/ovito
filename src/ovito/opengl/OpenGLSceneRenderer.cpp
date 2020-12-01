@@ -44,6 +44,9 @@
 #include <QSurface>
 #include <QWindow>
 #include <QScreen>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	#include <QOpenGLVersionFunctionsFactory>
+#endif
 
 namespace Ovito {
 
@@ -223,19 +226,31 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 #ifndef Q_OS_WASM
 	if(!glcontext()->isOpenGLES()) {
 		// Obtain a functions object that allows to call OpenGL 2.0 functions in a platform-independent way.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		_glFunctions20 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_2_0>(_glcontext);
+#else
 		_glFunctions20 = _glcontext->versionFunctions<QOpenGLFunctions_2_0>();
 		if(!_glFunctions20 || !_glFunctions20->initializeOpenGLFunctions())
 			_glFunctions20 = nullptr;
+#endif
 
 		// Obtain a functions object that allows to call OpenGL 3.0 functions in a platform-independent way.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		_glFunctions30 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_0>(_glcontext);
+#else
 		_glFunctions30 = _glcontext->versionFunctions<QOpenGLFunctions_3_0>();
 		if(!_glFunctions30 || !_glFunctions30->initializeOpenGLFunctions())
 			_glFunctions30 = nullptr;
+#endif
 
 		// Obtain a functions object that allows to call OpenGL 3.2 core functions in a platform-independent way.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		_glFunctions32 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_2_Core>(_glcontext);
+#else
 		_glFunctions32 = _glcontext->versionFunctions<QOpenGLFunctions_3_2_Core>();
 		if(!_glFunctions32 || !_glFunctions32->initializeOpenGLFunctions())
 			_glFunctions32 = nullptr;
+#endif
 
 		if(!_glFunctions20 && !_glFunctions30 && !_glFunctions32)
 			throwException(tr("Could not resolve OpenGL functions. Invalid OpenGL context."));

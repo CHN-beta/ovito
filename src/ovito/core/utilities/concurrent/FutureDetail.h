@@ -48,7 +48,7 @@ namespace detail
 
 	/// C++14 implementation of std::apply(), which is only available in C++17.
 	template<typename F, class Tuple>
-	static constexpr decltype(auto) apply(F&& f, Tuple&& t) {
+	static constexpr decltype(auto) apply_cpp14(F&& f, Tuple&& t) {
 		return apply_impl(
 			std::forward<F>(f), std::forward<Tuple>(t),
 			std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
@@ -57,7 +57,7 @@ namespace detail
 	/// Determine the return type of a continuation function object.
 	template<typename FC, typename Args>
 	struct continuation_func_return_type {
-		using type = decltype(apply(std::declval<FC>(), std::declval<Args>()));
+		using type = decltype(apply_cpp14(std::declval<FC>(), std::declval<Args>()));
 	};
 
 	/// Determines if the return type of a continuation function object is 'void'.

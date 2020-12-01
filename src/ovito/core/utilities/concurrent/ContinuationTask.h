@@ -78,7 +78,7 @@ public:
 		try {
 			// Call the continuation function with the results of the finished task.
 			this->setStarted();
-			Ovito::detail::apply(std::forward<FC>(cont), std::forward<Args>(params));
+			Ovito::detail::apply_cpp14(std::forward<FC>(cont), std::forward<Args>(params));
 		}
 		catch(...) {
 			this->captureException();
@@ -96,7 +96,7 @@ public:
 		try {
 			// Call the continuation function with the results of the finished task.
 			this->setStarted();
-			setResultsDirect(Ovito::detail::apply(std::forward<FC>(cont), std::forward<Args>(params)));
+			setResultsDirect(Ovito::detail::apply_cpp14(std::forward<FC>(cont), std::forward<Args>(params)));
 		}
 		catch(...) {
 			this->captureException();
@@ -115,7 +115,7 @@ public:
 			// Call the continuation function with the results of the finished task.
 			// The continuation function returns another future, which will provide the final results.
 			this->setStarted();
-			auto future = Ovito::detail::apply(std::forward<FC>(cont), std::forward<Args>(params));
+			auto future = Ovito::detail::apply_cpp14(std::forward<FC>(cont), std::forward<Args>(params));
 			OVITO_ASSERT(future.isValid());
 			// Make this task dependent on the future's task.
 			_continuedTask = future.takeTaskDependency();

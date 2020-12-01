@@ -35,6 +35,8 @@
 #include <QResource>
 #include <QtDebug>
 #include <QtGui>
+#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObjectFormat>
 
 /*! \namespace Ovito::Gui
     \brief This namespace contains the graphical user interface classes.

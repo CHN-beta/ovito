@@ -117,7 +117,7 @@ public:
 protected:
 
 	/// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
-	QMutex& mutex() { return _mutex; }
+	QRecursiveMutex& mutex() { return _mutex; }
 
 	/// Strips a URL from username and password information.
 	static QUrl normalizeUrl(QUrl url) {
@@ -179,7 +179,7 @@ private:
 	QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
 
 	/// The mutex to synchronize access to above data structures.
-	QMutex _mutex{QMutex::Recursive};
+	QRecursiveMutex _mutex;
 
 #ifdef OVITO_SSH_CLIENT
 	/// Holds open SSH connections, which are currently active.

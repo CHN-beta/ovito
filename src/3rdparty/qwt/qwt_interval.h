@@ -13,10 +13,6 @@
 #include "qwt_global.h"
 #include <qmetatype.h>
 
-#ifndef QT_NO_DEBUG_STREAM
-#include <qdebug.h>
-#endif
-
 /*!
   \brief A class representing an interval
 
@@ -69,11 +65,13 @@ public:
     double maxValue() const;
 
     double width() const;
+    long double widthL() const;
 
     void setMinValue( double );
     void setMaxValue( double );
 
     bool contains( double value ) const;
+    bool contains( const QwtInterval & ) const;
 
     bool intersects( const QwtInterval & ) const;
     QwtInterval intersect( const QwtInterval & ) const;
@@ -227,6 +225,24 @@ inline bool QwtInterval::isValid() const
 inline double QwtInterval::width() const
 {
     return isValid() ? ( d_maxValue - d_minValue ) : 0.0;
+}
+
+/*!
+   \brief Return the width of an interval as long double
+
+   The width of invalid intervals is 0.0, otherwise the result is
+   maxValue() - minValue().
+
+   \return Interval width
+   \sa isValid()
+*/
+inline long double QwtInterval::widthL() const
+{
+    if ( !isValid() )
+        return 0.0;
+
+    return static_cast<long double>( d_maxValue )
+        - static_cast<long double>( d_minValue );
 }
 
 /*!

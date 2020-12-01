@@ -8,6 +8,8 @@
  *****************************************************************************/
 
 #include "qwt_abstract_legend.h"
+#include "qwt_legend_data.h"
+#include "moc_qwt_abstract_legend.cpp"
 
 /*!
   Constructor
@@ -36,3 +38,7 @@ int QwtAbstractLegend::scrollExtent( Qt::Orientation orientation ) const
     Q_UNUSED( orientation );
     return 0;
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_abstract_legend.cpp"
+#endif

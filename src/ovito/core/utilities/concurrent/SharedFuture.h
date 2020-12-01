@@ -220,7 +220,7 @@ void SharedFuture<R...>::force_then(Executor&& executor, bool defer, FC&& cont) 
 			return;
 
 		// Now it's time to execute the continuation function.
-		Ovito::detail::apply(std::forward<FC>(cont), task->template getResults<tuple_type>());
+		Ovito::detail::apply_cpp14(std::forward<FC>(cont), task->template getResults<tuple_type>());
 	});
 }
 

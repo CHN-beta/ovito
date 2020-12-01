@@ -7,16 +7,14 @@
  * modify it under the terms of the Qwt License, Version 1.0
  *****************************************************************************/
 
-/*! \file !*/
 #ifndef QWT_PLOT_DICT
 #define QWT_PLOT_DICT
 
 #include "qwt_global.h"
 #include "qwt_plot_item.h"
+
 #include <qlist.h>
 
-/// \var typedef QList< QwtPlotItem *> QwtPlotItemList
-/// \brief See QT 4.x assistant documentation for QList
 typedef QList<QwtPlotItem *> QwtPlotItemList;
 typedef QList<QwtPlotItem *>::ConstIterator QwtPlotItemIterator;
 

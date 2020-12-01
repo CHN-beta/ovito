@@ -47,7 +47,7 @@ PropertyObject::PropertyObject(DataSet* dataset) : DataObject(dataset)
 PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type, QStringList componentNames) :
 	DataObject(dataset),
 	_dataType(dataType),
-	_dataTypeSize(QMetaType::sizeOf(dataType)),
+	_dataTypeSize(getQtTypeSizeFromId(dataType)),
 	_stride(stride),
 	_componentCount(componentCount),
 	_componentNames(std::move(componentNames)),
@@ -186,7 +186,7 @@ void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomput
 		stream.beginChunk(0x02);
 		stream << _name;
 		stream << _type;
-		stream << QByteArray(QMetaType::typeName(_dataType));
+		stream << QByteArray(getQtTypeNameFromId(_dataType));
 		stream.writeSizeT(_dataTypeSize);
 		stream.writeSizeT(_stride);
 		stream.writeSizeT(_componentCount);
@@ -221,9 +221,9 @@ void PropertyObject::loadFromStream(ObjectLoadStream& stream)
 	stream >> _type;
 	QByteArray dataTypeName;
 	stream >> dataTypeName;
-	_dataType = QMetaType::type(dataTypeName.constData());
-	OVITO_ASSERT_MSG(_dataType != 0, "PropertyObject::loadFromStream()", QString("The metadata type '%1' seems to be no longer defined.").arg(QString(dataTypeName)).toLocal8Bit().constData());
-	OVITO_ASSERT(dataTypeName == QMetaType::typeName(_dataType));
+	_dataType = getQtTypeIdFromName(dataTypeName);
+	OVITO_ASSERT_MSG(_dataType != 0, "PropertyObject::loadFromStream()", qPrintable(QString("The metadata type '%1' seems to be no longer defined.").arg(QString::fromLatin1(dataTypeName))));
+	OVITO_ASSERT(dataTypeName == getQtTypeNameFromId(_dataType));
 	stream.readSizeT(_dataTypeSize);
 	stream.readSizeT(_stride);
 	stream.readSizeT(_componentCount);
@@ -796,7 +796,7 @@ void PropertyObject::convertDataType(int newDataType)
 	if(dataType() == newDataType)
 		return;
 
-	size_t newDataTypeSize = QMetaType::sizeOf(newDataType);
+	size_t newDataTypeSize = getQtTypeSizeFromId(newDataType);
 	size_t newStride = _componentCount * newDataTypeSize;
 	std::unique_ptr<uint8_t[]> newData = std::make_unique<uint8_t[]>(_numElements * newStride);
 

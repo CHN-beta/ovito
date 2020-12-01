@@ -81,6 +81,8 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include git revision number in OVITO version string." "OFF")
+SET(OVITO_QT_MAJOR_VERSION "Qt5" CACHE STRING "The major version of the Qt framework to use (Qt5 or Qt6).")
+SET_PROPERTY(CACHE OVITO_QT_MAJOR_VERSION PROPERTY STRINGS Qt5 Qt6)
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")

@@ -11,12 +11,17 @@
 #define QWT_CLIPPER_H
 
 #include "qwt_global.h"
-#include "qwt_interval.h"
-#include <qpolygon.h>
-#include <qvector.h>
 
+class QwtInterval;
+class QPointF;
 class QRect;
 class QRectF;
+class QPolygon;
+class QPolygonF;
+
+#if QT_VERSION < 0x060000
+template <typename T> class QVector;
+#endif
 
 /*!
   \brief Some clipping algorithms
@@ -25,12 +30,22 @@ class QRectF;
 class QWT_EXPORT QwtClipper
 {
 public:
-    static QPolygon clipPolygon( const QRect &,
-        const QPolygon &, bool closePolygon = false );
-    static QPolygon clipPolygon( const QRectF &,
+    static void clipPolygon( const QRect &,
+        QPolygon &, bool closePolygon = false );
+
+    static void clipPolygon( const QRectF &,
+        QPolygon &, bool closePolygon = false );
+
+    static void clipPolygonF( const QRectF &,
+        QPolygonF &, bool closePolygon = false );
+
+    static QPolygon clippedPolygon( const QRect &,
         const QPolygon &, bool closePolygon = false );
 
-    static QPolygonF clipPolygonF( const QRectF &,
+    static QPolygon clippedPolygon( const QRectF &,
+        const QPolygon &, bool closePolygon = false );
+
+    static QPolygonF clippedPolygonF( const QRectF &,
         const QPolygonF &, bool closePolygon = false );
 
     static QVector<QwtInterval> clipCircle(

@@ -8,7 +8,7 @@
  *****************************************************************************/
 
 #ifndef QWT_TEXT_ENGINE_H
-#define QWT_TEXT_ENGINE_H 1
+#define QWT_TEXT_ENGINE_H
 
 #include "qwt_global.h"
 #include <qsize.h>
@@ -101,6 +101,9 @@ public:
 
 protected:
     QwtTextEngine();
+
+private:
+    Q_DISABLE_COPY(QwtTextEngine)
 };
 
 
@@ -117,18 +120,20 @@ public:
     virtual ~QwtPlainTextEngine();
 
     virtual double heightForWidth( const QFont &font, int flags,
-        const QString &text, double width ) const;
+        const QString &text, double width ) const QWT_OVERRIDE;
 
     virtual QSizeF textSize( const QFont &font, int flags,
-        const QString &text ) const;
+        const QString &text ) const QWT_OVERRIDE;
 
-    virtual void draw( QPainter *painter, const QRectF &rect,
-        int flags, const QString &text ) const;
+    virtual void draw( QPainter *, const QRectF &rect,
+        int flags, const QString &text ) const QWT_OVERRIDE;
 
-    virtual bool mightRender( const QString & ) const;
+    virtual bool mightRender( const QString & ) const QWT_OVERRIDE;
 
-    virtual void textMargins( const QFont &, const QString &,
-        double &left, double &right, double &top, double &bottom ) const;
+    virtual void textMargins(
+        const QFont &, const QString &,
+        double &left, double &right,
+        double &top, double &bottom ) const QWT_OVERRIDE;
 
 private:
     class PrivateData;
@@ -150,18 +155,20 @@ public:
     QwtRichTextEngine();
 
     virtual double heightForWidth( const QFont &font, int flags,
-        const QString &text, double width ) const;
+        const QString &text, double width ) const QWT_OVERRIDE;
 
     virtual QSizeF textSize( const QFont &font, int flags,
-        const QString &text ) const;
+        const QString &text ) const QWT_OVERRIDE;
 
-    virtual void draw( QPainter *painter, const QRectF &rect,
-        int flags, const QString &text ) const;
+    virtual void draw( QPainter *, const QRectF &rect,
+        int flags, const QString &text ) const QWT_OVERRIDE;
 
-    virtual bool mightRender( const QString & ) const;
+    virtual bool mightRender( const QString & ) const QWT_OVERRIDE;
 
-    virtual void textMargins( const QFont &, const QString &,
-        double &left, double &right, double &top, double &bottom ) const;
+    virtual void textMargins(
+        const QFont &, const QString &,
+        double &left, double &right,
+        double &top, double &bottom ) const QWT_OVERRIDE;
 
 private:
     QString taggedText( const QString &, int flags ) const;

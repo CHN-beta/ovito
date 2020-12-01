@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,12 +77,12 @@ QSize ColorPickerWidget::sizeHint() const
 	QStyleOptionButton opt;
 	opt.initFrom(this);
 	opt.features = QStyleOptionButton::Flat;
-	return style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(w, h), this).expandedTo(QApplication::globalStrut()).expandedTo(QSize(0,22));
+	return style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
 #else
 	QStyleOptionFrame opt;
 	opt.initFrom(this);
 	opt.features = QStyleOptionFrame::Flat;
-	return style()->sizeFromContents(QStyle::CT_LineEdit, &opt, QSize(w, h), this).expandedTo(QApplication::globalStrut()).expandedTo(QSize(0,22));
+	return style()->sizeFromContents(QStyle::CT_LineEdit, &opt, QSize(w, h), this).expandedTo(QSize(0,22));
 #endif
 }
 

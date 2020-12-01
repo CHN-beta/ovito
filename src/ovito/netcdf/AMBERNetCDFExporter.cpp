@@ -182,7 +182,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 			int var;
 			if(entry.key() == NC_TIME_STR || entry.key() == QStringLiteral("SourceFrame"))
 				continue;
-			else if((QMetaType::Type)entry.value().type() == QMetaType::Double || (QMetaType::Type)entry.value().type() == QMetaType::Float)
+			else if(getQVariantTypeId(entry.value()) == QMetaType::Double || getQVariantTypeId(entry.value()) == QMetaType::Float)
 				NCERR(nc_def_var(_ncid, entry.key().toUtf8().constData(), NC_DOUBLE, 1, &_frame_dim, &var));
 			else if(entry.value().canConvert<int>())
 				NCERR(nc_def_var(_ncid, entry.key().toUtf8().constData(), NC_INT, 1, &_frame_dim, &var));
