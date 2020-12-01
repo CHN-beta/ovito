@@ -25,7 +25,7 @@ OVITO_STANDARD_PLUGIN(Galamost
 	SOURCES
 		GALAMOSTImporter.cpp
 	PLUGIN_DEPENDENCIES Particles
-	LIB_DEPENDENCIES Qt::Xml
+	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
 )
 
 # Propagate list of plugins to parent scope.

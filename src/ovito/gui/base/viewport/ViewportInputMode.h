@@ -145,7 +145,7 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	static QPointF getGlobalMousePosition(const QMouseEvent* event) { return event->globalPosition(); }
 #else
-	static const QPointF& getGlobalMousePosition(const QMouseEvent* event) { return event->globalPos(); }
+	static const QPointF& getGlobalMousePosition(const QMouseEvent* event) { return event->screenPos(); }
 #endif
 
 public Q_SLOTS:

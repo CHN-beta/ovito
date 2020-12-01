@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (2018) Alexander Stukowski
+//  Copyright (2020) Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,11 @@ private:
     bool _isLocked = false;
 
 	/// The global mutex used to serialize access to the NetCDF library functions.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	static QRecursiveMutex _netcdfMutex;
+#else
+	static QMutex _netcdfMutex;
+#endif
 };
 
 /**
