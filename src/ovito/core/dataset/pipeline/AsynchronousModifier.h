@@ -123,7 +123,9 @@ protected:
 	virtual bool applyCachedResultsSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state);
 };
 
+#ifndef Core_EXPORTS
 // Export this class template specialization from the DLL under Windows.
-extern template class OVITO_CORE_EXPORT_TEMPLATE Future<AsynchronousModifier::EnginePtr>;
+extern template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
+#endif
 
 }	// End of namespace

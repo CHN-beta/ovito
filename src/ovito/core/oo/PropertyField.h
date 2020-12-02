@@ -287,6 +287,12 @@ protected:
 	pointer _target{};
 };
 
+#ifndef Core_EXPORTS
+// Instantiate base class template for the fancy pointer base types needed.
+extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
+extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
+#endif
+
 /**
  * \brief Class template for reference fields of RefMaker derived classes.
  */
@@ -388,6 +394,12 @@ protected:
 	/// The actual list of fancy pointers.
 	container _targets;
 };
+
+#ifndef Core_EXPORTS
+// Instantiate base class template for the fancy pointer base types needed.
+extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
+extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
+#endif
 
 /**
  * \brief Class template for vector reference fields of RefMaker derived classes.
