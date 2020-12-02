@@ -227,9 +227,9 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-template class SingleReferenceFieldBase<RefTarget*>;
-template class SingleReferenceFieldBase<OORef<RefTarget>>;
-template class SingleReferenceFieldBase<DataOORef<const DataObject>>;
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
 
 #ifdef OVITO_DEBUG
 /******************************************************************************
@@ -557,8 +557,8 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-template class VectorReferenceFieldBase<RefTarget*>;
-template class VectorReferenceFieldBase<OORef<RefTarget>>;
-template class VectorReferenceFieldBase<DataOORef<const DataObject>>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
 
 }	// End of namespace
