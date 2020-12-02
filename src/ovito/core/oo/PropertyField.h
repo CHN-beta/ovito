@@ -256,7 +256,7 @@ template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { usi
  * \brief Stores a fancy pointer to a RefTarget object held by a RefMaker class.
  */
 template<typename T>
-class OVITO_CORE_EXPORT SingleReferenceFieldBase : public PropertyFieldBase
+class SingleReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
@@ -328,7 +328,7 @@ public:
  * \brief Stores a list of fancy pointers to RefTarget objects held by a RefMaker class.
  */
 template<typename T>
-class OVITO_CORE_EXPORT VectorReferenceFieldBase : public PropertyFieldBase
+class VectorReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
