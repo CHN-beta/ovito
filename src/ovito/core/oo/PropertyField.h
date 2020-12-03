@@ -256,7 +256,7 @@ template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { usi
  * \brief Stores a fancy pointer to a RefTarget object held by a RefMaker class.
  */
 template<typename T>
-class SingleReferenceFieldBase : public PropertyFieldBase
+class OVITO_CORE_EXPORT SingleReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
@@ -287,10 +287,13 @@ protected:
 	pointer _target{};
 };
 
-#ifndef Core_EXPORTS
 // Instantiate base class template for the fancy pointer base types needed.
+#if !defined(Core_EXPORTS)
 extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
 extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
+#elif !defined(Q_CC_MSVC)
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
 #endif
 
 /**
@@ -328,7 +331,7 @@ public:
  * \brief Stores a list of fancy pointers to RefTarget objects held by a RefMaker class.
  */
 template<typename T>
-class VectorReferenceFieldBase : public PropertyFieldBase
+class OVITO_CORE_EXPORT VectorReferenceFieldBase : public PropertyFieldBase
 {
 public:
 
@@ -395,10 +398,13 @@ protected:
 	container _targets;
 };
 
-#ifndef Core_EXPORTS
 // Instantiate base class template for the fancy pointer base types needed.
+#if !defined(Core_EXPORTS)
 extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
 extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
+#elif !defined(Q_CC_MSVC)
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
 #endif
 
 /**

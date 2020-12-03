@@ -224,10 +224,13 @@ using DataObjectClassPtr = const DataObject::OOMetaClass*;
 
 #include <ovito/core/dataset/data/DataOORef.h>
 
-#ifndef Core_EXPORTS
 namespace Ovito {
 // Instantiate class templates.
+#if !defined(Core_EXPORTS)
 extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
 extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
-}
+#elif !defined(Q_CC_MSVC)
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
 #endif
+}

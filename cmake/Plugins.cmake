@@ -145,7 +145,10 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	IF(APPLE)
 		# This is required to avoid error by install_name_tool.
 		SET_TARGET_PROPERTIES(${target_name} PROPERTIES LINK_FLAGS "-headerpad_max_install_names")
-	ENDIF(APPLE)
+	ELSEIF(UNIX)
+		# Tell linker to detect missing references already at link time (and not at runtime).
+		TARGET_LINK_OPTIONS(${target_name} PRIVATE "LINKER:--no-undefined")
+	ENDIF()
 
 	IF(NOT OVITO_BUILD_PYTHON_PACKAGE)
 		IF(APPLE)
