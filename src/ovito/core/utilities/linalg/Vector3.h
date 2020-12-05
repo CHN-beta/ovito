@@ -77,7 +77,7 @@ class Vector_3 : public std::array<T, 3>
 {
 public:
 
-	/// An empty type that denotes the vector (0,0,0).
+	/// An empty type denoting the vector (0,0,0).
 	struct Zero {};
 
 	using typename std::array<T, 3>::size_type;
@@ -438,5 +438,3 @@ Q_DECLARE_TYPEINFO(Ovito::Vector3, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3I, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3*, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3I*, Q_PRIMITIVE_TYPE);
-
-

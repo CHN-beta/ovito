@@ -42,6 +42,9 @@ public:
 	PromiseBase() noexcept {}
 #endif
 
+	/// Move constructor.
+	PromiseBase(PromiseBase&& p) noexcept = default;
+
 	/// Destructor.
 	~PromiseBase() { reset(); }
 
@@ -166,9 +169,6 @@ public:
 	void finally(F&& cont) { finally(Ovito::detail::InlineExecutor(), false, std::forward<F>(cont)); }	
 
 protected:
-
-	/// Move constructor.
-	PromiseBase(PromiseBase&& p) noexcept = default;
 
 	/// Constructor.
 	PromiseBase(TaskPtr&& p) noexcept : _task(std::move(p)) {}

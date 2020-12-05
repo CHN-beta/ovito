@@ -98,8 +98,10 @@ public:
 
 		/// Constructor.
 		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& fileHandle, const DataCollection* masterDataCollection, PipelineObject* dataSource) :
-			_dataset(dataset), _frame(frame), _fileHandle(fileHandle), 
-			_state(masterDataCollection ? masterDataCollection : new DataCollection(dataset), PipelineStatus::Success),
+			_dataset(dataset), 
+			_frame(frame), 
+			_fileHandle(fileHandle), 
+			_state(masterDataCollection ? DataOORef<const DataCollection>(masterDataCollection) : DataOORef<const DataCollection>::create(dataset, executionContext()), PipelineStatus::Success),
 			_dataSource(dataSource) {}
 
 		/// Returns the global dataset this frame loader belongs to.
@@ -246,7 +248,7 @@ public:
 	virtual Future<PipelineFlowState> loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource);
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) = 0;
+	virtual FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) { return {}; }
 
 	/// Creates an asynchronous frame discovery object that scans a file for contained animation frames.
 	virtual FrameFinderPtr createFrameFinder(const FileHandle& file) { return {}; }

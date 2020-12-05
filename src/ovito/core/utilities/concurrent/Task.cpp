@@ -59,7 +59,7 @@ void Task::cancel() noexcept
 {
 	if(isCanceled() || isFinished()) return;
 
-	// Prevent this task instance from getting deleted while canceling up.
+	// Prevent this task instance from getting deleted while clearning up.
 	TaskPtr selfLock = shared_from_this();
 	cancelNoSelfLock();
 }

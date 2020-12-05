@@ -24,7 +24,7 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 #include <QXmlStreamReader>
@@ -67,39 +67,18 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
-		return std::make_shared<FrameLoader>(frame, file);
+		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource);
 	}
 
 private:
 
-	class RectilinearGridFrameData : public FileSourceImporter::FrameData
-	{
-	public:
-
-		/// Inserts the loaded loaded into the provided pipeline state structure. This function is
-		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
-
-		/// Returns the current simulation cell matrix.
-		const SimulationCell& simulationCell() const { return _simulationCell; }
-
-		/// Returns a reference to the simulation cell.
-		SimulationCell& simulationCell() { return _simulationCell; }
-
-	private:
-
-		/// The simulation cell geometry.
-		SimulationCell _simulationCell;
-	};
-
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public StandardFrameLoader
 	{
 	public:
 
-		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file) {}
+		/// Inherit constructor from base class.
+		using StandardFrameLoader::StandardFrameLoader;
 
 	protected:
 

@@ -64,82 +64,16 @@ public:
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTM"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
-		return std::make_shared<FrameLoader>(frame, file);
-	}
-
 	/// Loads the data for the given frame from the external file.
-	virtual Future<FrameDataPtr> loadFrame(const Frame& frame, const FileHandle& file) override;
+	virtual Future<PipelineFlowState> loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override;
 
 private:
 
-	class MultiBlockFrameData : public FileSourceImporter::FrameData
-	{
-	public:
-
-		/// Inserts the loaded loaded into the provided pipeline state structure. This function is
-		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix = {}) override;
-
-		/// Adds an URL to the list of URLs that are part of the multi-block dataset.
-		void addUrl(QUrl&& url, QStringRef blockName) { 
-			_urls.push_back(std::move(url)); 
-			_blockNames.push_back(blockName.toString());
-		}
-
-		/// Returns the list of URLs referenced by the VTM file.
-		const std::vector<QUrl>& urls() const { return _urls; }
-
-		/// Removes and returns next next URL from the list of URLs referenced by the VTM file.
-		bool takeUrl(QUrl& url, QString& blockName) {
-			if(_urls.empty()) return false;
-			url = std::move(_urls.back());
-			_urls.pop_back();
-			blockName = std::move(_blockNames.back());
-			_blockNames.pop_back();
-			return true;
-		}
-
-		/// Adds a dataset to the multi-block dataset.
-		void addBlockData(FrameDataPtr blockData, const QString& name) {
-			OVITO_ASSERT(blockData);
-			_blockData.insert(_blockData.begin(), std::move(blockData));
-			_loadedBlockNames.insert(_loadedBlockNames.begin(), name);
-		}
-
-	private:
-
-		/// The list of URLs referenced by the VTM file.
-		std::vector<QUrl> _urls;
-
-		/// The names of the child blocks.
-		std::vector<QString> _blockNames;
-
-		/// The loaded data of the child blocks.
-		std::vector<FrameDataPtr> _blockData;
-
-		/// The names of the loaded child blocks.
-		std::vector<QString> _loadedBlockNames;
-	};
-
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
-	{
-	public:
-
-		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file) {}
-
-	protected:
-
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-	};
+	/// Parses the given VTM file and returns the list of referenced data files.
+	static std::vector<std::pair<QUrl, QString>> loadVTMFile(const FileHandle& fileHandle);
 
 	/// Helper method that implements asynchronous loading of datasets referenced by the VTM file.
-	Future<FrameDataPtr> loadNextDataset(FrameDataPtr frameData);
+	Future<PipelineFlowState> loadDataBlock(const QUrl& url, const QString& blockName, ExecutionContext executionContext, const DataCollection* masterCollection, PipelineObject* dataSource);
 };
 
 }	// End of namespace

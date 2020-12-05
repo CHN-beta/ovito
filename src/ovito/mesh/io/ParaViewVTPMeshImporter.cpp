@@ -21,8 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/io/SurfaceMeshFrameData.h>
-#include <ovito/mesh/surface/SurfaceMeshVertices.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/surface/SurfaceMeshVis.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include "ParaViewVTPMeshImporter.h"
 
 namespace Ovito { namespace Mesh {
@@ -66,13 +67,23 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile()
+void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
 
-	// Create the container for the mesh data to be loaded.
-	std::shared_ptr<SurfaceMeshFrameData> frameData = std::make_shared<SurfaceMeshFrameData>();
-	SurfaceMeshAccess& mesh = frameData->mesh();
+	// Create the destination mesh data structure.
+	SurfaceMesh* meshObj;
+	if(const SurfaceMesh* existingMeshObj = state().getObject<SurfaceMesh>()) {
+		meshObj = state().makeMutable(existingMeshObj);
+	}
+	else {
+		meshObj = state().createObject<SurfaceMesh>(dataSource(), executionContext());
+		SurfaceMeshVis* vis = meshObj->visElement<SurfaceMeshVis>();
+		vis->setShowCap(false);
+		vis->setSmoothShading(true);
+	}
+	SurfaceMeshAccess mesh(meshObj);
+	mesh.clearMesh();
 
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -92,7 +103,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
 		if(isCanceled())
-			return {};
+			return;
 
 		if(xml.name() == "VTKFile") {
 			if(xml.attributes().value("type") != "PolyData")
@@ -129,7 +140,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			// Parse child <DataArray> element containing the point coordinates.
 			if(!xml.readNextStartElement())
 				break;
-			PropertyPtr property = parseDataArray(xml, PropertyStorage::Float);
+			PropertyPtr property = parseDataArray(xml, PropertyObject::Float);
 			if(!property)
 				break;
 
@@ -140,7 +151,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			}
 			// Copy point coordinates from temporary array to surface mesh data structure.
 			OVITO_ASSERT(property->size() + vertexBaseIndex == mesh.vertexCount());
-			boost::copy(ConstPropertyAccess<Point3>(property), mesh.vertexCoordsRange().begin() + vertexBaseIndex);
+			boost::copy(ConstPropertyAccess<Point3>(property), std::next(std::begin(mesh.mutableVertexPositions()), vertexBaseIndex));
 			xml.skipCurrentElement();
 		}
 		else if(xml.name() == "Polys") {
@@ -159,7 +170,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 			// Parse child <DataArray> element containing the offset information.
 			if(!xml.readNextStartElement())
 				break;
-			PropertyPtr offsetsArray = parseDataArray(xml, PropertyStorage::Int);
+			PropertyPtr offsetsArray = parseDataArray(xml, PropertyObject::Int);
 			if(!offsetsArray)
 				break;
 			// Make sure the data array has the expected data layout.
@@ -221,12 +232,13 @@ FileSourceImporter::FrameDataPtr ParaViewVTPMeshImporter::FrameLoader::loadFile(
 	}
 
 	// Report number of vertices and faces to the user.
-	frameData->setStatus(
+	state().setStatus(
 		tr("Number of mesh vertices: %1\nNumber of mesh faces: %2")
 		.arg(mesh.vertexCount())
 		.arg(mesh.faceCount()));
 
-	return std::move(frameData);
+	// Call base implementation.
+	StandardFrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -301,64 +313,64 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 
 	// Determine data type of the target property to create.
 	if(convertToDataType == 0) {
-		if(dataType == "Float32" || dataType == "Float64") convertToDataType = PropertyStorage::Float;
-		else if(dataType == "Int32") convertToDataType = PropertyStorage::Int;
-		else if(dataType == "Int64") convertToDataType = PropertyStorage::Int64;
+		if(dataType == "Float32" || dataType == "Float64") convertToDataType = PropertyObject::Float;
+		else if(dataType == "Int32") convertToDataType = PropertyObject::Int;
+		else if(dataType == "Int64") convertToDataType = PropertyObject::Int64;
 		else OVITO_ASSERT(false);
 	}
 
 	// Allocate destination buffer.
-	PropertyPtr property = std::make_shared<PropertyStorage>(elementCount, convertToDataType, numComponents, 0, name, false);
+	PropertyPtr property = DataOORef<PropertyObject>::create(dataset(), executionContext(), elementCount, convertToDataType, numComponents, 0, name, false);
 
 	if(dataType == "Float32") {
 		const float* begin = reinterpret_cast<const float*>(byteArray.constData() + sizeof(qint64));
 		const float* end = begin + (elementCount * numComponents);
-		if(property->dataType() == PropertyStorage::Float) {
+		if(property->dataType() == PropertyObject::Float) {
 			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
 		}
 	}
 	else if(dataType == "Float64") {
 		const double* begin = reinterpret_cast<const double*>(byteArray.constData() + sizeof(qint64));
 		const double* end = begin + (elementCount * numComponents);
-		if(property->dataType() == PropertyStorage::Float) {
+		if(property->dataType() == PropertyObject::Float) {
 			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
 		}
 	}
 	else if(dataType == "Int32") {
 		const qint32* begin = reinterpret_cast<const qint32*>(byteArray.constData() + sizeof(qint64));
 		const qint32* end = begin + (elementCount * numComponents);
-		if(property->dataType() == PropertyStorage::Float) {
+		if(property->dataType() == PropertyObject::Float) {
 			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
 		}
 	}
 	else if(dataType == "Int64") {
 		const qint64* begin = reinterpret_cast<const qint64*>(byteArray.constData() + sizeof(qint64));
 		const qint64* end = begin + (elementCount * numComponents);
-		if(property->dataType() == PropertyStorage::Float) {
+		if(property->dataType() == PropertyObject::Float) {
 			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int) {
+		else if(property->dataType() == PropertyObject::Int) {
 			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
 		}
-		else if(property->dataType() == PropertyStorage::Int64) {
+		else if(property->dataType() == PropertyObject::Int64) {
 			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
 		}
 	}

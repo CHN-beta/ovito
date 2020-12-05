@@ -151,7 +151,8 @@ public:
     /// Factory method instantiating a new object and returning a smart-pointer to it.
     template<typename... Args>
 	static this_type create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
-		this_type obj(new T(dataset, std::forward<Args>(args)...));
+        using OType = std::remove_const_t<T>;
+		OORef<OType> obj(new OType(dataset, std::forward<Args>(args)...));
         obj->initializeObject(executionContext);
         return obj;
 	}

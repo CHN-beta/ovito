@@ -58,12 +58,9 @@ bool ParaViewVTRSimulationCellImporter::OOMetaClass::checkFileFormat(const FileH
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
+void ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading ParaView VTR RectilinearGrid file %1").arg(fileHandle().toString()));
-
-	// Create the container for the data to be loaded.
-	std::shared_ptr<RectilinearGridFrameData> frameData = std::make_shared<RectilinearGridFrameData>();
 
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -77,7 +74,7 @@ FileSourceImporter::FrameDataPtr ParaViewVTRSimulationCellImporter::FrameLoader:
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
 		if(isCanceled())
-			return {};
+			return;
 
 		if(xml.name() == "VTKFile") {
 			if(xml.attributes().value("type") != "RectilinearGrid")
@@ -124,50 +121,10 @@ FileSourceImporter::FrameDataPtr ParaViewVTRSimulationCellImporter::FrameLoader:
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
 
-	frameData->simulationCell().setMatrix(cellMatrix);
+	simulationCell()->setCellMatrix(cellMatrix);
 
-	return std::move(frameData);
-}
-
-/******************************************************************************
-* Inserts the loaded data into the provided container object.
-******************************************************************************/
-OORef<DataCollection> ParaViewVTRSimulationCellImporter::RectilinearGridFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
-{
-	// Start with a fresh data collection that will be populated.
-	OORef<DataCollection> output = new DataCollection(fileSource->dataset());
-
-	// Create the simulation cell.
-	const SimulationCellObject* existingCell = existing ? existing->getObject<SimulationCellObject>() : nullptr;
-	if(!existingCell) {
-		// Create a new SimulationCellObject.
-		SimulationCellObject* cell = output->createObject<SimulationCellObject>(fileSource, simulationCell());
-
-		// Initialize the simulation cell and its vis element with default values.
-		cell->initializeObject(Application::instance()->executionContext());
-
-		// Set up the vis element for the simulation cell.
-		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(cell->visElement())) {
-
-			// Choose an appropriate line width depending on the cell's size.
-			FloatType cellDiameter = (
-					simulationCell().matrix().column(0) +
-					simulationCell().matrix().column(1) +
-					simulationCell().matrix().column(2)).length();
-			cellVis->setDefaultCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
-			cellVis->setCellLineWidth(cellVis->defaultCellLineWidth());
-		}
-	}
-	else {
-		// Adopt pbc flags from input file only if it is a new file.
-		// This gives the user the option to change the pbc flags without them
-		// being overwritten when a new frame from a simulation sequence is loaded.
-		SimulationCellObject* cell = cloneHelper.cloneObject(existingCell, false); 
-		output->addObject(cell);
-		cell->setData(simulationCell(), isNewFile);
-	}
-
-	return output;
+	// Call base implementation.
+	StandardFrameLoader::loadFile();
 }
 
 }	// End of namespace

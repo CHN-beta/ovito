@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <3rdparty/function2/function2.hpp>
+#include "FutureDetail.h"
 
 namespace Ovito {
 
@@ -160,6 +161,9 @@ public:
     /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const { return _exceptionStore; }
 
+    /// \brief Moves the internal exception store out of the task object.
+    std::exception_ptr takeExceptionStore() { return std::move(_exceptionStore); }
+
     /// \brief Resets the task object to its initial state, so that it can be run again.
     /// \note This method may only be called on a task that has finished running.
     virtual void startOver();
@@ -186,6 +190,43 @@ public:
             defer);
     }
 
+    /// Accessor function for the internal results storage.
+    /// This overload is used for tasks with a non-empty results tuple.
+    template<typename tuple_type>
+    const std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type>& getResults() const {
+        OVITO_ASSERT(_resultsTuple != nullptr);
+#ifdef OVITO_DEBUG
+        OVITO_ASSERT((bool)_resultSet);
+#endif
+        return *static_cast<const tuple_type*>(_resultsTuple);
+    }
+
+    /// Accessor function for the internal results storage.
+    /// This overload is used for tasks with an empty results tuple (returning void).
+    template<typename tuple_type>
+    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> getResults() const {
+        return {};
+    }
+
+    /// Accessor function for the internal results storage.
+    /// This overload is used for tasks with a non-empty results tuple.
+    template<typename tuple_type>
+    std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type> takeResults() {
+        OVITO_ASSERT(_resultsTuple != nullptr);
+#ifdef OVITO_DEBUG
+        OVITO_ASSERT((bool)_resultSet);
+        _resultSet = false;
+#endif
+        return std::move(*static_cast<tuple_type*>(_resultsTuple));
+    }
+
+    /// Accessor function for the internal results storage.
+    /// This overload is used for tasks with an empty results tuple (returning void).
+    template<typename tuple_type>
+    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> takeResults() {
+        return {};
+    }
+
 #ifdef OVITO_DEBUG
     /// Returns the global number of Task instances that currently exist. Used to detect memory leaks.
     static size_t instanceCount() { return _instanceCounter.load(); }
@@ -202,8 +243,8 @@ protected:
     /// \brief Re-throws the exception stored in this task state if an exception was previously set via setException().
     /// \throw The exception stored in the Task (if any).
     void throwPossibleException() {
-        if(_exceptionStore)
-            std::rethrow_exception(_exceptionStore);
+        if(exceptionStore())
+            std::rethrow_exception(takeExceptionStore());
     }
 
     /// Accessor function for the internal results storage.
@@ -215,39 +256,6 @@ protected:
         _resultSet = true;
 #endif
         *static_cast<tuple_type*>(_resultsTuple) = std::forward<source_tuple_type>(value);
-    }
-
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type>
-    const std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type>& getResults() const {
-        OVITO_ASSERT(_resultsTuple != nullptr);
-#ifdef OVITO_DEBUG
-        OVITO_ASSERT((bool)_resultSet);
-#endif
-        return *static_cast<const tuple_type*>(_resultsTuple);
-    }
-
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> getResults() const {
-        return {};
-    }
-
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type> takeResults() {
-        OVITO_ASSERT(_resultsTuple != nullptr);
-#ifdef OVITO_DEBUG
-        OVITO_ASSERT((bool)_resultSet);
-        _resultSet = false;
-#endif
-        return std::move(*static_cast<tuple_type*>(_resultsTuple));
-    }
-
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> takeResults() {
-        return {};
     }
 
     virtual void registerWatcher(TaskWatcher* watcher);
@@ -306,7 +314,6 @@ protected:
     template<typename... R2> friend class Future;
     template<typename... R2> friend class SharedFuture;
     template<typename... R2> friend class Promise;
-    template<typename promise_type> friend class ContinuationTask;
 };
 
 /**
@@ -317,7 +324,7 @@ protected:
  *
  * The Task gets automatically configured to use the internal results storage provided by this class.
  */
-template <class TaskType, class Tuple>
+template<class TaskType, class Tuple>
 #ifndef Q_CC_MSVC
 class TaskWithResultStorage : public TaskType, private Tuple
 #else
@@ -325,6 +332,7 @@ class TaskWithResultStorage : public TaskType
 #endif
 {
 public:
+    using tuple_type = Tuple;
 
     /// A special tag parameter type used to differentiate the second TaskWithResultStorage constructor.
     struct no_result_init_t {
@@ -335,19 +343,18 @@ public:
     /// \param initialResult The value to assign to the results storage tuple.
     /// \param args The extra arguments which will be passed to the constructor of the Task derived class.
     template <typename... Args>
-    TaskWithResultStorage(Tuple initialResult, Args&&... args)
-        : TaskType(std::forward<Args>(args)...),
+    TaskWithResultStorage(tuple_type initialResult, Args&&... args) : TaskType(std::forward<Args>(args)...),
 #ifndef Q_CC_MSVC
-        Tuple(std::move(initialResult))
+        tuple_type(std::move(initialResult))
 #else
         _tuple(std::move(initialResult))
 #endif
     {
         // Inform the Task about the internal storage location for the task results.
 #ifndef Q_CC_MSVC
-        this->_resultsTuple = static_cast<Tuple*>(this);
+        this->_resultsTuple = static_cast<tuple_type*>(this);
 #else
-        this->_resultsTuple = static_cast<Tuple*>(&_tuple);
+        this->_resultsTuple = static_cast<tuple_type*>(&_tuple);
 #endif
 #ifdef OVITO_DEBUG
         // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has
@@ -364,18 +371,17 @@ public:
     {
         // Inform the Task about the internal storage location for the task results,
         // unless this is a task not having any return value (i.e. empty tuple).
-        if(std::tuple_size<Tuple>::value != 0)
+        if(std::tuple_size<tuple_type>::value != 0)
 #ifndef Q_CC_MSVC
-            this->_resultsTuple = static_cast<Tuple*>(this);
+            this->_resultsTuple = static_cast<tuple_type*>(this);
 #else
-            this->_resultsTuple = static_cast<Tuple*>(&_tuple);
+            this->_resultsTuple = static_cast<tuple_type*>(&_tuple);
 #endif
     }
-
 private:
 
 #ifdef Q_CC_MSVC
-    Tuple _tuple;
+    tuple_type _tuple;
 #endif
 };
 

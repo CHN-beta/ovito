@@ -360,7 +360,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const Frame& frame, cons
 
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.
-	// Only  automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
+	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
 	if(masterCollection == nullptr) {
 		// Note: Changing a parameter of the file importer must be done in the main thread.
 		future.finally(executor(), [this](TaskPtr task) {

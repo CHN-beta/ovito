@@ -39,6 +39,7 @@ OVITO_STANDARD_PLUGIN(StdObj
 		table/DataTable.cpp
 		io/DataTableExporter.cpp
 		io/PropertyOutputWriter.cpp
+		io/StandardFrameLoader.cpp
 		util/ElementSelectionSet.cpp
 	LIB_DEPENDENCIES
 		muParser

@@ -45,8 +45,8 @@ public:
 	/// \param dataCollection The data which is used to fill the state.
 	/// \param status A status object describing the outcome of the pipeline evaluation.
 	/// \param validityInterval The time interval during which the state is valid.
-	PipelineFlowState(const DataCollection* dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-		_data(dataCollection), _status(status), _stateValidity(validityInterval) {}
+	PipelineFlowState(DataOORef<const DataCollection> dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+		_data(std::move(dataCollection)), _status(status), _stateValidity(validityInterval) {}
 
 	/// \brief Discards all contents of this state object and resets it to an empty state.
 	void reset() {
@@ -423,7 +423,7 @@ private:
 	/// The payload data.
 	DataOORef<const DataCollection> _data;
 
-	/// Contains the validity interval for this pipeline flow state.
+	/// The interval along the animation time line in which the pipeline state is valid.
 	TimeInterval _stateValidity = TimeInterval::empty();
 
 	/// The status of the pipeline evaluation.

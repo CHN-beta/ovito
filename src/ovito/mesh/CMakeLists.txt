@@ -33,8 +33,8 @@ SET(SourceFiles
 	surface/SurfaceMeshRegions.cpp
 	io/VTKFileImporter.cpp
 	io/VTKTriangleMeshExporter.cpp
-#	io/ParaViewVTPMeshImporter.cpp
-#	io/ParaViewVTRSimulationCellImporter.cpp
+	io/ParaViewVTPMeshImporter.cpp
+	io/ParaViewVTRSimulationCellImporter.cpp
 	io/WavefrontOBJImporter.cpp
 	io/STLImporter.cpp
 )

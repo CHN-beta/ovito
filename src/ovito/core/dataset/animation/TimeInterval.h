@@ -37,33 +37,33 @@ namespace Ovito {
  * Note that this is an integer data type. Times are measured
  * in discrete steps of 1/4800 of a second to avoid rounding errors.
  */
-typedef int TimePoint;
+using TimePoint = int;
 
 /// The number of time ticks per second.
 enum { TICKS_PER_SECOND = 4800 };
 
 /// Returns the smallest possible time value.
-Q_DECL_CONSTEXPR inline TimePoint TimeNegativeInfinity() noexcept {
+constexpr inline TimePoint TimeNegativeInfinity() noexcept {
 	return std::numeric_limits<TimePoint>::lowest();
 }
 
 /// Returns the largest possible time value.
-Q_DECL_CONSTEXPR inline TimePoint TimePositiveInfinity() noexcept {
+constexpr inline TimePoint TimePositiveInfinity() noexcept {
 	return std::numeric_limits<TimePoint>::max();
 }
 
 /// Converts time tick units to seconds.
-Q_DECL_CONSTEXPR inline FloatType TimeToSeconds(TimePoint t) noexcept {
+constexpr inline FloatType TimeToSeconds(TimePoint t) noexcept {
 	return (FloatType)t / TICKS_PER_SECOND;
 }
 
 /// Converts seconds to internal time ticks.
 inline TimePoint TimeFromSeconds(FloatType timeInSeconds) noexcept {
-	return (TimePoint)std::ceil(timeInSeconds * TICKS_PER_SECOND + FloatType(0.5));
+	return (TimePoint)std::round(timeInSeconds * TICKS_PER_SECOND);
 }
 
 /**
- * \brief An interval in (animation) time, which is defined by a start and an end time.
+ * \brief An interval on the animation time line, which is defined by a start and an end time.
  */
 class TimeInterval
 {

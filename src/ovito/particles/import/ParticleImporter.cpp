@@ -30,7 +30,6 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "ParticleImporter.h"
 
 namespace Ovito { namespace Particles {
@@ -51,21 +50,6 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor& field)
 		// But no need to refetch the files from the remote location. Reparsing the cached files is sufficient.
 		requestReload();
 	}
-}
-
-/******************************************************************************
-* Returns the simulation cell object, newly creating it first if necessary.
-******************************************************************************/
-SimulationCellObject* ParticleImporter::FrameLoader::simulationCell()
-{
-	if(!_simulationCell) {
-		_simulationCell = state().getMutableObject<SimulationCellObject>();
-		if(!_simulationCell) {
-			_simulationCell = state().createObject<SimulationCellObject>(dataSource(), executionContext(), AffineTransformation::Zero(), true, true, true, false);
-			_simulationCellNewlyCreated = _simulationCell;
-		}
-	}
-	return _simulationCell;
 }
 
 /******************************************************************************
@@ -250,12 +234,12 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 
 	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
 
-	if(!_simulationCell || !_simulationCell->hasPbc()) {
+	if(!hasSimulationCell() || !simulationCell()->hasPbc()) {
 		bondPeriodicImageProperty.fill(Vector3I::Zero());
 	}
 	else {
-		const AffineTransformation inverseCellMatrix = _simulationCell->inverseMatrix();
-		const std::array<bool,3> pbcFlags = _simulationCell->pbcFlags();
+		const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
+		const std::array<bool,3> pbcFlags = simulationCell()->pbcFlags();
 		for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
 			size_t index1 = bondTopologyProperty[bondIndex][0];
 			size_t index2 = bondTopologyProperty[bondIndex][1];
@@ -270,39 +254,11 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 }
 
 /******************************************************************************
-* Registers a new numeric element type with the given ID and an optional name string.
-******************************************************************************/
-const ElementType* ParticleImporter::FrameLoader::addNumericType(PropertyObject* typedProperty, int id, const QString& name, const OvitoClass& elementTypeClass)
-{
-	if(const ElementType* existingType = typedProperty->elementType(id))
-		return existingType;
-
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass.createInstance(dataset(), executionContext()));
-	elementType->setNumericId(id);
-	elementType->setName(name);
-	elementType->initializeObject(executionContext());
-	elementType->initializeType(typedProperty->type(), executionContext());
-
-	return typedProperty->addElementType(std::move(elementType));
-}
-
-/******************************************************************************
 * Finalizes the particle data loaded by a sub-class.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::loadFile()
 {
-	if(_simulationCellNewlyCreated) {
-		// Set up the vis element for the simulation cell.
-		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(_simulationCellNewlyCreated->visElement())) {
-			// Choose an appropriate line width that depends on the cell's size.
-			FloatType cellDiameter = (
-					_simulationCellNewlyCreated->cellMatrix().column(0) +
-					_simulationCellNewlyCreated->cellMatrix().column(1) +
-					_simulationCellNewlyCreated->cellMatrix().column(2)).length();
-			cellVis->setDefaultCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
-			cellVis->setCellLineWidth(cellVis->defaultCellLineWidth());
-		}
-	}
+	StandardFrameLoader::loadFile();
 
 #ifdef OVITO_DEBUG
 	if(_particles) _particles->verifyIntegrity();
