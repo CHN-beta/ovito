@@ -279,6 +279,20 @@ inline LoadStream& operator>>(LoadStream& stream, QVector<T>& v)
 	return stream;
 }
 
+/// \brief Reads a Qt string list from the input stream.
+/// \relates LoadStream
+///
+/// \param stream The source stream.
+/// \param a The QStringList that the will receive the loaded data.
+/// \return The source stream.
+/// \throw Exception if an I/O error has occurred.
+inline LoadStream& operator>>(LoadStream& stream, QStringList& v)
+{
+	OVITO_ASSERT(stream.isOpen());
+	stream.dataStream() >> v;
+	return stream;
+}
+
 /// \brief Reads a vector with a variable number of values from the input stream.
 /// \relates LoadStream
 ///

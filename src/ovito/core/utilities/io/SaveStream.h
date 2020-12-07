@@ -206,6 +206,19 @@ inline SaveStream& operator<<(SaveStream& stream, const QVector<T>& v)
 	return stream;
 }
 
+/// \brief Writes a Qt string list to a SaveStream.
+/// \relates SaveStream
+///
+/// \param stream The destination stream.
+/// \param v The string list to write to the stream.
+/// \return The destination stream.
+/// \throw Exception if an I/O error has occurred.
+inline SaveStream& operator<<(SaveStream& stream, const QStringList& v)
+{
+	stream.dataStream() << v;
+	return stream;
+}
+
 /// \brief Writes a vector container to a SaveStream.
 /// \relates SaveStream
 ///
