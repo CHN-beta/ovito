@@ -67,9 +67,9 @@ public:
 	virtual bool isTrajectoryFormat() const override { return true; } 
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, columnMapping());
+		return std::make_shared<FrameLoader>(request, columnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -89,11 +89,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, 
-				const DataCollection* masterCollection, PipelineObject* dataSource, 
-				const BondInputColumnMapping& columnMapping)
-			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource),
-				_columnMapping(columnMapping) {}
+		FrameLoader(const LoadOperationRequest& request, const BondInputColumnMapping& columnMapping)
+			: ParticleImporter::FrameLoader(request), _columnMapping(columnMapping) {}
 
 		/// Returns the file column mapping used to load the file.
 		const BondInputColumnMapping& columnMapping() const { return _columnMapping; }

@@ -67,9 +67,9 @@ public:
 	virtual QString objectTitle() const override { return tr("oxDNA"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, topologyFileUrl());
+		return std::make_shared<FrameLoader>(request, topologyFileUrl());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -86,8 +86,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, const QUrl& userSpecifiedTopologyUrl) :
-			ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), 
+		FrameLoader(const LoadOperationRequest& request, const QUrl& userSpecifiedTopologyUrl) :
+			ParticleImporter::FrameLoader(request), 
 			_userSpecifiedTopologyUrl(userSpecifiedTopologyUrl) {}
 
 	protected:

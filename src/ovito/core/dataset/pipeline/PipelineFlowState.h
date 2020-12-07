@@ -108,6 +108,7 @@ public:
 	const DataCollection* data() const { return _data.get(); }
 	
 	void setData(const DataCollection* data) { _data = data; }
+	void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }
 
 	/// \brief Finds an object of the given type in the list of data objects stored in this flow state.
 	const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const {

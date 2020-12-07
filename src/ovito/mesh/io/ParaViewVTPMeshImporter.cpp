@@ -46,14 +46,14 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 		return false;
 	if(xml.readNext() != QXmlStreamReader::StartElement)
 		return false;
-	if(xml.name() != "VTKFile")
+	if(xml.name().compare(QStringLiteral("VTKFile")) != 0)
 		return false;
-	if(xml.attributes().value("type") != "PolyData")
+	if(xml.attributes().value("type").compare(QStringLiteral("PolyData")) != 0)
 		return false;
 
 	// Continue until we reach the <Piece> element. 
 	while(xml.readNextStartElement()) {
-		if(xml.name() == "Piece") {
+		if(xml.name().compare(QStringLiteral("Piece")) == 0) {
 			// Number of triangle strips or polygons must be non-zero.
 			if(xml.attributes().value("NumberOfStrips").toULongLong() != 0 || xml.attributes().value("NumberOfPolys").toULongLong() != 0)
 				return !xml.hasError();
@@ -71,16 +71,18 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
 
-	// Create the destination mesh data structure.
-	SurfaceMesh* meshObj;
-	if(const SurfaceMesh* existingMeshObj = state().getObject<SurfaceMesh>()) {
-		meshObj = state().makeMutable(existingMeshObj);
-	}
-	else {
-		meshObj = state().createObject<SurfaceMesh>(dataSource(), executionContext());
+	// Create the destination mesh object.
+	QString meshIdentifier = dataBlockPrefix();
+	SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
+	if(!meshObj) {
+		meshObj = state().createObject<SurfaceMesh>(meshIdentifier, dataSource(), executionContext());
 		SurfaceMeshVis* vis = meshObj->visElement<SurfaceMeshVis>();
 		vis->setShowCap(false);
 		vis->setSmoothShading(true);
+		if(!meshIdentifier.isEmpty()) {
+			meshObj->setTitle(QStringLiteral("%1: %2").arg(meshObj->objectTitle()).arg(meshIdentifier));
+			vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(meshIdentifier));
+		}
 	}
 	SurfaceMeshAccess mesh(meshObj);
 	mesh.clearMesh();
@@ -105,18 +107,18 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 		if(isCanceled())
 			return;
 
-		if(xml.name() == "VTKFile") {
-			if(xml.attributes().value("type") != "PolyData")
+		if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
+			if(xml.attributes().value("type").compare(QStringLiteral("PolyData")) != 0)
 				xml.raiseError(tr("VTK file is not of type PolyData."));
-			else if(xml.attributes().value("byte_order") != "LittleEndian")
+			else if(xml.attributes().value("byte_order").compare(QStringLiteral("LittleEndian")) != 0)
 				xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
-			else if(xml.attributes().value("compressor") != "")
+			else if(!xml.attributes().value("compressor").isEmpty())
 				xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
 		}
-		else if(xml.name() == "PolyData") {
+		else if(xml.name().compare(QStringLiteral("PolyData")) == 0) {
 			// Do nothing. Parse child elements.
 		}
-		else if(xml.name() == "Piece") {
+		else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
 			// Parse geometric entity counts of the current piece.
 			numberOfPoints = xml.attributes().value("NumberOfPoints").toULongLong();
 			numberOfVerts = xml.attributes().value("NumberOfVerts").toULongLong();
@@ -128,7 +130,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			vertexBaseIndex = mesh.createVertices(numberOfPoints);
 			// Continue by parsing child elements.
 		}
-		else if(xml.name() == "PointData") {
+		else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
 			// Parse child elements.
 			while(xml.readNextStartElement() && !isCanceled()) {
 				PropertyPtr property = parseDataArray(xml);
@@ -136,7 +138,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 					break;
 			}
 		}
-		else if(xml.name() == "Points") {
+		else if(xml.name().compare(QStringLiteral("Points")) == 0) {
 			// Parse child <DataArray> element containing the point coordinates.
 			if(!xml.readNextStartElement())
 				break;
@@ -154,7 +156,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			boost::copy(ConstPropertyAccess<Point3>(property), std::next(std::begin(mesh.mutableVertexPositions()), vertexBaseIndex));
 			xml.skipCurrentElement();
 		}
-		else if(xml.name() == "Polys") {
+		else if(xml.name().compare(QStringLiteral("Polys")) == 0) {
 			// Parse child <DataArray> element containing the connectivity information.
 			if(!xml.readNextStartElement())
 				break;
@@ -195,10 +197,10 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 
 			xml.skipCurrentElement();
 		}
-		else if(xml.name() == "CellData") {
+		else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
 			// Parse <DataArray> child elements.
 			while(xml.readNextStartElement() && !isCanceled()) {
-				if(xml.name() == "DataArray") {
+				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 					if(PropertyPtr property = parseDataArray(xml))
 						cellDataArrays.push_back(std::move(property));
 					else
@@ -209,7 +211,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				}
 			}
 		}
-		else if(xml.name() == "Verts" || xml.name() == "Lines" || xml.name() == "Strips") {
+		else if(xml.name().compare(QStringLiteral("Verts")) == 0 || xml.name().compare(QStringLiteral("Lines")) == 0 || xml.name().compare(QStringLiteral("Strips")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}
@@ -247,7 +249,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReader& xml, int convertToDataType)
 {
 	// Make sure it is really an <DataArray>.
-	if(xml.name() != "DataArray") {
+	if(xml.name().compare(QStringLiteral("DataArray")) != 0) {
 		xml.raiseError(tr("Expected <DataArray> element but found <%1> element.").arg(xml.name().toString()));
 		return {};
 	}

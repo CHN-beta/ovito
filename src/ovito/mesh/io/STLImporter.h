@@ -66,9 +66,9 @@ public:
 	virtual QString objectTitle() const override { return tr("STL"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource);
+		return std::make_shared<FrameLoader>(request);
 	}
 
 protected:

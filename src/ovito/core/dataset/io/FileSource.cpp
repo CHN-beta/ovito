@@ -507,17 +507,27 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					TimeInterval interval = frameTimeInterval(frame);
 					const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
+					// Set up the load request to be submitted to the FileSourceImporter.
+					FileSourceImporter::LoadOperationRequest loadRequest;
+					loadRequest.dataset = dataset();
+					loadRequest.dataSource = this;
+					loadRequest.fileHandle = fileHandle;
+					loadRequest.frame = frameInfo;
+					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
+					loadRequest.state.setData(dataCollection() 
+						? DataOORef<const DataCollection>(dataCollection()) 
+						: DataOORef<const DataCollection>::create(dataset(), loadRequest.executionContext));
+
+					// Add some standard global attributes to the pipeline state to indicate where it is coming from.
+					loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
+					loadRequest.state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
+
+					// Also give the state the precomputed validity interval.
+					loadRequest.state.setStateValidity(interval);
+
 					// Load the frame data and process results in the UI thread.
-					auto future = importer()->loadFrame(frameInfo, fileHandle, dataCollection(), this)
-						.then(executor(), [this, frame, frameInfo, interval](PipelineFlowState state) {
+					auto future = importer()->loadFrame(loadRequest).then(executor(), [this, frame, interval](PipelineFlowState state) {
 							OVITO_ASSERT_MSG(state, "FileSource::requestFrameInternal()", "File importer did not return a valid pipeline state.");
-
-							// Add some standard global attributes to the pipeline state to indicate where it is coming from.
-							state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
-							state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
-
-							// Also give the state the precomputed validity interval.
-							state.setStateValidity(interval);
 
 							// Create editable proxy objects for the data objects in the loaded collection.
 							OVITO_ASSERT(state.data()->isSafeToModify());

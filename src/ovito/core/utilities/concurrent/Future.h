@@ -172,6 +172,11 @@ public:
 		return promise_type::createCanceled();
 	}
 
+	/// Create a future that is ready and provides an immediate default-constructed result.
+	static Future createImmediateEmpty() {
+		return promise_type::createImmediateEmpty();
+	}
+
 	/// Create a future that is ready and provides an immediate result.
 	template<typename... V>
 	static Future createImmediate(V&&... result) {
@@ -238,9 +243,8 @@ public:
 	}
 
 	/// Returns the results computed by the associated Promise.
-	/// This function may only be called after the Promise was fulfilled (and not canceled).
 	auto result() {
-		return std::get<0>(results());
+		return firstTupleElement(std::integral_constant<bool, sizeof...(R) != 0>{});
 	}
 
 	/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -270,6 +274,11 @@ public:
 	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
 	then_future(Executor&& executor, FC&& cont) noexcept { return then_future(std::forward<Executor>(executor), false, std::forward<FC>(cont)); }
 
+	/// Overload of the function above using the default inline executor.
+	template<typename FC>
+	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
+	then_future(FC&& cont) noexcept { return then_future(Ovito::detail::InlineExecutor(), std::forward<FC>(cont)); }
+
 #ifndef Q_CC_GNU
 protected:
 #else
@@ -287,6 +296,9 @@ public:
 
 	/// Move constructor taking the promise state pointer from a r-value Promise.
 	Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
+
+	void firstTupleElement(std::false_type) {}
+	auto firstTupleElement(std::true_type) { return std::get<0>(results()); }
 
 	template<typename... R2> friend class Future;
 	template<typename... R2> friend class Promise;

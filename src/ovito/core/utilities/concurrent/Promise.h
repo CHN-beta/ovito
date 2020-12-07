@@ -196,6 +196,12 @@ public:
 	Promise() noexcept {}
 #endif
 
+	/// Create a promise that is ready and provides immediate default-constructed results.
+	static Promise createImmediateEmpty() {
+		return Promise(std::make_shared<TaskWithResultStorage<Task, tuple_type>>(
+			tuple_type{}, Task::State(Task::Started | Task::Finished)));
+	}
+
 	/// Create a promise that is ready and provides an immediate result.
 	template<typename... R2>
 	static Promise createImmediate(R2&&... result) {

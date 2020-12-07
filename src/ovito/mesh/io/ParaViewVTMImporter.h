@@ -33,7 +33,7 @@ namespace Ovito { namespace Mesh {
 /**
  * \brief File parser for ParaView Multi-Block files (VTM).
  */
-class OVITO_MESHMOD_EXPORT ParaViewVTMImporter : public FileSourceImporter
+class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 {
 	/// Defines a metaclass specialization for this importer type.
 	class OOMetaClass : public FileSourceImporter::OOMetaClass
@@ -65,15 +65,12 @@ public:
 	virtual QString objectTitle() const override { return tr("VTM"); }
 
 	/// Loads the data for the given frame from the external file.
-	virtual Future<PipelineFlowState> loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override;
+	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
 
 private:
 
 	/// Parses the given VTM file and returns the list of referenced data files.
 	static std::vector<std::pair<QUrl, QString>> loadVTMFile(const FileHandle& fileHandle);
-
-	/// Helper method that implements asynchronous loading of datasets referenced by the VTM file.
-	Future<PipelineFlowState> loadDataBlock(const QUrl& url, const QString& blockName, ExecutionContext executionContext, const DataCollection* masterCollection, PipelineObject* dataSource);
 };
 
 }	// End of namespace

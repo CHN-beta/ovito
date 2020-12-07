@@ -35,6 +35,7 @@ SET(SourceFiles
 	io/VTKTriangleMeshExporter.cpp
 	io/ParaViewVTPMeshImporter.cpp
 	io/ParaViewVTRSimulationCellImporter.cpp
+	io/ParaViewVTMImporter.cpp
 	io/WavefrontOBJImporter.cpp
 	io/STLImporter.cpp
 )

@@ -152,7 +152,6 @@ private:
 	template<typename... R>
 	auto setResultsDirect(std::tuple<R...>&& results) {
 		using source_tuple_type = std::tuple<R...>;
-		static_assert(std::tuple_size<tuple_type>::value != 0, "Must not be an empty tuple");
 		static_assert(std::is_same<tuple_type, std::decay_t<source_tuple_type>>::value, "Must assign a compatible tuple");
 		this->template setResults<tuple_type>(std::move(results));
 	}

@@ -69,8 +69,8 @@ public:
 	virtual bool isTrajectoryFormat() const override { return true; } 
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), masterCollection, dataSource);
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+		return std::make_shared<FrameLoader>(request);
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.

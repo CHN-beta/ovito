@@ -71,9 +71,9 @@ public:
 	static bool mapVariableToProperty(ParticleInputColumnMapping& columnMapping, int column, QString name, int dataType, int vec);
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, sortParticles(), columnMapping(), autoRescaleCoordinates());
+		return std::make_shared<FrameLoader>(request, sortParticles(), columnMapping(), autoRescaleCoordinates());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -93,8 +93,8 @@ private:
 	public:
 
 		/// Normal constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
-		  : ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource),
+		FrameLoader(const LoadOperationRequest& request, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
+		  : ParticleImporter::FrameLoader(request),
 			_sortParticles(sortParticles),
 			_columnMapping(columnMapping),
 			_autoRescaleCoordinates(autoRescaleCoordinates) {}

@@ -247,15 +247,28 @@ protected:
             std::rethrow_exception(takeExceptionStore());
     }
 
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type, typename source_tuple_type, typename = std::enable_if_t<std::tuple_size<tuple_type>::value != 0>>
-    void setResults(source_tuple_type&& value) {
+	template<typename tuple_type, typename source_tuple_type>
+	void setResultsImpl(source_tuple_type&& value, std::false_type) {
+#ifdef OVITO_DEBUG
+        OVITO_ASSERT(!(bool)_resultSet);
+        _resultSet = true;
+#endif
+    }
+
+    template<typename tuple_type, typename source_tuple_type>
+	void setResultsImpl(source_tuple_type&& value, std::true_type) {
         OVITO_ASSERT(_resultsTuple != nullptr);
 #ifdef OVITO_DEBUG
         OVITO_ASSERT(!(bool)_resultSet);
         _resultSet = true;
 #endif
         *static_cast<tuple_type*>(_resultsTuple) = std::forward<source_tuple_type>(value);
+    }
+
+    /// Accessor function for the internal results storage.
+    template<typename tuple_type, typename source_tuple_type>
+    void setResults(source_tuple_type&& value) {
+        setResultsImpl<tuple_type>(std::forward<source_tuple_type>(value), std::integral_constant<bool, std::tuple_size<tuple_type>::value != 0>{});
     }
 
     virtual void registerWatcher(TaskWatcher* watcher);

@@ -349,10 +349,10 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 /******************************************************************************
 * Loads the data for the given frame from the external file.
 ******************************************************************************/
-Future<PipelineFlowState> FileSourceImporter::loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource)
+Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
 	// Create the frame loader for the requested frame.
-	FrameLoaderPtr frameLoader = createFrameLoader(frame, file, masterCollection, dataSource);
+	FrameLoaderPtr frameLoader = createFrameLoader(request);
 	OVITO_ASSERT(frameLoader);
 
 	// Execute the loader in a background thread.
@@ -361,7 +361,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const Frame& frame, cons
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.
 	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
-	if(masterCollection == nullptr) {
+	if(request.isNewlyImportedFile) {
 		// Note: Changing a parameter of the file importer must be done in the main thread.
 		future.finally(executor(), [this](TaskPtr task) {
 			if(!task->isCanceled()) {
@@ -560,7 +560,7 @@ void FileSourceImporter::FrameLoader::perform()
 	loadFile();
 
 	// Pass the constructed pipeline state back to the caller.
-	setResult(std::move(_state));
+	setResult(std::move(_loadRequest.state));
 }
 
 }	// End of namespace

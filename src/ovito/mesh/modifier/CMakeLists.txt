@@ -30,9 +30,7 @@ OVITO_STANDARD_PLUGIN(MeshMod
 		SurfaceMeshAssignColorModifierDelegate.cpp
 		SurfaceMeshDeleteSelectedModifierDelegate.cpp
 		SurfaceMeshExpressionSelectionModifierDelegate.cpp
-		ParaViewVTMImporter.cpp
 	PLUGIN_DEPENDENCIES Mesh StdMod
-	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
 )
 
 # Propagate list of plugins to parent scope.

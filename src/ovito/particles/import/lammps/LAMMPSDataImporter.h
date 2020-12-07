@@ -94,9 +94,9 @@ public:
 	virtual QString objectTitle() const override { return tr("LAMMPS Data"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, file, masterCollection, dataSource, sortParticles(), atomStyle());
+		return std::make_shared<FrameLoader>(request, sortParticles(), atomStyle());
 	}
 
 	/// Inspects the header of the given file and returns the detected LAMMPS atom style.
@@ -110,10 +110,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file,
-				const DataCollection* masterCollection, PipelineObject* dataSource,
-				bool sortParticles, LAMMPSAtomStyle atomStyle = AtomStyle_Unknown)
-			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource),
+		FrameLoader(const LoadOperationRequest& request, bool sortParticles, LAMMPSAtomStyle atomStyle = AtomStyle_Unknown)
+			: ParticleImporter::FrameLoader(request),
 				_atomStyle(atomStyle),
 				_sortParticles(sortParticles) {}
 

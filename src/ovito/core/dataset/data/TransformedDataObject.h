@@ -43,10 +43,7 @@ public:
 
 	/// Constructor.
 	TransformedDataObject(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(dataset), 
-		_sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) 
-	{
-		setVisElement(creator);
-	}
+		_sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
 
 private:
 

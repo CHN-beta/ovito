@@ -271,7 +271,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 	const QVariantMap& attributes = state.buildAttributesMap();
 	for(auto entry = _attributes_vars.constBegin(); entry != _attributes_vars.constEnd(); ++entry) {
 		QVariant val = attributes.value(entry.key());
-		if(val.type() == (int)QMetaType::Double || val.type() == (int)QMetaType::Float) {
+		if(getQVariantTypeId(val) == (int)QMetaType::Double || getQVariantTypeId(val) == (int)QMetaType::Float) {
 			double d = val.toDouble();
 			NCERR(nc_put_var1_double(_ncid, entry.value(), &_frameCounter, &d));
 		}

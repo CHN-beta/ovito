@@ -64,9 +64,9 @@ public:
 	virtual QString objectTitle() const override { return tr("CFG"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), masterCollection, dataSource, sortParticles());
+		return std::make_shared<FrameLoader>(request, sortParticles());
 	}
 
 private:
@@ -77,8 +77,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const FileSourceImporter::Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, bool sortParticles)
-		  : ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), _sortParticles(sortParticles) {}
+		FrameLoader(const LoadOperationRequest& request, bool sortParticles)
+		  : ParticleImporter::FrameLoader(request), _sortParticles(sortParticles) {}
 
 	protected:
 

@@ -89,6 +89,35 @@ public:
 		}
 	};
 
+	struct LoadOperationRequest {
+
+		/// The global dataset.
+		DataSet* dataset = nullptr;
+
+		/// The source file information.
+		Frame frame;
+
+		/// The local handle to the input file.
+		FileHandle fileHandle;
+
+		/// The storage container for the loaded file data, which is initialized with the state 
+		/// from a previous load operation. 
+		PipelineFlowState state;
+
+		/// Pointer to the FileSource that initiated the load operation.
+		QPointer<PipelineObject> dataSource;
+
+		/// If a loaded data collection consists of sub-collections, this string specifies the 
+		/// prefix to be prepended to the identifiers of data objects loaded by the file reader.
+		QString dataBlockPrefix;
+
+		/// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 
+		bool isNewlyImportedFile = true;
+
+		/// Type of execution context (interactive/scripting) in which the load operation runs.
+		ExecutionContext executionContext = Application::instance()->executionContext();
+	};
+
 	/**
 	 * Base class for frame data loader routines.
 	 */
@@ -97,30 +126,29 @@ public:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& fileHandle, const DataCollection* masterDataCollection, PipelineObject* dataSource) :
-			_dataset(dataset), 
-			_frame(frame), 
-			_fileHandle(fileHandle), 
-			_state(masterDataCollection ? DataOORef<const DataCollection>(masterDataCollection) : DataOORef<const DataCollection>::create(dataset, executionContext()), PipelineStatus::Success),
-			_dataSource(dataSource) {}
+		FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
 
 		/// Returns the global dataset this frame loader belongs to.
-		DataSet* dataset() const { return _dataset; }
+		DataSet* dataset() const { return _loadRequest.dataset; }
 
 		/// Returns the source file information.
-		const Frame& frame() const { return _frame; }
+		const Frame& frame() const { return _loadRequest.frame; }
 
 		/// Returns the local handle to the input data file.
-		const FileHandle& fileHandle() const { return _fileHandle; }
+		const FileHandle& fileHandle() const { return _loadRequest.fileHandle; }
 
 		/// Returns a reference to the pipeline state that receives the loaded file data. 
-		PipelineFlowState& state() { return _state; }
+		PipelineFlowState& state() { return _loadRequest.state; }
 
 		/// Returns the FileSource that owns the file importer.
-		PipelineObject* dataSource() const { return _dataSource; }
+		PipelineObject* dataSource() const { return _loadRequest.dataSource; }
 
 		/// Returns type of execution context (interactive/scripting) in which the frame loading was triggered.
-		ExecutionContext executionContext() const { return _executionContext; }
+		ExecutionContext executionContext() const { return _loadRequest.executionContext; }
+
+		/// If a loaded data collection consists of sub-collections, the string returned by this method specifies the 
+		/// prefix to be prepended to the identifiers of data objects loaded by the current file reader.
+		const QString& dataBlockPrefix() const { return _loadRequest.dataBlockPrefix; }
 
 		/// File parser implementations call this method to indicate that the input file contains
 		/// additional frames stored back to back with the currently loaded one.
@@ -139,23 +167,8 @@ public:
 
 	private:
 
-		/// The global dataset this frame loader belongs to.
-		DataSet* _dataset;
-
-		/// The source file information.
-		Frame _frame;
-
-		/// The local handle to the input file.
-		FileHandle _fileHandle;
-
-		/// The pipeline state that will receive the loaded file data. 
-		PipelineFlowState _state;
-
-		/// Pointer to the FileSource that owns the file importer.
-		QPointer<PipelineObject> _dataSource;
-
-		/// Type of execution context (interactive/scripting) in which the frame loading was triggered.
-		ExecutionContext _executionContext = Application::instance()->executionContext();
+		/// Data structure holding information about the load operation.
+		LoadOperationRequest _loadRequest;
 
 		/// Flag that is set by the parser to indicate that the input file contains more than one animation frame.
 		bool _additionalFramesDetected = false;
@@ -245,10 +258,10 @@ public:
 	void requestFramesUpdate(bool refetchCurrentFile = false);
 
 	/// Loads the data for the given frame from the external file.
-	virtual Future<PipelineFlowState> loadFrame(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource);
+	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request);
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) { return {}; }
+	virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
 
 	/// Creates an asynchronous frame discovery object that scans a file for contained animation frames.
 	virtual FrameFinderPtr createFrameFinder(const FileHandle& file) { return {}; }

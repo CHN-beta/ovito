@@ -165,6 +165,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 
 	// Create output RenderableDislocationLines object.
 	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), Application::instance()->executionContext(), this, dataObject);
+	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
 	flowState.addObject(std::move(renderableLines));

@@ -47,9 +47,9 @@ bool ParaViewVTRSimulationCellImporter::OOMetaClass::checkFileFormat(const FileH
 		return false;
 	if(xml.readNext() != QXmlStreamReader::StartElement)
 		return false;
-	if(xml.name() != "VTKFile")
+	if(xml.name().compare(QStringLiteral("VTKFile")) != 0)
 		return false;
-	if(xml.attributes().value("type") != "RectilinearGrid")
+	if(xml.attributes().value("type").compare(QStringLiteral("RectilinearGrid")) != 0)
 		return false;
 
 	return !xml.hasError();
@@ -76,24 +76,24 @@ void ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
 		if(isCanceled())
 			return;
 
-		if(xml.name() == "VTKFile") {
-			if(xml.attributes().value("type") != "RectilinearGrid")
+		if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
+			if(xml.attributes().value("type").compare(QStringLiteral("RectilinearGrid")) != 0)
 				xml.raiseError(tr("VTK file is not of type RectilinearGrid."));
-			else if(xml.attributes().value("byte_order") != "LittleEndian")
+			else if(xml.attributes().value("byte_order").compare(QStringLiteral("LittleEndian")) != 0)
 				xml.raiseError(tr("Byte order must be 'LittleEndian'. Please contact the OVITO developers to request an extension of the file parser."));
 		}
-		else if(xml.name() == "RectilinearGrid") {
+		else if(xml.name().compare(QStringLiteral("RectilinearGrid")) == 0) {
 			// Do nothing. Parse child elements.
 		}
-		else if(xml.name() == "Piece") {
+		else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
 			// Do nothing. Parse child elements.
 		}
-		else if(xml.name() == "Coordinates") {
+		else if(xml.name().compare(QStringLiteral("Coordinates")) == 0) {
 			// Parse three <DataArray> elements.
 			for(size_t dim = 0; dim < 3; dim++) {
 				if(!xml.readNextStartElement())
 					break;
-				if(xml.name() == "DataArray") {
+				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 					FloatType rangeMin = xml.attributes().value("RangeMin").toDouble();
 					FloatType rangeMax = xml.attributes().value("RangeMax").toDouble();
 					cellMatrix(dim, dim) = rangeMax - rangeMin;
@@ -106,7 +106,7 @@ void ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
 			}
 			break;
 		}
-		else if(xml.name() == "PointData" || xml.name() == "CellData" || xml.name() == "DataArray") {
+		else if(xml.name().compare(QStringLiteral("PointData")) == 0 || xml.name().compare(QStringLiteral("CellData")) == 0 || xml.name().compare(QStringLiteral("DataArray")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}

@@ -70,8 +70,8 @@ public:
 	virtual QString objectTitle() const override { return tr("GSD"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource) override {
-		return std::make_shared<FrameLoader>(dataset(), frame, std::move(file), masterCollection, dataSource, this, std::max(roundingResolution(), 1));
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+		return std::make_shared<FrameLoader>(request, this, std::max(roundingResolution(), 1));
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -110,8 +110,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(DataSet* dataset, const Frame& frame, const FileHandle& file, const DataCollection* masterCollection, PipelineObject* dataSource, GSDImporter* importer, int roundingResolution)
-			: ParticleImporter::FrameLoader(dataset, frame, file, masterCollection, dataSource), _importer(importer), _roundingResolution(roundingResolution) {}
+		FrameLoader(const LoadOperationRequest& request, GSDImporter* importer, int roundingResolution)
+			: ParticleImporter::FrameLoader(request), _importer(importer), _roundingResolution(roundingResolution) {}
 
 	protected:
 
