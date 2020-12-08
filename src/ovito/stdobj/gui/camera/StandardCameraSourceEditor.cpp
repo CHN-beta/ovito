@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,18 +24,18 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
-#include <ovito/stdobj/camera/CameraObject.h>
-#include "CameraObjectEditor.h"
+#include <ovito/stdobj/camera/StandardCameraSource.h>
+#include "StandardCameraSourceEditor.h"
 
 namespace Ovito { namespace StdObj {
 
-IMPLEMENT_OVITO_CLASS(CameraObjectEditor);
-SET_OVITO_OBJECT_EDITOR(CameraObject, CameraObjectEditor);
+IMPLEMENT_OVITO_CLASS(StandardCameraSourceEditor);
+SET_OVITO_OBJECT_EDITOR(StandardCameraSource, StandardCameraSourceEditor);
 
 /******************************************************************************
 * Constructor that creates the UI controls for the editor.
 ******************************************************************************/
-void CameraObjectEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
 	QWidget* rollout = createRollout(tr("Camera"), rolloutParams);
@@ -51,12 +51,12 @@ void CameraObjectEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	layout->addLayout(sublayout);
 
 	// Camera projection parameter.
-	BooleanRadioButtonParameterUI* isPerspectivePUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(CameraObject::isPerspective));
+	BooleanRadioButtonParameterUI* isPerspectivePUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(StandardCameraSource::isPerspective));
 	isPerspectivePUI->buttonTrue()->setText(tr("Perspective camera:"));
 	sublayout->addWidget(isPerspectivePUI->buttonTrue(), 0, 0, 1, 3);
 
 	// FOV parameter.
-	FloatParameterUI* fovPUI = new FloatParameterUI(this, PROPERTY_FIELD(CameraObject::fovController));
+	FloatParameterUI* fovPUI = new FloatParameterUI(this, PROPERTY_FIELD(StandardCameraSource::fovController));
 	sublayout->addWidget(fovPUI->label(), 1, 1);
 	sublayout->addLayout(fovPUI->createFieldLayout(), 1, 2);
 
@@ -64,7 +64,7 @@ void CameraObjectEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	sublayout->addWidget(isPerspectivePUI->buttonFalse(), 2, 0, 1, 3);
 
 	// Zoom parameter.
-	FloatParameterUI* zoomPUI = new FloatParameterUI(this, PROPERTY_FIELD(CameraObject::zoomController));
+	FloatParameterUI* zoomPUI = new FloatParameterUI(this, PROPERTY_FIELD(StandardCameraSource::zoomController));
 	sublayout->addWidget(zoomPUI->label(), 3, 1);
 	sublayout->addLayout(zoomPUI->createFieldLayout(), 3, 2);
 

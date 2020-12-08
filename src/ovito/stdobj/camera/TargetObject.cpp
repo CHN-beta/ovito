@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,8 @@ TargetObject::TargetObject(DataSet* dataset) : DataObject(dataset)
 ******************************************************************************/
 void TargetObject::initializeObject(ExecutionContext executionContext)
 {
-	addVisElement(OORef<TargetVis>::create(dataset(), executionContext));
+	if(!visElement())
+		setVisElement(OORef<TargetVis>::create(dataset(), executionContext));
 
 	DataObject::initializeObject(executionContext);
 }
@@ -134,7 +135,7 @@ void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 ******************************************************************************/
 Box3 TargetVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	// This is not a physical object. It doesn't have a size.
+	// This is not a physical object. It is point-like and doesn't have any size.
 	return Box3(Point3::Origin(), Point3::Origin());
 }
 

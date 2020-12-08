@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,17 +29,17 @@
 namespace Ovito { namespace StdObj {
 
 /**
- * A properties editor for the CameraObject class.
+ * A properties editor for the StandardCameraSource class.
  */
-class CameraObjectEditor : public PropertiesEditor
+class StandardCameraSourceEditor : public PropertiesEditor
 {
 	Q_OBJECT
-	OVITO_CLASS(CameraObjectEditor)
+	OVITO_CLASS(StandardCameraSourceEditor)
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CameraObjectEditor() {}
+	Q_INVOKABLE StandardCameraSourceEditor() {}
 
 protected:
 

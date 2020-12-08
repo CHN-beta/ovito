@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,29 +27,31 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/dataset/pipeline/StaticSource.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
-#include "CameraObject.h"
+#include "StandardCameraObject.h"
 
 namespace Ovito { namespace StdObj {
 
-IMPLEMENT_OVITO_CLASS(CameraObject);
-DEFINE_PROPERTY_FIELD(CameraObject, isPerspective);
-DEFINE_REFERENCE_FIELD(CameraObject, fovController);
-DEFINE_REFERENCE_FIELD(CameraObject, zoomController);
-SET_PROPERTY_FIELD_LABEL(CameraObject, isPerspective, "Perspective projection");
-SET_PROPERTY_FIELD_LABEL(CameraObject, fovController, "FOV angle");
-SET_PROPERTY_FIELD_LABEL(CameraObject, zoomController, "FOV size");
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(CameraObject, fovController, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CameraObject, zoomController, WorldParameterUnit, 0);
+IMPLEMENT_OVITO_CLASS(StandardCameraObject);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, fov);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, zoom);
+SET_PROPERTY_FIELD_LABEL(StandardCameraObject, isPerspective, "Perspective projection");
+SET_PROPERTY_FIELD_LABEL(StandardCameraObject, fov, "FOV angle");
+SET_PROPERTY_FIELD_LABEL(StandardCameraObject, zoom, "FOV size");
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraObject, zoom, WorldParameterUnit, 0);
 
 IMPLEMENT_OVITO_CLASS(CameraVis);
 
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-CameraObject::CameraObject(DataSet* dataset) : AbstractCameraObject(dataset), _isPerspective(true)
+StandardCameraObject::StandardCameraObject(DataSet* dataset) : AbstractCameraObject(dataset), 
+	_isPerspective(true),
+	_fov(FLOATTYPE_PI/4),
+	_zoom(200.0)
 {
 }
 
@@ -57,32 +59,55 @@ CameraObject::CameraObject(DataSet* dataset) : AbstractCameraObject(dataset), _i
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CameraObject::initializeObject(ExecutionContext executionContext)
+void StandardCameraObject::initializeObject(ExecutionContext executionContext)
 {
-	setFovController(ControllerManager::createFloatController(dataset(), executionContext));
-	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
-	setZoomController(ControllerManager::createFloatController(dataset(), executionContext));
-	zoomController()->setFloatValue(0, 200);
-	addVisElement(OORef<CameraVis>::create(dataset(), executionContext));
+	if(!visElement())
+		setVisElement(OORef<CameraVis>::create(dataset(), executionContext));
 
 	AbstractCameraObject::initializeObject(executionContext);
 }
 
 /******************************************************************************
-* Asks the object for its validity interval at the given time.
+* Provides a custom function that takes are of the deserialization of a 
+* serialized property field that has been removed from the class. 
+* This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
-TimeInterval CameraObject::objectValidity(TimePoint time)
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-	TimeInterval interval = DataObject::objectValidity(time);
-	if(isPerspective() && fovController()) interval.intersect(fovController()->validityInterval(time));
-	if(!isPerspective() && zoomController()) interval.intersect(zoomController()->validityInterval(time));
-	return interval;
+    // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3. and earlier.
+    if(field.identifier == "fovController" && field.definingClass == &StandardCameraObject::OOClass()) {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+            OVITO_ASSERT(field.isReferenceField);
+			stream.expectChunk(0x02);
+            OORef<Controller> controller = stream.loadObject<Controller>();
+            stream.closeChunk();
+			// Need to wait until the animation keys of the controller have been completely loaded.
+			// Only then it is safe to query the controller for its value.
+			connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+	            camera->setFov(controller->currentFloatValue());
+			});
+        };
+    }
+    else if(field.identifier == "zoomController" && field.definingClass == &StandardCameraObject::OOClass()) {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+            OVITO_ASSERT(field.isReferenceField);
+			stream.expectChunk(0x02);
+            OORef<Controller> controller = stream.loadObject<Controller>();
+            stream.closeChunk();
+			// Need to wait until the animation keys of the controller have been completely loaded.
+			// Only then it is safe to query the controller for its value.
+			connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+	            camera->setZoom(controller->currentFloatValue());
+			});
+        };
+    }
+    return nullptr;
 }
 
 /******************************************************************************
 * Fills in the missing fields of the camera view descriptor structure.
 ******************************************************************************/
-void CameraObject::projectionParameters(TimePoint time, ViewProjectionParameters& params) const
+void StandardCameraObject::projectionParameters(TimePoint time, ViewProjectionParameters& params) const
 {
 	// Transform scene bounding box to camera space.
 	Box3 bb = params.boundingBox.transformed(params.viewMatrix).centerScale(FloatType(1.01));
@@ -101,9 +126,7 @@ void CameraObject::projectionParameters(TimePoint time, ViewProjectionParameters
 		params.zfar = std::max(params.zfar, params.znear * FloatType(1.01));
 
 		// Get the camera angle.
-		params.fieldOfView = fovController() ? fovController()->getFloatValue(time, params.validityInterval) : 0;
-		if(params.fieldOfView < FLOATTYPE_EPSILON) params.fieldOfView = FLOATTYPE_EPSILON;
-		if(params.fieldOfView > FLOATTYPE_PI - FLOATTYPE_EPSILON) params.fieldOfView = FLOATTYPE_PI - FLOATTYPE_EPSILON;
+		params.fieldOfView = qBound(FLOATTYPE_EPSILON, fov(), FLOATTYPE_PI - FLOATTYPE_EPSILON);
 
 		params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
 	}
@@ -118,8 +141,7 @@ void CameraObject::projectionParameters(TimePoint time, ViewProjectionParameters
 		}
 
 		// Get the camera zoom.
-		params.fieldOfView = zoomController() ? zoomController()->getFloatValue(time, params.validityInterval) : 0;
-		if(params.fieldOfView < FLOATTYPE_EPSILON) params.fieldOfView = FLOATTYPE_EPSILON;
+		params.fieldOfView = qMax(FLOATTYPE_EPSILON, zoom());
 
 		params.projectionMatrix = Matrix4::ortho(-params.fieldOfView / params.aspectRatio, params.fieldOfView / params.aspectRatio,
 							-params.fieldOfView, params.fieldOfView, params.znear, params.zfar);
@@ -128,124 +150,19 @@ void CameraObject::projectionParameters(TimePoint time, ViewProjectionParameters
 }
 
 /******************************************************************************
-* Returns the field of view of the camera.
-******************************************************************************/
-FloatType CameraObject::fieldOfView(TimePoint time, TimeInterval& validityInterval) const
-{
-	if(isPerspective())
-		return fovController() ? fovController()->getFloatValue(time, validityInterval) : 0;
-	else
-		return zoomController() ? zoomController()->getFloatValue(time, validityInterval) : 0;
-}
-
-/******************************************************************************
-* Changes the field of view of the camera.
-******************************************************************************/
-void CameraObject::setFieldOfView(TimePoint time, FloatType newFOV)
-{
-	if(isPerspective()) {
-		if(fovController()) fovController()->setFloatValue(time, newFOV);
-	}
-	else {
-		if(zoomController()) zoomController()->setFloatValue(time, newFOV);
-	}
-}
-
-/******************************************************************************
-* Returns whether this camera is a target camera directed at a target object.
-******************************************************************************/
-bool CameraObject::isTargetCamera() const
-{
-	bool result = false;
-	visitDependents([&](RefMaker* dependent) {
-		if(const StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
-			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
-				if(data->contains(this)) {
-					for(PipelineSceneNode* node : staticSource->pipelines(true)) {
-						if(node->lookatTargetNode() != nullptr)
-							result = true;
-					}
-				}
-			}
-		}
-	});
-	return result;
-}
-
-/******************************************************************************
-* Changes the type of the camera to a target camera or a free camera.
-******************************************************************************/
-void CameraObject::setIsTargetCamera(bool enable)
-{
-	dataset()->undoStack().pushIfRecording<TargetChangedUndoOperation>(this);
-
-	visitDependents([&](RefMaker* dependent) {
-		if(StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
-			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
-				if(data->contains(this)) {
-					for(PipelineSceneNode* node : staticSource->pipelines(true)) {
-						if(node->lookatTargetNode() == nullptr && enable) {
-							if(SceneNode* parentNode = node->parentNode()) {
-								AnimationSuspender noAnim(this);
-								OORef<TargetObject> targetObj = OORef<TargetObject>::create(dataset(), Application::instance()->executionContext());
-								DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset(), Application::instance()->executionContext());
-								dataCollection->addObject(targetObj);
-								OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), Application::instance()->executionContext(), dataCollection);
-								OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
-								targetNode->setDataProvider(targetSource);
-								targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
-								parentNode->addChildNode(targetNode);
-								// Position the new target to match the current orientation of the camera.
-								TimeInterval iv;
-								const AffineTransformation& cameraTM = node->getWorldTransform(dataset()->animationSettings()->time(), iv);
-								Vector3 cameraPos = cameraTM.translation();
-								Vector3 cameraDir = cameraTM.column(2).normalized();
-								Vector3 targetPos = cameraPos - targetDistance() * cameraDir;
-								targetNode->transformationController()->translate(0, targetPos, AffineTransformation::Identity());
-								node->setLookatTargetNode(targetNode);
-							}
-						}
-						else if(node->lookatTargetNode() != nullptr && !enable) {
-							OORef<SceneNode> targetNode = node->lookatTargetNode();
-							node->setLookatTargetNode(nullptr);
-							targetNode->deleteNode();
-						}
-					}
-				}
-			}
-		}
-	});
-
-	dataset()->undoStack().pushIfRecording<TargetChangedRedoOperation>(this);
-	notifyTargetChanged();
-}
-
-/******************************************************************************
 * With a target camera, indicates the distance between the camera and its target.
 ******************************************************************************/
-FloatType CameraObject::targetDistance() const
+FloatType StandardCameraObject::getTargetDistance(TimePoint time, const PipelineSceneNode* node)
 {
+	if(node && node->lookatTargetNode() != nullptr) {
+		TimeInterval iv;
+		Vector3 cameraPos = node->getWorldTransform(time, iv).translation();
+		Vector3 targetPos = node->lookatTargetNode()->getWorldTransform(time, iv).translation();
+		return (cameraPos - targetPos).length();
+	}
+
 	// That's the fixed target distance of a free camera:
-	FloatType result = 50.0;
-
-	visitDependents([&](RefMaker* dependent) {
-		if(const StaticSource* staticSource = dynamic_object_cast<StaticSource>(dependent)) {
-			if(const DataCollection* data = dynamic_object_cast<StaticSource>(dependent)->dataCollection()) {
-				if(data->contains(this)) {
-					for(const PipelineSceneNode* node : staticSource->pipelines(true)) {
-						if(node->lookatTargetNode() != nullptr) {
-							TimeInterval iv;
-							Vector3 cameraPos = node->getWorldTransform(dataset()->animationSettings()->time(), iv).translation();
-							Vector3 targetPos = node->lookatTargetNode()->getWorldTransform(dataset()->animationSettings()->time(), iv).translation();
-							result = (cameraPos - targetPos).length();
-						}
-					}
-				}
-			}
-		}
-	});
-
-	return result;
+	return 50.0;
 }
 
 /******************************************************************************
@@ -266,7 +183,7 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 		// The key type used for caching the geometry primitive:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			WeakDataObjectRef,		// Camera object + revision number
+			WeakDataObjectRef,			// Camera object
 			Color						// Display color
 		>;
 
@@ -351,11 +268,11 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 	if(contextNode->isSelected()) {
 		if(RenderSettings* renderSettings = dataset()->renderSettings())
 			aspectRatio = renderSettings->outputImageAspectRatio();
-		if(const CameraObject* camera = dynamic_object_cast<CameraObject>(objectStack.back())) {
+		if(const StandardCameraObject* camera = dynamic_object_cast<StandardCameraObject>(objectStack.back())) {
 			if(camera->isPerspective()) {
 				coneAngle = camera->fieldOfView(time, iv);
 				if(targetDistance == 0)
-					targetDistance = camera->targetDistance();
+					targetDistance = StandardCameraObject::getTargetDistance(time, contextNode);
 			}
 		}
 	}

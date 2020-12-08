@@ -23,7 +23,8 @@
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(StdObj
 	SOURCES
-		camera/CameraObject.cpp
+		camera/StandardCameraObject.cpp
+		camera/StandardCameraSource.cpp
 		camera/TargetObject.cpp
 		simcell/SimulationCellObject.cpp
 		simcell/SimulationCellVis.cpp

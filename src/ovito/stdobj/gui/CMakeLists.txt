@@ -23,7 +23,7 @@
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(StdObjGui
 	SOURCES
-		camera/CameraObjectEditor.cpp
+		camera/StandardCameraSourceEditor.cpp
 		io/DataTablePlotExporter.cpp
 		io/DataTablePlotExporterEditor.cpp
 		properties/PropertyInspectionApplet.cpp

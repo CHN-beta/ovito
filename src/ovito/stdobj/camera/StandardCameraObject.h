@@ -25,38 +25,45 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
-#include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
 namespace Ovito { namespace StdObj {
 
 /**
- * The standard camera object.
+ * The standard camera data object.
  */
-class OVITO_STDOBJ_EXPORT CameraObject : public AbstractCameraObject
+class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
 {
+	/// Give this class its own metaclass.
+	class StandardCameraObjectClass : public AbstractCameraObject::OOMetaClass
+	{
+	public:
+
+		/// Inherit constructor from base class.
+		using AbstractCameraObject::OOMetaClass::OOMetaClass;
+
+		/// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+		/// This is needed for backward compatibility with OVITO 3.3.
+		virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
+	};
+
 	Q_OBJECT
-	OVITO_CLASS(CameraObject)
+	OVITO_CLASS_META(StandardCameraObject, StandardCameraObjectClass)
 	Q_CLASSINFO("DisplayName", "Camera");
+	Q_CLASSINFO("ClassNameAlias", "CameraObject");	// For backward compatibility with OVITO 3.3.
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CameraObject(DataSet* dataset);
+	Q_INVOKABLE StandardCameraObject(DataSet* dataset);
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
 	virtual void initializeObject(ExecutionContext executionContext) override;
-	
-	/// Returns whether this camera is a target camera directory at a target object.
-	bool isTargetCamera() const;
-
-	/// Changes the type of the camera to a target camera or a free camera.
-	void setIsTargetCamera(bool enable);
 
 	/// With a target camera, indicates the distance between the camera and its target.
-	FloatType targetDistance() const;
+	static FloatType getTargetDistance(TimePoint time, const PipelineSceneNode* node);
 
 	/// \brief Returns a structure describing the camera's projection.
 	/// \param[in] time The animation time for which the camera's projection parameters should be determined.
@@ -74,33 +81,28 @@ public:
 	virtual void setPerspectiveCamera(bool perspective) override { setIsPerspective(perspective); }
 
 	/// \brief Returns the field of view of the camera.
-	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const override;
+	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const override {
+		return isPerspective() ? fov() : zoom();
+	}
 
 	/// \brief Changes the field of view of the camera.
-	virtual void setFieldOfView(TimePoint time, FloatType newFOV) override;
-
-	/// Asks the object for its validity interval at the given time.
-	virtual TimeInterval objectValidity(TimePoint time) override;
-
-	/// Returns whether this data object wants to be shown in the pipeline editor
-	/// under the data source section.
-	virtual bool showInPipelineEditor() const override { return true; }
-
-public:
-
-	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
-	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
+	virtual void setFieldOfView(TimePoint time, FloatType newFOV) override {
+		if(isPerspective())
+			setFov(newFOV);
+		else
+			setZoom(newFOV);
+	}
 
 private:
 
 	/// Determines if this camera uses a perspective projection.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
 
-	/// This controller stores the field of view of the camera if it uses a perspective projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, fovController, setFovController);
+	/// Field of view of the camera if it uses a perspective projection.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fov, setFov);
 
-	/// This controller stores the field of view of the camera if it uses an orthogonal projection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
+	/// Field of view of the camera if it uses an orthogonal projection.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, zoom, setZoom);
 };
 
 /**
