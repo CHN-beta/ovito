@@ -41,9 +41,6 @@ IF(OVITO_BUILD_GUI AND NOT OVITO_BUILD_PYTHON_PACKAGE)
 ENDIF()
 
 # Build the main application for the WebAssembly platform.
-IF(OVITO_BUILD_WEBGUI)
-	ADD_SUBDIRECTORY(ovito_wasm)
-ENDIF()
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

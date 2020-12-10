@@ -26,8 +26,8 @@
 #include <ovito/gui/web/GUIWeb.h>
 #include <ovito/gui/web/dataset/WasmDataSetContainer.h>
 #include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include "ModifierListModel.h"
-#include "PipelineListModel.h"
 
 namespace Ovito {
 

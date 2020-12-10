@@ -32,21 +32,22 @@ IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
 	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS OpenGL OpenGLWidgets)
 ENDIF()
 IF(OVITO_BUILD_GUI)
-	# Note: QtConcurrent and QtPrintSupport are a dependency of the Qwt library.
-	# Note: QtDBus is an indirect dependency of the Xcb platform plugin under Linux.
-	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets Concurrent PrintSupport Svg DBus)
+	IF(NOT OVITO_QML_GUI)
+		# Note: QtConcurrent and QtPrintSupport are a dependency of the Qwt library.
+		# Note: QtDBus is an indirect dependency of the Xcb platform plugin under Linux.
+		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets Concurrent PrintSupport Svg DBus)
+	ELSE()
+		# The user interface is implemented using Qt Qml and Quick when running inside a web browser.
+		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml QmlModels QmlWorkerScript Quick QuickControls2 QuickTemplates2 Svg)
+		# Additionally, when building for the desktop platform, we need the QtWidgets module.
+		IF(NOT EMSCRIPTEN)
+			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
+		ENDIF()
+	ENDIF()
 ENDIF()
 IF(NOT EMSCRIPTEN)
 	# The Qt Network module is used by the OVITO Core module, except in the wasm build.
 	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Network)
-ENDIF()
-IF(OVITO_BUILD_WEBGUI)
-	# The user interface is implemented using Qt Qml and Quick when running inside a web browser.
-	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml Quick QuickControls2 QuickTemplates2 Svg)
-	# Additionally, when building for the desktop platform, we need the QtWidgets module.
-	IF(NOT EMSCRIPTEN)
-		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
-	ENDIF()
 ENDIF()
 
 # Find the required Qt modules.
@@ -202,12 +203,14 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_PYTHON_PACKAGE AND NOT OVITO_BUILD_CONDA)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindowsd.dll" "plugins/platforms/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpegd.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgifd.dll" "plugins/imageformats/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvgd.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicond.dll" "plugins/iconengines/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyled.dll" "plugins/styles/")
 	ELSE()
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows.dll" "plugins/platforms/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif.dll" "plugins/imageformats/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon.dll" "plugins/iconengines/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle.dll" "plugins/styles/")
 	ENDIF()

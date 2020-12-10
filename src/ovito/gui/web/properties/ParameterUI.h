@@ -118,7 +118,7 @@ protected:
 private:
 
 	/// The object whose parameter is being edited.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget, editObject, setEditObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, setEditObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The QML property this value source is attached to.
 	QQmlProperty _qmlProperty;

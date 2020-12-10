@@ -29,8 +29,6 @@ OVITO_STANDARD_PLUGIN(GuiWeb
 		mainwin/MainWindow.cpp
 		mainwin/ViewportsPanel.cpp
 		mainwin/ModifierListModel.cpp
-		mainwin/PipelineListModel.cpp
-		mainwin/PipelineListItem.cpp
 		properties/ParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
 		viewport/ViewportWindow.cpp
@@ -39,7 +37,10 @@ OVITO_STANDARD_PLUGIN(GuiWeb
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2
+		${OVITO_QT_MAJOR_VERSION}::Qml 
+		${OVITO_QT_MAJOR_VERSION}::Quick 
+		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
+		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2
 	PRECOMPILED_HEADERS 
 		GUIWeb.h
 )

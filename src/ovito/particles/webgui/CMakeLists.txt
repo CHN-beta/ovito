@@ -24,6 +24,7 @@
 OVITO_STANDARD_PLUGIN(ParticlesGui
 	SOURCES
 		resources/particlesgui.qrc
+		ParticlesGui.cpp
 	PLUGIN_DEPENDENCIES 
 		Particles
 	GUI_PLUGIN

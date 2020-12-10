@@ -19,7 +19,7 @@ ScrollView {
 		onCurrentIndexChanged: model.selectedIndex = currentIndex;
 		Connections {
 			target: model
-			onSelectedIndexChanged: listView.currentIndex = model.selectedIndex;
+			function onSelectedIndexChanged(selectedIndex) { listView.currentIndex = selectedIndex; }
 		}
 
 		Component {

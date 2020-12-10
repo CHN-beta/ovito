@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT AtomicStrainModifier : public ReferenceConfiguratio
 
 	Q_CLASSINFO("DisplayName", "Atomic strain");
 	Q_CLASSINFO("Description", "Calculate local strain and deformation gradient tensors.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");

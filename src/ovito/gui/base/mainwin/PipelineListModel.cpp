@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
@@ -28,9 +28,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include "PipelineListModel.h"
-#include "ModifyCommandPage.h"
 
 namespace Ovito {
 
@@ -94,11 +92,33 @@ void PipelineListModel::setItems(std::vector<OORef<PipelineListItem>> newItems)
 ******************************************************************************/
 PipelineListItem* PipelineListModel::selectedItem() const
 {
-	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.empty())
+	int index = selectedIndex();
+	if(index == -1)
 		return nullptr;
 	else
-		return item(selection.front().row());
+		return item(index);
+}
+
+/******************************************************************************
+* Returns the index of the item that is currently selected in the pipeline editor.
+******************************************************************************/
+int PipelineListModel::selectedIndex() const
+{
+	QModelIndexList selection = _selectionModel->selectedRows();
+	if(selection.empty())
+		return -1;
+	else
+		return selection.front().row();
+}
+
+/******************************************************************************
+* Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
+******************************************************************************/
+RefTarget* PipelineListModel::selectedObject() const
+{
+	if(PipelineListItem* item = selectedItem())
+		return item->object();
+	return nullptr;
 }
 
 /******************************************************************************

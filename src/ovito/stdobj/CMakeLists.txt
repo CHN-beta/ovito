@@ -50,10 +50,11 @@ OVITO_STANDARD_PLUGIN(StdObj
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
-ENDIF()
-IF(OVITO_BUILD_WEBGUI)
-	ADD_SUBDIRECTORY(webgui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ELSE()
+		ADD_SUBDIRECTORY(webgui)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -35,9 +35,11 @@ namespace Ovito {
 /**
  * This Qt model class is used to populate the QListView widget.
  */
-class PipelineListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT PipelineListModel : public QAbstractListModel
 {
 	Q_OBJECT
+	Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject NOTIFY selectedItemChanged);
+	Q_PROPERTY(int selectedIndex READ selectedIndex WRITE setSelectedIndex NOTIFY selectedItemChanged);
 
 public:
 
@@ -71,6 +73,19 @@ public:
 
 	/// Returns the currently selected item in the modification list.
 	PipelineListItem* selectedItem() const;
+
+	/// Returns the index of the item that is currently selected in the pipeline editor.
+	int selectedIndex() const;
+
+	/// Sets the index of the item that is currently selected in the pipeline editor.
+	void setSelectedIndex(int index) { 
+		if(selectedIndex() != index) {
+			_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+		}
+	}
+
+	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
+	RefTarget* selectedObject() const;
 
 	/// Returns an item from the list model.
 	PipelineListItem* item(int index) const {

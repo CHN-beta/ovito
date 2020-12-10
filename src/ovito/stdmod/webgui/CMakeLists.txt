@@ -24,6 +24,7 @@
 OVITO_STANDARD_PLUGIN(StdModGui
 	SOURCES
 		resources/stdmodgui.qrc
+		StdModGui.cpp
 	PLUGIN_DEPENDENCIES 
 		StdMod
 	GUI_PLUGIN

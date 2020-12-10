@@ -100,10 +100,8 @@ void ModifierListModel::insertModifier(int index, PipelineListModel* pipelineMod
 	// Instantiate the new modifier and insert it into the pipeline.
 	UndoableTransaction::handleExceptions(dataset->undoStack(), tr("Apply modifier"), [&]() {
 		// Create an instance of the modifier.
-		OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset));
+		OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset, ExecutionContext::Interactive));
 		OVITO_CHECK_OBJECT_POINTER(modifier);
-		// Load user-defined default parameters.
-		modifier->initializeObject();
 		// Apply it to the data pipeline.
 		pipelineModel->applyModifiers({modifier});
 	});

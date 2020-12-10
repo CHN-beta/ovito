@@ -29,13 +29,9 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/cmdpanel/CommandPanel.cpp
 		mainwin/cmdpanel/RenderCommandPage.cpp
 		mainwin/cmdpanel/ModifyCommandPage.cpp
-		mainwin/cmdpanel/PipelineListModel.cpp
-		mainwin/cmdpanel/PipelineListItem.cpp
 		mainwin/cmdpanel/ModifierListModel.cpp
 		mainwin/cmdpanel/OverlayCommandPage.cpp
 		mainwin/cmdpanel/OverlayTypesModel.cpp
-		mainwin/cmdpanel/OverlayListModel.cpp
-		mainwin/cmdpanel/OverlayListItem.cpp
 		mainwin/data_inspector/DataInspectorPanel.cpp
 		mainwin/data_inspector/DataInspectionApplet.cpp
 		mainwin/data_inspector/GlobalAttributesInspectionApplet.cpp

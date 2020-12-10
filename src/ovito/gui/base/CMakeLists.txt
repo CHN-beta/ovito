@@ -24,6 +24,10 @@
 OVITO_STANDARD_PLUGIN(GuiBase
 	SOURCES
 		mainwin/MainWindowInterface.cpp
+		mainwin/OverlayListModel.cpp
+		mainwin/OverlayListItem.cpp
+		mainwin/PipelineListModel.cpp
+		mainwin/PipelineListItem.cpp
 		rendering/ViewportSceneRenderer.cpp
 		rendering/PickingSceneRenderer.cpp
 		viewport/ViewportInputManager.cpp

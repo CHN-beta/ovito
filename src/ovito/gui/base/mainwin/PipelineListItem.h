@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/oo/RefMaker.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -50,7 +50,8 @@ public:
 		DataSourceHeader,
 		PipelineBranch
 	};
-	Q_ENUM(PipelineItemType);
+
+public:
 
 	/// Constructor.
 	PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent = nullptr);
@@ -73,6 +74,9 @@ public:
 	/// Returns the type of this list item.
 	PipelineItemType itemType() const { return _itemType; }
 
+	/// Returns whether this list item represents an OVITO object.
+	bool isObjectItem() const { return _itemType <= DataObject; }
+
 Q_SIGNALS:
 
 	/// This signal is emitted when this item has changed.
@@ -92,7 +96,7 @@ protected:
 private:
 
 	/// The object represented by this item in the list box.
-	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget, object, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, object, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The type of this list item.
 	PipelineItemType _itemType;

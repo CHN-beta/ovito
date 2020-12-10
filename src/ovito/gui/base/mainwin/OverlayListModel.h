@@ -23,9 +23,10 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/RefTargetListener.h>
+#include <ovito/core/viewport/Viewport.h>
 #include "OverlayListItem.h"
 
 namespace Ovito {
@@ -33,7 +34,7 @@ namespace Ovito {
 /**
  * A Qt model class used to populate the QListView widget on the viewports overlay page of the command panel.
  */
-class OverlayListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT OverlayListModel : public QAbstractListModel
 {
 	Q_OBJECT
 

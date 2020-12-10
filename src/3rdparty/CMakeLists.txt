@@ -20,7 +20,7 @@
 #
 #######################################################################################
 
-IF(OVITO_BUILD_GUI)
+IF(OVITO_BUILD_GUI AND NOT OVITO_QML_GUI)
     ADD_SUBDIRECTORY(qwt)
 ENDIF()
 IF(OVITO_BUILD_PLUGIN_STDOBJ OR OVITO_BUILD_PLUGIN_PARTICLES)

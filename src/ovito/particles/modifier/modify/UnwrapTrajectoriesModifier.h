@@ -53,7 +53,7 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 
 	Q_CLASSINFO("DisplayName", "Unwrap trajectories");
 	Q_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Modification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");

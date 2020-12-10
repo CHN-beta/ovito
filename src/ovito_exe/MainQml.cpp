@@ -24,7 +24,7 @@
 #include <ovito/gui/web/app/WasmApplication.h>
 
 /**
- * This is the main entry point for the WebAssembly application.
+ * This is the main entry point for the QML-based application.
  */
 int main(int argc, char** argv)
 {

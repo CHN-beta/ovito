@@ -58,7 +58,7 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
 
 	Q_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
 	Q_CLASSINFO("DisplayName", "Spatial correlation function");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");

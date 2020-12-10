@@ -102,11 +102,12 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 	if(!url.isValid())
 		throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()), currentSet());
 
+	std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
 	OORef<FileImporter> importer;
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), url);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Interactive, url);
 		if(!taskManager().waitForFuture(importerFuture))
 			return false;
 
@@ -120,18 +121,16 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 		}
 	}
 	else {
-		importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet()));
+		importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Interactive));
 		if(!importer)
 			currentSet()->throwException(tr("Failed to import file. Could not initialize file reader."));
 	}
-
-	// Load user-defined default settings for the importer.
-	importer->initializeObject();
+	urlImporters.push_back(std::make_pair(url, importer));
 
 	// Specify how the file's data should be inserted into the current scene.
 	FileImporter::ImportMode importMode = FileImporter::ResetScene;
 
-	return importer->importFile({url}, importMode, true);
+	return importer->importFileSet(std::move(urlImporters), importMode, true);
 }
 
 }	// End of namespace

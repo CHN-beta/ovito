@@ -99,7 +99,7 @@ QVariant ParameterUI::getCurrentValue() const
 	if(editObject()) {
 		if(propertyField()) {
 			if(propertyField()->isReferenceField()) {
-				RefTarget* target = editObject()->getReferenceField(*propertyField()).getInternal();
+				RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
 				if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
 					switch(ctrl->controllerType()) {
 					case Controller::ControllerTypeFloat:
@@ -146,7 +146,7 @@ void ParameterUI::setCurrentValue(const QVariant& val)
 		UndoableTransaction::handleExceptions(editObject()->dataset()->undoStack(), tr("Change parameter"), [&]() {
 			if(propertyField()) {
 				if(propertyField()->isReferenceField()) {
-					RefTarget* target = editObject()->getReferenceField(*propertyField()).getInternal();
+					RefTarget* target = editObject()->getReferenceFieldTarget(*propertyField());
 					if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
 						switch(ctrl->controllerType()) {
 						case Controller::ControllerTypeFloat:
