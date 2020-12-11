@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,9 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -232,12 +233,12 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 	PickElementMode* pickElementMode = new PickElementMode(this);
 	connect(this, &QObject::destroyed, pickElementMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Pick"), this, pickElementMode);
-	sublayout->addWidget(pickModeAction->createPushButton());
+	sublayout->addWidget(new ViewportModeButton(pickModeAction));
 
 	FenceSelectionMode* fenceMode = new FenceSelectionMode(this);
 	connect(this, &QObject::destroyed, fenceMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* fenceModeAction = new ViewportModeAction(mainWindow(), tr("Fence selection"), this, fenceMode);
-	sublayout->addWidget(fenceModeAction->createPushButton());
+	sublayout->addWidget(new ViewportModeButton(fenceModeAction));
 
 	// Deactivate input modes when editor is reset.
 	connect(this, &PropertiesEditor::contentsReplaced, pickModeAction, &ViewportModeAction::deactivateMode);

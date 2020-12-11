@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include "RenderCommandPage.h"
 

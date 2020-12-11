@@ -23,28 +23,31 @@
 #include <ovito/gui/web/GUIWeb.h>
 #include <ovito/gui/web/dataset/WasmFileManager.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "MainWindow.h"
-#include "ModifierListModel.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainWindow::MainWindow() : _datasetContainer(this)
+MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
 	// Create the object that manages the input modes of the viewports.
-	setViewportInputManager(new ViewportInputManager(this, this, *datasetContainer()));
+	setViewportInputManager(new ViewportInputManager(this, this));
+
+	// Create actions.
+	setActionManager(new ActionManager(this, this));
 
 	// For timed display of texts in the status bar:
 	connect(&_statusBarTimer, &QTimer::timeout, this, &MainWindow::clearStatusBarMessage);
 
-	// Create list of available modifiers.
-	_modifierListModel = new ModifierListModel(this);
-
 	// Create list model for the items in the selected data pipeline.
 	_pipelineListModel = new PipelineListModel(_datasetContainer, this);
+
+	// Create list of available modifiers.
+	_modifierListModel = new ModifierListModel(this, this, _pipelineListModel);
 }
 
 /******************************************************************************

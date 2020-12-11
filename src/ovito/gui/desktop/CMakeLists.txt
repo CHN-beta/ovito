@@ -29,9 +29,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/cmdpanel/CommandPanel.cpp
 		mainwin/cmdpanel/RenderCommandPage.cpp
 		mainwin/cmdpanel/ModifyCommandPage.cpp
-		mainwin/cmdpanel/ModifierListModel.cpp
 		mainwin/cmdpanel/OverlayCommandPage.cpp
-		mainwin/cmdpanel/OverlayTypesModel.cpp
 		mainwin/data_inspector/DataInspectorPanel.cpp
 		mainwin/data_inspector/DataInspectionApplet.cpp
 		mainwin/data_inspector/GlobalAttributesInspectionApplet.cpp
@@ -52,13 +50,10 @@ OVITO_STANDARD_PLUGIN(Gui
 		dialogs/ClonePipelineDialog.cpp
 		dialogs/FontSelectionDialog.cpp
 		dialogs/ModalPropertiesEditorDialog.cpp
-		actions/ActionManager.cpp
+		actions/WidgetActionManager.cpp
 		actions/FileActions.cpp
-		actions/ViewportActions.cpp
-		actions/AnimationActions.cpp
 		actions/RenderActions.cpp
 		actions/SearchActions.cpp
-		actions/ViewportModeAction.cpp
 		dataset/GuiDataSetContainer.cpp
 		dataset/io/FileSourceEditor.cpp
 		dataset/io/FileSourcePlaybackRateEditor.cpp
@@ -73,6 +68,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		widgets/general/AutocompleteLineEdit.cpp
 		widgets/general/AutocompleteTextEdit.cpp
 		widgets/general/HtmlListWidget.cpp
+		widgets/general/ViewportModeButton.cpp
 		widgets/animation/AnimationTimeSpinner.cpp
 		widgets/animation/AnimationFramesToolButton.cpp
 		widgets/animation/AnimationTimeSlider.cpp
@@ -146,10 +142,6 @@ SET_PROPERTY(SOURCE actions/FileActions.cpp
 # Compute the relative path where the documentation files get installed relative to the executable. 
 FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
 TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
-
-# Compute the relative path where the Python extension scripts get installed relative to the executable. 
-FILE(RELATIVE_PATH OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/scripts/")
-TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH=\"${OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH}\"")
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

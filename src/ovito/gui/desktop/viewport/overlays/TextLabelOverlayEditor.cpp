@@ -28,9 +28,11 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
+#include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/overlays/TextLabelOverlay.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
@@ -143,7 +145,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	layout->addWidget(moveOverlayAction->createPushButton(), row++, 1, 1, 2);
+	layout->addWidget(new ViewportModeButton(moveOverlayAction), row++, 1, 1, 2);
 
 	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::fontSize));
 	layout->addWidget(new QLabel(tr("Text size/color:")), row, 0);

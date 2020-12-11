@@ -19,14 +19,17 @@ ScrollView {
 		onCurrentIndexChanged: model.selectedIndex = currentIndex;
 		Connections {
 			target: model
-			function onSelectedIndexChanged(selectedIndex) { listView.currentIndex = selectedIndex; }
+			function onSelectedIndexChanged() { listView.currentIndex = model.selectedIndex; }
 		}
 
 		Component {
 			id: itemDelegate
 			MouseArea {
 				id: mouseArea
-				anchors { left: parent.left; right: parent.right }
+				anchors { 
+					left: parent ? parent.left : undefined; 
+					right: parent ? parent.right : undefined; 
+				}
 				height: itemInfo.height
 				hoverEnabled: true
 				onClicked: { 
@@ -90,7 +93,7 @@ ScrollView {
 						anchors.right: parent.right
 						anchors.rightMargin: 4.0
 						opacity: 0
-						source: "qrc:/gui/actions/edit/delete_modifier.svg"
+						source: "qrc:/guibase/actions/modify/delete_modifier.bw.svg"
 						MouseArea {
 							anchors.fill: parent
 							onClicked: { 

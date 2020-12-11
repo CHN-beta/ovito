@@ -46,7 +46,7 @@ ModifierDelegateVariableListParameterUI::ModifierDelegateVariableListParameterUI
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	toolbar->setFloatable(false);
 	toolbar->setIconSize(QSize(16,16));
-	QAction* addDelegateAction = toolbar->addAction(QIcon(":/gui/actions/animation/add_animation_key.bw.svg"), tr("Add entry"));
+	QAction* addDelegateAction = toolbar->addAction(QIcon(":/guibase/actions/animation/add_animation_key.bw.svg"), tr("Add entry"));
 	connect(addDelegateAction, &QAction::triggered, this, &ModifierDelegateVariableListParameterUI::onAddDelegate);
 	layout->addWidget(toolbar, 0, Qt::AlignRight | Qt::AlignTop);
 }
@@ -151,7 +151,7 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
 		toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 		toolbar->setFloatable(false);
 		toolbar->setIconSize(QSize(16,16));
-		QAction* removeDelegateAction = toolbar->addAction(QIcon(":/gui/actions/animation/delete_animation_key.bw.svg"), tr("Remove entry"));
+		QAction* removeDelegateAction = toolbar->addAction(QIcon(":/guibase/actions/animation/delete_animation_key.bw.svg"), tr("Remove entry"));
 		connect(removeDelegateAction, &QAction::triggered, this, &ModifierDelegateVariableListParameterUI::onRemoveDelegate);
 		_removeDelegateActions.insert(listIndex, removeDelegateAction);
 		_delegateBoxes.insert(listIndex, comboBox);

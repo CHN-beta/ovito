@@ -20,10 +20,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
-#include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "OverlayTypesModel.h"
@@ -50,7 +49,7 @@ OverlayAction* OverlayAction::createForClass(OvitoClassPtr clazz)
 	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this viewport layer."));
 
 	// Give the action an icon.
-	static QIcon icon(":/gui/actions/overlays/layer_action_icon.svg");
+	static QIcon icon(":/guibase/actions/overlays/layer_action_icon.svg");
 	action->setIcon(icon);
 
 	return action;
@@ -78,7 +77,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 	action->setStatusTip(tr("Insert this Python-based viewport layer."));
 
 	// Give the action an icon.
-	static QIcon icon(":/gui/actions/overlays/layer_action_icon.svg");
+	static QIcon icon(":/guibase/actions/overlays/layer_action_icon.svg");
 	action->setIcon(icon);
 	
 	return action;
@@ -87,7 +86,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OverlayTypesModel::OverlayTypesModel(QObject* parent, MainWindow* mainWindow, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _overlayListModel(overlayListModel)
+OverlayTypesModel::OverlayTypesModel(QObject* parent, MainWindowInterface* mainWindow, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _overlayListModel(overlayListModel)
 {
 	// Enumerate all built-in viewport layer classes.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ViewportOverlay::OOClass())) {

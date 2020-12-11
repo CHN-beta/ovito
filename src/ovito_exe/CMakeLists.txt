@@ -33,11 +33,11 @@ ELSE()
 	SET(OVITO_WIN32_EXECUTABLE "")
 ENDIF()
 
-# Builds the main executable of the application
+# Builds the main executable of the application.
 IF(NOT OVITO_QML_GUI)
-	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES})
+	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES}) # QWidget based version.
 ELSE()
-	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} MainQml.cpp ${WINDOWS_RESOURCES})
+	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} MainQml.cpp ${WINDOWS_RESOURCES}) # QML based version.
 ENDIF()
 
 # The executable depends on the core module, of course.

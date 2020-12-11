@@ -23,13 +23,13 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 
 namespace Ovito {
 
 class PipelineListModel;	// Defined in PipelineListModel.h
 
-class ModifierAction : public QAction
+class OVITO_GUIBASE_EXPORT ModifierAction : public QAction
 {
 	Q_OBJECT
 
@@ -77,14 +77,17 @@ private:
 /**
  * A Qt list model that list all available modifier types that are applicable to the current data pipeline.
  */
-class ModifierListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT ModifierListModel : public QAbstractListModel
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	ModifierListModel(QObject* parent, MainWindow* mainWindow, PipelineListModel* pipelineListModel);
+	ModifierListModel(QObject* parent, MainWindowInterface* mainWindow, PipelineListModel* pipelineListModel);
+
+	/// Destructor.
+	virtual ~ModifierListModel() { _allModels.removeOne(this); }
 
 	/// Returns the number of rows in the model.
 	virtual int rowCount(const QModelIndex& parent) const override;
@@ -130,6 +133,9 @@ public Q_SLOTS:
 	/// Updates the enabled/disabled state of all modifier actions based on the current pipeline.
 	void updateActionState();
 
+	/// Inserts the i-th modifier from this model into the current pipeline.
+	void insertModifierByIndex(int index);
+
 private Q_SLOTS:
 
 	/// Signal handler that inserts the selected modifier into the current pipeline.
@@ -150,7 +156,7 @@ private:
 	std::vector<QString> _categoryNames;
 
 	/// The context main window.
-	MainWindow* _mainWindow;
+	MainWindowInterface* _mainWindow;
 
 	/// The model representing the current data pipeline.
 	PipelineListModel* _pipelineListModel;
@@ -167,6 +173,9 @@ private:
 
 	/// Controls the sorting of available modifiers into categories.
 	bool _useCategories = useCategoriesGlobal();
+
+	/// Global list of all ModifierListModel instances that currently exist.
+	static QVector<ModifierListModel*> _allModels;
 };
 
 }	// End of namespace

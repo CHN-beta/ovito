@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 
 namespace Ovito {
@@ -156,7 +156,7 @@ namespace Ovito {
 /**
  * \brief Manages all available user interface actions.
  */
-class OVITO_GUI_EXPORT ActionManager : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT ActionManager : public QAbstractListModel
 {
 	Q_OBJECT
 
@@ -170,10 +170,10 @@ public:
 	};
 
 	/// Constructor.
-	ActionManager(MainWindow* mainWindow);
+	ActionManager(QObject* parent, MainWindowInterface* mainWindow);
 
 	/// Returns the main window this action manager belongs to.
-	MainWindow* mainWindow() const { return reinterpret_cast<MainWindow*>(parent()); }
+	MainWindowInterface* mainWindow() const { return _mainWindow; }
 
 	/// Returns dataset currently being edited in the main window.
 	DataSet* dataset() const;
@@ -248,43 +248,27 @@ private Q_SLOTS:
 	/// This is called whenever the scene node selection changed.
 	void onSelectionChangeComplete(SelectionSet* selection);
 
-	/// Is called when the user selects a command in the quick search field.
-	void onQuickSearchCommandSelected(const QModelIndex& index);
-
-	void on_Quit_triggered();
-	void on_HelpAbout_triggered();
-	void on_HelpOpenGLInfo_triggered();
-	void on_HelpShowOnlineHelp_triggered();
-	void on_HelpShowScriptingReference_triggered();
-	void on_FileOpen_triggered();
-	void on_FileSave_triggered();
-	void on_FileSaveAs_triggered();
-	void on_FileImport_triggered();
-	void on_FileRemoteImport_triggered();
-	void on_FileExport_triggered();
-	void on_FileNewWindow_triggered();
 	void on_ViewportMaximize_triggered();
 	void on_ViewportZoomSceneExtents_triggered();
 	void on_ViewportZoomSelectionExtents_triggered();
 	void on_ViewportZoomSceneExtentsAll_triggered();
 	void on_ViewportZoomSelectionExtentsAll_triggered();
-	void on_Settings_triggered();
 	void on_AnimationGotoStart_triggered();
 	void on_AnimationGotoEnd_triggered();
 	void on_AnimationGotoPreviousFrame_triggered();
 	void on_AnimationGotoNextFrame_triggered();
 	void on_AnimationStartPlayback_triggered();
 	void on_AnimationStopPlayback_triggered();
-	void on_AnimationSettings_triggered();
-	void on_RenderActiveViewport_triggered();
 	void on_EditDelete_triggered();
-	void on_ClonePipeline_triggered();
-	void on_RenamePipeline_triggered();
+
+protected:
+
+	void updateActionStates();
 
 private:
 
-	void setupCommandSearch();
-	void updateActionStates();
+	/// The main window that owns this action manager.
+	MainWindowInterface* _mainWindow;
 
 	/// The list of registered actions.
 	QVector<QAction*> _actions;

@@ -4,16 +4,17 @@ import QtQuick.Layouts 1.12
 
 ColumnLayout {
 	spacing: 0
-	// Modifiers combobox:
+	// Avaiöable modifiers list:
 	CustomComboBox {
 		Layout.fillWidth: true
 		model: mainWindow.modifierListModel
 		textRole: "display"
 		onActivated: {
-			mainWindow.modifierListModel.insertModifier(index, pipelineEditor.model)
+			mainWindow.modifierListModel.insertModifierByIndex(index)
 			currentIndex = 0;
 		}
 	}
+
 	// Pipeline editor:
 	PipelineEditor {
 		id: pipelineEditor
@@ -29,7 +30,8 @@ ColumnLayout {
 				viewportsPanel.viewportConfiguration.updateViewports();
 		}
 	}
-	// Properties editor:
+	
+	// Properties editor panel:
 	PropertiesEditor {
 		Layout.fillWidth: true
 		Layout.fillHeight: true

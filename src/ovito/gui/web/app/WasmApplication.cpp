@@ -23,12 +23,12 @@
 #include <ovito/gui/web/GUIWeb.h>
 #include <ovito/gui/web/mainwin/MainWindow.h>
 #include <ovito/gui/web/mainwin/ViewportsPanel.h>
-#include <ovito/gui/web/mainwin/ModifierListModel.h>
 #include <ovito/gui/web/dataset/WasmFileManager.h>
 #include <ovito/gui/web/viewport/ViewportWindow.h>
 #include <ovito/gui/web/properties/ParameterUI.h>
 #include <ovito/gui/web/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
+#include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/ApplicationService.h>
@@ -95,6 +95,9 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 	// On desktop platforms, enable high-resolution toolbar icons for high-dpi screens.
 	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+	// Request single-thread Qt Quick render loop.
+	qputenv("QSG_RENDER_LOOP", "basic");
 
 	// Create a QtWidget application object.
 	new QApplication(argc, argv);

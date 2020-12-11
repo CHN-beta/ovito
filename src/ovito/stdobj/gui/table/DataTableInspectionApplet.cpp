@@ -71,7 +71,7 @@ QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
 	_switchToPlotAction->setChecked(true);
 	toolbar->addSeparator();
 
-	_exportTableToFileAction = new QAction(QIcon(":/gui/actions/file/file_save_as.bw.svg"), tr("Export data plot"), this);
+	_exportTableToFileAction = new QAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Export data plot"), this);
 	connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
 	toolbar->addAction(_exportTableToFileAction);
 

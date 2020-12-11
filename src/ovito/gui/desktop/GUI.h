@@ -53,7 +53,7 @@ namespace Ovito {
 	class GuiAutoStartObject;
 	class MainWindow;
 	class GuiApplication;
-	class ActionManager;
+	class WidgetActionManager;
 	class DataInspectionApplet;
 	class PropertiesPanel;
 	class SpinnerWidget;

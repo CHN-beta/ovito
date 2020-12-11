@@ -31,6 +31,10 @@
 #include <ovito/core/app/Application.h>
 #include "ViewportWindow.h"
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QQuickOpenGLUtils> 
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
@@ -191,10 +195,17 @@ void ViewportWindow::mouseMoveEvent(QMouseEvent* event)
 ******************************************************************************/
 void ViewportWindow::hoverMoveEvent(QHoverEvent* event)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	if(event->oldPosF() != event->position()) {
+		QMouseEvent mouseEvent(QEvent::MouseMove, event->position(), Qt::NoButton, Qt::NoButton, event->modifiers());
+		mouseMoveEvent(&mouseEvent);
+	}
+#else
 	if(event->oldPosF() != event->posF()) {
 		QMouseEvent mouseEvent(QEvent::MouseMove, event->posF(), Qt::NoButton, Qt::NoButton, event->modifiers());
 		mouseMoveEvent(&mouseEvent);
 	}
+#endif
 }
 
 /******************************************************************************
@@ -306,7 +317,11 @@ void ViewportWindow::renderViewport()
 	}
 
 	// Reset the OpenGL context back to its default state expected by Qt Quick.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	QQuickOpenGLUtils::resetOpenGLState();
+#else
 	window()->resetOpenGLState();
+#endif
 }
 
 /******************************************************************************

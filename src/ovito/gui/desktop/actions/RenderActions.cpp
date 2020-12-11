@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
+#include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Handles the ACTION_RENDER_ACTIVE_VIEWPORT command.
 ******************************************************************************/
-void ActionManager::on_RenderActiveViewport_triggered()
+void WidgetActionManager::on_RenderActiveViewport_triggered()
 {
 	try {
 		// Set input focus to main window.

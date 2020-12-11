@@ -81,7 +81,7 @@ void fullToVoigt(size_t particleCount, T *full, T *voigt) {
 bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	QString filename = QDir::toNativeSeparators(file.localFilePath());
-	if(filename.isEmpty())
+	if(filename.isEmpty() || filename.startsWith(QChar(':')))
 		return false;
 
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.

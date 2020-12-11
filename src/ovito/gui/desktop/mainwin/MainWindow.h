@@ -72,6 +72,9 @@ public:
 		statusBar()->clearMessage();
 	}
 
+	/// Gives the active viewport the input focus.
+	virtual void setViewportInputFocus() override;
+
 	/// Returns the frame buffer window showing the rendered image.
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
 
@@ -89,9 +92,6 @@ public:
 
 	/// Returns the container that keeps a reference to the current dataset.
 	GuiDataSetContainer& datasetContainer() { return _datasetContainer; }
-
-	/// Returns the window's action manager.
-	ActionManager* actionManager() const { return _actionManager; }
 
 	/// Returns the widget that numerically displays the transformation.
 	CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
@@ -173,9 +173,6 @@ private:
 	/// Container that keeps a reference to the current dataset.
 	GuiDataSetContainer _datasetContainer;
 
-	/// The associated GUI action manager.
-	ActionManager* _actionManager;
-	
 	/// The container widget for viewports.
 	QWidget* _viewportsPanel;
 

@@ -27,19 +27,20 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
 #include "SliceModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -122,7 +123,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	_pickPlanePointsInputMode = new PickPlanePointsInputMode(this);
 	connect(this, &QObject::destroyed, _pickPlanePointsInputMode, &ViewportInputMode::removeMode);
 	_pickPlanePointsInputModeAction = new ViewportModeAction(mainWindow(), tr("Pick three points"), this, _pickPlanePointsInputMode);
-	layout->addWidget(_pickPlanePointsInputModeAction->createPushButton());
+	layout->addWidget(new ViewportModeButton(_pickPlanePointsInputModeAction));
 
 	// Deactivate input mode when editor is reset.
 	connect(this, &PropertiesEditor::contentsReplaced, _pickPlanePointsInputModeAction, &ViewportModeAction::deactivateMode);

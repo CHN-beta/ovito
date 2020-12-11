@@ -20,70 +20,68 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
-#include <ovito/gui/desktop/dialogs/AnimationSettingsDialog.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/viewport/ViewportConfiguration.h>
 
 namespace Ovito {
 
 /******************************************************************************
-* Handles the ACTION_GOTO_START_OF_ANIMATION command.
+* Handles the ACTION_VIEWPORT_MAXIMIZE command.
 ******************************************************************************/
-void ActionManager::on_AnimationGotoStart_triggered()
+void ActionManager::on_ViewportMaximize_triggered()
 {
-	dataset()->animationSettings()->jumpToAnimationStart();
+	ViewportConfiguration* vpconf = dataset()->viewportConfig();
+	if(vpconf->maximizedViewport()) {
+		vpconf->setMaximizedViewport(nullptr);
+	}
+	else if(vpconf->activeViewport()) {
+		vpconf->setMaximizedViewport(vpconf->activeViewport());
+	}
+	// Remember which viewport was maximized across program sessions.
+	// The same viewport will be maximized next time OVITO is started.
+	ViewportSettings::getSettings().setDefaultMaximizedViewportType(vpconf->maximizedViewport() ? vpconf->maximizedViewport()->viewType() : Viewport::VIEW_NONE);
+	ViewportSettings::getSettings().save();
 }
 
 /******************************************************************************
-* Handles the ACTION_GOTO_END_OF_ANIMATION command.
+* Handles the ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS command.
 ******************************************************************************/
-void ActionManager::on_AnimationGotoEnd_triggered()
+void ActionManager::on_ViewportZoomSceneExtents_triggered()
 {
-	dataset()->animationSettings()->jumpToAnimationEnd();
+	ViewportConfiguration* vpconf = dataset()->viewportConfig();
+
+	if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
+		vpconf->activeViewport()->zoomToSceneExtents();
+	else
+		vpconf->zoomToSceneExtents();
 }
 
 /******************************************************************************
-* Handles the ACTION_GOTO_PREVIOUS_FRAME command.
+* Handles the ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS_ALL command.
 ******************************************************************************/
-void ActionManager::on_AnimationGotoPreviousFrame_triggered()
+void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 {
-	dataset()->animationSettings()->jumpToPreviousFrame();
+	dataset()->viewportConfig()->zoomToSceneExtents();
 }
 
 /******************************************************************************
-* Handles the ACTION_GOTO_NEXT_FRAME command.
+* Handles the ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS command.
 ******************************************************************************/
-void ActionManager::on_AnimationGotoNextFrame_triggered()
+void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 {
-	dataset()->animationSettings()->jumpToNextFrame();
+	ViewportConfiguration* vpconf = dataset()->viewportConfig();
+	if(vpconf->activeViewport())
+		vpconf->activeViewport()->zoomToSelectionExtents();
 }
 
 /******************************************************************************
-* Handles the ACTION_START_ANIMATION_PLAYBACK command.
+* Handles the ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL command.
 ******************************************************************************/
-void ActionManager::on_AnimationStartPlayback_triggered()
+void ActionManager::on_ViewportZoomSelectionExtentsAll_triggered()
 {
-	if(!getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
-		getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
-}
-
-/******************************************************************************
-* Handles the ACTION_STOP_ANIMATION_PLAYBACK command.
-******************************************************************************/
-void ActionManager::on_AnimationStopPlayback_triggered()
-{
-	if(getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->isChecked())
-		getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK)->trigger();
-}
-
-/******************************************************************************
-* Handles the ACTION_ANIMATION_SETTINGS command.
-******************************************************************************/
-void ActionManager::on_AnimationSettings_triggered()
-{
-	AnimationSettingsDialog(dataset()->animationSettings(), mainWindow()).exec();
+	dataset()->viewportConfig()->zoomToSelectionExtents();
 }
 
 }	// End of namespace

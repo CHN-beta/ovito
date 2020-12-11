@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
+#include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
@@ -46,7 +46,7 @@ namespace Ovito {
 /******************************************************************************
 * Handles the ACTION_QUIT command.
 ******************************************************************************/
-void ActionManager::on_Quit_triggered()
+void WidgetActionManager::on_Quit_triggered()
 {
 	mainWindow()->close();
 }
@@ -54,7 +54,7 @@ void ActionManager::on_Quit_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_ABOUT command.
 ******************************************************************************/
-void ActionManager::on_HelpAbout_triggered()
+void WidgetActionManager::on_HelpAbout_triggered()
 {
 	QMessageBox msgBox(QMessageBox::NoIcon, Application::applicationName(),
 			tr("<h3>%1 (Open Visualization Tool)</h3>"
@@ -78,7 +78,7 @@ void ActionManager::on_HelpAbout_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_SHOW_ONLINE_HELP command.
 ******************************************************************************/
-void ActionManager::on_HelpShowOnlineHelp_triggered()
+void WidgetActionManager::on_HelpShowOnlineHelp_triggered()
 {
 	mainWindow()->openHelpTopic(QString());
 }
@@ -86,7 +86,7 @@ void ActionManager::on_HelpShowOnlineHelp_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_SHOW_SCRIPTING_HELP command.
 ******************************************************************************/
-void ActionManager::on_HelpShowScriptingReference_triggered()
+void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 {
 	mainWindow()->openHelpTopic(QStringLiteral("python/index.html"));
 }
@@ -94,7 +94,7 @@ void ActionManager::on_HelpShowScriptingReference_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_OPENGL_INFO command.
 ******************************************************************************/
-void ActionManager::on_HelpOpenGLInfo_triggered()
+void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 {
 	QDialog dlg(mainWindow());
 	dlg.setWindowTitle(tr("OpenGL Information"));
@@ -167,7 +167,7 @@ void ActionManager::on_HelpOpenGLInfo_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_NEW_WINDOW command.
 ******************************************************************************/
-void ActionManager::on_FileNewWindow_triggered()
+void WidgetActionManager::on_FileNewWindow_triggered()
 {
 	try {
 		MainWindow* mainWin = new MainWindow();
@@ -183,7 +183,7 @@ void ActionManager::on_FileNewWindow_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_OPEN command.
 ******************************************************************************/
-void ActionManager::on_FileOpen_triggered()
+void WidgetActionManager::on_FileOpen_triggered()
 {
 	try {
 		if(!mainWindow()->datasetContainer().askForSaveChanges())
@@ -218,7 +218,7 @@ void ActionManager::on_FileOpen_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_SAVE command.
 ******************************************************************************/
-void ActionManager::on_FileSave_triggered()
+void WidgetActionManager::on_FileSave_triggered()
 {
 	// Set focus to main window.
 	// This will process any pending user inputs in QLineEdit fields.
@@ -235,7 +235,7 @@ void ActionManager::on_FileSave_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_SAVEAS command.
 ******************************************************************************/
-void ActionManager::on_FileSaveAs_triggered()
+void WidgetActionManager::on_FileSaveAs_triggered()
 {
 	try {
 		mainWindow()->datasetContainer().fileSaveAs();
@@ -248,7 +248,7 @@ void ActionManager::on_FileSaveAs_triggered()
 /******************************************************************************
 * Handles the ACTION_SETTINGS_DIALOG command.
 ******************************************************************************/
-void ActionManager::on_Settings_triggered()
+void WidgetActionManager::on_Settings_triggered()
 {
 	ApplicationSettingsDialog dlg(mainWindow());
 	dlg.exec();
@@ -257,7 +257,7 @@ void ActionManager::on_Settings_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_IMPORT command.
 ******************************************************************************/
-void ActionManager::on_FileImport_triggered()
+void WidgetActionManager::on_FileImport_triggered()
 {
 	try {
 		// Let the user select one or more files.
@@ -276,7 +276,7 @@ void ActionManager::on_FileImport_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_REMOTE_IMPORT command.
 ******************************************************************************/
-void ActionManager::on_FileRemoteImport_triggered()
+void WidgetActionManager::on_FileRemoteImport_triggered()
 {
 	try {
 		// Let the user enter the URL of the remote file.
@@ -295,7 +295,7 @@ void ActionManager::on_FileRemoteImport_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_EXPORT command.
 ******************************************************************************/
-void ActionManager::on_FileExport_triggered()
+void WidgetActionManager::on_FileExport_triggered()
 {
 	// Build filter string.
 	QStringList filterStrings;

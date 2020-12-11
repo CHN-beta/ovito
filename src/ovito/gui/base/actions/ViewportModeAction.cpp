@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,17 +20,17 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/mainwin/MainWindowInterface.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include "ViewportModeAction.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Initializes the action object.
 ******************************************************************************/
-ViewportModeAction::ViewportModeAction(MainWindow* mainWindow, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
+ViewportModeAction::ViewportModeAction(MainWindowInterface* mainWindow, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
 	: QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*mainWindow->viewportInputManager())
 {
 	OVITO_CHECK_POINTER(inputMode);
@@ -52,7 +52,7 @@ void ViewportModeAction::onActionToggled(bool checked)
 	if(checked && !_inputMode->isActive()) {
 		_viewportInputManager.pushInputMode(_inputMode);
 		// Give viewport windows the input focus.
-		static_cast<MainWindow*>(_viewportInputManager.mainWindow())->viewportsPanel()->setFocus(Qt::OtherFocusReason);
+		_viewportInputManager.mainWindow()->setViewportInputFocus();
 	}
 	else if(!checked) {
 		if(_viewportInputManager.activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {
@@ -72,40 +72,6 @@ void ViewportModeAction::onActionTriggered(bool checked)
 			_viewportInputManager.removeInputMode(_inputMode);
 		}
 	}
-}
-
-/******************************************************************************
-* Create a push button that activates this action.
-******************************************************************************/
-QPushButton* ViewportModeAction::createPushButton(QWidget* parent)
-{
-	// Define a specialized QPushButton class, which will automatically deactive the viewport input
-	// mode wheneven the button widget is hidden. This is to prevent the viewport mode from remaining
-	// active when the user switches to another command panel tab.
-	class MyPushButton : public QPushButton {
-	public:
-		using QPushButton::QPushButton;
-	protected:
-		virtual void hideEvent(QHideEvent* event) override {
-			if(!event->spontaneous() && isChecked()) click();
-			QPushButton::hideEvent(event);
-		}
-	};
-
-	QPushButton* button = new MyPushButton(text(), parent);
-	button->setCheckable(true);
-	button->setChecked(isChecked());
-
-#ifndef Q_OS_MACX
-	if(_highlightColor.isValid())
-		button->setStyleSheet("QPushButton:checked { background-color: " + _highlightColor.name() + " }");
-	else
-		button->setStyleSheet("QPushButton:checked { background-color: moccasin; }");
-#endif
-
-	connect(this, &ViewportModeAction::toggled, button, &QPushButton::setChecked);
-	connect(button, &QPushButton::clicked, this, &ViewportModeAction::trigger);
-	return button;
 }
 
 }	// End of namespace

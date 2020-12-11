@@ -23,11 +23,17 @@
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(GuiBase
 	SOURCES
+		actions/ActionManager.cpp
+		actions/ViewportModeAction.cpp
+		actions/ViewportActions.cpp
+		actions/AnimationActions.cpp
 		mainwin/MainWindowInterface.cpp
 		mainwin/OverlayListModel.cpp
 		mainwin/OverlayListItem.cpp
+		mainwin/OverlayTypesModel.cpp
 		mainwin/PipelineListModel.cpp
 		mainwin/PipelineListItem.cpp
+		mainwin/ModifierListModel.cpp
 		rendering/ViewportSceneRenderer.cpp
 		rendering/PickingSceneRenderer.cpp
 		viewport/ViewportInputManager.cpp
@@ -40,6 +46,16 @@ OVITO_STANDARD_PLUGIN(GuiBase
 	PRECOMPILED_HEADERS
 		GUIBase.h
 )
+
+# The GUI base module depends on the QAction class, which used to be defined only in the QtWidgets module in Qt5.
+# Starting with Qt6, teh QAction class is part of the QtGui module.
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
+	TARGET_LINK_LIBRARIES(GuiBase PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
+ENDIF()
+
+# Compute the relative path where the Python extension scripts get installed relative to the executable. 
+FILE(RELATIVE_PATH OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/scripts/")
+TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH=\"${OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH}\"")
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

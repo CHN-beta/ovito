@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
+#include <ovito/core/dataset/animation/TimeInterval.h>
 
 namespace Ovito {
 

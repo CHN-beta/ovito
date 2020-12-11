@@ -56,10 +56,10 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 	sublayout2->addWidget(displacementToolBar);
 	_displacementDirectionGroup = new QActionGroup(this);
 	_displacementDirectionGroup->setExclusive(true);
-	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_none.svg"), tr("Do not displace clone"));
-	QAction* displacementXAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_x.svg"), tr("Displace clone along X axis"));
-	QAction* displacementYAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_y.svg"), tr("Displace clone along Y axis"));
-	QAction* displacementZAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_z.svg"), tr("Displace clone along Z axis"));
+	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_none.svg"), tr("Do not displace clone"));
+	QAction* displacementXAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_x.svg"), tr("Displace clone along X axis"));
+	QAction* displacementYAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_y.svg"), tr("Displace clone along Y axis"));
+	QAction* displacementZAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_z.svg"), tr("Displace clone along Z axis"));
 	sublayout2->addStretch(1);
 	displacementNoneAction->setCheckable(true);
 	displacementXAction->setCheckable(true);

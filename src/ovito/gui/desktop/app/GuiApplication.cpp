@@ -22,9 +22,9 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/ApplicationService.h>

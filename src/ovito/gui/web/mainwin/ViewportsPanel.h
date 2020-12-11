@@ -59,8 +59,13 @@ Q_SIGNALS:
 
 protected:
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	/// Handles resize events for the item.
+	virtual void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+#else
 	/// Handles resize events for the item.
 	virtual void geometryChanged(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+#endif
 
 private Q_SLOTS:
 

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/cmdpanel/ModifierListModel.h>
+#include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include "GeneralSettingsPage.h"
 

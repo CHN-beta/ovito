@@ -13,7 +13,7 @@ ToolBar {
 			id: fileRow
 			ToolButton {
 				id: importLocalFileButton
-				icon.source: "qrc:/gui/actions/file/file_import.bw.svg"
+				icon.source: "qrc:/guibase/actions/file/file_import.bw.svg"
 				ToolTip.text: qsTr("Import local file")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -22,7 +22,7 @@ ToolBar {
 			/*
 			ToolButton {
 				id: importRemoteFileButton
-				icon.source: "qrc:/gui/actions/file/file_import_remote.bw.svg"
+				icon.source: "qrc:/guibase/actions/file/file_import_remote.bw.svg"
 				ToolTip.text: qsTr("Import remote file")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -38,7 +38,7 @@ ToolBar {
 			id: editRow
 			ToolButton {
 				id: undoButton
-				icon.source: "qrc:/gui/actions/edit/edit_undo.bw.svg"
+				icon.source: "qrc:/guibase/actions/edit/edit_undo.bw.svg"
 				ToolTip.text: qsTr("Undo action: ") + (mainWindow.datasetContainer.currentSet ? mainWindow.datasetContainer.currentSet.undoStack.undoText : "")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -48,7 +48,7 @@ ToolBar {
 			}
 			ToolButton {
 				id: redoButton
-				icon.source: "qrc:/gui/actions/edit/edit_redo.bw.svg"
+				icon.source: "qrc:/guibase/actions/edit/edit_redo.bw.svg"
 				ToolTip.text: qsTr("Redo action: ") + (mainWindow.datasetContainer.currentSet ? mainWindow.datasetContainer.currentSet.undoStack.redoText : "")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -65,7 +65,7 @@ ToolBar {
 			id: viewportRow
 			ToolButton {
 				id: zoomSceneExtentsButton
-				icon.source: "qrc:/gui/actions/viewport/zoom_scene_extents.bw.svg"
+				icon.source: "qrc:/guibase/actions/viewport/zoom_scene_extents.bw.svg"
 				ToolTip.text: qsTr("Zoom to scene extents")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -78,7 +78,7 @@ ToolBar {
 				checkable: true
 				checked: viewportsPanel.viewportConfiguration && viewportsPanel.viewportConfiguration.maximizedViewport == null
 				enabled: viewportsPanel.viewportConfiguration
-				icon.source: "qrc:/gui/actions/viewport/multi_viewports.svg"
+				icon.source: "qrc:/guibase/actions/viewport/multi_viewports.svg"
 				ToolTip.text: qsTr("Show multiple viewports")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -94,7 +94,7 @@ ToolBar {
 			id: aboutRow
 			ToolButton {
 				id: aboutButton
-				icon.source: "qrc:/gui/actions/file/about.bw.svg"
+				icon.source: "qrc:/guibase/actions/file/about.bw.svg"
 				ToolTip.text: qsTr("About OVITO")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500

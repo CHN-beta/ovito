@@ -20,12 +20,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
-#include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
-#include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -34,6 +31,8 @@
 #include "PipelineListModel.h"
 
 namespace Ovito {
+
+QVector<ModifierListModel*> ModifierListModel::_allModels;
 
 /******************************************************************************
 * Constructs an action for a built-in modifier class.
@@ -55,7 +54,7 @@ ModifierAction* ModifierAction::createForClass(ModifierClassPtr clazz)
 	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this modifier into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/gui/actions/modify/modifier_action_icon.svg");
+	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
 	action->setIcon(icon);
 
 	// Modifiers without a category are moved into the "Other" category.
@@ -83,7 +82,7 @@ ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
 	action->setStatusTip(tr("Insert this modifier template into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/gui/actions/modify/modifier_action_icon.svg");
+	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
 	action->setIcon(icon);
 	
 	return action;
@@ -111,7 +110,7 @@ ModifierAction* ModifierAction::createForScript(const QString& fileName, const Q
 	action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/gui/actions/modify/modifier_action_icon.svg");
+	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
 	action->setIcon(icon);
 	
 	return action;
@@ -133,9 +132,12 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierListModel::ModifierListModel(QObject* parent, MainWindow* mainWindow, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _pipelineListModel(pipelineListModel)
+ModifierListModel::ModifierListModel(QObject* parent, MainWindowInterface* mainWindow, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _pipelineListModel(pipelineListModel)
 {
-	// Update the state of this model's actions whenther the ActionManager requests it.
+	// Register this instance.
+	_allModels.push_back(this);
+
+	// Update the state of this model's actions whenever the ActionManager requests it.
 	connect(_mainWindow->actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
 
 	// Enumerate all built-in modifier classes.
@@ -444,8 +446,18 @@ void ModifierListModel::insertModifier()
 				}
 			}
 		}
-
 	});
+}
+
+/******************************************************************************
+* Inserts the i-th modifier from this model into the current pipeline.
+******************************************************************************/
+void ModifierListModel::insertModifierByIndex(int index)
+{
+	if(QAction* action = actionFromIndex(index))
+		action->trigger();
+	else
+		qWarning() << "ModifierListModel::insertModifierByIndex(): Index" << index << "does not correspond to a modifier type.";
 }
 
 /******************************************************************************
@@ -535,7 +547,7 @@ void ModifierListModel::updateActionState()
 			else if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
 				inputState = pipelineObject->evaluateSynchronous(dataset->animationSettings()->time());
 			}
-			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedNode()) {
+			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
 				inputState = pipeline->evaluatePipelineSynchronous(false);
 			}
 		}
@@ -594,12 +606,8 @@ void ModifierListModel::setUseCategoriesGlobal(bool on)
 		settings.setValue("modifiers/sort_by_category", on);
 	}
 
-	for(QWidget* widget : QApplication::topLevelWidgets()) {
-		if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
-			ModifierListModel* model = mainWindow->commandPanel()->modifyPage()->modifierListModel();
-			model->setUseCategories(on);
-		}
-	}
+	for(ModifierListModel* model : _allModels)
+		model->setUseCategories(on);
 }
 
 }	// End of namespace

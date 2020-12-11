@@ -26,11 +26,11 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/gui/base/mainwin/OverlayListModel.h>
+#include <ovito/gui/base/mainwin/OverlayListItem.h>
+#include <ovito/gui/base/mainwin/OverlayTypesModel.h>
 #include "OverlayCommandPage.h"
-#include "OverlayListModel.h"
-#include "OverlayListItem.h"
-#include "OverlayTypesModel.h"
 
 namespace Ovito {
 
@@ -99,25 +99,25 @@ OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) 
 #endif
 	subLayout->addWidget(editToolbar);
 
-	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Viewport Layer"), ":/gui/actions/modify/delete_modifier.bw.svg", tr("Remove the selected viewport layer from the stack."));
+	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Viewport Layer"), ":/guibase/actions/modify/delete_modifier.bw.svg", tr("Remove the selected viewport layer from the stack."));
 	_deleteLayerAction->setEnabled(false);
 	connect(_deleteLayerAction, &QAction::triggered, this, &OverlayCommandPage::onDeleteLayer);
 	editToolbar->addAction(_deleteLayerAction);
 
 	editToolbar->addSeparator();
 
-	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Viewport Layer Up"), ":/gui/actions/modify/modifier_move_up.bw.svg", tr("Move the selected viewport layer up in the stack."));
+	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Viewport Layer Up"), ":/guibase/actions/modify/modifier_move_up.bw.svg", tr("Move the selected viewport layer up in the stack."));
 	connect(_moveLayerUpAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveUp);
 	editToolbar->addAction(_moveLayerUpAction);
-	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Viewport Layer Down"), ":/gui/actions/modify/modifier_move_down.bw.svg", tr("Move the selected viewport layer down in the stack."));
+	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Viewport Layer Down"), ":/guibase/actions/modify/modifier_move_down.bw.svg", tr("Move the selected viewport layer down in the stack."));
 	connect(_moveLayerDownAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveDown);
 	editToolbar->addAction(_moveLayerDownAction);
 
 	_toggleLayerStateAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_TOGGLE_STATE, tr("Enable/Disable Viewport Layer"), {}, tr("Turn the selected viewport layer on or off."));
 	_toggleLayerStateAction->setCheckable(true);
 	_toggleLayerStateAction->setEnabled(false);
-	QIcon toggleStateActionIcon(QString(":/gui/actions/modify/modifier_enabled_large.png"));
-	toggleStateActionIcon.addFile(QString(":/gui/actions/modify/modifier_disabled_large.png"), QSize(), QIcon::Normal, QIcon::On);
+	QIcon toggleStateActionIcon(QString(":/guibase/actions/modify/modifier_enabled_large.png"));
+	toggleStateActionIcon.addFile(QString(":/guibase/actions/modify/modifier_disabled_large.png"), QSize(), QIcon::Normal, QIcon::On);
 	_toggleLayerStateAction->setIcon(toggleStateActionIcon);
 	connect(_toggleLayerStateAction, &QAction::triggered, this, &OverlayCommandPage::onLayerToggleState);
 

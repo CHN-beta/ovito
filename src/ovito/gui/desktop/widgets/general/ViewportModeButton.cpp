@@ -20,44 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/base/mainwin/PipelineListModel.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
+#include "ViewportModeButton.h"
 
 namespace Ovito {
 
-/**
- * A Qt list model that list all available modifier types that are applicable to the current data pipeline.
- */
-class ModifierListModel : public QAbstractListModel
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* parent) : QPushButton(action->text(), parent)
 {
-	Q_OBJECT
+	setCheckable(true);
+	setChecked(action->isChecked());
 
-public:
+#ifndef Q_OS_MACX
+	if(action->highlightColor().isValid())
+		setStyleSheet("QPushButton:checked { background-color: " + action->highlightColor().name() + " }");
+	else
+		setStyleSheet("QPushButton:checked { background-color: moccasin; }");
+#endif
 
-	/// Constructor.
-	ModifierListModel(QObject* parent);
-
-	/// Returns the number of rows in the model.
-	virtual int rowCount(const QModelIndex& parent) const override;
-
-	/// Returns the data associated with a list item.
-	virtual QVariant data(const QModelIndex& index, int role) const override;
-
-	/// Returns the flags for an item.
-	virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
-
-public Q_SLOTS:
-
-	/// Instantiates a modifier and inserts into the current data pipeline.
-	void insertModifier(int index, PipelineListModel* pipelineModel);
-
-private:
-
-	/// The list of modifier class types.
-	QVector<ModifierClassPtr> _modifierClasses;
-};
+	connect(action, &ViewportModeAction::toggled, this, &QPushButton::setChecked);
+	connect(this, &QPushButton::clicked, action, &ViewportModeAction::trigger);
+}
 
 }	// End of namespace

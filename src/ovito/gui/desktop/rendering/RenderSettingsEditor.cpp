@@ -29,9 +29,9 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/HtmlListWidget.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>

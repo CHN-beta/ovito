@@ -315,18 +315,18 @@ Control {
 
 	Connections {
 		target: control.spinBoxItem ? control.spinBoxItem.up : null
-		onPressedChanged: control.toggleButtonPress(control.spinBoxItem.up.pressed, true)
+		function onPressedChanged() { control.toggleButtonPress(control.spinBoxItem.up.pressed, true) }
 	}
 
 	Connections {
 		target: control.spinBoxItem ? control.spinBoxItem.down : null
-		onPressedChanged: control.toggleButtonPress(control.spinBoxItem.down.pressed, false)
+		function onPressedChanged() { control.toggleButtonPress(control.spinBoxItem.down.pressed, false) }
 	}
 
 	Connections {
 		target: control.textInputItem
 		// Checking active focus works better than onEditingFinished because the latter doesn't fire if input is invalid (nor does it fix it up automatically).
-		onActiveFocusChanged: {
+		function onActiveFocusChanged() {
 			if (!control.textInputItem.activeFocus)
 				control.updateValueFromText();
 		}

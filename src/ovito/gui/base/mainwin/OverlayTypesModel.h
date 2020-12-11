@@ -23,13 +23,13 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 
 namespace Ovito {
 
 class OverlayListModel;	// Defined in OverlayListModel.h
 
-class OverlayAction : public QAction
+class OVITO_GUIBASE_EXPORT OverlayAction : public QAction
 {
 	Q_OBJECT
 
@@ -59,14 +59,14 @@ private:
 /**
  * A Qt list model that list all available viewport layer types.
  */
-class OverlayTypesModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT OverlayTypesModel : public QAbstractListModel
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	OverlayTypesModel(QObject* parent, MainWindow* mainWindow, OverlayListModel* overlayListModel);
+	OverlayTypesModel(QObject* parent, MainWindowInterface* mainWindow, OverlayListModel* overlayListModel);
 
 	/// Returns the number of rows in the model.
 	virtual int rowCount(const QModelIndex& parent) const override;
@@ -94,7 +94,7 @@ private:
 	std::vector<OverlayAction*> _actions;
 
 	/// The context main window.
-	MainWindow* _mainWindow;
+	MainWindowInterface* _mainWindow;
 
 	/// The model representing the viewport layers of the active viewport.
 	OverlayListModel* _overlayListModel;

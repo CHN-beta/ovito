@@ -40,7 +40,7 @@ class OVITO_GUIBASE_EXPORT ViewportInputManager : public QObject
 public:
 
 	/// \brief Constructor.
-	ViewportInputManager(QObject* parent, MainWindowInterface* mainWindow, DataSetContainer& datasetContainer);
+	ViewportInputManager(QObject* parent, MainWindowInterface* mainWindow);
 
 	/// Destructor.
 	virtual ~ViewportInputManager();

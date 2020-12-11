@@ -32,10 +32,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the viewport input manager.
 ******************************************************************************/
-ViewportInputManager::ViewportInputManager(QObject* parent, MainWindowInterface* mainWindow, DataSetContainer& datasetContainer) : 
+ViewportInputManager::ViewportInputManager(QObject* parent, MainWindowInterface* mainWindow) : 
 	QObject(parent),
 	_mainWindow(mainWindow),
-	_datasetContainer(datasetContainer)
+	_datasetContainer(mainWindow->datasetContainer())
 {
 	_zoomMode = new ZoomMode(this);
 	_panMode = new PanMode(this);
