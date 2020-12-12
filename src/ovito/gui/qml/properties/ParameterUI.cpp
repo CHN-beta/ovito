@@ -20,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/properties/ParameterUI.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/properties/ParameterUI.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/PluginManager.h>
 

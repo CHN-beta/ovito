@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
+#include <ovito/gui/qml/GUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito { 
@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief Manages the DataSet being edited.
  */
-class OVITO_GUIWEB_EXPORT WasmDataSetContainer : public DataSetContainer
+class OVITO_GUI_EXPORT WasmDataSetContainer : public DataSetContainer
 {
 	Q_OBJECT
 	OVITO_CLASS(WasmDataSetContainer)

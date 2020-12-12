@@ -20,13 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/mainwin/MainWindow.h>
-#include <ovito/gui/web/mainwin/ViewportsPanel.h>
-#include <ovito/gui/web/dataset/WasmFileManager.h>
-#include <ovito/gui/web/viewport/ViewportWindow.h>
-#include <ovito/gui/web/properties/ParameterUI.h>
-#include <ovito/gui/web/properties/ModifierDelegateParameterUI.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/mainwin/MainWindow.h>
+#include <ovito/gui/qml/mainwin/ViewportsPanel.h>
+#include <ovito/gui/qml/dataset/WasmFileManager.h>
+#include <ovito/gui/qml/viewport/ViewportWindow.h>
+#include <ovito/gui/qml/properties/ParameterUI.h>
+#include <ovito/gui/qml/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/utilities/io/FileManager.h>

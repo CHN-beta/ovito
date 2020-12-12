@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Define plugin module.
-OVITO_STANDARD_PLUGIN(GuiWeb
+OVITO_STANDARD_PLUGIN(Gui
 	SOURCES
 		app/WasmApplication.cpp
 		dataset/WasmDataSetContainer.cpp
@@ -41,9 +41,9 @@ OVITO_STANDARD_PLUGIN(GuiWeb
 		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
 		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2
 	PRECOMPILED_HEADERS 
-		GUIWeb.h
+		GUI.h
 )
 
 IF(NOT EMSCRIPTEN)
-	TARGET_LINK_LIBRARIES(GuiWeb PRIVATE ${OVITO_QT_MAJOR_VERSION}::Widgets)
+	TARGET_LINK_LIBRARIES(Gui PRIVATE ${OVITO_QT_MAJOR_VERSION}::Widgets)
 ENDIF()

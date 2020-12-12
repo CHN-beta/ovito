@@ -20,9 +20,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/mainwin/MainWindow.h>
-#include <ovito/gui/web/viewport/ViewportWindow.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/mainwin/MainWindow.h>
+#include <ovito/gui/qml/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>

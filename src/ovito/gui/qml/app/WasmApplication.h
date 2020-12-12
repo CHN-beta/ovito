@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
+#include <ovito/gui/qml/GUI.h>
 #include <ovito/core/app/ApplicationService.h>
 #include <ovito/core/app/StandaloneApplication.h>
 
@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * \brief The application object used when running on the WebAssembly platform.
  */
-class OVITO_GUIWEB_EXPORT WasmApplication : public StandaloneApplication
+class OVITO_GUI_EXPORT WasmApplication : public StandaloneApplication
 {
 	Q_OBJECT
 

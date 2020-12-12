@@ -23,8 +23,8 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/dataset/WasmDataSetContainer.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/dataset/WasmDataSetContainer.h>
 #include <ovito/gui/base/mainwin/MainWindowInterface.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * \brief The main window of the application.
  */
-class OVITO_GUIWEB_EXPORT MainWindow : public QQuickItem, public MainWindowInterface
+class OVITO_GUI_EXPORT MainWindow : public QQuickItem, public MainWindowInterface
 {
 	Q_OBJECT
 	Q_PROPERTY(Ovito::WasmDataSetContainer* datasetContainer READ datasetContainer CONSTANT);

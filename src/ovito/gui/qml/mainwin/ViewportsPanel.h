@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
+#include <ovito/gui/qml/GUI.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 
 namespace Ovito {

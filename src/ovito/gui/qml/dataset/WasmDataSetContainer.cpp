@@ -20,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/mainwin/MainWindow.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileImporter.h>

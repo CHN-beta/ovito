@@ -20,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/mainwin/MainWindow.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>

@@ -21,13 +21,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/gui/web/app/WasmApplication.h>
+#include <ovito/gui/qml/app/WasmApplication.h>
+
+#include <QQuickStyle>
 
 /**
  * This is the main entry point for the QML-based application.
  */
 int main(int argc, char** argv)
 {
+//	QQuickStyle::setStyle("Universal");
+//	qputenv("QT_QUICK_CONTROLS_UNIVERSAL_THEME", "Dark");
+
 	// Initialize the application.
 	Ovito::WasmApplication app;
 	if(!app.initialize(argc, argv))

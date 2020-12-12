@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/web/GUIWeb.h>
+#include <ovito/gui/qml/GUI.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/rendering/PickingSceneRenderer.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief The internal render window asosciated with the Viewport class.
  */
-class OVITO_GUIWEB_EXPORT ViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
+class OVITO_GUI_EXPORT ViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
 {
 	Q_OBJECT
 	Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced);

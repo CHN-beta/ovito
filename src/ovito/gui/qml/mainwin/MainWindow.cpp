@@ -20,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/web/GUIWeb.h>
-#include <ovito/gui/web/dataset/WasmFileManager.h>
+#include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/dataset/WasmFileManager.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
