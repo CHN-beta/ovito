@@ -65,7 +65,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	setContextMenuPolicy(Qt::NoContextMenu);
 
 	// Create input manager.
-	setViewportInputManager(new ViewportInputManager(this, this));
+	setViewportInputManager(new ViewportInputManager(this, datasetContainer(), this));
 
 	// Create actions.
 	setActionManager(new WidgetActionManager(this, this));
@@ -73,7 +73,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	// Let GUI application services register their actions.
 	for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
 		if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-			gui_service->registerActions(*actionManager());
+			gui_service->registerActions(*actionManager(), this);
 	}
 
 	// Create the main menu

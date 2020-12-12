@@ -24,9 +24,9 @@
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "DislocationInspectionApplet.h"
 

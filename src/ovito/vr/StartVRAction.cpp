@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(StartVRAction);
 /******************************************************************************
 * Is called when a new main window is created.
 ******************************************************************************/
-void StartVRAction::registerActions(ActionManager& actionManager)
+void StartVRAction::registerActions(ActionManager& actionManager, MainWindow* mainWindow)
 {
 	// Register an action, which allows the user to run a Python script file.
 	QAction* startVRAction = actionManager.createCommandAction("StartVR", tr("Start VR module..."));

@@ -52,7 +52,8 @@ void ViewportModeAction::onActionToggled(bool checked)
 	if(checked && !_inputMode->isActive()) {
 		_viewportInputManager.pushInputMode(_inputMode);
 		// Give viewport windows the input focus.
-		_viewportInputManager.mainWindow()->setViewportInputFocus();
+		if(_viewportInputManager.mainWindow())
+			_viewportInputManager.mainWindow()->setViewportInputFocus();
 	}
 	else if(!checked) {
 		if(_viewportInputManager.activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {

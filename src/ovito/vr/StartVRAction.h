@@ -44,7 +44,7 @@ public:
 	Q_INVOKABLE StartVRAction() {}
 
 	/// \brief Is called when a new main window is created.
-	virtual void registerActions(ActionManager& actionManager) override;
+	virtual void registerActions(ActionManager& actionManager, MainWindow* mainWindow) override;
 
 	/// \brief Is called when the main menu is created.
 	virtual void addActionsToMenu(ActionManager& actionManager, QMenuBar* menuBar) override;
