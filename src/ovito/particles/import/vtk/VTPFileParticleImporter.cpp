@@ -120,8 +120,9 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 			// Parse child elements.
 			while(xml.readNextStartElement() && !isCanceled()) {
 				if(xml.name().compare(QLatin1String("DataArray")) == 0) {
-					if(PropertyObject* property = createParticlePropertyForDataArray(xml)) {
-						parseDataArray(property, xml);
+					int vectorComponent = -1;
+					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent)) {
+						parseDataArray(property, vectorComponent, xml);
 					}
 					if(xml.tokenType() != QXmlStreamReader::EndElement)
 						xml.skipCurrentElement();
@@ -146,6 +147,17 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
 
+	// Convert 3x3 'Tensor' property into particle orientation.
+	if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
+		if(tensorProperty->dataType() == PropertyObject::Float && tensorProperty->componentCount() == 9) {
+			PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
+			Quaternion* q = orientations.begin();
+			for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty)) {
+				*q++ = Quaternion(tensor);
+			} 
+		}
+	}
+
 	// Report number of particles to the user.
 	QString statusString = tr("Number of particles: %1").arg(particles()->elementCount());
 	state().setStatus(std::move(statusString));
@@ -158,7 +170,7 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data 
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml)
+PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent)
 {
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");
@@ -187,11 +199,26 @@ PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForD
 	else if(name.compare(QLatin1String("tq"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::TorqueProperty, false, executionContext());
 	}
+	else if(name.compare(QLatin1String("f"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
+		return particles()->createProperty(ParticlesObject::ForceProperty, false, executionContext());
+	}
 	else if(name.compare(QLatin1String("density"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(QStringLiteral("Density"), PropertyObject::Float, 1, 0, false);
 	}
 	else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
 		return particles()->createProperty(QStringLiteral("Tensor"), PropertyObject::Float, 9, 0, false);
+	}
+	else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		vectorComponent = 0;
+		return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
+	}
+	else if(name.compare(QLatin1String("shapey"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		vectorComponent = 1;
+		return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
+	}
+	else if(name.compare(QLatin1String("shapez"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		vectorComponent = 2;
+		return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
 	}
 	else {
 		return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);
@@ -202,7 +229,7 @@ PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForD
 /******************************************************************************
 * Reads a <DataArray> element and stores it in the given OVITO property.
 ******************************************************************************/
-void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyObject* property, QXmlStreamReader& xml)
+void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml)
 {
 	// Check value of the 'format' attribute.
 	QString format = xml.attributes().value("format").toString();
@@ -242,7 +269,7 @@ void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyObject* proper
 	// Parse the contents of the XML element and convert binary data from base64 encoding.
 	QString text = xml.readElementText();
 	QByteArray byteArray = QByteArray::fromBase64(text.toLatin1());
-	qint64 expectedBytes = property->size() * dataTypeSize * property->componentCount();
+	qint64 expectedBytes = property->size() * dataTypeSize * (vectorComponent == -1 ? property->componentCount() : 1);
 	// Note: Decoded binary data is prepended with array size information.
 	if(byteArray.size() != expectedBytes + sizeof(qint64)) {
 		xml.raiseError(tr("Data array size mismatch: Expected %1 bytes of base64 encoded data, but XML element contains %2 bytes.")
@@ -258,64 +285,46 @@ void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyObject* proper
 		return;
 	}
 
-	if(dataType == "Float32") {
-		const float* begin = reinterpret_cast<const float*>(byteArray.constData() + sizeof(qint64));
-		const float* end = begin + property->size() * property->componentCount();
+	auto copyValuesToProperty = [&](auto srcData) {
+		const auto begin = srcData;
+		const auto end = begin + property->size() * (vectorComponent == -1 ? property->componentCount() : 1);
 		if(property->dataType() == PropertyObject::Float) {
-			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
+			if(vectorComponent == -1)
+				std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
+			else
+				std::copy(begin, end, std::begin(PropertyAccess<FloatType, true>(property).componentRange(vectorComponent)));
 		}
 		else if(property->dataType() == PropertyObject::Int) {
-			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
+			if(vectorComponent == -1)
+				std::copy(begin, end, PropertyAccess<int, true>(property).begin());
+			else
+				std::copy(begin, end, std::begin(PropertyAccess<int, true>(property).componentRange(vectorComponent)));
 		}
 		else if(property->dataType() == PropertyObject::Int64) {
-			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
+			if(vectorComponent == -1)
+				std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
+			else
+				std::copy(begin, end, std::begin(PropertyAccess<qlonglong, true>(property).componentRange(vectorComponent)));
 		}
+	};
+
+	if(dataType == "Float32") {
+		copyValuesToProperty(reinterpret_cast<const float*>(byteArray.constData() + sizeof(qint64)));
 	}
 	else if(dataType == "Float64") {
-		const double* begin = reinterpret_cast<const double*>(byteArray.constData() + sizeof(qint64));
-		const double* end = begin + property->size() * property->componentCount();
-		if(property->dataType() == PropertyObject::Float) {
-			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int) {
-			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int64) {
-			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
-		}
+		copyValuesToProperty(reinterpret_cast<const double*>(byteArray.constData() + sizeof(qint64)));
 	}
 	else if(dataType == "Int32") {
-		const qint32* begin = reinterpret_cast<const qint32*>(byteArray.constData() + sizeof(qint64));
-		const qint32* end = begin + property->size() * property->componentCount();
-		if(property->dataType() == PropertyObject::Float) {
-			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int) {
-			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int64) {
-			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
-		}
+		copyValuesToProperty(reinterpret_cast<const qint32*>(byteArray.constData() + sizeof(qint64)));
 	}
 	else if(dataType == "Int64") {
-		const qint64* begin = reinterpret_cast<const qint64*>(byteArray.constData() + sizeof(qint64));
-		const qint64* end = begin + property->size() * property->componentCount();
-		if(property->dataType() == PropertyObject::Float) {
-			std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int) {
-			std::copy(begin, end, PropertyAccess<int, true>(property).begin());
-		}
-		else if(property->dataType() == PropertyObject::Int64) {
-			std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
-		}
+		copyValuesToProperty(reinterpret_cast<const qint64*>(byteArray.constData() + sizeof(qint64)));
 	}
 	else {
 		OVITO_ASSERT(false);
 		property->fillZero();
 	}
 }
-
 
 }	// End of namespace
 }	// End of namespace

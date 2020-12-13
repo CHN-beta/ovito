@@ -84,10 +84,10 @@ private:
 		virtual void loadFile() override;
 
 		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml);
+		PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent);
 
 		/// Reads a <DataArray> element and stores it in the given OVITO property.
-		void parseDataArray(PropertyObject* property, QXmlStreamReader& xml);
+		void parseDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml);
 	};
 };
 
