@@ -68,10 +68,10 @@ Box3 ParticlesVis::boundingBox(TimePoint time, const std::vector<const DataObjec
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		WeakDataObjectRef,	// Position property + revision number
-		WeakDataObjectRef,	// Radius property + revision number
-		WeakDataObjectRef,	// Type property + revision number
-		WeakDataObjectRef,	// Aspherical shape property + revision number
+		WeakDataObjectRef,	// Position property
+		WeakDataObjectRef,	// Radius property
+		WeakDataObjectRef,	// Type property
+		WeakDataObjectRef,	// Aspherical shape property
 		FloatType 				// Default particle radius
 	>;
 
@@ -422,9 +422,10 @@ ParticlePrimitive::RenderingQuality ParticlesVis::effectiveRenderingQuality(Scen
 /******************************************************************************
 * Returns the actual particle shape used to render the particles.
 ******************************************************************************/
-ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty) const
+ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty) const
 {
 	if(particleShape() == Sphere) {
+		if(roundnessProperty != nullptr) return ParticlePrimitive::SuperquadricShape;
 		if(shapeProperty != nullptr) return ParticlePrimitive::EllipsoidShape;
 		else return ParticlePrimitive::SphericalShape;
 	}
@@ -468,6 +469,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
 	const PropertyObject* asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+	const PropertyObject* roundnessProperty = particles->getProperty(ParticlesObject::SuperquadricRoundnessProperty);
 
 	// Check if any of the particle types have a user-defined mesh geometry assigned.
 	std::vector<int> userShapeParticleTypes;
@@ -484,8 +486,9 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	if(particleShape() != Sphere && particleShape() != Box && particleShape() != Cylinder && particleShape() != Spherocylinder && userShapeParticleTypes.empty()) {
 		asphericalShapeProperty = nullptr;
 		orientationProperty = nullptr;
+		roundnessProperty = nullptr;
 	}
-	if(particleShape() == Sphere && asphericalShapeProperty == nullptr && userShapeParticleTypes.empty())
+	if(particleShape() == Sphere && asphericalShapeProperty == nullptr && roundnessProperty == nullptr && userShapeParticleTypes.empty())
 		orientationProperty = nullptr;
 
 	// Make sure we don't exceed our internal limits.
@@ -499,6 +502,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	ConstPropertyPtr colorStorage = colorProperty;
 	ConstPropertyPtr asphericalShapeStorage = asphericalShapeProperty;
 	ConstPropertyPtr orientationStorage = orientationProperty;
+	ConstPropertyPtr roundnessStorage = roundnessProperty;
 
 	// Get total number of particles.
 	int particleCount = particles->elementCount();
@@ -509,7 +513,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		ParticlePrimitive::RenderingQuality renderQuality = effectiveRenderingQuality(renderer, particles);
 
 		// Determine primitive particle shape and shading mode.
-		ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(asphericalShapeProperty, orientationProperty);
+		ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(asphericalShapeProperty, orientationProperty, roundnessProperty);
 		ParticlePrimitive::ShadingMode primitiveShadingMode = ParticlePrimitive::NormalShading;
 		if(particleShape() == Circle || particleShape() == Square)
 			primitiveShadingMode = ParticlePrimitive::FlatShading;
@@ -518,8 +522,8 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		using ParticleCacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
 			QPointer<PipelineSceneNode>,// The scene node
-			WeakDataObjectRef,		// Position property + revision number
-			WeakDataObjectRef		// Particle type property + revision number
+			WeakDataObjectRef,			// Position property
+			WeakDataObjectRef			// Particle type property
 		>;
 		// The data structure stored in the vis cache.
 		struct ParticleCacheValue {
@@ -547,22 +551,24 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		// The type of lookup key used for caching the particle positions, orientations and shapes:
 		using PositionCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
-			WeakDataObjectRef,		// Position property + revision number
-			WeakDataObjectRef,		// Aspherical shape property + revision number
-			WeakDataObjectRef		// Orientation property + revision number
+			WeakDataObjectRef,		// Position property
+			WeakDataObjectRef,		// Aspherical shape property
+			WeakDataObjectRef,		// Orientation property
+			WeakDataObjectRef		// Roundness property
 		>;
 		bool& positionsUpToDate = dataset()->visCache().get<bool>(PositionCacheKey(
 			visCache.particlePrimitive,
 			positionProperty,
 			asphericalShapeProperty,
-			orientationProperty));
+			orientationProperty,
+			roundnessProperty));
 
 		// The type of lookup key used for caching the particle radii:
 		using RadiiCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
 			FloatType,							// Default particle radius
-			WeakDataObjectRef,				// Radius property + revision number
-			WeakDataObjectRef				// Type property + revision number
+			WeakDataObjectRef,					// Radius property
+			WeakDataObjectRef					// Type property
 		>;
 		bool& radiiUpToDate = dataset()->visCache().get<bool>(RadiiCacheKey(
 			visCache.particlePrimitive,
@@ -573,10 +579,10 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		// The type of lookup key used for caching the particle colors:
 		using ColorCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
-			WeakDataObjectRef,		// Type property + revision number
-			WeakDataObjectRef,		// Color property + revision number
-			WeakDataObjectRef,		// Selection property + revision number
-			WeakDataObjectRef		// Transparency property + revision number
+			WeakDataObjectRef,					// Type property
+			WeakDataObjectRef,					// Color property
+			WeakDataObjectRef,					// Selection property
+			WeakDataObjectRef					// Transparency property
 		>;
 		bool& colorsUpToDate = dataset()->visCache().get<bool>(ColorCacheKey(
 			visCache.particlePrimitive,
@@ -589,7 +595,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		using ShapeMeshCacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
 			QPointer<PipelineSceneNode>,// The scene node
-			WeakDataObjectRef		// Particle type property + revision number
+			WeakDataObjectRef			// Particle type property
 		>;
 		// The data structure stored in the vis cache.
 		struct ShapeMeshCacheValue {
@@ -624,12 +630,12 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 			using ParticleInfoCacheKey = std::tuple<
 				std::shared_ptr<MeshPrimitive>,	// The rendering primitive
 				FloatType,						// Default particle radius
-				WeakDataObjectRef,		// Position property + revision number
-				WeakDataObjectRef,		// Orientation property + revision number
-				WeakDataObjectRef,		// Color property + revision number
-				WeakDataObjectRef,		// Selection property + revision number
-				WeakDataObjectRef,		// Transparency property + revision number
-				WeakDataObjectRef		// Radius property + revision number
+				WeakDataObjectRef,				// Position property
+				WeakDataObjectRef,				// Orientation property
+				WeakDataObjectRef,				// Color property
+				WeakDataObjectRef,				// Selection property
+				WeakDataObjectRef,				// Transparency property
+				WeakDataObjectRef				// Radius property
 			>;
 			bool& particleInfoUpToDate = dataset()->visCache().get<bool>(ParticleInfoCacheKey(
 				meshVisCache->shapeMeshPrimitives.front(),
@@ -744,7 +750,7 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 				if(visibleStandardParticles != particleCount)
 					asphericalShapeStorage = asphericalShapeStorage->filterCopy(hiddenParticlesMask);
 				// Fill in aspherical shape data.
-				visCache.particlePrimitive->setParticleShapes(ConstPropertyAccess<Vector3>(asphericalShapeStorage).cbegin());
+				visCache.particlePrimitive->setParticleAsphericalShapes(ConstPropertyAccess<Vector3>(asphericalShapeStorage).cbegin());
 			}
 			if(orientationStorage) {
 				// Filter the property array to include only the visible particles.
@@ -752,6 +758,13 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 					orientationStorage = orientationStorage->filterCopy(hiddenParticlesMask);
 				// Fill in orientation data.
 				visCache.particlePrimitive->setParticleOrientations(ConstPropertyAccess<Quaternion>(orientationStorage).cbegin());
+			}
+			if(roundnessStorage) {
+				// Filter the property array to include only the visible particles.
+				if(visibleStandardParticles != particleCount)
+					roundnessStorage = roundnessStorage->filterCopy(hiddenParticlesMask);
+				// Fill in superquadrics roundness data.
+				visCache.particlePrimitive->setParticleRoundness(ConstPropertyAccess<Vector2>(roundnessStorage).cbegin());
 			}
 		}
 
@@ -858,15 +871,15 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 
 		// The key type used for caching the sphere rendering primitive:
 		using SpherocylinderCacheKey = std::tuple<
-			CompatibleRendererGroup,	// The scene renderer
-			WeakDataObjectRef,		// Position property + revision number
-			WeakDataObjectRef,		// Type property + revision number
-			WeakDataObjectRef,		// Selection property + revision number
-			WeakDataObjectRef,		// Color property + revision number
-			WeakDataObjectRef,		// Apherical shape property + revision number
-			WeakDataObjectRef,		// Orientation property + revision number
-			FloatType,					// Default particle radius
-			ParticleShape				// Display shape
+			CompatibleRendererGroup,// The scene renderer
+			WeakDataObjectRef,		// Position property
+			WeakDataObjectRef,		// Type property
+			WeakDataObjectRef,		// Selection property
+			WeakDataObjectRef,		// Color property
+			WeakDataObjectRef,		// Apherical shape property
+			WeakDataObjectRef,		// Orientation property
+		FloatType,					// Default particle radius
+		ParticleShape				// Display shape
 		>;
 		// The data structure stored in the vis cache.
 		struct CacheValue {
@@ -1005,6 +1018,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		const PropertyObject* transparencyProperty = nullptr;
 		const PropertyObject* shapeProperty = nullptr;
 		const PropertyObject* orientationProperty = nullptr;
+		const PropertyObject* roundnessProperty = nullptr;
 		const PropertyObject* typeProperty = nullptr;
 		for(const PropertyObject* property : particles->properties()) {
 			if(property->type() == ParticlesObject::PositionProperty && property->size() >= particleIndex)
@@ -1023,6 +1037,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				shapeProperty = property;
 			else if(property->type() == ParticlesObject::OrientationProperty && property->size() >= particleIndex)
 				orientationProperty = property;
+			else if(property->type() == ParticlesObject::SuperquadricRoundnessProperty && property->size() >= particleIndex)
+				roundnessProperty = property;
 		}
 		if(!posProperty || particleIndex >= posProperty->size())
 			return;
@@ -1056,7 +1072,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		std::shared_ptr<ArrowPrimitive> highlightCylinderBuffer;
 		if(particleShape() != Cylinder && particleShape() != Spherocylinder) {
 			// Determine effective particle shape and shading mode.
-			ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shapeProperty, orientationProperty);
+			ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shapeProperty, orientationProperty, roundnessProperty);
 			ParticlePrimitive::ShadingMode primitiveShadingMode = ParticlePrimitive::NormalShading;
 			if(particleShape() == ParticlesVis::Circle || particleShape() == ParticlesVis::Square)
 				primitiveShadingMode = ParticlePrimitive::FlatShading;
@@ -1067,9 +1083,11 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			particleBuffer->setParticlePositions(&pos);
 			particleBuffer->setParticleRadius(radius);
 			if(shapeProperty)
-				particleBuffer->setParticleShapes(ConstPropertyAccess<Vector3>(shapeProperty).cbegin() + particleIndex);
+				particleBuffer->setParticleAsphericalShapes(ConstPropertyAccess<Vector3>(shapeProperty).cbegin() + particleIndex);
 			if(orientationProperty)
 				particleBuffer->setParticleOrientations(ConstPropertyAccess<Quaternion>(orientationProperty).cbegin() + particleIndex);
+			if(roundnessProperty)
+				particleBuffer->setParticleRoundness(ConstPropertyAccess<Vector2>(roundnessProperty).cbegin() + particleIndex);
 
 			// Prepare marker geometry buffer.
 			highlightParticleBuffer = renderer->createParticlePrimitive(primitiveShadingMode, renderQuality, primitiveParticleShape, false);
@@ -1080,10 +1098,12 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			if(shapeProperty) {
 				Vector3 shape = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
 				shape += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
-				highlightParticleBuffer->setParticleShapes(&shape);
+				highlightParticleBuffer->setParticleAsphericalShapes(&shape);
 			}
 			if(orientationProperty)
 				highlightParticleBuffer->setParticleOrientations(ConstPropertyAccess<Quaternion>(orientationProperty).cbegin() + particleIndex);
+			if(roundnessProperty)
+				highlightParticleBuffer->setParticleRoundness(ConstPropertyAccess<Vector2>(roundnessProperty).cbegin() + particleIndex);
 		}
 		else {
 			FloatType radius, length;

@@ -127,7 +127,8 @@ public:
 		NucleobaseTypeProperty,
 		DNAStrandProperty,
 		NucleotideAxisProperty,
-		NucleotideNormalProperty
+		NucleotideNormalProperty,
+		SuperquadricRoundnessProperty
 	};
 
 	/// \brief Constructor.

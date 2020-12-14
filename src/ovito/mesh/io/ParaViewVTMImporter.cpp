@@ -27,6 +27,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParaViewVTMImporter.h"
 
 namespace Ovito { namespace Mesh {
@@ -108,11 +109,22 @@ std::vector<std::pair<QUrl, QString>> ParaViewVTMImporter::loadVTMFile(const Fil
 ******************************************************************************/
 Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequest& request)
 {
+	// Resize property containers to zero element in the existing pipeline state.
+	// This is mainly to remove the particles in animation frame in wich the VTM file 
+	// contains empty data blocks.
+	LoadOperationRequest modifiedRequest = request;
+	for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
+		if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(obj)) {
+			PropertyContainer* mutableContainer = modifiedRequest.state.mutableData()->makeMutable(container);
+			mutableContainer->setElementCount(0);
+		}
+	}
+
 	// Load the VTM file, which contains the list of referenced data files.
 	std::vector<std::pair<QUrl, QString>> blocks = loadVTMFile(request.fileHandle);
 
 	// Load each data block referenced in the VTM file. 
-	Future<LoadOperationRequest> future = for_each(request, std::move(blocks), executor(), [this](const std::pair<QUrl, QString>& block, LoadOperationRequest& request) {
+	Future<LoadOperationRequest> future = for_each(std::move(modifiedRequest), std::move(blocks), executor(), [this](const std::pair<QUrl, QString>& block, LoadOperationRequest& request) {
 
 		// Set up the load request submitted to the FileSourceImporter.
 		request.dataBlockPrefix = block.second;

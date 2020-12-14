@@ -144,6 +144,12 @@ OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, 
 							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.fs",
 							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.gs");
 				}
+				else if(shape == SuperquadricShape) {
+					_shader = renderer->loadShaderProgram("particle_geomshader_superquadric",
+							prefix + "/glsl/particles/geometry/superquadric/superquadric.vs",
+							prefix + "/glsl/particles/geometry/superquadric/superquadric.fs",
+							prefix + "/glsl/particles/geometry/superquadric/superquadric.gs");
+				}
 			}
 			else {
 				if(shape == SphericalShape && renderingQuality == HighQuality) {
@@ -166,6 +172,11 @@ OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, 
 							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid_tristrip.vs",
 							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.fs");
 				}
+				else if(shape == SuperquadricShape) {
+					_shader = renderer->loadShaderProgram("particle_tristrip_superquadric",
+							prefix + "/glsl/particles/geometry/superquadric/superquadric_tristrip.vs",
+							prefix + "/glsl/particles/geometry/superquadric/superquadric.fs");
+				}
 			}
 		}
 	}
@@ -185,11 +196,15 @@ void OpenGLParticlePrimitive::setSize(int particleCount)
 	_positionsBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
 	_radiiBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
 	_colorsBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
-	if(particleShape() == BoxShape || particleShape() == EllipsoidShape) {
+	if(particleShape() == BoxShape || particleShape() == EllipsoidShape || particleShape() == SuperquadricShape) {
 		_shapeBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
 		_shapeBuffer.fillConstant(Vector_3<float>::Zero());
 		_orientationBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
 		_orientationBuffer.fillConstant(QuaternionT<float>(0,0,0,1));
+		if(particleShape() == SuperquadricShape) {
+			_roundnessBuffer.create(QOpenGLBuffer::StaticDraw, particleCount, _verticesPerParticle);
+			_roundnessBuffer.fillConstant(Vector_2<float>::Zero());
+		}
 	}
 }
 
@@ -270,7 +285,7 @@ void OpenGLParticlePrimitive::setParticleColor(const ColorA color)
 /******************************************************************************
 * Sets the aspherical shapes of the particles.
 ******************************************************************************/
-void OpenGLParticlePrimitive::setParticleShapes(const Vector3* shapes)
+void OpenGLParticlePrimitive::setParticleAsphericalShapes(const Vector3* shapes)
 {
 	OVITO_ASSERT(QOpenGLContextGroup::currentContextGroup() == _contextGroup);
 	if(_shapeBuffer.isCreated())
@@ -286,6 +301,17 @@ void OpenGLParticlePrimitive::setParticleOrientations(const Quaternion* orientat
 	if(_orientationBuffer.isCreated())
 		_orientationBuffer.fill(orientations);
 }
+
+/******************************************************************************
+* Sets the superquadric roundness values of the particles.
+******************************************************************************/
+void OpenGLParticlePrimitive::setParticleRoundness(const Vector2* roundness)
+{
+	OVITO_ASSERT(QOpenGLContextGroup::currentContextGroup() == _contextGroup);
+	if(_roundnessBuffer.isCreated())
+		_roundnessBuffer.fill(roundness);
+}
+
 
 /******************************************************************************
 * Resets the aspherical shape of the particles.
@@ -305,6 +331,16 @@ void OpenGLParticlePrimitive::clearParticleOrientations()
 	OVITO_ASSERT(QOpenGLContextGroup::currentContextGroup() == _contextGroup);
 	if(_orientationBuffer.isCreated())
 		_orientationBuffer.fillConstant(QuaternionT<float>(0,0,0,1));
+}
+
+/******************************************************************************
+* Resets the roundness values of superquadric particles.
+******************************************************************************/
+void OpenGLParticlePrimitive::clearParticleRoundness()
+{
+	OVITO_ASSERT(QOpenGLContextGroup::currentContextGroup() == _contextGroup);
+	if(_roundnessBuffer.isCreated())
+		_roundnessBuffer.fillConstant(Vector_2<float>::Zero());
 }
 
 /******************************************************************************
@@ -443,6 +479,8 @@ void OpenGLParticlePrimitive::render(SceneRenderer* sceneRenderer)
 		_shapeBuffer.bind(renderer, shader, "shape", GL_FLOAT, 0, 3);
 	if(_orientationBuffer.isCreated())
 		_orientationBuffer.bind(renderer, shader, "orientation", GL_FLOAT, 0, 4);
+	if(_roundnessBuffer.isCreated())
+		_roundnessBuffer.bind(renderer, shader, "roundness", GL_FLOAT, 0, 2);
 	_radiiBuffer.bind(renderer, shader, "particle_radius", GL_FLOAT, 0, 1);
 	if(!renderer->isPicking())
 		_colorsBuffer.bindColors(renderer, shader, 4);
@@ -576,6 +614,8 @@ void OpenGLParticlePrimitive::render(SceneRenderer* sceneRenderer)
 		_shapeBuffer.detach(renderer, shader, "shape");
 	if(_orientationBuffer.isCreated())
 		_orientationBuffer.detach(renderer, shader, "orientation");
+	if(_roundnessBuffer.isCreated())
+		_roundnessBuffer.detach(renderer, shader, "roundness");
 	_radiiBuffer.detach(renderer, shader, "particle_radius");
 
 	// Reset state.

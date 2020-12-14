@@ -72,7 +72,7 @@ public:
 	Color selectionParticleColor() const { return Color(1,0,0); }
 
 	/// Returns the actual particle shape used to render the particles.
-	ParticlePrimitive::ParticleShape effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty) const;
+	ParticlePrimitive::ParticleShape effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty) const;
 
 	/// Returns the actual rendering quality used to render the particles.
 	ParticlePrimitive::RenderingQuality effectiveRenderingQuality(SceneRenderer* renderer, const ParticlesObject* particles) const;

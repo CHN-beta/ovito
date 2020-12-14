@@ -32,6 +32,11 @@
 	<file>glsl/particles/geometry/ellipsoid/ellipsoid_tristrip.vs</file>
 	<file>glsl/particles/geometry/ellipsoid/ellipsoid.gs</file>
 
+	<file>glsl/particles/geometry/superquadric/superquadric.fs</file>
+	<file>glsl/particles/geometry/superquadric/superquadric.vs</file>
+	<file>glsl/particles/geometry/superquadric/superquadric_tristrip.vs</file>
+	<file>glsl/particles/geometry/superquadric/superquadric.gs</file>
+
 	<file>glsl/arrows/flat.fs</file>
 	<file>glsl/arrows/flat_tri.vs</file>
 	<file>glsl/arrows/flat.gs</file>

@@ -153,8 +153,17 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 			PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
 			Quaternion* q = orientations.begin();
 			for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty)) {
-				*q++ = Quaternion(tensor);
-			} 
+				*q++ = Quaternion(tensor.transposed());
+			}
+		}
+	}
+
+	// Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
+	if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
+		for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty)) {
+    		// Roundness = 2.0 / Blockiness
+			if(v.x() != 0) v.x() = FloatType(2) / v.x();
+			if(v.y() != 0) v.y() = FloatType(2) / v.y();
 		}
 	}
 
@@ -219,6 +228,14 @@ PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForD
 	else if(name.compare(QLatin1String("shapez"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		vectorComponent = 2;
 		return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
+	}
+	else if(name.compare(QLatin1String("blockiness1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		vectorComponent = 0;
+		return particles()->createProperty(ParticlesObject::SuperquadricRoundnessProperty, true, executionContext());
+	}
+	else if(name.compare(QLatin1String("blockiness2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		vectorComponent = 1;
+		return particles()->createProperty(ParticlesObject::SuperquadricRoundnessProperty, true, executionContext());
 	}
 	else {
 		return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);

@@ -349,7 +349,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(TimePo
 	PropertyContainer* container = state.expectMutableLeafObject(modifier->delegate()->inputContainerRef());
 
 	// Create the output property object in the container.
-	container->addProperty(outputProperty());
+	container->createProperty(outputProperty());
 }
 
 }	// End of namespace

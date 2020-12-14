@@ -692,6 +692,12 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		componentCount = 3;
 		stride = componentCount * sizeof(int);
 		break;
+	case SuperquadricRoundnessProperty:
+		dataType = PropertyObject::Float;
+		componentCount = 2;
+		stride = componentCount * sizeof(FloatType);
+		OVITO_ASSERT(stride == sizeof(Vector2));
+		break;
 	default:
 		OVITO_ASSERT_MSG(false, "ParticlesObject::createStandardProperty()", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard property type: %1").arg(type));
@@ -850,6 +856,7 @@ void ParticlesObject::OOMetaClass::initialize()
 	registerStandardProperty(DNAStrandProperty, tr("DNA Strand"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("DNA Strands"));
 	registerStandardProperty(NucleotideAxisProperty, tr("Nucleotide Axis"), PropertyObject::Float, xyzList);
 	registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), PropertyObject::Float, xyzList);
+	registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), PropertyObject::Float, QStringList() << "Phi" << "Theta");
 }
 
 /******************************************************************************

@@ -306,7 +306,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 			// Fill in aspherical shape values.
 			Vector3 asphericalShape = cylinderRadius() * Vector3(2.0, 3.0, 1.0);
 			std::vector<Vector3> asphericalShapes(particles->elementCount(), asphericalShape);
-			visCache.basePrimitive->setParticleShapes(asphericalShapes.data());
+			visCache.basePrimitive->setParticleAsphericalShapes(asphericalShapes.data());
 
 			// Fill in base orientations.
 			if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {

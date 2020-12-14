@@ -65,16 +65,22 @@ public:
 	virtual void setParticleColor(const ColorA color) override;
 
 	/// \brief Sets the aspherical shapes of the particles.
-	virtual void setParticleShapes(const Vector3* shapes) override;
+	virtual void setParticleAsphericalShapes(const Vector3* shapes) override;
 
 	/// \brief Sets the orientation of aspherical particles.
 	virtual void setParticleOrientations(const Quaternion* orientations) override;
+
+	/// \brief Sets the superquadric roundness values of the particles.
+	virtual void setParticleRoundness(const Vector2* roundness) override;
 
 	/// \brief Resets the aspherical shape of the particles.
 	virtual void clearParticleShapes() override;
 
 	/// \brief Resets the orientation of particles.
 	virtual void clearParticleOrientations() override;
+
+	/// \brief Resets the roundness values of superquadric particles.
+	virtual void clearParticleRoundness() override;
 
 	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
 	virtual bool isValid(SceneRenderer* renderer) override;
@@ -119,6 +125,9 @@ private:
 
 	/// The internal OpenGL vertex buffer that stores the orientation of aspherical particles.
 	OpenGLBuffer<QuaternionT<float>> _orientationBuffer;
+
+	/// The internal OpenGL vertex buffer that stores the roundness values of superquadric particles.
+	OpenGLBuffer<Vector_2<float>> _roundnessBuffer;
 
 	/// The GL context group under which the GL vertex buffers have been created.
 	QPointer<QOpenGLContextGroup> _contextGroup;

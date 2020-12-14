@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,7 +80,7 @@ public:
 	}
 
 	/// \brief Sets the aspherical shapes of the particles.
-	virtual void setParticleShapes(const Vector3* shapes) override {
+	virtual void setParticleAsphericalShapes(const Vector3* shapes) override {
 		_shapesBuffer.resize(particleCount());
 		std::copy(shapes, shapes + _shapesBuffer.size(), _shapesBuffer.begin());
 	}
@@ -91,6 +91,12 @@ public:
 		std::copy(orientations, orientations + _orientationsBuffer.size(), _orientationsBuffer.begin());
 	}
 
+	/// \brief Sets the superquadric roundness values of the particles.
+	virtual void setParticleRoundness(const Vector2* roundness) override {
+		_roundnessBuffer.resize(particleCount());
+		std::copy(roundness, roundness + _roundnessBuffer.size(), _roundnessBuffer.begin());
+	}
+
 	/// \brief Resets the aspherical shape of the particles.
 	virtual void clearParticleShapes() override {
 		_shapesBuffer.clear();
@@ -99,6 +105,11 @@ public:
 	/// \brief Resets the orientation of particles.
 	virtual void clearParticleOrientations() override {
 		_orientationsBuffer.clear();
+	}
+
+	/// \brief Resets the roundness values of superquadric particles.
+	virtual void clearParticleRoundness() override {
+		_roundnessBuffer.clear();
 	}
 
 	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
@@ -122,6 +133,9 @@ public:
 	/// Returns a reference to the internal buffer that stores the orientations of aspherical particles.
 	const std::vector<Quaternion>& orientations() const { return _orientationsBuffer; }
 
+	/// Returns a reference to the internal buffer that stores the roundness values of superquadric particles.
+	const std::vector<Vector2>& roundness() const { return _roundnessBuffer; }
+
 private:
 
 	/// The internal buffer that stores the particle positions.
@@ -138,8 +152,9 @@ private:
 
 	/// The internal buffer that stores the orientations of aspherical particles.
 	std::vector<Quaternion> _orientationsBuffer;
+
+	/// The internal buffer that stores the roundness values of superquadric particles.
+	std::vector<Vector2> _roundnessBuffer;
 };
 
 }	// End of namespace
-
-
