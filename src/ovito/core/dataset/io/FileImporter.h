@@ -127,6 +127,9 @@ public:
 
 	/// Utility method which splits a string at whitespace separators into tokens.
 	static QStringList splitString(const QString& str);
+
+	/// Utility method which splits a string at whitespace separators into tokens.
+	static QStringList splitString(QStringView str) { return splitString(str.toString()); }
 };
 
 }	// End of namespace

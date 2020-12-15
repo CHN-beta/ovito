@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/grid/io/ParaViewVTIGridImporter.h>
 #include "VTPFileParticleImporter.h"
 
 namespace Ovito { namespace Particles {
@@ -122,7 +123,7 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 				if(xml.name().compare(QLatin1String("DataArray")) == 0) {
 					int vectorComponent = -1;
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent)) {
-						parseDataArray(property, vectorComponent, xml);
+						ParaViewVTIGridImporter::parseVTKDataArray(property, vectorComponent, xml);
 					}
 					if(xml.tokenType() != QXmlStreamReader::EndElement)
 						xml.skipCurrentElement();
@@ -241,106 +242,6 @@ PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForD
 		return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);
 	}
 	return nullptr;
-}
-
-/******************************************************************************
-* Reads a <DataArray> element and stores it in the given OVITO property.
-******************************************************************************/
-void VTPFileParticleImporter::FrameLoader::parseDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml)
-{
-	// Check value of the 'format' attribute.
-	QString format = xml.attributes().value("format").toString();
-	if(format.isEmpty()) {
-		xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name().toString()));
-		return;
-	}
-	if(format != "binary") {
-		xml.raiseError(tr("Parser supports only binary data arrays. Please contact the OVITO developers to request an extension of the file parser."));
-		return;
-	}
-
-	// Check value of the 'type' attribute.
-	QString dataType = xml.attributes().value("type").toString();
-	size_t dataTypeSize;
-	if(dataType == "Float32") {
-		OVITO_STATIC_ASSERT(sizeof(float) == 4);
-		dataTypeSize = sizeof(float);
-	}
-	else if(dataType == "Float64") {
-		OVITO_STATIC_ASSERT(sizeof(double) == 8);
-		dataTypeSize = sizeof(double);
-	}
-	else if(dataType == "Int32") {
-		OVITO_STATIC_ASSERT(sizeof(qint32) == 4);
-		dataTypeSize = sizeof(qint32);
-	}
-	else if(dataType == "Int64") {
-		OVITO_STATIC_ASSERT(sizeof(qint64) == 8);
-		dataTypeSize = sizeof(qint64);
-	}
-	else {
-		xml.raiseError(tr("Parser supports only data arrays of type 'Int32', 'Int64', 'Float32' and 'Float64'. Please contact the OVITO developers to request an extension of the file parser."));
-		return;
-	}
-
-	// Parse the contents of the XML element and convert binary data from base64 encoding.
-	QString text = xml.readElementText();
-	QByteArray byteArray = QByteArray::fromBase64(text.toLatin1());
-	qint64 expectedBytes = property->size() * dataTypeSize * (vectorComponent == -1 ? property->componentCount() : 1);
-	// Note: Decoded binary data is prepended with array size information.
-	if(byteArray.size() != expectedBytes + sizeof(qint64)) {
-		xml.raiseError(tr("Data array size mismatch: Expected %1 bytes of base64 encoded data, but XML element contains %2 bytes.")
-			.arg(expectedBytes + sizeof(qint64))
-			.arg(byteArray.size()));
-		return;
-	}
-	qint64 dataSize = *reinterpret_cast<const qint64*>(byteArray.constData());
-	if(dataSize != expectedBytes) {
-		xml.raiseError(tr("Data array size mismatch: Expected %1 bytes of payload, but XML element contains data array with %2 bytes.")
-			.arg(expectedBytes)
-			.arg(dataSize));
-		return;
-	}
-
-	auto copyValuesToProperty = [&](auto srcData) {
-		const auto begin = srcData;
-		const auto end = begin + property->size() * (vectorComponent == -1 ? property->componentCount() : 1);
-		if(property->dataType() == PropertyObject::Float) {
-			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
-			else
-				std::copy(begin, end, std::begin(PropertyAccess<FloatType, true>(property).componentRange(vectorComponent)));
-		}
-		else if(property->dataType() == PropertyObject::Int) {
-			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<int, true>(property).begin());
-			else
-				std::copy(begin, end, std::begin(PropertyAccess<int, true>(property).componentRange(vectorComponent)));
-		}
-		else if(property->dataType() == PropertyObject::Int64) {
-			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
-			else
-				std::copy(begin, end, std::begin(PropertyAccess<qlonglong, true>(property).componentRange(vectorComponent)));
-		}
-	};
-
-	if(dataType == "Float32") {
-		copyValuesToProperty(reinterpret_cast<const float*>(byteArray.constData() + sizeof(qint64)));
-	}
-	else if(dataType == "Float64") {
-		copyValuesToProperty(reinterpret_cast<const double*>(byteArray.constData() + sizeof(qint64)));
-	}
-	else if(dataType == "Int32") {
-		copyValuesToProperty(reinterpret_cast<const qint32*>(byteArray.constData() + sizeof(qint64)));
-	}
-	else if(dataType == "Int64") {
-		copyValuesToProperty(reinterpret_cast<const qint64*>(byteArray.constData() + sizeof(qint64)));
-	}
-	else {
-		OVITO_ASSERT(false);
-		property->fillZero();
-	}
 }
 
 }	// End of namespace

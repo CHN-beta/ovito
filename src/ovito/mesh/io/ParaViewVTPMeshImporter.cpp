@@ -65,7 +65,7 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 }
 
 /******************************************************************************
-* Parses the given input file.
+* Parses the input file.
 ******************************************************************************/
 void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 {
@@ -75,13 +75,16 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	QString meshIdentifier = dataBlockPrefix();
 	SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
 	if(!meshObj) {
-		meshObj = state().createObject<SurfaceMesh>(meshIdentifier, dataSource(), executionContext());
+		meshObj = state().createObject<SurfaceMesh>(dataSource(), executionContext());
+		meshObj->setIdentifier(meshIdentifier);
 		SurfaceMeshVis* vis = meshObj->visElement<SurfaceMeshVis>();
-		vis->setShowCap(false);
-		vis->setSmoothShading(true);
+		if(vis) {
+			vis->setShowCap(false);
+			vis->setSmoothShading(true);
+		}
 		if(!meshIdentifier.isEmpty()) {
 			meshObj->setTitle(QStringLiteral("%1: %2").arg(meshObj->objectTitle()).arg(meshIdentifier));
-			vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(meshIdentifier));
+			if(vis) vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(meshIdentifier));
 		}
 	}
 	SurfaceMeshAccess mesh(meshObj);

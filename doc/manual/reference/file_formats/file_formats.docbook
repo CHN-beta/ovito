@@ -148,9 +148,29 @@
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.bonds">bonds</link></entry>
             </row>
             <row>
-              <entry>VTK</entry>
-              <entry><para>Format used by the <emphasis>Visualization Toolkit</emphasis> (VTK). This text-based format is documented <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. Note that OVITO supports only triangular cells.</para></entry>
+              <entry>VTK (legacy format)</entry>
+              <entry><para>File format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only ASCII-based files containing PolyData and UnstructuredGrid data with triangular cells.</para></entry>
               <entry><link linkend="scene_objects.triangle_mesh">triangle&#xA0;meshes</link></entry>
+            </row>
+            <row>
+              <entry>VTI (VTK ImageData)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only a subset of the full format specification and is geared towards files written by the <link xlink:href="https://www.aspherix-dem.com/">Aspherix</link> simulation code.</para></entry>
+              <entry><link linkend="scene_objects.voxel_grid">voxel&#xA0;grids</link></entry>
+            </row>
+            <row>
+              <entry>VTP (VTK PolyData)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only a subset of the full format specification and is geared towards mesh geometry and particle data files written by the <link xlink:href="https://www.aspherix-dem.com/">Aspherix</link> simulation code.
+                VTK PolyData blocks consisting of triangle strips or polygons are imported as surface meshes by OVITO. PolyData consisting of vertices only are imported as a set of particles.</para></entry>
+              <entry><link linkend="scene_objects.surface_mesh">surface&#xA0;meshes</link>, <link linkend="scene_objects.particles">particles</link></entry>
+            </row>
+            <row>
+              <entry>VTM (VTK MultiBlock)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. VTK multiblock data files are meta-files that point to a list of VTK XML files,
+                which will all be loaded by OVITO as a single data collection.</para></entry>
+              <entry>any</entry>
             </row>
             <row>
               <entry>OBJ</entry>
