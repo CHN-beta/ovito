@@ -4,11 +4,13 @@ import QtQuick.Layouts 1.12
 
 ColumnLayout {
 	spacing: 0
-	// Avaiöable modifiers list:
-	CustomComboBox {
+
+	// Available modifiers list:
+	ModifierListBox {
 		Layout.fillWidth: true
-		model: mainWindow.modifierListModel
-		textRole: "display"
+
+		// When the user selects a modifier from the list box, insert that modifier into the pipeline
+		// and reset the selection back to the first item ("Add modification...").
 		onActivated: {
 			mainWindow.modifierListModel.insertModifierByIndex(index)
 			currentIndex = 0;

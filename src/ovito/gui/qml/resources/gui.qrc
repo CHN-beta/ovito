@@ -23,6 +23,7 @@
         <file>ui/IntegerParameter.qml</file>
         <file>ui/IntegerRadioButtonParameter.qml</file>
         <file>ui/ModifierDelegateParameter.qml</file>        
+        <file>ui/ModifierListBox.qml</file>        
         <file>ui/PipelineEditor.qml</file>
         <file>ui/PipelineTab.qml</file>
         <file>ui/PropertiesEditor.qml</file>

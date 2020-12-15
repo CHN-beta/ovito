@@ -98,6 +98,9 @@ public:
 	/// Returns the flags for an item.
 	virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
+	/// Returns the model's role names.
+	virtual QHash<int, QByteArray> roleNames() const override;
+	
 	/// Returns the action that belongs to the given model index.
 	ModifierAction* actionFromIndex(int index) const;
 

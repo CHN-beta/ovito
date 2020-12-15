@@ -35,7 +35,7 @@ namespace Ovito {
 MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
 	// Create the object that manages the input modes of the viewports.
-	setViewportInputManager(new ViewportInputManager(this, this));
+	setViewportInputManager(new ViewportInputManager(this, _datasetContainer, this));
 
 	// Create actions.
 	setActionManager(new ActionManager(this, this));

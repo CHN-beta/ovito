@@ -343,6 +343,18 @@ int ModifierListModel::rowCount(const QModelIndex& parent) const
 }
 
 /******************************************************************************
+* Returns the model's role names.
+******************************************************************************/
+QHash<int, QByteArray> ModifierListModel::roleNames() const
+{
+	QHash<int, QByteArray> roles;
+	roles[Qt::DisplayRole] = "title";
+	roles[Qt::UserRole] = "isheader";
+	roles[Qt::FontRole] = "font";
+	return roles;
+}
+
+/******************************************************************************
 * Returns the data associated with a list item.
 ******************************************************************************/
 QVariant ModifierListModel::data(const QModelIndex& index, int role) const
@@ -358,6 +370,12 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 			else
 				return _categoryNames[categoryIndex];
 		}
+	}
+	else if(role == Qt::UserRole) {
+		if(categoryIndexFromListIndex(index.row()) >= 0)
+			return true;
+		else
+			return false;
 	}
 	else if(role == Qt::FontRole) {
 		if(categoryIndexFromListIndex(index.row()) >= 0)
@@ -456,8 +474,6 @@ void ModifierListModel::insertModifierByIndex(int index)
 {
 	if(QAction* action = actionFromIndex(index))
 		action->trigger();
-	else
-		qWarning() << "ModifierListModel::insertModifierByIndex(): Index" << index << "does not correspond to a modifier type.";
 }
 
 /******************************************************************************
