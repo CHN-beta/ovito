@@ -154,8 +154,8 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 				// Check if neighbor vector spans more than half of a periodic simulation cell.
 				Vector3 neighborVector = neighQuery.neighbors()[j].delta;
 				for(size_t dim = 0; dim < 3; dim++) {
-					if(cell().pbcFlags()[dim]) {
-						if(std::abs(cell().inverseMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON) {
+					if(cell()->hasPbc(dim)) {
+						if(std::abs(cell()->reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON) {
 							static const QString axes[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
 							throw Exception(GrainSegmentationModifier::tr("Simulation box is too short along cell vector %1 (%2) to perform analysis. "
 									"Please extend it first using the 'Replicate' modifier.").arg(dim+1).arg(axes[dim]));
