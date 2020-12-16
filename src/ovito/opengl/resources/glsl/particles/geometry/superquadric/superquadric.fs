@@ -263,7 +263,7 @@ void solve_hit1(in float v0, in vec3 tP0, in float v1, in vec3 tP1, out vec3 P)
 
 
 /// Try to find the root of a superquadric using Newtons method.
-bool check_hit2(in vec3 P, in vec3 D, in float t0, in out vec3 P0, in float v0, in float t1, out float t, out vec3 Q)
+bool check_hit2(in vec3 P, in vec3 D, in float t0, inout vec3 P0, in float v0, in float t1, out float t, out vec3 Q)
 {
     int i;
     float dt0, dt1, v1, deltat, maxdelta;

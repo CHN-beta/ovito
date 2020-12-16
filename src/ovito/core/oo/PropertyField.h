@@ -291,7 +291,7 @@ protected:
 #if !defined(Core_EXPORTS)
 extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
 extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
-#elif !defined(Q_CC_MSVC)
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
 template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
 template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
 #endif
@@ -402,7 +402,7 @@ protected:
 #if !defined(Core_EXPORTS)
 extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
 extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
-#elif !defined(Q_CC_MSVC)
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
 template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
 template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
 #endif

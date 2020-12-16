@@ -168,6 +168,12 @@ QSurfaceFormat OpenGLSceneRenderer::getDefaultSurfaceFormat()
 	if(!QCoreApplication::testAttribute(Qt::AA_UseSoftwareOpenGL)) {
 		format.setDepthBufferSize(24);
 		format.setStencilBufferSize(1);
+#ifdef Q_OS_MACOS
+		// macOS only supports core profile contexts.
+		format.setMajorVersion(3);
+		format.setMinorVersion(2);
+		format.setProfile(QSurfaceFormat::CoreProfile);
+#endif
 	}
 #else
 	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
@@ -528,7 +534,8 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	if(!glcontext()->isOpenGLES()) {
 
 		// Inject GLSL version directive into shader source. 
-		if(shaderType == QOpenGLShader::Geometry)
+		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
+		if(shaderType == QOpenGLShader::Geometry || (glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
 			shaderSource.append("#version 150\n");
 		else
 			shaderSource.append("#version 130\n");

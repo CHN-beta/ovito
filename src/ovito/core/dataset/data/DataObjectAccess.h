@@ -36,7 +36,7 @@ namespace Ovito {
  * If needed, a call to makeMutable() can be used at any time to request write access to the data object.
  * The accessor class automatically takes care of cloning the original data object if necessary to make it safe to modify.
  */
-template<template<typename> typename Reference, typename DataObjectClass>
+template<template<typename> class Reference, typename DataObjectClass>
 class DataObjectAccess
 {
 public:

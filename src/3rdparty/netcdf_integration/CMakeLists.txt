@@ -50,6 +50,9 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 	# This library depends on the Core module of OVITO.
 	TARGET_LINK_LIBRARIES(NetCDFIntegration PUBLIC Core)
 
+	# Inform source code that the NetCDF library is available.
+	TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PUBLIC OVITO_NETCDF_SUPPORT)
+
 	# Define macro for symbol export from the shared library.
 	IF(BUILD_SHARED_LIBS)
 		TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PRIVATE "OVITO_NETCDF_INTEGRATION_EXPORT=Q_DECL_EXPORT")
