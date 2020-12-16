@@ -214,7 +214,7 @@ bool GuiDataSetContainer::fileNew()
 {
 	OORef<DataSet> newSet = new DataSet();
 	newSet->initializeObject(Application::instance()->executionContext());
-	setCurrentSet(newSet);
+	setCurrentSet(std::move(newSet));
 	return true;
 }
 
