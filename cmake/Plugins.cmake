@@ -148,7 +148,15 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 		SET_TARGET_PROPERTIES(${target_name} PROPERTIES LINK_FLAGS "-headerpad_max_install_names")
 	ELSEIF(UNIX)
 		# Tell linker to detect missing references already at link time (and not at runtime).
-		TARGET_LINK_OPTIONS(${target_name} PRIVATE "LINKER:--no-undefined")
+		# This check must NOT be performed when building Python extension modules, because they deliberately do not
+		# link to the Python library at build time, only at runtime. That's because the Python library is assumed to be already 
+		# loaded into the process once the extension module gets loaded. 
+		# Here we assume that all OVITO modules that depend on the PyScript module, and the PyScript module itself, are Python
+		# extension modules. The link-time check will not be enabled for these modules. 
+		GET_PROPERTY(_link_libs TARGET ${target_name} PROPERTY LINK_LIBRARIES)
+		IF(NOT ${target_name} STREQUAL "PyScript" AND NOT "PyScript" IN_LIST _link_libs)
+			TARGET_LINK_OPTIONS(${target_name} PRIVATE "LINKER:--no-undefined" "LINKER:--no-allow-shlib-undefined")
+		ENDIF()
 	ENDIF()
 
 	IF(NOT OVITO_BUILD_PYTHON_PACKAGE)

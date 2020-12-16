@@ -21,8 +21,8 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2.0 FATAL_ERROR)
-CMAKE_POLICY(VERSION 3.2.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0 FATAL_ERROR)
+CMAKE_POLICY(VERSION 3.3.0)
 
 # Choose CMake policies.
 CMAKE_POLICY(SET CMP0020 NEW) 	# Automatically link to qtmain.lib on Windows.
