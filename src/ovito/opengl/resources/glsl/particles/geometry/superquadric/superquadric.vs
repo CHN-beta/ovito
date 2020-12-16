@@ -35,7 +35,7 @@ in vec2 roundness;
 
 // Output to geometry shader.
 out vec4 particle_color_gs;
-out mat3 view_particle_matrix_gs;
+out mat3 particle_view_matrix_gs;
 out vec2 particle_exponents_gs;
 
 void main()
@@ -76,7 +76,7 @@ void main()
 	if(shape2.y == 0.0) shape2.y = particle_radius;
 	if(shape2.z == 0.0) shape2.z = particle_radius;
 	mat3 particle_model_matrix = rot * mat3(shape2.x, 0, 0, 0, shape2.y, 0, 0, 0, shape2.z);
-	view_particle_matrix_gs = inverse_mat3(mat3(modelview_matrix) * particle_model_matrix);
+	particle_view_matrix_gs = mat3(modelview_matrix) * particle_model_matrix;
 
 	// The x-component of the input vector is exponent 'e', the y-component is 'n'.
 	particle_exponents_gs.x = 2.0 / (roundness.x > 0.0 ? roundness.x : 1.0);

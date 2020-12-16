@@ -30,7 +30,7 @@ uniform mat4 modelviewprojection_matrix;
 
 // Inputs from vertex shader
 in vec4 particle_color_gs[1];
-in mat3 view_particle_matrix_gs[1];
+in mat3 particle_view_matrix_gs[1];
 in vec2 particle_exponents_gs[1];
 
 // Outputs to fragment shader
@@ -156,31 +156,32 @@ void main()
 	dx *= 2.0;
 	dy *= 2.0;
 	dz *= 2.0;
+	mat3 view_particle_matrix = inverse(particle_view_matrix_gs[0]);
 
 	// -X
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dz;
@@ -189,28 +190,28 @@ void main()
 
 	// +X
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dy + dz;
@@ -219,28 +220,28 @@ void main()
 
 	// -Y
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dz;
@@ -249,28 +250,28 @@ void main()
 
 	// +Y
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy + dx + dz;
@@ -279,28 +280,28 @@ void main()
 
 	// -Z
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dy;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx;
@@ -309,28 +310,28 @@ void main()
 
 	// +Z
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dy + dz;
 	EmitVertex();
 
 	particle_color_fs = particle_color_gs[0];
-	particle_view_matrix_fs = particle_view_matrix_gs[0];
+	view_particle_matrix_fs = view_particle_matrix;
 	particle_view_pos_fs = particle_view_pos;
 	particle_exponents_fs = particle_exponents_gs[0];
 	gl_Position = corner + dx + dy + dz;
