@@ -148,7 +148,6 @@ public:
 	/// Newly added data elements will *not* be initialized to zero.
 	/// Returns the previous number of existing elements in the container.
 	size_t growElements(size_t numAdditionalElements) {
-		OVITO_ASSERT(numAdditionalElements != 0);
 
 		// Extend each property array.
 		for(const PropertyObject* prop : mutableProperties()) {
