@@ -218,6 +218,79 @@ public:
 		Quaternion orientation;
 	};
 
+	class InterfaceHandler
+	{
+	public:
+		InterfaceHandler(ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray) {
+
+			// Count structure types
+			int structureCounts[PTMAlgorithm::NUM_STRUCTURE_TYPES] = {0};
+			for (auto structureType: structuresArray) {
+				structureCounts[(int)structureType]++;
+			}
+
+			parent_fcc = structureCounts[(size_t)PTMAlgorithm::FCC] >= structureCounts[(size_t)PTMAlgorithm::HCP];
+			parent_dcub = structureCounts[(size_t)PTMAlgorithm::CUBIC_DIAMOND] >= structureCounts[(size_t)PTMAlgorithm::HEX_DIAMOND];
+
+			// Set structure targets (i.e. which way a structure will flip)
+			if (parent_fcc) {
+				target[(size_t)PTMAlgorithm::HCP] = PTMAlgorithm::FCC;
+			}
+			else {
+				target[(size_t)PTMAlgorithm::FCC] = PTMAlgorithm::HCP;
+			}
+
+			if (parent_dcub) {
+				target[(size_t)PTMAlgorithm::HEX_DIAMOND] = PTMAlgorithm::CUBIC_DIAMOND;
+			}
+			else {
+				target[(size_t)PTMAlgorithm::CUBIC_DIAMOND] = PTMAlgorithm::HEX_DIAMOND;
+			}
+		}
+
+		PTMAlgorithm::StructureType parent_phase(PTMAlgorithm::StructureType defectStructureType) {
+			return target[(size_t)defectStructureType];
+		}
+
+		bool reorder_bond(NeighborBond& bond, std::vector<PTMAlgorithm::StructureType>& _adjustedStructureTypes) {
+			auto a = bond.a;
+			auto b = bond.b;
+			auto sa = _adjustedStructureTypes[a];
+			auto sb = _adjustedStructureTypes[b];
+
+			// We want ordering of (a, b) to be (parent phase, defect phase)
+			bool flipped = false;
+			if (sa == PTMAlgorithm::FCC && sb == PTMAlgorithm::HCP) {
+				flipped |= !parent_fcc;
+			}
+			else if (sa == PTMAlgorithm::HCP && sb == PTMAlgorithm::FCC) {
+				flipped |= parent_fcc;
+			}
+			else if (sa == PTMAlgorithm::CUBIC_DIAMOND && sb == PTMAlgorithm::HEX_DIAMOND) {
+				flipped |= !parent_dcub;
+			}
+			else if (sa == PTMAlgorithm::HEX_DIAMOND && sb == PTMAlgorithm::CUBIC_DIAMOND) {
+				flipped |= parent_dcub;
+			}
+			else {
+				return false;
+			}
+
+			if (flipped) {
+				std::swap(a, b);
+			}
+
+			bond.a = a;
+			bond.b = b;
+			return true;
+		}
+
+	private:
+		bool parent_fcc;
+		bool parent_dcub;
+		PTMAlgorithm::StructureType target[PTMAlgorithm::NUM_STRUCTURE_TYPES];
+	};
+
 	/// Constructor.
 	GrainSegmentationEngine1(
 			ParticleOrderingFingerprint fingerprint, 
@@ -293,7 +366,7 @@ private:
 	bool createNeighborBonds();
 
 	/// Rotates hexagonal atoms (HCP and hex-diamond) to an equivalent cubic orientation.
-	bool rotateHexagonalAtoms();
+	bool rotateInterfaceAtoms();
 
 	/// Calculates the disorientation angle for each graph edge (i.e. bond).
 	bool computeDisorientationAngles();
@@ -324,15 +397,15 @@ private:
 		if (a == b) return true;
 		if (!_handleBoundaries) return false;
 
-        if (a == PTMAlgorithm::FCC && b == PTMAlgorithm::HCP) return true;
-        if (a == PTMAlgorithm::HCP && b == PTMAlgorithm::FCC) return true;
-        if (a == PTMAlgorithm::CUBIC_DIAMOND && b == PTMAlgorithm::HEX_DIAMOND) return true;
-        if (a == PTMAlgorithm::HEX_DIAMOND && b == PTMAlgorithm::CUBIC_DIAMOND) return true;
-        return false;
+		if (a == PTMAlgorithm::FCC && b == PTMAlgorithm::HCP) return true;
+		if (a == PTMAlgorithm::HCP && b == PTMAlgorithm::FCC) return true;
+		if (a == PTMAlgorithm::CUBIC_DIAMOND && b == PTMAlgorithm::HEX_DIAMOND) return true;
+		if (a == PTMAlgorithm::HEX_DIAMOND && b == PTMAlgorithm::CUBIC_DIAMOND) return true;
+		return false;
 	}
 
-	bool interface_cubic_hex(NeighborBond& bond, bool parent_fcc, bool parent_dcub,
-								FloatType& disorientation, Quaternion& output, size_t& index);
+	bool interface_cubic_hex(NeighborBond& bond, InterfaceHandler& interfaceHandler,
+						     Quaternion& output);
 
 	// Converts a disorientation to an edge weight for Node Pair Sampling algorithm
 	static FloatType calculateGraphWeight(FloatType disorientation) {
