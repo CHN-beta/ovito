@@ -147,7 +147,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 		throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
-
+	if(isCanceled())
+		return;
+		
 	// Convert 3x3 'Tensor' property into particle orientation.
 	if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
 		if(tensorProperty->dataType() == PropertyObject::Float && tensorProperty->componentCount() == 9) {
@@ -158,6 +160,8 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 			}
 		}
 	}
+	if(isCanceled())
+		return;
 
 	// Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
 	if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {

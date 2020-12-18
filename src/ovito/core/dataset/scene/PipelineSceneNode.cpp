@@ -218,7 +218,7 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 {
 	if(field == PROPERTY_FIELD(dataProvider)) {
 		// Reset caches when the pipeline data source is replaced.
-		invalidatePipelineCache(TimeInterval::empty(), true);
+		invalidatePipelineCache(TimeInterval::empty(), false);
 
 		// The animation length and the title of the pipeline might have changed.
 		if(!isBeingLoaded()) {

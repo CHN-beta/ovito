@@ -228,6 +228,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 		throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
+	if(isCanceled())
+		return;
 
 	// Add cell data arrays to mesh.
 	if(numberOfPolys == numberOfCells) {
