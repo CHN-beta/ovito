@@ -47,7 +47,7 @@ class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTP PolyData File"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView VTP PolyData Mesh File"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

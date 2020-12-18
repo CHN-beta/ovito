@@ -14,14 +14,23 @@ ComboBox {
         highlighted: control.highlightedIndex === index
         hoverEnabled: control.hoverEnabled
 	}
-	
-	indicator: Image {
-		id: image
-		x: control.width - width - control.rightPadding
-		y: control.topPadding + (control.availableHeight - height) / 2
-		width: 20
-		height: 20
-		source: "qrc:/gui/ui/arrow_down.svg"
+
+	// A custom drop-down indicator for the combobox.
+	// It is only needed when using Qt5. For Qt6 we can rely on the built-in indicator.
+	Component {
+		id: indicatorComponent
+		Image {
+			id: image
+			x: control.width - width - control.rightPadding
+			y: control.topPadding + (control.availableHeight - height) / 2
+			width: 20
+			height: 20
+			source: "qrc:/gui/ui/arrow_down.svg"
+		}
+	}
+	// Conditionally activate the drop-down indicator when using Qt5: 
+	indicator: Loader {
+		sourceComponent: QT_VERSION < 0x060000 ? indicatorComponent : undefined
 	}
 
 /*

@@ -192,4 +192,3 @@ private:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerClassPtr);
-Q_DECLARE_TYPEINFO(Ovito::StdObj::PropertyContainerClassPtr, Q_PRIMITIVE_TYPE);

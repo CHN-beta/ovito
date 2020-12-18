@@ -84,10 +84,10 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
 	gridlayout = new QGridLayout();
 	gridlayout->addWidget(new QLabel(tr("Average:"), rollout), 0, 0);
 	VariantComboBoxParameterUI* averagingDirectionPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::averagingDirection));
-    averagingDirectionPUI->comboBox()->addItem("radial", QVariant::fromValue(SpatialCorrelationFunctionModifier::RADIAL));
-    averagingDirectionPUI->comboBox()->addItem("cell vector 1", QVariant::fromValue(SpatialCorrelationFunctionModifier::CELL_VECTOR_1));
-    averagingDirectionPUI->comboBox()->addItem("cell vector 2", QVariant::fromValue(SpatialCorrelationFunctionModifier::CELL_VECTOR_2));
-    averagingDirectionPUI->comboBox()->addItem("cell vector 3", QVariant::fromValue(SpatialCorrelationFunctionModifier::CELL_VECTOR_3));
+    averagingDirectionPUI->comboBox()->addItem("radial", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::RADIAL));
+    averagingDirectionPUI->comboBox()->addItem("cell vector 1", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::CELL_VECTOR_1));
+    averagingDirectionPUI->comboBox()->addItem("cell vector 2", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::CELL_VECTOR_2));
+    averagingDirectionPUI->comboBox()->addItem("cell vector 3", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::CELL_VECTOR_3));
     gridlayout->addWidget(averagingDirectionPUI->comboBox(), 0, 1);
     layout->addLayout(gridlayout);
 #endif
@@ -119,8 +119,8 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
 	QGridLayout *normalizeRealSpaceLayout = new QGridLayout();
 	normalizeRealSpaceLayout->addWidget(new QLabel(tr("Type of plot:"), rollout), 0, 0);
 	VariantComboBoxParameterUI* normalizeRealSpacePUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpace));
-    normalizeRealSpacePUI->comboBox()->addItem("Value correlation", QVariant::fromValue(SpatialCorrelationFunctionModifier::VALUE_CORRELATION));
-    normalizeRealSpacePUI->comboBox()->addItem("Difference correlation", QVariant::fromValue(SpatialCorrelationFunctionModifier::DIFFERENCE_CORRELATION));
+    normalizeRealSpacePUI->comboBox()->addItem("Value correlation", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::VALUE_CORRELATION));
+    normalizeRealSpacePUI->comboBox()->addItem("Difference correlation", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::DIFFERENCE_CORRELATION));
     normalizeRealSpaceLayout->addWidget(normalizeRealSpacePUI->comboBox(), 0, 1);
 
 	BooleanParameterUI* normalizeRealSpaceByRDFUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpaceByRDF));

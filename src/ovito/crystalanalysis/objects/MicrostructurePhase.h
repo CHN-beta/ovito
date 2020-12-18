@@ -47,7 +47,7 @@ public:
 		Planar,			///< Planar interface, grain boundary, stacking fault, etc.
 		Pointlike		///< Zero-dimensional defect
 	};
-	Q_ENUMS(Dimensionality);
+	Q_ENUM(Dimensionality);
 
 	/// The type of symmetry of the crystal lattice.
 	enum CrystalSymmetryClass {
@@ -55,7 +55,7 @@ public:
 		CubicSymmetry,		///< Used for cubic crystals like FCC, BCC, diamond.
 		HexagonalSymmetry	///< Used for hexagonal crystals like HCP, hexagonal diamond.
 	};
-	Q_ENUMS(CrystalSymmetryClass);
+	Q_ENUM(CrystalSymmetryClass);
 
 public:
 
@@ -101,8 +101,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::CrystalAnalysis::MicrostructurePhase::Dimensionality);
-Q_DECLARE_TYPEINFO(Ovito::CrystalAnalysis::MicrostructurePhase::Dimensionality, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(Ovito::CrystalAnalysis::MicrostructurePhase::CrystalSymmetryClass);
-Q_DECLARE_TYPEINFO(Ovito::CrystalAnalysis::MicrostructurePhase::CrystalSymmetryClass, Q_PRIMITIVE_TYPE);

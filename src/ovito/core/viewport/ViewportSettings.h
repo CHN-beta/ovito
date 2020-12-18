@@ -52,7 +52,7 @@ public:
 
 		NUMBER_OF_COLORS
 	};
-	Q_ENUMS(ViewportColor);
+	Q_ENUM(ViewportColor);
 
 	/// Selects the "up" direction in the viewports.
 	enum UpDirection {
@@ -60,7 +60,7 @@ public:
 		Y_AXIS, ///< Makes the Y axis the vertical axis
 		Z_AXIS, ///< Makes the Z axis the vertical axis (the default)
 	};
-	Q_ENUMS(UpDirection);
+	Q_ENUM(UpDirection);
 
 public:
 
@@ -168,8 +168,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::ViewportSettings::ViewportColor);
-Q_DECLARE_METATYPE(Ovito::ViewportSettings::UpDirection);
-Q_DECLARE_TYPEINFO(Ovito::ViewportSettings::ViewportColor, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::ViewportSettings::UpDirection, Q_PRIMITIVE_TYPE);

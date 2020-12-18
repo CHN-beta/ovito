@@ -296,4 +296,3 @@ private: \
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::OvitoClassPtr);
-Q_DECLARE_TYPEINFO(Ovito::OvitoClassPtr, Q_PRIMITIVE_TYPE);

@@ -50,7 +50,7 @@ public:
 		CUSTOM_INTERVAL,	///< Renders a user-defined time interval.
 		CUSTOM_FRAME,		///< Renders a specific animation frame.
 	};
-	Q_ENUMS(RenderingRangeType);
+	Q_ENUM(RenderingRangeType);
 
 public:
 
@@ -130,6 +130,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::RenderSettings::RenderingRangeType);
-Q_DECLARE_TYPEINFO(Ovito::RenderSettings::RenderingRangeType, Q_PRIMITIVE_TYPE);

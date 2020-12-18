@@ -56,7 +56,6 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	QVBoxLayout* sublayout1 = new QVBoxLayout(structureBox);
 	sublayout1->setContentsMargins(4,4,4,4);
 	VariantComboBoxParameterUI* crystalStructureUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::inputCrystalStructure));
-
 	crystalStructureUI->comboBox()->addItem(tr("Face-centered cubic (FCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_FCC));
 	crystalStructureUI->comboBox()->addItem(tr("Hexagonal close-packed (HCP)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HCP));
 	crystalStructureUI->comboBox()->addItem(tr("Body-centered cubic (BCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_BCC));

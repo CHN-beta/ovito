@@ -45,7 +45,7 @@ public:
 		FlatArrows,
 		SolidArrows
 	};
-	Q_ENUMS(TripodStyle);
+	Q_ENUM(TripodStyle);
 
 public:
 
@@ -158,6 +158,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::CoordinateTripodOverlay::TripodStyle);
-Q_DECLARE_TYPEINFO(Ovito::CoordinateTripodOverlay::TripodStyle, Q_PRIMITIVE_TYPE);

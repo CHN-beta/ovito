@@ -34,11 +34,7 @@ ELSE()
 ENDIF()
 
 # Builds the main executable of the application.
-IF(NOT OVITO_QML_GUI)
-	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES}) # QWidget based version.
-ELSE()
-	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} MainQml.cpp ${WINDOWS_RESOURCES}) # QML based version.
-ENDIF()
+ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES})
 
 # The executable depends on the core module, of course.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)

@@ -93,7 +93,7 @@ public:
 		ResetScene,				///< Clear the contents of the current scene first before importing the data.
 		DontAddToScene			///< Do not add the imported data to the scene.
 	};
-	Q_ENUMS(ImportMode);
+	Q_ENUM(ImportMode);
 
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.
@@ -133,6 +133,3 @@ public:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::FileImporter::ImportMode);
-Q_DECLARE_TYPEINFO(Ovito::FileImporter::ImportMode, Q_PRIMITIVE_TYPE);

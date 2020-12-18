@@ -277,6 +277,19 @@ void ViewportWindow::renderNow()
 }
 
 /******************************************************************************
+* Makes the OpenGL context used by the viewport window for rendering the current context.
+******************************************************************************/
+void ViewportWindow::makeOpenGLContextCurrent() 
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	OVITO_ASSERT(window()->rendererInterface()->graphicsApi() == QSGRendererInterface::OpenGL);
+
+#else
+	window()->openglContext()->makeCurrent(window()); 
+#endif
+}
+
+/******************************************************************************
 * Renders the contents of the viewport window.
 ******************************************************************************/
 void ViewportWindow::renderViewport()

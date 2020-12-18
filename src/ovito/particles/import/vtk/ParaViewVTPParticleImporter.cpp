@@ -24,16 +24,16 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/grid/io/ParaViewVTIGridImporter.h>
-#include "VTPFileParticleImporter.h"
+#include "ParaViewVTPParticleImporter.h"
 
 namespace Ovito { namespace Particles {
 
-IMPLEMENT_OVITO_CLASS(VTPFileParticleImporter);
+IMPLEMENT_OVITO_CLASS(ParaViewVTPParticleImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
 ******************************************************************************/
-bool VTPFileParticleImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
+bool ParaViewVTPParticleImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = file.createIODevice();
@@ -71,7 +71,7 @@ bool VTPFileParticleImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-void VTPFileParticleImporter::FrameLoader::loadFile()
+void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading ParaView VTP particles file %1").arg(fileHandle().toString()));
 
@@ -180,7 +180,7 @@ void VTPFileParticleImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data 
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* VTPFileParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent)
+PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent)
 {
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");

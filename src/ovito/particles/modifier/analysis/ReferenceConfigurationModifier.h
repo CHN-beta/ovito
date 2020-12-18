@@ -59,7 +59,7 @@ public:
 		TO_REFERENCE_CELL,
 		TO_CURRENT_CELL
 	};
-	Q_ENUMS(AffineMappingType);
+	Q_ENUM(AffineMappingType);
 
 public:
 
@@ -202,6 +202,3 @@ public:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::ReferenceConfigurationModifier::AffineMappingType);
-Q_DECLARE_TYPEINFO(Ovito::Particles::ReferenceConfigurationModifier::AffineMappingType, Q_PRIMITIVE_TYPE);

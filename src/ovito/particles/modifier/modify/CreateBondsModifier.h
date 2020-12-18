@@ -72,7 +72,7 @@ public:
 		UniformCutoff,		///< A single cutoff radius for all particles.
 		PairCutoff,			///< Individual cutoff radius for each pair of particle types.
 	};
-	Q_ENUMS(CutoffMode);
+	Q_ENUM(CutoffMode);
 
 	/// The container type used to store the pair-wise cutoffs.
 	using PairwiseCutoffsList = QMap<QPair<QVariant,QVariant>, FloatType>;
@@ -190,6 +190,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::CreateBondsModifier::CutoffMode);
-Q_DECLARE_TYPEINFO(Ovito::Particles::CreateBondsModifier::CutoffMode, Q_PRIMITIVE_TYPE);

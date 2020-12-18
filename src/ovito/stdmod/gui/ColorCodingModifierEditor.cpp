@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,6 +33,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/oo/OvitoClass.h>
 #include "ColorCodingModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -81,6 +82,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 		if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
 			continue;
 		colorGradientList->addItem(iconFromColorMapClass(clazz), clazz->displayName(), QVariant::fromValue(clazz));
+		OVITO_ASSERT(colorGradientList->findData(QVariant::fromValue(clazz)) >= 0);
 	}
 	colorGradientList->insertSeparator(colorGradientList->count());
 	colorGradientList->addItem(tr("Load custom color map..."));

@@ -540,8 +540,4 @@ using Rotation = RotationT<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Rotation);
-Q_DECLARE_METATYPE(Ovito::Rotation*);
 Q_DECLARE_TYPEINFO(Ovito::Rotation, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Rotation*, Q_PRIMITIVE_TYPE);
-
-

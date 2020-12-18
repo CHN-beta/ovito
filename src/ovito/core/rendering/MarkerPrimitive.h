@@ -71,5 +71,3 @@ private:
 
 Q_DECLARE_METATYPE(Ovito::MarkerPrimitive::MarkerShape);
 Q_DECLARE_TYPEINFO(Ovito::MarkerPrimitive::MarkerShape, Q_PRIMITIVE_TYPE);
-
-

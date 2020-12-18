@@ -497,8 +497,4 @@ using Quaternion = QuaternionT<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Quaternion);
-Q_DECLARE_METATYPE(Ovito::Quaternion*);
 Q_DECLARE_TYPEINFO(Ovito::Quaternion, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Quaternion*, Q_PRIMITIVE_TYPE);
-
-

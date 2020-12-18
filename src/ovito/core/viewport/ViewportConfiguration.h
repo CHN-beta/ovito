@@ -48,7 +48,7 @@ public:
 									///< If there is no selection, use scene bounding box.
 		ORBIT_USER_DEFINED			///< Use the orbit center set by the user.
 	};
-	Q_ENUMS(OrbitCenterMode);
+	Q_ENUM(OrbitCenterMode);
 
 public:
 
@@ -194,6 +194,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::ViewportConfiguration::OrbitCenterMode);
-Q_DECLARE_TYPEINFO(Ovito::ViewportConfiguration::OrbitCenterMode, Q_PRIMITIVE_TYPE);

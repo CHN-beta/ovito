@@ -49,7 +49,7 @@ public:
 		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
 		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// The position mode for the arrows.
 	enum ArrowPosition {
@@ -57,7 +57,7 @@ public:
 		Center,
 		Head
 	};
-	Q_ENUMS(ArrowPosition);
+	Q_ENUM(ArrowPosition);
 
 public:
 
@@ -160,6 +160,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::VectorVis::ArrowPosition);
-Q_DECLARE_TYPEINFO(Ovito::Particles::VectorVis::ArrowPosition, Q_PRIMITIVE_TYPE);

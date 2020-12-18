@@ -52,8 +52,8 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
 	// Shading mode.
 	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue(ArrowPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue(ArrowPrimitive::FlatShading));
+	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)ArrowPrimitive::NormalShading));
+	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)ArrowPrimitive::FlatShading));
 	layout->addWidget(new QLabel(tr("Shading mode:")), row, 0);
 	layout->addWidget(shadingModeUI->comboBox(), row++, 1);
 
@@ -68,9 +68,9 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	layout->addLayout(arrowWidthUI->createFieldLayout(), row++, 1);
 
 	VariantComboBoxParameterUI* arrowPositionUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::arrowPosition));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_base.png"), tr("Base"), QVariant::fromValue(VectorVis::Base));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_center.png"), tr("Center"), QVariant::fromValue(VectorVis::Center));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_head.png"), tr("Head"), QVariant::fromValue(VectorVis::Head));
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_base.png"), tr("Base"), QVariant::fromValue((int)VectorVis::Base));
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_center.png"), tr("Center"), QVariant::fromValue((int)VectorVis::Center));
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_head.png"), tr("Head"), QVariant::fromValue((int)VectorVis::Head));
 	layout->addWidget(new QLabel(tr("Alignment:")), row, 0);
 	layout->addWidget(arrowPositionUI->comboBox(), row++, 1);
 

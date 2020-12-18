@@ -71,7 +71,7 @@ public:
 		BarChart,
 		Scatter
 	};
-	Q_ENUMS(PlotMode);
+	Q_ENUM(PlotMode);
 
 	/// Constructor.
 	Q_INVOKABLE DataTable(DataSet* dataset, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
@@ -120,5 +120,3 @@ using DataTablePropertyReference = TypedPropertyReference<DataTable>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::DataTablePropertyReference);
-Q_DECLARE_METATYPE(Ovito::StdObj::DataTable::PlotMode);
-Q_DECLARE_TYPEINFO(Ovito::StdObj::DataTable::PlotMode, Q_PRIMITIVE_TYPE);

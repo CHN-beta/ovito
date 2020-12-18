@@ -83,7 +83,7 @@ public:
 		AtomStyle_Wavepacket,
 		AtomStyle_Hybrid,
 	};
-	Q_ENUMS(LAMMPSAtomStyle);
+	Q_ENUM(LAMMPSAtomStyle);
 
 public:
 
@@ -144,6 +144,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::LAMMPSDataImporter::LAMMPSAtomStyle);
-Q_DECLARE_TYPEINFO(Ovito::Particles::LAMMPSDataImporter::LAMMPSAtomStyle, Q_PRIMITIVE_TYPE);

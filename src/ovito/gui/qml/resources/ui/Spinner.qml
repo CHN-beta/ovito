@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.15
 import QtQuick.Controls 2.5
 
 Control {
@@ -56,7 +56,7 @@ Control {
 			\li It allows for scientific notation entry even if std. notation is specified (and vice versa) and will then re-format the entry as necessary after editing is finished.
       \li Could also be used with a custom input mask, as demonstrated in tests.qml
 		To use it, just set \c validator: regExpValidator  */
-	readonly property QtObject regExpValidator: RegExpValidator { regExp: control.doubleValidationRegEx(); }
+	readonly property QtObject regExpValidator: RegularExpressionValidator { regularExpression: control.doubleValidationRegEx(); }
 
 	// signals
 

@@ -87,7 +87,7 @@ public:
 	virtual void renderGui(SceneRenderer* renderer) override;
 
 	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() override { window()->openglContext()->makeCurrent(window()); }
+	virtual void makeOpenGLContextCurrent() override;
 
 	/// \brief Determines the object that is visible under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;

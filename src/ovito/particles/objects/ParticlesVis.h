@@ -52,7 +52,7 @@ public:
 		Cylinder,
 		Spherocylinder
 	};
-	Q_ENUMS(ParticleShape);
+	Q_ENUM(ParticleShape);
 
 public:
 
@@ -163,6 +163,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::ParticlesVis::ParticleShape);
-Q_DECLARE_TYPEINFO(Ovito::Particles::ParticlesVis::ParticleShape, Q_PRIMITIVE_TYPE);

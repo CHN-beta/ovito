@@ -38,7 +38,9 @@ OVITO_STANDARD_PLUGIN(NetCDFPlugin
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

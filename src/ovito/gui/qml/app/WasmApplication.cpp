@@ -92,12 +92,18 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 
 #else
 
-	// On desktop platforms, enable high-resolution toolbar icons for high-dpi screens.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	// Enable high-resolution toolbar icons on hi-dpi screens.
 	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
 	// Request single-thread Qt Quick render loop.
 	qputenv("QSG_RENDER_LOOP", "basic");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	// Request OpenGL-based Qt Quick implementation.
+	QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+#endif
 
 	// Create a QtWidget application object.
 	new QApplication(argc, argv);
@@ -131,6 +137,8 @@ bool WasmApplication::startupApplication()
 
 	// Initialize the Qml engine.
 	_qmlEngine = new QQmlApplicationEngine(this);
+	// Pass Qt version to QML code:
+	_qmlEngine->rootContext()->setContextProperty("QT_VERSION", QT_VERSION);
 	_qmlEngine->load(QUrl(QStringLiteral("qrc:/gui/main.qml")));
 	if(_qmlEngine->rootObjects().empty())
 		return false;

@@ -325,8 +325,4 @@ using SymmetricTensor2 = SymmetricTensor2T<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::SymmetricTensor2);
-Q_DECLARE_METATYPE(Ovito::SymmetricTensor2*);
 Q_DECLARE_TYPEINFO(Ovito::SymmetricTensor2, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::SymmetricTensor2*, Q_PRIMITIVE_TYPE);
-
-

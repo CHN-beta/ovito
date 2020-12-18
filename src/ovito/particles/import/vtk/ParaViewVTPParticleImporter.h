@@ -31,9 +31,9 @@
 namespace Ovito { namespace Particles {
 
 /**
- * \brief File parser for reading particle data from a ParaView VTP (PolyData) file.
+ * \brief File reader for point-like particle data from a ParaView VTP (PolyData) file.
  */
-class OVITO_PARTICLES_EXPORT VTPFileParticleImporter : public ParticleImporter
+class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImporter
 {
 	/// Defines a metaclass specialization for this importer type.
 	class OOMetaClass : public ParticleImporter::OOMetaClass
@@ -46,19 +46,19 @@ class OVITO_PARTICLES_EXPORT VTPFileParticleImporter : public ParticleImporter
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTP Point Data File"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView VTP PolyData Particles File"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};
 
-	OVITO_CLASS_META(VTPFileParticleImporter, OOMetaClass)
+	OVITO_CLASS_META(ParaViewVTPParticleImporter, OOMetaClass)
 	Q_OBJECT
 
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE VTPFileParticleImporter(DataSet *dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE ParaViewVTPParticleImporter(DataSet *dataset) : ParticleImporter(dataset) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTP"); }

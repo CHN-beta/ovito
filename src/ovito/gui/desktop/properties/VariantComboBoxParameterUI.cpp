@@ -86,7 +86,7 @@ void VariantComboBoxParameterUI::updateUI()
         }
         else if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(*propertyField());
-            OVITO_ASSERT_MSG(val.isValid(), "VariantComboBoxParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
+            OVITO_ASSERT_MSG(val.isValid(), "VariantComboBoxParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
         }
         else return;
         comboBox()->setCurrentIndex(comboBox()->findData(val));
@@ -121,7 +121,7 @@ void VariantComboBoxParameterUI::updatePropertyValue()
 
             if(isQtPropertyUI()) {
                 if(!mutableEditObject()->setProperty(propertyName(), newValue)) {
-                    OVITO_ASSERT_MSG(false, "VariantComboBoxParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+                    OVITO_ASSERT_MSG(false, "VariantComboBoxParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
             else if(isPropertyFieldUI()) {
@@ -134,4 +134,3 @@ void VariantComboBoxParameterUI::updatePropertyValue()
 }
 
 }	// End of namespace
-

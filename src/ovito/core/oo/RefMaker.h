@@ -351,4 +351,3 @@ private:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(const Ovito::RefMakerClass*);
-Q_DECLARE_TYPEINFO(const Ovito::RefMakerClass*, Q_PRIMITIVE_TYPE);

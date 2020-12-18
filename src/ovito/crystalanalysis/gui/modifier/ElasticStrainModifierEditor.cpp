@@ -54,7 +54,6 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
 	sublayout1->setSpacing(4);
 	sublayout1->setColumnStretch(1,1);
 	VariantComboBoxParameterUI* crystalStructureUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::inputCrystalStructure));
-
 	crystalStructureUI->comboBox()->addItem(tr("Face-centered cubic (FCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_FCC));
 	crystalStructureUI->comboBox()->addItem(tr("Hexagonal close-packed (HCP)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HCP));
 	crystalStructureUI->comboBox()->addItem(tr("Body-centered cubic (BCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_BCC));

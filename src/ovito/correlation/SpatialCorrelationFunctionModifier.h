@@ -72,13 +72,13 @@ public:
 		CELL_VECTOR_3 = 2,
 		RADIAL = 3
 	};
-    Q_ENUMS(AveragingDirectionType);
+    Q_ENUM(AveragingDirectionType);
 
     enum NormalizationType {
 		VALUE_CORRELATION = 0,
 		DIFFERENCE_CORRELATION = 1
 	};
-    Q_ENUMS(NormalizationType);
+    Q_ENUM(NormalizationType);
 
 	/// Constructor.
 	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
@@ -321,8 +321,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::SpatialCorrelationFunctionModifier::AveragingDirectionType);
-Q_DECLARE_METATYPE(Ovito::Particles::SpatialCorrelationFunctionModifier::NormalizationType);
-Q_DECLARE_TYPEINFO(Ovito::Particles::SpatialCorrelationFunctionModifier::AveragingDirectionType, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Particles::SpatialCorrelationFunctionModifier::NormalizationType, Q_PRIMITIVE_TYPE);
