@@ -534,47 +534,31 @@ void CAImporter::FrameLoader::loadFile()
 
 		// Update structure catalog.
 		for(int i = 0; i < patterns.size(); i++) {
-			DataOORef<MicrostructurePhase> pattern;
-			if(dislocationNetwork->crystalStructures().size() > i+1) {
-				pattern = dislocationNetwork->makeMutable<MicrostructurePhase>(dislocationNetwork->crystalStructures()[i+1]);
-			}
-			else {
-				pattern = DataOORef<MicrostructurePhase>::create(dataset(), executionContext());
-				dislocationNetwork->addCrystalStructure(pattern);
-			}
-			if(pattern->shortName() != patterns[i].shortName)
-				pattern->setColor(patterns[i].color);
+			if(dislocationNetwork->structureByName(patterns[i].longName))
+				continue;
+
+			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create(dataset(), executionContext());
+			pattern->setColor(patterns[i].color);
 			pattern->setShortName(patterns[i].shortName);
 			pattern->setLongName(patterns[i].longName);
 			pattern->setDimensionality(patterns[i].type);
 			pattern->setNumericId(patterns[i].id);
 			pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
+			dislocationNetwork->addCrystalStructure(pattern);
 
-			// Update Burgers vector families.
+			// Add Burgers vector families.
 			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-				DataOORef<BurgersVectorFamily> family;
-				if(j < pattern->burgersVectorFamilies().size()) {
-					family = pattern->makeMutable<BurgersVectorFamily>(pattern->burgersVectorFamilies()[j]);
-				}
-				else {
-					family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());
-					pattern->addBurgersVectorFamily(family);
-				}
-				if(family->name() != patterns[i].burgersVectorFamilies[j].name)
-					family->setColor(patterns[i].burgersVectorFamilies[j].color);
+				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());
+				family->setColor(patterns[i].burgersVectorFamilies[j].color);
 				family->setName(patterns[i].burgersVectorFamilies[j].name);
 				family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
+				pattern->addBurgersVectorFamily(family);
 			}
-			// Remove excess families.
-			for(int j = pattern->burgersVectorFamilies().size() - 1; j >= patterns[i].burgersVectorFamilies.size(); j--)
-				pattern->removeBurgersVectorFamily(j);
-			// Make sure there is a default family.
+
+			// Make sure there always is a default family.
 			if(pattern->burgersVectorFamilies().empty())
 				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext()));
 		}
-		// Remove excess patterns from the catalog.
-		for(int i = dislocationNetwork->crystalStructures().size() - 1; i > patterns.size(); i--)
-			dislocationNetwork->removeCrystalStructure(i);
 	}
 
 	state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));

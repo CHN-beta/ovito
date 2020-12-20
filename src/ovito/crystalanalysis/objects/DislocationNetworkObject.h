@@ -59,7 +59,7 @@ public:
 	const std::vector<DislocationSegment*>& modifiableSegments() { return modifiableStorage()->segments(); }
 
 	/// Adds a new crystal structures to the list.
-	void addCrystalStructure(MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }
+	void addCrystalStructure(const MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }
 
 	/// Removes a crystal structure.
 	void removeCrystalStructure(int index) { _crystalStructures.remove(this, PROPERTY_FIELD(crystalStructures), index); }
@@ -72,8 +72,19 @@ public:
 		return nullptr;
 	}
 
+	/// Returns the crystal structure with the given name, or null if no such structure exists.
+	const MicrostructurePhase* structureByName(const QString& name) const {
+		for(const MicrostructurePhase* stype : crystalStructures())
+			if(stype->name() == name)
+				return stype;
+		return nullptr;
+	}
+
 	/// Returns whether this data object wants to be shown in the pipeline editor under the data source section.
 	virtual bool showInPipelineEditor() const override { return true; }
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 private:
 

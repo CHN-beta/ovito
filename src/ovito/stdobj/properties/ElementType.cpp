@@ -152,14 +152,14 @@ void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjec
 	if(const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy())) {
 		// The numeric ID of a type and some other attributes should never change.
 		OVITO_ASSERT(proxy->numericId() == self->numericId());
-		OVITO_ASSERT(proxy->enabled() == self->enabled());
 
-		if(proxy->name() != self->name() || proxy->color() != self->color()) {
+		if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
 			// Make this data object mutable first.
 			ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
 		
 			mutableSelf->setName(proxy->name());
 			mutableSelf->setColor(proxy->color());
+			mutableSelf->setEnabled(proxy->enabled());
 		}
 	}
 	else {

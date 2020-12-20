@@ -699,6 +699,7 @@ bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
 		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
+
 			// The user has modified one of the editable proxy objects attached to the data collection.
 			// Apply the changes made to the proxy objects to the actual data objects.
 			UndoSuspender noUndo(this);

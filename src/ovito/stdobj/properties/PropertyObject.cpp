@@ -941,7 +941,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
-		// Adopt the proxy object for the element types, which have already been created by
+		// Adopt the proxy objects corresponding to the element types, which have already been created by
 		// the recursive method.
 		for(const ElementType* type : self->elementTypes()) {
 			OVITO_ASSERT(type->editableProxy() != nullptr);
