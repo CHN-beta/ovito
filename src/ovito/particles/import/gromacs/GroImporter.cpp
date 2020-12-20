@@ -283,8 +283,8 @@ void GroImporter::FrameLoader::loadFile()
 
 		// Store parsed value in property arrays.
 		identifierProperty.set(atomIndex, atomNumber);
-		typeProperty.set(atomIndex, addNamedType(typeProperty.property(), QLatin1String(atomNameStart, atomNameEnd), ParticleType::OOClass())->numericId());
-		residueTypeProperty.set(atomIndex, addNamedType(residueTypeProperty.property(), QLatin1String(residueNameStart, residueNameEnd), ElementType::OOClass())->numericId());
+		typeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), typeProperty.property(), QLatin1String(atomNameStart, atomNameEnd))->numericId());
+		residueTypeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), residueTypeProperty.property(), QLatin1String(residueNameStart, residueNameEnd))->numericId());
 		residueNumberProperty.set(atomIndex, residueNumber);
 
 		// Parse atomic xyz coordinates.

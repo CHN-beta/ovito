@@ -64,7 +64,7 @@ ParticleType* StructureIdentificationModifier::createStructureType(int id, Parti
 	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), executionContext);
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-	stype->initializeType(ParticlesObject::StructureTypeProperty, executionContext);
+	stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext);
 	addStructureType(stype);
 	return stype;
 }

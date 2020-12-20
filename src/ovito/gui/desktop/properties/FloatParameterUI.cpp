@@ -58,8 +58,8 @@ void FloatParameterUI::updatePropertyValue()
 				ctrl->setCurrentFloatValue(spinner()->floatValue());
 		}
 		else if(isQtPropertyUI()) {
-			if(!mutableEditObject()->setProperty(propertyName(), spinner()->floatValue())) {
-				OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+			if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
+				OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 			}
 		}
 		else if(isPropertyFieldUI()) {

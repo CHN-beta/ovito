@@ -561,7 +561,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
 				// Create particle types.
 				for(int ptype : ConstPropertyAccess<int>(property)) {
-					addNumericType(property, ptype, {}, *elementTypeClass);
+					addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
 				}
 
 				// Since we created particle types on the go while reading the particles, the assigned particle type IDs

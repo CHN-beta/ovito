@@ -260,9 +260,9 @@ void POSCARImporter::FrameLoader::loadFile()
 	for(int atype = 1; atype <= atomCounts.size(); atype++) {
 		int typeId = atype;
 		if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
-			typeId = addNamedType(typeProperty.property(), atomTypeNames[atype-1], ParticleType::OOClass())->numericId();
+			typeId = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), atomTypeNames[atype-1])->numericId();
 		else
-			addNumericType(typeProperty.property(), atype, {}, ParticleType::OOClass());
+			addNumericType(ParticlesObject::OOClass(), typeProperty.property(), atype, {});
 		for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
 			*a = typeId;
 			if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,

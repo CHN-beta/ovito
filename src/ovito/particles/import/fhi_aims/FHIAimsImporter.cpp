@@ -129,7 +129,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
 						throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 					pos = cell * pos;
 				}
-				typeProperty[i] = addNamedType(typeProperty.property(), QLatin1String(atomTypeName), ParticleType::OOClass())->numericId();
+				typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), QLatin1String(atomTypeName))->numericId();
 				break;
 			}
 		}

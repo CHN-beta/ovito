@@ -122,9 +122,6 @@ public:
 	/// Changes the value of a non-animatable property field of the object being edited.
 	void changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue);
 
-	/// Returns the object being edited or a copy of the object which is safe to modify.
-	RefTarget* mutableEditObject();
-
 public Q_SLOTS:
 
 	/// \brief Sets the object being edited in this editor.
@@ -145,11 +142,6 @@ Q_SIGNALS:
 	///        event or if a new object has been loaded into editor via the setEditObject() method.
 	/// \sa editObject The object that has changed.
     void contentsChanged(Ovito::RefTarget* editObject);
-
-	/// \brief This signal is emitted by the editor of a DataObject with shared ownership in order to
-	///        request a replacement of the object with a mutable copy. The owner of the editor, for example
-	///        the parent editor, should handle the request.
-	void mutableDataObjectRequested(const Ovito::DataObject* dataObject);
 
 protected:
 

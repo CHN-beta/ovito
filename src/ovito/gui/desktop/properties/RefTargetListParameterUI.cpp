@@ -187,7 +187,6 @@ void RefTargetListParameterUI::openSubEditor()
 			}
 			if(subEditor()) {
 				subEditor()->initialize(editor()->container(), editor()->mainWindow(), _rolloutParams, editor());
-				connect(subEditor(), &PropertiesEditor::mutableDataObjectRequested, this, &RefTargetListParameterUI::makeSelectedDataObjectMutable);
 			}
 		}
 		if(subEditor()) {
@@ -240,27 +239,6 @@ int RefTargetListParameterUI::setSelectedObject(RefTarget* selObj)
 	}
 	_viewWidget->selectionModel()->clear();
 	return -1;
-}
-
-/******************************************************************************
-* This method handles requests from the sub-editor to replace the selected data object,
-* which has shared ownership, with a copy that is safe to modify.
-******************************************************************************/
-void RefTargetListParameterUI::makeSelectedDataObjectMutable(const DataObject* dataObject)
-{
-	OVITO_ASSERT(editor() != nullptr);
-	OVITO_ASSERT(dataObject == selectedObject());
-	OVITO_ASSERT(editObject()->hasReferenceTo(dataObject));
-	RefTarget* mutableParent = editor()->mutableEditObject();
-	OVITO_ASSERT(mutableParent->hasReferenceTo(dataObject));
-	if(!dataObject->isSafeToModify()) {
-		qDebug() << "RefTargetListParameterUI::makeSelectedDataObjectMutable: cloning shared data object" << dataObject;
-		DataOORef<DataObject> clone = DataOORef<DataObject>::makeCopy(dataObject);
-		DataObject* mutableDataObject = clone.get();
-		mutableParent->replaceReferencesTo(dataObject, std::move(clone));
-		clone.reset();
-		OVITO_ASSERT(mutableDataObject->isSafeToModify());
-	}
 }
 
 /******************************************************************************

@@ -86,13 +86,6 @@ public:
 		UndoableTransaction::handleExceptions(dataset()->undoStack(), operationLabel, std::forward<Function>(func));
 	}
 
-	/// Returns the object being edited or a copy of the object which is safe to modify.
-	RefTarget* mutableEditObject() {
-		RefTarget* obj = editor()->mutableEditObject();
-		OVITO_ASSERT(editObject() == obj);
-		return obj;
-	}
-
 public:
 
     Q_PROPERTY(Ovito::RefTarget* editObject READ editObject);

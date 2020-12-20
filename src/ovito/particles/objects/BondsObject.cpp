@@ -198,6 +198,31 @@ void BondsObject::OOMetaClass::initialize()
 }
 
 /******************************************************************************
+* Returns the default color for a numeric type ID.
+******************************************************************************/
+Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+{
+	if(property.type() == BondsObject::TypeProperty) {
+
+		// Initial standard colors assigned to new bond types:
+		static const Color defaultTypeColors[] = {
+			Color(1.0,  1.0,  0.0), // 0
+			Color(0.7,  0.0,  1.0), // 1
+			Color(0.2,  1.0,  1.0), // 2
+			Color(1.0,  0.4,  1.0), // 3
+			Color(0.4,  1.0,  0.4), // 4
+			Color(1.0,  0.4,  0.4), // 5
+			Color(0.4,  0.4,  1.0), // 6
+			Color(1.0,  1.0,  0.7), // 7
+			Color(0.97, 0.97, 0.97) // 8
+		};
+		return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+	}
+
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
+}
+
+/******************************************************************************
 * Returns the index of the element that was picked in a viewport.
 ******************************************************************************/
 std::pair<size_t, ConstDataObjectPath> BondsObject::OOMetaClass::elementFromPickResult(const ViewportPickResult& pickResult) const

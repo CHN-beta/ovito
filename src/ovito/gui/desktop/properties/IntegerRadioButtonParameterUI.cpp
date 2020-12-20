@@ -169,8 +169,8 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 					}
 				}
 				else if(isQtPropertyUI()) {
-					if(!mutableEditObject()->setProperty(propertyName(), id)) {
-						OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					if(!editObject()->setProperty(propertyName(), id)) {
+						OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 					}
 				}
 				else if(isPropertyFieldUI()) {

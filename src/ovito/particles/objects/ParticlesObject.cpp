@@ -825,7 +825,7 @@ void ParticlesObject::OOMetaClass::initialize()
 	registerStandardProperty(KineticEnergyProperty, tr("Kinetic Energy"), PropertyObject::Float, emptyList);
 	registerStandardProperty(TotalEnergyProperty, tr("Total Energy"), PropertyObject::Float, emptyList);
 	registerStandardProperty(RadiusProperty, tr("Radius"), PropertyObject::Float, emptyList, nullptr, tr("Radii"));
-	registerStandardProperty(StructureTypeProperty, tr("Structure Type"), PropertyObject::Int, emptyList, &ParticleType::OOClass(), tr("Structure types"));
+	registerStandardProperty(StructureTypeProperty, tr("Structure Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Structure types"));
 	registerStandardProperty(IdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList, nullptr, tr("Particle identifiers"));
 	registerStandardProperty(StressTensorProperty, tr("Stress Tensor"), PropertyObject::Float, symmetricTensorList);
 	registerStandardProperty(StrainTensorProperty, tr("Strain Tensor"), PropertyObject::Float, symmetricTensorList);
@@ -857,6 +857,33 @@ void ParticlesObject::OOMetaClass::initialize()
 	registerStandardProperty(NucleotideAxisProperty, tr("Nucleotide Axis"), PropertyObject::Float, xyzList);
 	registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), PropertyObject::Float, xyzList);
 	registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), PropertyObject::Float, QStringList() << "Phi" << "Theta");
+}
+
+/******************************************************************************
+* Returns the default color for a numeric type ID.
+******************************************************************************/
+Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+{
+	if(property.type() == ParticlesObject::TypeProperty) {
+		for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
+			if(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(predefType)) == typeName)
+				return ParticleType::getPredefinedParticleTypeColor(static_cast<ParticleType::PredefinedParticleType>(predefType));
+		}
+
+		// Sometimes atom type names have additional letters/numbers appended.
+		if(typeName.length() > 1 && typeName.length() <= 5) {
+			return ElementType::getDefaultColor(property, typeName.left(typeName.length() - 1), numericTypeId, executionContext);
+		}
+	}
+	else if(property.type() == ParticlesObject::StructureTypeProperty) {
+		for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; predefType++) {
+			if(ParticleType::getPredefinedStructureTypeName(static_cast<ParticleType::PredefinedStructureType>(predefType)) == typeName)
+				return ParticleType::getPredefinedStructureTypeColor(static_cast<ParticleType::PredefinedStructureType>(predefType));
+		}
+		return Color(1,1,1);
+	}
+
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 }
 
 /******************************************************************************

@@ -22,7 +22,8 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
@@ -33,10 +34,12 @@ DEFINE_PROPERTY_FIELD(ElementType, numericId);
 DEFINE_PROPERTY_FIELD(ElementType, color);
 DEFINE_PROPERTY_FIELD(ElementType, name);
 DEFINE_PROPERTY_FIELD(ElementType, enabled);
+DEFINE_PROPERTY_FIELD(ElementType, ownerProperty);
 SET_PROPERTY_FIELD_LABEL(ElementType, numericId, "Id");
 SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");
 SET_PROPERTY_FIELD_LABEL(ElementType, name, "Name");
 SET_PROPERTY_FIELD_LABEL(ElementType, enabled, "Enabled");
+SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 
 /******************************************************************************
 * Constructs a new ElementType.
@@ -49,63 +52,92 @@ ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
 }
 
 /******************************************************************************
-* Initializes the element type's attributes to standard values.
+* Initializes the element type to default parameter values.
 ******************************************************************************/
-void ElementType::initializeType(int propertyType, ExecutionContext executionContext)
+void ElementType::initializeType(const PropertyReference& property, ExecutionContext executionContext)
 {
-	setColor(getDefaultColor(propertyType, nameOrNumericId(), numericId(), executionContext));
+	OVITO_ASSERT(!property.isNull());
+
+	// Remember the kind of typed property this type belongs to.
+	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
+
+	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
-* Returns the default color for a numeric type ID.
+* Returns the QSettings path for storing or accessing the user-defined 
+* default values of some ElementType parameter.
 ******************************************************************************/
-const Color& ElementType::getDefaultColorForId(int typeClass, int typeId)
+QString ElementType::getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName)
 {
-	// Palette of standard colors initially assigned to new element types:
-	static const Color defaultTypeColors[] = {
-		Color(0.97, 0.97, 0.97),// 0
-		Color(1.0,  0.4,  0.4), // 1
-		Color(0.4,  0.4,  1.0), // 2
-		Color(1.0,  1.0,  0.0), // 3
-		Color(1.0,  0.4,  1.0), // 4
-		Color(0.4,  1.0,  0.2), // 5
-		Color(0.8,  1.0,  0.7), // 6
-		Color(0.7,  0.0,  1.0), // 7
-		Color(0.2,  1.0,  1.0), // 8
-	};
-	return defaultTypeColors[std::abs(typeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+	OVITO_ASSERT(!property.isNull());
+	OVITO_ASSERT(!parameterName.isEmpty());
+
+	return QStringLiteral("defaults/%1/%2/%3/%4").arg(
+		property.containerClass()->pythonName(),
+		property.name(),
+		parameterName,
+		elementTypeName);
 }
 
 /******************************************************************************
 * Returns the default color for a element type name.
 ******************************************************************************/
-Color ElementType::getDefaultColor(int typeClass, const QString& typeName, int typeId, ExecutionContext executionContext)
+Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext)
 {
+	OVITO_ASSERT(!property.isNull());
+	OVITO_ASSERT(!typeName.isEmpty());
+
+	// Interactive execution context means that we are supposed to load the user-defined
+	// settings from the settings store.
 	if(executionContext == ExecutionContext::Interactive) {
-		QSettings settings;
-		settings.beginGroup("defaults/color");
-		settings.beginGroup(QString::number(typeClass));
-		QVariant v = settings.value(typeName);
+
+		// Use the type's name, property type and container class to look up the 
+		// default color saved by the user.
+		QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
 		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
 			return v.value<Color>();
+
+		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+		// default colors in a different branch of the settings registry.
+		if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
+			// Load particle type colors.
+			QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
+		else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
+			// Load bond type colors.
+			QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
+		else {
+			// Load generic element type colors.
+			QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
 	}
 
-	return getDefaultColorForId(typeClass, typeId);
+	// Otherwise fall back to a hard-coded default colors provided by the property container class.
+	return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 }
 
 /******************************************************************************
 * Changes the default color for an element type name.
 ******************************************************************************/
-void ElementType::setDefaultColor(int typeClass, const QString& typeName, const Color& color)
+void ElementType::setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color)
 {
 	QSettings settings;
-	settings.beginGroup("defaults/color");
-	settings.beginGroup(QString::number(typeClass));
+	QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
 
-	if(getDefaultColor(typeClass, typeName, 0, ExecutionContext::Scripting) != color)
-		settings.setValue(typeName, QVariant::fromValue((QColor)color));
-	else
-		settings.remove(typeName);
+	if(getDefaultColor(property, typeName, 0, ExecutionContext::Scripting).equals(color, 1.0/256.0) == false) {
+		settings.setValue(settingsKey, QVariant::fromValue(static_cast<QColor>(color)));
+	}
+	else {
+		settings.remove(settingsKey);
+	}
 }
 
 /******************************************************************************

@@ -86,6 +86,7 @@ void PolyhedralTemplateMatchingModifier::initializeObject(ExecutionContext execu
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
 		OORef<ParticleType> otype = OORef<ParticleType>::create(dataset(), executionContext);
 		otype->setNumericId(id);
+		otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")), executionContext);
 		otype->setColor({0.75f, 0.75f, 0.75f});
 		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
 	}
@@ -145,12 +146,12 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(ExecutionContext execut
 		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 	StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
-	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("RMSD"), false)),
-	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, tr("Interatomic Distance"), true) : nullptr),
+	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("RMSD"), false)),
+	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Interatomic Distance"), true) : nullptr),
 	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true, executionContext) : nullptr),
 	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true, executionContext) : nullptr),
-	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, tr("Ordering Type"), true) : nullptr),
-	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, tr("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
+	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, QStringLiteral("Ordering Type"), true) : nullptr),
+	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, QStringLiteral("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
 	_rmsdHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
 {
 	_algorithm.emplace();

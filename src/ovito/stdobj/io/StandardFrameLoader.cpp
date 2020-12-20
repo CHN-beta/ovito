@@ -23,6 +23,8 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "StandardFrameLoader.h"
@@ -47,16 +49,25 @@ SimulationCellObject* StandardFrameLoader::simulationCell()
 /******************************************************************************
 * Registers a new numeric element type with the given ID and an optional name string.
 ******************************************************************************/
-const ElementType* StandardFrameLoader::addNumericType(PropertyObject* typedProperty, int id, const QString& name, const OvitoClass& elementTypeClass)
+const ElementType* StandardFrameLoader::addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass)
 {
 	if(const ElementType* existingType = typedProperty->elementType(id))
 		return existingType;
 
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass.createInstance(dataset(), executionContext()));
+	// If the caller did not specify an element type class, let the PropertyConatiner class 
+	// determine the right element type class for the given property.
+	if(elementTypeClass == nullptr) {
+		elementTypeClass = containerClass.typedPropertyElementClass(typedProperty->type());
+		if(elementTypeClass == nullptr)
+			elementTypeClass = &ElementType::OOClass();
+	}
+	OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
+
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset(), executionContext()));
 	elementType->setNumericId(id);
 	elementType->setName(name);
 	elementType->initializeObject(executionContext());
-	elementType->initializeType(typedProperty->type(), executionContext());
+	elementType->initializeType(PropertyReference(&containerClass, typedProperty), executionContext());
 
 	return typedProperty->addElementType(std::move(elementType));
 }

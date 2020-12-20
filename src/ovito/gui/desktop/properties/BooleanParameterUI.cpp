@@ -134,8 +134,8 @@ void BooleanParameterUI::updatePropertyValue()
 	if(checkBox() && editObject()) {
 		undoableTransaction(tr("Change parameter"), [this]() {
 			if(isQtPropertyUI()) {
-				if(!mutableEditObject()->setProperty(propertyName(), checkBox()->isChecked())) {
-					OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+				if(!editObject()->setProperty(propertyName(), checkBox()->isChecked())) {
+					OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {

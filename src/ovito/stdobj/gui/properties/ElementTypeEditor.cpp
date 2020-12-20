@@ -23,6 +23,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -52,20 +53,14 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	layout1->addWidget(nameBox);
 
 	// Name.
-	StringParameterUI* namePUI = new StringParameterUI(this, PROPERTY_FIELD(ElementType::name));
+	_namePUI = new StringParameterUI(this, PROPERTY_FIELD(ElementType::name));
 	gridLayout->addWidget(new QLabel(tr("Name:")), 0, 0);
-	gridLayout->addWidget(namePUI->textBox(), 0, 1);
+	gridLayout->addWidget(_namePUI->textBox(), 0, 1);
 
 	// Numeric ID.
 	gridLayout->addWidget(new QLabel(tr("Numeric ID:")), 1, 0);
-	QLabel* numericIdLabel = new QLabel();
-	gridLayout->addWidget(numericIdLabel, 1, 1);
-	connect(this, &PropertiesEditor::contentsReplaced, [numericIdLabel](RefTarget* newEditObject) {
-		if(ElementType* ptype = static_object_cast<ElementType>(newEditObject))
-			numericIdLabel->setText(QString::number(ptype->numericId()));
-		else
-			numericIdLabel->setText({});
-	});
+	_numericIdLabel = new QLabel();
+	gridLayout->addWidget(_numericIdLabel, 1, 1);
 
 	QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"), rollout);
 	gridLayout = new QGridLayout(appearanceBox);
@@ -78,31 +73,48 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	gridLayout->addWidget(colorPUI->label(), 0, 0);
 	gridLayout->addWidget(colorPUI->colorPicker(), 0, 1);
 
-	// "Save as default" button
-	QPushButton* setAsDefaultBtn = new QPushButton(tr("Save as default"));
-	setAsDefaultBtn->setToolTip(tr("Save the current color as default value for this type."));
-	setAsDefaultBtn->setEnabled(false);
-	gridLayout->addWidget(setAsDefaultBtn, 1, 0, 1, 2, Qt::AlignRight);
-	connect(setAsDefaultBtn, &QPushButton::clicked, this, [this]() {
-		ElementType* ptype = static_object_cast<ElementType>(editObject());
-		if(!ptype) return;
+	// "Save as preset" button
+	_setAsDefaultBtn = new QPushButton(tr("Save as preset"));
+	_setAsDefaultBtn->setToolTip(tr("Set the current color as future default for this type."));
+	_setAsDefaultBtn->setEnabled(false);
+	gridLayout->addWidget(_setAsDefaultBtn, 1, 0, 1, 2, Qt::AlignRight);
+	connect(_setAsDefaultBtn, &QPushButton::clicked, this, &ElementTypeEditor::onSaveAsDefault);
+}
 
-		ElementType::setDefaultColor(PropertyObject::GenericTypeProperty, ptype->nameOrNumericId(), ptype->color());
+/******************************************************************************
+* Is called when the value of a reference field of this RefMaker changes.
+******************************************************************************/
+void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 
-		mainWindow()->statusBar()->showMessage(tr("Stored current color as default value for type '%1'.").arg(ptype->nameOrNumericId()), 4000);
-	});
+	if(field == PROPERTY_FIELD(PropertiesEditor::editObject)) {
 
-	connect(this, &PropertiesEditor::contentsReplaced, [setAsDefaultBtn,namePUI](RefTarget* newEditObject) {
-		setAsDefaultBtn->setEnabled(newEditObject != nullptr);
+		ElementType* etype = static_object_cast<ElementType>(newTarget);
 
-		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
-		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
-			if(ElementType* ptype = dynamic_object_cast<ElementType>(newEditObject))
-				lineEdit->setPlaceholderText(QStringLiteral("[%1]").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
-			else
-				lineEdit->setPlaceholderText({});
-		}
-	});
+		// Update the displayed numeric ID.
+		_numericIdLabel->setText(etype ? QString::number(etype->numericId()) : QString());
+
+		// Update the placeholder text of the name input field to reflect the numeric ID of the current element type.
+		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(_namePUI->textBox()))
+			lineEdit->setPlaceholderText(etype ? QStringLiteral("<%1>").arg(ElementType::generateDefaultTypeName(etype->numericId())) : QString());
+
+		// Enable/disable the button.
+		_setAsDefaultBtn->setEnabled(etype != nullptr && !etype->ownerProperty().isNull());
+	}
+}
+
+/******************************************************************************
+* Saves the current settings as defaults for the element type.
+******************************************************************************/
+void ElementTypeEditor::onSaveAsDefault()
+{
+	ElementType* etype = static_object_cast<ElementType>(editObject());
+	if(!etype) return;
+
+	ElementType::setDefaultColor(etype->ownerProperty(), etype->nameOrNumericId(), etype->color());
+
+	mainWindow()->statusBar()->showMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
 }
 
 }	// End of namespace

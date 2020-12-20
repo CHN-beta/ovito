@@ -139,10 +139,6 @@ protected Q_SLOTS:
 	/// Is called when the user has selected an item in the list/table view.
 	void onSelectionChanged();
 
-	/// This method handles requests from the sub-editor to replace the selected data object,
-	/// which has shared ownership, with a copy that is safe to modify.
-	void makeSelectedDataObjectMutable(const DataObject* dataObject);
-
 protected:
 
 	/// This method is called when a reference target changes.

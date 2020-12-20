@@ -74,7 +74,7 @@ public:
 	Q_INVOKABLE ParticleType(DataSet* dataset);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(int propertyType, ExecutionContext executionContext) override;
+	virtual void initializeType(const PropertyReference& property, ExecutionContext executionContext) override;
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -110,17 +110,23 @@ public:
 		return std::get<0>(_predefinedParticleTypes[predefType]);
 	}
 
+	/// Returns the hard-coded color of a predefined particle type.
+	static const Color& getPredefinedParticleTypeColor(PredefinedParticleType predefType) {
+		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_PARTICLE_TYPES);
+		return std::get<1>(_predefinedParticleTypes[predefType]);
+	}
+
 	/// Returns the name string of a predefined structure type.
 	static const QString& getPredefinedStructureTypeName(PredefinedStructureType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
 		return std::get<0>(_predefinedStructureTypes[predefType]);
 	}
 
-	/// Returns the default color for a named particle type.
-	static Color getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
-
-	/// Changes the default color for a named particle type.
-	static void setDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, const Color& color);
+	/// Returns the hard-coded color of a predefined structure type.
+	static const Color& getPredefinedStructureTypeColor(PredefinedStructureType predefType) {
+		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+		return std::get<1>(_predefinedStructureTypes[predefType]);
+	}
 
 	/// Returns the default radius for a named particle type.
 	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);

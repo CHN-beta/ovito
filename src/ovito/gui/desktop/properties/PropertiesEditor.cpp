@@ -171,34 +171,11 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 }
 
 /******************************************************************************
-* Returns the object being edited or a copy of the object which is safe to modify.
-******************************************************************************/
-RefTarget* PropertiesEditor::mutableEditObject()
-{
-	OVITO_ASSERT(editObject());
-	if(DataObject* dataObject = dynamic_object_cast<DataObject>(editObject())) {
-		OVITO_ASSERT(dataObject->isSafeToModify());
-#if 0
-		if(!dataObject->isSafeToModify()) {
-			qDebug() << ">>>>Editor" << this << "mutableEditObject(): Making edit object" << dataObject << "mutable";
-			OVITO_ASSERT(isSignalConnected(QMetaMethod::fromSignal(&PropertiesEditor::mutableDataObjectRequested)));
-			Q_EMIT mutableDataObjectRequested(dataObject);
-			OVITO_CHECK_OBJECT_POINTER(this);
-			OVITO_ASSERT(editObject() != dataObject);
-			OVITO_ASSERT(static_object_cast<DataObject>(editObject())->isSafeToModify());
-			qDebug() << "<<<<Editor" << this << "made edit object" << editObject() << "mutable";
-		}
-#endif
-	}
-	return editObject();
-}
-
-/******************************************************************************
 * Changes the value of a non-animatable property field of the object being edited.
 ******************************************************************************/
 void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
 {
-	mutableEditObject()->setPropertyFieldValue(field, newValue);
+	editObject()->setPropertyFieldValue(field, newValue);
 }
 
 }	// End of namespace

@@ -46,20 +46,20 @@ public:
 	bool hasSimulationCell() const { return _simulationCell != nullptr; }
 
 	/// Registers a new numeric element type with the given ID and an optional name string.
-	const ElementType* addNumericType(PropertyObject* typedProperty, int id, const QString& name, const OvitoClass& elementTypeClass);
+	const ElementType* addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {});
 
 	/// Registers a new named element type and automatically gives it a unique numeric ID.
-	const ElementType* addNamedType(PropertyObject* typedProperty, const QString& name, const OvitoClass& elementTypeClass) {
+	const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
 		if(const ElementType* existingType = typedProperty->elementType(name))
 			return existingType;
-		return addNumericType(typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
+		return addNumericType(containerClass, typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
 	}
 
 	/// Registers a new named element type and automatically gives it a unique numeric ID.
-	const ElementType* addNamedType(PropertyObject* typedProperty, const QLatin1String& name, const OvitoClass& elementTypeClass) {
+	const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
 		if(const ElementType* existingType = typedProperty->elementType(name))
 			return existingType;
-		return addNumericType(typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
+		return addNumericType(containerClass, typedProperty, typedProperty->generateUniqueElementTypeId(), name, elementTypeClass);
 	}
 
 protected:

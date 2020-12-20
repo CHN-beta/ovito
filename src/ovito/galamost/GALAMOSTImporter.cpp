@@ -205,7 +205,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					QString typeName;
 					for(int& type : PropertyAccess<int>(property)) {
 						stream >> typeName;
-						type = addNamedType(property, typeName, ParticleType::OOClass())->numericId();
+						type = addNamedType(ParticlesObject::OOClass(), property, typeName)->numericId();
 					}
 					property->sortElementTypesByName();
 				}
@@ -269,7 +269,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					QString typeName;
 					for(size_t i = 0; i < nbonds; i++) {
 						stream >> typeName >> topologyProperty[i][0] >> topologyProperty[i][1];
-						typeProperty[i] = addNamedType(typeProperty.property(), typeName, BondType::OOClass())->numericId();
+						typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), typeName)->numericId();
 						stream.skipWhiteSpace();
 					}
 					typeProperty.property()->sortElementTypesByName();

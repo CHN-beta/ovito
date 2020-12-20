@@ -139,7 +139,7 @@ void CIFImporter::FrameLoader::loadFile()
 			posIter->y() = pos.y;
 			posIter->z() = pos.z;
 			++posIter;
-			*typeIter++ = addNamedType(typeProperty.property(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str(), ParticleType::OOClass())->numericId();
+			*typeIter++ = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str())->numericId();
 			if(site.occ != 1) hasOccupancy = true;
 		}
 		if(isCanceled()) return;

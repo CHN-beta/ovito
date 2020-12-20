@@ -229,7 +229,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create atom types.
 			for(int i = 1; i <= natomtypes; i++)
-				addNumericType(typeProperty, i, {}, ParticleType::OOClass());
+				addNumericType(ParticlesObject::OOClass(), typeProperty, i, {});
 
 			if(natoms != 0) {
 				stream.readLine();
@@ -346,7 +346,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						atomTypeName = words[1];
 				}
 
-				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(typeProperty, atomType, atomTypeName, ParticleType::OOClass()));
+				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
 				if(mass != 0 && mass != type->mass())
 					static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(mass);
 			}
@@ -384,7 +384,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create bond types.
 			for(int i = 1; i <= nbondtypes; i++)
-				addNumericType(typeProperty.property(), i, {}, BondType::OOClass());
+				addNumericType(BondsObject::OOClass(), typeProperty.property(), i, {});
 
 			setProgressMaximum(nbonds);
 			int* bondType = typeProperty.begin();
@@ -437,7 +437,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create angle types.
 			for(int i = 1; i <= nangletypes; i++)
-				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
+				addNumericType(AnglesObject::OOClass(), typeProperty.property(), i, {});
 
 			setProgressMaximum(nangles);
 			int* angleType = typeProperty.begin();
@@ -478,7 +478,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create dihedral types.
 			for(int i = 1; i <= ndihedraltypes; i++)
-				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
+				addNumericType(DihedralsObject::OOClass(), typeProperty.property(), i, {});
 
 			setProgressMaximum(ndihedrals);
 			int* dihedralType = typeProperty.begin();
@@ -519,7 +519,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create improper types.
 			for(int i = 1; i <= nimpropertypes; i++)
-				addNumericType(typeProperty.property(), i, {}, ElementType::OOClass());
+				addNumericType(ImpropersObject::OOClass(), typeProperty.property(), i, {});
 
 			setProgressMaximum(nimpropers);
 			int* improperType = typeProperty.begin();

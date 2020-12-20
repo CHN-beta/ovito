@@ -181,7 +181,7 @@ void XSFImporter::FrameLoader::loadFile()
 
 			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 			boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-				return addNamedType(typeProperty.property(), typeName, ParticleType::OOClass())->numericId();
+				return addNamedType(ParticlesObject::OOClass(), typeProperty.property(), typeName)->numericId();
 			});
 			// Since we created particle types on the go while reading the particles, the type ordering
 			// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's

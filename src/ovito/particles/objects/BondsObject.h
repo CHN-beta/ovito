@@ -62,6 +62,9 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
+		/// Returns a default color for an ElementType given its numeric type ID.
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const override;
+
 	protected:
 
 		/// Is called by the system after construction of the meta-class instance.

@@ -102,43 +102,43 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	hboxlayout->setSpacing(2);
 	gridLayout->addLayout(hboxlayout, 2, 0, 1, 2);
 
-	// "Load defaults" button
-	QPushButton* loadDefaultBtn = new QPushButton(tr("Load defaults"));
-	loadDefaultBtn->setToolTip(tr("Load color/radius from database of predefined particle types."));
-	loadDefaultBtn->setEnabled(false);
-	hboxlayout->addWidget(loadDefaultBtn, 1);
-	connect(loadDefaultBtn, &QPushButton::clicked, this, [this]() {
+	// "Load presets" button
+	QPushButton* loadPresetsBtn = new QPushButton(tr("Load presets"));
+	loadPresetsBtn->setToolTip(tr("Reset color and radius parameter of the particle type to default values."));
+	loadPresetsBtn->setEnabled(false);
+	hboxlayout->addWidget(loadPresetsBtn, 1);
+	connect(loadPresetsBtn, &QPushButton::clicked, this, [this]() {
 		ParticleType* ptype = static_object_cast<ParticleType>(editObject());
 		if(!ptype) return;
 
-		undoableTransaction(tr("Load default particle settings"), [&]() {
-			ptype->initializeType(ParticlesObject::TypeProperty, ExecutionContext::Interactive);
+		undoableTransaction(tr("Reset particle type parameters"), [&]() {
+			ptype->initializeType(ParticlePropertyReference(ParticlesObject::TypeProperty), ExecutionContext::Interactive);
 			mainWindow()->statusBar()->showMessage(tr("Loaded default color and radius values for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		});
 	});
 
-	// "Save as defaults" button
-	QPushButton* setAsDefaultBtn = new QPushButton(tr("Save as defaults"));
-	setAsDefaultBtn->setToolTip(tr("Save current color/radius as default values for this particle type."));
+	// "Save as presets" button
+	QPushButton* setAsDefaultBtn = new QPushButton(tr("Save as presets"));
+	setAsDefaultBtn->setToolTip(tr("Use current color and radius as default values for this particle type in the future."));
 	setAsDefaultBtn->setEnabled(false);
 	hboxlayout->addWidget(setAsDefaultBtn, 1);
 	connect(setAsDefaultBtn, &QPushButton::clicked, this, [this]() {
 		ParticleType* ptype = static_object_cast<ParticleType>(editObject());
 		if(!ptype) return;
 
-		ParticleType::setDefaultParticleColor(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->color());
+		ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color());
 		ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius());
 
 		mainWindow()->statusBar()->showMessage(tr("Stored current color and radius as defaults for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 	});
-	connect(this, &PropertiesEditor::contentsReplaced, [loadDefaultBtn,setAsDefaultBtn,namePUI](RefTarget* newEditObject) {
-		loadDefaultBtn->setEnabled(newEditObject != nullptr);
+	connect(this, &PropertiesEditor::contentsReplaced, [loadPresetsBtn,setAsDefaultBtn,namePUI](RefTarget* newEditObject) {
+		loadPresetsBtn->setEnabled(newEditObject != nullptr);
 		setAsDefaultBtn->setEnabled(newEditObject != nullptr);
 
 		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
 		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
 			if(ElementType* ptype = dynamic_object_cast<ElementType>(newEditObject))
-				lineEdit->setPlaceholderText(QStringLiteral("[%1]").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
+				lineEdit->setPlaceholderText(QStringLiteral("<%1>").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
 			else
 				lineEdit->setPlaceholderText({});
 		}
@@ -189,7 +189,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		}
 	});
 
-	// Implement shape load button.
+	// Shape load button.
 	connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
 		if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
 

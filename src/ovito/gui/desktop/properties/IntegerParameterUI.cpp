@@ -58,8 +58,8 @@ void IntegerParameterUI::updatePropertyValue()
 				ctrl->setCurrentIntValue(spinner()->intValue());
 		}
 		else if(isQtPropertyUI()) {
-			if(!mutableEditObject()->setProperty(propertyName(), spinner()->intValue())) {
-				OVITO_ASSERT_MSG(false, "IntegerParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+			if(!editObject()->setProperty(propertyName(), spinner()->intValue())) {
+				OVITO_ASSERT_MSG(false, "IntegerParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 			}
 		}
 		else if(isPropertyFieldUI()) {

@@ -452,7 +452,7 @@ void PDBImporter::FrameLoader::loadFile()
 
 					// Atomic type.
 					*typeIter++ = atom.element.ordinal();
-					addNumericType(typeProperty.property(), atom.element.ordinal(), QString::fromStdString(atom.element.name()), ParticleType::OOClass());
+					addNumericType(ParticlesObject::OOClass(), typeProperty.property(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
 					// Check for presence of occupancy values.
 					if(atom.occ != 0 && atom.occ != 1) hasOccupancy = true;

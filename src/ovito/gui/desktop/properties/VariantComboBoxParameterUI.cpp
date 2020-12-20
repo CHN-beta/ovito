@@ -120,7 +120,7 @@ void VariantComboBoxParameterUI::updatePropertyValue()
 				newValue = comboBox()->itemData(comboBox()->currentIndex());
 
             if(isQtPropertyUI()) {
-                if(!mutableEditObject()->setProperty(propertyName(), newValue)) {
+                if(!editObject()->setProperty(propertyName(), newValue)) {
                     OVITO_ASSERT_MSG(false, "VariantComboBoxParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }

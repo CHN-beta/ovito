@@ -253,7 +253,7 @@ void CFGImporter::FrameLoader::loadFile()
 				const char* line = stream.readLineTrimLeft();
 				const char* line_end = line;
 				while(*line_end != '\0' && *line_end > ' ') ++line_end;
-				currentAtomType = addNamedType(typeProperty.property(), QLatin1String(line, line_end), ParticleType::OOClass())->numericId();
+				currentAtomType = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), QLatin1String(line, line_end))->numericId();
 				continue;
 			}
 

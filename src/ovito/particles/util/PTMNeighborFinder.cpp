@@ -221,9 +221,8 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 	}
 
 	barycenter /= centered.size();
-	for(size_t i = 0; i < centered.size(); i++) {
-		centered[i] -= barycenter;
-	}
+	for(Vector3& c : centered)
+		c -= barycenter;
 
 	// calculate scale
 	// (s.a - b)^2 = s^2.a^2 - 2.s.a.b + b^2
@@ -231,7 +230,7 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 	// s.a^2 = a.b
 	// s = a.b / (a.a)
 	FloatType numerator = 0, denominator = 0;
-	for(size_t i = 0; i < centered.size(); i++) {
+	for(int i = 0; i < centered.size(); i++) {
 		numerator += centered[i].dot(rotatedTemplate[i]);
 		denominator += centered[i].squaredLength();
 	}
@@ -239,7 +238,7 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 
 	// calculate RMSD
 	_rmsd = 0;
-	for(size_t i = 0; i < centered.size(); i++) {
+	for(int i = 0; i < centered.size(); i++) {
 		auto delta = scale * centered[i] - rotatedTemplate[i];
 		_rmsd += delta.squaredLength();
 	}

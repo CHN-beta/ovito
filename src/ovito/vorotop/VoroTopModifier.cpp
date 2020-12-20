@@ -72,7 +72,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
         OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), executionContext);
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->initializeType(ParticlesObject::StructureTypeProperty, executionContext);
+        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext);
         addStructureType(std::move(stype));
     }
 

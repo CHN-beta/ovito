@@ -76,56 +76,33 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		pbcyPUI->checkBox()->setText("Y");
 		layout2->addWidget(pbcyPUI->checkBox(), 0, 1);
 
-		pbczPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcZ));
-		pbczPUI->checkBox()->setText("Z");
-		layout2->addWidget(pbczPUI->checkBox(), 0, 2);
+		_pbczPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellObject::pbcZ));
+		_pbczPUI->checkBox()->setText("Z");
+		layout2->addWidget(_pbczPUI->checkBox(), 0, 2);
 	}
 
 	connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
 
-#if 0
 	{
-		QGroupBox* sizeGroupBox = new QGroupBox(tr("Box size"), rollout);
+		QGroupBox* sizeGroupBox = new QGroupBox(tr("Box dimensions"), rollout);
 		layout1->addWidget(sizeGroupBox);
 
 		QGridLayout* layout2 = new QGridLayout(sizeGroupBox);
 		layout2->setContentsMargins(4,4,4,4);
-		layout2->setSpacing(0);
+		layout2->setSpacing(4);
 		layout2->setColumnStretch(1, 1);
-
-		QSignalMapper* signalMapperValueChanged = new QSignalMapper(this);
-		QSignalMapper* signalMapperDragStart = new QSignalMapper(this);
-		QSignalMapper* signalMapperDragStop = new QSignalMapper(this);
-		QSignalMapper* signalMapperDragAbort = new QSignalMapper(this);
 		for(int i = 0; i < 3; i++) {
-			QLineEdit* textBox = new QLineEdit(rollout);
-			simCellSizeSpinners[i] = new SpinnerWidget(rollout, textBox);
-			simCellSizeSpinners[i]->setMinValue(0);
-			layout2->addWidget(textBox, i, 1);
-			layout2->addWidget(simCellSizeSpinners[i], i, 2);
-			simCellSizeSpinners[i]->setEnabled(false);
-
-			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerValueChanged, signalMapperValueChanged, (void (QSignalMapper::*)())&QSignalMapper::map);
-			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerDragStart, signalMapperDragStart, (void (QSignalMapper::*)())&QSignalMapper::map);
-			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerDragStop, signalMapperDragStop, (void (QSignalMapper::*)())&QSignalMapper::map);
-			connect(simCellSizeSpinners[i], &SpinnerWidget::spinnerDragAbort, signalMapperDragAbort, (void (QSignalMapper::*)())&QSignalMapper::map);
-
-			signalMapperValueChanged->setMapping(simCellSizeSpinners[i], i);
-			signalMapperDragStart->setMapping(simCellSizeSpinners[i], i);
-			signalMapperDragStop->setMapping(simCellSizeSpinners[i], i);
-			signalMapperDragAbort->setMapping(simCellSizeSpinners[i], i);
+			_boxSizeFields[i] = new QLineEdit(rollout);
+			_boxSizeFields[i]->setReadOnly(true);
+			layout2->addWidget(_boxSizeFields[i], i, 1);
 		}
-		connect(signalMapperValueChanged, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, &SimulationCellEditor::onSizeSpinnerValueChanged);
-		connect(signalMapperDragStart, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, &SimulationCellEditor::onSizeSpinnerDragStart);
-		connect(signalMapperDragStop, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, &SimulationCellEditor::onSizeSpinnerDragStop);
-		connect(signalMapperDragAbort, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, &SimulationCellEditor::onSizeSpinnerDragAbort);
 		layout2->addWidget(new QLabel(tr("Width (X):")), 0, 0);
 		layout2->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
 		layout2->addWidget(new QLabel(tr("Height (Z):")), 2, 0);
 	}
 
 	{
-		QGroupBox* vectorsGroupBox = new QGroupBox(tr("Cell geometry"), rollout);
+		QGroupBox* vectorsGroupBox = new QGroupBox(tr("Geometry"), rollout);
 		layout1->addWidget(vectorsGroupBox);
 
 		QVBoxLayout* sublayout = new QVBoxLayout(vectorsGroupBox);
@@ -137,74 +114,59 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		{	// First cell vector.
 			sublayout->addSpacing(6);
 			sublayout->addWidget(new QLabel(tr("Cell vector 1:"), rollout));
-			QGridLayout* layout2 = new QGridLayout();
-			layout2->setContentsMargins(0,0,0,0);
-			layout2->setSpacing(0);
-			sublayout->addLayout(layout2);
+			QHBoxLayout* rowLayout = new QHBoxLayout();
+			rowLayout->setContentsMargins(0,0,0,0);
+			rowLayout->setSpacing(2);
+			sublayout->addLayout(rowLayout);
 			for(int i = 0; i < 3; i++) {
-				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 0);
-				vPUI->setEnabled(false);
-				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
-				layout2->setColumnStretch(i*2, 1);
-				if(i != 2)
-					layout2->setColumnMinimumWidth(i*2+1, 6);
+				_cellVectorFields[0][i] = new QLineEdit();
+				_cellVectorFields[0][i]->setReadOnly(true);
+				rowLayout->addWidget(_cellVectorFields[0][i], 1);
 			}
 		}
 
 		{	// Second cell vector.
 			sublayout->addSpacing(2);
 			sublayout->addWidget(new QLabel(tr("Cell vector 2:"), rollout));
-			QGridLayout* layout2 = new QGridLayout();
-			layout2->setContentsMargins(0,0,0,0);
-			layout2->setSpacing(0);
-			sublayout->addLayout(layout2);
+			QHBoxLayout* rowLayout = new QHBoxLayout();
+			rowLayout->setContentsMargins(0,0,0,0);
+			rowLayout->setSpacing(2);
+			sublayout->addLayout(rowLayout);
 			for(int i = 0; i < 3; i++) {
-				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 1);
-				vPUI->setEnabled(false);
-				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
-				layout2->setColumnStretch(i*2, 1);
-				if(i != 2)
-					layout2->setColumnMinimumWidth(i*2+1, 6);
+				_cellVectorFields[1][i] = new QLineEdit();
+				_cellVectorFields[1][i]->setReadOnly(true);
+				rowLayout->addWidget(_cellVectorFields[1][i], 1);
 			}
 		}
 
 		{	// Third cell vector.
 			sublayout->addSpacing(2);
 			sublayout->addWidget(new QLabel(tr("Cell vector 3:"), rollout));
-			QGridLayout* layout2 = new QGridLayout();
-			layout2->setContentsMargins(0,0,0,0);
-			layout2->setSpacing(0);
-			sublayout->addLayout(layout2);
+			QHBoxLayout* rowLayout = new QHBoxLayout();
+			rowLayout->setContentsMargins(0,0,0,0);
+			rowLayout->setSpacing(2);
+			sublayout->addLayout(rowLayout);
 			for(int i = 0; i < 3; i++) {
-				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 2);
-				vPUI->setEnabled(false);
-				zvectorPUI[i] = vPUI;
-				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
-				layout2->setColumnStretch(i*2, 1);
-				if(i != 2)
-					layout2->setColumnMinimumWidth(i*2+1, 6);
+				_cellVectorFields[2][i] = new QLineEdit();
+				_cellVectorFields[2][i]->setReadOnly(true);
+				rowLayout->addWidget(_cellVectorFields[2][i], 1);
 			}
 		}
 
 		{	// Cell origin.
 			sublayout->addSpacing(8);
 			sublayout->addWidget(new QLabel(tr("Cell origin:"), rollout));
-			QGridLayout* layout2 = new QGridLayout();
-			layout2->setContentsMargins(0,0,0,0);
-			layout2->setSpacing(0);
-			sublayout->addLayout(layout2);
+			QHBoxLayout* rowLayout = new QHBoxLayout();
+			rowLayout->setContentsMargins(0,0,0,0);
+			rowLayout->setSpacing(2);
+			sublayout->addLayout(rowLayout);
 			for(int i = 0; i < 3; i++) {
-				AffineTransformationParameterUI* vPUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(SimulationCellObject::cellMatrix), i, 3);
-				vPUI->setEnabled(false);
-				if(i == 2) zoriginPUI = vPUI;
-				layout2->addLayout(vPUI->createFieldLayout(), 0, i*2);
-				layout2->setColumnStretch(i*2, 1);
-				if(i != 2)
-					layout2->setColumnMinimumWidth(i*2+1, 6);
+				_cellVectorFields[3][i] = new QLineEdit();
+				_cellVectorFields[3][i]->setReadOnly(true);
+				rowLayout->addWidget(_cellVectorFields[3][i], 1);
 			}
 		}
 	}
-#endif
 }
 
 /******************************************************************************
@@ -215,87 +177,17 @@ void SimulationCellEditor::updateSimulationBoxSize()
 	SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
 	if(!cell) return;
 
-#if 0
 	const AffineTransformation& cellTM = cell->cellMatrix();
-	for(int dim = 0; dim < 3; dim++) {
-		if(simCellSizeSpinners[dim]->isDragging() == false) {
-			simCellSizeSpinners[dim]->setUnit(dataset()->unitsManager().worldUnit());
-			simCellSizeSpinners[dim]->setFloatValue(cellTM(dim,dim));
-		}
+	ParameterUnit* worldUnit = dataset()->unitsManager().worldUnit();
+
+	for(size_t dim = 0; dim < 3; dim++) {
+		_boxSizeFields[dim]->setText(worldUnit->formatValue(cellTM(dim, dim)));
+		for(size_t col = 0; col < 4; col++) 
+			_cellVectorFields[col][dim]->setText(worldUnit->formatValue(cellTM(dim, col)));
 	}
-#endif
 
-	pbczPUI->setEnabled(!cell->is2D());
-//	simCellSizeSpinners[2]->setEnabled(!cell->is2D());
-//	zvectorPUI[0]->setEnabled(!cell->is2D());
-//	zvectorPUI[1]->setEnabled(!cell->is2D());
-//	zvectorPUI[2]->setEnabled(!cell->is2D());
-//	zoriginPUI->setEnabled(!cell->is2D());
+	_pbczPUI->setEnabled(!cell->is2D());
 }
-
-#if 0
-/******************************************************************************
-* After the user has changed a spinner value, this method changes the
-* simulation cell geometry.
-******************************************************************************/
-void SimulationCellEditor::changeSimulationBoxSize(int dim)
-{
-	OVITO_ASSERT(dim >=0 && dim < 3);
-
-	SimulationCellObject* cell = static_object_cast<SimulationCellObject>(editObject());
-	if(!cell) return;
-
-	AffineTransformation cellTM = cell->cellMatrix();
-	FloatType newSize = simCellSizeSpinners[dim]->floatValue();
-	cellTM.column(3)[dim] -= FloatType(0.5) * (newSize - cellTM(dim, dim));
-	cellTM(dim, dim) = newSize;
-	cell->setCellMatrix(cellTM);
-}
-
-/******************************************************************************
-* Is called when a spinner's value has changed.
-******************************************************************************/
-void SimulationCellEditor::onSizeSpinnerValueChanged(int dim)
-{
-	ViewportSuspender noVPUpdate(dataset());
-	if(!dataset()->undoStack().isRecording()) {
-		undoableTransaction(tr("Change simulation cell size"), [this, dim]() {
-			changeSimulationBoxSize(dim);
-		});
-	}
-	else {
-		dataset()->undoStack().resetCurrentCompoundOperation();
-		changeSimulationBoxSize(dim);
-	}
-}
-
-/******************************************************************************
-* Is called when the user begins dragging a spinner interactively.
-******************************************************************************/
-void SimulationCellEditor::onSizeSpinnerDragStart(int dim)
-{
-	OVITO_ASSERT(!dataset()->undoStack().isRecording());
-	dataset()->undoStack().beginCompoundOperation(tr("Change simulation cell size"));
-}
-
-/******************************************************************************
-* Is called when the user stops dragging a spinner interactively.
-******************************************************************************/
-void SimulationCellEditor::onSizeSpinnerDragStop(int dim)
-{
-	OVITO_ASSERT(dataset()->undoStack().isRecording());
-	dataset()->undoStack().endCompoundOperation();
-}
-
-/******************************************************************************
-* Is called when the user aborts dragging a spinner interactively.
-******************************************************************************/
-void SimulationCellEditor::onSizeSpinnerDragAbort(int dim)
-{
-	OVITO_ASSERT(dataset()->undoStack().isRecording());
-	dataset()->undoStack().endCompoundOperation(false);
-}
-#endif
 
 }	// End of namespace
 }	// End of namespace

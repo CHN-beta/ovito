@@ -401,7 +401,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 				if(!prec.property->elementType(d)) {
 					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
 					elementType->setNumericId(d);
-					elementType->initializeType(prec.property->type(), _executionContext);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _executionContext);
 					prec.property->addElementType(std::move(elementType));
 				}
 			}
@@ -415,7 +415,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
 					elementType->setName(typeName);
 					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
-					elementType->initializeType(prec.property->type(), _executionContext);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _executionContext);
 					d = elementType->numericId();
 					prec.property->addElementType(std::move(elementType));
 				}
@@ -461,7 +461,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 					if(!prec->property->elementType(ival)) {
 						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset(), _executionContext));
 						elementType->setNumericId(ival);
-						elementType->initializeType(prec->property->type(), _executionContext);
+						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property), _executionContext);
 						prec->property->addElementType(std::move(elementType));
 					}
 				}

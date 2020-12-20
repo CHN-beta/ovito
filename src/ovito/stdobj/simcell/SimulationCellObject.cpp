@@ -100,6 +100,11 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 
 	if(SimulationCellObject* proxy = static_object_cast<SimulationCellObject>(editableProxy())) {
 		// Synchronize the actual data object with the editable proxy object.
+
+		// Box size changes of the actual simulation cell are adopted by the proxy cell object.
+		proxy->setCellMatrix(cellMatrix());
+
+		// Changes made by the user to the PBC flags or dimensionality setting of the proxy cell object will be adopted by the actual simulation cell object.
 		if(pbcFlags() != proxy->pbcFlags() || is2D() != proxy->is2D()) {
 			// Make this data object mutable first.
 			SimulationCellObject* self = static_object_cast<SimulationCellObject>(state.makeMutableInplace(dataPath));

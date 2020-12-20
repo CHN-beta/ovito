@@ -43,6 +43,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 	class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
 	{
 	public:
+	
 		/// Inherit constructor from base class.
 		using PropertyContainerClass::PropertyContainerClass;
 
@@ -68,6 +69,9 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		/// This method is called by InputColumnMapping::validate() to let the container class perform custom checks
 		/// on the mapping of the file data columns to internal properties.
 		virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const override;
+
+		/// Returns a default color for an ElementType given its numeric type ID.
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const override;
 
 	protected:
 

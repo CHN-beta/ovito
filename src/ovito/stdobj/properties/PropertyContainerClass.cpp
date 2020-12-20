@@ -61,5 +61,27 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, siz
 	return property;
 }
 
+/******************************************************************************
+* Returns the default color for a numeric type ID.
+******************************************************************************/
+Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+{
+	OVITO_ASSERT(!property.isNull());
+
+	// Palette of standard colors initially assigned to new element types:
+	static const Color defaultTypeColors[] = {
+		Color(0.97, 0.97, 0.97),// 0
+		Color(1.0,  0.4,  0.4), // 1
+		Color(0.4,  0.4,  1.0), // 2
+		Color(1.0,  1.0,  0.0), // 3
+		Color(1.0,  0.4,  1.0), // 4
+		Color(0.4,  1.0,  0.2), // 5
+		Color(0.8,  1.0,  0.7), // 6
+		Color(0.7,  0.0,  1.0), // 7
+		Color(0.2,  1.0,  1.0), // 8
+	};
+	return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+}
+
 }	// End of namespace
 }	// End of namespace

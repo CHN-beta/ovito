@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/io/FileSource.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ParticleType.h"
 
@@ -58,12 +57,11 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(int propertyType, ExecutionContext executionContext)
+void ParticleType::initializeType(const PropertyReference& property, ExecutionContext executionContext)
 {
-	ElementType::initializeType(propertyType, executionContext);
+	ElementType::initializeType(property, executionContext);
 
-	setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
-	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
@@ -206,79 +204,36 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 }};
 
 /******************************************************************************
-* Returns the default color for a particle type name.
+* Returns the default radius for a particle type.
 ******************************************************************************/
-Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& typeName, int numericTypeId, ExecutionContext executionContext)
 {
+	// Interactive execution context means that we are supposed to load the user-defined
+	// settings from the settings store.
 	if(executionContext == ExecutionContext::Interactive) {
-		QSettings settings;
-		settings.beginGroup("particles/defaults/color");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(particleTypeName);
-		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
-			return v.value<Color>();
-	}
 
-	if(typeClass == ParticlesObject::StructureTypeProperty) {
-		for(const PredefinedTypeInfo& predefType : _predefinedStructureTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
-				return std::get<1>(predefType);
-		}
-		return Color(1,1,1);
-	}
-	else if(typeClass == ParticlesObject::TypeProperty) {
-		for(const PredefinedTypeInfo& predefType : _predefinedParticleTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
-				return std::get<1>(predefType);
-		}
+		// Use the type's name, property type and container class to look up the 
+		// default color saved by the user.
+		QVariant v = QSettings().value(ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), typeName));
+		if(v.isValid() && v.canConvert<FloatType>())
+			return v.value<FloatType>();
 
-		// Sometimes atom type names have additional letters/numbers appended.
-		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleColor(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, executionContext);
-		}
-	}
-
-	return getDefaultColorForId(typeClass, particleTypeId);
-}
-
-/******************************************************************************
-* Changes the default color for a particle type name.
-******************************************************************************/
-void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, const Color& color)
-{
-	QSettings settings;
-	settings.beginGroup("particles/defaults/color");
-	settings.beginGroup(QString::number((int)typeClass));
-
-	if(getDefaultParticleColor(typeClass, particleTypeName, 0, ExecutionContext::Scripting) != color)
-		settings.setValue(particleTypeName, QVariant::fromValue((QColor)color));
-	else
-		settings.remove(particleTypeName);
-}
-
-/******************************************************************************
-* Returns the default radius for a particle type name.
-******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext)
-{
-	if(executionContext == ExecutionContext::Interactive) {
-		QSettings settings;
-		settings.beginGroup("particles/defaults/radius");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(particleTypeName);
+		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+		// default radii in a different branch of the settings registry.
+		v = QSettings().value(QStringLiteral("particles/defaults/radius/%1/%2").arg(typeClass).arg(typeName));
 		if(v.isValid() && v.canConvert<FloatType>())
 			return v.value<FloatType>();
 	}
 
 	if(typeClass == ParticlesObject::TypeProperty) {
 		for(const PredefinedTypeInfo& predefType : _predefinedParticleTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
+			if(std::get<0>(predefType) == typeName)
 				return std::get<2>(predefType);
 		}
 
 		// Sometimes atom type names have additional letters/numbers appended.
-		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, executionContext);
+		if(typeName.length() > 1 && typeName.length() <= 5) {
+			return getDefaultParticleRadius(typeClass, typeName.left(typeName.length() - 1), numericTypeId, executionContext);
 		}
 	}
 
@@ -286,18 +241,17 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 }
 
 /******************************************************************************
-* Changes the default radius for a particle type name.
+* Changes the default radius for a particle type.
 ******************************************************************************/
 void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius)
 {
 	QSettings settings;
-	settings.beginGroup("particles/defaults/radius");
-	settings.beginGroup(QString::number((int)typeClass));
-
+	QString settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), particleTypeName);
+	
 	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting) != radius)
-		settings.setValue(particleTypeName, QVariant::fromValue(radius));
+		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
-		settings.remove(particleTypeName);
+		settings.remove(settingsKey);
 }
 
 }	// End of namespace

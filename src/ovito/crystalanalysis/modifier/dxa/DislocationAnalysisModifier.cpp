@@ -120,7 +120,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 		stype->setNumericId(id);
 		stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
 		stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-		stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id, executionContext));
+		stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, executionContext));
 		addStructureType(std::move(stype));
 	}
 

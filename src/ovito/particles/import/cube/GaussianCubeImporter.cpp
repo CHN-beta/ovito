@@ -170,9 +170,9 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 	// Translate atomic numbers into element names.
 	for(int a : typeProperty) {
 		if(a >= 0 && a < sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
-			addNumericType(typeProperty.property(), a, QLatin1String(chemical_symbols[a]), ParticleType::OOClass());
+			addNumericType(ParticlesObject::OOClass(), typeProperty.property(), a, QLatin1String(chemical_symbols[a]));
 		else
-			addNumericType(typeProperty.property(), a, {}, ParticleType::OOClass());
+			addNumericType(ParticlesObject::OOClass(), typeProperty.property(), a, {});
 	}
 
 	// Parse voxel field table.

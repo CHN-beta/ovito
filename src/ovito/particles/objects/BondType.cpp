@@ -35,19 +35,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 /******************************************************************************
 * Constructs a new BondType.
 ******************************************************************************/
-BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0)
+BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0.0)
 {
-}
-
-/******************************************************************************
-* Initializes the particle type's attributes to standard values.
-******************************************************************************/
-void BondType::initializeType(int propertyType, ExecutionContext executionContext)
-{
-	ElementType::initializeType(propertyType, executionContext);
-
-	setColor(getDefaultBondColor(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
-	setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(propertyType), nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************
@@ -68,60 +57,6 @@ void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
 			mutableSelf->setRadius(proxy->radius());
 		}
 	}
-}
-
-/******************************************************************************
-* Returns the default color for a bond type ID.
-******************************************************************************/
-Color BondType::getDefaultBondColorForId(BondsObject::Type typeClass, int bondTypeId)
-{
-	// Initial standard colors assigned to new bond types:
-	static const Color defaultTypeColors[] = {
-		Color(1.0,  1.0,  0.0),
-		Color(0.7,  0.0,  1.0),
-		Color(0.2,  1.0,  1.0),
-		Color(1.0,  0.4,  1.0),
-		Color(0.4,  1.0,  0.4),
-		Color(1.0,  0.4,  0.4),
-		Color(0.4,  0.4,  1.0),
-		Color(1.0,  1.0,  0.7),
-		Color(0.97, 0.97, 0.97)
-	};
-	return defaultTypeColors[std::abs(bondTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
-}
-
-/******************************************************************************
-* Returns the default color for a bond type name.
-******************************************************************************/
-Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, ExecutionContext executionContext)
-{
-	if(executionContext == ExecutionContext::Interactive) {
-		QSettings settings;
-		settings.beginGroup("bonds/defaults/color");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(bondTypeName);
-		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
-			return v.value<Color>();
-	}
-
-	return getDefaultBondColorForId(typeClass, bondTypeId);
-}
-
-/******************************************************************************
-* Returns the default radius for a bond type name.
-******************************************************************************/
-FloatType BondType::getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, ExecutionContext executionContext)
-{
-	if(executionContext == ExecutionContext::Interactive) {
-		QSettings settings;
-		settings.beginGroup("bonds/defaults/radius");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(bondTypeName);
-		if(v.isValid() && v.canConvert<FloatType>())
-			return v.value<FloatType>();
-	}
-
-	return 0;
 }
 
 }	// End of namespace

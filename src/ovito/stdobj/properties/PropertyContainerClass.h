@@ -84,6 +84,9 @@ public:
 	/// on the mapping of the file data columns to internal properties.
 	virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const {}
 
+	/// Returns a default color for an ElementType given its numeric type ID.
+	virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const;
+
 	/// Determines whether a standard property ID is defined for this property class.
 	bool isValidStandardPropertyId(int id) const {
 		return _standardPropertyNames.find(id) != _standardPropertyNames.end();
