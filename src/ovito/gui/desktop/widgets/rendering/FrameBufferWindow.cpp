@@ -32,8 +32,8 @@ namespace Ovito {
 FrameBufferWindow::FrameBufferWindow(QWidget* parent) :
 	QMainWindow(parent, (Qt::WindowFlags)(Qt::Tool | Qt::CustomizeWindowHint | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint))
 {
-	// Note: This line has been disabled, because it leads to sporadic program crashes (Qt 5.12.5).
-//	setAttribute(Qt::WA_MacAlwaysShowToolWindow);
+	// Note: The following setAttribute() call has been commented out, because it leads to sporadic program crashes (Qt 5.12.5).
+	// setAttribute(Qt::WA_MacAlwaysShowToolWindow);
 
 	class MyScrollArea : public QScrollArea {
 	public:
@@ -88,7 +88,11 @@ void FrameBufferWindow::showAndActivateWindow()
 		// Center frame buffer window in main window.
 		if(parentWidget()) {
 			QSize s = frameGeometry().size();
-			move(parentWidget()->geometry().center() - QPoint(s.width() / 2, s.height() / 2));
+			QPoint position = parentWidget()->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
+			// Make sure the window's title bar doesn't move outside the screen area (issue #201):
+			if(position.x() < 0) position.setX(0);
+			if(position.y() < 0) position.setY(0);
+			move(position);
 		}
 		show();
 		updateGeometry();
