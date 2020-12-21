@@ -61,7 +61,7 @@ public:
 
         NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
     };
-    Q_ENUMS(StructureType);
+    Q_ENUM(StructureType);
 
     /// Constructor.
     Q_INVOKABLE ChillPlusModifier(DataSet* dataset);

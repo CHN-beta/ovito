@@ -62,7 +62,7 @@ public:
 		ConventionalMode,	///< Performs the conventional CSP.
 		MatchingMode,		///< Performs the minimum-weight matching CSP.
 	};
-	Q_ENUMS(CSPMode);
+	Q_ENUM(CSPMode);
 
 	/// The maximum number of neighbors that can be taken into account to compute the CSP.
 	enum { MAX_CSP_NEIGHBORS = 32 };

@@ -64,7 +64,7 @@ public:
 		CutoffRange,	///< Treats particles as neighbors which are within a certain distance.
 		Bonding,		///< Treats particles as neighbors which are connected by a bond.
 	};
-	Q_ENUMS(NeighborMode);
+	Q_ENUM(NeighborMode);
 
 	/// Constructor.
 	Q_INVOKABLE ClusterAnalysisModifier(DataSet* dataset);

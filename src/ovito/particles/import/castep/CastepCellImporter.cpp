@@ -201,9 +201,9 @@ void CastepCellImporter::FrameLoader::loadFile()
 
 			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 			boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-				return addNamedType(ParticlesObject::OOClass(), typeProperty.property(), typeName)->numericId();
+				return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
 			});
-			typeProperty.property()->sortElementTypesByName();
+			typeProperty.buffer()->sortElementTypesByName();
 
 			state().setStatus(tr("%1 atoms").arg(coords.size()));
 		}

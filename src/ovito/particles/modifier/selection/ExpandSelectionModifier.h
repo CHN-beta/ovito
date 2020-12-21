@@ -64,7 +64,7 @@ public:
 		CutoffRange,		///< Expands the selection to particles that within a cutoff range of an already selected particle.
 		NearestNeighbors,	///< Expands the selection to the N nearest particles of already selected particles.
 	};
-	Q_ENUMS(ExpansionMode);
+	Q_ENUM(ExpansionMode);
 
 	/// Compile-time constant for the maximum number of nearest neighbors that can be taken into account.
 	enum { MAX_NEAREST_NEIGHBORS = 30 };

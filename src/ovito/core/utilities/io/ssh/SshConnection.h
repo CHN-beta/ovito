@@ -58,7 +58,6 @@ class SshConnection : public QObject
 
 public:
 
-    Q_ENUMS(HostState)
     enum HostState {
         HostKnown                   = SSH_SERVER_KNOWN_OK,
         HostUnknown                 = SSH_SERVER_NOT_KNOWN,
@@ -66,8 +65,8 @@ public:
         HostKeyTypeChanged          = SSH_SERVER_FOUND_OTHER,
         HostKnownHostsFileMissing   = SSH_SERVER_FILE_NOT_FOUND
     };
+    Q_ENUM(HostState)
 
-    Q_FLAGS(AuthMehodFlag)
     enum AuthMehodFlag
     {
         AuthMethodUnknown           = SSH_AUTH_METHOD_UNKNOWN,
@@ -77,9 +76,9 @@ public:
         AuthMethodHostBased         = SSH_AUTH_METHOD_HOSTBASED,
         AuthMethodKbi               = SSH_AUTH_METHOD_INTERACTIVE
     };
+    Q_FLAGS(AuthMehodFlag)
     Q_DECLARE_FLAGS(AuthMethods, AuthMehodFlag)
 
-    Q_FLAGS(UseAuthFlag)
     enum UseAuthFlag
     {
         UseAuthEmpty                = 0,    ///< Auth method not chosen
@@ -88,6 +87,7 @@ public:
         UseAuthPassword             = 1<<2, ///< SSH Password auth method
         UseAuthKbi                  = 1<<3  ///< SSH KBI auth method
     };
+    Q_FLAGS(UseAuthFlag)
     Q_DECLARE_FLAGS(UseAuths, UseAuthFlag)
 
     class KbiQuestion

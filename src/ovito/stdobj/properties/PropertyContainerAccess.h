@@ -192,7 +192,7 @@ public:
 		const T* data = static_cast<const T*>(_cachedPointers[cachedPropertyIndexExpect<PropertyType>()]);
 		OVITO_ASSERT(data != nullptr);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->size() == _elementCount);
-		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == PropertyStoragePrimitiveDataType<T>::value);
+		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == DataBufferPrimitiveType<T>::value);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->stride() == sizeof(T));
 		return data[index];
 	}
@@ -204,7 +204,7 @@ public:
 		T* data = static_cast<T*>(makeCachedPropertyMutable<PropertyType>());
 		OVITO_ASSERT(data != nullptr);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->size() == _elementCount);
-		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == PropertyStoragePrimitiveDataType<T>::value);
+		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == DataBufferPrimitiveType<T>::value);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->stride() == sizeof(T));
 		data[index] = value;
 	}
@@ -215,7 +215,7 @@ public:
 		OVITO_ASSERT(index < elementCount());
 		if(T* data = static_cast<T*>(makeCachedPropertyMutable<PropertyType>())) {
 			OVITO_ASSERT(_container->getProperty(PropertyType)->size() == _elementCount);
-			OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == PropertyStoragePrimitiveDataType<T>::value);
+			OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == DataBufferPrimitiveType<T>::value);
 			OVITO_ASSERT(_container->getProperty(PropertyType)->stride() == sizeof(T));
 			data[index] = value;
 		}
@@ -226,7 +226,7 @@ public:
 	auto propertyRange() const {
 		const T* data = static_cast<const T*>(_cachedPointers[cachedPropertyIndexExpect<PropertyType>()]);
 		OVITO_ASSERT(data != nullptr);
-		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == PropertyStoragePrimitiveDataType<T>::value);
+		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == DataBufferPrimitiveType<T>::value);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->stride() == sizeof(T));
 		return boost::make_iterator_range_n(data, _elementCount);
 	}
@@ -237,7 +237,7 @@ public:
 		T* data = static_cast<T*>(makeCachedPropertyMutable<PropertyType>());
 		OVITO_ASSERT(data != nullptr);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->size() == _elementCount);
-		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == PropertyStoragePrimitiveDataType<T>::value);
+		OVITO_ASSERT(_container->getProperty(PropertyType)->dataType() == DataBufferPrimitiveType<T>::value);
 		OVITO_ASSERT(_container->getProperty(PropertyType)->stride() == sizeof(T));
 		return boost::make_iterator_range_n(data, _elementCount);
 	}

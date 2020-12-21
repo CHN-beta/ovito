@@ -51,7 +51,7 @@ public:
 		IntervalCutoffMode,	///< Performs the interval CNA, which performs an interval analysis to find the optimal cutoff for each atom.
 		BondMode,			///< Performs the CNA based on the existing network of bonds.
 	};
-	Q_ENUMS(CNAMode);
+	Q_ENUM(CNAMode);
 
 #ifndef Q_CC_MSVC
 	/// The maximum number of neighbor atoms taken into account for the common neighbor analysis.
@@ -70,7 +70,7 @@ public:
 
 		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
 	};
-	Q_ENUMS(StructureType);
+	Q_ENUM(StructureType);
 
 	/// Pair of neighbor atoms that form a bond (bit-wise storage).
 	typedef unsigned int CNAPairBond;

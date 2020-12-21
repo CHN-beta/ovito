@@ -384,7 +384,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create bond types.
 			for(int i = 1; i <= nbondtypes; i++)
-				addNumericType(BondsObject::OOClass(), typeProperty.property(), i, {});
+				addNumericType(BondsObject::OOClass(), typeProperty.buffer(), i, {});
 
 			setProgressMaximum(nbonds);
 			int* bondType = typeProperty.begin();
@@ -437,7 +437,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create angle types.
 			for(int i = 1; i <= nangletypes; i++)
-				addNumericType(AnglesObject::OOClass(), typeProperty.property(), i, {});
+				addNumericType(AnglesObject::OOClass(), typeProperty.buffer(), i, {});
 
 			setProgressMaximum(nangles);
 			int* angleType = typeProperty.begin();
@@ -478,7 +478,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create dihedral types.
 			for(int i = 1; i <= ndihedraltypes; i++)
-				addNumericType(DihedralsObject::OOClass(), typeProperty.property(), i, {});
+				addNumericType(DihedralsObject::OOClass(), typeProperty.buffer(), i, {});
 
 			setProgressMaximum(ndihedrals);
 			int* dihedralType = typeProperty.begin();
@@ -519,7 +519,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 			// Create improper types.
 			for(int i = 1; i <= nimpropertypes; i++)
-				addNumericType(ImpropersObject::OOClass(), typeProperty.property(), i, {});
+				addNumericType(ImpropersObject::OOClass(), typeProperty.buffer(), i, {});
 
 			setProgressMaximum(nimpropers);
 			int* improperType = typeProperty.begin();

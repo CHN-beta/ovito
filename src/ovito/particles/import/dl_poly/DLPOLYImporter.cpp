@@ -307,12 +307,12 @@ void DLPOLYImporter::FrameLoader::loadFile()
 
 	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	boost::transform(atom_types, typeProperty.begin(), [&](const QString& typeName) {
-		return addNamedType(ParticlesObject::OOClass(), typeProperty.property(), typeName)->numericId();
+		return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
 	});
 	// Since we created particle types on the go while reading the particles, the type ordering
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeProperty.property()->sortElementTypesByName();
+	typeProperty.buffer()->sortElementTypesByName();
 	
 	if(identifiers.size() == positions.size()) {
 		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());

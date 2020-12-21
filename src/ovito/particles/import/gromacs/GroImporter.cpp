@@ -283,8 +283,8 @@ void GroImporter::FrameLoader::loadFile()
 
 		// Store parsed value in property arrays.
 		identifierProperty.set(atomIndex, atomNumber);
-		typeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), typeProperty.property(), QLatin1String(atomNameStart, atomNameEnd))->numericId());
-		residueTypeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), residueTypeProperty.property(), QLatin1String(residueNameStart, residueNameEnd))->numericId());
+		typeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(atomNameStart, atomNameEnd))->numericId());
+		residueTypeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residueNameStart, residueNameEnd))->numericId());
 		residueNumberProperty.set(atomIndex, residueNumber);
 
 		// Parse atomic xyz coordinates.
@@ -344,8 +344,8 @@ void GroImporter::FrameLoader::loadFile()
 	// Since we created particle types on the go while reading the particles, the type ordering
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeProperty.property()->sortElementTypesByName();
-	residueTypeProperty.property()->sortElementTypesByName();
+	typeProperty.buffer()->sortElementTypesByName();
+	residueTypeProperty.buffer()->sortElementTypesByName();
 
 	// Parse simulation cell definition.
 	AffineTransformation cell = AffineTransformation::Identity();

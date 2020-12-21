@@ -62,7 +62,7 @@ public:
 		GraphClusteringManual,		///< Use graph clustering algorithm to build merge sequence and let user choose merge threshold.
 		MinimumSpanningTree,		///< Use minimum spanning tree algorithm to build merge sequence.
 	};
-	Q_ENUMS(MergeAlgorithm);
+	Q_ENUM(MergeAlgorithm);
 
 	/// Constructor.
 	Q_INVOKABLE GrainSegmentationModifier(DataSet* dataset);

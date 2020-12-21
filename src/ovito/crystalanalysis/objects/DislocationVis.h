@@ -104,7 +104,7 @@ public:
 		ColorByBurgersVector,
 		ColorByCharacter
 	};
-	Q_ENUMS(LineColoringMode);
+	Q_ENUM(LineColoringMode);
 
 public:
 

@@ -471,7 +471,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 			// Average all scalar continuous properties.
 			for(auto& accessor : outputScalarProperties) {
-				const PropertyObject* property2 = (accessor.property()->type() != 0) ? particles2->getProperty(accessor.property()->type()) : particles2->getProperty(accessor.property()->name());
+				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
 				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
 					ConstPropertyAccess<FloatType> accessor2(property2);
 					auto id = idProperty1.cbegin();
@@ -515,7 +515,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 			// Average all scalar continuous properties.
 			for(auto& accessor : outputScalarProperties) {
-				const PropertyObject* property2 = (accessor.property()->type() != 0) ? particles2->getProperty(accessor.property()->type()) : particles2->getProperty(accessor.property()->name());
+				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
 				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
 					ConstPropertyAccess<FloatType> accessor2(property2);
 					const FloatType* v2 = accessor2.cbegin();

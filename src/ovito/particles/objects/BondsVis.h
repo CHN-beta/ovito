@@ -49,7 +49,7 @@ public:
 		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
 		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// Constructor.
 	Q_INVOKABLE BondsVis(DataSet* dataset);

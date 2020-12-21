@@ -228,7 +228,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 						FloatType eps_a, eps_b, eps_c;
 						stream >> typeName >> a >> b >> c >> eps_a >> eps_b >> eps_c;
 						stream.skipWhiteSpace();
-						for(const ElementType* type : typeProperty.property()->elementTypes()) {
+						for(const ElementType* type : typeProperty.buffer()->elementTypes()) {
 							if(type->name() == typeName) {
 								if(typesAsphericalShape.size() <= type->numericId()) typesAsphericalShape.resize(type->numericId()+1, Vector3::Zero());
 								typesAsphericalShape[type->numericId()] = Vector3(a/2,b/2,c/2);
@@ -269,10 +269,10 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 					QString typeName;
 					for(size_t i = 0; i < nbonds; i++) {
 						stream >> typeName >> topologyProperty[i][0] >> topologyProperty[i][1];
-						typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), typeName)->numericId();
+						typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
 						stream.skipWhiteSpace();
 					}
-					typeProperty.property()->sortElementTypesByName();
+					typeProperty.buffer()->sortElementTypesByName();
 					typeProperty.reset();
 					topologyProperty.reset();
 					// Make sure bonds that cross a periodic cell boundary are correctly wrapped around.

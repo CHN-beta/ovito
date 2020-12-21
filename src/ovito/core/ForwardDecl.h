@@ -89,6 +89,9 @@ namespace Ovito {
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;
+	class DataBuffer;
+	using DataBufferPtr = DataOORef<DataBuffer>;
+	using ConstDataBufferPtr = DataOORef<const DataBuffer>;
 	class SelectionSet;
 	class Modifier;
 	class ModifierClass;

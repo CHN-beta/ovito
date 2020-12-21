@@ -74,8 +74,10 @@ LoadStream::LoadStream(QDataStream& source, SynchronousOperation operation) :
 
 	// Check file format version.
 	if(_fileFormat > OVITO_FILE_FORMAT_VERSION)
-		throw Exception(tr("Unsupported file format revision %1. This file has been written by %2 %3. Please upgrade to the newest program version to open this file.")
-				.arg(_fileFormat).arg(_applicationName).arg(_applicationVersionString));
+		throw Exception(tr("Unsupported file format revision %1. This file was written by %2 %3 and you are currently using %4 %5. Please upgrade to a newer program version to open this file.")
+				.arg(_fileFormat)
+				.arg(_applicationName).arg(_applicationVersionString)
+				.arg(Application::applicationName()).arg(Application::applicationVersionString()));
 
 	// OVITO 3.x cannot read state files written by OVITO 2.x:
 	if(_fileFormat < 30001)

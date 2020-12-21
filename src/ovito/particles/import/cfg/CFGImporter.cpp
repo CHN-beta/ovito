@@ -253,7 +253,7 @@ void CFGImporter::FrameLoader::loadFile()
 				const char* line = stream.readLineTrimLeft();
 				const char* line_end = line;
 				while(*line_end != '\0' && *line_end > ' ') ++line_end;
-				currentAtomType = addNamedType(ParticlesObject::OOClass(), typeProperty.property(), QLatin1String(line, line_end))->numericId();
+				currentAtomType = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(line, line_end))->numericId();
 				continue;
 			}
 
@@ -277,7 +277,7 @@ void CFGImporter::FrameLoader::loadFile()
 	columnParser.reset();
 
 	if(header.isExtendedFormat)
-		typeProperty.property()->sortElementTypesByName();
+		typeProperty.buffer()->sortElementTypesByName();
 
 	AffineTransformation H((header.transform * header.H0).transposed());
 	H.translation() = H * Vector3(-0.5, -0.5, -0.5);

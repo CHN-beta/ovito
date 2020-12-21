@@ -46,7 +46,7 @@ public:
 		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
 		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// \brief Constructor.
 	Q_INVOKABLE TrajectoryVis(DataSet* dataset);

@@ -64,7 +64,7 @@ public:
 		AlphaShape,
 		GaussianDensity,
 	};
-    Q_ENUMS(SurfaceMethod);
+    Q_ENUM(SurfaceMethod);
 
 public:
 

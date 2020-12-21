@@ -167,15 +167,15 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Define nucleobase types.
 	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty, false, executionContext());
-	addNumericType(ParticlesObject::OOClass(), baseProperty.property(), 1, QStringLiteral("T"));
-	addNumericType(ParticlesObject::OOClass(), baseProperty.property(), 2, QStringLiteral("C"));
-	addNumericType(ParticlesObject::OOClass(), baseProperty.property(), 3, QStringLiteral("G"));
-	addNumericType(ParticlesObject::OOClass(), baseProperty.property(), 4, QStringLiteral("A"));
+	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 1, QStringLiteral("T"));
+	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 2, QStringLiteral("C"));
+	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 3, QStringLiteral("G"));
+	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 4, QStringLiteral("A"));
 
 	// Define strands list.
 	PropertyAccess<int> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty, false, executionContext());
 	for(int i = 1; i <= numStrands; i++)
-		addNumericType(ParticlesObject::OOClass(), strandsProperty.property(), i, {});
+		addNumericType(ParticlesObject::OOClass(), strandsProperty.buffer(), i, {});
 
 	// The list of bonds between nucleotides.
 	std::vector<ParticleIndexPair> bonds;
@@ -205,7 +205,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 		if(neighbor2 != -1)
 			bonds.push_back({(qlonglong)i, neighbor2});
 
-		*baseTypeIter++ = addNamedType(ParticlesObject::OOClass(), baseProperty.property(), QLatin1String(baseName))->numericId();
+		*baseTypeIter++ = addNamedType(ParticlesObject::OOClass(), baseProperty.buffer(), QLatin1String(baseName))->numericId();
 	}
 
 	// Create and fill bonds topology storage.

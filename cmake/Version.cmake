@@ -31,7 +31,7 @@ SET(OVITO_VERSION_REVISION		"5")
 # changes in a backward-incompatible way.
 #
 # Format version 30006 - OVITO ver>3.2.1: TimeAveragingModifier changed.
-# Format version 30007 - OVITO ver>3.3.2: New DataObject framework. Removed PropertyStorage class.
+# Format version 30007 - OVITO ver>3.3.5: New DataObject framework. Removed PropertyStorage class.
 #
 SET(OVITO_FILE_FORMAT_VERSION	"30007")
 

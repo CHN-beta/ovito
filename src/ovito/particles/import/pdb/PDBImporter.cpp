@@ -452,7 +452,7 @@ void PDBImporter::FrameLoader::loadFile()
 
 					// Atomic type.
 					*typeIter++ = atom.element.ordinal();
-					addNumericType(ParticlesObject::OOClass(), typeProperty.property(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+					addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
 					// Check for presence of occupancy values.
 					if(atom.occ != 0 && atom.occ != 1) hasOccupancy = true;
@@ -478,7 +478,7 @@ void PDBImporter::FrameLoader::loadFile()
 		// Since we created particle types on the go while reading the particles, the assigned particle type IDs
 		// depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
-		typeProperty.property()->sortElementTypesById();
+		typeProperty.buffer()->sortElementTypesById();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {

@@ -190,8 +190,8 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	// Create output arrays.
 	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty, false, Application::instance()->executionContext());
 	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty, false, Application::instance()->executionContext());
-	out_x.property()->setName(xAxisProperty().nameWithComponent());
-	out_y.property()->setName(yAxisProperty().nameWithComponent());
+	out_x.buffer()->setName(xAxisProperty().nameWithComponent());
+	out_y.buffer()->setName(yAxisProperty().nameWithComponent());
 
 	// Collect X coordinates.
 	if(!xProperty->copyTo(out_x.begin(), xVecComponent))

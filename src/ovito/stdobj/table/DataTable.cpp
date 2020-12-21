@@ -115,7 +115,7 @@ ConstPropertyPtr DataTable::getXValues() const
 	else if(const PropertyObject* yProperty = getY()) {
 		if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
 			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false, ExecutionContext::Scripting);
-			xdata.property()->setName(axisLabelX());
+			xdata.buffer()->setName(axisLabelX());
 			FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
 			FloatType x = intervalStart() + binSize * FloatType(0.5);
 			for(FloatType& v : xdata) {
