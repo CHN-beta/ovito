@@ -43,14 +43,16 @@ class OVITO_PARTICLES_EXPORT ParticlesVis : public DataVis
 
 public:
 
-	/// The shapes supported by the particle vis element.
+	/// The standard shapes supported by the particles visualization element.
 	enum ParticleShape {
-		Sphere,
-		Box,
+		Sphere, 			// Includes ellipsoids and superquadrics
+		Box,				// Includes cubes and non-cubic boxes
 		Circle,
 		Square,
 		Cylinder,
-		Spherocylinder
+		Spherocylinder,
+		Mesh,
+		Default
 	};
 	Q_ENUM(ParticleShape);
 
@@ -72,16 +74,16 @@ public:
 	Color selectionParticleColor() const { return Color(1,0,0); }
 
 	/// Returns the actual particle shape used to render the particles.
-	ParticlePrimitive::ParticleShape effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty) const;
+	static ParticlePrimitive::ParticleShape effectiveParticleShape(ParticleShape shape, const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty);
 
 	/// Returns the actual rendering quality used to render the particles.
 	ParticlePrimitive::RenderingQuality effectiveRenderingQuality(SceneRenderer* renderer, const ParticlesObject* particles) const;
 
 	/// Determines the color of each particle to be used for rendering.
-	std::vector<ColorA> particleColors(const ParticlesObject* particles, bool highlightSelection, bool includeTransparency) const;
+	ConstPropertyPtr particleColors(const ParticlesObject* particles, bool highlightSelection) const;
 
 	/// Determines the particle radii used for rendering.
-	std::vector<FloatType> particleRadii(const ParticlesObject* particles) const;
+	ConstPropertyPtr particleRadii(const ParticlesObject* particles) const;
 
 	/// Determines the display radius of a single particle.
 	FloatType particleRadius(size_t particleIndex, ConstPropertyAccess<FloatType> radiusProperty, const PropertyObject* typeProperty) const;
@@ -108,6 +110,17 @@ public:
 
 private:
 
+	/// Renders particle types that have a mesh-based shape assigned.
+	void renderMeshBasedParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+
+	/// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
+	void renderPrimitiveParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+
+	/// Renders all particles with a (sphero-)cylindrical shape.
+	void renderCylindricParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+
+private:
+
 	/// Controls the default display radius of atomic particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE);
 
@@ -130,7 +143,7 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	ParticlePickInfo(ParticlesVis* visElement, const PipelineFlowState& pipelineState, std::vector<size_t> subobjectToParticleMapping = {}) :
+	ParticlePickInfo(ParticlesVis* visElement, const PipelineFlowState& pipelineState, ConstDataBufferPtr subobjectToParticleMapping = {}) :
 		_visElement(visElement), _pipelineState(pipelineState), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
 
 	/// The pipeline flow state containing the particle properties.
@@ -157,8 +170,8 @@ private:
 	/// The vis element that rendered the particles.
 	OORef<ParticlesVis> _visElement;
 
-	/// Stores the index of the particle that is associated with a rendering primitive sub-object ID.
-	std::vector<size_t> _subobjectToParticleMapping;
+	/// Stores the indices of the particles associated with the rendering primitives.
+	ConstDataBufferPtr _subobjectToParticleMapping;
 };
 
 }	// End of namespace

@@ -175,21 +175,23 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		WeakDataObjectRef,		// Bond topology property + revision number
-		WeakDataObjectRef,		// Bond PBC vector property + revision number
-		WeakDataObjectRef,		// Particle position property + revision number
-		WeakDataObjectRef,		// Particle color property + revision number
-		WeakDataObjectRef,		// Particle type property + revision number
-		WeakDataObjectRef,		// Particle radius property + revision number
-		WeakDataObjectRef,		// Bond color property + revision number
-		WeakDataObjectRef,		// Bond type property + revision number
-		WeakDataObjectRef,		// Bond selection property + revision number
-		WeakDataObjectRef,		// Bond transparency + revision number
-		WeakDataObjectRef,		// Simulation cell + revision number
-		FloatType,					// Bond width
-		Color,						// Bond color
-		bool						// Use particle colors
+		CompatibleRendererGroup,// The scene renderer
+		WeakDataObjectRef,		// Bond topology property
+		WeakDataObjectRef,		// Bond PBC vector property
+		WeakDataObjectRef,		// Particle position property
+		WeakDataObjectRef,		// Particle color property
+		WeakDataObjectRef,		// Particle type property
+		WeakDataObjectRef,		// Particle radius property
+		WeakDataObjectRef,		// Bond color property
+		WeakDataObjectRef,		// Bond type property
+		WeakDataObjectRef,		// Bond selection property
+		WeakDataObjectRef,		// Bond transparency
+		WeakDataObjectRef,		// Simulation cell
+		FloatType,				// Bond width
+		Color,					// Bond color
+		bool,					// Use particle colors
+		ShadingMode,			// Bond shading mode
+		ArrowPrimitive::RenderingQuality // Bond rendering quality
 	>;
 
 	// Lookup the rendering primitive in the vis cache.
@@ -208,13 +210,12 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			simulationCell,
 			bondWidth(),
 			bondColor(),
-			useParticleColors()));
+			useParticleColors(),
+			shadingMode(),
+			renderingQuality()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrowPrimitive
-			|| !arrowPrimitive->isValid(renderer)
-			|| !arrowPrimitive->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !arrowPrimitive->setRenderingQuality(renderingQuality())) {
+	if(!arrowPrimitive || !arrowPrimitive->isValid(renderer)) {
 
 		FloatType bondRadius = bondWidth() / 2;
 		if(bondTopologyProperty && positionProperty && bondRadius > 0) {
@@ -228,20 +229,20 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			size_t particleCount = positions.size();
 			const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
-			// Compute the radii of the particles.
-			std::vector<FloatType> particleRadii;
+			// Obtain the radii of the particles.
+			ConstPropertyAccessAndRef<FloatType> particleRadii;
 			if(particleVis)
 				particleRadii = particleVis->particleRadii(particles);
+			// Make sure the particle radius array has the correct length.
+			if(particleRadii && particleRadii.size() != particleCount) 
+				particleRadii.reset();
 
 			if(!useParticleColors())
 				particleVis = nullptr;
 
 			// Determine half-bond colors.
-			std::vector<ColorA> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
+			std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
 			OVITO_ASSERT(colors.size() == arrowPrimitive->elementCount());
-
-			// Make sure the particle radius array has the correct length.
-			if(particleRadii.size() != particleCount) particleRadii.clear();
 
 			int elementIndex = 0;
 			auto color = colors.cbegin();
@@ -258,7 +259,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 					}
 					FloatType t = 0.5;
 					FloatType blen = vec.length() * FloatType(2);
-					if(!particleRadii.empty() && blen != 0) {
+					if(particleRadii && blen != 0) {
 						// This calculation determines the point where to split the bond into the two half-bonds
 						// such that the border appears halfway between the two particles, which may have two different sizes.
 						t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
@@ -297,7 +298,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 * Returns an array with two colors per full bond, because the two half-bonds
 * may have different colors.
 ******************************************************************************/
-std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const
+std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const
 {
 	OVITO_ASSERT(particles != nullptr);
 	particles->verifyIntegrity();
@@ -310,7 +311,6 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 	ConstPropertyAccess<Color> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
 	const PropertyObject* bondTypeProperty = bonds->getProperty(BondsObject::TypeProperty);
 	ConstPropertyAccess<int> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
-	ConstPropertyAccess<FloatType> transparencyProperty = bonds->getProperty(BondsObject::TransparencyProperty);
 
 	// Get particle-related properties and the vis element.
 	const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
@@ -321,8 +321,8 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 		particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
 	}
 
-	std::vector<ColorA> output(bonds->elementCount() * 2);
-	ColorA defaultColor = (ColorA)bondColor();
+	std::vector<Color> output(bonds->elementCount() * 2);
+	Color defaultColor = bondColor();
 	if(bondColorProperty && bondColorProperty.size() * 2 == output.size()) {
 		// Take bond colors directly from the color property.
 		auto bc = output.begin();
@@ -334,7 +334,8 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 	else if(useParticleColors && particleVis) {
 		// Derive bond colors from particle colors.
 		size_t particleCount = particles->elementCount();
-		std::vector<ColorA> particleColors = particleVis->particleColors(particles, false, false);
+		ConstPropertyAccessAndRef<Color> particleColors = particleVis->particleColors(particles, false);
+		OVITO_ASSERT(particleColors.size() == particleCount);
 		auto bc = output.begin();
 		for(const auto& bond : topologyProperty) {
 			if((size_t)bond[0] < particleCount && (size_t)bond[1] < particleCount) {
@@ -352,11 +353,11 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 			// Assign colors based on bond types.
 			// Generate a lookup map for bond type colors.
 			const std::map<int, Color>& colorMap = bondTypeProperty->typeColorMap();
-			std::array<ColorA,16> colorArray;
+			std::array<Color,16> colorArray;
 			// Check if all type IDs are within a small, non-negative range.
 			// If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
 			if(boost::algorithm::all_of(colorMap,
-					[&colorArray](const std::map<int, ColorA>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
+					[&colorArray](const std::map<int, Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
 				colorArray.fill(defaultColor);
 				for(const auto& entry : colorMap)
 					colorArray[entry.first] = entry.second;
@@ -397,19 +398,9 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 		}
 	}
 
-	// Apply transparency values.
-	if(transparencyProperty && transparencyProperty.size() * 2 == output.size()) {
-		auto c = output.begin();
-		for(FloatType t : transparencyProperty) {
-			FloatType alpha = qBound(FloatType(0), FloatType(1)-t, FloatType(1));
-			c->a() = alpha; ++c;
-			c->a() = alpha; ++c;
-		}
-	}
-
 	// Highlight selected bonds.
 	if(bondSelectionProperty && bondSelectionProperty.size() * 2 == output.size()) {
-		const ColorA selColor = selectionBondColor();
+		const Color selColor = selectionBondColor();
 		const int* t = bondSelectionProperty.cbegin();
 		for(auto c = output.begin(); c != output.end(); ++t) {
 			if(*t) {

@@ -175,6 +175,17 @@ public:
         return CloneHelper().cloneObject(_ref, false);
     }
 
+    /// Turns a const data object reference into a mutable data object reference. 
+    /// Makes a copy of the data object if necessary.
+    DataOORef<std::remove_const_t<T>> makeMutable() && {
+        if(!this->_ref)
+            return {};
+        else if(this->_ref->isSafeToModify())
+            return const_pointer_cast<std::remove_const_t<T>>(std::move(this->_ref));
+        else
+            return makeCopy();
+    }
+
     /// Makes a shallow copy of a data object.
     static DataOORef<std::remove_const_t<T>> makeCopy(const T* obj) {
         return CloneHelper().cloneObject(obj, false);

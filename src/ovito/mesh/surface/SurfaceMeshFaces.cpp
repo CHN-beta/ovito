@@ -86,7 +86,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSe
 				}
 				else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
 					// Initialize face colors from uniform color set in SurfaceMeshVis.
-					PropertyAccess<Color>(property).fill(vis->surfaceColor());
+					property->fill(vis->surfaceColor());
 					initializeMemory = false;
 				}
 			}

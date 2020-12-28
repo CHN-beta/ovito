@@ -45,9 +45,9 @@ public:
     DataObjectAccess() noexcept = default;
 
     /// Constructor taking an externally owned data object.
-    DataObjectAccess(const DataObjectClass* object) noexcept : 
-        _constObject(object), 
-        _mutableObject((object && object->isSafeToModify()) ? const_cast<DataObjectClass*>(object) : nullptr) {}
+    DataObjectAccess(Reference<const DataObjectClass> object) noexcept : 
+        _constObject(std::move(object)), 
+        _mutableObject((_constObject && _constObject->isSafeToModify()) ? const_cast<DataObjectClass*>(_constObject.get()) : nullptr) {}
 
     /// Copying not allowed, because it would lead to a shared ownership.
     DataObjectAccess(const DataObjectAccess& other) = delete;
@@ -74,10 +74,10 @@ public:
     }
 
     /// Releases the current data object from this accessor and loads a new one.
-    void reset(const DataObjectClass* object = nullptr) noexcept {
-        _constObject = object;
-        if(object && object->isSafeToModify())
-            _mutableObject = const_cast<DataObjectClass*>(object);
+    void reset(Reference<const DataObjectClass> object = {}) noexcept {
+        _constObject = std::move(object);
+        if(_constObject && _constObject->isSafeToModify())
+            _mutableObject = const_cast<DataObjectClass*>(_constObject.get());
         else
             _mutableObject = nullptr;
     }

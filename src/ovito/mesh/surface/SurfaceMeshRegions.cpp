@@ -85,7 +85,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(Data
 		if(type == ColorProperty) {
 			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
 				if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
-					PropertyAccess<Color>(property).fill(vis->surfaceColor());
+					property->fill(vis->surfaceColor());
 					initializeMemory = false;
 				}
 			}

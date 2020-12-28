@@ -81,7 +81,7 @@ private:
 	public:
 
 		/// Constructor.
-		VoronoiAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, std::vector<FloatType> radii,
+		VoronoiAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
 							const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
 							bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
 			Engine(executionContext, validityInterval),
@@ -137,7 +137,7 @@ private:
 		const FloatType _faceThreshold;
 		const FloatType _relativeFaceThreshold;
 		DataOORef<const SimulationCellObject> _simCell;
-		std::vector<FloatType> _radii;
+		ConstPropertyPtr _radii;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _selection;
 		ConstPropertyPtr _particleIdentifiers;

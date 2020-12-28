@@ -111,11 +111,12 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		WeakDataObjectRef,		// The trajectory data object + revision number
-		FloatType,					// Line width
-		Color,						// Line color,
-		FloatType,					// End frame
+		CompatibleRendererGroup,// The scene renderer
+		WeakDataObjectRef,		// The trajectory data object
+		FloatType,				// Line width
+		Color,					// Line color,
+		ShadingMode,			// Shading mode
+		FloatType,				// End frame
 		WeakDataObjectRef		// Simulation cell
 	>;
 
@@ -125,30 +126,30 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 		std::shared_ptr<ParticlePrimitive> corners;
 	};
 
-	// The shading mode.
-	ParticlePrimitive::ShadingMode cornerShadingMode = (static_cast<ArrowPrimitive::ShadingMode>(shadingMode()) == ArrowPrimitive::NormalShading)
-			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 	FloatType endFrame = showUpToCurrentTime() ? dataset()->animationSettings()->timeToFrame(time) : std::numeric_limits<FloatType>::max();
 
 	// Lookup the rendering primitives in the vis cache.
-	auto& renderingPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(
+	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
 			renderer,
 			trajObj,
 			lineWidth(),
 			lineColor(),
+			shadingMode(),
 			endFrame,
 			simulationCell));
 
+	// The shading mode for corner spheres.
+	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ArrowPrimitive::NormalShading)
+			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
+
 	// Check if we already have a valid rendering primitives that are up to date.
-	if(!renderingPrimitives.segments || !renderingPrimitives.corners
-			|| !renderingPrimitives.segments->isValid(renderer)
-			|| !renderingPrimitives.corners->isValid(renderer)
-			|| !renderingPrimitives.segments->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !renderingPrimitives.corners->setShadingMode(cornerShadingMode)) {
+	if(!visCache.segments || !visCache.corners
+			|| !visCache.segments->isValid(renderer)
+			|| !visCache.corners->isValid(renderer)) {
 
 		// Update the rendering primitives.
-		renderingPrimitives.segments.reset();
-		renderingPrimitives.corners.reset();
+		visCache.segments.reset();
+		visCache.corners.reset();
 
 		FloatType lineRadius = lineWidth() / 2;
 		if(trajObj && lineRadius > 0) {
@@ -161,7 +162,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 				// Determine the number of line segments and corner points to render.
 				size_t lineSegmentCount = 0;
-				std::vector<Point3> cornerPoints;
+				DataBufferAccessAndRef<Point3> cornerPoints = DataOORef<DataBuffer>::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
@@ -188,21 +189,20 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 					}
 				}
 
-				renderingPrimitives.segments = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), ArrowPrimitive::HighQuality);
-				renderingPrimitives.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+				visCache.segments = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), ArrowPrimitive::HighQuality);
 
-				renderingPrimitives.segments->startSetElements(lineSegmentCount);
+				visCache.segments->startSetElements(lineSegmentCount);
 				int lineSegmentIndex = 0;
 
 				// Create the line segment geometry.
 				pos = posProperty.cbegin();
 				sampleTime = timeProperty.cbegin();
 				id = idProperty.cbegin();
-				ColorA color = lineColor();
+				Color color = lineColor();
 				if(!simulationCell) {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							renderingPrimitives.segments->setElement(lineSegmentIndex++, pos[0], pos[1] - pos[0], color, lineRadius);
+							visCache.segments->setElement(lineSegmentIndex++, pos[0], pos[1] - pos[0], color, lineRadius);
 						}
 					}
 				}
@@ -210,30 +210,29 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
 							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
-								renderingPrimitives.segments->setElement(lineSegmentIndex++, p1, p2 - p1, color, lineRadius);
+								visCache.segments->setElement(lineSegmentIndex++, p1, p2 - p1, color, lineRadius);
 							});
 						}
 					}
 				}
 				OVITO_ASSERT(lineSegmentIndex == lineSegmentCount);
-				renderingPrimitives.segments->endSetElements();
+				visCache.segments->endSetElements();
 
-				// Create corner points.
-				renderingPrimitives.corners->setSize(cornerPoints.size());
-				if(!cornerPoints.empty())
-					renderingPrimitives.corners->setParticlePositions(cornerPoints.data());
-				renderingPrimitives.corners->setParticleColor(color);
-				renderingPrimitives.corners->setParticleRadius(lineRadius);
+				// Create rendering primitive for the corner points.
+				visCache.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+				visCache.corners->setPositions(cornerPoints.take());
+				visCache.corners->setUniformColor(color);
+				visCache.corners->setUniformRadius(lineRadius);
 			}
 		}
 	}
 
-	if(!renderingPrimitives.segments)
+	if(!visCache.segments)
 		return;
 
 	renderer->beginPickObject(contextNode);
-	renderingPrimitives.segments->render(renderer);
-	renderingPrimitives.corners->render(renderer);
+	visCache.segments->render(renderer);
+	visCache.corners->render(renderer);
 	renderer->endPickObject();
 }
 

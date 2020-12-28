@@ -25,6 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 
@@ -136,8 +137,11 @@ public:
 
 private:
 
-	/// The default display radius to be used for particles of this type.
+	/// The display radius to be used for particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+
+	/// The visualization shape for particles of this type.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape, shape, setShape);
 
 	/// An optional user-defined shape used for rendering particles of this type.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriMeshObject>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);

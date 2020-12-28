@@ -423,11 +423,11 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	// Assign weights to sub-steps according to estimated runtime.
 	beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
-	// Scale the atomic radii.
-	for(FloatType& r : _particleRadii) r *= _radiusFactor;
+	// Access the atomic radii.
+	ConstPropertyAccess<FloatType> particleRadii(_particleRadii);
 
 	// Determine the cutoff range of atomic Gaussians.
-	FloatType cutoffSize = FloatType(3) * *std::max_element(_particleRadii.cbegin(), _particleRadii.cend());
+	FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii);
 
 	// Determine the extents of the density grid.
 	AffineTransformation gridBoundaries = mesh()->domain()->matrix();
@@ -495,7 +495,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
 		// Visit all particles in the vicinity of the center point.
 		for(CutoffNeighborFinder::Query neighQuery(neighFinder, voxelCenter); !neighQuery.atEnd(); neighQuery.next()) {
-			FloatType alpha = _particleRadii[neighQuery.current()];
+			FloatType alpha = _radiusFactor * particleRadii[neighQuery.current()];
 			density += std::exp(-neighQuery.distanceSquared() / (FloatType(2) * alpha * alpha));
 		}
 	});
@@ -592,7 +592,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 			// Visit all particles in the vicinity of the vertex.
 			FloatType weightSum = 0;
 			for(CutoffNeighborFinder::Query neighQuery(neighFinder, mesh.vertexPosition(vertexIndex)); !neighQuery.atEnd(); neighQuery.next()) {
-				FloatType alpha = _particleRadii[neighQuery.current()];
+				FloatType alpha = _radiusFactor * particleRadii[neighQuery.current()];
 				FloatType weight = std::exp(-neighQuery.distanceSquared() / (FloatType(2) * alpha * alpha));
 				// Perform summation of particle contributions to the property values at the current mesh vertex.
 				for(auto& p : propertyMapping) {
@@ -648,6 +648,8 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
 	// Release data that is no longer needed.
 	releaseWorkingData();
+	particleRadii.reset();
+	_particleRadii.reset();
 }
 
 /******************************************************************************

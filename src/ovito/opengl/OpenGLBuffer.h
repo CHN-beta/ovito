@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "OpenGLHelpers.h"
 #include "OpenGLSceneRenderer.h"
 #include <QOpenGLBuffer>
@@ -44,6 +45,23 @@ public:
 
 	/// Constructor.
 	OpenGLBuffer(QOpenGLBuffer::Type type = QOpenGLBuffer::VertexBuffer) : _elementCount(0), _verticesPerElement(0), _buffer(type) {}
+
+	/// Transfers a local OVITO data buffer into the OpenGL VBO.
+	template<typename U>
+	void uploadData(const ConstDataBufferPtr& sourceBuffer, int verticesPerElement = 1) {
+		if(_sourceBuffer == sourceBuffer && isCreated() && _verticesPerElement == verticesPerElement) {
+			OVITO_ASSERT(!sourceBuffer || sourceBuffer->size() == _elementCount);
+			return;
+		}
+		_sourceBuffer = sourceBuffer;
+		if(_sourceBuffer) {
+			create(QOpenGLBuffer::StaticDraw, _sourceBuffer->size(), verticesPerElement);
+			fill(ConstDataBufferAccess<U>(_sourceBuffer).cbegin());
+		}
+		else {
+			destroy();
+		}
+	}
 
 	/// Creates the buffer object in the OpenGL server. This function must be called with a current QOpenGLContext.
 	/// The buffer will be bound to and can only be used in that context (or any other context that is shared with it).
@@ -208,105 +226,36 @@ public:
 
 	/// Binds this buffer to the vertex position attribute of a vertex shader.
 	void bindPositions(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_STATIC_ASSERT(sizeof(T) >= sizeof(GLfloat)*3);
-
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex positions buffer."));
-
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("position"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("position", GL_FLOAT, byteOffset, 3, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex coordinates through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_VERTEX_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glVertexPointer(3, GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+		bind(renderer, shader, "position", GL_FLOAT, byteOffset, 3, sizeof(T));
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex position attribute.
 	void detachPositions(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("position"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_VERTEX_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "position");
 	}
 
 	/// Binds this buffer to the vertex color attribute of a vertex shader.
 	void bindColors(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, int components, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_ASSERT(sizeof(T) >= sizeof(GLfloat)*components);
-		OVITO_ASSERT(components == 3 || components == 4);
+		bind(renderer, shader, "color", GL_FLOAT, byteOffset, components, sizeof(T));
+	}
 
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex color buffer."));
-
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("color"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("color", GL_FLOAT, byteOffset, components, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex colors through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_COLOR_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glColorPointer(components, GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+	void setUniformColor(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, const Color& c) {
+		shader->setAttributeValue("color", c.r(), c.g(), c.b());
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex color attribute.
 	void detachColors(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("color"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_COLOR_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "color");
 	}
 
 	/// Binds this buffer to the vertex normal attribute of a vertex shader.
 	void bindNormals(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_STATIC_ASSERT(sizeof(T) >= sizeof(GLfloat)*3);
-
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex normal buffer."));
-
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("normal"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("normal", GL_FLOAT, byteOffset, 3, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex normals through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_NORMAL_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glNormalPointer(GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+		bind(renderer, shader, "normal", GL_FLOAT, byteOffset, 3, sizeof(T));
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex normal attribute.
 	void detachNormals(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("normal"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_NORMAL_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "normal");
 	}
 
 private:
@@ -323,9 +272,12 @@ private:
 	/// The number of vertices per element.
 	int _verticesPerElement;
 
-	// OpenGL ES may not support memory mapping a GL buffer.
-	// This is a host memory buffer used to emulate the map() method on this platform.
-	std::vector<T> _temporaryBuffer; 
+	/// OpenGL ES may not support memory mapping a GL buffer.
+	/// This is a host memory buffer used to emulate the map() method on this platform.
+	std::vector<T> _temporaryBuffer;
+
+	/// The OVITO data buffer that is used to fill the VBO.
+	ConstDataBufferPtr _sourceBuffer;
 };
 
 }	// End of namespace

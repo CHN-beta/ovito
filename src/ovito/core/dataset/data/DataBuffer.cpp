@@ -108,20 +108,43 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
 }
 
 /******************************************************************************
-* Grows the storage buffer to accomodate at least the given number of data elements
+* Grows the number of data elements while preserving the exiting data.
+* True if the memory buffer was reallocated, because the current capacity was insufficient
+* to accommodate the new elements.
 ******************************************************************************/
-void DataBuffer::growCapacity(size_t newSize)
+bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess) 
 {
-	prepareWriteAccess();
+	if(!callerAlreadyHasWriteAccess)
+		prepareWriteAccess();
+	size_t newSize = _numElements + numAdditionalElements;
 	OVITO_ASSERT(newSize >= _numElements);
-	OVITO_ASSERT(newSize > _capacity);
-	size_t newCapacity = (newSize < 1024)
-		? std::max(newSize * 2, (size_t)256)
-		: (newSize * 3 / 2);
-	std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newCapacity * _stride]);
-	std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
-	_data.swap(newBuffer);
-	_capacity = newCapacity;
+	bool needToGrow;
+	if((needToGrow = (newSize > _capacity))) {
+		// Grow the storage capacity of the data buffer.
+		size_t newCapacity = (newSize < 1024)
+			? std::max(newSize * 2, (size_t)256)
+			: (newSize * 3 / 2);
+		std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newCapacity * _stride]);
+		std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
+		_data.swap(newBuffer);
+		_capacity = newCapacity;
+	}
+	_numElements = newSize;
+	if(!callerAlreadyHasWriteAccess)
+		finishWriteAccess();
+	return needToGrow;
+}
+
+/******************************************************************************
+* Reduces the number of data elements while preserving the exiting data.
+* Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
+* memory of the truncated elements is not released by the method.
+******************************************************************************/
+void DataBuffer::truncate(size_t numElementsToRemove) 
+{
+	OVITO_ASSERT(numElementsToRemove <= _numElements);
+	prepareWriteAccess();
+	_numElements -= numElementsToRemove;
 	finishWriteAccess();
 }
 

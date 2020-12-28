@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 
 namespace Ovito {
@@ -66,21 +67,16 @@ public:
 	bool emphasizeEdges() const { return _emphasizeEdges; }
 
 	/// Activates rendering of multiple instances of the mesh.
-	virtual void setInstancedRendering(std::vector<AffineTransformation> perInstanceTMs, std::vector<ColorA> perInstanceColors) override {
-		OVITO_ASSERT(perInstanceTMs.size() == perInstanceColors.size() || perInstanceColors.empty());
-		_perInstanceTMs = std::move(perInstanceTMs);
-		_perInstanceColors = std::move(perInstanceColors);
-		_useInstancedRendering = true;
-	}
-
-	/// Indicates whether rendering of multiple instances of the same mesh is activated.
-	bool useInstancedRendering() const { return _useInstancedRendering; }
+	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) override;
 
 	/// Returns the list of transformation matrices when rendering multiple instances of the mesh is enabled.
-	const std::vector<AffineTransformation>& perInstanceTMs() const { return _perInstanceTMs; }
+	const ConstDataBufferPtr& perInstanceTMs() const { return _perInstanceTMs; }
 
 	/// Returns the list of colors when rendering multiple instances of the mesh is enabled.
-	const std::vector<ColorA>& perInstanceColors() const { return _perInstanceColors; }
+	const ConstDataBufferPtr& perInstanceColors() const { return _perInstanceColors; }
+
+	/// Returns whether instanced rendering of the mesh has been activated.
+	bool useInstancedRendering() const { return (bool)_perInstanceTMs; }
 
 private:
 
@@ -94,13 +90,10 @@ private:
 	bool _emphasizeEdges = false;
 
 	/// The list of transformation matrices when rendering multiple instances of the mesh.
-	std::vector<AffineTransformation> _perInstanceTMs;
+	ConstDataBufferPtr _perInstanceTMs;
 
 	/// The list of colors when rendering multiple instances of the mesh.
-	std::vector<ColorA> _perInstanceColors;
-
-	/// Activates the rendering of multiple instances of the same mesh.
-	bool _useInstancedRendering = false;
+	ConstDataBufferPtr _perInstanceColors;
 };
 
 }	// End of namespace

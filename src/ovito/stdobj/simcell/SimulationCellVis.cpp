@@ -27,6 +27,7 @@
 #include <ovito/core/rendering/ArrowPrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "SimulationCellVis.h"
 #include "SimulationCellObject.h"
 
@@ -197,50 +198,54 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 	};
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& solidPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, cell, cellLineWidth(), cellColor()));
+	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(renderer, cell, cellLineWidth(), cellColor()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!solidPrimitives.lines || !solidPrimitives.corners
-			|| !solidPrimitives.lines->isValid(renderer)
-			|| !solidPrimitives.corners->isValid(renderer)) {
+	if(!visCache.lines || !visCache.corners
+			|| !visCache.lines->isValid(renderer)
+			|| !visCache.corners->isValid(renderer)) {
 
-		solidPrimitives.lines = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality);
-		solidPrimitives.corners  = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
-		solidPrimitives.lines->startSetElements(cell->is2D() ? 4 : 12);
+		visCache.lines = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality);
+		visCache.lines->startSetElements(cell->is2D() ? 4 : 12);
 		ColorA color = (ColorA)cellColor();
-		Point3 corners[8];
+
+		// Create a DataBuffer with the box corner coordinates.
+		DataBufferAccessAndRef<Point3> corners = DataOORef<DataBuffer>::create(dataset(), ExecutionContext::Scripting, cell->is2D() ? 4 : 8, DataBuffer::Float, 3, 0, false);
+
 		corners[0] = cell->cellOrigin();
 		if(cell->is2D()) corners[0].z() = 0;
 		corners[1] = corners[0] + cell->cellVector1();
 		corners[2] = corners[1] + cell->cellVector2();
 		corners[3] = corners[0] + cell->cellVector2();
-		corners[4] = corners[0] + cell->cellVector3();
-		corners[5] = corners[1] + cell->cellVector3();
-		corners[6] = corners[2] + cell->cellVector3();
-		corners[7] = corners[3] + cell->cellVector3();
-		solidPrimitives.lines->setElement(0, corners[0], corners[1] - corners[0], color, cellLineWidth());
-		solidPrimitives.lines->setElement(1, corners[1], corners[2] - corners[1], color, cellLineWidth());
-		solidPrimitives.lines->setElement(2, corners[2], corners[3] - corners[2], color, cellLineWidth());
-		solidPrimitives.lines->setElement(3, corners[3], corners[0] - corners[3], color, cellLineWidth());
+		visCache.lines->setElement(0, corners[0], corners[1] - corners[0], color, cellLineWidth());
+		visCache.lines->setElement(1, corners[1], corners[2] - corners[1], color, cellLineWidth());
+		visCache.lines->setElement(2, corners[2], corners[3] - corners[2], color, cellLineWidth());
+		visCache.lines->setElement(3, corners[3], corners[0] - corners[3], color, cellLineWidth());
 		if(cell->is2D() == false) {
-			solidPrimitives.lines->setElement(4, corners[4], corners[5] - corners[4], color, cellLineWidth());
-			solidPrimitives.lines->setElement(5, corners[5], corners[6] - corners[5], color, cellLineWidth());
-			solidPrimitives.lines->setElement(6, corners[6], corners[7] - corners[6], color, cellLineWidth());
-			solidPrimitives.lines->setElement(7, corners[7], corners[4] - corners[7], color, cellLineWidth());
-			solidPrimitives.lines->setElement(8, corners[0], corners[4] - corners[0], color, cellLineWidth());
-			solidPrimitives.lines->setElement(9, corners[1], corners[5] - corners[1], color, cellLineWidth());
-			solidPrimitives.lines->setElement(10, corners[2], corners[6] - corners[2], color, cellLineWidth());
-			solidPrimitives.lines->setElement(11, corners[3], corners[7] - corners[3], color, cellLineWidth());
+			corners[4] = corners[0] + cell->cellVector3();
+			corners[5] = corners[1] + cell->cellVector3();
+			corners[6] = corners[2] + cell->cellVector3();
+			corners[7] = corners[3] + cell->cellVector3();
+			visCache.lines->setElement(4, corners[4], corners[5] - corners[4], color, cellLineWidth());
+			visCache.lines->setElement(5, corners[5], corners[6] - corners[5], color, cellLineWidth());
+			visCache.lines->setElement(6, corners[6], corners[7] - corners[6], color, cellLineWidth());
+			visCache.lines->setElement(7, corners[7], corners[4] - corners[7], color, cellLineWidth());
+			visCache.lines->setElement(8, corners[0], corners[4] - corners[0], color, cellLineWidth());
+			visCache.lines->setElement(9, corners[1], corners[5] - corners[1], color, cellLineWidth());
+			visCache.lines->setElement(10, corners[2], corners[6] - corners[2], color, cellLineWidth());
+			visCache.lines->setElement(11, corners[3], corners[7] - corners[3], color, cellLineWidth());
 		}
-		solidPrimitives.lines->endSetElements();
-		solidPrimitives.corners->setSize(cell->is2D() ? 4 : 8);
-		solidPrimitives.corners->setParticlePositions(corners);
-		solidPrimitives.corners->setParticleRadius(cellLineWidth());
-		solidPrimitives.corners->setParticleColor(cellColor());
+		visCache.lines->endSetElements();
+
+		// Render spheres in the corners of the simulation box.
+		visCache.corners  = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+		visCache.corners->setPositions(corners.take());
+		visCache.corners->setUniformRadius(cellLineWidth());
+		visCache.corners->setUniformColor(cellColor());
 	}
 	renderer->beginPickObject(contextNode);
-	solidPrimitives.lines->render(renderer);
-	solidPrimitives.corners->render(renderer);
+	visCache.lines->render(renderer);
+	visCache.corners->render(renderer);
 	renderer->endPickObject();
 }
 

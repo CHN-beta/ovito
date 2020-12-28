@@ -246,15 +246,16 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 	// The key type used for caching the rendering primitives:
 	using CacheKey = std::tuple<
 		CompatibleRendererGroup,// The scene renderer
-		WeakDataObjectRef,	// Source object + revision number
-		WeakDataObjectRef,	// Renderable object + revision number
-		WeakDataObjectRef,	// Simulation cell geometry
+		WeakDataObjectRef,		// Source object
+		WeakDataObjectRef,		// Renderable object
+		WeakDataObjectRef,		// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling
 		FloatType,				// Burgers vector width
 		Color,					// Burgers vector color
-		LineColoringMode		// Way to color lines
+		LineColoringMode,		// Way to color lines
+		ArrowPrimitive::ShadingMode	// Line shading mode
 	>;
 
 	// The values stored in the vis cache.
@@ -302,20 +303,17 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		burgersVectorScaling(),
 		burgersVectorWidth(),
 		burgersVectorColor(),
-		lineColoringMode()));
+		lineColoringMode(),
+		shadingMode()));
 
 	// Check if we already have valid rendering primitives that are up to date.
 	if(!primitives.segments || !primitives.corners || !primitives.burgersArrows
 			|| !primitives.segments->isValid(renderer)
 			|| !primitives.corners->isValid(renderer)
 			|| !primitives.burgersArrows->isValid(renderer)
-			|| !primitives.segments->setShadingMode(shadingMode())
-			|| !primitives.corners->setShadingMode(cornerShadingMode)
-			|| !primitives.burgersArrows->setShadingMode(shadingMode())
 			|| primitives.segments->shape() != segmentShape) {
 
 		primitives.segments = renderer->createArrowPrimitive(segmentShape, shadingMode(), ArrowPrimitive::HighQuality);
-		primitives.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
 		primitives.burgersArrows.reset();
 
 		ConstPropertyAccess<int> phaseArray(phaseProperty);
@@ -333,10 +331,10 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		primitives.segments->startSetElements(lineSegmentCount);
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
 		FloatType lineRadius = std::max(lineWidth() / 2, FloatType(0));
-		std::vector<Point3> cornerPoints;
-		std::vector<Color> cornerColors;
-		cornerPoints.reserve(cornerCount);
-		cornerColors.reserve(cornerCount);
+		DataBufferAccessAndRef<Point3> cornerPoints = new DataBuffer(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> cornerColors = new DataBuffer(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
+		auto cornerPointsIter = cornerPoints.begin();
+		auto cornerColorsIter = cornerColors.begin();
 		Color lineColor;
 		Vector3 normalizedBurgersVector;
 		Vector3 lastBurgersVector = Vector3::Zero();
@@ -413,17 +411,18 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 			}
 			primitives.segments->setElement(lineSegmentIndex, lineSegment.verts[0], delta, segmentColor, lineRadius);
 			if(lineSegmentIndex != 0 && lineSegment.verts[0].equals(renderableLines->lineSegments()[lineSegmentIndex-1].verts[1])) {
-				subobjToSegmentMap[cornerPoints.size() + lineSegmentCount] = lineSegment.dislocationIndex;
-				cornerPoints.push_back(lineSegment.verts[0]);
-				cornerColors.push_back(segmentColor);
+				subobjToSegmentMap[(cornerPointsIter - cornerPoints.begin()) + lineSegmentCount] = lineSegment.dislocationIndex;
+				*cornerPointsIter++ = lineSegment.verts[0];
+				*cornerColorsIter++ = segmentColor;
 			}
 		}
-		OVITO_ASSERT(cornerPoints.size() == cornerCount);
+		OVITO_ASSERT(cornerPointsIter == cornerPoints.end());
 		primitives.segments->endSetElements();
-		primitives.corners->setSize(cornerPoints.size());
-		primitives.corners->setParticlePositions(cornerPoints.empty() ? nullptr : cornerPoints.data());
-		primitives.corners->setParticleColors(cornerColors.empty() ? nullptr : cornerColors.data());
-		primitives.corners->setParticleRadius(lineRadius);
+
+		primitives.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+		primitives.corners->setPositions(cornerPoints.take());
+		primitives.corners->setColors(cornerColors.take());
+		primitives.corners->setUniformRadius(lineRadius);
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
@@ -496,7 +495,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 
 	// Generate the polyline segments to render.
 	std::vector<std::pair<Point3,Point3>> lineSegments;
-	std::vector<Point3> cornerVertices;
+	DataBufferAccessAndRef<Point3> cornerVertices = new DataBuffer(dataset(), 0, DataBuffer::Float, 3, 0, false);
 	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&lineSegments, &cornerVertices](const Point3& v1, const Point3& v2, bool isInitialSegment) {
 		lineSegments.push_back({v1,v2});
 		if(!isInitialSegment)
@@ -533,19 +532,18 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	segmentBuffer->render(renderer);
 
 	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-	cornerBuffer->setSize(cornerVertices.size());
-	cornerBuffer->setParticlePositions(cornerVertices.data());
-	cornerBuffer->setParticleColor(Color(1,1,1));
-	cornerBuffer->setParticleRadius(lineRadius);
+	cornerBuffer->setPositions(cornerVertices.take());
+	cornerBuffer->setUniformColor(Color(1,1,1));
+	cornerBuffer->setUniformRadius(lineRadius);
 	cornerBuffer->render(renderer);
 
 	if(!segment->line.empty()) {
-		Point3 wrappedHeadPos = cellObject->wrapPoint(segment->line.front());
+		DataBufferAccessAndRef<Point3> wrappedHeadPos = new DataBuffer(dataset(), 1, DataBuffer::Float, 3, 0, false); 
+		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
 		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-		headBuffer->setSize(1);
-		headBuffer->setParticlePositions(&wrappedHeadPos);
-		headBuffer->setParticleColor(Color(1,1,1));
-		headBuffer->setParticleRadius(headRadius);
+		headBuffer->setPositions(wrappedHeadPos.take());
+		headBuffer->setUniformColor(Color(1,1,1));
+		headBuffer->setUniformRadius(headRadius);
 		headBuffer->render(renderer);
 	}
 

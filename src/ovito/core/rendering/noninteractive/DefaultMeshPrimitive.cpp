@@ -36,6 +36,22 @@ bool DefaultMeshPrimitive::isValid(SceneRenderer* renderer)
 }
 
 /******************************************************************************
+* Activates rendering of multiple instances of the mesh.
+******************************************************************************/
+void DefaultMeshPrimitive::setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors)
+{
+	OVITO_ASSERT(perInstanceTMs);
+	OVITO_ASSERT(!perInstanceColors || perInstanceTMs->size() == perInstanceColors->size());
+	OVITO_ASSERT(!perInstanceColors || perInstanceColors->stride() == sizeof(ColorA));
+	OVITO_ASSERT(perInstanceTMs->stride() == sizeof(AffineTransformation));
+
+	// Store the data arrays.
+	_perInstanceTMs = std::move(perInstanceTMs);
+	_perInstanceColors = std::move(perInstanceColors);
+	OVITO_ASSERT(useInstancedRendering());
+}
+
+/******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
 void DefaultMeshPrimitive::render(SceneRenderer* renderer)

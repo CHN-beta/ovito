@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ bool DefaultParticlePrimitive::isValid(SceneRenderer* renderer)
 void DefaultParticlePrimitive::render(SceneRenderer* renderer)
 {
 	NonInteractiveSceneRenderer* niRenderer = dynamic_object_cast<NonInteractiveSceneRenderer>(renderer);
-	if(particleCount() <= 0 || !niRenderer || renderer->isPicking())
+	if(!positions() || positions()->size() <= 0 || !niRenderer || renderer->isPicking())
 		return;
 
 	niRenderer->renderParticles(*this);

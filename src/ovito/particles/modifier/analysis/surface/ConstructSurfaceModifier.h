@@ -226,7 +226,7 @@ private:
 
 		/// Constructor.
 		GaussianDensityEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
-				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
+				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties) :
 			ConstructSurfaceEngineBase(executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
@@ -251,7 +251,7 @@ private:
 		const int _gridResolution;
 
 		/// The atomic input radii.
-		std::vector<FloatType> _particleRadii;
+		ConstPropertyPtr _particleRadii;
 	};
 
 	/// The vis element for rendering the surface.

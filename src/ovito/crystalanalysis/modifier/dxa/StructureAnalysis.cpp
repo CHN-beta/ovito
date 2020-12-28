@@ -89,7 +89,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
 	_neighborLists.resize(_positions->size() * _neighborListsSize, -1);
 
 	// Reset atomic structure types.
-	_structureTypesArray.fill(LATTICE_OTHER);
+	std::fill(_structureTypesArray.begin(), _structureTypesArray.end(), LATTICE_OTHER);
 }
 
 /******************************************************************************

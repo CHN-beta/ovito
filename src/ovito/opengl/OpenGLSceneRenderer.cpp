@@ -222,24 +222,8 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     OVITO_REPORT_OPENGL_ERRORS(this);
 	_glformat = _glcontext->format();
 
-	// OpenGL of a Windows guest machine running inside a VirtualBox reports "2.1 Chromium 1.9" as version string,
-	// which is not correctly parsed by Qt. We have to work around this by explicitly setting the major/minor version numbers.
-	if(qstrncmp((const char*)this->glGetString(GL_VERSION), "2.1 ", 4) == 0) {
-		_glformat.setMajorVersion(2);
-		_glformat.setMinorVersion(1);
-	}
-
 #ifndef Q_OS_WASM
 	if(!glcontext()->isOpenGLES()) {
-		// Obtain a functions object that allows to call OpenGL 2.0 functions in a platform-independent way.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-		_glFunctions20 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_2_0>(_glcontext);
-#else
-		_glFunctions20 = _glcontext->versionFunctions<QOpenGLFunctions_2_0>();
-		if(!_glFunctions20 || !_glFunctions20->initializeOpenGLFunctions())
-			_glFunctions20 = nullptr;
-#endif
-
 		// Obtain a functions object that allows to call OpenGL 3.0 functions in a platform-independent way.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 		_glFunctions30 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_0>(_glcontext);
@@ -258,7 +242,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 			_glFunctions32 = nullptr;
 #endif
 
-		if(!_glFunctions20 && !_glFunctions30 && !_glFunctions32)
+		if(!_glFunctions30 && !_glFunctions32)
 			throwException(tr("Could not resolve OpenGL functions. Invalid OpenGL context."));
 	}
 #endif
@@ -415,13 +399,12 @@ std::shared_ptr<LinePrimitive> OpenGLSceneRenderer::createLinePrimitive()
 /******************************************************************************
 * Requests a new particle geometry buffer from the renderer.
 ******************************************************************************/
-std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode,
-		ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape,
-		bool translucentParticles)
+std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
+		ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
 	makeContextCurrent();
-	return std::make_shared<OpenGLParticlePrimitive>(this, shadingMode, renderingQuality, shape, translucentParticles);
+	return std::make_shared<OpenGLParticlePrimitive>(this, shadingMode, renderingQuality, shape);
 }
 
 /******************************************************************************
@@ -599,102 +582,20 @@ void OpenGLSceneRenderer::render2DPolyline(const Point2* points, int count, cons
 
 	OpenGLBuffer<Point_2<float>> vertexBuffer;
 	OpenGLBuffer<ColorAT<float>> colorBuffer;
-	if(glformat().majorVersion() >= 3) {
-		vertexBuffer.create(QOpenGLBuffer::StaticDraw, count);
-		vertexBuffer.fill(points);
-		vertexBuffer.bind(this, shader, "position", GL_FLOAT, 0, 2);
-		colorBuffer.create(QOpenGLBuffer::StaticDraw, count);
-		colorBuffer.fillConstant(color);
-		OVITO_CHECK_OPENGL(this, colorBuffer.bindColors(this, shader, 4));
-	}
-#ifndef Q_OS_WASM	
-	else if(oldGLFunctions()) {
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glEnableClientState(GL_VERTEX_ARRAY));
-#ifdef FLOATTYPE_FLOAT
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glVertexPointer(2, GL_FLOAT, 0, points));
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glColor4fv(color.data()));
-#else
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glVertexPointer(2, GL_DOUBLE, 0, points));
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glColor4dv(color.data()));
-#endif
-	}
-#endif
+	vertexBuffer.create(QOpenGLBuffer::StaticDraw, count);
+	vertexBuffer.fill(points);
+	vertexBuffer.bind(this, shader, "position", GL_FLOAT, 0, 2);
+	colorBuffer.create(QOpenGLBuffer::StaticDraw, count);
+	colorBuffer.fillConstant(color);
+	OVITO_CHECK_OPENGL(this, colorBuffer.bindColors(this, shader, 4));
 
 	OVITO_CHECK_OPENGL(this, glDrawArrays(closed ? GL_LINE_LOOP : GL_LINE_STRIP, 0, count));
 
-	if(glformat().majorVersion() >= 3) {
-		vertexBuffer.detach(this, shader, "position");
-		colorBuffer.detachColors(this, shader);
-	}
-#ifndef Q_OS_WASM
-	else if(oldGLFunctions()) {
-		OVITO_CHECK_OPENGL(this, oldGLFunctions()->glDisableClientState(GL_VERTEX_ARRAY));
-	}
-#endif
+	vertexBuffer.detach(this, shader, "position");
+	colorBuffer.detachColors(this, shader);
 	shader->release();
 	if(wasDepthTestEnabled) 
 		OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
-}
-
-/******************************************************************************
-* Makes vertex IDs available to the shader.
-******************************************************************************/
-void OpenGLSceneRenderer::activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount)
-{
-	// Older OpenGL implementations do not provide the built-in gl_VertexID shader
-	// variable. Therefore we have to provide the IDs in a vertex buffer.
-	if(glformat().majorVersion() < 3) {
-		if(!_glVertexIDBuffer.isCreated() || _glVertexIDBufferSize < vertexCount) {
-			OVITO_REPORT_OPENGL_ERRORS(this);
-			if(!_glVertexIDBuffer.isCreated()) {
-				// Create the ID buffer only once and keep it until the number of element grows.
-				if(!_glVertexIDBuffer.create())
-					throwException(QStringLiteral("Failed to create OpenGL vertex ID buffer."));
-				_glVertexIDBuffer.setUsagePattern(QOpenGLBuffer::StaticDraw);
-				OVITO_REPORT_OPENGL_ERRORS(this);
-			}
-			if(!_glVertexIDBuffer.bind())
-				throwException(QStringLiteral("Failed to bind OpenGL vertex ID buffer."));
-			OVITO_CHECK_OPENGL(this, _glVertexIDBuffer.allocate(vertexCount * sizeof(GLfloat)));
-			_glVertexIDBufferSize = vertexCount;
-			if(vertexCount > 0) {
-				if(!glcontext()->isOpenGLES()) {
-					GLfloat* bufferData = static_cast<GLfloat*>(_glVertexIDBuffer.map(QOpenGLBuffer::WriteOnly));
-					if(!bufferData)
-						throwException(QStringLiteral("Failed to map OpenGL vertex ID buffer to memory."));
-					GLfloat* bufferDataEnd = bufferData + vertexCount;
-					for(GLint index = 0; bufferData != bufferDataEnd; ++index, ++bufferData)
-						*bufferData = index;
-					_glVertexIDBuffer.unmap();
-				}
-				else {
-					// OpenGL ES does not support memory mapping of VBOs.
-					std::vector<GLfloat> bufferData(vertexCount);
-					std::iota(bufferData.begin(), bufferData.end(), 0);
-					OVITO_CHECK_OPENGL(this, _glVertexIDBuffer.write(0, bufferData.data(), bufferData.size() * sizeof(GLfloat)));
-				}
-			}
-		}
-		else {
-			if(!_glVertexIDBuffer.bind())
-				throwException(QStringLiteral("Failed to bind OpenGL vertex ID buffer."));
-		}
-
-		// Make this vertex attribute available to vertex shaders.
-		OVITO_CHECK_OPENGL(this, shader->enableAttributeArray("vertexID"));
-		OVITO_CHECK_OPENGL(this, shader->setAttributeBuffer("vertexID", GL_FLOAT, 0, 1));
-		OVITO_CHECK_OPENGL(this, _glVertexIDBuffer.release());
-	}
-}
-
-/******************************************************************************
-* Disables vertex IDs.
-******************************************************************************/
-void OpenGLSceneRenderer::deactivateVertexIDs(QOpenGLShaderProgram* shader)
-{
-	if(glformat().majorVersion() < 3) {
-		OVITO_CHECK_OPENGL(this, shader->disableAttributeArray("vertexID"));
-	}
 }
 
 /******************************************************************************

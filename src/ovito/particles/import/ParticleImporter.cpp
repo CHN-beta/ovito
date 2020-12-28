@@ -235,7 +235,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
 
 	if(!hasSimulationCell() || !simulationCell()->hasPbc()) {
-		bondPeriodicImageProperty.fill(Vector3I::Zero());
+		bondPeriodicImageProperty.take()->fill(Vector3I::Zero());
 	}
 	else {
 		const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();

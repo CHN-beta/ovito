@@ -592,12 +592,11 @@ void OpenGLArrowPrimitive::renderWithNormals(OpenGLSceneRenderer* renderer)
 		GLint pickingBaseID = renderer->registerSubObjectIDs(elementCount());
 		shader->setUniformValue("picking_base_id", pickingBaseID);
 	}
-	renderer->activateVertexIDs(shader, _elementCount * _verticesPerElement);
 
 	_verticesWithNormals.bindPositions(renderer, shader, offsetof(VertexWithNormal, pos));
 	if(!renderer->isPicking()) {
 		_verticesWithNormals.bindNormals(renderer, shader, offsetof(VertexWithNormal, normal));
-		_verticesWithNormals.bindColors(renderer, shader, 4, offsetof(VertexWithNormal, color));
+		_verticesWithNormals.bindColors(renderer, shader, offsetof(VertexWithNormal, color));
 	}
 
 	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
@@ -622,7 +621,6 @@ void OpenGLArrowPrimitive::renderWithNormals(OpenGLSceneRenderer* renderer)
 	}
 
 	// Reset state.
-	renderer->deactivateVertexIDs(shader);
 	shader->release();
 	renderer->glDisable(GL_CULL_FACE);
 }
@@ -665,7 +663,6 @@ void OpenGLArrowPrimitive::renderWithElementInfo(OpenGLSceneRenderer* renderer)
 		shader->setUniformValue("picking_base_id", pickingBaseID);
 		shader->setUniformValue("verticesPerElement", (GLint)_verticesPerElement);
 	}
-	renderer->activateVertexIDs(shader, _elementCount * _verticesPerElement);
 
 	_verticesWithElementInfo.bindPositions(renderer, shader, offsetof(VertexWithElementInfo, pos));
 	_verticesWithElementInfo.bind(renderer, shader, "cylinder_base", GL_FLOAT, offsetof(VertexWithElementInfo, base), 3, sizeof(VertexWithElementInfo));
@@ -698,7 +695,6 @@ void OpenGLArrowPrimitive::renderWithElementInfo(OpenGLSceneRenderer* renderer)
 	if(!renderer->isPicking())
 		_verticesWithElementInfo.detachColors(renderer, shader);
 
-	renderer->deactivateVertexIDs(shader);
 	shader->release();
 	renderer->glDisable(GL_CULL_FACE);
 }

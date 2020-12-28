@@ -102,6 +102,18 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 ******************************************************************************/
 PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
+	// Initialize memory if requested.
+	if(initializeMemory && containerPath.size() >= 2) {
+		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+		if(type == ColorProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
+				ConstPropertyPtr property = particles->inputBondColors();
+				OVITO_ASSERT(property && property->size() == bondsCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+	}
+
 	int dataType;
 	size_t componentCount;
 	size_t stride;
@@ -139,6 +151,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 		OVITO_ASSERT_MSG(false, "BondsObject::createStandardStorage", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard bond property type: %1").arg(type));
 	}
+	
 	const QStringList& componentNames = standardPropertyComponentNames(type);
 	const QString& propertyName = standardPropertyName(type);
 
@@ -146,19 +159,6 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	PropertyPtr property = PropertyPtr::create(dataset, executionContext, bondsCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
-
-	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
-		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
-		if(type == ColorProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
-				const std::vector<ColorA>& colors = particles->inputBondColors();
-				OVITO_ASSERT(colors.size() == property->size());
-				boost::transform(colors, PropertyAccess<Color>(property).begin(), [](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
-				initializeMemory = false;
-			}
-		}
-	}
 
 	if(initializeMemory) {
 		// Default-initialize property values with zeros.

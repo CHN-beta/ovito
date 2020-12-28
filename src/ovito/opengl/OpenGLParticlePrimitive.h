@@ -37,50 +37,7 @@ class OpenGLParticlePrimitive : public ParticlePrimitive, public std::enable_sha
 public:
 
 	/// Constructor.
-	OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer,
-			ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape, bool translucentParticles);
-
-	/// \brief Allocates a geometry buffer with the given number of particles.
-	virtual void setSize(int particleCount) override;
-
-	/// \brief Returns the number of particles stored in the buffer.
-	virtual int particleCount() const override { return _particleCount; }
-
-	/// \brief Sets the coordinates of the particles.
-	virtual void setParticlePositions(const Point3* positions) override;
-
-	/// \brief Sets the radii of the particles.
-	virtual void setParticleRadii(const FloatType* radii) override;
-
-	/// \brief Sets the radius of all particles to the given value.
-	virtual void setParticleRadius(FloatType radius) override;
-
-	/// \brief Sets the colors of the particles.
-	virtual void setParticleColors(const ColorA* colors) override;
-
-	/// \brief Sets the colors of the particles.
-	virtual void setParticleColors(const Color* colors) override;
-
-	/// \brief Sets the color of all particles to the given value.
-	virtual void setParticleColor(const ColorA color) override;
-
-	/// \brief Sets the aspherical shapes of the particles.
-	virtual void setParticleAsphericalShapes(const Vector3* shapes) override;
-
-	/// \brief Sets the orientation of aspherical particles.
-	virtual void setParticleOrientations(const Quaternion* orientations) override;
-
-	/// \brief Sets the superquadric roundness values of the particles.
-	virtual void setParticleRoundness(const Vector2* roundness) override;
-
-	/// \brief Resets the aspherical shape of the particles.
-	virtual void clearParticleShapes() override;
-
-	/// \brief Resets the orientation of particles.
-	virtual void clearParticleOrientations() override;
-
-	/// \brief Resets the roundness values of superquadric particles.
-	virtual void clearParticleRoundness() override;
+	OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape);
 
 	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
 	virtual bool isValid(SceneRenderer* renderer) override;
@@ -88,19 +45,19 @@ public:
 	/// \brief Renders the geometry.
 	virtual void render(SceneRenderer* renderer) override;
 
-	/// \brief Changes the shading mode for particles.
-	virtual bool setShadingMode(ShadingMode mode) override { return (mode == shadingMode()); }
-
-	/// \brief Changes the rendering quality of particles.
-	virtual bool setRenderingQuality(RenderingQuality level) override { return (level == renderingQuality()); }
-
-	/// \brief Changes the display shape of particles.
-	virtual bool setParticleShape(ParticleShape shape) override { return (shape == particleShape()); }
+	/// Returns the number of particles being rendered.
+	int particleCount() const { return _particleCount; }
 
 private:
 
 	/// Returns an array of particle indices, sorted back-to-front, which is used to render translucent particles.
-	std::vector<GLuint> determineRenderingOrder(OpenGLSceneRenderer* renderer);
+	ConstDataBufferPtr determineRenderingOrder(OpenGLSceneRenderer* renderer) const;
+
+	/// Renders a set of boxes using a glMultiDrawArrays() call.
+	void renderBoxGeometries(OpenGLSceneRenderer* renderer);
+
+	/// Renders a set of imposters using triangle geometry.
+	void renderImposterGeometries(OpenGLSceneRenderer* renderer);
 
 	/// The implemented techniques for rendering particles.
 	enum RenderingTechnique {
@@ -111,6 +68,9 @@ private:
 	/// The number of particles stored in the class.
 	int _particleCount = -1;
 
+	/// The internal OpenGL index buffer that stores the particle indices to be rendered.
+	OpenGLBuffer<int> _indexBuffer{QOpenGLBuffer::IndexBuffer};
+
 	/// The internal OpenGL vertex buffer that stores the particle positions.
 	OpenGLBuffer<Point_3<float>> _positionsBuffer;
 
@@ -118,7 +78,13 @@ private:
 	OpenGLBuffer<float> _radiiBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the particle colors.
-	OpenGLBuffer<ColorAT<float>> _colorsBuffer;
+	OpenGLBuffer<ColorT<float>> _colorsBuffer;
+
+	/// The internal OpenGL vertex buffer that stores the particle transparencies.
+	OpenGLBuffer<float> _transparenciesBuffer;
+
+	/// The internal OpenGL vertex buffer that stores the particle selection flags.
+	OpenGLBuffer<int> _selectionBuffer;
 
 	/// The internal OpenGL vertex buffer that stores the shape of aspherical particles.
 	OpenGLBuffer<Vector_3<float>> _shapeBuffer;
@@ -132,11 +98,14 @@ private:
 	/// The GL context group under which the GL vertex buffers have been created.
 	QPointer<QOpenGLContextGroup> _contextGroup;
 
-	/// This array contains the start indices of primitives and is passed to glMultiDrawArrays().
+	/// Start indices of primitives passed to glMultiDrawArrays().
 	std::vector<GLint> _primitiveStartIndices;
 
-	/// This array contains the vertex counts of primitives and is passed to glMultiDrawArrays().
+	/// Vertex counts of primitives passed to glMultiDrawArrays().
 	std::vector<GLsizei> _primitiveVertexCounts;
+
+	/// Part of the caching mechsims for the indices/counts arrays for glMultiDrawArrays().
+	WeakDataObjectRef _primitiveIndicesSource{};
 
 	/// OpenGL ES only: Vertex indices passed to glDrawElements() using GL_TRIANGLES primitives.
 	std::vector<GLuint> _trianglePrimitiveVertexIndices;
@@ -149,10 +118,6 @@ private:
 
 	/// Number of OpenGL vertices per particle that must be rendered.
 	int _verticesPerParticle;
-
-	/// A copy of the particle coordinates. This is only required to render translucent
-	/// particles in the correct order from back to front.
-	std::vector<Point3> _particleCoordinates;
 };
 
 }	// End of namespace

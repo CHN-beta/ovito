@@ -69,9 +69,8 @@ public:
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
 			ParticlePrimitive::ShadingMode shadingMode,
 			ParticlePrimitive::RenderingQuality renderingQuality,
-			ParticlePrimitive::ParticleShape shape,
-			bool translucentParticles) override {
-		return std::make_shared<DefaultParticlePrimitive>(shadingMode, renderingQuality, shape, translucentParticles);
+			ParticlePrimitive::ParticleShape shape) override {
+		return std::make_shared<DefaultParticlePrimitive>(shadingMode, renderingQuality, shape);
 	}
 
 	/// Requests a new marker geometry buffer from the renderer.

@@ -78,7 +78,7 @@ private:
 
 		/// Constructor.
 		VoroTopAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-							std::vector<FloatType> radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
+							ConstPropertyPtr radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
 			StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_filterFile(filterFile),
 			_filter(std::move(filter)),
@@ -105,7 +105,7 @@ private:
 		std::shared_ptr<Filter> _filter;
 
 		/// The per-particle radii.
-		std::vector<FloatType> _radii;
+		ConstPropertyPtr _radii;
 	};
 
 private:

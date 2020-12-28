@@ -23,10 +23,13 @@
 // Inputs from calling program:
 uniform bool is_picking_mode;
 uniform int picking_base_id;
+uniform vec4 selection_color;
 
 // The particle data:
 in vec3 position;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in int selection;
 in vec3 shape;
 in vec4 orientation;
 in float particle_radius;
@@ -39,8 +42,8 @@ out vec4 particle_orientation_gs;
 void main()
 {
 	if(!is_picking_mode) {
-		// Forward color and radius to geometry shader.
-		particle_color_gs = color;
+		// Forward color to geometry shader.
+		particle_color_gs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
 	}
 	else {
 		// Compute color from object ID.

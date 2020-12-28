@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -353,7 +353,6 @@ inline QDataStream& operator>>(QDataStream& stream, Vector_2<T>& v) {
 	return stream >> v.x() >> v.y();
 }
 
-
 /**
  * \brief Instantiation of the Vector_2 class template with the default floating-point type.
  * \relates Vector_2
@@ -367,6 +366,12 @@ using Vector2 = Vector_2<FloatType>;
 using Vector2I = Vector_2<int>;
 
 }	// End of namespace
+
+// Specialize STL templates for Vector_2.
+namespace std {
+	template<typename T> struct tuple_size<Ovito::Vector_2<T>> : std::integral_constant<std::size_t, 2> {};
+	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Vector_2<T>> { using type = T; };
+};
 
 Q_DECLARE_METATYPE(Ovito::Vector2);
 Q_DECLARE_METATYPE(Ovito::Vector2I);

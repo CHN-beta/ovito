@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "OpenGLBuffer.h"
 
@@ -53,7 +54,10 @@ public:
 	virtual void render(SceneRenderer* renderer) override;
 
 	/// Activates rendering of multiple instances of the mesh.
-	virtual void setInstancedRendering(std::vector<AffineTransformation> perInstanceTMs, std::vector<ColorA> perInstanceColors) override;
+	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) override;
+
+	/// Returns whether instanced rendering of the mesh has been activated.
+	bool useInstancedRendering() const { return (bool)_perInstanceTMs; }
 
 private:
 
@@ -87,13 +91,10 @@ private:
 	OpenGLBuffer<Point_3<float>> _edgeLinesBuffer;
 
 	/// The list of transformation matrices when rendering multiple instances of the mesh.
-	std::vector<AffineTransformation> _perInstanceTMs;
+	ConstDataBufferPtr _perInstanceTMs; 
 
 	/// The list of colors when rendering multiple instances of the mesh.
-	std::vector<ColorA> _perInstanceColors;
-
-	/// Activates the rendering of multiple instances of the same mesh.
-	bool _useInstancedRendering = false;
+	ConstDataBufferPtr _perInstanceColors;
 };
 
 }	// End of namespace

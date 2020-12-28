@@ -62,7 +62,7 @@ public:
 	}
 
 	/// Activates rendering of multiple instances of the mesh.
-	virtual void setInstancedRendering(std::vector<AffineTransformation> perInstanceTMs, std::vector<ColorA> perInstanceColors) = 0;
+	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) = 0;
 
 private:
 

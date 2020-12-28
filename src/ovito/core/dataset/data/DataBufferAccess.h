@@ -92,52 +92,52 @@ protected:
 
 public:
 
-	/// \brief Returns the number of elements in the data array.
+	/// Returns the number of elements in the data array.
 	size_t size() const { 
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->size(); 
 	}
 
-	/// \brief Returns the number of vector components per element.
+	/// Returns the number of vector components per element.
 	size_t componentCount() const { 
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->componentCount(); 
 	}
 
-	/// \brief Returns the number of bytes per element.
+	/// Returns the number of bytes per element.
 	size_t stride() const { 
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->stride(); 
 	}
 
-	/// \brief Returns the number of bytes per vector component.
+	/// Returns the number of bytes per vector component.
 	size_t dataTypeSize() const { 
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->dataTypeSize(); 
 	}
 
-	/// \brief Returns the data type of the property.
+	/// Returns the data type of the property.
 	int dataType() const { 
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->dataType(); 
 	}
 
-	/// \brief Returns whether this accessor object points to a valid DataBuffer. 
+	/// Returns whether this accessor object points to a valid DataBuffer. 
 	explicit operator bool() const noexcept {
 		return (bool)this->_buffer;
 	}
 
-	/// \brief Returns the buffer object which is being accessed by this class.
+	/// Returns the buffer object which is being accessed by this class.
 	const PointerType& buffer() const {
 		return this->_buffer;
 	}
 
-	/// \brief Moves the internal buffer reference out of this accessor object.
+	/// Moves the internal buffer reference out of this accessor object.
 	PointerType take() {
 		return reset();
 	}
 
-	/// \brief Detaches the accessor object from the underlying buffer object.
+	/// Detaches the accessor object from the underlying buffer object.
 	PointerType reset() {
 #ifdef OVITO_DEBUG
 		if(this->_buffer) {
@@ -158,33 +158,33 @@ public:
 	using iterator = const T*;
 	using const_iterator = const T*;
 
-	/// \brief Returns the value of the i-th element from the array.
+	/// Returns the value of the i-th element from the array.
 	const T& get(size_t i) const {
 		OVITO_ASSERT(i < this->size());
 		return *(this->cbegin() + i);
 	}
 
-	/// \brief Indexed access to the elements of the array.
+	/// Indexed access to the elements of the array.
 	const T& operator[](size_t i) const {
 		return this->get(i);
 	}
 
-	/// \brief Returns a range of const iterators over the elements stored in this array.
+	/// Returns a range of const iterators over the elements stored in this array.
 	boost::iterator_range<const T*> crange() const {
 		return boost::make_iterator_range(cbegin(), cend());
 	}
 
-	/// \brief Returns a pointer to the first element of the data array.
+	/// Returns a pointer to the first element of the data array.
 	const T* begin() const {
 		return cbegin();
 	}
 
-	/// \brief Returns a pointer pointing to the end of the data array.
+	/// Returns a pointer pointing to the end of the data array.
 	const T* end() const {
 		return cend();
 	}
 
-	/// \brief Returns a pointer to the first element of the data array.
+	/// Returns a pointer to the first element of the data array.
 	const T* cbegin() const {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
@@ -192,7 +192,7 @@ public:
 		return reinterpret_cast<const T*>(this->_buffer->cbuffer());
 	}
 
-	/// \brief Returns a pointer pointing to the end of the data array.
+	/// Returns a pointer pointing to the end of the data array.
 	const T* cend() const {
 		return cbegin() + this->size();
 	}
@@ -218,24 +218,24 @@ public:
 	using iterator = const T*;
 	using const_iterator = const T*;
 
-	/// \brief Returns the value of the i-th element from the array.
+	/// Returns the value of the i-th element from the array.
 	const T& get(size_t i, size_t j) const {
 		OVITO_ASSERT(i < this->size());
 		OVITO_ASSERT(j < this->componentCount());
 		return *(this->cbegin() + (i * this->componentCount()) + j);
 	}
 
-	/// \brief Returns a pointer to the beginning of the data array.
+	/// Returns a pointer to the beginning of the data array.
 	const T* cbegin() const {
 		return reinterpret_cast<const T*>(this->_buffer->cbuffer());
 	}
 
-	/// \brief Returns a pointer to the end of the data array.
+	/// Returns a pointer to the end of the data array.
 	const T* cend() const {
 		return this->cbegin() + (this->size() * this->componentCount());
 	}
 
-	/// \brief Returns a range of iterators over the i-th vector component of all elements stored in this array.
+	/// Returns a range of iterators over the i-th vector component of all elements stored in this array.
 	auto componentRange(size_t componentIndex) const {
 		OVITO_ASSERT(this->componentCount() > componentIndex);
 		const T* begin = cbegin() + componentIndex;
@@ -261,7 +261,7 @@ class ReadOnlyDataBufferAccessBaseTable<void, PointerType, Writable> : public Da
 {
 public:
 
-	/// \brief Returns the j-th component of the i-th element in the array.
+	/// Returns the j-th component of the i-th element in the array.
 	template<typename U>
 	U get(size_t i, size_t j) const {
 		switch(this->dataType()) {
@@ -277,13 +277,13 @@ public:
 		}
 	}
 
-	/// \brief Returns a pointer to the raw data of the data array.
+	/// Returns a pointer to the raw data of the data array.
 	const uint8_t* cdata(size_t component = 0) const {
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->cbuffer() + (component * this->dataTypeSize());
 	}
 
-	/// \brief Returns a pointer to the raw data of the data array.
+	/// Returns a pointer to the raw data of the data array.
 	const uint8_t* cdata(size_t index, size_t component) const {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(index < this->size());
@@ -306,60 +306,45 @@ public:
 	using iterator = T*;
 	using const_iterator = T*;
 
-	/// \brief Sets the value of the i-th element in the array.
+	/// Sets the value of the i-th element in the array.
 	void set(size_t i, const T& v) {
 		OVITO_ASSERT(i < this->size());
 		*(this->begin() + i) = v;
 	}
 
-	/// \brief Indexed access to the elements of the array.
+	/// Indexed access to the elements of the array.
 	T& operator[](size_t i) {
 		OVITO_ASSERT(i < this->size());
 		return *(this->begin() + i);
 	}
 
-	/// \brief Indexed access to the elements of the array.
+	/// Indexed access to the elements of the array.
 	const T& operator[](size_t i) const {
 		OVITO_ASSERT(i < this->size());
 		return *(this->cbegin() + i);
 	}
 
-	/// \brief Returns a pointer to the first element of the data array.
+	/// Returns a pointer to the first element of the data array.
 	T* begin() const {
 		OVITO_ASSERT(this->_buffer);
 		return reinterpret_cast<T*>(this->_buffer->buffer());
 	}
 
-	/// \brief Returns a pointer pointing to the end of the data array.
+	/// Returns a pointer pointing to the end of the data array.
 	T* end() const {
 		return this->begin() + this->size();
 	}
 
-	/// \brief Returns a range of iterators over the elements stored in this array.
+	/// Returns a range of iterators over the elements stored in this array.
 	boost::iterator_range<T*> range() {
 		return boost::make_iterator_range(begin(), end());
 	}
 
-	/// \brief Sets all array elements to the given uniform value.
-	void fill(const T& value) {
-		OVITO_ASSERT(this->_buffer);
-		this->_buffer->template fill<T>(value);
-	}
-
-	/// \brief Sets all array elements for which the corresponding entries in the 
-	///        selection array are non-zero to the given uniform value.
-	void fillSelected(const T& value, const DataBuffer* selectionProperty) {
-		OVITO_ASSERT(this->_buffer);
-		this->_buffer->template fillSelected<T>(value, selectionProperty);
-	}
-
-	/// Copies the data from the given source array to this array. 
-	/// The array size and data type of source and destination must match.
-	template<class PointerType2>
-	void copyFrom(const ReadOnlyDataBufferAccessBase<T, PointerType2>& source) {
-		OVITO_ASSERT(this->_buffer);
-		OVITO_ASSERT(source._buffer);
-		this->_buffer->copyFrom(*source._buffer);
+	/// Appends a new element to the end of the data array.
+	void push_back(const T& v) {
+		size_t oldCount = this->size();
+		this->buffer()->grow(1, true);
+		set(oldCount, v);
 	}
 
 protected:
@@ -377,19 +362,19 @@ public:
 	using iterator = T*;
 	using const_iterator = T*;
 
-	/// \brief Returns a pointer to the first element of the data array.
+	/// Returns a pointer to the first element of the data array.
 	T* begin() const {
 		OVITO_ASSERT(this->_buffer);
 		return reinterpret_cast<T*>(this->_buffer->buffer());
 	}
 
-	/// \brief Returns a pointer pointing to the end of the data array.
+	/// Returns a pointer pointing to the end of the data array.
 	T* end() const {
 		OVITO_ASSERT(this->stride() == sizeof(T) * this->componentCount());
 		return this->begin() + (this->size() * this->componentCount());
 	}
 
-	/// \brief Returns a range of iterators over the i-th vector component of all elements stored in this array.
+	/// Returns a range of iterators over the i-th vector component of all elements stored in this array.
 	auto componentRange(size_t componentIndex) {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(this->_buffer->componentCount() > componentIndex);
@@ -397,12 +382,12 @@ public:
 		return boost::adaptors::stride(boost::make_iterator_range(begin, begin + (this->size() * this->componentCount())), this->componentCount());
 	}
 
-	/// \brief Returns a range of iterators over the elements stored in this array.
+	/// Returns a range of iterators over the elements stored in this array.
 	boost::iterator_range<T*> range() {
 		return boost::make_iterator_range(begin(), end());
 	}
 
-	/// \brief Sets the j-th component of the i-th element of the array to a new value.
+	/// Sets the j-th component of the i-th element of the array to a new value.
 	void set(size_t i, size_t j, const T& value) {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(i < this->size());
@@ -410,7 +395,7 @@ public:
 		*(begin() + i * this->componentCount() + j) = value;
 	}
 
-	/// \brief Returns a modifiable reference to the j-th component of the i-th element of the array.
+	/// Returns a modifiable reference to the j-th component of the i-th element of the array.
 	T& value(size_t i, size_t j) {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(i < this->size());
@@ -430,7 +415,7 @@ class ReadWriteDataBufferAccessBaseTable<void, PointerType> : public ReadOnlyDat
 {
 public:
 
-	/// \brief Sets the j-th component of the i-th element of the array to a new value.
+	/// Sets the j-th component of the i-th element of the array to a new value.
 	template<typename U>
 	void set(size_t i, size_t j, const U& value) {
 		OVITO_ASSERT(this->_buffer);
@@ -450,13 +435,13 @@ public:
 		}
 	}
 
-	/// \brief Returns a pointer to the raw data of the data array.
+	/// Returns a pointer to the raw data of the data array.
 	uint8_t* data(size_t component = 0) {
 		OVITO_ASSERT(this->_buffer);
 		return this->_buffer->buffer() + (component * this->dataTypeSize());
 	}
 
-	/// \brief Returns a pointer to the raw data of the data array.
+	/// Returns a pointer to the raw data of the data array.
 	uint8_t* data(size_t index, size_t component) {
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(index < this->size());
@@ -473,7 +458,7 @@ protected:
 } // End of namespace detail.
 
 /**
- * \brief Helper class that provides read access to the data elements of a DataBuffer.
+ * Helper class that provides read access to the data elements of a DataBuffer.
  * 
  * The TableMode template parameter should be set to true if access to the individual components
  * of a vector data array is desired or if the number of vector components is unknown at compile time. 
@@ -504,7 +489,7 @@ public:
 };
 
 /**
- * \brief Helper class that provides read access to the data elements in a DataBuffer
+ * Helper class that provides read access to the data elements in a DataBuffer
  *        and which keeps a strong reference to the DataBuffer.
  */
 template<typename T, bool TableMode = false>
@@ -531,7 +516,7 @@ public:
 };
 
 /**
- * \brief Helper class that provides read/write access to the data elements in a DataBuffer.
+ * Helper class that provides read/write access to the data elements in a DataBuffer.
  * 
  * The TableMode template parameter should be set to true if access to the individual components
  * of a vector data array is desired or if the number of vector components of the property is unknown at compile time. 
@@ -574,7 +559,7 @@ public:
 };
 
 /**
- * \brief Helper class that provides read/write access to the data elements in a DataBuffer object
+ * Helper class that provides read/write access to the data elements in a DataBuffer object
  *        and which keeps a strong reference to the DataBuffer.
  */
 template<typename T, bool TableMode = false>

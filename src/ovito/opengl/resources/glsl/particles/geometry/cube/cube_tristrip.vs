@@ -29,11 +29,14 @@ uniform vec3 cubeVerts[14];
 uniform vec3 normals[14];
 uniform bool is_picking_mode;
 uniform int picking_base_id;
+uniform vec4 selection_color;
 
 // The particle data:
 in vec3 position;
-in vec4 color;
+in vec3 color;
+in float transparency;
 in float particle_radius;
+in int selection;
 
 // Outputs to fragment shader
 flat out vec4 particle_color_fs;
@@ -47,7 +50,7 @@ void main()
 
 	if(!is_picking_mode) {
 		// Forward color to fragment shader.
-		particle_color_fs = color;
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
 
 		// Determine face normal.
 		surface_normal_fs = normal_matrix * normals[cubeCorner];

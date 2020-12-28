@@ -193,7 +193,7 @@ void GSDImporter::FrameLoader::loadFile()
 		if(gsd.hasChunk("particles/typeid", frameNumber))
 			gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
 		else
-			typeProperty.fill(0);
+			typeProperty.take()->fill(0);
 		if(isCanceled()) return;
 	}
 
@@ -284,7 +284,7 @@ void GSDImporter::FrameLoader::loadFile()
 				gsd.readIntArray("bonds/typeid", frameNumber, bondTypeProperty.begin(), numBonds);
 			}
 			else {
-				bondTypeProperty.fill(0);
+				bondTypeProperty.take()->fill(0);
 			}
 			if(isCanceled()) return;
 		}
@@ -356,7 +356,9 @@ void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shape
 
 	// Assign the shape to the particle type.
 	PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
-	typeProperty->makeMutable(existingType)->setShapeMesh(shapeObject);
+	ParticleType* mutableType = typeProperty->makeMutable(existingType);
+	mutableType->setShapeMesh(shapeObject);
+	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
 }
 
 /******************************************************************************

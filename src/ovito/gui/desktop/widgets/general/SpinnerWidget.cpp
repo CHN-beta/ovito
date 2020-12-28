@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -102,16 +102,18 @@ void SpinnerWidget::onTextChanged()
 {
 	OVITO_CHECK_POINTER(textBox());
 
-	FloatType newValue;
 	try {
 		if(textBox()->text() == _originalText) return;
-		if(unit()) {
-			newValue = unit()->parseString(textBox()->text());
+		if(textBox()->text().isEmpty() && std::isfinite(standardValue())) {
+			setFloatValue(standardValue(), true);
+		}
+		else if(unit()) {
+			FloatType newValue = unit()->parseString(textBox()->text());
 			setFloatValue(unit()->userToNative(newValue), true);
 		}
 		else {
 			bool ok;
-			newValue = textBox()->text().toDouble(&ok);
+			FloatType newValue = textBox()->text().toDouble(&ok);
 			if(!ok)
 				throw Exception(tr("Invalid floating-point value: %1").arg(textBox()->text()), this);
 			setFloatValue(newValue, true);
@@ -129,7 +131,9 @@ void SpinnerWidget::onTextChanged()
 void SpinnerWidget::updateTextBox()
 {
 	if(textBox()) {
-		if(unit())
+		if(floatValue() == standardValue() && !textBox()->placeholderText().isEmpty())
+			_originalText.clear();
+		else if(unit())
 			_originalText = unit()->formatValue(unit()->nativeToUser(floatValue()));
 		else
 			_originalText = QString::number(floatValue());
@@ -195,6 +199,14 @@ void SpinnerWidget::setMinValue(FloatType minValue)
 void SpinnerWidget::setMaxValue(FloatType maxValue)
 {
 	_maxValue = maxValue;
+}
+
+/******************************************************************************
+* Specifies the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
+******************************************************************************/
+void SpinnerWidget::setStandardValue(FloatType value)
+{
+	_standardValue = value;
 }
 
 /******************************************************************************

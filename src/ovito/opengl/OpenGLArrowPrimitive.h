@@ -51,12 +51,6 @@ public:
 	/// \brief Finalizes the geometry buffer after all elements have been set.
 	virtual void endSetElements() override;
 
-	/// \brief Changes the shading mode for elements.
-	virtual bool setShadingMode(ShadingMode mode) override { return (mode == shadingMode()); }
-
-	/// \brief Changes the rendering quality of elements.
-	virtual bool setRenderingQuality(RenderingQuality level) override { return (renderingQuality() == level); }
-
 	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
 	virtual bool isValid(SceneRenderer* renderer) override;
 

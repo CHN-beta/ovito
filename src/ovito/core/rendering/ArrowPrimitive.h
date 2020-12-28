@@ -76,16 +76,8 @@ public:
 	/// \brief Returns the shading mode for elements.
 	ShadingMode shadingMode() const { return _shadingMode; }
 
-	/// \brief Changes the shading mode for elements.
-	/// \return false if the shading mode cannot be changed after the buffer has been created; true otherwise.
-	virtual bool setShadingMode(ShadingMode mode) { _shadingMode = mode; return true; }
-
 	/// \brief Returns the rendering quality of elements.
 	RenderingQuality renderingQuality() const { return _renderingQuality; }
-
-	/// \brief Changes the rendering quality of elements.
-	/// \return false if the quality level cannot be changed after the buffer has been created; true otherwise.
-	virtual bool setRenderingQuality(RenderingQuality level) { _renderingQuality = level; return true; }
 
 	/// \brief Returns the selected element shape.
 	Shape shape() const { return _shape; }

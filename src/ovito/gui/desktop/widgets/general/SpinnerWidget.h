@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -108,6 +108,12 @@ public:
 	/// \sa maxValue()
 	void setMaxValue(FloatType maxValue);
 
+	/// \brief Returns the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
+	FloatType standardValue() const { return _standardValue; }
+
+	/// \brief Specifies the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
+	void setStandardValue(FloatType value);
+
 	/// \brief Returns the units of this spinner's value.
 	/// \return The parameter unit object that performs the conversion from native units
 	///         to user units and back.
@@ -171,6 +177,9 @@ protected:
 
 	/// The upper limit of the spinner value.
 	FloatType _maxValue;
+
+	/// The standard value that, if set in the spinner, should be highlighted.
+	FloatType _standardValue = std::numeric_limits<FloatType>::quiet_NaN();
 
 	/// The current step size used by the the spinner.
 	/// This stays constant during a drag operation.

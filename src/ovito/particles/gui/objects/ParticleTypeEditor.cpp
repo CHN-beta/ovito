@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/particles/gui/util/ParticleSettingsPage.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
@@ -29,6 +30,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -95,45 +97,97 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	FloatParameterUI* radiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::radius));
 	gridLayout->addWidget(radiusPUI->label(), 1, 0);
 	gridLayout->addLayout(radiusPUI->createFieldLayout(), 1, 1);
+	radiusPUI->spinner()->setStandardValue(0.0);
+	radiusPUI->textBox()->setPlaceholderText(tr("<unspecified>"));
 
-	// Button layout.
-	QHBoxLayout* hboxlayout = new QHBoxLayout();
-	hboxlayout->setContentsMargins(0,0,0,0);
-	hboxlayout->setSpacing(2);
-	gridLayout->addLayout(hboxlayout, 2, 0, 1, 2);
+	// Shape type.
+	VariantComboBoxParameterUI* particleShapeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticleType::shape));
+	particleShapeUI->comboBox()->addItem(tr("<unspecified>"), QVariant::fromValue((int)ParticlesVis::Default));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue((int)ParticlesVis::Box));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_square.png"), tr("Square"), QVariant::fromValue((int)ParticlesVis::Square));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cylinder.png"), tr("Cylinder"), QVariant::fromValue((int)ParticlesVis::Cylinder));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_mesh.png"), tr("Mesh/User-defined"), QVariant::fromValue((int)ParticlesVis::Mesh));
+	gridLayout->addWidget(new QLabel(tr("Shape:")), 2, 0);
+	gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1, 1, 2);
 
-	// "Load presets" button
-	QPushButton* loadPresetsBtn = new QPushButton(tr("Load presets"));
-	loadPresetsBtn->setToolTip(tr("Reset color and radius parameter of the particle type to default values."));
-	loadPresetsBtn->setEnabled(false);
-	hboxlayout->addWidget(loadPresetsBtn, 1);
-	connect(loadPresetsBtn, &QPushButton::clicked, this, [this]() {
-		ParticleType* ptype = static_object_cast<ParticleType>(editObject());
-		if(!ptype) return;
+	// Color presets toolbars.
+	QToolBar* colorPresetsToolbar = new QToolBar();
+	colorPresetsToolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
+	colorPresetsToolbar->setFloatable(false);
+	colorPresetsToolbar->setIconSize(QSize(24,24));
+	gridLayout->addWidget(colorPresetsToolbar, 0, 2);
+	QAction* loadColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset current color back to user-defined or hard-coded default value for this particle type."));
+	connect(loadColorPresetAction, &QAction::triggered, this, [this]() {
+		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+			undoableTransaction(tr("Reset particle type color"), [&]() {
+				ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
+				mainWindow()->statusBar()->showMessage(tr("Reset color of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
+			});
+		}
+	});
+	QAction* saveColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Save current color as future default value for this particle type."));
+	connect(saveColorPresetAction, &QAction::triggered, this, [this,saveColorPresetAction,loadColorPresetAction]() {
+		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+			ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color());
+			Q_EMIT contentsChanged(editObject());
+			mainWindow()->statusBar()->showMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
+		}
+	});
+	QAction* editColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit default color presets."));
+	connect(editColorPresetAction, &QAction::triggered, this, [this]() {
+		ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
+		dlg.exec();		
+		Q_EMIT contentsChanged(editObject());
+	});
+	colorPresetsToolbar->setMinimumWidth(colorPresetsToolbar->sizeHint().width());
 
-		undoableTransaction(tr("Reset particle type parameters"), [&]() {
-			ptype->initializeType(ParticlePropertyReference(ParticlesObject::TypeProperty), ExecutionContext::Interactive);
-			mainWindow()->statusBar()->showMessage(tr("Loaded default color and radius values for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
-		});
+	// Radius presets toolbars.
+	QToolBar* radiusPresetsToolbar = new QToolBar();
+	radiusPresetsToolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
+	radiusPresetsToolbar->setFloatable(false);
+	radiusPresetsToolbar->setIconSize(QSize(24,24));
+	gridLayout->addWidget(radiusPresetsToolbar, 1, 2);
+	QAction* loadRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset current radius back to user-defined or hard-coded default value for this particle type."));
+	connect(loadRadiusPresetAction, &QAction::triggered, this, [this]() {
+		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+			undoableTransaction(tr("Reset particle type radius"), [&]() {
+				ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
+				mainWindow()->statusBar()->showMessage(tr("Reset radius of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
+			});
+		}
+	});
+	QAction* saveRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Save current radius as future default value for this particle type."));
+	connect(saveRadiusPresetAction, &QAction::triggered, this, [this,saveRadiusPresetAction,loadRadiusPresetAction]() {
+		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+			ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius());
+			Q_EMIT contentsChanged(editObject());
+			mainWindow()->statusBar()->showMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
+		}
+	});
+	QAction* editRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit default radius presets."));
+	connect(editRadiusPresetAction, &QAction::triggered, this, [this]() {
+		ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
+		dlg.exec();
+		Q_EMIT contentsChanged(editObject());
+	});
+	radiusPresetsToolbar->setMinimumWidth(radiusPresetsToolbar->sizeHint().width());
+
+	connect(this, &PropertiesEditor::contentsChanged, [loadColorPresetAction,saveColorPresetAction,loadRadiusPresetAction,saveRadiusPresetAction](RefTarget* editObject) {
+		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject)) {
+			bool hasDefaultColor = (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
+			loadColorPresetAction->setEnabled(!hasDefaultColor);
+			saveColorPresetAction->setEnabled(!hasDefaultColor);
+			bool hasDefaultRadius = (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
+			loadRadiusPresetAction->setEnabled(!hasDefaultRadius);
+			saveRadiusPresetAction->setEnabled(!hasDefaultRadius);
+		}
 	});
 
-	// "Save as presets" button
-	QPushButton* setAsDefaultBtn = new QPushButton(tr("Save as presets"));
-	setAsDefaultBtn->setToolTip(tr("Use current color and radius as default values for this particle type in the future."));
-	setAsDefaultBtn->setEnabled(false);
-	hboxlayout->addWidget(setAsDefaultBtn, 1);
-	connect(setAsDefaultBtn, &QPushButton::clicked, this, [this]() {
-		ParticleType* ptype = static_object_cast<ParticleType>(editObject());
-		if(!ptype) return;
-
-		ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color());
-		ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius());
-
-		mainWindow()->statusBar()->showMessage(tr("Stored current color and radius as defaults for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
-	});
-	connect(this, &PropertiesEditor::contentsReplaced, [loadPresetsBtn,setAsDefaultBtn,namePUI](RefTarget* newEditObject) {
-		loadPresetsBtn->setEnabled(newEditObject != nullptr);
-		setAsDefaultBtn->setEnabled(newEditObject != nullptr);
+	connect(this, &PropertiesEditor::contentsReplaced, [colorPresetsToolbar,namePUI](RefTarget* newEditObject) {
+		colorPresetsToolbar->setEnabled(newEditObject != nullptr);
 
 		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
 		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
@@ -144,48 +198,45 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		}
 	});
 
-	QGroupBox* userShapeBox = new QGroupBox(tr("User-defined particle shape"), rollout);
-	gridLayout = new QGridLayout(userShapeBox);
+	QGroupBox* shapeGroupBox = new QGroupBox(tr("User-defined shape"), rollout);
+	gridLayout = new QGridLayout(shapeGroupBox);
 	gridLayout->setContentsMargins(4,4,4,4);
 	gridLayout->setSpacing(2);
-	layout1->addWidget(userShapeBox);
+	layout1->addWidget(shapeGroupBox);
+	shapeGroupBox->setVisible(false);
 
 	// User-defined shape.
-	QLabel* userShapeLabel = new QLabel();
-	gridLayout->addWidget(userShapeLabel, 0, 0, 1, 2);
-	QPushButton* loadShapeBtn = new QPushButton(tr("Load shape..."));
-	loadShapeBtn->setToolTip(tr("Select a mesh geometry file to use as particle shape."));
-	loadShapeBtn->setEnabled(false);
-	gridLayout->addWidget(loadShapeBtn, 1, 0);
-	QPushButton* resetShapeBtn = new QPushButton(tr("Remove"));
-	resetShapeBtn->setToolTip(tr("Remove the user-defined particle shape."));
-	resetShapeBtn->setEnabled(false);
-	gridLayout->addWidget(resetShapeBtn, 1, 1);
+	QPushButton* loadShapeBtn = new QPushButton(tr("Load geometry file..."));
+	loadShapeBtn->setToolTip(tr("Loads a mesh file to be used as shape for this particle type."));
+	gridLayout->addWidget(loadShapeBtn, 0, 0, 1, 2);
 	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::highlightShapeEdges));
-	gridLayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 1);
+	gridLayout->addWidget(highlightEdgesUI->checkBox(), 1, 0, 1, 2);
 	BooleanParameterUI* shapeBackfaceCullingUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled));
-	gridLayout->addWidget(shapeBackfaceCullingUI->checkBox(), 2, 1, 1, 1);
+	gridLayout->addWidget(shapeBackfaceCullingUI->checkBox(), 2, 0, 1, 2);
 	BooleanParameterUI* shapeUseMeshColorUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::shapeUseMeshColor));
 	gridLayout->addWidget(shapeUseMeshColorUI->checkBox(), 3, 0, 1, 2);
+
+	// Show/hide controls for user-defined shapes depending on the selected shape type.
+	connect(particleShapeUI->comboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, shapeGroupBox, box = particleShapeUI->comboBox()](int index) {
+		bool userDefinedShape = box->itemData(index).toInt() == ParticlesVis::Mesh;
+		if(userDefinedShape != shapeGroupBox->isVisible()) {
+			shapeGroupBox->setVisible(userDefinedShape);
+			container()->updateRolloutsLater();
+		}
+	});
 
 	// Update the shape buttons whenever the particle type is being modified.
 	connect(this, &PropertiesEditor::contentsChanged, this, [=](RefTarget* editObject) {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject)) {
-			loadShapeBtn->setEnabled(true);
-			resetShapeBtn->setEnabled(ptype->shapeMesh() != nullptr);
-			if(ptype->shapeMesh() && ptype->shapeMesh()->mesh())
-				userShapeLabel->setText(tr("Mesh: %1 faces / %2 vertices").arg(ptype->shapeMesh()->mesh()->faceCount()).arg(ptype->shapeMesh()->mesh()->vertexCount()));
-			else
-				userShapeLabel->setText({});
-			highlightEdgesUI->setEnabled(ptype->shapeMesh() != nullptr);
-			shapeBackfaceCullingUI->setEnabled(ptype->shapeMesh() != nullptr);
-			shapeUseMeshColorUI->setEnabled(ptype->shapeMesh() != nullptr);
-		}
-		else {
-			loadShapeBtn->setEnabled(false);
-			resetShapeBtn->setEnabled(false);
-			shapeUseMeshColorUI->setEnabled(false);
-			userShapeLabel->setText({});
+			if(ptype->shapeMesh() && ptype->shapeMesh()->mesh()) {
+				loadShapeBtn->setText(tr("%1 faces / %2 vertices").arg(ptype->shapeMesh()->mesh()->faceCount()).arg(ptype->shapeMesh()->mesh()->vertexCount()));
+				if(loadShapeBtn->icon().isNull())
+					loadShapeBtn->setIcon(QIcon(":/particles/icons/particle_shape_mesh.png"));
+			}
+			else {
+				loadShapeBtn->setText(tr("Load geometry file..."));
+				loadShapeBtn->setIcon({});
+			}
 		}
 	});
 
@@ -193,7 +244,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
 		if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
 
-			undoableTransaction(tr("Set particle shape"), [&]() {
+			undoableTransaction(tr("Load mesh particle shape"), [&]() {
 				QUrl selectedFile;
 				const FileImporterClass* fileImporterType = nullptr;
 				// Put code in a block: Need to release dialog before loading the input file.
@@ -206,7 +257,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 					}
 
 					// Let the user select a geometry file to import.
-					ImportFileDialog fileDialog(meshImporters, ptype->dataset(), mainWindow(), tr("Load mesh file"), false, QStringLiteral("particle_shape_mesh"));
+					ImportFileDialog fileDialog(meshImporters, ptype->dataset(), mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
 					if(fileDialog.exec() != QDialog::Accepted)
 						return;
 
@@ -214,17 +265,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 					fileImporterType = fileDialog.selectedFileImporterType();
 				}
 				// Load the geometry from the selected file.
-				ProgressDialog progressDialog(container(), ptype->dataset()->taskManager(), tr("Loading mesh file"));
+				ProgressDialog progressDialog(container(), ptype->dataset()->taskManager(), tr("Loading geometry file"));
 				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), ExecutionContext::Interactive, fileImporterType);
-			});
-		}
-	});
-
-	// Implement shape reset button.
-	connect(resetShapeBtn, &QPushButton::clicked, this, [this]() {
-		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
-			undoableTransaction(tr("Reset particle shape"), [&]() {
-				ptype->setShapeMesh(nullptr);
 			});
 		}
 	});

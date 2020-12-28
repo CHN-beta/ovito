@@ -78,23 +78,12 @@ public:
 	/// Newly added elements are *not* initialized to zero by this method.
 	/// \return True if the memory buffer was reallocated, because the current capacity was insufficient
 	/// to accommodate the new elements.
-	bool grow(size_t numAdditionalElements) {
-		size_t newSize = _numElements + numAdditionalElements;
-		OVITO_ASSERT(newSize >= _numElements);
-		bool needToGrow;
-		if((needToGrow = (newSize > _capacity)))
-			growCapacity(newSize);
-		_numElements = newSize;
-		return needToGrow;
-	}
+	bool grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess = false);
 
 	/// \brief Reduces the number of data elements while preserving the exiting data.
 	/// Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
 	/// memory of the truncated elements is not released by the method.
-	void truncate(size_t numElementsToRemove) {
-		OVITO_ASSERT(numElementsToRemove <= _numElements);
-		_numElements -= numElementsToRemove;
-	}	
+	void truncate(size_t numElementsToRemove);
 
 	/// \brief Returns the data type of the property.
 	/// \return The identifier of the data type used for the elements stored in
@@ -140,22 +129,28 @@ public:
 	/// \brief Sets all array elements to the given uniform value.
 	template<typename T>
 	void fill(const T value) {
+		prepareWriteAccess();
 		OVITO_ASSERT(stride() == sizeof(T));
 		T* begin = reinterpret_cast<T*>(buffer());
 		T* end = begin + this->size();
 		std::fill(begin, end, value);
+		finishWriteAccess();
 	}
 
 	/// \brief Sets all array elements for which the corresponding entries in the 
 	///        selection array are non-zero to the given uniform value.
 	template<typename T>
 	void fillSelected(const T value, const DataBuffer& selectionProperty) {
+		prepareWriteAccess();
+		selectionProperty.prepareReadAccess();
 		OVITO_ASSERT(selectionProperty.size() == this->size());
 		OVITO_ASSERT(selectionProperty.dataType() == Int);
 		OVITO_ASSERT(selectionProperty.componentCount() == 1);
 		const int* selectionIter = reinterpret_cast<const int*>(selectionProperty.cbuffer());
 		for(T* v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v)
 			if(*selectionIter++) *v = value;
+		selectionProperty.finishReadAccess();
+		finishWriteAccess();
 	}
 
 	/// \brief Sets all array elements for which the corresponding entries in the 
@@ -170,7 +165,9 @@ public:
 
 	// Set all property values to zeros.
 	void fillZero() {
+		prepareWriteAccess();
 		std::memset(_data.get(), 0, this->size() * this->stride());
+		finishWriteAccess();
 	}
 
 	/// Extends the data array and replicates the existing data N times.
@@ -210,18 +207,24 @@ public:
 		if(component >= cmpntCount) return false;
 		if(size() == 0) return true;
 		if(dataType() == DataBuffer::Int) {
+			prepareReadAccess();
 			for(auto v = reinterpret_cast<const int*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
+			finishReadAccess();
 			return true;
 		}
 		else if(dataType() == DataBuffer::Int64) {
+			prepareReadAccess();
 			for(auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
+			finishReadAccess();
 			return true;
 		}
 		else if(dataType() == DataBuffer::Float) {
+			prepareReadAccess();
 			for(auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component, v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
 				*iter++ = *v;
+			finishReadAccess();
 			return true;
 		}
 		return false;
@@ -235,21 +238,27 @@ public:
 		if(component >= cmpntCount) return false;
 		if(s == 0) return true;
 		if(dataType() == DataBuffer::Int) {
+			prepareReadAccess();
 			auto v = reinterpret_cast<const int*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
+			finishReadAccess();
 			return true;
 		}
 		else if(dataType() == DataBuffer::Int64) {
+			prepareReadAccess();
 			auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
+			finishReadAccess();
 			return true;
 		}
 		else if(dataType() == DataBuffer::Float) {
+			prepareReadAccess();
 			auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component;
 			for(size_t i = 0; i < s; i++, v += cmpntCount)
 				f(i, *v);
+			finishReadAccess();
 			return true;
 		}
 		return false;
@@ -295,9 +304,6 @@ public:
 	}
 
 protected:
-
-	/// Grows the storage buffer to accomodate at least the given number of data elements.
-	void growCapacity(size_t newSize);
 
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
@@ -354,8 +360,10 @@ template<typename T> struct DataBufferPrimitiveType<Vector_3<T>> : public DataBu
 template<typename T> struct DataBufferPrimitiveType<Point_2<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Vector_2<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Matrix_3<T>> : public DataBufferPrimitiveType<T> {};
+template<typename T> struct DataBufferPrimitiveType<AffineTransformationT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<QuaternionT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<ColorT<T>> : public DataBufferPrimitiveType<T> {};
+template<typename T> struct DataBufferPrimitiveType<ColorAT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<SymmetricTensor2T<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<T, typename std::enable_if<std::is_enum<T>::value>::type> : public DataBufferPrimitiveType<std::make_signed_t<std::underlying_type_t<T>>> {};
 

@@ -507,11 +507,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		// Initialize property values of new bonds.
 		for(PropertyObject* bondPropertyObject : bonds->makePropertiesMutable()) {
 			if(bondPropertyObject->type() == BondsObject::ColorProperty) {
-				const std::vector<ColorA>& colors = inputBondColors(true);
-				OVITO_ASSERT(colors.size() == bondPropertyObject->size());
-				std::transform(colors.cbegin() + originalBondCount, colors.cend(), 
-					PropertyAccess<Color>(bondPropertyObject).begin() + originalBondCount, 
-					[](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
+				bondPropertyObject->copyFrom(*inputBondColors(true));
 			}
 		}
 
@@ -542,42 +538,45 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 /******************************************************************************
 * Returns a vector with the input particle colors.
 ******************************************************************************/
-std::vector<ColorA> ParticlesObject::inputParticleColors() const
+ConstPropertyPtr ParticlesObject::inputParticleColors() const
 {
 	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
-		
 		// Query particle colors from vis element.
-		return particleVis->particleColors(this, false, true);
+		return particleVis->particleColors(this, false);
 	}
 
 	// Return an array with uniform colors if there is no vis element attached to the particles object.
-	return std::vector<ColorA>(elementCount(), ColorA(1,1,1,1));
+	PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::ColorProperty, false, ExecutionContext::Scripting);
+	colors->fill(Color(1,1,1));
+	return colors;
 }
 
 /******************************************************************************
 * Returns a vector with the input bond colors.
 ******************************************************************************/
-std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
+ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
 {
 	// Access the bonds vis element.
     if(bonds()) {
 		if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
 
 			// Query half-bond colors from vis element.
-			std::vector<ColorA> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->useParticleColors(), ignoreExistingColorProperty);
+			std::vector<Color> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->useParticleColors(), ignoreExistingColorProperty);
 			OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
 			// Map half-bond colors to full bond colors.
-			std::vector<ColorA> colors(bonds()->elementCount());
+			PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
 			auto ci = halfBondColors.cbegin();
-			for(ColorA& co : colors) {
-				co = ColorA(ci->r(), ci->g(), ci->b(), 1);
+			for(Color& co : colors) {
+				co = *ci;
 				ci += 2;
 			}
-			return colors;
+			return colors.take();
 		}
-    	return std::vector<ColorA>(bonds()->elementCount(), ColorA(1,1,1,1));
+		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
+		colors->fill(Color(1,1,1));
+		return colors;
     }
 	return {};
 }
@@ -585,7 +584,7 @@ std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorPro
 /******************************************************************************
 * Returns a vector with the input particle radii.
 ******************************************************************************/
-std::vector<FloatType> ParticlesObject::inputParticleRadii() const
+ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 {
 	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
@@ -595,7 +594,9 @@ std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 	}
 
 	// Return uniform default radius for all particles.
-	return std::vector<FloatType>(elementCount(), FloatType(1));
+	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::RadiusProperty, false, ExecutionContext::Scripting);
+	buffer->fill(FloatType(1));
+	return buffer;
 }
 
 /******************************************************************************
@@ -603,6 +604,25 @@ std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 ******************************************************************************/
 PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
+	// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+	if(initializeMemory && !containerPath.empty()) {
+		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+		if(type == ColorProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				ConstPropertyPtr property = particles->inputParticleColors();
+				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+		else if(type == RadiusProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				ConstPropertyPtr property = particles->inputParticleRadii();
+				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+	}
+
 	int dataType;
 	size_t componentCount;
 	size_t stride;
@@ -715,23 +735,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 	// Initialize memory if requested.
 	if(initializeMemory && !containerPath.empty()) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
-		if(type == ColorProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
-				const std::vector<ColorA>& colors = particles->inputParticleColors();
-				OVITO_ASSERT(colors.size() == property->size());
-				boost::transform(colors, PropertyAccess<Color>(property).begin(), [](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
-				initializeMemory = false;
-			}
-		}
-		else if(type == RadiusProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
-				const std::vector<FloatType>& radii = particles->inputParticleRadii();
-				OVITO_ASSERT(radii.size() == property->size());
-				boost::copy(radii, PropertyAccess<FloatType>(property).begin());
-				initializeMemory = false;
-			}
-		}
-		else if(type == MassProperty) {
+		if(type == MassProperty) {
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
 				if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 					// Use per-type mass information and initialize the per-particle mass array from it.
@@ -759,6 +763,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		}
 	}
 
+	// Some properties get an attached visual element.
 	if(type == ParticlesObject::DisplacementProperty) {
 		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
 		vis->setObjectTitle(tr("Displacements"));

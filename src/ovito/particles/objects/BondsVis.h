@@ -65,7 +65,7 @@ public:
 
 	/// Determines the display colors of half-bonds.
 	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-	std::vector<ColorA> halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const;
+	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const;
 
 public:
 

@@ -92,30 +92,31 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	int resolution = (128 << res);
 
 	TimeInterval validityInterval = input.stateValidity();
-	std::vector<FloatType> radii = particles->inputParticleRadii();
+	ConstPropertyPtr radii = particles->inputParticleRadii();
 
 	// Create the AmbientOcclusionRenderer instance.
 	AmbientOcclusionRenderer* renderer = new AmbientOcclusionRenderer(dataset(), QSize(resolution, resolution));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AmbientOcclusionEngine>(executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, boundingBox, std::move(radii), renderer);
+	return std::make_shared<AmbientOcclusionEngine>(executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, renderer);
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
 AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
-		const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer) :
+		ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer) :
 	Engine(executionContext, validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
 	_positions(std::move(positions)),
-	_boundingBox(boundingBox),
 	_particleRadii(std::move(particleRadii)),
+	_boundingBox(boundingBox),
 	_renderer(renderer),
 	_brightness(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Brightness"), true)),
 	_inputFingerprint(std::move(fingerprint))
 {
+	OVITO_ASSERT(_particleRadii->size() == _positions->size());
 }
 
 /******************************************************************************
@@ -127,7 +128,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		if(_boundingBox.isEmpty())
 			throw Exception(tr("Modifier input is degenerate or contains no particles."));
 
-		setProgressText(tr("Computing ambient occlusion"));
+		setProgressText(tr("Ambient occlusion"));
 
 		_renderer->startRender(nullptr, nullptr);
 		try {
@@ -168,12 +169,12 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				try {
 					// Create particle buffer.
-					if(!particleBuffer || !particleBuffer->isValid(_renderer)) {
-						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality, ParticlePrimitive::SphericalShape, false);
-						particleBuffer->setSize(positions()->size());
-						particleBuffer->setParticlePositions(ConstPropertyAccess<Point3>(positions()).cbegin());
-						particleBuffer->setParticleRadii(_particleRadii.data());
+					if(!particleBuffer) {
+						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality, ParticlePrimitive::SphericalShape);
+						particleBuffer->setPositions(positions());
+						particleBuffer->setRadii(particleRadii());
 					}
+					OVITO_ASSERT(particleBuffer->isValid(_renderer));
 					particleBuffer->render(_renderer);
 				}
 				catch(...) {
@@ -212,8 +213,9 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		setProgressValue(_samplingCount);
 
 		// Normalize brightness values by particle area.
-		auto r = _particleRadii.cbegin();
+		ConstPropertyAccess<FloatType> radiusArray(particleRadii());
 		PropertyAccess<FloatType> brightnessValues(brightness());
+		auto r = radiusArray.cbegin();
 		for(FloatType& b : brightnessValues) {
 			if(*r != 0)
 				b /= (*r) * (*r);
@@ -233,7 +235,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 	// Release data that is no longer needed to reduce memory footprint.
 	_positions.reset();
-	decltype(_particleRadii){}.swap(_particleRadii);
+	_particleRadii.reset();
 	_renderer->deleteLater();
 	_renderer = nullptr;
 }

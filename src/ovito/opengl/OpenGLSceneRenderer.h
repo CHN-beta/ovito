@@ -74,9 +74,10 @@ public:
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
 
 	/// Requests a new particle geometry buffer from the renderer.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode,
-			ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape,
-			bool translucentParticles) override;
+	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
+			ParticlePrimitive::ShadingMode shadingMode,
+			ParticlePrimitive::RenderingQuality renderingQuality, 
+			ParticlePrimitive::ParticleShape shape) override;
 
 	/// Requests a new marker geometry buffer from the renderer.
 	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) override;
@@ -116,12 +117,6 @@ public:
 
 	/// Loads and compiles an OpenGL shader program.
 	QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
-
-	/// Make sure vertex IDs are available to use by the OpenGL shader.
-	void activateVertexIDs(QOpenGLShaderProgram* shader, GLint vertexCount);
-
-	/// This needs to be called to deactivate vertex IDs, which were activated by a call to activateVertexIDs().
-	void deactivateVertexIDs(QOpenGLShaderProgram* shader);
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingSceneRenderer class to implement the picking mechanism.
@@ -226,37 +221,29 @@ protected:
 	void glPointSize(GLfloat size) {
 		if(_glFunctions32) _glFunctions32->glPointSize(size);
 		else if(_glFunctions30) _glFunctions30->glPointSize(size);
-		else if(_glFunctions20) _glFunctions20->glPointSize(size);
 	}
 
 	/// The OpenGL glPointParameterf() function.
 	void glPointParameterf(GLenum pname, GLfloat param) {
 		if(_glFunctions32) _glFunctions32->glPointParameterf(pname, param);
 		else if(_glFunctions30) _glFunctions30->glPointParameterf(pname, param);
-		else if(_glFunctions20) _glFunctions20->glPointParameterf(pname, param);
 	}
 
 	/// The OpenGL glPointParameterfv() function.
 	void glPointParameterfv(GLenum pname, const GLfloat* params) {
 		if(_glFunctions32) _glFunctions32->glPointParameterfv(pname, params);
 		else if(_glFunctions30) _glFunctions30->glPointParameterfv(pname, params);
-		else if(_glFunctions20) _glFunctions20->glPointParameterfv(pname, params);
 	}
 
 	/// The OpenGL glMultiDrawArrays() function.
 	void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) {
 		if(_glFunctions32) _glFunctions32->glMultiDrawArrays(mode, first, count, drawcount);
 		else if(_glFunctions30) _glFunctions30->glMultiDrawArrays(mode, first, count, drawcount);
-		else if(_glFunctions20) _glFunctions20->glMultiDrawArrays(mode, first, count, drawcount);
 	}
 
 	void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
 		if(_glFunctions30) _glFunctions30->glTexEnvf(target, pname, param);
-		else if(_glFunctions20) _glFunctions20->glTexEnvf(target, pname, param);
 	}
-
-	/// The OpenGL 2.0 functions object.
-	QOpenGLFunctions_2_0* oldGLFunctions() const { return _glFunctions20; }
 
 #endif
 
@@ -272,9 +259,6 @@ private:
 	QSurface* _glsurface = nullptr;
 
 #ifndef Q_OS_WASM
-
-	/// The OpenGL 2.0 functions object.
-	QOpenGLFunctions_2_0* _glFunctions20 = nullptr;
 
 	/// The OpenGL 3.0 functions object.
 	QOpenGLFunctions_3_0* _glFunctions30 = nullptr;
@@ -298,12 +282,6 @@ private:
 
 	/// The current model-to-view transformation matrix.
 	AffineTransformation _modelViewTM = AffineTransformation::Identity();
-
-	/// The internal OpenGL vertex buffer that stores vertex IDs.
-	QOpenGLBuffer _glVertexIDBuffer;
-
-	/// The number of IDs stored in the OpenGL buffer.
-	GLint _glVertexIDBufferSize = 0;
 
 	/// Indicates that we are currently rendering the translucent objects during a second rendering pass.
 	bool _translucentPass = false;

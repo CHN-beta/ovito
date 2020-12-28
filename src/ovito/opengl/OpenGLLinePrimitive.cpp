@@ -169,8 +169,6 @@ void OpenGLLinePrimitive::renderLines(OpenGLSceneRenderer* renderer)
 		GLint pickingBaseID = renderer->registerSubObjectIDs(lineCount());
 		shader->setUniformValue("picking_base_id", pickingBaseID);
 	}
-	// Make vertex IDs available to the shader.
-	renderer->activateVertexIDs(shader, _positionsBuffer.elementCount() * _positionsBuffer.verticesPerElement());
 
 	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_LINES, 0, _positionsBuffer.elementCount() * _positionsBuffer.verticesPerElement()));
 
@@ -180,7 +178,6 @@ void OpenGLLinePrimitive::renderLines(OpenGLSceneRenderer* renderer)
 		_colorsBuffer.detachColors(renderer, shader);
 
 	// Reset state.
-	renderer->deactivateVertexIDs(shader);
 	shader->release();
 }
 
@@ -214,9 +211,6 @@ void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 		shader->setUniformValue("picking_base_id", pickingBaseID);
 	}
 
-	// Make vertex IDs available to the shader.
-	renderer->activateVertexIDs(shader, _positionsBuffer.elementCount() * _positionsBuffer.verticesPerElement());
-
 	// Bind IBO.
 	_indicesBuffer.oglBuffer().bind();
 
@@ -229,7 +223,6 @@ void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 		_colorsBuffer.detachColors(renderer, shader);
 
 	// Reset state.
-	renderer->deactivateVertexIDs(shader);
 	_vectorsBuffer.detach(renderer, shader, "vector");
 	shader->release();
 }

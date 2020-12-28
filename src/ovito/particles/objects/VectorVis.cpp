@@ -189,15 +189,17 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		WeakDataObjectRef,		// Vector property + revision number
-		WeakDataObjectRef,		// Particle position property + revision number
-		FloatType,					// Scaling factor
-		FloatType,					// Arrow width
-		ColorA,						// Arrow color + alpha
-		bool,						// Reverse arrow direction
-		ArrowPosition,				// Arrow position
-		WeakDataObjectRef		// Vector color property + revision number
+		CompatibleRendererGroup,// The scene renderer
+		WeakDataObjectRef,		// Vector property
+		WeakDataObjectRef,		// Particle position property
+		ShadingMode,			// Arrow shading mode
+		ArrowPrimitive::RenderingQuality,	// Arrow rendering quality
+		FloatType,				// Scaling factor
+		FloatType,				// Arrow width
+		ColorA,					// Arrow color + alpha
+		bool,					// Reverse arrow direction
+		ArrowPosition,			// Arrow position
+		WeakDataObjectRef		// Vector color property
 	>;
 
 	// Determine effective color including alpha value.
@@ -212,6 +214,8 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 			renderer,
 			vectorProperty,
 			positionProperty,
+			shadingMode(),
+			renderingQuality(),
 			scalingFactor(),
 			arrowWidth(),
 			color,
@@ -220,10 +224,7 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 			vectorColorProperty));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrowPrimitive
-			|| !arrowPrimitive->isValid(renderer)
-			|| !arrowPrimitive->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !arrowPrimitive->setRenderingQuality(renderingQuality())) {
+	if(!arrowPrimitive || !arrowPrimitive->isValid(renderer)) {
 
 		arrowPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::ArrowShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), renderingQuality(), color.a() < 1.0);
 

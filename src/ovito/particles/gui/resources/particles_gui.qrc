@@ -10,6 +10,7 @@
 	<file>icons/particle_shape_square.png</file>
 	<file>icons/particle_shape_cylinder.png</file>
 	<file>icons/particle_shape_spherocylinder.png</file>
+	<file>icons/particle_shape_mesh.png</file>
 
 	<file>icons/arrow_alignment_base.png</file>
 	<file>icons/arrow_alignment_center.png</file>
@@ -19,6 +20,7 @@
 	<file>icons/highlight_selection_off.svg</file>
 	<file>icons/select_mode.svg</file>
 	<file>icons/measure_distances.svg</file>
+	<file>icons/settings_restore.svg</file>
 	
 </qresource> 
 

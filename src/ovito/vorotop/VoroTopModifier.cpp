@@ -104,7 +104,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Get particle radii.
-    std::vector<FloatType> radii;
+    ConstPropertyPtr radii;
     if(useRadii())
         radii = particles->inputParticleRadii();
 
@@ -387,6 +387,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     ConstPropertyAccess<Point3> positionsArray(positions());
     ConstPropertyAccess<int> selectionArray(selection());
+    ConstPropertyAccess<FloatType> radiiArray(_radii);
     PropertyAccess<int> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
@@ -407,7 +408,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         int ny = (int)std::ceil((by - ay) / cellSize);
         int nz = (int)std::ceil((bz - az) / cellSize);
 
-        if(_radii.empty()) {
+        if(!radiiArray) {
             voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
                                           cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
@@ -456,7 +457,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
                     continue;
                 }
                 const Point3& p = positionsArray[index];
-                voroContainer.put(index, p.x(), p.y(), p.z(), _radii[index]);
+                voroContainer.put(index, p.x(), p.y(), p.z(), radiiArray[index]);
                 count++;
             }
 
@@ -485,10 +486,6 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         NearestNeighborFinder nearestNeighborFinder;
         if(!nearestNeighborFinder.prepare(positions(), cell(), selection(), this))
             return;
-
-        // Squared particle radii (input was just radii).
-        for(auto& r : _radii)
-            r = r*r;
 
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
         double boxDiameter = sqrt(
@@ -544,8 +541,8 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
                 // Skip unselected particles (if requested).
                 OVITO_ASSERT(!selectionArray || selectionArray[n.index]);
                 FloatType rs = n.distanceSq;
-                if(!_radii.empty())
-                    rs += _radii[index] - _radii[n.index];
+                if(radiiArray)
+                    rs += radiiArray[index]*radiiArray[index] - radiiArray[n.index]*radiiArray[n.index];
                 v.nplane(n.delta.x(), n.delta.y(), n.delta.z(), rs, n.index);
                 if(nvisits == 0) {
                     mrs = v.max_radius_squared();
@@ -563,7 +560,8 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     // Release data that is no longer needed.
     releaseWorkingData();
-    decltype(_radii){}.swap(_radii);
+    radiiArray.reset();
+    _radii.reset();
 }
 
 /******************************************************************************

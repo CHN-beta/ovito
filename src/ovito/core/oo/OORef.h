@@ -48,6 +48,7 @@ private:
 	template<class U> friend class OORef;
     template<class T2, class U> OORef<T2> friend static_pointer_cast(OORef<U>&& p) noexcept;
     template<class T2, class U> OORef<T2> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T2, class U> OORef<T2> friend const_pointer_cast(OORef<U>&& p) noexcept;
 
 public:
 
@@ -239,6 +240,14 @@ template<class T, class U> OORef<T> static_pointer_cast(OORef<U>&& p) noexcept
 template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexcept
 {
     return const_cast<T*>(p.get());
+}
+
+template<class T, class U> OORef<T> const_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = const_cast<T*>(p.get());
+    p.px = nullptr;
+    return result;
 }
 
 template<class T, class U> OORef<T> dynamic_pointer_cast(const OORef<U>& p) noexcept

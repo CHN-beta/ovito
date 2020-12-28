@@ -121,7 +121,7 @@ Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(co
 	const PropertyObject* selectionProperty = onlySelected() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle radii.
-	std::vector<FloatType> radii;
+	ConstPropertyPtr radii;
 	if(useRadii())
 		radii = particles->inputParticleRadii();
 
@@ -395,7 +395,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		int nz = (int)std::ceil((bz - az) / cellSize);
 
 		size_t count = 0;
-		if(_radii.empty()) {
+		if(!_radii) {
 			// All particles have a uniform size.
 			voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
 					_simCell->hasPbc(0), _simCell->hasPbc(1), _simCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
@@ -437,12 +437,13 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 					(int)std::ceil(voro::optimal_particles));
 
 			// Insert particles into Voro++ container.
+			ConstPropertyAccess<FloatType> radiusArray(_radii);
 			for(size_t index = 0; index < positionsArray.size(); index++) {
 				// Skip unselected particles (if requested).
 				if(selectionArray && selectionArray[index] == 0)
 					continue;
 				const Point3& p = positionsArray[index];
-				voroContainer.put(index, p.x(), p.y(), p.z(), _radii[index]);
+				voroContainer.put(index, p.x(), p.y(), p.z(), radiusArray[index]);
 				count++;
 			}
 
@@ -475,10 +476,6 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection(), this))
 			return;
 
-		// Squared particle radii (input was just radii).
-		for(auto& r : _radii)
-			r = r*r;
-
 		// This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
 		double boxDiameter = sqrt(
 				  _simCell->matrix().column(0).squaredLength()
@@ -496,6 +493,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		QMutex bondMutex;
 		QMutex indexMutex;
+		ConstPropertyAccess<FloatType> radiusArray(_radii);
 
 		// Perform analysis, particle-wise parallel.
 		setProgressMaximum(_positions->size());
@@ -539,8 +537,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 					// Skip unselected particles (if requested).
 					OVITO_ASSERT(!selectionArray || selectionArray[n.index]);
 					FloatType rs = n.distanceSq;
-					if(!_radii.empty())
-						rs += _radii[index] - _radii[n.index];
+					if(radiusArray)
+						rs += radiusArray[index]*radiusArray[index] - radiusArray[n.index]*radiusArray[n.index];
 					v.nplane(n.delta.x(), n.delta.y(), n.delta.z(), rs, n.index);
 					if(nvisits == 0) {
 						mrs = v.max_radius_squared();
@@ -755,7 +753,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	_selection.reset();
 	_particleIdentifiers.reset();
 	_simCell.reset();
-	decltype(_radii){}.swap(_radii);
+	_radii.reset();
 }
 
 /******************************************************************************

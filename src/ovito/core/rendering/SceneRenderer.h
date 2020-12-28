@@ -156,10 +156,10 @@ public:
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() = 0;
 
 	/// Requests a new particle geometry buffer from the renderer.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode = ParticlePrimitive::NormalShading,
+	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
+			ParticlePrimitive::ShadingMode shadingMode = ParticlePrimitive::NormalShading,
 			ParticlePrimitive::RenderingQuality renderingQuality = ParticlePrimitive::MediumQuality,
-			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape,
-			bool translucentParticles = false) = 0;
+			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape) = 0;
 
 	/// Requests a new marker geometry buffer from the renderer.
 	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) = 0;
@@ -309,9 +309,7 @@ public:
 	}
 
 	/// Comparison operator.
-	bool operator!=(const CompatibleRendererGroup& other) const {
-		return _renderer.isNull() || other._renderer.isNull() || !_renderer->sharesResourcesWith(other._renderer.data());
-	}
+	bool operator!=(const CompatibleRendererGroup& other) const { return !(*this == other); }
 
 private:
 

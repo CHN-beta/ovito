@@ -29,13 +29,15 @@ namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
+DEFINE_PROPERTY_FIELD(ParticleType, shape);
 DEFINE_REFERENCE_FIELD(ParticleType, shapeMesh);
 DEFINE_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
 DEFINE_PROPERTY_FIELD(ParticleType, mass);
 SET_PROPERTY_FIELD_LABEL(ParticleType, radius, "Radius");
-SET_PROPERTY_FIELD_LABEL(ParticleType, shapeMesh, "Shape");
+SET_PROPERTY_FIELD_LABEL(ParticleType, shape, "Shape");
+SET_PROPERTY_FIELD_LABEL(ParticleType, shapeMesh, "Shape Mesh");
 SET_PROPERTY_FIELD_LABEL(ParticleType, highlightShapeEdges, "Highlight edges");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeBackfaceCullingEnabled, "Back-face culling");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeUseMeshColor, "Use mesh color");
@@ -47,6 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, radius, WorldParameterUnit, 0
 ******************************************************************************/
 ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 	_radius(0),
+	_shape(ParticlesVis::ParticleShape::Default),
 	_highlightShapeEdges(false),
 	_shapeBackfaceCullingEnabled(true),
 	_shapeUseMeshColor(false),
@@ -76,12 +79,13 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 	const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
 
 	if(const ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
-		if(proxy->radius() != self->radius() || proxy->mass() != self->mass() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
+		if(proxy->radius() != self->radius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
 				|| proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
 			// Make this data object mutable first.
 			ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
 			mutableSelf->setRadius(proxy->radius());
 			mutableSelf->setMass(proxy->mass());
+			mutableSelf->setShape(proxy->shape());
 			mutableSelf->setShapeMesh(proxy->shapeMesh());
 			mutableSelf->setHighlightShapeEdges(proxy->highlightShapeEdges());
 			mutableSelf->setShapeBackfaceCullingEnabled(proxy->shapeBackfaceCullingEnabled());
@@ -141,6 +145,9 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, E
 	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	noUndo.reset();
 	setShapeMesh(meshObj);
+
+	// Also switch the particle type's visualization shape to mesh-based.
+	setShape(ParticlesVis::Mesh);
 
     return !operation.isCanceled();
 }

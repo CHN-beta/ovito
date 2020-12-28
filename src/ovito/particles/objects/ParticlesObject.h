@@ -180,13 +180,13 @@ public:
 	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a vector with the input particle colors.
-	std::vector<ColorA> inputParticleColors() const;
+	ConstPropertyPtr inputParticleColors() const;
 
 	/// Returns a vector with the input particle radii.
-	std::vector<FloatType> inputParticleRadii() const;
+	ConstPropertyPtr inputParticleRadii() const;
 
 	/// Returns a vector with the input bond colors.
-	std::vector<ColorA> inputBondColors(bool ignoreExistingColorProperty = false) const;
+	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
 private:
 

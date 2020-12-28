@@ -28,11 +28,14 @@ uniform vec4 imposter_voffsets[6];
 uniform float radius_scalingfactor;
 uniform int picking_base_id;
 uniform bool is_picking_mode;
+uniform vec4 selection_color;
 
 // The particle data:
 in vec3 position;
-in vec4 color;
+in vec3 color;
+in float transparency;
 in float particle_radius;
+in int selection;
 
 // Output to fragment shader:
 flat out vec4 particle_color_fs;
@@ -44,7 +47,7 @@ void main()
 {
 	if(!is_picking_mode) {
 		// Forward color to fragment shader.
-		particle_color_fs = color;
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
 	}
 	else {
 		// Compute color from object ID.

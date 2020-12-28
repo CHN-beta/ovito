@@ -131,7 +131,6 @@ void OpenGLMarkerPrimitive::render(SceneRenderer* renderer)
 		GLint pickingBaseID = vpRenderer->registerSubObjectIDs(markerCount());
 		shader->setUniformValue("picking_base_id", pickingBaseID);
 	}
-	vpRenderer->activateVertexIDs(shader, _positionBuffer.elementCount() * _positionBuffer.verticesPerElement());
 
 	if(markerShape() == DotShape) {
 		shader->setUniformValue("modelview_projection_matrix", (QMatrix4x4)(vpRenderer->projParams().projectionMatrix * vpRenderer->modelViewTM()));
@@ -171,7 +170,6 @@ void OpenGLMarkerPrimitive::render(SceneRenderer* renderer)
 		_colorBuffer.detachColors(vpRenderer, shader);
 
 	// Reset state.
-	vpRenderer->deactivateVertexIDs(shader);
 	shader->release();
 #endif
 }
