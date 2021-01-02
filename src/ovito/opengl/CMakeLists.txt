@@ -27,7 +27,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLParticlePrimitive.cpp
 		OpenGLTextPrimitive.cpp
 		OpenGLImagePrimitive.cpp
-		OpenGLArrowPrimitive.cpp
+		OpenGLCylinderPrimitive.cpp
 		OpenGLMeshPrimitive.cpp
 		OpenGLMarkerPrimitive.cpp
 		OpenGLSharedResource.cpp

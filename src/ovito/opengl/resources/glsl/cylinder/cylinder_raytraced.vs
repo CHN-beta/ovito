@@ -30,8 +30,8 @@ in vec3 position;
 in vec4 color;
 
 // The cylinder data:
-in vec3 cylinder_base;				// The position of the cylinder in model coordinates.
-in vec3 cylinder_axis;				// The axis of the cylinder in model coordinates.
+in vec3 cylinder_base;				// The base position of the cylinder in model coordinates.
+in vec3 cylinder_head;				// The head position of the cylinder in model coordinates.
 in float cylinder_radius;			// The radius of the cylinder in model coordinates.
 
 // Outputs to geometry shader
@@ -57,5 +57,5 @@ void main()
 	// Transform cylinder to eye coordinates.
 	gl_Position = modelview_matrix * vec4(position, 1.0);
 	cylinder_view_base_gs = gl_Position.xyz;
-	cylinder_view_axis_gs = modelview_matrix * vec4(cylinder_axis, 0.0);
+	cylinder_view_axis_gs = modelview_matrix * vec4(cylinder_head - cylinder_base, 0.0);
 }

@@ -110,7 +110,7 @@ private:
 	std::shared_ptr<MeshPrimitive> _floorMesh;
 
 	/// Controller geometry.
-	std::shared_ptr<ArrowPrimitive> _controllerGeometry;
+	std::shared_ptr<CylinderPrimitive> _controllerGeometry;
 	FloatType _controllerSize = 0.2f;
 
 	// Current size of VR monitor window.

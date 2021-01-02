@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,9 +67,9 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObje
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		WeakDataObjectRef,		// The data object + revision number
-		FloatType,					// Line width
-		WeakDataObjectRef		// Simulation cell + revision number
+		ConstDataObjectRef,		// Trajectory object
+		FloatType,				// Line width
+		ConstDataObjectRef		// Simulation cell
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -111,18 +111,18 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// The scene renderer
-		WeakDataObjectRef,		// The trajectory data object
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Trajectory data object
 		FloatType,				// Line width
 		Color,					// Line color,
 		ShadingMode,			// Shading mode
 		FloatType,				// End frame
-		WeakDataObjectRef		// Simulation cell
+		ConstDataObjectRef		// Simulation cell
 	>;
 
 	// The data structure stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<ArrowPrimitive> segments;
+		std::shared_ptr<CylinderPrimitive> segments;
 		std::shared_ptr<ParticlePrimitive> corners;
 	};
 
@@ -139,13 +139,11 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 			simulationCell));
 
 	// The shading mode for corner spheres.
-	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ArrowPrimitive::NormalShading)
+	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == CylinderPrimitive::NormalShading)
 			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
 	// Check if we already have a valid rendering primitives that are up to date.
-	if(!visCache.segments || !visCache.corners
-			|| !visCache.segments->isValid(renderer)
-			|| !visCache.corners->isValid(renderer)) {
+	if(!visCache.segments || !visCache.corners) {
 
 		// Update the rendering primitives.
 		visCache.segments.reset();
@@ -161,15 +159,17 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 			if(posProperty && timeProperty && idProperty && posProperty.size() == timeProperty.size() && timeProperty.size() == idProperty.size() && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
-				size_t lineSegmentCount = 0;
-				DataBufferAccessAndRef<Point3> cornerPoints = DataOORef<DataBuffer>::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
 				if(!simulationCell) {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							lineSegmentCount++;
+							baseSegmentPoints.push_back(pos[0]);
+							headSegmentPoints.push_back(pos[1]);
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(pos[1]);
 							}
@@ -179,8 +179,9 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				else {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&lineSegmentCount](const Point3& p1, const Point3& p2) {
-								lineSegmentCount++;
+							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
+								baseSegmentPoints.push_back(p1);
+								headSegmentPoints.push_back(p2);
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
@@ -189,39 +190,16 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 					}
 				}
 
-				visCache.segments = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), ArrowPrimitive::HighQuality);
-
-				visCache.segments->startSetElements(lineSegmentCount);
-				int lineSegmentIndex = 0;
-
-				// Create the line segment geometry.
-				pos = posProperty.cbegin();
-				sampleTime = timeProperty.cbegin();
-				id = idProperty.cbegin();
-				Color color = lineColor();
-				if(!simulationCell) {
-					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
-						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							visCache.segments->setElement(lineSegmentIndex++, pos[0], pos[1] - pos[0], color, lineRadius);
-						}
-					}
-				}
-				else {
-					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
-						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
-								visCache.segments->setElement(lineSegmentIndex++, p1, p2 - p1, color, lineRadius);
-							});
-						}
-					}
-				}
-				OVITO_ASSERT(lineSegmentIndex == lineSegmentCount);
-				visCache.segments->endSetElements();
+				// Create rendering primitive for the line segments.
+				visCache.segments = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), CylinderPrimitive::HighQuality);
+				visCache.segments->setUniformColor(lineColor());
+				visCache.segments->setUniformRadius(lineRadius);
+				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 
 				// Create rendering primitive for the corner points.
 				visCache.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
 				visCache.corners->setPositions(cornerPoints.take());
-				visCache.corners->setUniformColor(color);
+				visCache.corners->setUniformColor(lineColor());
 				visCache.corners->setUniformRadius(lineRadius);
 			}
 		}
@@ -231,8 +209,8 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 		return;
 
 	renderer->beginPickObject(contextNode);
-	visCache.segments->render(renderer);
-	visCache.corners->render(renderer);
+	renderer->renderCylinders(visCache.segments);
+	renderer->renderParticles(visCache.corners);
 	renderer->endPickObject();
 }
 

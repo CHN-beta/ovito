@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * \brief Buffer object that stores a triangle mesh to be rendered in the viewports.
  */
-class OpenGLMeshPrimitive : public MeshPrimitive, public std::enable_shared_from_this<OpenGLMeshPrimitive>
+class OpenGLMeshPrimitive : public MeshPrimitive
 {
 public:
 
@@ -42,46 +42,61 @@ public:
 	OpenGLMeshPrimitive(OpenGLSceneRenderer* renderer);
 
 	/// Sets the mesh to be stored in this buffer object.
-	virtual void setMesh(const TriMesh& mesh, const ColorA& meshColor, bool emphasizeEdges, DepthSortingMode depthSortingMode) override;
+	virtual void setMesh(const TriMesh& mesh, DepthSortingMode depthSortingMode) override {
+		MeshPrimitive::setMesh(mesh, depthSortingMode);
+		_depthSortingMode = depthSortingMode;
+		discardBuffers();
+	}
 
-	/// \brief Returns the number of triangle faces stored in the buffer.
-	virtual int faceCount() override { return _vertexBuffer.elementCount(); }
+	/// Sets array of materials referenced by the materialIndex() field of the mesh faces.
+	virtual void setMaterialColors(std::vector<ColorA> colors) override { 
+		MeshPrimitive::setMaterialColors(std::move(colors));
+		discardBuffers();
+	}
 
-	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) override;
+	/// Sets the rendering color to be used if the mesh doesn't have per-vertex colors.
+	virtual void setUniformColor(const ColorA& color) override { 
+		MeshPrimitive::setUniformColor(color); 
+		discardBuffers();
+	}
+
+	/// Sets whether mesh edges are rendered as wireframe.
+	virtual void setEmphasizeEdges(bool emphasizeEdges) override { 
+		MeshPrimitive::setEmphasizeEdges(emphasizeEdges); 
+		discardBuffers();
+	}
 
 	/// \brief Renders the geometry.
-	virtual void render(SceneRenderer* renderer) override;
-
-	/// Activates rendering of multiple instances of the mesh.
-	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) override;
-
-	/// Returns whether instanced rendering of the mesh has been activated.
-	bool useInstancedRendering() const { return (bool)_perInstanceTMs; }
+	void render(OpenGLSceneRenderer* renderer);
 
 private:
 
-	/// Stores data of a single vertex passed to the OpenGL implementation.
+	/// Throws away the OpenGL vertex buffers whenever the mesh changes.
+	void discardBuffers();
+
+	/// Fills the OpenGL vertex buffers with the mesh data.
+	void setupBuffers();
+
+private:
+
+	/// Stores data of a single vertex passed to the OpenGL shader.
 	struct ColoredVertexWithNormal {
 		Point_3<float> pos;
 		Vector_3<float> normal;
 		ColorAT<float> color;
 	};
 
-	/// The internal OpenGL vertex buffer that stores the vertex data.
+	/// The internal OpenGL vertex buffer that stores the per-vertex data.
 	OpenGLBuffer<ColoredVertexWithNormal> _vertexBuffer;
 
-	/// The GL context group under which the GL vertex buffer has been created.
-	QOpenGLContextGroup* _contextGroup;
+	/// The OpenGL shader program for renderint the triangles.
+	QOpenGLShaderProgram* _faceShader;
 
-	/// The OpenGL shader program used to render the triangles.
-	QOpenGLShaderProgram* _shader;
+	/// The OpenGL shader program for rendering the wireframe edges.
+	QOpenGLShaderProgram* _edgeShader;
 
-	/// The OpenGL shader program used to render the wireframe edges.
-	QOpenGLShaderProgram* _lineShader;
-
-	/// Are we rendering a semi-transparent mesh?
-	FloatType _alpha = 1.0;
+	/// Controls how the OpenGL renderer performs depth-correct rendering of semi-transparent meshes.
+	DepthSortingMode _depthSortingMode = AnyShapeMode;
 
 	/// Stores the center coordinates of the triangles, which are used to render semi-transparent faces in the 
 	/// correct order from back to front.
@@ -89,12 +104,6 @@ private:
 
 	/// The internal OpenGL vertex buffer that stores the vertex data for rendering polygon edges.
 	OpenGLBuffer<Point_3<float>> _edgeLinesBuffer;
-
-	/// The list of transformation matrices when rendering multiple instances of the mesh.
-	ConstDataBufferPtr _perInstanceTMs; 
-
-	/// The list of colors when rendering multiple instances of the mesh.
-	ConstDataBufferPtr _perInstanceColors;
 };
 
 }	// End of namespace

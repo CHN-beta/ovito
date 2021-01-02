@@ -174,8 +174,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 						particleBuffer->setPositions(positions());
 						particleBuffer->setRadii(particleRadii());
 					}
-					OVITO_ASSERT(particleBuffer->isValid(_renderer));
-					particleBuffer->render(_renderer);
+					_renderer->renderParticles(particleBuffer);
 				}
 				catch(...) {
 					_renderer->endFrame(false);

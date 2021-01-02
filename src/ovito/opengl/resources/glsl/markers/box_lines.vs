@@ -29,10 +29,10 @@ uniform vec3 cubeVerts[24];
 uniform float marker_size;
 uniform int picking_base_id;
 uniform bool is_picking_mode;
+uniform vec4 color;
 
 // The marker data:
 in vec3 position;
-in vec4 color;
 
 // Outputs to fragment shader
 flat out vec4 vertex_color_fs;

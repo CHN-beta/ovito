@@ -33,8 +33,6 @@ namespace Ovito {
 ******************************************************************************/
 OpenGLImagePrimitive::OpenGLImagePrimitive(OpenGLSceneRenderer* renderer)
 {
-	_contextGroup = QOpenGLContextGroup::currentContextGroup();
-	OVITO_ASSERT(renderer->glcontext()->shareGroup() == _contextGroup);
 	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
     if(!renderer->glcontext()->isOpenGLES() || renderer->glformat().majorVersion() >= 3) {
@@ -52,92 +50,60 @@ OpenGLImagePrimitive::OpenGLImagePrimitive(OpenGLSceneRenderer* renderer)
 }
 
 /******************************************************************************
-* Returns true if the buffer is filled and can be rendered with the given renderer.
-******************************************************************************/
-bool OpenGLImagePrimitive::isValid(SceneRenderer* renderer)
-{
-	OpenGLSceneRenderer* vpRenderer = qobject_cast<OpenGLSceneRenderer*>(renderer);
-	if(!vpRenderer) return false;
-	return (_contextGroup == vpRenderer->glcontext()->shareGroup());
-}
-
-/******************************************************************************
-* Renders the image in a rectangle given in viewport coordinates.
-******************************************************************************/
-void OpenGLImagePrimitive::renderViewport(SceneRenderer* renderer, const Point2& pos, const Vector2& size)
-{
-	OpenGLSceneRenderer* vpRenderer = dynamic_object_cast<OpenGLSceneRenderer>(renderer);
-	GLint vc[4];
-    OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
-	vpRenderer->glGetIntegerv(GL_VIEWPORT, vc);
-
-	Point2 windowPos((pos.x() + 1.0f) * vc[2] / 2, (-(pos.y() + size.y()) + 1.0f) * vc[3] / 2);
-	Vector2 windowSize(size.x() * vc[2] / 2, size.y() * vc[3] / 2);
-	renderWindow(renderer, windowPos, windowSize);
-}
-
-/******************************************************************************
 * Renders the image in a rectangle given in device pixel coordinates.
 ******************************************************************************/
-void OpenGLImagePrimitive::renderWindow(SceneRenderer* renderer, const Point2& pos, const Vector2& size)
+void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 {
-	OpenGLSceneRenderer* vpRenderer = dynamic_object_cast<OpenGLSceneRenderer>(renderer);
-
-	if(image().isNull() || !vpRenderer || renderer->isPicking())
+	if(image().isNull() || renderer->isPicking() || windowRect().isEmpty())
 		return;
-    OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
 
     if(_texture.isCreated()) {
-        OVITO_ASSERT(_contextGroup == QOpenGLContextGroup::currentContextGroup());
         OVITO_ASSERT(_texture.isCreated());
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->rebindVAO());
+        OVITO_CHECK_OPENGL(renderer, renderer->rebindVAO());
 
         // Prepare texture.
-        OVITO_CHECK_OPENGL(vpRenderer, _texture.bind());
+        OVITO_CHECK_OPENGL(renderer, _texture.bind());
 
-        if(_needTextureUpdate) {
-            _needTextureUpdate = false;
+        qint64 cacheKey = image().cacheKey();
+        if(cacheKey != _imageCacheKey) {
+            _imageCacheKey = cacheKey;
 
-            OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
-            OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-            OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    #ifndef Q_OS_WASM
-            OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0));
-            OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
-    #endif
+            OVITO_REPORT_OPENGL_ERRORS(renderer);
+            OVITO_CHECK_OPENGL(renderer, renderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+            OVITO_CHECK_OPENGL(renderer, renderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+#ifndef Q_OS_WASM
+            OVITO_CHECK_OPENGL(renderer, renderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0));
+            OVITO_CHECK_OPENGL(renderer, renderer->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
+#endif
 
             // Upload texture data.
             QImage textureImage = convertToGLFormat(image());
-            OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureImage.width(), textureImage.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, textureImage.constBits()));
+            OVITO_CHECK_OPENGL(renderer, renderer->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureImage.width(), textureImage.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, textureImage.constBits()));
         }
 
         // Transform rectangle to normalized device coordinates.
-        FloatType x = pos.x(), y = pos.y();
-        FloatType w = size.x(), h = size.y();
-        int aaLevel = vpRenderer->antialiasingLevelInternal();
+        Box2 b = windowRect();
+        int aaLevel = renderer->antialiasingLevelInternal();
         if(aaLevel > 1) {
-            x = (int)(x / aaLevel) * aaLevel;
-            y = (int)(y / aaLevel) * aaLevel;
-            int x2 = (int)((x + w) / aaLevel) * aaLevel;
-            int y2 = (int)((y + h) / aaLevel) * aaLevel;
-            w = x2 - x;
-            h = y2 - y;
+            b.minc.x() = (int)(b.minc.x() / aaLevel) * aaLevel;
+            b.minc.y() = (int)(b.minc.y() / aaLevel) * aaLevel;
+            b.maxc.x() = (int)(b.maxc.x() / aaLevel) * aaLevel;
+            b.maxc.y() = (int)(b.maxc.y() / aaLevel) * aaLevel;
         }
-        QRectF rect2(x, y, w, h);
         GLint vc[4];
-        vpRenderer->glGetIntegerv(GL_VIEWPORT, vc);
+        renderer->glGetIntegerv(GL_VIEWPORT, vc);
         Point_3<GLfloat>* vertices = _vertexBuffer.map();
-        vertices[0] = Point_3<GLfloat>(rect2.left() / vc[2] * 2 - 1, 1 - rect2.bottom() / vc[3] * 2, 0);
-        vertices[1] = Point_3<GLfloat>(rect2.right() / vc[2] * 2 - 1, 1 - rect2.bottom() / vc[3] * 2, 1);
-        vertices[2] = Point_3<GLfloat>(rect2.left() / vc[2] * 2 - 1, 1 - rect2.top() / vc[3] * 2, 2);
-        vertices[3] = Point_3<GLfloat>(rect2.right() / vc[2] * 2 - 1, 1 - rect2.top() / vc[3] * 2, 3);
+        vertices[0] = Point_3<GLfloat>(b.minc.x() / vc[2] * 2 - 1, 1 - b.maxc.y() / vc[3] * 2, 0);
+        vertices[1] = Point_3<GLfloat>(b.maxc.x() / vc[2] * 2 - 1, 1 - b.maxc.y() / vc[3] * 2, 1);
+        vertices[2] = Point_3<GLfloat>(b.minc.x() / vc[2] * 2 - 1, 1 - b.minc.y() / vc[3] * 2, 2);
+        vertices[3] = Point_3<GLfloat>(b.maxc.x() / vc[2] * 2 - 1, 1 - b.minc.y() / vc[3] * 2, 3);
         _vertexBuffer.unmap();
 
-        bool wasDepthTestEnabled = vpRenderer->glIsEnabled(GL_DEPTH_TEST);
-        bool wasBlendEnabled = vpRenderer->glIsEnabled(GL_BLEND);
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glDisable(GL_DEPTH_TEST));
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glEnable(GL_BLEND));
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        bool wasDepthTestEnabled = renderer->glIsEnabled(GL_DEPTH_TEST);
+        bool wasBlendEnabled = renderer->glIsEnabled(GL_BLEND);
+        OVITO_CHECK_OPENGL(renderer, renderer->glDisable(GL_DEPTH_TEST));
+        OVITO_CHECK_OPENGL(renderer, renderer->glEnable(GL_BLEND));
+        OVITO_CHECK_OPENGL(renderer, renderer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
         if(!_shader->bind())
             renderer->throwException(QStringLiteral("Failed to bind OpenGL shader."));
@@ -146,36 +112,36 @@ void OpenGLImagePrimitive::renderWindow(SceneRenderer* renderer, const Point2& p
         static const QVector2D uvcoords[] = {{0,0}, {1,0}, {0,1}, {1,1}};
         _shader->setUniformValueArray("uvcoords", uvcoords, 4);
 
-        _vertexBuffer.bindPositions(vpRenderer, _shader);
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
-        _vertexBuffer.detachPositions(vpRenderer, _shader);
+        _vertexBuffer.bindPositions(renderer, _shader);
+        OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
+        _vertexBuffer.detachPositions(renderer, _shader);
 
         _shader->release();
 
         // Restore old state.
-        if(wasDepthTestEnabled) vpRenderer->glEnable(GL_DEPTH_TEST);
-        if(!wasBlendEnabled) vpRenderer->glDisable(GL_BLEND);
+        if(wasDepthTestEnabled) renderer->glEnable(GL_DEPTH_TEST);
+        if(!wasBlendEnabled) renderer->glDisable(GL_BLEND);
     }
     else {
         // Disable depth testing and blending.
-        bool wasDepthTestEnabled = vpRenderer->glIsEnabled(GL_DEPTH_TEST);
-        OVITO_CHECK_OPENGL(vpRenderer, vpRenderer->glDisable(GL_DEPTH_TEST));
+        bool wasDepthTestEnabled = renderer->glIsEnabled(GL_DEPTH_TEST);
+        OVITO_CHECK_OPENGL(renderer, renderer->glDisable(GL_DEPTH_TEST));
 
         // Query the viewport size in device pixels.
         GLint vc[4];
-        vpRenderer->glGetIntegerv(GL_VIEWPORT, vc);
+        renderer->glGetIntegerv(GL_VIEWPORT, vc);
 
         // Use Qt's QOpenGLPaintDevice to paint the image into the framebuffer.
         QOpenGLPaintDevice paintDevice(vc[2], vc[3]);
         QPainter painter(&paintDevice);
 
-        OVITO_CHECK_OPENGL(vpRenderer, painter.drawImage(QRectF(pos.x(), pos.y(), size.x(), size.y()), image()));
+        QRectF rect(windowRect().minc.x(), windowRect().minc.y(), windowRect().width(), windowRect().height());
+        OVITO_CHECK_OPENGL(renderer, painter.drawImage(rect, image()));
 
         // Restore old state.
         if(wasDepthTestEnabled)
-            vpRenderer->glEnable(GL_DEPTH_TEST);
+            renderer->glEnable(GL_DEPTH_TEST);
     }
-    OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
 }
 
 static inline QRgb qt_gl_convertToGLFormatHelper(QRgb src_pixel, GLenum texture_format)

@@ -66,7 +66,7 @@ public:
 		: _shadingMode(shadingMode), _renderingQuality(renderingQuality), _particleShape(shape) {
 	}
 
-	/// Sets the array of particle indices to render.
+	/// \brief Sets the array of particle indices to render.
 	virtual void setIndices(ConstDataBufferPtr indices) {
 		OVITO_ASSERT(!indices || (indices->dataType() == DataBuffer::Int && indices->componentCount() == 1));
 		_indices = std::move(indices);
@@ -176,10 +176,10 @@ public:
 	FloatType uniformRadius() const { return _uniformParticleRadius; }
 
 	/// Returns the color assigned to all particles.
-	const Color& uniformColor() { return _uniformParticleColor; }
+	const Color& uniformColor() const { return _uniformParticleColor; }
 
 	/// Returns the color used for rendering all selected particles.
-	const Color& selectionColor() { return _selectionParticleColor; }
+	const Color& selectionColor() const { return _selectionParticleColor; }
 
 private:
 
@@ -223,10 +223,10 @@ private:
 	FloatType _uniformParticleRadius = 0;
 
 	/// The color to be used if no per-particle colors have been specified.
-	Color _uniformParticleColor = ColorA(1,1,1);
+	Color _uniformParticleColor{1,1,1};
 
 	/// The color used for rendering all selected particles.
-	Color _selectionParticleColor = Color(1,0,0);
+	Color _selectionParticleColor{1,0,0};
 };
 
 }	// End of namespace

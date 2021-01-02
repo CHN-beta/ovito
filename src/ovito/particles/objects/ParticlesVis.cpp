@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "ParticlesVis.h"
 
 namespace Ovito { namespace Particles {
@@ -69,10 +69,10 @@ Box3 ParticlesVis::boundingBox(TimePoint time, const std::vector<const DataObjec
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		WeakDataObjectRef,	// Position property
-		WeakDataObjectRef,	// Radius property
-		WeakDataObjectRef,	// Type property
-		WeakDataObjectRef,	// Aspherical shape property
+		ConstDataObjectRef,	// Position property
+		ConstDataObjectRef,	// Radius property
+		ConstDataObjectRef,	// Type property
+		ConstDataObjectRef,	// Aspherical shape property
 		FloatType 			// Default particle radius
 	>;
 
@@ -461,19 +461,19 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	}
 
 	// Render all mesh-based particle types.
-	renderMeshBasedParticles(time, particles, flowState, renderer, contextNode);
+	renderMeshBasedParticles(particles, renderer, contextNode);
 
 	// Render all primitive particle types.
-	renderPrimitiveParticles(time, particles, flowState, renderer, contextNode);
+	renderPrimitiveParticles(particles, renderer, contextNode);
 
 	// Render all (sphero-)cylindric particle types.
-	renderCylindricParticles(time, particles, flowState, renderer, contextNode);
+	renderCylindricParticles(particles, renderer, contextNode);
 }
 
 /******************************************************************************
 * Renders particle types that have a mesh-based shape assigned.
 ******************************************************************************/
-void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Get input particle data.
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -502,14 +502,14 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 	using ShapeMeshCacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
 		QPointer<PipelineSceneNode>,// The pipeline scene node
-		WeakDataObjectRef,			// Particle type property
+		ConstDataObjectRef,			// Particle type property
 		FloatType,					// Default particle radius
-		WeakDataObjectRef,			// Position property
-		WeakDataObjectRef,			// Orientation property
-		WeakDataObjectRef,			// Color property
-		WeakDataObjectRef,			// Selection property
-		WeakDataObjectRef,			// Transparency property
-		WeakDataObjectRef			// Radius property
+		ConstDataObjectRef,			// Position property
+		ConstDataObjectRef,			// Orientation property
+		ConstDataObjectRef,			// Color property
+		ConstDataObjectRef,			// Selection property
+		ConstDataObjectRef,			// Transparency property
+		ConstDataObjectRef			// Radius property
 	>;
 	// The data structure created for each mesh-based particle type.
 	struct MeshParticleType {
@@ -534,7 +534,7 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 		radiusProperty));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(meshVisCache.empty() || !meshVisCache.front().meshPrimitive->isValid(renderer)) {
+	if(meshVisCache.empty()) {
 		meshVisCache.clear();
 
 		// This data structure stores temporary per-particle instance data, separated by mesh-based particle type.
@@ -557,8 +557,9 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 			OVITO_ASSERT(ptype->shapeMesh() && ptype->shapeMesh()->mesh());
 			MeshParticleType meshType;
 			meshType.meshPrimitive = renderer->createMeshPrimitive();
-			meshType.meshPrimitive->setMesh(*ptype->shapeMesh()->mesh(), ColorA(1,1,1,1), ptype->highlightShapeEdges());
+			meshType.meshPrimitive->setEmphasizeEdges(ptype->highlightShapeEdges());
 			meshType.meshPrimitive->setCullFaces(ptype->shapeBackfaceCullingEnabled());
+			meshType.meshPrimitive->setMesh(*ptype->shapeMesh()->mesh());
 			meshType.useMeshColors = ptype->shapeUseMeshColor();
 			meshVisCache.push_back(std::move(meshType));
 
@@ -608,7 +609,7 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 				perInstanceData[typeIndex].particleTMs.take(), 
 				perInstanceData[typeIndex].particleColors.take());
 			// Create a picking structure for this set of particles.
-			meshVisCache[typeIndex].pickInfo = new ParticlePickInfo(this, flowState, perInstanceData[typeIndex].particleIndices.take());
+			meshVisCache[typeIndex].pickInfo = new ParticlePickInfo(this, particles, perInstanceData[typeIndex].particleIndices.take());
 		}
 	}
 	OVITO_ASSERT(meshVisCache.size() == shapeMeshParticleTypes.size());
@@ -617,7 +618,7 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 	for(MeshParticleType& t : meshVisCache) {
 		if(renderer->isPicking())
 			renderer->beginPickObject(contextNode, t.pickInfo);
-		t.meshPrimitive->render(renderer);
+		renderer->renderMesh(t.meshPrimitive);
 		if(renderer->isPicking())
 			renderer->endPickObject();
 	}
@@ -626,7 +627,7 @@ void ParticlesVis::renderMeshBasedParticles(TimePoint time, const ParticlesObjec
 /******************************************************************************
 * Renders all particles with a primitive shape (spherical, box, (super)quadrics).
 ******************************************************************************/
-void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Determine whether all particle types use the same uniform shape or not.
 	ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -684,12 +685,12 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 
 		// The lookup key for the cached rendering primitive:
 		using ParticleCacheKey = std::tuple<
-			CompatibleRendererGroup,			// The scene renderer
-			QPointer<PipelineSceneNode>,		// The pipeline scene node
-			ParticlePrimitive::ShadingMode,		// The effective particle shading mode
-			ParticlePrimitive::RenderingQuality,// The effective particle rendering quality
-			ParticlePrimitive::ParticleShape,	// The effective particle shape
-			WeakDataObjectRef,					// Particle type property
+			CompatibleRendererGroup,			// Sscene renderer
+			QPointer<PipelineSceneNode>,		// Pipeline scene node
+			ParticlePrimitive::ShadingMode,		// Effective particle shading mode
+			ParticlePrimitive::RenderingQuality,// Effective particle rendering quality
+			ParticlePrimitive::ParticleShape,	// Effective particle shape
+			ConstDataObjectRef,					// Particle type property
 			size_t,								// Total particle count
 			ParticlesVis::ParticleShape			// Global particle shape
 		>;
@@ -715,7 +716,7 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 			particleShape()));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.primitive || !visCache.primitive->isValid(renderer)) {
+		if(!visCache.primitive) {
 
 			// Determine the set of particles to be rendered using the current primitive shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -751,7 +752,7 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 			// Enable/disable indexed rendering of particle primitives.
 			visCache.primitive->setIndices(activeParticleIndices.take());
 			// Also create the corresponding picking record.
-			visCache.pickInfo = new ParticlePickInfo(this, flowState);
+			visCache.pickInfo = new ParticlePickInfo(this, particles);
 		}
 
 		// Fill rendering primitive with particle properties.
@@ -767,8 +768,8 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 		using RadiiCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
 			FloatType,							// Default particle radius
-			WeakDataObjectRef,					// Radius property
-			WeakDataObjectRef					// Type property
+			ConstDataObjectRef,					// Radius property
+			ConstDataObjectRef					// Type property
 		>;
 		bool& radiiUpToDate = dataset()->visCache().get<bool>(RadiiCacheKey(
 			visCache.primitive,
@@ -785,8 +786,8 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 		// The type of lookup key used for caching the particle colors:
 		using ColorCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
-			WeakDataObjectRef,					// Type property
-			WeakDataObjectRef					// Color property
+			ConstDataObjectRef,					// Type property
+			ConstDataObjectRef					// Color property
 		>;
 		bool& colorsUpToDate = dataset()->visCache().get<bool>(ColorCacheKey(
 			visCache.primitive,
@@ -801,7 +802,7 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 
 		// Render the particle primitive.
 		if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
-		visCache.primitive->render(renderer);
+		renderer->renderParticles(visCache.primitive);
 		if(renderer->isPicking()) renderer->endPickObject();
 	}
 }
@@ -809,7 +810,7 @@ void ParticlesVis::renderPrimitiveParticles(TimePoint time, const ParticlesObjec
 /******************************************************************************
 * Renders all particles with a (sphero-)cylindrical shape.
 ******************************************************************************/
-void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Determine whether all particle types use the same uniform shape or not.
 	ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -859,23 +860,23 @@ void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObjec
 
 		// The lookup key for the cached rendering primitive:
 		using ParticleCacheKey = std::tuple<
-			CompatibleRendererGroup,			// The scene renderer
-			QPointer<PipelineSceneNode>,		// The pipeline scene node
-			WeakDataObjectRef,					// Position property
-			WeakDataObjectRef,					// Type property
-			WeakDataObjectRef,					// Selection property
-			WeakDataObjectRef,					// Color property
-			WeakDataObjectRef,					// Transparency property
-			WeakDataObjectRef,					// Apherical shape property
-			WeakDataObjectRef,					// Orientation property
-			WeakDataObjectRef,					// Radius property
+			CompatibleRendererGroup,			// Scene renderer
+			QPointer<PipelineSceneNode>,		// Pipeline scene node
+			ConstDataObjectRef,					// Position property
+			ConstDataObjectRef,					// Type property
+			ConstDataObjectRef,					// Selection property
+			ConstDataObjectRef,					// Color property
+			ConstDataObjectRef,					// Transparency property
+			ConstDataObjectRef,					// Apherical shape property
+			ConstDataObjectRef,					// Orientation property
+			ConstDataObjectRef,					// Radius property
 			FloatType,							// Default particle radius
 			ParticlesVis::ParticleShape,		// Global particle shape
 			ParticlesVis::ParticleShape			// Local particle shape
 		>;
 		// The data structure stored in the vis cache.
 		struct ParticleCacheValue {
-			std::shared_ptr<ArrowPrimitive> cylinderPrimitive;
+			std::shared_ptr<CylinderPrimitive> cylinderPrimitive;
 			std::shared_ptr<ParticlePrimitive> spheresPrimitives[2];
 			OORef<ParticlePickInfo> pickInfo;
 		};
@@ -897,7 +898,7 @@ void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObjec
 			shape));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.cylinderPrimitive || !visCache.cylinderPrimitive->isValid(renderer)) {
+		if(!visCache.cylinderPrimitive) {
 
 			// Determine the set of particles to be rendered using the current shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -933,7 +934,7 @@ void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObjec
 			int effectiveParticleCount = activeParticleIndices ? activeParticleIndices.size() : particles->elementCount();
 
 			// Create the rendering primitive for the cylinders.
-			visCache.cylinderPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality, transparencyProperty != nullptr);
+			visCache.cylinderPrimitive = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
 
 			// Determine cylinder colors.
 			if(!colorBuffer)
@@ -943,21 +944,14 @@ void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObjec
 			if(!radiusBuffer && !asphericalShapeProperty)
 				radiusBuffer = particleRadii(particles);
 
-			DataBufferAccessAndRef<Point3> sphereCapPositions[2];
-			DataBufferAccessAndRef<FloatType> sphereRadii;
-			DataBufferAccessAndRef<Color> sphereColors;
-			DataBufferAccessAndRef<FloatType> sphereTransparencies;
-			if(shape == ParticleShape::Spherocylinder) {
-				sphereCapPositions[0] = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-				sphereCapPositions[1] = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-				sphereRadii = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 1, 0, false);
-				sphereColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-				if(transparencyProperty)
-					sphereTransparencies = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 1, 0, false);
-			}
+			// Allocate cylinder data buffers.
+			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> cylinderHeadPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<FloatType> cylinderRadii = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 1, 0, false);
+			DataBufferAccessAndRef<Color> cylinderColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<FloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 1, 0, false) : nullptr;
 
-			// Fill cylinder buffer.
-			visCache.cylinderPrimitive->startSetElements(effectiveParticleCount);
+			// Fill data buffers.
 			ConstPropertyAccess<Point3> positionArray(positionProperty);
 			ConstPropertyAccess<Vector3> asphericalShapeArray(asphericalShapeProperty);
 			ConstPropertyAccess<Quaternion> orientationArray(orientationProperty);
@@ -978,51 +972,49 @@ void ParticlesVis::renderCylindricParticles(TimePoint time, const ParticlesObjec
 				}
 				Vector3 dir = Vector3(0, 0, length);
 				if(orientationArray) {
-					const Quaternion& q = orientationArray[effectiveParticleIndex];
-					dir = q * dir;
+					dir = orientationArray[effectiveParticleIndex] * dir;
 				}
 				Point3 p = center - (dir * FloatType(0.5));
-				if(shape == ParticleShape::Spherocylinder) {
-					sphereCapPositions[0][index] = p;
-					sphereCapPositions[1][index] = p + dir;
-					sphereRadii[index] = radius;
-					sphereColors[index] = colorsArray[effectiveParticleIndex];
-					if(sphereTransparencies)
-						sphereTransparencies[index] = transparencies[effectiveParticleIndex];
-				}
-				ColorA color(colorsArray[effectiveParticleIndex], transparencies ? qBound(0.0, 1.0 - transparencies[effectiveParticleIndex], 1.0) : 1.0);
-				visCache.cylinderPrimitive->setElement(index, p, dir, color, radius);
+				cylinderBasePositions[index] = p;
+				cylinderHeadPositions[index] = p + dir;
+				cylinderRadii[index] = radius;
+				cylinderColors[index] = colorsArray[effectiveParticleIndex];
+				if(cylinderTransparencies)
+					cylinderTransparencies[index] = transparencies[effectiveParticleIndex];
 			}
-			visCache.cylinderPrimitive->endSetElements();
+			visCache.cylinderPrimitive->setPositions(cylinderBasePositions.take(), cylinderHeadPositions.take());
+			visCache.cylinderPrimitive->setRadii(cylinderRadii.take());
+			visCache.cylinderPrimitive->setColors(cylinderColors.take());
+			visCache.cylinderPrimitive->setTransparencies(cylinderTransparencies.take());
 
 			// Create the rendering primitive for the spheres.
 			if(shape == ParticleShape::Spherocylinder) {
 				visCache.spheresPrimitives[0] = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
-				visCache.spheresPrimitives[0]->setPositions(sphereCapPositions[0].take());
-				visCache.spheresPrimitives[0]->setRadii(sphereRadii.take());
-				visCache.spheresPrimitives[0]->setColors(sphereColors.take());
-				visCache.spheresPrimitives[0]->setTransparencies(sphereTransparencies.take());
+				visCache.spheresPrimitives[0]->setPositions(visCache.cylinderPrimitive->basePositions());
+				visCache.spheresPrimitives[0]->setRadii(visCache.cylinderPrimitive->radii());
+				visCache.spheresPrimitives[0]->setColors(visCache.cylinderPrimitive->colors());
+				visCache.spheresPrimitives[0]->setTransparencies(visCache.cylinderPrimitive->transparencies());
 				visCache.spheresPrimitives[1] = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
-				visCache.spheresPrimitives[1]->setPositions(sphereCapPositions[1].take());
-				visCache.spheresPrimitives[1]->setRadii(visCache.spheresPrimitives[0]->radii());
-				visCache.spheresPrimitives[1]->setColors(visCache.spheresPrimitives[0]->colors());
-				visCache.spheresPrimitives[1]->setTransparencies(visCache.spheresPrimitives[0]->transparencies());
+				visCache.spheresPrimitives[1]->setPositions(visCache.cylinderPrimitive->headPositions());
+				visCache.spheresPrimitives[1]->setRadii(visCache.cylinderPrimitive->radii());
+				visCache.spheresPrimitives[1]->setColors(visCache.cylinderPrimitive->colors());
+				visCache.spheresPrimitives[1]->setTransparencies(visCache.cylinderPrimitive->transparencies());
 			}
 
 			// Also create the corresponding picking record.
-			visCache.pickInfo = new ParticlePickInfo(this, flowState, activeParticleIndices.take());
+			visCache.pickInfo = new ParticlePickInfo(this, particles, activeParticleIndices.take());
 		}
 
 		// Render the particle primitive.
 		if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
-		visCache.cylinderPrimitive->render(renderer);
+		renderer->renderCylinders(visCache.cylinderPrimitive);
 		if(renderer->isPicking()) renderer->endPickObject();
 		if(visCache.spheresPrimitives[0]) {
 			if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
-			visCache.spheresPrimitives[0]->render(renderer);
+			renderer->renderParticles(visCache.spheresPrimitives[0]);
 			if(renderer->isPicking()) renderer->endPickObject();
 			if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
-			visCache.spheresPrimitives[1]->render(renderer);
+			renderer->renderParticles(visCache.spheresPrimitives[1]);
 			if(renderer->isPicking()) renderer->endPickObject();
 		}
 	}
@@ -1094,8 +1086,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 
 		std::shared_ptr<ParticlePrimitive> particleBuffer;
 		std::shared_ptr<ParticlePrimitive> highlightParticleBuffer;
-		std::shared_ptr<ArrowPrimitive> cylinderBuffer;
-		std::shared_ptr<ArrowPrimitive> highlightCylinderBuffer;
+		std::shared_ptr<CylinderPrimitive> cylinderBuffer;
+		std::shared_ptr<CylinderPrimitive> highlightCylinderBuffer;
 		if(particleShape() != Cylinder && particleShape() != Spherocylinder) {
 			// Determine effective particle shape and shading mode.
 			ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shapeProperty, orientationProperty, roundnessProperty);
@@ -1146,8 +1138,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				dir = q * dir;
 			}
 			Point3 p = pos - (dir * FloatType(0.5));
-			cylinderBuffer = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality);
-			highlightCylinderBuffer = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality);
+			cylinderBuffer = renderer->createArrowPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
+			highlightCylinderBuffer = renderer->createArrowPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
 			cylinderBuffer->startSetElements(1);
 			cylinderBuffer->setElement(0, p, dir, (ColorA)color, radius);
 			cylinderBuffer->endSetElements();
@@ -1242,53 +1234,51 @@ size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 QString ParticlePickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
 {
 	size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
-	return particleInfoString(pipelineState(), particleIndex);
+	return particleInfoString(*particles(), particleIndex);
 }
 
 /******************************************************************************
 * Builds the info string for a particle to be displayed in the status bar.
 ******************************************************************************/
-QString ParticlePickInfo::particleInfoString(const PipelineFlowState& pipelineState, size_t particleIndex)
+QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, size_t particleIndex)
 {
 	QString str;
-	if(const ParticlesObject* particles = pipelineState.getObject<ParticlesObject>()) {
-		for(const PropertyObject* property : particles->properties()) {
-			if(property->size() <= particleIndex) continue;
-			if(property->type() == ParticlesObject::SelectionProperty) continue;
-			if(property->type() == ParticlesObject::ColorProperty) continue;
-			if(!str.isEmpty()) str += QStringLiteral(" | ");
-			str += property->name();
-			str += QStringLiteral(" ");
-			if(property->dataType() == PropertyObject::Int) {
-				ConstPropertyAccess<int, true> data(property);
-				for(size_t component = 0; component < data.componentCount(); component++) {
-					if(component != 0) str += QStringLiteral(", ");
-					str += QString::number(data.get(particleIndex, component));
-					if(property->elementTypes().empty() == false) {
-						if(const ElementType* ptype = property->elementType(data.get(particleIndex, component))) {
-							if(!ptype->name().isEmpty())
-								str += QString(" (%1)").arg(ptype->name());
-						}
+	for(const PropertyObject* property : particles.properties()) {
+		if(property->size() <= particleIndex) continue;
+		if(property->type() == ParticlesObject::SelectionProperty) continue;
+		if(property->type() == ParticlesObject::ColorProperty) continue;
+		if(!str.isEmpty()) str += QStringLiteral(" | ");
+		str += property->name();
+		str += QStringLiteral(" ");
+		if(property->dataType() == PropertyObject::Int) {
+			ConstPropertyAccess<int, true> data(property);
+			for(size_t component = 0; component < data.componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(particleIndex, component));
+				if(property->elementTypes().empty() == false) {
+					if(const ElementType* ptype = property->elementType(data.get(particleIndex, component))) {
+						if(!ptype->name().isEmpty())
+							str += QString(" (%1)").arg(ptype->name());
 					}
 				}
 			}
-			else if(property->dataType() == PropertyObject::Int64) {
-				ConstPropertyAccess<qlonglong, true> data(property);
-				for(size_t component = 0; component < property->componentCount(); component++) {
-					if(component != 0) str += QStringLiteral(", ");
-					str += QString::number(data.get(particleIndex, component));
-				}
+		}
+		else if(property->dataType() == PropertyObject::Int64) {
+			ConstPropertyAccess<qlonglong, true> data(property);
+			for(size_t component = 0; component < property->componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(particleIndex, component));
 			}
-			else if(property->dataType() == PropertyObject::Float) {
-				ConstPropertyAccess<FloatType, true> data(property);
-				for(size_t component = 0; component < property->componentCount(); component++) {
-					if(component != 0) str += QStringLiteral(", ");
-					str += QString::number(data.get(particleIndex, component));
-				}
+		}
+		else if(property->dataType() == PropertyObject::Float) {
+			ConstPropertyAccess<FloatType, true> data(property);
+			for(size_t component = 0; component < property->componentCount(); component++) {
+				if(component != 0) str += QStringLiteral(", ");
+				str += QString::number(data.get(particleIndex, component));
 			}
-			else {
-				str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
-			}
+		}
+		else {
+			str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
 		}
 	}
 	return str;

@@ -28,7 +28,6 @@
 #include "OpenGLHelpers.h"
 
 #include <QOpenGLFunctions>
-#include <QOpenGLFunctions_2_0>
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLFunctions_3_2_Core>
 #include <QOpenGLShader>
@@ -61,17 +60,11 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderSuccessful) override;
 
-	/// Changes the current local to world transformation matrix.
-	virtual void setWorldTransform(const AffineTransformation& tm) override;
-
-	/// Returns the current local-to-world transformation matrix.
-	virtual const AffineTransformation& worldTransform() const override { return _modelWorldTM; }
-
-	/// Returns the current model-to-view transformation matrix.
-	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
-
 	/// Requests a new line geometry buffer from the renderer.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
+
+	/// Renders the line geometry stored in the given buffer.
+	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
 
 	/// Requests a new particle geometry buffer from the renderer.
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
@@ -79,23 +72,40 @@ public:
 			ParticlePrimitive::RenderingQuality renderingQuality, 
 			ParticlePrimitive::ParticleShape shape) override;
 
+	/// Renders the particles stored in the given primitive buffer.
+	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
+
 	/// Requests a new marker geometry buffer from the renderer.
 	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) override;
+
+	/// Renders the marker geometry stored in the given buffer.
+	virtual void renderMarkers(const std::shared_ptr<MarkerPrimitive>& primitive) override;
 
 	/// Requests a new text geometry buffer from the renderer.
 	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() override;
 
+	/// Renders the text stored in the given primitive buffer.
+	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) override;
+
 	/// Requests a new image geometry buffer from the renderer.
 	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
 
-	/// Requests a new arrow geometry buffer from the renderer.
-	virtual std::shared_ptr<ArrowPrimitive> createArrowPrimitive(ArrowPrimitive::Shape shape,
-			ArrowPrimitive::ShadingMode shadingMode,
-			ArrowPrimitive::RenderingQuality renderingQuality,
-			bool translucentElements) override;
+	/// Renders the image stored in the given primitive buffer.
+	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
+
+	/// Requests a new cylinder geometry buffer from the renderer.
+	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape,
+			CylinderPrimitive::ShadingMode shadingMode,
+			CylinderPrimitive::RenderingQuality renderingQuality) override;
+
+	/// Renders the cylinder or arrow elements stored in the given buffer.
+	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) override;
 
 	/// Requests a new triangle mesh buffer from the renderer.
 	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() override;
+
+	/// Renders the triangle mesh stored in the given buffer.
+	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) override;
 
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
@@ -127,16 +137,6 @@ public:
 
 	/// Returns the default OpenGL surface format requested by OVITO when creating OpenGL contexts.
 	static QSurfaceFormat getDefaultSurfaceFormat();
-
-	/// Returns whether we are currently rendering translucent objects.
-	bool translucentPass() const { return _translucentPass; }
-
-	/// Adds a primitive to the list of translucent primitives which will be rendered during the second
-	/// rendering pass.
-	void registerTranslucentPrimitive(const std::shared_ptr<PrimitiveBase>& primitive) {
-		OVITO_ASSERT(!translucentPass());
-		_translucentPrimitives.emplace_back(worldTransform(), primitive);
-	}
 
 	/// Binds the default vertex array object again in case another VAO was bound in between.
 	/// This method should be called before calling an OpenGL rendering function.
@@ -277,18 +277,14 @@ private:
 	/// Indicates whether it is okay to use GLSL geometry shaders.
 	bool _useGeometryShaders = false;
 
-	/// The current model-to-world transformation matrix.
-	AffineTransformation _modelWorldTM = AffineTransformation::Identity();
+	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
+	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
 
-	/// The current model-to-view transformation matrix.
-	AffineTransformation _modelViewTM = AffineTransformation::Identity();
+	/// List of semi-transparent czlinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
+	std::vector<std::tuple<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
 
-	/// Indicates that we are currently rendering the translucent objects during a second rendering pass.
-	bool _translucentPass = false;
-
-	/// List of translucent graphics primitives collected during the first rendering pass, which
-	/// need to be rendered during the second pass.
-	std::vector<std::tuple<AffineTransformation, std::shared_ptr<PrimitiveBase>>> _translucentPrimitives;
+	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
+	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
 
 	/// The vendor of the OpenGL implementation in use.
 	static QByteArray _openGLVendor;
@@ -309,7 +305,7 @@ private:
 	static bool _openglSupportsGeomShaders;
 
 	friend class OpenGLMeshPrimitive;
-	friend class OpenGLArrowPrimitive;
+	friend class OpenGLCylinderPrimitive;
 	friend class OpenGLImagePrimitive;
 	friend class OpenGLLinePrimitive;
 	friend class OpenGLTextPrimitive;

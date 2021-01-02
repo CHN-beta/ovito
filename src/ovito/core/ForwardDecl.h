@@ -85,7 +85,7 @@ namespace Ovito {
 	class ConstDataObjectPath;
 	class DataObjectPath;
 	template<class T> class DataOORef;
-	using WeakDataObjectRef = QPointer<const DataObject>;
+	using ConstDataObjectRef = DataOORef<const DataObject>;
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;
@@ -119,7 +119,7 @@ namespace Ovito {
 	class ViewportPickResult;
 	class RenderSettings;
 	class FrameBuffer;
-	class ArrowPrimitive;
+	class CylinderPrimitive;
 	class ImagePrimitive;
 	class LinePrimitive;
 	class MarkerPrimitive;

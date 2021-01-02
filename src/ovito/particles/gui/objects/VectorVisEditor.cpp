@@ -52,8 +52,8 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
 	// Shading mode.
 	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)ArrowPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)ArrowPrimitive::FlatShading));
+	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
+	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
 	layout->addWidget(new QLabel(tr("Shading mode:")), row, 0);
 	layout->addWidget(shadingModeUI->comboBox(), row++, 1);
 

@@ -44,26 +44,25 @@ bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const Q
 		// Check if that was a particle.
 		ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult.pickInfo());
 		if(pickInfo) {
-			if(const ParticlesObject* particles = pickInfo->pipelineState().getObject<ParticlesObject>()) {
-				ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-				size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
-				if(posProperty && particleIndex < posProperty.size()) {
-					// Save reference to the selected particle.
-					TimeInterval iv;
-					result.objNode = vpPickResult.pipelineNode();
-					result.particleIndex = particleIndex;
-					result.localPos = posProperty[result.particleIndex];
-					result.worldPos = result.objNode->getWorldTransform(vpwin->viewport()->dataset()->animationSettings()->time(), iv) * result.localPos;
+			const ParticlesObject* particles = pickInfo->particles();
+			ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+			size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
+			if(posProperty && particleIndex < posProperty.size()) {
+				// Save reference to the selected particle.
+				TimeInterval iv;
+				result.objNode = vpPickResult.pipelineNode();
+				result.particleIndex = particleIndex;
+				result.localPos = posProperty[result.particleIndex];
+				result.worldPos = result.objNode->getWorldTransform(vpwin->viewport()->dataset()->animationSettings()->time(), iv) * result.localPos;
 
-					// Determine particle ID.
-					ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-					if(identifierProperty && result.particleIndex < identifierProperty.size()) {
-						result.particleId = identifierProperty[result.particleIndex];
-					}
-					else result.particleId = -1;
-
-					return true;
+				// Determine particle ID.
+				ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+				if(identifierProperty && result.particleIndex < identifierProperty.size()) {
+					result.particleId = identifierProperty[result.particleIndex];
 				}
+				else result.particleId = -1;
+
+				return true;
 			}
 		}
 	}

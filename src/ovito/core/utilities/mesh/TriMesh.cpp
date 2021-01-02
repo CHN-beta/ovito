@@ -568,7 +568,7 @@ TriMesh TriMesh::createIcosphere(int resolution)
 	TriMesh mesh;
 	mesh.setVertexCount(sizeof(vertices) / sizeof(vertices[0]));
 	mesh.setFaceCount(sizeof(triangles) / sizeof(triangles[0]));
-	std::copy(std::begin(vertices), std::end(vertices), mesh.vertices().begin());
+	boost::range::copy(vertices, mesh.vertices().begin());
 	for(int i = 0; i < mesh.faceCount(); i++)
 		mesh.face(i).setVertices(triangles[i][2], triangles[i][1], triangles[i][0]);
 

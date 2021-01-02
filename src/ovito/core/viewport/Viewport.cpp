@@ -649,7 +649,8 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 	}
 	std::shared_ptr<ImagePrimitive> paintBufferPrim = renderer->createImagePrimitive();
 	paintBufferPrim->setImage(paintBuffer);
-	paintBufferPrim->renderViewport(renderer, Point2(-1,-1), Vector2(2, 2));
+	paintBufferPrim->setRectViewport(renderer, Box2({-1,-1}, {1,1}));
+	renderer->renderImage(paintBufferPrim);
 }
 
 /******************************************************************************

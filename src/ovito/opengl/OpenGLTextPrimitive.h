@@ -43,44 +43,35 @@ public:
 	/// \brief Sets the text to be rendered.
 	virtual void setText(const QString& text) override {
 		if(text != this->text())
-			_needImageUpdate = true;
+			_imageUpdateNeeded = true;
 		TextPrimitive::setText(text);
 	}
 
 	/// Sets the text font.
 	virtual void setFont(const QFont& font) override {
 		if(font != this->font())
-			_needImageUpdate = true;
+			_imageUpdateNeeded = true;
 		TextPrimitive::setFont(font);
 	}
 
 	/// Sets the text color.
 	virtual void setColor(const ColorA& color) override {
 		if(color != this->color())
-			_needImageUpdate = true;
+			_imageUpdateNeeded = true;
 		TextPrimitive::setColor(color);
 	}
 
 	/// Sets the text background color.
 	virtual void setBackgroundColor(const ColorA& color) override {
 		if(color != this->backgroundColor())
-			_needImageUpdate = true;
+			_imageUpdateNeeded = true;
 		TextPrimitive::setBackgroundColor(color);
 	}
 
-	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) override;
-
-	/// \brief Renders the text string at the given 2D window (pixel) coordinates.
-	virtual void renderWindow(SceneRenderer* renderer, const Point2& pos, int alignment = Qt::AlignLeft | Qt::AlignTop) override;
-
-	/// \brief Renders the text string at the given 2D normalized viewport coordinates ([-1,+1] range).
-	virtual void renderViewport(SceneRenderer* renderer, const Point2& pos, int alignment = Qt::AlignLeft | Qt::AlignTop) override;
+	/// \brief Renders the text string.
+	void render(OpenGLSceneRenderer* renderer);
 
 private:
-
-	/// The GL context group under which the GL vertex buffer has been created.
-	QOpenGLContextGroup* _contextGroup;
 
 	/// The pre-rendered text.
 	std::shared_ptr<ImagePrimitive> _imageBuffer;
@@ -88,8 +79,8 @@ private:
 	/// The position of the text inside the texture image.
 	QPoint _textOffset;
 
-	/// Indicates that the pre-rendered image needs to be updated.
-	bool _needImageUpdate;
+	/// Indicates that the pre-rendered image of the text string needs to be updated.
+	bool _imageUpdateNeeded = true;
 };
 
 }	// End of namespace

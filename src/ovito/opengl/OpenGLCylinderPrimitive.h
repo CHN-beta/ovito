@@ -24,46 +24,76 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "OpenGLBuffer.h"
 
 namespace Ovito {
 
 /**
- * \brief Buffer object that stores a set of arrows to be rendered in the viewports.
+ * \brief Buffer object storing a set of cylinders to be rendered in the viewports.
  */
-class OpenGLArrowPrimitive : public ArrowPrimitive, public std::enable_shared_from_this<OpenGLArrowPrimitive>
+class OpenGLCylinderPrimitive : public CylinderPrimitive
 {
 public:
 
 	/// Constructor.
-	OpenGLArrowPrimitive(OpenGLSceneRenderer* renderer, ArrowPrimitive::Shape shape, ShadingMode shadingMode, RenderingQuality renderingQuality, bool translucentElements);
+	OpenGLCylinderPrimitive(OpenGLSceneRenderer* renderer, CylinderPrimitive::Shape shape, ShadingMode shadingMode, RenderingQuality renderingQuality);
 
-	/// \brief Allocates a geometry buffer with the given number of elements.
-	virtual void startSetElements(int elementCount) override;
+	/// Sets the coordinates of the base and the head points.
+	virtual void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) override {
+		CylinderPrimitive::setPositions(std::move(baseCoordinates), std::move(headCoordinates));
+		discardBuffers();
+	}
 
-	/// \brief Returns the number of elements stored in the buffer.
-	virtual int elementCount() const override { return _elementCount; }
+	/// Sets the per-primitive colors.
+	virtual void setColors(ConstDataBufferPtr colors) override {
+		CylinderPrimitive::setColors(std::move(colors));
+		discardBuffers();
+	}
 
-	/// \brief Sets the properties of a single line element.
-	virtual void setElement(int index, const Point3& pos, const Vector3& dir, const ColorA& color, FloatType width) override;
+	/// Sets the transparency values of the primitives.
+	virtual void setTransparencies(ConstDataBufferPtr transparencies) override {
+		CylinderPrimitive::setTransparencies(std::move(transparencies));
+		discardBuffers();
+	}
 
-	/// \brief Finalizes the geometry buffer after all elements have been set.
-	virtual void endSetElements() override;
+	/// Sets the radii of the primitives.
+	virtual void setRadii(ConstDataBufferPtr radii) override {
+		CylinderPrimitive::setRadii(std::move(radii));
+		discardBuffers();
+	}
 
-	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) override;
+	/// Sets the cylinder radius of all primitives to the given value.
+	virtual void setUniformRadius(FloatType radius) override {
+		CylinderPrimitive::setUniformRadius(radius);
+		discardBuffers();
+	}
 
-	/// \brief Renders the geometry.
-	virtual void render(SceneRenderer* renderer) override;
+	/// Sets the color of all primitives to the given value.
+	virtual void setUniformColor(const Color& color) override {
+		CylinderPrimitive::setUniformColor(color);
+		discardBuffers();
+	}
+
+	/// Renders the geometry.
+	void render(OpenGLSceneRenderer* renderer);
 
 private:
 
-	/// \brief Creates the geometry for a single cylinder element.
-	void createCylinderElement(int index, const Point_3<float>& pos, const Vector_3<float>& dir, const ColorAT<float>& color, float width);
+	/// Creates and fills the OpenGL VBO buffers with data.
+	void fillBuffers(OpenGLSceneRenderer* renderer);
 
-	/// \brief Creates the geometry for a single arrow element.
-	void createArrowElement(int index, const Point_3<float>& pos, const Vector_3<float>& dir, const ColorAT<float>& color, float width);
+	/// Discards the existing OpenGL VBOs so that they get recreated during the next render pass.
+	void discardBuffers() {
+		_verticesWithNormals.destroy();
+		_verticesWithElementInfo.destroy();
+	}
+
+	/// Creates the geometry for a single cylinder element.
+	void createCylinderElement(OpenGLSceneRenderer* renderer, const Point_3<float>& base, const Point_3<float>& head, const ColorAT<float>& color, float radius);
+
+	/// Creates the geometry for a single arrow element.
+	void createArrowElement(OpenGLSceneRenderer* renderer, const Point_3<float>& base, const Point_3<float>& head, const ColorAT<float>& color, float radius);
 
 	/// Renders the geometry as triangle mesh with normals.
 	void renderWithNormals(OpenGLSceneRenderer* renderer);
@@ -84,16 +114,13 @@ private:
 	struct VertexWithElementInfo {
 		Point_3<float> pos;
 		Point_3<float> base;
-		Vector_3<float> dir;
+		Point_3<float> head;
 		ColorAT<float> color;
 		float radius;
 	};
 
-	/// The GL context group under which the GL vertex buffers have been created.
-	QPointer<QOpenGLContextGroup> _contextGroup;
-
-	/// The number of elements stored in the buffer.
-	int _elementCount = -1;
+	/// The number of cylinder or arrow primitives stored in the buffer.
+	int _primitiveCount = 0;
 
 	/// The number of cylinder segments to generate.
 	int _cylinderSegments = 16;
@@ -101,20 +128,11 @@ private:
 	/// The number of mesh vertices generated per primitive.
 	int _verticesPerElement = 0;
 
-	/// Indicates whether OpenGL geometry shaders are supported.
-	bool _usingGeometryShader;
-
 	/// The OpenGL vertex buffer objects that store the vertices with normal vectors for polygon rendering.
 	OpenGLBuffer<VertexWithNormal> _verticesWithNormals;
 
 	/// The OpenGL vertex buffer objects that store the vertices with full element info for raytraced shader rendering.
 	OpenGLBuffer<VertexWithElementInfo> _verticesWithElementInfo;
-
-	/// Pointer to the memory-mapped VBO buffer.
-	VertexWithNormal* _mappedVerticesWithNormals = nullptr;
-
-	/// Pointer to the memory-mapped VBO buffer.
-	VertexWithElementInfo* _mappedVerticesWithElementInfo = nullptr;
 
 	/// The OpenGL shader program that is used for rendering.
 	QOpenGLShaderProgram* _shader = nullptr;
@@ -136,6 +154,9 @@ private:
 
 	/// Primitive vertex counts passed to glMultiDrawArrays() using GL_TRIANGLE_FAN primitives.
 	std::vector<GLsizei> _fanPrimitiveVertexCounts;
+
+	VertexWithNormal* _mappedVerticesWithNormals = nullptr;
+	VertexWithElementInfo* _mappedVerticesWithElementInfo = nullptr;
 
 	// OpenGL ES only:
 

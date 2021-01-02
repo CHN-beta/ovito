@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -177,11 +178,12 @@ void SliceModifier::renderVisual(TimePoint time, PipelineSceneNode* contextNode,
 void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& bb, const ColorA& color) const
 {
 	// Compute intersection lines of slicing plane and bounding box.
-	QVector<Point3> vertices;
 	Point3 corners[8];
-	for(int i = 0; i < 8; i++)
+	for(size_t i = 0; i < 8; i++)
 		corners[i] = bb[i];
 
+	std::vector<Point3> vertices;
+	vertices.reserve(8);
 	planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
 	planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
 	planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
@@ -197,6 +199,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 				{4,5},{5,7},{7,6},{6,4},
 				{0,4},{1,5},{3,7},{2,6}
 		};
+		vertices.reserve(24);
 		for(int edge = 0; edge < 12; edge++) {
 			vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
 			vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
@@ -210,18 +213,19 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 		renderer->addToLocalBoundingBox(vertexBoundingBox);
 	}
 	else {
+		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vertices.size(), DataBuffer::Float, 3, 0, false);
+		boost::range::copy(vertices, positions.begin());
 		std::shared_ptr<LinePrimitive> buffer = renderer->createLinePrimitive();
-		buffer->setVertexCount(vertices.size());
-		buffer->setVertexPositions(vertices.constData());
-		buffer->setLineColor(color);
-		buffer->render(renderer);
+		buffer->setPositions(positions.take());
+		buffer->setUniformColor(color);
+		renderer->renderLines(buffer);
 	}
 }
 
 /******************************************************************************
 * Computes the intersection lines of a plane and a quad.
 ******************************************************************************/
-void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, QVector<Point3>& vertices) const
+void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const
 {
 	Point3 p1;
 	bool hasP1 = false;

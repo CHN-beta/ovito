@@ -37,7 +37,7 @@
 #include "ParticlePrimitive.h"
 #include "TextPrimitive.h"
 #include "ImagePrimitive.h"
-#include "ArrowPrimitive.h"
+#include "CylinderPrimitive.h"
 #include "MeshPrimitive.h"
 #include "MarkerPrimitive.h"
 
@@ -137,6 +137,8 @@ public:
 		_time = time;
 		_viewport = vp;
 		setProjParams(params);
+		_modelWorldTM.setIdentity();
+		_modelViewTM = projParams().viewMatrix;
 	}
 
 	/// Renders the current animation frame.
@@ -147,37 +149,84 @@ public:
 	virtual void endFrame(bool renderSuccessful) {}
 
 	/// Changes the current local-to-world transformation matrix.
-	virtual void setWorldTransform(const AffineTransformation& tm) = 0;
+	void setWorldTransform(const AffineTransformation& tm) {
+		_modelWorldTM = tm;
+		_modelViewTM = projParams().viewMatrix * tm;
+	}
 
 	/// Returns the current local-to-world transformation matrix.
-	virtual const AffineTransformation& worldTransform() const = 0;
+	const AffineTransformation& worldTransform() const { return _modelWorldTM; }
+
+	/// Returns the current model-to-view transformation matrix.
+	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
 
 	/// Requests a new line geometry buffer from the renderer.
-	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() = 0;
+	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<LinePrimitive>();
+	}
+
+	/// Renders the line geometry stored in the given buffer.
+	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) {}
 
 	/// Requests a new particle geometry buffer from the renderer.
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
 			ParticlePrimitive::ShadingMode shadingMode = ParticlePrimitive::NormalShading,
 			ParticlePrimitive::RenderingQuality renderingQuality = ParticlePrimitive::MediumQuality,
-			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape) = 0;
+			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape) {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<ParticlePrimitive>(shadingMode, renderingQuality, shape);
+	}
+
+	/// Renders the particles stored in the given primitive buffer.
+	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) {}
 
 	/// Requests a new marker geometry buffer from the renderer.
-	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) = 0;
+	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<MarkerPrimitive>(shape);
+	}
+
+	/// Renders the marker geometry stored in the given buffer.
+	virtual void renderMarkers(const std::shared_ptr<MarkerPrimitive>& primitive) {}
 
 	/// Requests a new text geometry buffer from the renderer.
-	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() = 0;
+	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<TextPrimitive>();
+	}
+
+	/// Renders the text stored in the given primitive buffer.
+	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) {}
 
 	/// Requests a new image geometry buffer from the renderer.
-	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() = 0;
+	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<ImagePrimitive>();
+	}
 
-	/// Requests a new arrow geometry buffer from the renderer.
-	virtual std::shared_ptr<ArrowPrimitive> createArrowPrimitive(ArrowPrimitive::Shape shape,
-			ArrowPrimitive::ShadingMode shadingMode = ArrowPrimitive::NormalShading,
-			ArrowPrimitive::RenderingQuality renderingQuality = ArrowPrimitive::MediumQuality,
-			bool translucentElements = false) = 0;
+	/// Renders the image stored in the given primitive buffer.
+	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) {}
+
+	/// Requests a new cylinder geometry buffer from the renderer.
+	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape,
+			CylinderPrimitive::ShadingMode shadingMode = CylinderPrimitive::NormalShading,
+			CylinderPrimitive::RenderingQuality renderingQuality = CylinderPrimitive::MediumQuality) {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<CylinderPrimitive>(shape, shadingMode, renderingQuality);
+	}
+
+	/// Renders the cylinder or arrow elements stored in the given buffer.
+	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) {}
 
 	/// Requests a new triangle mesh geometry buffer from the renderer.
-	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() = 0;
+	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() {
+		OVITO_ASSERT(!isBoundingBoxPass());
+		return std::make_shared<MeshPrimitive>();
+	}
+
+	/// Renders the triangle mesh stored in the given buffer.
+	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) {}
 
 	/// Returns whether this renderer is rendering an interactive viewport.
 	/// \return true if rendering a real-time viewport; false if rendering a static image.
@@ -220,7 +269,7 @@ public:
 	virtual void setHighlightMode(int pass) {}
 
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
-	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const = 0;
+	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const { return true; }
 
 protected:
 
@@ -253,11 +302,12 @@ protected:
 	/// \brief Renders the visual representation of the modifiers.
 	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay);
 
-	/// \brief Gets the trajectory of motion of a node.
-	std::vector<Point3> getNodeTrajectory(SceneNode* node);
+	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of 
+	///        Point3 (if the node's position is animated) or a null pointer (if the node's position is static).
+	ConstDataBufferPtr getNodeTrajectory(const SceneNode* node);
 
 	/// \brief Renders the trajectory of motion of a node in the interactive viewports.
-	void renderNodeTrajectory(SceneNode* node);
+	void renderNodeTrajectory(const SceneNode* node);
 
 	/// Sets whether object picking mode is active.
 	void setPicking(bool enable) { _isPicking = enable; }
@@ -278,6 +328,12 @@ private:
 
 	/// The view projection parameters.
 	ViewProjectionParameters _projParams;
+
+	/// The current model-to-world transformation matrix.
+	AffineTransformation _modelWorldTM = AffineTransformation::Identity();
+
+	/// The current model-to-view transformation matrix.
+	AffineTransformation _modelViewTM = AffineTransformation::Identity();
 
 	/// The animation time being rendered.
 	TimePoint _time;

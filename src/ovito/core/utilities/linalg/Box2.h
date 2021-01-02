@@ -148,6 +148,11 @@ public:
 		return maxc[dimension] - minc[dimension];
 	}
 
+	/// Conversion operator to a Qt rectangle.
+	operator QRectF() const {
+		return QRectF(minc.x(), minc.y(), width(), height());
+	}
+
 	/////////////////////////////// Classification ///////////////////////////////
 
 	/// \brief Checks whether a point is located inside the box.

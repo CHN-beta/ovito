@@ -174,7 +174,7 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
 	// The key type used for caching the surface primitive:
 	using SurfaceCacheKey = std::tuple<
 		CompatibleRendererGroup,	// The scene renderer
-		WeakDataObjectRef,		// Mesh object
+		ConstDataObjectRef,			// Mesh object
 		ColorA,						// Surface color
 		ColorA,						// Cap color
 		bool						// Edge highlighting
@@ -195,15 +195,17 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
     auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(renderer, objectStack.back(), color_surface, color_cap, highlightEdges()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!visCache.surfacePrimitive || !visCache.surfacePrimitive->isValid(renderer)) {
+	if(!visCache.surfacePrimitive) {
 		visCache.surfacePrimitive = renderer->createMeshPrimitive();
 		auto materialColors = renderableMesh->materialColors();
 		for(ColorA& c : materialColors) {
 			c.a() = surface_alpha;
 		}
 		visCache.surfacePrimitive->setMaterialColors(std::move(materialColors));
-		visCache.surfacePrimitive->setMesh(renderableMesh->surfaceMesh(), color_surface, highlightEdges());
+		visCache.surfacePrimitive->setUniformColor(color_surface);
+		visCache.surfacePrimitive->setEmphasizeEdges(highlightEdges());
 		visCache.surfacePrimitive->setCullFaces(renderableMesh->backfaceCulling());
+		visCache.surfacePrimitive->setMesh(renderableMesh->surfaceMesh());
 
         // Get the original surface mesh.
         if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(renderableMesh->sourceDataObject().get())) {
@@ -213,21 +215,22 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
 	}
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!visCache.capPrimitive || !visCache.capPrimitive->isValid(renderer)) {
+	if(!visCache.capPrimitive) {
 		if(showCap()) {
 			visCache.capPrimitive = renderer->createMeshPrimitive();
-			visCache.capPrimitive->setMesh(renderableMesh->capPolygonsMesh(), color_cap, false, MeshPrimitive::ConvexShapeMode);
+			visCache.capPrimitive->setUniformColor(color_cap);
+			visCache.capPrimitive->setMesh(renderableMesh->capPolygonsMesh(), MeshPrimitive::ConvexShapeMode);
 		}
 	}
 
 	// Handle picking of triangles.
 	renderer->beginPickObject(contextNode, visCache.pickInfo);
 	if(visCache.surfacePrimitive) {
-		visCache.surfacePrimitive->render(renderer);
+		renderer->renderMesh(visCache.surfacePrimitive);
 	}
 	if(showCap()) {
 		if(!renderer->isPicking() || cap_alpha >= 1)
-			visCache.capPrimitive->render(renderer);
+			renderer->renderMesh(visCache.capPrimitive);
 	}
 	else {
 		visCache.capPrimitive.reset();

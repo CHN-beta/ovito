@@ -898,11 +898,10 @@ std::pair<size_t, ConstDataObjectPath> ParticlesObject::OOMetaClass::elementFrom
 {
 	// Check if a particle was picked.
 	if(const ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(pickResult.pickInfo())) {
-		if(const ParticlesObject* particles = pickInfo->pipelineState().getObject<ParticlesObject>()) {
-			size_t particleIndex = pickInfo->particleIndexFromSubObjectID(pickResult.subobjectId());
-			if(particleIndex < particles->elementCount())
-				return std::make_pair(particleIndex, ConstDataObjectPath({particles}));
-		}
+		const ParticlesObject* particles = pickInfo->particles();
+		size_t particleIndex = pickInfo->particleIndexFromSubObjectID(pickResult.subobjectId());
+		if(particleIndex < particles->elementCount())
+			return std::make_pair(particleIndex, ConstDataObjectPath({particles}));
 	}
 
 	return std::pair<size_t, ConstDataObjectPath>(std::numeric_limits<size_t>::max(), {});

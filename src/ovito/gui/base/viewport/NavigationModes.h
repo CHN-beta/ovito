@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include "ViewportInputMode.h"
 
@@ -260,7 +260,7 @@ private:
 	bool _showCursor = false;
 
 	/// The geometry buffer used to render the orbit center.
-	std::shared_ptr<ArrowPrimitive> _orbitCenterMarker;
+	std::shared_ptr<CylinderPrimitive> _orbitCenterMarker;
 };
 
 }	// End of namespace

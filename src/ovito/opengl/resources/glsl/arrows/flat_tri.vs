@@ -31,7 +31,7 @@ uniform int verticesPerElement;
 in vec3 position;
 in vec4 color;
 in vec3 cylinder_base;
-in vec3 cylinder_axis;
+in vec3 cylinder_head;
 
 flat out vec4 vertex_color_out;
 
@@ -46,6 +46,7 @@ void main()
 		vertex_color_out = pickingModeColor(picking_base_id, gl_VertexID / verticesPerElement); 
 	}	
 
+	vec3 cylinder_axis = cylinder_head - cylinder_base;
 	if(cylinder_axis != vec3(0)) {
 
 		// Get view direction.

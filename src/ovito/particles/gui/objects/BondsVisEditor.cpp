@@ -49,16 +49,16 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
 	// Shading mode.
 	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)ArrowPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)ArrowPrimitive::FlatShading));
+	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
+	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
 	layout->addWidget(new QLabel(tr("Shading mode:")), 0, 0);
 	layout->addWidget(shadingModeUI->comboBox(), 0, 1);
 
 	// Rendering quality.
 	VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(BondsVis::renderingQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)ArrowPrimitive::LowQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)ArrowPrimitive::MediumQuality));
-	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)ArrowPrimitive::HighQuality));
+	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)CylinderPrimitive::LowQuality));
+	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)CylinderPrimitive::MediumQuality));
+	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)CylinderPrimitive::HighQuality));
 	layout->addWidget(new QLabel(tr("Rendering quality:")), 1, 0);
 	layout->addWidget(renderingQualityUI->comboBox(), 1, 1);
 

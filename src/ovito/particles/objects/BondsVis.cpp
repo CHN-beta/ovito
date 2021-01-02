@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "BondsVis.h"
 #include "ParticlesVis.h"
@@ -56,7 +56,7 @@ BondsVis::BondsVis(DataSet* dataset) : DataVis(dataset),
 	_bondColor(0.6, 0.6, 0.6),
 	_useParticleColors(true),
 	_shadingMode(NormalShading),
-	_renderingQuality(ArrowPrimitive::HighQuality)
+	_renderingQuality(CylinderPrimitive::HighQuality)
 {
 }
 
@@ -78,11 +78,11 @@ Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>&
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		WeakDataObjectRef,		// Bond topology property + revision number
-		WeakDataObjectRef,		// Bond PBC vector property + revision number
-		WeakDataObjectRef,		// Particle position property + revision number
-		WeakDataObjectRef,		// Simulation cell + revision number
-		FloatType					// Bond width
+		ConstDataObjectRef,		// Bond topology property
+		ConstDataObjectRef,		// Bond PBC vector property
+		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Simulation cell
+		FloatType				// Bond width
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -175,27 +175,27 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// The scene renderer
-		WeakDataObjectRef,		// Bond topology property
-		WeakDataObjectRef,		// Bond PBC vector property
-		WeakDataObjectRef,		// Particle position property
-		WeakDataObjectRef,		// Particle color property
-		WeakDataObjectRef,		// Particle type property
-		WeakDataObjectRef,		// Particle radius property
-		WeakDataObjectRef,		// Bond color property
-		WeakDataObjectRef,		// Bond type property
-		WeakDataObjectRef,		// Bond selection property
-		WeakDataObjectRef,		// Bond transparency
-		WeakDataObjectRef,		// Simulation cell
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Bond topology property
+		ConstDataObjectRef,		// Bond PBC vector property
+		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Particle color property
+		ConstDataObjectRef,		// Particle type property
+		ConstDataObjectRef,		// Particle radius property
+		ConstDataObjectRef,		// Bond color property
+		ConstDataObjectRef,		// Bond type property
+		ConstDataObjectRef,		// Bond selection property
+		ConstDataObjectRef,		// Bond transparency
+		ConstDataObjectRef,		// Simulation cell
 		FloatType,				// Bond width
 		Color,					// Bond color
 		bool,					// Use particle colors
 		ShadingMode,			// Bond shading mode
-		ArrowPrimitive::RenderingQuality // Bond rendering quality
+		CylinderPrimitive::RenderingQuality // Bond rendering quality
 	>;
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& arrowPrimitive = dataset()->visCache().get<std::shared_ptr<ArrowPrimitive>>(CacheKey(
+	auto& cylinders = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
 			renderer,
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
@@ -215,14 +215,16 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			renderingQuality()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrowPrimitive || !arrowPrimitive->isValid(renderer)) {
+	if(!cylinders) {
 
 		FloatType bondRadius = bondWidth() / 2;
 		if(bondTopologyProperty && positionProperty && bondRadius > 0) {
 
-			// Create bond geometry buffer.
-			arrowPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), renderingQuality(), transparencyProperty != nullptr);
-			arrowPrimitive->startSetElements((int)bondTopologyProperty->size() * 2);
+			// Allocate buffers for the bonds geometry.
+			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
 
 			// Cache some values.
 			ConstPropertyAccess<Point3> positions(positionProperty);
@@ -242,12 +244,13 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 			// Determine half-bond colors.
 			std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
-			OVITO_ASSERT(colors.size() == arrowPrimitive->elementCount());
+			OVITO_ASSERT(colors.size() == bondPositions1.size());
 
-			int elementIndex = 0;
+			size_t cylinderIndex = 0;
 			auto color = colors.cbegin();
 			ConstPropertyAccess<ParticleIndexPair> bonds(bondTopologyProperty);
 			ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+			ConstPropertyAccess<FloatType> bondInputTransparency(transparencyProperty);
 			for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
 				size_t particleIndex1 = bonds[bondIndex][0];
 				size_t particleIndex2 = bonds[bondIndex][1];
@@ -264,21 +267,38 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 						// such that the border appears halfway between the two particles, which may have two different sizes.
 						t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
 					}
-					arrowPrimitive->setElement(elementIndex++, positions[particleIndex1], vec * t, *color++, bondRadius);
-					arrowPrimitive->setElement(elementIndex++, positions[particleIndex2], vec * (t-FloatType(1)), *color++, bondRadius);
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+					bondPositions1[cylinderIndex] = positions[particleIndex1];
+					bondPositions2[cylinderIndex++] = positions[particleIndex1] + vec * t;
+
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+					bondPositions1[cylinderIndex] = positions[particleIndex2];
+					bondPositions2[cylinderIndex++] = positions[particleIndex2] - vec * (FloatType(1) - t);
 				}
 				else {
-					arrowPrimitive->setElement(elementIndex++, Point3::Origin(), Vector3::Zero(), *color++, 0);
-					arrowPrimitive->setElement(elementIndex++, Point3::Origin(), Vector3::Zero(), *color++, 0);
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+					bondPositions1[cylinderIndex] = Point3::Origin();
+					bondPositions2[cylinderIndex++] = Point3::Origin();
+
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+					bondPositions1[cylinderIndex] = Point3::Origin();
+					bondPositions2[cylinderIndex++] = Point3::Origin();
 				}
 			}
 
-			arrowPrimitive->endSetElements();
+			cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+			cylinders->setUniformRadius(bondRadius);
+			cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
+			cylinders->setColors(bondColors.take());
+			cylinders->setTransparencies(bondTransparencies.take());
 		}
-		else arrowPrimitive.reset();
 	}
 
-	if(!arrowPrimitive)
+	if(!cylinders)
 		return;
 
 	if(renderer->isPicking()) {
@@ -286,7 +306,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 
-	arrowPrimitive->render(renderer);
+	renderer->renderCylinders(cylinders);
 
 	if(renderer->isPicking()) {
 		renderer->endPickObject();

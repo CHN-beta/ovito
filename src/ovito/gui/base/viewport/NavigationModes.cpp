@@ -27,6 +27,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -481,15 +482,19 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 
 	if(!renderer->isBoundingBoxPass()) {
 		// Create line buffer.
-		if(!_orbitCenterMarker || !_orbitCenterMarker->isValid(renderer)) {
-			_orbitCenterMarker = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality, false);
-			_orbitCenterMarker->startSetElements(3);
-			_orbitCenterMarker->setElement(0, Point3(-1,0,0), Vector3(2,0,0), ColorA(1,0,0), FloatType(0.05));
-			_orbitCenterMarker->setElement(1, Point3(0,-1,0), Vector3(0,2,0), ColorA(0,1,0), FloatType(0.05));
-			_orbitCenterMarker->setElement(2, Point3(0,0,-1), Vector3(0,0,2), ColorA(0.4,0.4,1), FloatType(0.05));
-			_orbitCenterMarker->endSetElements();
+		if(!_orbitCenterMarker) {
+			DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
+			basePositions[0] = Point3(-1,0,0); headPositions[0] = Point3(1,0,0); colors[0] = Color(1,0,0);
+			basePositions[1] = Point3(0,-1,0); headPositions[1] = Point3(0,1,0); colors[1] = Color(0,1,0);
+			basePositions[2] = Point3(0,0,-1); headPositions[2] = Point3(0,0,1); colors[2] = Color(0.4,0.4,1);
+			_orbitCenterMarker = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
+			_orbitCenterMarker->setUniformRadius(0.05);
+			_orbitCenterMarker->setPositions(basePositions.take(), headPositions.take());
+			_orbitCenterMarker->setColors(colors.take());
 		}
-		_orbitCenterMarker->render(renderer);
+		renderer->renderCylinders(_orbitCenterMarker);
 	}
 	else {
 		// Add marker to bounding box.

@@ -25,6 +25,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -176,21 +177,21 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	TimeInterval iv;
 
-	std::shared_ptr<LinePrimitive> cameraIcon;
-	std::shared_ptr<LinePrimitive> cameraPickIcon;
+	std::shared_ptr<LinePrimitive> iconRendering;
+	std::shared_ptr<LinePrimitive> iconPicking;
 	if(!renderer->isBoundingBoxPass()) {
 
 		// The key type used for caching the geometry primitive:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			WeakDataObjectRef,			// Camera object
+			ConstDataObjectRef,			// Camera object
 			Color						// Display color
 		>;
 
 		// The values stored in the vis cache.
 		struct CacheValue {
-			std::shared_ptr<LinePrimitive> icon;
-			std::shared_ptr<LinePrimitive> pickIcon;
+			std::shared_ptr<LinePrimitive> iconRendering;
+			std::shared_ptr<LinePrimitive> iconPicking;
 		};
 
 		// Determine icon color depending on selection state.
@@ -200,16 +201,11 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 		auto& cameraPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, objectStack.back(), color));
 
 		// Check if we already have a valid rendering primitive that is up to date.
-		if(!cameraPrimitives.icon || !cameraPrimitives.pickIcon
-				|| !cameraPrimitives.icon->isValid(renderer)
-				|| !cameraPrimitives.pickIcon->isValid(renderer)) {
+		if(!cameraPrimitives.iconRendering || !cameraPrimitives.iconPicking) {
 
-			cameraPrimitives.icon = renderer->createLinePrimitive();
-			cameraPrimitives.pickIcon = renderer->createLinePrimitive();
-
-			// Initialize lines.
-			static std::vector<Point3> iconVertices;
-			if(iconVertices.empty()) {
+			// Load 3d camera icon.
+			if(!_cameraIconVertices) {
+				DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				// Load and parse PLY file that contains the camera icon.
 				QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
 				meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -229,27 +225,29 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 					for(int j = 0; j < numEdges; j++) {
 						stream >> vindex;
 						if(j != 0) {
-							iconVertices.push_back(vertices[lastvindex]);
-							iconVertices.push_back(vertices[vindex]);
+							lines.push_back(vertices[lastvindex]);
+							lines.push_back(vertices[vindex]);
 						}
 						else firstvindex = vindex;
 						lastvindex = vindex;
 					}
-					iconVertices.push_back(vertices[lastvindex]);
-					iconVertices.push_back(vertices[firstvindex]);
+					lines.push_back(vertices[lastvindex]);
+					lines.push_back(vertices[firstvindex]);
 				}
+				_cameraIconVertices = lines.take();
 			}
 
-			cameraPrimitives.icon->setVertexCount(iconVertices.size());
-			cameraPrimitives.icon->setVertexPositions(iconVertices.data());
-			cameraPrimitives.icon->setLineColor(ColorA(color));
+			cameraPrimitives.iconRendering = renderer->createLinePrimitive();
+			cameraPrimitives.iconRendering->setPositions(_cameraIconVertices);
+			cameraPrimitives.iconRendering->setUniformColor(color);
 
-			cameraPrimitives.pickIcon->setVertexCount(iconVertices.size(), renderer->defaultLinePickingWidth());
-			cameraPrimitives.pickIcon->setVertexPositions(iconVertices.data());
-			cameraPrimitives.pickIcon->setLineColor(ColorA(color));
+			cameraPrimitives.iconPicking = renderer->createLinePrimitive();
+			cameraPrimitives.iconPicking->setLineWidth(renderer->defaultLinePickingWidth());
+			cameraPrimitives.iconPicking->setPositions(_cameraIconVertices);
+			cameraPrimitives.iconPicking->setUniformColor(color);
 		}
-		cameraIcon = cameraPrimitives.icon;
-		cameraPickIcon = cameraPrimitives.pickIcon;
+		iconRendering = cameraPrimitives.iconRendering;
+		iconPicking = cameraPrimitives.iconPicking;
 	}
 
 	// Determine the camera and target positions when rendering a target camera.
@@ -301,9 +299,8 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 					coneAngle));
 
 			// Check if we already have a valid rendering primitive that is up to date.
-			if(!conePrimitive || !conePrimitive->isValid(renderer)) {
-				conePrimitive = renderer->createLinePrimitive();
-				std::vector<Point3> targetLineVertices;
+			if(!conePrimitive) {
+				DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				if(targetDistance != 0) {
 					if(showTargetLine) {
 						targetLineVertices.push_back(Point3::Origin());
@@ -331,11 +328,11 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 						targetLineVertices.push_back(Point3(sizeX, sizeY, -targetDistance));
 					}
 				}
-				conePrimitive->setVertexCount(targetLineVertices.size());
-				conePrimitive->setVertexPositions(targetLineVertices.data());
-				conePrimitive->setLineColor(ColorA(color));
+				conePrimitive = renderer->createLinePrimitive();
+				conePrimitive->setPositions(targetLineVertices.take());
+				conePrimitive->setUniformColor(color);
 			}
-			conePrimitive->render(renderer);
+			renderer->renderLines(conePrimitive);
 		}
 	}
 	else {
@@ -361,10 +358,7 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	if(!renderer->isBoundingBoxPass()) {
 		renderer->beginPickObject(contextNode);
-		if(!renderer->isPicking())
-			cameraIcon->render(renderer);
-		else
-			cameraPickIcon->render(renderer);
+		renderer->renderLines(renderer->isPicking() ? iconPicking : iconRendering);
 		renderer->endPickObject();
 	}
 	else {

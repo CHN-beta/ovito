@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "ParticleInspectionApplet.h"
 
 namespace Ovito { namespace Particles {
@@ -313,21 +314,21 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 		}
 
 		// Generate pair-wise line elements.
-		std::vector<Point3> lines;
-		lines.reserve(vertices.size() * (vertices.size() - 1));
+		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, vertices.size() * (vertices.size() - 1), DataBuffer::Float, 3, 0, false);;
+		auto iter = lines.begin();
 		for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
 			for(auto v2 = v1 + 1; v2 != outVertex; ++v2) {
-				lines.push_back(*v1);
-				lines.push_back(*v2);
+				*iter++ = *v1;
+				*iter++ = *v2;
 			}
 		}
+		OVITO_ASSERT(iter == lines.end());
 
 		// Render line elements.
 		std::shared_ptr<LinePrimitive> linesPrimitive = renderer->createLinePrimitive();
-		linesPrimitive->setVertexCount(lines.size());
-		linesPrimitive->setVertexPositions(lines.data());
-		linesPrimitive->setLineColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
-		linesPrimitive->render(renderer);
+		linesPrimitive->setPositions(lines.take());
+		linesPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
+		renderer->renderLines(linesPrimitive);
 	}
 }
 

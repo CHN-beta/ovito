@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
 namespace Ovito { namespace StdObj {
@@ -124,6 +125,11 @@ public:
 
 	/// \brief Computes the bounding box of the object.
 	virtual Box3 boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+
+private:
+
+	/// The cached geometry data of the 3d camera icon.
+	ConstDataBufferPtr _cameraIconVertices;
 };
 
 }	// End of namespace

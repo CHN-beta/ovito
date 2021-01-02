@@ -33,12 +33,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode,
-		RenderingQuality renderingQuality, ParticleShape shape) :
-	ParticlePrimitive(shadingMode, renderingQuality, shape),
-	_contextGroup(QOpenGLContextGroup::currentContextGroup())
+OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape) :
+	ParticlePrimitive(shadingMode, renderingQuality, shape)
 {
-	OVITO_ASSERT(renderer->glcontext()->shareGroup() == _contextGroup);
 	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
 	// Choose rendering technique for the particles.
@@ -188,25 +185,10 @@ OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, 
 }
 
 /******************************************************************************
-* Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-******************************************************************************/
-bool OpenGLParticlePrimitive::isValid(SceneRenderer* renderer)
-{
-	OpenGLSceneRenderer* vpRenderer = dynamic_object_cast<OpenGLSceneRenderer>(renderer);
-	if(!vpRenderer) return false;
-	return (_contextGroup == vpRenderer->glcontext()->shareGroup());
-}
-
-/******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
-void OpenGLParticlePrimitive::render(SceneRenderer* sceneRenderer)
+void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 {
-	OVITO_ASSERT(_contextGroup == QOpenGLContextGroup::currentContextGroup());
-
-	OpenGLSceneRenderer* renderer = dynamic_object_cast<OpenGLSceneRenderer>(sceneRenderer);
-    OVITO_REPORT_OPENGL_ERRORS(renderer);
-
 	if(indices())
 		_particleCount = indices()->size();
 	else if(positions())
@@ -216,15 +198,6 @@ void OpenGLParticlePrimitive::render(SceneRenderer* sceneRenderer)
 
 	if(particleCount() <= 0 || !renderer)
 		return;
-
-	// If object is translucent, don't render it during the first rendering pass.
-	// Queue primitive so that it gets rendered during the second pass.
-	if(!renderer->isPicking() && transparencies() && renderer->translucentPass() == false) {
-		renderer->registerTranslucentPrimitive(shared_from_this());
-		return;
-	}
-
-	renderer->rebindVAO();
 
 	// Upload data to OpenGL VBOs.
 	_positionsBuffer.uploadData<Point3>(positions(), _verticesPerParticle);

@@ -82,7 +82,7 @@ void TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& ob
 		// The key type used for caching the rendering primitive:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
-			WeakDataObjectRef,		// Mesh object
+			ConstDataObjectRef,			// Mesh object
 			ColorA,						// Display color
 			bool						// Edge highlighting
 		>;
@@ -96,17 +96,17 @@ void TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& ob
 		auto& meshPrimitive = dataset()->visCache().get<std::shared_ptr<MeshPrimitive>>(CacheKey(renderer, objectStack.back(), color_mesh, highlightEdges()));
 
 		// Check if we already have a valid rendering primitive that is up to date.
-		if(!meshPrimitive || !meshPrimitive->isValid(renderer)) {
+		if(!meshPrimitive) {
 			meshPrimitive = renderer->createMeshPrimitive();
-			const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(objectStack.back());
-			if(triMeshObj && triMeshObj->mesh())
-				meshPrimitive->setMesh(*triMeshObj->mesh(), color_mesh, highlightEdges());
-			else
-				meshPrimitive->setMesh(TriMesh(), ColorA(1,1,1,1));
+			meshPrimitive->setEmphasizeEdges(highlightEdges());
+			meshPrimitive->setUniformColor(color_mesh);
+			if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(objectStack.back()))
+				if(triMeshObj->mesh())
+					meshPrimitive->setMesh(*triMeshObj->mesh());
 		}
 
 		renderer->beginPickObject(contextNode);
-		meshPrimitive->render(renderer);
+		renderer->renderMesh(meshPrimitive);
 		renderer->endPickObject();
 	}
 	else {

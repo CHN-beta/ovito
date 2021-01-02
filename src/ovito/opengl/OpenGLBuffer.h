@@ -243,6 +243,10 @@ public:
 		shader->setAttributeValue("color", c.r(), c.g(), c.b());
 	}
 
+	void setUniformColor(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, const ColorA& c) {
+		shader->setAttributeValue("color", c.r(), c.g(), c.b(), c.a());
+	}
+
 	/// After rendering is done, release the binding of the buffer to the vertex color attribute.
 	void detachColors(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
 		detach(renderer, shader, "color");

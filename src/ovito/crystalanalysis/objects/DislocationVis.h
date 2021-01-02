@@ -125,7 +125,7 @@ public:
 
 public:
 
-	Q_PROPERTY(Ovito::ArrowPrimitive::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
+	Q_PROPERTY(Ovito::CylinderPrimitive::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
 
 protected:
 
@@ -141,7 +141,7 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
 
 	/// The shading mode for dislocation lines.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPrimitive::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CylinderPrimitive::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
 	/// The rendering width for Burgers vectors.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, burgersVectorWidth, setBurgersVectorWidth, PROPERTY_FIELD_MEMORIZE);

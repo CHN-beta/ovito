@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "NucleotidesVis.h"
 
 namespace Ovito { namespace Particles {
@@ -59,9 +59,9 @@ Box3 NucleotidesVis::boundingBox(TimePoint time, const std::vector<const DataObj
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		WeakDataObjectRef,	// Position property + revision number
-		WeakDataObjectRef,	// Nucleotide axis property + revision number
-		FloatType 				// Default particle radius
+		ConstDataObjectRef,	// Position property
+		ConstDataObjectRef,	// Nucleotide axis property
+		FloatType 			// Default particle radius
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -212,15 +212,15 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 	// The type of lookup key used for caching the rendering primitives:
 	using NucleotidesCacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		QPointer<PipelineSceneNode>,// The pipeline scene node
-		WeakDataObjectRef,			// Position property
-		WeakDataObjectRef,			// Color property
-		WeakDataObjectRef,			// Strand property
-		WeakDataObjectRef,			// Transparency property
-		WeakDataObjectRef,			// Selection property
-		WeakDataObjectRef,			// Nucleotide axis property
-		WeakDataObjectRef,			// Nucleotide normal property
+		CompatibleRendererGroup,	// Scene renderer
+		QPointer<PipelineSceneNode>,// Pipeline scene node
+		ConstDataObjectRef,			// Position property
+		ConstDataObjectRef,			// Color property
+		ConstDataObjectRef,			// Strand property
+		ConstDataObjectRef,			// Transparency property
+		ConstDataObjectRef,			// Selection property
+		ConstDataObjectRef,			// Nucleotide axis property
+		ConstDataObjectRef,			// Nucleotide normal property
 		FloatType,					// Default particle radius
 		FloatType					// Cylinder radius
 	>;
@@ -228,7 +228,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 	// The data structure stored in the vis cache.
 	struct NucleotidesCacheValue {
 		std::shared_ptr<ParticlePrimitive> backbonePrimitive;
-		std::shared_ptr<ArrowPrimitive> connectionPrimitive;
+		std::shared_ptr<CylinderPrimitive> connectionPrimitive;
 		std::shared_ptr<ParticlePrimitive> basePrimitive;
 		OORef<ParticlePickInfo> pickInfo;
 	};
@@ -248,10 +248,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 		cylinderRadius()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!visCache.backbonePrimitive
-			|| !visCache.backbonePrimitive->isValid(renderer)
-			|| (visCache.connectionPrimitive && !visCache.connectionPrimitive->isValid(renderer))
-			|| (visCache.basePrimitive && !visCache.basePrimitive->isValid(renderer))) {
+	if(!visCache.backbonePrimitive) {
 
 		// Create the rendering primitive for the backbone sites.
 		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality, ParticlePrimitive::SphericalShape);
@@ -315,12 +312,14 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 			}
 
 			// Create the rendering primitive for the connections between backbone and base sites.
-			visCache.connectionPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality, transparencyProperty != nullptr);
+			visCache.connectionPrimitive = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
+#if 0
 			visCache.connectionPrimitive->startSetElements(particles->elementCount());
 			ConstPropertyAccess<Color> colorArray(colors);
 			for(size_t i = 0; i < positionsArray.size(); i++)
 				visCache.connectionPrimitive->setElement(i, positionsArray[i], 0.8 * nucleotideAxisArray[i], colorArray[i], cylinderRadius());
 			visCache.connectionPrimitive->endSetElements();
+#endif
 		}
 		else {
 			visCache.connectionPrimitive.reset();
@@ -334,21 +333,21 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 			std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
 			std::iota(subobjectToParticleMapping.begin() + 2 * particles->elementCount(), subobjectToParticleMapping.begin() + 3 * particles->elementCount(), 0);
 		}
-		visCache.pickInfo = new ParticlePickInfo(this, flowState, subobjectToParticleMapping.take());
+		visCache.pickInfo = new ParticlePickInfo(this, particles, subobjectToParticleMapping.take());
 	}
 	else {
 		// Update the pipeline state stored in te picking object info.
-		visCache.pickInfo->setPipelineState(flowState);
+		visCache.pickInfo->setParticles(particles);
 	}
 
 	if(renderer->isPicking())
 		renderer->beginPickObject(contextNode, visCache.pickInfo);
 
-	visCache.backbonePrimitive->render(renderer);
+	renderer->renderParticles(visCache.backbonePrimitive);
 	if(visCache.connectionPrimitive)
-		visCache.connectionPrimitive->render(renderer);
+		renderer->renderCylinders(visCache.connectionPrimitive);
 	if(visCache.basePrimitive)
-		visCache.basePrimitive->render(renderer);
+		renderer->renderParticles(visCache.basePrimitive);
 
 	if(renderer->isPicking())
 		renderer->endPickObject();

@@ -23,9 +23,9 @@
 uniform mat4 modelview_projection_matrix;
 uniform int picking_base_id;
 uniform bool is_picking_mode;
+uniform vec4 color;
 
 in vec3 position;
-in vec4 color;
 flat out vec4 vertex_color_fs;
 
 void main()
@@ -36,7 +36,7 @@ void main()
 	}
 	else {
 		// Compute color from object ID.
-		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 2);
+		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID);
 	}
 
 	gl_Position = modelview_projection_matrix * vec4(position, 1.0);

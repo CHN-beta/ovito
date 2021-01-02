@@ -32,18 +32,15 @@ namespace Ovito {
 /**
  * \brief This class is responsible for rendering particle primitives using OpenGL.
  */
-class OpenGLParticlePrimitive : public ParticlePrimitive, public std::enable_shared_from_this<OpenGLParticlePrimitive>
+class OpenGLParticlePrimitive : public ParticlePrimitive
 {
 public:
 
 	/// Constructor.
 	OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape);
 
-	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) override;
-
 	/// \brief Renders the geometry.
-	virtual void render(SceneRenderer* renderer) override;
+	void render(OpenGLSceneRenderer* renderer);
 
 	/// Returns the number of particles being rendered.
 	int particleCount() const { return _particleCount; }
@@ -95,17 +92,14 @@ private:
 	/// The internal OpenGL vertex buffer that stores the roundness values of superquadric particles.
 	OpenGLBuffer<Vector_2<float>> _roundnessBuffer;
 
-	/// The GL context group under which the GL vertex buffers have been created.
-	QPointer<QOpenGLContextGroup> _contextGroup;
-
 	/// Start indices of primitives passed to glMultiDrawArrays().
 	std::vector<GLint> _primitiveStartIndices;
 
 	/// Vertex counts of primitives passed to glMultiDrawArrays().
 	std::vector<GLsizei> _primitiveVertexCounts;
 
-	/// Part of the caching mechsims for the indices/counts arrays for glMultiDrawArrays().
-	WeakDataObjectRef _primitiveIndicesSource{};
+	/// Part of the caching mechanism for the indices/counts arrays for glMultiDrawArrays().
+	ConstDataObjectRef _primitiveIndicesSource{};
 
 	/// OpenGL ES only: Vertex indices passed to glDrawElements() using GL_TRIANGLES primitives.
 	std::vector<GLuint> _trianglePrimitiveVertexIndices;

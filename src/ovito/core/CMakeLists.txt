@@ -117,14 +117,6 @@ SET(SourceFiles
 	utilities/concurrent/AsynchronousTask.cpp
 	utilities/mesh/TriMesh.cpp
 	rendering/SceneRenderer.cpp
-	rendering/noninteractive/NonInteractiveSceneRenderer.cpp
-	rendering/noninteractive/DefaultLinePrimitive.cpp
-	rendering/noninteractive/DefaultParticlePrimitive.cpp
-	rendering/noninteractive/DefaultTextPrimitive.cpp
-	rendering/noninteractive/DefaultImagePrimitive.cpp
-	rendering/noninteractive/DefaultArrowPrimitive.cpp
-	rendering/noninteractive/DefaultMeshPrimitive.cpp
-	rendering/noninteractive/DefaultMarkerPrimitive.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
 	viewport/Viewport.cpp

@@ -24,6 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -111,13 +112,13 @@ public:
 private:
 
 	/// Renders particle types that have a mesh-based shape assigned.
-	void renderMeshBasedParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+	void renderMeshBasedParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
 	/// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
-	void renderPrimitiveParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+	void renderPrimitiveParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
 	/// Renders all particles with a (sphero-)cylindrical shape.
-	void renderCylindricParticles(TimePoint time, const ParticlesObject* particles, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+	void renderCylindricParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
 private:
 
@@ -143,14 +144,14 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	ParticlePickInfo(ParticlesVis* visElement, const PipelineFlowState& pipelineState, ConstDataBufferPtr subobjectToParticleMapping = {}) :
-		_visElement(visElement), _pipelineState(pipelineState), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
+	ParticlePickInfo(ParticlesVis* visElement, DataOORef<const ParticlesObject> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) :
+		_visElement(visElement), _particles(std::move(particles)), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
 
-	/// The pipeline flow state containing the particle properties.
-	const PipelineFlowState& pipelineState() const { return _pipelineState; }
+	/// Returns the particles object.
+	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
 
-	/// Replaces the stored pipeline flow state with a new version.
-	void setPipelineState(const PipelineFlowState& pipelineState) { _pipelineState = pipelineState; }
+	/// Updates the reference to the particles object.
+	void setParticles(DataOORef<const ParticlesObject> particles) { _particles = std::move(particles); }
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
 	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
@@ -160,15 +161,15 @@ public:
 	size_t particleIndexFromSubObjectID(quint32 subobjID) const;
 
 	/// Builds the info string for a particle to be displayed in the status bar.
-	static QString particleInfoString(const PipelineFlowState& pipelineState, size_t particleIndex);
+	static QString particleInfoString(const ParticlesObject& particles, size_t particleIndex);
 
 private:
 
-	/// The pipeline flow state containing the particle properties.
-	PipelineFlowState _pipelineState;
-
 	/// The vis element that rendered the particles.
 	OORef<ParticlesVis> _visElement;
+
+	/// The particles object.
+	DataOORef<const ParticlesObject> _particles;
 
 	/// Stores the indices of the particles associated with the rendering primitives.
 	ConstDataBufferPtr _subobjectToParticleMapping;

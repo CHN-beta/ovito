@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/data/DataVis.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "TrajectoryObject.h"
 
 namespace Ovito { namespace Particles {
@@ -43,8 +43,8 @@ public:
 
 	/// The shading modes supported by the trajectory vis element.
 	enum ShadingMode {
-		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
-		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
+		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
 	};
 	Q_ENUM(ShadingMode);
 

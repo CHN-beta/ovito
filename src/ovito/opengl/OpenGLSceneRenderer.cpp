@@ -35,7 +35,7 @@
 #include "OpenGLParticlePrimitive.h"
 #include "OpenGLTextPrimitive.h"
 #include "OpenGLImagePrimitive.h"
-#include "OpenGLArrowPrimitive.h"
+#include "OpenGLCylinderPrimitive.h"
 #include "OpenGLMeshPrimitive.h"
 #include "OpenGLMarkerPrimitive.h"
 #include "OpenGLHelpers.h"
@@ -190,10 +190,11 @@ QSurfaceFormat OpenGLSceneRenderer::getDefaultSurfaceFormat()
 bool OpenGLSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) const
 {
 	// Two OpenGL renderers are compatible and share resources if they use the same QOpenGLContextGroup.
-	OpenGLSceneRenderer* otherGLRenderer = dynamic_object_cast<OpenGLSceneRenderer>(otherRenderer);
-	if(!otherGLRenderer) return false;
-	if(_glcontextGroup.isNull()) return false;
-	return _glcontextGroup == otherGLRenderer->_glcontextGroup;
+	if(OpenGLSceneRenderer* otherGLRenderer = dynamic_object_cast<OpenGLSceneRenderer>(otherRenderer)) {
+		if(!_glcontextGroup.isNull())
+			return _glcontextGroup == otherGLRenderer->_glcontextGroup;
+	}
+	return false;
 }
 
 /******************************************************************************
@@ -282,7 +283,6 @@ void OpenGLSceneRenderer::initializeGLState()
 	OVITO_CHECK_OPENGL(this, this->glClearDepthf(1));
 	OVITO_CHECK_OPENGL(this, this->glDepthMask(GL_TRUE));
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
-	_translucentPass = false;
 	setClearColor(ColorA(0, 0, 0, 0));
 
 	// Set up default viewport rectangle.
@@ -333,12 +333,22 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
 		// Render translucent objects in a second pass.
-		_translucentPass = true;
-		for(auto& record : _translucentPrimitives) {
-			setWorldTransform(std::get<0>(record));
-			std::get<1>(record)->render(this);
+		rebindVAO();
+		for(auto& deferredPrimitive : _translucentParticles) {
+			setWorldTransform(std::get<0>(deferredPrimitive));
+			static_cast<OpenGLParticlePrimitive&>(*std::get<1>(deferredPrimitive)).render(this);
 		}
-		_translucentPrimitives.clear();
+		for(auto& deferredPrimitive : _translucentCylinders) {
+			setWorldTransform(std::get<0>(deferredPrimitive));
+			static_cast<OpenGLCylinderPrimitive&>(*std::get<1>(deferredPrimitive)).render(this);
+		}
+		for(auto& deferredPrimitive : _translucentMeshes) {
+			setWorldTransform(std::get<0>(deferredPrimitive));
+			static_cast<OpenGLMeshPrimitive&>(*std::get<1>(deferredPrimitive)).render(this);
+		}
+		_translucentParticles.clear();
+		_translucentCylinders.clear();
+		_translucentMeshes.clear();
 	}
 
 	// Restore default OpenGL state.
@@ -357,15 +367,6 @@ void OpenGLSceneRenderer::makeContextCurrent()
 	if(!glcontext()->makeCurrent(_glsurface))
 		throwException(tr("Failed to make OpenGL context current."));
 #endif		
-}
-
-/******************************************************************************
-* Changes the current local to world transformation matrix.
-******************************************************************************/
-void OpenGLSceneRenderer::setWorldTransform(const AffineTransformation& tm)
-{
-	_modelWorldTM = tm;
-	_modelViewTM = projParams().viewMatrix * tm;
 }
 
 /******************************************************************************
@@ -392,8 +393,21 @@ const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
 std::shared_ptr<LinePrimitive> OpenGLSceneRenderer::createLinePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLLinePrimitive>(this);
+}
+
+/******************************************************************************
+* Renders the line primitives stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLLinePrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	static_cast<OpenGLLinePrimitive&>(*primitive).render(this);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -403,8 +417,25 @@ std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
 		ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLParticlePrimitive>(this, shadingMode, renderingQuality, shape);
+}
+
+/******************************************************************************
+* Renders the particles stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLParticlePrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	// Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
+	if(isPicking() || !primitive->transparencies())
+		static_cast<OpenGLParticlePrimitive&>(*primitive).render(this);
+	else
+		_translucentParticles.emplace_back(worldTransform(), primitive);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -413,8 +444,21 @@ std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
 std::shared_ptr<TextPrimitive> OpenGLSceneRenderer::createTextPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLTextPrimitive>(this);
+}
+
+/******************************************************************************
+* Renders the text stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLTextPrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	static_cast<OpenGLTextPrimitive&>(*primitive).render(this);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -423,21 +467,51 @@ std::shared_ptr<TextPrimitive> OpenGLSceneRenderer::createTextPrimitive()
 std::shared_ptr<ImagePrimitive> OpenGLSceneRenderer::createImagePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLImagePrimitive>(this);
 }
 
 /******************************************************************************
-* Requests a new arrow geometry buffer from the renderer.
+* Renders the 2d image stored in the given buffer.
 ******************************************************************************/
-std::shared_ptr<ArrowPrimitive> OpenGLSceneRenderer::createArrowPrimitive(ArrowPrimitive::Shape shape,
-		ArrowPrimitive::ShadingMode shadingMode,
-		ArrowPrimitive::RenderingQuality renderingQuality,
-		bool translucentElements)
+void OpenGLSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLImagePrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	static_cast<OpenGLImagePrimitive&>(*primitive).render(this);
+	OVITO_REPORT_OPENGL_ERRORS(this);
+}
+
+/******************************************************************************
+* Requests a new cylinder geometry buffer from the renderer.
+******************************************************************************/
+std::shared_ptr<CylinderPrimitive> OpenGLSceneRenderer::createCylinderPrimitive(
+		CylinderPrimitive::Shape shape,
+		CylinderPrimitive::ShadingMode shadingMode,
+		CylinderPrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
-	return std::make_shared<OpenGLArrowPrimitive>(this, shape, shadingMode, renderingQuality, translucentElements);
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
+	return std::make_shared<OpenGLCylinderPrimitive>(this, shape, shadingMode, renderingQuality);
+}
+
+/******************************************************************************
+* Renders the cylinders stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLCylinderPrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	// Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
+	if(isPicking() || !primitive->transparencies())
+		static_cast<OpenGLCylinderPrimitive&>(*primitive).render(this);
+	else
+		_translucentCylinders.emplace_back(worldTransform(), primitive);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -446,8 +520,21 @@ std::shared_ptr<ArrowPrimitive> OpenGLSceneRenderer::createArrowPrimitive(ArrowP
 std::shared_ptr<MarkerPrimitive> OpenGLSceneRenderer::createMarkerPrimitive(MarkerPrimitive::MarkerShape shape)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLMarkerPrimitive>(this, shape);
+}
+
+/******************************************************************************
+* Renders the markers stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderMarkers(const std::shared_ptr<MarkerPrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLMarkerPrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	static_cast<OpenGLMarkerPrimitive&>(*primitive).render(this);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -456,8 +543,25 @@ std::shared_ptr<MarkerPrimitive> OpenGLSceneRenderer::createMarkerPrimitive(Mark
 std::shared_ptr<MeshPrimitive> OpenGLSceneRenderer::createMeshPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	makeContextCurrent();
+	OVITO_ASSERT(glcontext() != nullptr);
+	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
 	return std::make_shared<OpenGLMeshPrimitive>(this);
+}
+
+/******************************************************************************
+* Renders the triangle mesh stored in the given buffer.
+******************************************************************************/
+void OpenGLSceneRenderer::renderMesh(const std::shared_ptr<MeshPrimitive>& primitive)
+{
+	OVITO_REPORT_OPENGL_ERRORS(this);
+	OVITO_ASSERT(dynamic_cast<OpenGLMeshPrimitive*>(primitive.get()) != nullptr);
+	rebindVAO();
+	// Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
+	if(isPicking() || primitive->isFullyOpaque())
+		static_cast<OpenGLMeshPrimitive&>(*primitive).render(this);
+	else
+		_translucentMeshes.emplace_back(worldTransform(), primitive);
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************

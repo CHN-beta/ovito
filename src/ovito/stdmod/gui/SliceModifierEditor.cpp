@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -405,35 +405,33 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 	renderer->setWorldTransform(AffineTransformation::Identity());
 	if(!renderer->isBoundingBoxPass()) {
 		std::shared_ptr<MarkerPrimitive> markers = renderer->createMarkerPrimitive(MarkerPrimitive::BoxShape);
-		markers->setCount(npoints);
-		markers->setMarkerPositions(_pickedPoints);
-		markers->setMarkerColor(ColorA(1, 1, 1));
-		markers->render(renderer);
+		markers->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + npoints);
+		markers->setColor(ColorA(1, 1, 1));
+		renderer->renderMarkers(markers);
 
 		if(npoints == 2) {
 			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
-			lines->setVertexCount(2);
-			lines->setVertexPositions(_pickedPoints);
-			lines->setLineColor(ColorA(1, 1, 1));
-			lines->render(renderer);
+			lines->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + 2);
+			lines->setUniformColor(ColorA(1, 1, 1));
+			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			std::shared_ptr<MeshPrimitive> mesh = renderer->createMeshPrimitive();
+			std::shared_ptr<MeshPrimitive> meshPrimitive = renderer->createMeshPrimitive();
 			TriMesh tri;
 			tri.setVertexCount(3);
 			tri.setVertex(0, _pickedPoints[0]);
 			tri.setVertex(1, _pickedPoints[1]);
 			tri.setVertex(2, _pickedPoints[2]);
 			tri.addFace().setVertices(0, 1, 2);
-			mesh->setMesh(tri, ColorA(0.7f, 0.7f, 1.0f, 0.5f));
-			mesh->render(renderer);
+			meshPrimitive->setMesh(tri, MeshPrimitive::ConvexShapeMode);
+			meshPrimitive->setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
+			renderer->renderMesh(std::move(meshPrimitive));
 
 			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
-			lines->setVertexCount(6);
 			const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
-			lines->setVertexPositions(vertices);
-			lines->setLineColor(ColorA(1, 1, 1));
-			lines->render(renderer);
+			lines->setPositions(vp->dataset(), vertices);
+			lines->setUniformColor(ColorA(1, 1, 1));
+			renderer->renderLines(lines);
 		}
 	}
 	else {

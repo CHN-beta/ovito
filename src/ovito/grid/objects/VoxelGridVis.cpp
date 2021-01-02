@@ -103,9 +103,9 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 
 	// The key type used for caching the geometry primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		WeakDataObjectRef,		// The voxel grid object
-		WeakDataObjectRef,		// Color property
+		CompatibleRendererGroup,	// Scene renderer
+		ConstDataObjectRef,			// Voxel grid object
+		ConstDataObjectRef,			// Color property
 		FloatType,					// Transparency
 		bool,						// Grid line highlighting
 		bool						// Interpolate colors
@@ -128,7 +128,7 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, gridObj, colorProperty, transp, highlightGridLines(), interpolateColors()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!primitives.volumeFaces || !primitives.volumeFaces->isValid(renderer)) {
+	if(!primitives.volumeFaces) {
 		primitives.volumeFaces = renderer->createMeshPrimitive();
 		if(gridObj->domain()) {
 			TriMesh mesh;
@@ -365,13 +365,15 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 				createFacesForSide(2, 0, 1, false);
 				createFacesForSide(2, 0, 1, true);
 			}
-			primitives.volumeFaces->setMesh(std::move(mesh), ColorA(1,1,1,alpha), highlightGridLines());
+			primitives.volumeFaces->setMesh(std::move(mesh));
+			primitives.volumeFaces->setUniformColor(ColorA(1,1,1,alpha));
+			primitives.volumeFaces->setEmphasizeEdges(highlightGridLines());
 			primitives.volumeFaces->setCullFaces(false);
 		}
 	}
 
 	renderer->beginPickObject(contextNode);
-	primitives.volumeFaces->render(renderer);
+	renderer->renderMesh(primitives.volumeFaces);
 	renderer->endPickObject();
 }
 
