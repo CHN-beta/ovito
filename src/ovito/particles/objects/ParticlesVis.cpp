@@ -1025,7 +1025,6 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 ******************************************************************************/
 void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject* particles, SceneRenderer* renderer) const
 {
-#if 0
 	if(!renderer->isBoundingBoxPass()) {
 
 		// Fetch properties of selected particle which are needed to render the overlay.
@@ -1061,24 +1060,31 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		if(!posProperty || particleIndex >= posProperty->size())
 			return;
 
-		// Check if the particle must be rendered using a custom shape.
+		// Get the particle type.
+		const ParticleType* ptype = nullptr;
 		if(typeProperty && particleIndex < typeProperty->size()) {
 			ConstPropertyAccess<int> typeArray(typeProperty);
-			if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeArray[particleIndex]))) {
-				if(ptype->shapeMesh())
-					return;	// Note: Highlighting of particles with user-defined shapes is not implemented yet.
-			}
+			ptype = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeArray[particleIndex]));
 		}
 
-		// Determine position of selected particle.
+		// Check if the particle must be rendered using a custom shape.
+		if(ptype && ptype->shape() == ParticleShape::Mesh && ptype->shapeMesh())
+			return;	// Note: Highlighting of particles with user-defined shapes is not implemented yet.
+
+		// The rendering shape of the highlighted particle.
+		ParticleShape shape = particleShape();
+		if(ptype && ptype->shape() != ParticleShape::Default)
+			shape = ptype->shape();
+
+		// Determine position of the selected particle.
 		Point3 pos = ConstPropertyAccess<Point3>(posProperty)[particleIndex];
 
 		// Determine radius of selected particle.
 		FloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
 		// Determine the display color of selected particle.
-		ColorA color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty, transparencyProperty);
-		ColorA highlightColor = selectionParticleColor();
+		Color color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty, transparencyProperty);
+		Color highlightColor = selectionParticleColor();
 		color = color * FloatType(0.5) + highlightColor * FloatType(0.5);
 
 		// Determine rendering quality used to render the particles.
@@ -1088,40 +1094,53 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		std::shared_ptr<ParticlePrimitive> highlightParticleBuffer;
 		std::shared_ptr<CylinderPrimitive> cylinderBuffer;
 		std::shared_ptr<CylinderPrimitive> highlightCylinderBuffer;
-		if(particleShape() != Cylinder && particleShape() != Spherocylinder) {
+		if(shape != Cylinder && shape != Spherocylinder) {
 			// Determine effective particle shape and shading mode.
-			ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shapeProperty, orientationProperty, roundnessProperty);
+			ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shape, shapeProperty, orientationProperty, roundnessProperty);
 			ParticlePrimitive::ShadingMode primitiveShadingMode = ParticlePrimitive::NormalShading;
-			if(particleShape() == ParticlesVis::Circle || particleShape() == ParticlesVis::Square)
+			if(shape == ParticlesVis::Circle || shape == ParticlesVis::Square)
 				primitiveShadingMode = ParticlePrimitive::FlatShading;
 
-			particleBuffer = renderer->createParticlePrimitive(1, primitiveShadingMode, renderQuality, primitiveParticleShape, false);
-			particleBuffer->setParticleColor(color);
-			particleBuffer->setParticlePositions(&pos);
-			particleBuffer->setParticleRadius(radius);
-			if(shapeProperty)
-				particleBuffer->setParticleAsphericalShapes(ConstPropertyAccess<Vector3>(shapeProperty).cbegin() + particleIndex);
-			if(orientationProperty)
-				particleBuffer->setParticleOrientations(ConstPropertyAccess<Quaternion>(orientationProperty).cbegin() + particleIndex);
-			if(roundnessProperty)
-				particleBuffer->setParticleRoundness(ConstPropertyAccess<Vector2>(roundnessProperty).cbegin() + particleIndex);
+			// Prepare data buffers.
+			DataBufferAccessAndRef<Point3> positionBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false);
+			positionBuffer[0] = pos;
+			DataBufferAccessAndRef<Vector3> asphericalShapeBuffer;
+			DataBufferAccessAndRef<Vector3> asphericalShapeBufferHighlight;
+			if(shapeProperty) {
+				asphericalShapeBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false);
+				asphericalShapeBufferHighlight = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false);
+				asphericalShapeBufferHighlight[0] = asphericalShapeBuffer[0] = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
+				asphericalShapeBufferHighlight[0] += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+			}
+			DataBufferAccessAndRef<Quaternion> orientationBuffer;
+			if(orientationProperty) {
+				orientationBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 4, 0, false);
+				orientationBuffer[0] = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
+			}
+			DataBufferAccessAndRef<Vector2> roundnessBuffer;
+			if(roundnessProperty) {
+				roundnessBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 2, 0, false);
+				roundnessBuffer[0] = ConstPropertyAccess<Vector2>(roundnessProperty)[particleIndex];
+			}
+
+			particleBuffer = renderer->createParticlePrimitive(primitiveShadingMode, renderQuality, primitiveParticleShape);
+			particleBuffer->setUniformColor(color);
+			particleBuffer->setPositions(positionBuffer.take());
+			particleBuffer->setUniformRadius(radius);
+			particleBuffer->setAsphericalShapes(asphericalShapeBuffer.take());
+			particleBuffer->setOrientations(orientationBuffer.take());
+			particleBuffer->setRoundness(roundnessBuffer.take());
 
 			// Prepare marker geometry buffer.
-			highlightParticleBuffer = renderer->createParticlePrimitive(1, primitiveShadingMode, renderQuality, primitiveParticleShape, false);
-			highlightParticleBuffer->setParticleColor(highlightColor);
-			highlightParticleBuffer->setParticlePositions(&pos);
-			highlightParticleBuffer->setParticleRadius(radius + renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
-			if(shapeProperty) {
-				Vector3 shape = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
-				shape += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
-				highlightParticleBuffer->setParticleAsphericalShapes(&shape);
-			}
-			if(orientationProperty)
-				highlightParticleBuffer->setParticleOrientations(ConstPropertyAccess<Quaternion>(orientationProperty).cbegin() + particleIndex);
-			if(roundnessProperty)
-				highlightParticleBuffer->setParticleRoundness(ConstPropertyAccess<Vector2>(roundnessProperty).cbegin() + particleIndex);
+			highlightParticleBuffer = renderer->createParticlePrimitive(primitiveShadingMode, renderQuality, primitiveParticleShape);
+			highlightParticleBuffer->setUniformColor(highlightColor);
+			highlightParticleBuffer->setPositions(particleBuffer->positions());
+			highlightParticleBuffer->setUniformRadius(radius + renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+			highlightParticleBuffer->setAsphericalShapes(asphericalShapeBufferHighlight.take());
+			highlightParticleBuffer->setOrientations(particleBuffer->orientations());
+			highlightParticleBuffer->setRoundness(particleBuffer->roundness());
 		}
-		else {
+		else if(shape == Cylinder || shape == Spherocylinder) {
 			FloatType radius, length;
 			if(shapeProperty) {
 				Vector3 shape = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
@@ -1137,42 +1156,42 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				Quaternion q = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
 				dir = q * dir;
 			}
-			Point3 p = pos - (dir * FloatType(0.5));
-			cylinderBuffer = renderer->createArrowPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-			highlightCylinderBuffer = renderer->createArrowPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-			cylinderBuffer->startSetElements(1);
-			cylinderBuffer->setElement(0, p, dir, (ColorA)color, radius);
-			cylinderBuffer->endSetElements();
+			DataBufferAccessAndRef<Point3> positionBuffer1 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> positionBuffer2 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> positionBufferSpheres = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 2, DataBuffer::Float, 3, 0, false);
+			positionBufferSpheres[0] = positionBuffer1[0] = pos - (dir * FloatType(0.5));
+			positionBufferSpheres[1] = positionBuffer2[0] = pos + (dir * FloatType(0.5));
+			cylinderBuffer = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
+			highlightCylinderBuffer = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
+			cylinderBuffer->setUniformColor(color);
+			cylinderBuffer->setUniformRadius(radius);
+			cylinderBuffer->setPositions(positionBuffer1.take(), positionBuffer2.take());
 			FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
-			highlightCylinderBuffer->startSetElements(1);
-			highlightCylinderBuffer->setElement(0, p, dir, highlightColor, radius + padding);
-			highlightCylinderBuffer->endSetElements();
-			if(particleShape() == Spherocylinder) {
-				particleBuffer = renderer->createParticlePrimitive(2, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape, false);
-				highlightParticleBuffer = renderer->createParticlePrimitive(2, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape, false);
-				Point3 sphereCapPositions[2] = {p, p + dir};
-				FloatType sphereRadii[2] = {radius, radius};
-				FloatType sphereHighlightRadii[2] = {radius + padding, radius + padding};
-				Color sphereColors[2] = {(Color)color, (Color)color};
-				particleBuffer->setParticlePositions(sphereCapPositions);
-				particleBuffer->setParticleRadii(sphereRadii);
-				particleBuffer->setParticleColors(sphereColors);
-				highlightParticleBuffer->setParticlePositions(sphereCapPositions);
-				highlightParticleBuffer->setParticleRadii(sphereHighlightRadii);
-				highlightParticleBuffer->setParticleColor(highlightColor);
+			highlightCylinderBuffer->setUniformColor(highlightColor);
+			highlightCylinderBuffer->setUniformRadius(radius + padding);
+			highlightCylinderBuffer->setPositions(cylinderBuffer->basePositions(), cylinderBuffer->headPositions());
+			if(shape == Spherocylinder) {
+				particleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
+				highlightParticleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
+				particleBuffer->setPositions(positionBufferSpheres.take());
+				particleBuffer->setUniformRadius(radius);
+				particleBuffer->setUniformColor(color);
+				highlightParticleBuffer->setPositions(particleBuffer->positions());
+				highlightParticleBuffer->setUniformRadius(radius + padding);
+				highlightParticleBuffer->setUniformColor(highlightColor);
 			}
 		}
 
 		renderer->setHighlightMode(1);
 		if(particleBuffer)
-			particleBuffer->render(renderer);
+			renderer->renderParticles(particleBuffer);
 		if(cylinderBuffer)
-			cylinderBuffer->render(renderer);
+			renderer->renderCylinders(cylinderBuffer);
 		renderer->setHighlightMode(2);
 		if(highlightParticleBuffer)
-			highlightParticleBuffer->render(renderer);
+			renderer->renderParticles(highlightParticleBuffer);
 		if(highlightCylinderBuffer)
-			highlightCylinderBuffer->render(renderer);
+			renderer->renderCylinders(highlightCylinderBuffer);
 		renderer->setHighlightMode(0);
 	}
 	else {
@@ -1213,7 +1232,6 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		const AffineTransformation& tm = renderer->worldTransform();
 		renderer->addToLocalBoundingBox(Box3(pos, radius + renderer->viewport()->nonScalingSize(tm * pos) * FloatType(1e-1)));
 	}
-#endif
 }
 
 /******************************************************************************

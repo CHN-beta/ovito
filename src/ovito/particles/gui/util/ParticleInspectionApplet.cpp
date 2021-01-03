@@ -314,7 +314,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 		}
 
 		// Generate pair-wise line elements.
-		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, vertices.size() * (vertices.size() - 1), DataBuffer::Float, 3, 0, false);;
+		size_t n = std::distance(vertices.begin(), outVertex); 
+		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, n * (n - 1), DataBuffer::Float, 3, 0, false);
 		auto iter = lines.begin();
 		for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
 			for(auto v2 = v1 + 1; v2 != outVertex; ++v2) {
@@ -328,7 +329,10 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 		std::shared_ptr<LinePrimitive> linesPrimitive = renderer->createLinePrimitive();
 		linesPrimitive->setPositions(lines.take());
 		linesPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
+		linesPrimitive->setLineWidth(4.0 * renderer->devicePixelRatio());
+		renderer->setDepthTestEnabled(false);
 		renderer->renderLines(linesPrimitive);
+		renderer->setDepthTestEnabled(true);
 	}
 }
 
