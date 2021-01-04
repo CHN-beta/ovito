@@ -271,6 +271,9 @@ public:
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const { return true; }
 
+	/// Computes the world size of an object that should appear one pixel wide in the rendered image.
+	FloatType projectedPixelSize(const Point3& worldPosition) const;
+
 protected:
 
 	/// Constructor.

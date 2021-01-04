@@ -314,6 +314,34 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 }
 
 /******************************************************************************
+* Computes the world-space radius of an object located at the given world-space position,
+* which should appear exactly one pixel wide in the rendered image.
+******************************************************************************/
+FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
+{
+	// Get window size in device-independent pixels.
+	int height = outputSize().height();
+	if(height == 0) return 0;
+
+	// The projected size in pixels:
+	const FloatType baseSize = 1.0 * devicePixelRatio();
+
+	if(projParams().isPerspective) {
+
+		Point3 p = projParams().viewMatrix * worldPosition;
+		if(p.z() == 0) return 1;
+
+        Point3 p1 = projParams().projectionMatrix * p;
+		Point3 p2 = projParams().projectionMatrix * (p + Vector3(1,0,0));
+
+		return baseSize / (p1 - p2).length() / (FloatType)height;
+	}
+	else {
+		return projParams().fieldOfView / (FloatType)height * baseSize;
+	}
+}
+
+/******************************************************************************
 * Sets the destination rectangle for rendering the image in viewport coordinates.
 ******************************************************************************/
 void ImagePrimitive::setRectViewport(const SceneRenderer* renderer, const Box2& rect)

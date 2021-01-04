@@ -204,6 +204,11 @@ public:
 	    return (x() <= y()) ? 0 : 1;
 	}
 
+	/// \brief Returns the midpoint that is located halfway between this point and another point.
+	Q_DECL_CONSTEXPR inline Point_2 midpoint(const Point_2& other) const {
+		return Point_2(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()));
+	}
+
 	/// \brief Produces a string representation of this point.
 	/// \return A string that contains the coordinate of the point.
 	QString toString() const {
