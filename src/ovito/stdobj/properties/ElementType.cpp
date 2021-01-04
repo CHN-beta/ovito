@@ -24,6 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
@@ -87,6 +88,10 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 {
 	OVITO_ASSERT(!property.isNull());
 	OVITO_ASSERT(!typeName.isEmpty());
+
+	if(property.isNull()) {
+		return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
+	}
 
 	// Interactive execution context means that we are supposed to load the user-defined
 	// settings from the settings store.

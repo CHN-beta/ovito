@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -232,6 +232,8 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 		undoableTransaction(tr("Change output dimensions"), [settings, index]() {
 			settings->setOutputImageWidth(imageSizePresets[index-2][0]);
 			settings->setOutputImageHeight(imageSizePresets[index-2][1]);
+			PROPERTY_FIELD(RenderSettings::outputImageWidth).memorizeDefaultValue(settings);
+			PROPERTY_FIELD(RenderSettings::outputImageHeight).memorizeDefaultValue(settings);
 		});
 	}
 	sizePresetsBox->setCurrentIndex(0);

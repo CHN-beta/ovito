@@ -66,8 +66,6 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, siz
 ******************************************************************************/
 Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
 {
-	OVITO_ASSERT(!property.isNull());
-
 	// Palette of standard colors initially assigned to new element types:
 	static const Color defaultTypeColors[] = {
 		Color(0.97, 0.97, 0.97),// 0

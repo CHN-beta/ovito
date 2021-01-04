@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
+#include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyContainer.h"
 #include "PropertyAccess.h"
@@ -385,6 +386,32 @@ void PropertyContainer::loadFromStream(ObjectLoadStream& stream)
 	// This is needed only for backward compatibility with early dev builds of OVITO 3.0:
 	if(identifier().isEmpty())
 		setIdentifier(getOOMetaClass().pythonName());
+}
+
+/******************************************************************************
+* Is called once for this object after it has been completely loaded from a stream.
+******************************************************************************/
+void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	DataObject::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.3.5: 
+	// The ElementType::ownerProperty parameter field did not exist in older OVITO versions and does not have
+	// a valid value when loaded from a state file. The following code initializes the parameter field to 
+	// a meaningful value. 
+	if(stream.formatVersion() < 30007) {
+		for(const PropertyObject* property : properties()) {
+			for(const ElementType* type : property->elementTypes()) {
+				if(type->ownerProperty().isNull()) {
+					const_cast<ElementType*>(type)->_ownerProperty.set(const_cast<ElementType*>(type), PROPERTY_FIELD(ElementType::ownerProperty), PropertyReference(&OOClass(), property));
+				}
+				if(ElementType* proxyType = dynamic_object_cast<ElementType>(type->editableProxy())) {
+					if(proxyType->ownerProperty().isNull())
+						proxyType->_ownerProperty.set(proxyType, PROPERTY_FIELD(ElementType::ownerProperty), type->ownerProperty());
+				}
+			}
+		}
+	}
 }
 
 }	// End of namespace

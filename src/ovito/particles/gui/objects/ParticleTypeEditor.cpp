@@ -113,13 +113,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	gridLayout->addWidget(new QLabel(tr("Shape:")), 2, 0);
 	gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1, 1, 2);
 
-	// Color presets toolbars.
-	QToolBar* colorPresetsToolbar = new QToolBar();
-	colorPresetsToolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
-	colorPresetsToolbar->setFloatable(false);
-	colorPresetsToolbar->setIconSize(QSize(24,24));
-	gridLayout->addWidget(colorPresetsToolbar, 0, 2);
-	QAction* loadColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset current color back to user-defined or hard-coded default value for this particle type."));
+	// Color presets menu.
+	QToolButton* colorPresetsMenuButton = new QToolButton();
+	QMenu* colorPresetsMenu = new QMenu(colorPresetsMenuButton);
+	QAction* loadColorPresetAction = colorPresetsMenu->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset color to default"));
+	loadColorPresetAction->setStatusTip(tr("Reset current color back to user-defined or hard-coded default value for this particle type."));
 	connect(loadColorPresetAction, &QAction::triggered, this, [this]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type color"), [&]() {
@@ -128,7 +126,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 			});
 		}
 	});
-	QAction* saveColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Save current color as future default value for this particle type."));
+	QAction* saveColorPresetAction = colorPresetsMenu->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Use current color as new default"));
+	saveColorPresetAction->setStatusTip(tr("Save current color as future default value for this particle type."));
 	connect(saveColorPresetAction, &QAction::triggered, this, [this,saveColorPresetAction,loadColorPresetAction]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color());
@@ -136,21 +135,28 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 			mainWindow()->statusBar()->showMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
-	QAction* editColorPresetAction = colorPresetsToolbar->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit default color presets."));
+	colorPresetsMenu->addSeparator();
+	QAction* editColorPresetAction = colorPresetsMenu->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit presets..."));
 	connect(editColorPresetAction, &QAction::triggered, this, [this]() {
 		ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
 		dlg.exec();		
 		Q_EMIT contentsChanged(editObject());
 	});
-	colorPresetsToolbar->setMinimumWidth(colorPresetsToolbar->sizeHint().width());
+	colorPresetsMenuButton->setStyleSheet(
+		"QToolButton { padding: 0px; margin: 0px; border: none; background-color: transparent; } "
+		"QToolButton::menu-indicator { image: none; } ");
+	colorPresetsMenuButton->setPopupMode(QToolButton::InstantPopup);
+	colorPresetsMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
+	colorPresetsMenuButton->setMenu(colorPresetsMenu);
+	colorPresetsMenuButton->setEnabled(false);
+	colorPresetsMenuButton->setToolTip(tr("Presets"));
+	gridLayout->addWidget(colorPresetsMenuButton, 0, 2);
 
-	// Radius presets toolbars.
-	QToolBar* radiusPresetsToolbar = new QToolBar();
-	radiusPresetsToolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
-	radiusPresetsToolbar->setFloatable(false);
-	radiusPresetsToolbar->setIconSize(QSize(24,24));
-	gridLayout->addWidget(radiusPresetsToolbar, 1, 2);
-	QAction* loadRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset current radius back to user-defined or hard-coded default value for this particle type."));
+	// Radius presets menu.
+	QToolButton* radiusPresetsMenuButton = new QToolButton();
+	QMenu* radiusPresetsMenu = new QMenu(radiusPresetsMenuButton);
+	QAction* loadRadiusPresetAction = radiusPresetsMenu->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset radius to default"));
+	loadRadiusPresetAction->setStatusTip(tr("Reset current radius back to user-defined or hard-coded default value for this particle type."));
 	connect(loadRadiusPresetAction, &QAction::triggered, this, [this]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type radius"), [&]() {
@@ -159,21 +165,31 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 			});
 		}
 	});
-	QAction* saveRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Save current radius as future default value for this particle type."));
+	QAction* saveRadiusPresetAction = radiusPresetsMenu->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Use current radius as new default"));
+	saveRadiusPresetAction->setStatusTip(tr("Save current radius as future default value for this particle type."));
 	connect(saveRadiusPresetAction, &QAction::triggered, this, [this,saveRadiusPresetAction,loadRadiusPresetAction]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius());
 			Q_EMIT contentsChanged(editObject());
-			mainWindow()->statusBar()->showMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
+			mainWindow()->statusBar()->showMessage(tr("Stored current radius as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
-	QAction* editRadiusPresetAction = radiusPresetsToolbar->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit default radius presets."));
+	radiusPresetsMenu->addSeparator();
+	QAction* editRadiusPresetAction = radiusPresetsMenu->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit presets..."));
 	connect(editRadiusPresetAction, &QAction::triggered, this, [this]() {
 		ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
 		dlg.exec();
 		Q_EMIT contentsChanged(editObject());
 	});
-	radiusPresetsToolbar->setMinimumWidth(radiusPresetsToolbar->sizeHint().width());
+	radiusPresetsMenuButton->setStyleSheet(
+		"QToolButton { padding: 0px; margin: 0px; border: none; background-color: transparent; } "
+		"QToolButton::menu-indicator { image: none; } ");
+	radiusPresetsMenuButton->setPopupMode(QToolButton::InstantPopup);
+	radiusPresetsMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
+	radiusPresetsMenuButton->setMenu(radiusPresetsMenu);
+	radiusPresetsMenuButton->setEnabled(false);
+	radiusPresetsMenuButton->setToolTip(tr("Presets"));
+	gridLayout->addWidget(radiusPresetsMenuButton, 1, 2);
 
 	connect(this, &PropertiesEditor::contentsChanged, [loadColorPresetAction,saveColorPresetAction,loadRadiusPresetAction,saveRadiusPresetAction](RefTarget* editObject) {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject)) {
@@ -186,8 +202,9 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		}
 	});
 
-	connect(this, &PropertiesEditor::contentsReplaced, [colorPresetsToolbar,namePUI](RefTarget* newEditObject) {
-		colorPresetsToolbar->setEnabled(newEditObject != nullptr);
+	connect(this, &PropertiesEditor::contentsReplaced, [colorPresetsMenuButton,radiusPresetsMenuButton,namePUI](RefTarget* newEditObject) {
+		colorPresetsMenuButton->setEnabled(newEditObject != nullptr);
+		radiusPresetsMenuButton->setEnabled(newEditObject != nullptr);
 
 		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
 		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {

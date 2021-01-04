@@ -149,38 +149,33 @@ void ObjectLoadStream::close()
 
 			// Load class contents.
 			try {
-				try {
-					// Make the object being loaded a child of this stream object.
-					// This is to let the OvitoObject::isBeingLoaded() function detect that
-					// the object is being loaded from this stream.
-					OVITO_ASSERT(_currentObject->object->parent() == nullptr);
-					_currentObject->object->setParent(this);
-					OVITO_ASSERT(_currentObject->object->isBeingLoaded());
+				// Make the object being loaded a child of this stream object.
+				// This is to let the OvitoObject::isBeingLoaded() function detect that
+				// the object is being loaded from this stream.
+				OVITO_ASSERT(_currentObject->object->parent() == nullptr);
+				_currentObject->object->setParent(this);
+				OVITO_ASSERT(_currentObject->object->isBeingLoaded());
 
-					// Let the object load its data fields.
-					_currentObject->object->loadFromStream(*this);
-
-					OVITO_ASSERT(_currentObject->object->parent() == this);
-					_currentObject->object->setParent(nullptr);
-				}
-				catch(...) {
-					// Clean up.
-					if(_currentObject && _currentObject->object) {
-						OVITO_CHECK_OBJECT_POINTER(_currentObject->object);
-						_currentObject->object->setParent(nullptr);
-					}
-					throw;
-				}
+				// Let the object load its data fields.
+				_currentObject->object->loadFromStream(*this);
 			}
 			catch(Exception& ex) {
 				throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(_currentObject->object->getOOClass().name()));
 			}
 		}
 
-		// Now that all references are in place call post-processing function on each loaded object.
+		// Now that all references are in place call, post-processing function on each loaded object.
 		for(const ObjectRecord& record : _objects) {
 			if(record.object)
 				record.object->loadFromStreamComplete(*this);
+		}
+
+		// Clear the being-loaded status of all objects.
+		for(const ObjectRecord& record : _objects) {
+			if(record.object) {
+				OVITO_ASSERT(record.object->parent() == this);
+				record.object->setParent(nullptr);
+			}
 		}
 	}
 	LoadStream::close();

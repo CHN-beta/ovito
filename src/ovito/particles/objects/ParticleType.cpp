@@ -152,6 +152,22 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, E
     return !operation.isCanceled();
 }
 
+/******************************************************************************
+* Is called once for this object after it has been completely loaded from a stream.
+******************************************************************************/
+void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	ElementType::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.3.5: 
+	// The 'shape' parameter field of the ParticleType class does not exist yet in state files written by older program versions.
+	// Automatically switch the type's shape to 'Mesh' if a mesh geometry has been assigned to the type. 
+	if(stream.formatVersion() < 30007) {
+		if(shape() == ParticlesVis::ParticleShape::Default && shapeMesh())
+			setShape(ParticlesVis::ParticleShape::Mesh);
+	}
+}
+
 // Define default names, colors, and radii for some predefined particle types.
 std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES> ParticleType::_predefinedParticleTypes{{
 	ParticleType::PredefinedTypeInfo{ QString("H"), Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f },
@@ -202,7 +218,7 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal diamond (1st neighbor)"), Color(254.0f/255.0f, 220.0f/255.0f, 0.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal diamond (2nd neighbor)"), Color(204.0f/255.0f, 229.0f/255.0f, 81.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Simple cubic"), Color(160.0f/255.0f, 20.0f/255.0f, 254.0f/255.0f), 0 },
-	ParticleType::PredefinedTypeInfo{ QString("Graphene"), Color(160.0f/255.0f, 120.0f/255.0f, 254.0f/255.0f), 0 },	//todo: pick a different colour
+	ParticleType::PredefinedTypeInfo{ QString("Graphene"), Color(160.0f/255.0f, 120.0f/255.0f, 254.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal ice"), Color(0.0f, 0.9f, 0.9f), 0  },
 	ParticleType::PredefinedTypeInfo{ QString("Cubic ice"), Color(1.0f, 193.0f/255.0f, 5.0f/255.0f), 0  },
 	ParticleType::PredefinedTypeInfo{ QString("Interfacial ice"), Color(0.5f, 0.12f, 0.4f), 0 },

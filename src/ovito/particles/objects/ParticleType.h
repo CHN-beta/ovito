@@ -135,6 +135,11 @@ public:
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius);
 
+protected:
+
+	/// Is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
 	/// The display radius to be used for particles of this type.
