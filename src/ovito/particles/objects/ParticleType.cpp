@@ -78,7 +78,14 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 	// have already replaced it with a mutable copy.
 	const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
 
-	if(const ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
+	if(ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
+
+		// This allows the GSD file importer to update the generated shape mesh as long as the user didn't replace the mesh with a custom one.
+		if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
+			proxy->setShapeMesh(self->shapeMesh());
+		}
+	
+		// Copy properties changed by the user over to the data object.
 		if(proxy->radius() != self->radius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
 				|| proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
 			// Make this data object mutable first.
