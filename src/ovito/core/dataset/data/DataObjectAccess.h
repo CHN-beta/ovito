@@ -44,10 +44,13 @@ public:
     /// Default constructor.
     DataObjectAccess() noexcept = default;
 
-    /// Constructor taking an externally owned data object.
+    /// Constructor taking a reference to a data object.
     DataObjectAccess(Reference<const DataObjectClass> object) noexcept : 
         _constObject(std::move(object)), 
         _mutableObject((_constObject && _constObject->isSafeToModify()) ? const_cast<DataObjectClass*>(_constObject.get()) : nullptr) {}
+
+    /// Constructor taking an externally owned data object.
+    DataObjectAccess(const DataObjectClass* object) noexcept : DataObjectAccess(Reference<const DataObjectClass>(object)) {}
 
     /// Copying not allowed, because it would lead to a shared ownership.
     DataObjectAccess(const DataObjectAccess& other) = delete;
