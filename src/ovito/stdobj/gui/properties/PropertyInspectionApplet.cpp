@@ -203,7 +203,7 @@ void PropertyInspectionApplet::PropertyFilterModel::setupEvaluator()
 	if(_filterExpression.isEmpty() == false && _applet->currentState()) {
 		if(const PropertyContainer* container = _applet->selectedContainerObject()) {
 			try {
-				// Check if expression contains an assignment ('=' operator).
+				// Check if expression contains a variable assignment ('=' operator).
 				// This should be considered an error, because the user is probably referring to the comparison operator '=='.
 				if(_filterExpression.contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
 					throw Exception(tr("The entered expression contains the assignment operator '='. Please use the correct comparison operator '==' instead."));

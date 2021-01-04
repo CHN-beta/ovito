@@ -41,7 +41,7 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 			return property->type() == ParticlesObject::PositionProperty;
 		});
 		if(iter != inputProperties.end()) {
-			ConstPropertyAccess<Point3> posProperty = *iter;
+			ConstPropertyAccessAndRef<Point3> posProperty = *iter;
 			registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
 				return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
 			});
