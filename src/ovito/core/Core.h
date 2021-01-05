@@ -101,8 +101,8 @@
     #include <QNetworkAccessManager>
 #endif
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 6, 0)
-#  error "OVITO requires Qt 5.6 or newer."
+#if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
+#  error "OVITO requires Qt 5.12 or newer."
 #endif
 
 /******************************************************************************
