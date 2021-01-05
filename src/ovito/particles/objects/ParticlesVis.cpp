@@ -362,7 +362,7 @@ FloatType ParticlesVis::particleRadius(size_t particleIndex, ConstPropertyAccess
 /******************************************************************************
 * Determines the display color of a single particle.
 ******************************************************************************/
-ColorA ParticlesVis::particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty, ConstPropertyAccess<FloatType> transparencyProperty) const
+Color ParticlesVis::particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty) const
 {
 	// Check if particle is selected.
 	if(selectionProperty && selectionProperty.size() > particleIndex) {
@@ -370,7 +370,7 @@ ColorA ParticlesVis::particleColor(size_t particleIndex, ConstPropertyAccess<Col
 			return selectionParticleColor();
 	}
 
-	ColorA c = defaultParticleColor();
+	Color c = defaultParticleColor();
 	if(colorProperty && colorProperty.size() > particleIndex) {
 		// Take particle color directly from the color property.
 		c = colorProperty[particleIndex];
@@ -381,11 +381,6 @@ ColorA ParticlesVis::particleColor(size_t particleIndex, ConstPropertyAccess<Col
 		const ElementType* ptype = typeProperty->elementType(typeData[particleIndex]);
 		if(ptype)
 			c = ptype->color();
-	}
-
-	// Apply alpha component.
-	if(transparencyProperty && transparencyProperty.size() > particleIndex) {
-		c.a() = qBound(FloatType(0), FloatType(1) - transparencyProperty[particleIndex], FloatType(1));
 	}
 
 	return c;
@@ -1032,7 +1027,6 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		const PropertyObject* radiusProperty = nullptr;
 		const PropertyObject* colorProperty = nullptr;
 		const PropertyObject* selectionProperty = nullptr;
-		const PropertyObject* transparencyProperty = nullptr;
 		const PropertyObject* shapeProperty = nullptr;
 		const PropertyObject* orientationProperty = nullptr;
 		const PropertyObject* roundnessProperty = nullptr;
@@ -1048,8 +1042,6 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				colorProperty = property;
 			else if(property->type() == ParticlesObject::SelectionProperty && property->size() >= particleIndex)
 				selectionProperty = property;
-			else if(property->type() == ParticlesObject::TransparencyProperty && property->size() >= particleIndex)
-				transparencyProperty = property;
 			else if(property->type() == ParticlesObject::AsphericalShapeProperty && property->size() >= particleIndex)
 				shapeProperty = property;
 			else if(property->type() == ParticlesObject::OrientationProperty && property->size() >= particleIndex)
@@ -1083,7 +1075,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 		FloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
 		// Determine the display color of selected particle.
-		Color color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty, transparencyProperty);
+		Color color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty);
 		Color highlightColor = selectionParticleColor();
 		color = color * FloatType(0.5) + highlightColor * FloatType(0.5);
 
