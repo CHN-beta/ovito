@@ -72,6 +72,11 @@ public:
 		/// Creates another engine that performs the next stage of the computation. 
 		virtual std::shared_ptr<Engine> createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input) { return {}; }
 
+		/// Decides whether the computation is sufficiently short to perform
+		/// it synchronously within the GUI thread. The default implementation returns false,
+		/// which means the computation will be performed asynchronously in a worker thread.
+		virtual bool preferSynchronousExecution() { return false; }
+
 		/// Returns the validity interval of the stored computation results.
 		const TimeInterval& validityInterval() const { return _validityInterval; }
 

@@ -178,12 +178,20 @@ public:
     /// Turns a const data object reference into a mutable data object reference. 
     /// Makes a copy of the data object if necessary.
     DataOORef<std::remove_const_t<T>> makeMutable() && {
-        if(!this->_ref)
+        if(!this->_ref) {
             return {};
-        else if(this->_ref->isSafeToModify())
-            return const_pointer_cast<std::remove_const_t<T>>(std::move(this->_ref));
-        else
+        }
+        else if(this->_ref->isSafeToModify()) {
+            // Transfer the internal OORef from the const input into a non-const output (without incrementing/descrementing the data object's ref count).
+            DataOORef<std::remove_const_t<T>> result;
+            result._ref = const_pointer_cast<std::remove_const_t<T>>(std::move(this->_ref));
+            OVITO_ASSERT(!this->_ref);
+            OVITO_ASSERT(result->isSafeToModify());
+            return result;
+        }
+        else {
             return makeCopy();
+        }
     }
 
     /// Makes a shallow copy of a data object.

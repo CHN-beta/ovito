@@ -427,7 +427,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 	ConstPropertyAccess<FloatType> particleRadii(_particleRadii);
 
 	// Determine the cutoff range of atomic Gaussians.
-	FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii);
+	FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii) * _radiusFactor;
 
 	// Determine the extents of the density grid.
 	AffineTransformation gridBoundaries = mesh()->domain()->matrix();

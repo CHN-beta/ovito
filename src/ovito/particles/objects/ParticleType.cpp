@@ -257,8 +257,9 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 
 	if(typeClass == ParticlesObject::TypeProperty) {
 		for(const PredefinedTypeInfo& predefType : _predefinedParticleTypes) {
-			if(std::get<0>(predefType) == typeName)
+			if(std::get<0>(predefType) == typeName) {
 				return std::get<2>(predefType);
+			}
 		}
 
 		// Sometimes atom type names have additional letters/numbers appended.
@@ -278,7 +279,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	QSettings settings;
 	QString settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), particleTypeName);
 	
-	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting) != radius)
+	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting) - radius) > 1e-6)
 		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
 		settings.remove(settingsKey);

@@ -66,6 +66,13 @@ protected:
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
+		/// Decides whether the computation is sufficiently short to perform
+		/// it synchronously within the GUI thread.
+		virtual bool preferSynchronousExecution() override { 
+			// It's okay to perform the modifier operation synchronously for small inputs.
+			return outputProperty()->size() * _expressions.size() <= 2000; 
+		}
+
 		/// Returns the data accessor to the selection flag array.
 		const ConstPropertyAccessAndRef<int>& selectionArray() const { return _selectionArray; }
 
