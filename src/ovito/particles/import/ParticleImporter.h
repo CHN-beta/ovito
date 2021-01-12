@@ -98,6 +98,9 @@ protected:
 		/// Determines the PBC shift vectors for bonds based on the minimum image convention.
 		void generateBondPeriodicImageProperty();
 
+		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
+		void computeVelocityMagnitude();
+
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.

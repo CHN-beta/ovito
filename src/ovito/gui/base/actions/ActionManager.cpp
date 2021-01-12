@@ -49,9 +49,9 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), ":/guibase/actions/file/file_open.bw.svg", tr("Load a previously saved session from a file."), QKeySequence::Open);
 	createCommandAction(ACTION_FILE_SAVE, tr("Save Session State"), ":/guibase/actions/file/file_save.bw.svg", tr("Save the current program session to a file."), QKeySequence::Save);
 	createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As"), ":/guibase/actions/file/file_save_as.bw.svg", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
-	createCommandAction(ACTION_FILE_IMPORT, tr("Load File"), ":/guibase/actions/file/file_import.bw.svg", tr("Import data from a file on this computer."), Qt::CTRL | Qt::Key_I);
-	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), ":/guibase/actions/file/file_import_remote.bw.svg", tr("Import a file from a remote location."), Qt::CTRL | Qt::SHIFT | Qt::Key_I);
-	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), ":/guibase/actions/file/file_export.bw.svg", tr("Export data to a file."), Qt::CTRL | Qt::Key_E);
+	createCommandAction(ACTION_FILE_IMPORT, tr("Load File"), ":/guibase/actions/file/file_import.bw.svg", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
+	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), ":/guibase/actions/file/file_import_remote.bw.svg", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
+	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), ":/guibase/actions/file/file_export.bw.svg", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
 	createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), ":/guibase/actions/file/new_window.bw.svg", tr("Open another OVITO program window."), QKeySequence::New);
 	createCommandAction(ACTION_HELP_ABOUT, tr("About Ovito"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
 	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), ":/guibase/actions/file/user_manual.bw.svg", tr("Open the user manual."), QKeySequence::HelpContents);
@@ -92,8 +92,8 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 
 	createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), ":/guibase/actions/animation/goto_animation_start.bw.svg", tr("Jump to first frame of the animation."), Qt::Key_Home);
 	createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), ":/guibase/actions/animation/goto_animation_end.bw.svg", tr("Jump to the last frame of the animation."), Qt::Key_End);
-	createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), ":/guibase/actions/animation/goto_previous_frame.bw.svg", tr("Move time slider one animation frame backward."), Qt::ALT | Qt::Key_Left);
-	createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), ":/guibase/actions/animation/goto_next_frame.bw.svg", tr("Move time slider one animation frame forward."), Qt::ALT | Qt::Key_Right);
+	createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), ":/guibase/actions/animation/goto_previous_frame.bw.svg", tr("Move time slider one animation frame backward."), Qt::Key_Left | Qt::ALT);
+	createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), ":/guibase/actions/animation/goto_next_frame.bw.svg", tr("Move time slider one animation frame forward."), Qt::Key_Right | Qt::ALT);
 	createCommandAction(ACTION_START_ANIMATION_PLAYBACK, tr("Start Animation Playback"), ":/guibase/actions/animation/play_animation.bw.svg", tr("Start playing the animation in the viewports."));
 	createCommandAction(ACTION_STOP_ANIMATION_PLAYBACK, tr("Stop Animation Playback"), ":/guibase/actions/animation/stop_animation.bw.svg", tr("Stop playing the animation in the viewports."));
 	createCommandAction(ACTION_ANIMATION_SETTINGS, tr("Animation Settings"), ":/guibase/actions/animation/animation_settings.bw.svg", tr("Open the animation settings dialog."));

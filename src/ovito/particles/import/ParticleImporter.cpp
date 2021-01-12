@@ -254,11 +254,32 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 }
 
 /******************************************************************************
+* If the 'Velocity' vector particle property is present, then this method 
+* computes the 'Velocity Magnitude' scalar property.
+******************************************************************************/
+void ParticleImporter::FrameLoader::computeVelocityMagnitude()
+{
+	if(!_particles) return;
+
+	if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
+		auto v = velocityVectors.cbegin();
+		PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty, false, executionContext());
+		for(FloatType& mag : PropertyAccess<FloatType>(magnitudeProperty)) {
+			mag = v->length();
+			++v;
+		}
+	}
+}
+
+/******************************************************************************
 * Finalizes the particle data loaded by a sub-class.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::loadFile()
 {
 	StandardFrameLoader::loadFile();
+
+	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property is loaded from the input file.
+	computeVelocityMagnitude();
 
 #ifdef OVITO_DEBUG
 	if(_particles) _particles->verifyIntegrity();
