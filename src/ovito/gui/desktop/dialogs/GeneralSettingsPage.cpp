@@ -79,7 +79,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	_contextSharingMode->setCurrentIndex(OpenGLSceneRenderer::contextSharingEnabled() ? 0 : 1);
 
 	// OpenGL geometry shaders:
-	_overrideUseOfGeometryShaders = new QCheckBox(tr("Override usage of geometry shaders"), openglGroupBox);
+	_overrideUseOfGeometryShaders = new QCheckBox(tr("Override use of geometry shaders"), openglGroupBox);
 	_overrideUseOfGeometryShaders->setToolTip(tr("<p>Activate this option to explicitly control the usage of OpenGL geometry shaders.</p>"));
 	layout2->addWidget(_overrideUseOfGeometryShaders, 1, 0);
 	_geometryShaderMode = new QComboBox(openglGroupBox);

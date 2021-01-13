@@ -124,17 +124,17 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	std::vector<std::pair<QUrl, QString>> blocks = loadVTMFile(request.fileHandle);
 
 	// Load each data block referenced in the VTM file. 
-	Future<LoadOperationRequest> future = for_each(std::move(modifiedRequest), std::move(blocks), executor(), [this](const std::pair<QUrl, QString>& block, LoadOperationRequest& request) {
+	Future<LoadOperationRequest> future = for_each(std::move(modifiedRequest), std::move(blocks), dataset()->executor(), [](const std::pair<QUrl, QString>& block, LoadOperationRequest& request) {
 
 		// Set up the load request submitted to the FileSourceImporter.
 		request.dataBlockPrefix = block.second;
 
 		// Retrieve the data file.
-		return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), block.first).then_future(executor(), [this, &request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), block.first).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
 			try {
 				// Detect file format and create an importer for it.
 				const FileHandle& file = fileFuture.result();
-				OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.executionContext, file);
+				OORef<FileImporter> importer = FileImporter::autodetectFileFormat(request.dataset, request.executionContext, file);
 
 				// This currently works only for FileSourceImporters.
 				// Files formats handled by other kinds of importers will be skipped.
@@ -152,7 +152,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				request.state.setStatus(PipelineStatus::Success);
 
 				// Load the file.
-				return fsImporter->loadFrame(request).then_future([this, fsImporter = std::move(fsImporter), filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
+				return fsImporter->loadFrame(request).then_future([fsImporter = std::move(fsImporter), filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
 					try {
 						request.state = blockDataFuture.result();
 
@@ -177,7 +177,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 			catch(Exception& ex) {
 				// Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
 				request.state.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))));
-				ex.setContext(dataset());
+				ex.setContext(request.dataset);
 				ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
 				ex.reportError();
 				// We treat such an error as recoverable and continue with loading the remaining data blocks. 

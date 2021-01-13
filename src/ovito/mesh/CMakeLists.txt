@@ -36,6 +36,7 @@ SET(SourceFiles
 	io/ParaViewVTPMeshImporter.cpp
 	io/ParaViewVTRSimulationCellImporter.cpp
 	io/ParaViewVTMImporter.cpp
+	io/ParaViewPVDImporter.cpp
 	io/WavefrontOBJImporter.cpp
 	io/STLImporter.cpp
 )

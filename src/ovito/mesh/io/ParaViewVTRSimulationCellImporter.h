@@ -48,7 +48,7 @@ class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImp
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtr"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTR RectilinearGrid File"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView VTR RectilinearGrid Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

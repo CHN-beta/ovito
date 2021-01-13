@@ -24,7 +24,6 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 #include <QXmlStreamReader>
@@ -32,60 +31,65 @@
 namespace Ovito { namespace Mesh {
 
 /**
- * \brief File parser for reading a SurfaceMesh from a ParaView VTP (PolyData) file.
+ * \brief File parser for ParaView data files (PVD).
+ * 
+ * See https://www.paraview.org/Wiki/ParaView/Data_formats
  */
-class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
+class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
 {
 	/// Defines a metaclass specialization for this importer type.
 	class OOMetaClass : public FileSourceImporter::OOMetaClass
 	{
 	public:
+	
 		/// Inherit standard constructor from base meta class.
 		using FileSourceImporter::OOMetaClass::OOMetaClass;
 
 		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
+		virtual QString fileFilter() const override { return QStringLiteral("*.pvd"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTP PolyData Mesh Files"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView PVD Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};
 
-	OVITO_CLASS_META(ParaViewVTPMeshImporter, OOMetaClass)
+	OVITO_CLASS_META(ParaViewPVDImporter, OOMetaClass)
 	Q_OBJECT
 
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTPMeshImporter(DataSet *dataset) : FileSourceImporter(dataset) {}
+	Q_INVOKABLE ParaViewPVDImporter(DataSet *dataset) : FileSourceImporter(dataset) {
+		setMultiTimestepFile(true);
+	}
 
 	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("VTP"); }
+	virtual QString objectTitle() const override { return tr("PVD"); }
 
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
+	/// Loads the data for the given frame from the external file.
+	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
+
+	/// Creates an asynchronous task for scanning the input file for animation frames.
+	virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
+		return std::make_shared<FrameFinder>(file);
 	}
 
 private:
 
-	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public StandardFrameLoader
+	/// The asynchronous task that scans the input file for animation frames.
+	class FrameFinder : public FileSourceImporter::FrameFinder
 	{
 	public:
 
 		/// Inherit constructor from base class.
-		using StandardFrameLoader::StandardFrameLoader;
+		using FileSourceImporter::FrameFinder::FrameFinder;
 
 	protected:
 
-		/// Reads the frame data from the external file.
-		virtual void loadFile() override;
-
-		/// Reads a <DataArray> element and returns it as an OVITO property.
-		PropertyPtr parseDataArray(QXmlStreamReader& xml, int convertToDataType = 0);
+		/// Scans the data file and builds a list of source frames.
+		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
 	};
 };
 

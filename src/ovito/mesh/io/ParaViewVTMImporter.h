@@ -47,7 +47,7 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtm"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView Multi-Block VTM File"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView Multi-Block VTM Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

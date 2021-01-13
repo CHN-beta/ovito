@@ -62,9 +62,29 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file)
 {
 	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
+
+	// This is a cache for the file formats of files that have been loaded before.
+	static std::map<QString, const FileImporterClass*> formatDetectionCache;
+
+	// Mutex for synchronized access to the format detection cache.
+	static QMutex formatDetectionCacheMutex;
+
+	// Check the format cache if we have already detected the format of the same file before.
+	const QString& fileIdentifier = file.localFilePath();
+	QMutexLocker locker(&formatDetectionCacheMutex);
+	auto entry = formatDetectionCache.find(fileIdentifier);
+	if(entry != formatDetectionCache.end())
+		return static_object_cast<FileImporter>(entry->second->createInstance(dataset, executionContext));
+	locker.unlock();
+
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
 			if(importerClass->checkFileFormat(file)) {
+				// Insert detected format into cache to speed up future requests for the same file.
+				locker.relock();
+				formatDetectionCache.emplace(fileIdentifier, importerClass);
+
+				// Instantiate the file importer for this file format.
 				return static_object_cast<FileImporter>(importerClass->createInstance(dataset, executionContext));
 			}
 		}

@@ -323,6 +323,7 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	PipelineEvaluationFuture oldEvaluation = std::move(_pipelineEvaluation);
 	_pipelineEvaluationWatcher.reset();
 	_pipelineEvaluation.reset(animationSettings()->time());
+	_sceneReadyTime = animationSettings()->time();
 
 	sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		// Request visual elements too.
