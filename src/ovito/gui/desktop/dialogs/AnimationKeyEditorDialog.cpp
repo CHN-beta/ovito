@@ -372,7 +372,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	connect(_deleteKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onDeleteKey);
 
 	toolbar->addSeparator();
-	QAction* animSettingsAction = toolbar->addAction(QIcon(":/guibase/actions/animation/animation_settings.png"), tr("Animation settings..."));
+	QAction* animSettingsAction = toolbar->addAction(QIcon(":/guibase/actions/animation/animation_settings.bw.svg"), tr("Animation settings..."));
 	connect(animSettingsAction, &QAction::triggered, [this]() {
 		AnimationSettingsDialog(this->ctrl()->dataset()->animationSettings(), this).exec();
 	});
