@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -107,7 +107,7 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void ColorLegendOverlay::renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings)
+void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation)
 {
 	// Check whether a Color Coding modifier has been wired to this color legend:
 	if(!modifier()) {
@@ -175,17 +175,43 @@ void ColorLegendOverlay::renderImplementation(QPainter& painter, const ViewProje
 	// Get modifier's parameters.
 	FloatType startValue = modifier()->startValue();
 	FloatType endValue = modifier()->endValue();
+	if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
+		// Get the automatically adjusted range of the color coding modifier.
+		// This requires a partial pipeline evaluation up to the color coding modifier.
+		startValue = std::numeric_limits<FloatType>::quiet_NaN();
+		endValue = std::numeric_limits<FloatType>::quiet_NaN();
+		if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
+			QVariant minValue, maxValue;
+			if(!isInteractive) {
+				SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(PipelineEvaluationRequest(time));
+				if(!operation.waitForFuture(stateFuture))
+					return;
+				const PipelineFlowState& state = stateFuture.result();
+				minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+				maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+			}
+			else {
+				const PipelineFlowState& state = modApp->evaluateSynchronous(time);
+				minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+				maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+			}
+			if(minValue.isValid() && maxValue.isValid()) {
+				startValue = minValue.value<FloatType>();
+				endValue = maxValue.value<FloatType>();
+			}
+		}
+	}
 
 	QByteArray format = valueFormatString().toUtf8();
 	if(format.contains("%s")) format.clear();
 
 	QString titleLabel, topLabel, bottomLabel;
 	if(label1().isEmpty())
-		topLabel = QString::asprintf(format.constData(), endValue);
+		topLabel = std::isfinite(endValue) ? QString::asprintf(format.constData(), endValue) : QStringLiteral("###");
 	else
 		topLabel = label1();
 	if(label2().isEmpty())
-		bottomLabel = QString::asprintf(format.constData(), startValue);
+		bottomLabel = std::isfinite(startValue) ? QString::asprintf(format.constData(), startValue) : QStringLiteral("###");
 	else
 		bottomLabel = label2();
 	if(title().isEmpty())

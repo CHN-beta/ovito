@@ -106,7 +106,7 @@ StatusWidget* ModifierPropertiesEditor::statusLabel()
 /******************************************************************************
 * Returns the list of ModifierApplications of the modifier currently being edited.
 ******************************************************************************/
-QVector<ModifierApplication*> ModifierPropertiesEditor::modifierApplications()
+QVector<ModifierApplication*> ModifierPropertiesEditor::modifierApplications() const
 {
 	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject()))
 		return modifier->modifierApplications();
@@ -120,7 +120,7 @@ QVector<ModifierApplication*> ModifierPropertiesEditor::modifierApplications()
 * Return the input data of the Modifier being edited (for the current
 * ModifierApplication).
 ******************************************************************************/
-PipelineFlowState ModifierPropertiesEditor::getModifierInput()
+PipelineFlowState ModifierPropertiesEditor::getModifierInput() const
 {
 	if(ModifierApplication* modApp = modifierApplication()) {
 		return modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
@@ -132,7 +132,7 @@ PipelineFlowState ModifierPropertiesEditor::getModifierInput()
 * Return the output data of the Modifier being edited (for the current
 * ModifierApplication).
 ******************************************************************************/
-PipelineFlowState ModifierPropertiesEditor::getModifierOutput()
+PipelineFlowState ModifierPropertiesEditor::getModifierOutput() const
 {
 	if(ModifierApplication* modApp = modifierApplication()) {
 		return modApp->evaluateSynchronous(dataset()->animationSettings()->time());

@@ -47,12 +47,12 @@ public:
 	/// This method asks the overlay to paint its contents over the rendered image.
 	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
 		QPainter painter(&frameBuffer->image());
-		renderImplementation(painter, projParams, renderSettings);
+		renderImplementation(time, painter, projParams, renderSettings, false, std::move(operation));
 	}
 
 	/// This method asks the overlay to paint its contents over the given interactive viewport.
 	virtual void renderInteractive(const Viewport* viewport, TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		renderImplementation(painter, projParams, renderSettings);
+		renderImplementation(time, painter, projParams, renderSettings, true, std::move(operation));
 	}
 
 	/// Moves the position of the overlay in the viewport by the given amount,
@@ -69,7 +69,7 @@ public:
 private:
 
 	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings);
+	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation);
 
 	/// The corner of the viewport where the color legend is displayed.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,10 +69,8 @@ public:
 
 public:
 
-	Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue)
-	Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue)
+	Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue);
+	Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue);
 };
 
 }	// End of namespace
-
-

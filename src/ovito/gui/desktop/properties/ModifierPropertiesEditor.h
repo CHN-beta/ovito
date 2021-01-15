@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,13 +51,13 @@ public:
 	StatusWidget* statusLabel();
 
 	/// Returns the list of all ModifierApplications of the modifier currently being edited.
-	QVector<ModifierApplication*> modifierApplications();
+	QVector<ModifierApplication*> modifierApplications() const;
 
 	/// Return the input data of the Modifier being edited (for the selected ModifierApplication).
-	PipelineFlowState getModifierInput();
+	PipelineFlowState getModifierInput() const;
 
 	/// Return the output data of the Modifier being edited (for the selected ModifierApplication).
-	PipelineFlowState getModifierOutput();
+	PipelineFlowState getModifierOutput() const;
 
 Q_SIGNALS:
 

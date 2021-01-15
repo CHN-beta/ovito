@@ -150,10 +150,12 @@ Q_SIGNALS:
 	/// \brief This signal is emitted by the spinner when the user has aborted the drag operation.
 	void spinnerDragAbort();
 
-protected Q_SLOTS:
+public Q_SLOTS:
 
 	/// \brief Updates the text of the connected text box after the spinner's value has changed.
 	virtual void updateTextBox();
+
+protected Q_SLOTS:
 
 	/// \brief Is called when the user has entered a new text into the text box.
 	///
@@ -214,5 +216,3 @@ protected:
 };
 
 }	// End of namespace
-
-

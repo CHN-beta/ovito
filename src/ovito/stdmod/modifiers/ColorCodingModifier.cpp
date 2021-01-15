@@ -21,12 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
+#include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
@@ -54,12 +55,14 @@ DEFINE_REFERENCE_FIELD(ColorCodingModifier, endValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, colorGradient);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, colorOnlySelected);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, keepSelection);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, autoAdjustRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, sourceProperty);
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValueController, "Start value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValueController, "End value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorOnlySelected, "Color only selected elements");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatically adjust range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
 
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
@@ -70,7 +73,8 @@ DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 ******************************************************************************/
 ColorCodingModifier::ColorCodingModifier(DataSet* dataset) : DelegatingModifier(dataset),
 	_colorOnlySelected(false),
-	_keepSelection(true)
+	_keepSelection(true),
+	_autoAdjustRange(false)
 {
 }
 
@@ -83,6 +87,10 @@ void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 	setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), executionContext));
 	setStartValueController(ControllerManager::createFloatController(dataset(), executionContext));
 	setEndValueController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	// When the modifier is created by a Python script, enable automatic range adjustment.
+	if(executionContext == ExecutionContext::Scripting)
+		setAutoAdjustRange(true);
 
 	// Let this modifier act on particles by default.
 	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), executionContext);
@@ -118,8 +126,10 @@ void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 TimeInterval ColorCodingModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
 {
 	TimeInterval iv = DelegatingModifier::validityInterval(request, modApp);
-	if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
-	if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
+	if(!autoAdjustRange()) {
+		if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
+		if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
+	}
 	return iv;
 }
 
@@ -142,11 +152,10 @@ void ColorCodingModifier::initializeModifier(ModifierApplication* modApp)
 			if(!bestProperty.isNull())
 				setSourceProperty(bestProperty);
 		}
-	}
 
-	// Automatically adjust value range.
-	if(startValue() == 0 && endValue() == 0)
+		// Automatically adjust value range to input.
 		adjustRange();
+	}
 }
 
 /******************************************************************************
@@ -164,7 +173,7 @@ void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor& field
 /******************************************************************************
 * Determines the range of values in the input data for the selected property.
 ******************************************************************************/
-bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max)
+bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const
 {
 	if(!delegate())
 		return false;
@@ -330,17 +339,30 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 		}
 	}
 
-	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, Application::instance()->executionContext(), objectPath);
-
 	// Get modifier's parameter values.
 	FloatType startValue = 0, endValue = 0;
-	if(mod->startValueController()) startValue = mod->startValueController()->getFloatValue(time, state.mutableStateValidity());
-	if(mod->endValueController()) endValue = mod->endValueController()->getFloatValue(time, state.mutableStateValidity());
+
+	if(mod->autoAdjustRange()) {
+		FloatType minValue = std::numeric_limits<FloatType>::max();
+		FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+		if(mod->determinePropertyValueRange(state, minValue, maxValue)) {
+			startValue = minValue;
+			endValue = maxValue;
+			state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, modApp);
+			state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, modApp);
+		}
+	}
+	else {
+		if(mod->startValueController()) startValue = mod->startValueController()->getFloatValue(time, state.mutableStateValidity());
+		if(mod->endValueController()) endValue = mod->endValueController()->getFloatValue(time, state.mutableStateValidity());
+	}
 
 	// Clamp to finite range.
 	if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
 	if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
+
+	// Create the color output property.
+    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, Application::instance()->executionContext(), objectPath);
 
 	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
 	bool result = property->forEach(vecComponent, [&](size_t i, auto v) {

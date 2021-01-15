@@ -374,7 +374,7 @@ protected:
 	virtual void initializeModifier(ModifierApplication* modApp) override;
 
 	/// Determines the range of values in the input data for the selected property.
-	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max);
+	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
@@ -398,6 +398,11 @@ private:
 
 	/// Controls whether the input selection is preserved. If false, the selection is cleared by the modifier.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
+
+	/// Controls whether the value range of the color map is automically adjusted to the range of input values.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustRange, setAutoAdjustRange);
+
+	friend class ColorCodingModifierDelegate;
 };
 
 }	// End of namespace
