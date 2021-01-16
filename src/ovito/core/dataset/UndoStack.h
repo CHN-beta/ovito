@@ -261,6 +261,13 @@ public:
 		return !isSuspended() && _compoundStack.empty() == false; 
 	}
 
+	/// \brief Returns whether the manager is currently recording undoable operations.
+	/// \return \c true if this method is called from the main thread and if the UndoStack currently records any changes made to the scene on its stack.
+	///         \c false if changes to the scene are ignored by the UndoStack or if this method is called from a worker thread.
+	bool isRecordingThread() const {
+		return (QThread::currentThread() == this->thread()) && isRecording(); 
+	}
+
 	/// \brief Records a single operation.
 	/// \param operation An instance of a UndoableOperation derived class that encapsulates
 	///                  the operation. The UndoStack becomes the owner of

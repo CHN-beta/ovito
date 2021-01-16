@@ -25,7 +25,7 @@
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR 		"3")
 SET(OVITO_VERSION_MINOR 		"3")
-SET(OVITO_VERSION_REVISION		"5")
+SET(OVITO_VERSION_REVISION		"6")
 
 # Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
@@ -35,46 +35,29 @@ SET(OVITO_VERSION_REVISION		"5")
 #
 SET(OVITO_FILE_FORMAT_VERSION	"30007")
 
-# Extract revision number from Git repository in order to tag development builds of OVITO.
+# The application's default version string:
+SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")
+
+# Extract revision number from Git repository to tag development builds of OVITO.
 FIND_PACKAGE(Git)
 IF(GIT_FOUND AND OVITO_USE_GIT_REVISION_NUMBER)
-	# Count the number of commits since the most recent git tag.
-	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} "describe"
+	# Get the current commit hash:
+	EXECUTE_PROCESS(COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD"
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-		RESULT_VARIABLE GIT_RESULT_VAR
-		OUTPUT_VARIABLE OVITO_VERSION_STRING
+		RESULT_VARIABLE GIT_RESULT_VAR1
+		OUTPUT_VARIABLE GIT_COMMIT_REV_STRING
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 		ERROR_QUIET)
-	IF(GIT_RESULT_VAR STREQUAL "0")
-		STRING(REGEX REPLACE "v[0-9.]*" "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}" OVITO_VERSION_STRING "${OVITO_VERSION_STRING}")
-		STRING(REGEX REPLACE "-g[A-Fa-f0-9]*" "" OVITO_VERSION_STRING "${OVITO_VERSION_STRING}")
-		STRING(REGEX REPLACE "-" "-dev" OVITO_VERSION_STRING "${OVITO_VERSION_STRING}")
-	ELSE()
-		# If there is no tag in this branch, count the number of commits since the very beginning.
-		# This is the case for the ovito-pro repository, which has no tags yet.
-		IF("${GIT_VERSION_STRING}" VERSION_LESS "1.7.3")
-			# Workaround for old git versions which don't support the --count option.
-			# We use "wc -l" instead to count the number of commits.
-			EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} "rev-list" "HEAD"
-				COMMAND  "wc" "-l"
-				WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-				RESULT_VARIABLE GIT_RESULT_VAR
-				OUTPUT_VARIABLE GIT_REVISION_NUMBER
-				OUTPUT_STRIP_TRAILING_WHITESPACE)
-		ELSE()
-			EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} "rev-list" "--count" "HEAD"
-				WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-				RESULT_VARIABLE GIT_RESULT_VAR
-				OUTPUT_VARIABLE GIT_REVISION_NUMBER
-				OUTPUT_STRIP_TRAILING_WHITESPACE)
-		ENDIF()
-		IF(NOT GIT_RESULT_VAR STREQUAL "0")
-			MESSAGE(FATAL "Failed to run git rev-list: ${GIT_RESULT_VAR}")
-		ENDIF()
-		SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}-dev${GIT_REVISION_NUMBER}")
+	# Get the current git branch:
+	EXECUTE_PROCESS(COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--abbrev-ref" "HEAD"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		RESULT_VARIABLE GIT_RESULT_VAR2
+		OUTPUT_VARIABLE GIT_BRANCH_REV_STRING
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET)
+	IF(GIT_RESULT_VAR1 STREQUAL "0" AND GIT_RESULT_VAR2 STREQUAL "0")
+		SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}-dev-${GIT_BRANCH_REV_STRING}-${GIT_COMMIT_REV_STRING}")
 	ENDIF()
-ELSE()
-	SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")
 ENDIF()
 
 # The application's name shown in the main window's title bar:

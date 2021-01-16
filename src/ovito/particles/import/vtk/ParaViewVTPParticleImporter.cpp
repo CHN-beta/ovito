@@ -22,13 +22,20 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/grid/io/ParaViewVTIGridImporter.h>
+#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/core/dataset/data/DataObjectAccess.h>
+#include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
 
 namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPParticleImporter);
+IMPLEMENT_OVITO_CLASS(ParticlesParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -124,6 +131,20 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 					int vectorComponent = -1;
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent)) {
 						ParaViewVTIGridImporter::parseVTKDataArray(property, vectorComponent, xml);
+
+						// Create particle types if this is a typed property.
+						if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
+							for(int t : ConstPropertyAccess<int>(property)) {
+								if(!property->elementType(t)) {
+									DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset(), executionContext()));
+									elementType->setNumericId(t);
+									elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property), executionContext());
+									if(elementTypeClass == &ParticleType::OOClass())
+										loadParticleShape(static_object_cast<ParticleType>(elementType.get()));
+									property->addElementType(std::move(elementType));
+								}
+							}
+						}
 					}
 					if(xml.tokenType() != QXmlStreamReader::EndElement)
 						xml.skipCurrentElement();
@@ -189,13 +210,19 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");
 
-	if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
+	if(name.compare(QLatin1String("connectivity"), Qt::CaseInsensitive) == 0 || name.compare(QLatin1String("offsets"), Qt::CaseInsensitive) == 0) {
+		return nullptr;
+	}
+	else if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
 		return particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	}
 	else if(name.compare(QLatin1String("id"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 	}
 	else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+		return particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	}
+	else if(name.compare(QLatin1String("shapetype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	}
 	else if(name.compare(QLatin1String("mass"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
@@ -246,6 +273,110 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
 		return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);
 	}
 	return nullptr;
+}
+
+/******************************************************************************
+* Helper method that loads the shape of a particle type from an external geometry file.
+******************************************************************************/
+void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* particleType)
+{
+	OVITO_ASSERT(dataset()->undoStack().isRecordingThread() == false);
+
+	// According to Aspherix convention, particle type -1 has no shape.
+	if(particleType->numericId() < 0 || particleType->numericId() >= _particleShapeFiles.size())
+		return;
+
+	// Adopt the particle type name from the VTM file.
+	particleType->setName(_particleShapeFiles[particleType->numericId()].first);
+
+	// Set radius of particle type to 1.0 to always get correct scaling of shape geometry.
+	particleType->setRadius(1.0);
+
+	// Fetch the shape geometry file, then continue in main thread.
+	// Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
+	const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].second;
+	Future<PipelineFlowState> stateFuture = Application::instance()->fileManager()->fetchUrl(*taskManager(), geometryFileUrl).then(particleType->executor(executionContext()), [particleType,dataSource=dataSource()](const FileHandle& fileHandle) {
+
+		// Detect geometry file format and create an importer for it.
+		// Note: For loading particle shape geometries we only accept FileSourceImporters.
+		ExecutionContext executionContext = Application::instance()->executionContext();
+		OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(particleType->dataset(), executionContext, fileHandle));
+		if(!importer)
+			return Future<PipelineFlowState>::createImmediateEmpty();
+
+		// Set up a file load request to be passed to the importer.
+		LoadOperationRequest request;
+		request.dataset = particleType->dataset();
+		request.dataSource = dataSource;
+		request.fileHandle = fileHandle;
+		request.frame = Frame(fileHandle);
+		request.state = PipelineFlowState(DataOORef<const DataCollection>::create(particleType->dataset(), executionContext), PipelineStatus::Success);
+
+		// Let the importer parse the geometry file.
+		return importer->loadFrame(request);
+	});
+	if(!waitForFuture(stateFuture))
+		return;
+
+	// Check if the importer has loaded any data.
+	PipelineFlowState state = stateFuture.result();
+	if(!state || state.status().type() == PipelineStatus::Error)
+		return;
+
+	// Look for a triangle mesh or a surface mesh.
+	DataObjectAccess<DataOORef, TriMeshObject> meshObj = state.getObject<TriMeshObject>();
+	if(!meshObj || !meshObj->mesh()) {
+		if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
+			// Convert surface mesh to triangle mesh.
+			std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
+			SurfaceMeshAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
+			meshObj.reset(DataOORef<TriMeshObject>::create(surfaceMesh->dataset(), ExecutionContext::Scripting));
+			meshObj.makeMutable()->setMesh(std::move(triMesh));
+			meshObj.makeMutable()->setVisElement(nullptr);
+		}
+		else return;
+	}
+	state.reset();
+
+	// Show sharp edges of the mesh.
+	meshObj.makeMutable()->modifiableMesh()->determineEdgeVisibility();
+
+	particleType->setShapeMesh(meshObj.take());
+	particleType->setShape(ParticlesVis::Mesh);
+
+	// Aspherix particle geometries seem no to have a consistent face winding order. 
+	// Need to turn edge highlighting and backface culling off by default.
+	particleType->setShapeBackfaceCullingEnabled(false);
+	particleType->setHighlightShapeEdges(false);
+}
+
+/******************************************************************************
+* Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+******************************************************************************/
+void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<std::pair<QStringList, QUrl>>& blockDatasets)
+{
+	// Remove those datasets from the multi-block structure that represent particle shapes.
+	// Keep a list of these removed datasets for later to load them together with the particles dataset.
+	blockDatasets.erase(std::remove_if(blockDatasets.begin(), blockDatasets.end(), [this](const auto& blockDataset) {
+		if(blockDataset.first.size() == 2 && blockDataset.first[0] == QStringLiteral("Convex shapes")) {
+			// Store the particle type name and the URL of the type's shape file in the internal list.
+			_particleShapeFiles.emplace_back(blockDataset.first[1], std::move(blockDataset.second));
+			return true;
+		}
+		return false;
+	}), blockDatasets.end());
+}
+
+/******************************************************************************
+* Is called before parsing of a dataset reference in a multi-block VTM file begins.
+******************************************************************************/
+void ParticlesParaViewVTMFileFilter::configureImporter(const QStringList& blockPath, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
+{
+	// Pass the list of particle shape files to be loaded to the VTP particle importer, which will take care
+	// of loading the files.
+	if(ParaViewVTPParticleImporter* particleImporter = dynamic_object_cast<ParaViewVTPParticleImporter>(importer)) {
+		particleImporter->setParticleShapeFileList(std::move(_particleShapeFiles));
+	}
 }
 
 }	// End of namespace

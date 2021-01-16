@@ -347,6 +347,14 @@ void GroImporter::FrameLoader::loadFile()
 	typeProperty.buffer()->sortElementTypesByName();
 	residueTypeProperty.buffer()->sortElementTypesByName();
 
+	// Release property accessors.
+	posProperty.reset();
+	residueTypeProperty.reset();
+	residueNumberProperty.reset();
+	typeProperty.reset();
+	identifierProperty.reset();
+	velocityProperty.reset();
+
 	// Parse simulation cell definition.
 	AffineTransformation cell = AffineTransformation::Identity();
 	if(sscanf(stream.readLine(), 

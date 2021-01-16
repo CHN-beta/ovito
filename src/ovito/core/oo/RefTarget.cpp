@@ -24,6 +24,7 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/Application.h>
 #include "RefTarget.h"
 
 namespace Ovito {
@@ -251,6 +252,15 @@ void RefTarget::unsetObjectEditingFlag()
 bool RefTarget::isObjectBeingEdited() const
 {
 	return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
+}
+
+/******************************************************************************
+* Returns an executor object to be used with Future<>::then(), which executes work
+* in the context (and the thread) of this object.
+******************************************************************************/
+RefTargetExecutor RefTarget::executor() const
+{
+	return executor(Application::instance()->executionContext());
 }
 
 }	// End of namespace

@@ -61,7 +61,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 ******************************************************************************/
 OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file)
 {
-	OVITO_ASSERT(dataset->undoStack().isRecording() == false);
+	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
 
 	// This is a cache for the file formats of files that have been loaded before.
 	static std::map<QString, const FileImporterClass*> formatDetectionCache;
@@ -101,10 +101,9 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Executi
 ******************************************************************************/
 void FileImporter::activateCLocale()
 {
-	// Note: This function may only be called from the main thread.
-	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
-
-	std::setlocale(LC_ALL, "C");
+	// The setlocale() function is not thread-safe and should only be called from the main thread.
+	if(QThread::currentThread() == QCoreApplication::instance()->thread())
+		std::setlocale(LC_ALL, "C");
 }
 
 /******************************************************************************

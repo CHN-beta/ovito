@@ -122,6 +122,7 @@ void ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
 	}
 
 	simulationCell()->setCellMatrix(cellMatrix);
+	simulationCell()->setPbcFlags(false, false, false);
 
 	// Call base implementation.
 	StandardFrameLoader::loadFile();

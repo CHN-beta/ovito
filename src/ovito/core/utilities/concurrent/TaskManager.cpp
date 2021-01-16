@@ -350,6 +350,9 @@ bool TaskManager::waitForTaskUIThread(const TaskPtr& task, const TaskPtr& depend
 ******************************************************************************/
 bool TaskManager::waitForTaskNonUIThread(const TaskPtr& task, const TaskPtr& dependentTask)
 {
+	// This method is only called when running in a background worker thread.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread());
+
 	// Create local task watchers.
 	TaskWatcher watcher;
 	TaskWatcher dependentWatcher;

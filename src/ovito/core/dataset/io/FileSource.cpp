@@ -513,6 +513,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					loadRequest.dataSource = this;
 					loadRequest.fileHandle = fileHandle;
 					loadRequest.frame = frameInfo;
+					loadRequest.executionContext = Application::instance()->executionContext();
 					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
 					loadRequest.state.setData(dataCollection() 
 						? DataOORef<const DataCollection>(dataCollection()) 

@@ -115,7 +115,7 @@ public:
 		bool isNewlyImportedFile = true;
 
 		/// Type of execution context (interactive/scripting) in which the load operation runs.
-		ExecutionContext executionContext = Application::instance()->executionContext();
+		ExecutionContext executionContext = ExecutionContext::Scripting;
 	};
 
 	/**

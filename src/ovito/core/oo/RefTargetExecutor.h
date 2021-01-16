@@ -27,6 +27,7 @@
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
 #include <ovito/core/utilities/concurrent/MainThreadTask.h>
+#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -45,7 +46,7 @@ private:
 	protected:
 
 		/// Constructor.
-		explicit WorkEventBase(const RefTarget* obj);
+		explicit WorkEventBase(const RefTarget* obj, ExecutionContext executionContext);
 
 		/// Determines whether work can be executed in the context of the OvitoObject or not.
 		bool needToCancelWork() const;
@@ -61,7 +62,7 @@ private:
 		QPointer<RefTarget> _obj;
 
 		/// The execution context (interactive or scripting) under which the work has been submitted.
-		int _executionContext;
+		ExecutionContext _executionContext;
 	};
 
 	/// Helper class that is used by this executor to transmit a callable object
@@ -72,8 +73,8 @@ private:
 	public:
 
 		/// Constructor.
-		WorkEvent(const RefTarget* obj, F&& callable) :
-			WorkEventBase(obj), _callable(std::move(callable)) {}
+		WorkEvent(const RefTarget* obj, ExecutionContext executionContext, F&& callable) :
+			WorkEventBase(obj, executionContext), _callable(std::move(callable)) {}
 
 		/// Destructor.
 		virtual ~WorkEvent() {
@@ -122,13 +123,13 @@ public:
 public:
 
 	/// \brief Constructor.
-	RefTargetExecutor(const RefTarget* obj) noexcept : _obj(obj) { OVITO_ASSERT(obj); }
+	RefTargetExecutor(const RefTarget* obj, ExecutionContext executionContext) noexcept : _obj(obj), _executionContext(executionContext) { OVITO_ASSERT(obj); }
 
 	/// \brief Create some work that can be submitted for execution later.
 	template<typename F>
 	Work createWork(F&& f) {
 		OVITO_ASSERT(_obj != nullptr);
-		return Work(std::make_unique<WorkEvent<F>>(_obj, std::forward<F>(f)));
+		return Work(std::make_unique<WorkEvent<F>>(_obj, _executionContext, std::forward<F>(f)));
 	}
 
 	/// \brief Returns the task manager that provides the context for tasks created by this executor.
@@ -146,7 +147,11 @@ public:
 
 private:
 
+	/// The object the work is submitted to.
 	const RefTarget* _obj = nullptr;
+
+	/// The execution context (interactive or scripting) under which the work has been submitted.
+	ExecutionContext _executionContext;
 
 	friend class Application;
 };

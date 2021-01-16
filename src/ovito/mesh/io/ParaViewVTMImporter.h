@@ -31,6 +31,29 @@
 namespace Ovito { namespace Mesh {
 
 /**
+ * \brief Abstract base class for filters that can customize the loading of VTM files. 
+ */
+class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
+{
+	Q_OBJECT
+	OVITO_CLASS(ParaViewVTMFileFilter)
+
+public:
+
+	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+	virtual void preprocessDatasets(std::vector<std::pair<QStringList, QUrl>>& blockDatasets) {}
+
+	/// \brief Is called for every dataset referenced in a multi-block VTM file.
+	virtual Future<> loadDataset(const QStringList& blockPath, const FileHandle& referencedFile, const FileSourceImporter::LoadOperationRequest& loadRequest) { return {}; }
+
+	/// \brief Is called before parsing of a dataset reference in a multi-block VTM file begins.
+	virtual void configureImporter(const QStringList& blockPath, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) {}
+
+	/// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
+	virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) {}
+};
+
+/**
  * \brief File parser for ParaView Multi-Block files (VTM).
  */
 class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
@@ -70,7 +93,7 @@ public:
 private:
 
 	/// Parses the given VTM file and returns the list of referenced data files.
-	static std::vector<std::pair<QUrl, QString>> loadVTMFile(const FileHandle& fileHandle);
+	static std::vector<std::pair<QStringList, QUrl>> loadVTMFile(const FileHandle& fileHandle);
 };
 
 }	// End of namespace

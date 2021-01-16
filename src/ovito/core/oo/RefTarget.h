@@ -220,7 +220,11 @@ public:
 
 	/// Returns an executor object to be used with Future<>::then(), which executes work
 	/// in the context (and the thread) of this object.
-	RefTargetExecutor executor() const { return RefTargetExecutor(this); }
+	RefTargetExecutor executor(ExecutionContext executionContext) const { return RefTargetExecutor(this, executionContext); }
+
+	/// Returns an executor object to be used with Future<>::then(), which executes work
+	/// in the context (and the thread) of this object.
+	RefTargetExecutor executor() const;
 
 	/// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
 	/// \param oldAnimationInterval The old animation interval, which should be mapped to the new animation interval.

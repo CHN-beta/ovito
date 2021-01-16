@@ -292,10 +292,9 @@ bool FileExporter::exportFrame(int frameNumber, TimePoint time, const QString& f
 ******************************************************************************/
 void FileExporter::activateCLocale()
 {
-	// Note: This function may only be called from the main thread.
-	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
-
-	std::setlocale(LC_ALL, "C");
+	// The setlocale() function is not thread-safe and should only be called from the main thread.
+	if(QThread::currentThread() == QCoreApplication::instance()->thread())
+		std::setlocale(LC_ALL, "C");
 }
 
 /******************************************************************************

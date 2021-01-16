@@ -32,7 +32,7 @@
 namespace Ovito { namespace Mesh {
 
 /**
- * \brief File parser for reading the simulation cell geometry from a ParaView VTR (RectilinearGrid) file.
+ * \brief File parser for reading the simulation cell geometry from a ParaView VTR (RectilinearGrid) file as written by the Aspherix simulation code.
  */
 class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImporter
 {
@@ -48,7 +48,7 @@ class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImp
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtr"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTR RectilinearGrid Files"); }
+		virtual QString fileFilterDescription() const override { return tr("Aspherix VTR Simulation Cell Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

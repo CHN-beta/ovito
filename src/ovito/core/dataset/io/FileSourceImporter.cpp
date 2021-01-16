@@ -351,6 +351,8 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
+	OVITO_ASSERT(!dataset()->undoStack().isRecordingThread());
+
 	// Create the frame loader for the requested frame.
 	FrameLoaderPtr frameLoader = createFrameLoader(request);
 	OVITO_ASSERT(frameLoader);
@@ -362,7 +364,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	// input file being loaded, automatically turn on scanning of the input file.
 	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
 	if(request.isNewlyImportedFile) {
-		// Note: Changing a parameter of the file importer must be done in the main thread.
+		// Note: Changing a parameter of the file importer must be done in the correct thread.
 		future.finally(executor(), [this](TaskPtr task) {
 			if(!task->isCanceled()) {
 				FrameLoader* frameLoader = static_cast<FrameLoader*>(task.get());

@@ -27,12 +27,14 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParaViewVTMImporter.h"
 
 namespace Ovito { namespace Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
+IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -61,7 +63,7 @@ bool ParaViewVTMImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 /******************************************************************************
 * Parses the given VTM file and returns the list of referenced data files.
 ******************************************************************************/
-std::vector<std::pair<QUrl, QString>> ParaViewVTMImporter::loadVTMFile(const FileHandle& fileHandle)
+std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const FileHandle& fileHandle)
 {
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle.createIODevice();
@@ -69,29 +71,54 @@ std::vector<std::pair<QUrl, QString>> ParaViewVTMImporter::loadVTMFile(const Fil
 		throw Exception(tr("Failed to open VTM file: %1").arg(device->errorString()));
 	QXmlStreamReader xml(device.get());
 
+	// The list of <DataSet> elements found in the file.
+	std::vector<std::pair<QStringList, QUrl>> datasetList;
+	// The current branch in the block hierarchy.
+	QStringList blockBranch;
+
 	// Parse the elements of the XML file.
-	std::vector<std::pair<QUrl, QString>> blocks;
-	while(xml.readNextStartElement()) {
-		if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
-			if(xml.attributes().value("type").compare(QStringLiteral("vtkMultiBlockDataSet")) != 0)
-				xml.raiseError(tr("VTM file is not of type vtkMultiBlockDataSet."));
-		}
-		else if(xml.name().compare(QStringLiteral("vtkMultiBlockDataSet")) == 0) {
-			// Do nothing. Parse child elements.
-		}
-		else if(xml.name().compare(QStringLiteral("DataSet")) == 0) {
-
-			// Get value of 'file' attribute.
-			QString file = xml.attributes().value("file").toString();
-			if(!file.isEmpty()) {
-				// Resolve file path and record URL, which will be loaded later.
-				blocks.emplace_back(fileHandle.sourceUrl().resolved(QUrl(file)), xml.attributes().value("name").toString());
+	while(!xml.atEnd()) {
+		while(xml.readNextStartElement()) {
+			if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
+				if(xml.attributes().value("type").compare(QStringLiteral("vtkMultiBlockDataSet")) != 0)
+					xml.raiseError(tr("VTM file is not of type vtkMultiBlockDataSet."));
 			}
+			else if(xml.name().compare(QStringLiteral("vtkMultiBlockDataSet")) == 0) {
+				// Do nothing. Parse child elements.
+			}
+			else if(xml.name().compare(QStringLiteral("Block")) == 0) {
 
-			xml.skipCurrentElement();
+				// Get value of 'name' attribute.
+				blockBranch.push_back(xml.attributes().value("name").toString());
+
+				// Continue by parsing child elements.
+			}
+			else if(xml.name().compare(QStringLiteral("DataSet")) == 0) {
+
+				// Get value of 'file' attribute.
+				QString file = xml.attributes().value("file").toString();
+				if(!file.isEmpty()) {
+					// The current path in the block hierarchy:
+					QStringList path = blockBranch;
+					path.append(xml.attributes().value("name").toString());
+
+					// Resolve file path and record URL, which will be loaded later.
+					datasetList.emplace_back(std::move(path), fileHandle.sourceUrl().resolved(QUrl(file)));
+				}
+
+				xml.skipCurrentElement();
+			}
+			else {
+				xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+			}
 		}
-		else {
-			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+		if(xml.tokenType() == QXmlStreamReader::EndElement) {
+			if(xml.name().compare(QStringLiteral("Block")) == 0) {
+				blockBranch.pop_back();
+			}
+			else if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
+				break;
+			}
 		}
 	}
 
@@ -101,7 +128,7 @@ std::vector<std::pair<QUrl, QString>> ParaViewVTMImporter::loadVTMFile(const Fil
 			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
 
-	return blocks;
+	return datasetList;
 }
 
 /******************************************************************************
@@ -109,10 +136,21 @@ std::vector<std::pair<QUrl, QString>> ParaViewVTMImporter::loadVTMFile(const Fil
 ******************************************************************************/
 Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequest& request)
 {
-	// Resize property containers to zero element in the existing pipeline state.
-	// This is mainly to remove the particles in animation frame in wich the VTM file 
-	// contains empty data blocks.
-	LoadOperationRequest modifiedRequest = request;
+	OVITO_ASSERT(dataset()->undoStack().isRecordingThread() == false);
+
+	struct ExtendedLoadRequest : public LoadOperationRequest {
+		/// Constructor.
+		ExtendedLoadRequest(const LoadOperationRequest& other) : LoadOperationRequest(other) {}
+		/// The multi-block hierarchy path of the current dataset being loaded.
+		QStringList blockPath;
+		/// Plugin filters processing the datasets referenced by the VTM file.
+		std::vector<OORef<ParaViewVTMFileFilter>> filters;
+	};
+
+	// Resize property containers to zero elements in the existing pipeline state.
+	// This is mainly done to remove the existing particles in those animation frames in which the VTM file 
+	// has empty data blocks.
+	ExtendedLoadRequest modifiedRequest(request);
 	for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
 		if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(obj)) {
 			PropertyContainer* mutableContainer = modifiedRequest.state.mutableData()->makeMutable(container);
@@ -121,29 +159,48 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	}
 
 	// Load the VTM file, which contains the list of referenced data files.
-	std::vector<std::pair<QUrl, QString>> blocks = loadVTMFile(request.fileHandle);
+	std::vector<std::pair<QStringList, QUrl>> blockDatasets = loadVTMFile(request.fileHandle);
 
-	// Load each data block referenced in the VTM file. 
-	Future<LoadOperationRequest> future = for_each(std::move(modifiedRequest), std::move(blocks), dataset()->executor(), [](const std::pair<QUrl, QString>& block, LoadOperationRequest& request) {
+	// Create filter objects.
+	static const QVector<OvitoClassPtr> filterClassList = PluginManager::instance().listClasses(ParaViewVTMFileFilter::OOClass());
+	for(OvitoClassPtr clazz : filterClassList) {
+		modifiedRequest.filters.push_back(static_object_cast<ParaViewVTMFileFilter>(clazz->createInstance()));
+
+		// Let the plugin filter objects preprocess the multi-block structure before the referenced data files bget loaded.
+		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets);
+	}
+
+	// Load each dataset referenced by the VTM file. 
+	Future<ExtendedLoadRequest> future = for_each(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(), [](const std::pair<QStringList, QUrl>& blockDataset, ExtendedLoadRequest& request) {
 
 		// Set up the load request submitted to the FileSourceImporter.
-		request.dataBlockPrefix = block.second;
+		request.dataBlockPrefix = blockDataset.first.back();
+		request.blockPath = blockDataset.first;
 
 		// Retrieve the data file.
-		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), block.first).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockDataset.second).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
 			try {
-				// Detect file format and create an importer for it.
+				// Obtain a handle to the referenced data file.
 				const FileHandle& file = fileFuture.result();
-				OORef<FileImporter> importer = FileImporter::autodetectFileFormat(request.dataset, request.executionContext, file);
 
+				// Give plugin filter objects the possibility to override the loading of the data file.
+				for(const auto& filter : request.filters) {
+					Future<> future = filter->loadDataset(request.blockPath, file, request);
+					if(future.isValid())
+						return future;
+				}
+				// If none of the filter objects decided to handle the loading process, fall back to our standard procedure,
+				// which consists of detecting the file's format and delegating the file parsing to the corresponding FileSourceImporter class.
+
+				// Detect file format and create an importer for it.
 				// This currently works only for FileSourceImporters.
-				// Files formats handled by other kinds of importers will be skipped.
-				OORef<FileSourceImporter> fsImporter = dynamic_object_cast<FileSourceImporter>(std::move(importer));
-				if(!fsImporter)
+				// Files handled by other kinds of importers will be skipped.
+				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataset, request.executionContext, file));
+				if(!importer)
 					return Future<>::createImmediateEmpty();
 
-				// Remember the current status returned by the load operations performed so far.
-				// We will prepend this existing status to the one generated by the current file importer.
+				// Remember the current status returned by the loading operations completed so far.
+				// We will prepend this existing status text to the one generated by the current file importer.
 				PipelineStatus lastStatus = request.state.status();
 
 				// Set up the load request submitted to the FileSourceImporter.
@@ -151,8 +208,14 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				request.fileHandle = file;
 				request.state.setStatus(PipelineStatus::Success);
 
-				// Load the file.
-				return fsImporter->loadFrame(request).then_future([fsImporter = std::move(fsImporter), filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
+				// Give plugin filter objects the possibility to pass additional information to the specific FileSourceImporter.
+				for(const auto& filter : request.filters)
+					filter->configureImporter(request.blockPath, request, importer);
+
+				// Parse the referenced file.
+				// Note: We need to keep the FileSourceImporter object while the asynchronous parsing process is 
+				// in progress. That's why we store an otherwise unused pointer to it in the lambda function. 
+				return importer->loadFrame(request).then_future([importer, filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
 					try {
 						request.state = blockDataFuture.result();
 
@@ -162,6 +225,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 							if(!statusString.isEmpty() && !statusString.endsWith(QChar('\n'))) statusString += QChar('\n');
 							statusString += request.state.status().text();
 						}
+
 						// Also calculate a combined status code.
 						PipelineStatus::StatusType statusType = lastStatus.type();
 						if(statusType == PipelineStatus::Success || (statusType == PipelineStatus::Warning && request.state.status().type() == PipelineStatus::Error))
@@ -186,7 +250,13 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		});
 	});
 
-	return future.then([](LoadOperationRequest&& request) -> PipelineFlowState {
+	return future.then([](ExtendedLoadRequest&& request) -> PipelineFlowState {
+
+		// Let the plugin filter objects post-process the loaded data.
+		for(const auto& filter : request.filters)
+			filter->postprocessDatasets(request);
+
+		// Return just the PipelineFlowState to the caller.
 		return std::move(request.state);
 	});
 }
