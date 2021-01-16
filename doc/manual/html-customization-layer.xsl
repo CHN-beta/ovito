@@ -210,7 +210,7 @@ set       toc
 </xsl:template>
 
 <xsl:template name="user.footer.content">
-  <p class="footer_copyright">&#x00A9; 2020  OVITO GmbH</p>
+  <p class="footer_copyright">&#x00A9; 2021  OVITO GmbH</p>
 </xsl:template>
 
 </xsl:stylesheet>
