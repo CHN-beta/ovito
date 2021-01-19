@@ -240,10 +240,10 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 {
 	// Interactive execution context means that we are supposed to load the user-defined
 	// settings from the settings store.
-	if(executionContext == ExecutionContext::Interactive) {
+	if(executionContext == ExecutionContext::Interactive && typeClass != ParticlesObject::UserProperty) {
 
 		// Use the type's name, property type and container class to look up the 
-		// default color saved by the user.
+		// default radius saved by the user.
 		QVariant v = QSettings().value(ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), typeName));
 		if(v.isValid() && v.canConvert<FloatType>())
 			return v.value<FloatType>();
@@ -276,6 +276,9 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 ******************************************************************************/
 void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius)
 {
+	if(typeClass == ParticlesObject::UserProperty)
+		return;
+
 	QSettings settings;
 	QString settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), particleTypeName);
 	

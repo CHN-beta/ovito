@@ -455,9 +455,8 @@ void ModifierListModel::insertModifier()
 					modifier->setTitle(action->text());
 
 					// Assign the script code.
-					const PropertyFieldDescriptor* scriptPropertyField = modifierClass->findPropertyField("script");
-					OVITO_ASSERT(scriptPropertyField);
-					modifier->setPropertyFieldValue(*scriptPropertyField, QVariant::fromValue(scriptCode));
+					bool callSuccessful = QMetaObject::invokeMethod(modifier, "setScriptCode", Qt::DirectConnection, Q_ARG(const QString&, scriptCode));
+					OVITO_ASSERT(callSuccessful);
 
 					// Insert modifier(s) into the data pipeline.
 					_pipelineListModel->applyModifiers({modifier});

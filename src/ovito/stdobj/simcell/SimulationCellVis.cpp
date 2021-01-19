@@ -176,7 +176,7 @@ void SimulationCellVis::renderWireframe(TimePoint time, const SimulationCellObje
 	const AffineTransformation oldTM = renderer->worldTransform();
 	AffineTransformation cellMatrix = cell->cellMatrix();
 	if(cell->is2D()) cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.	
-	renderer->setWorldTransform(cellMatrix * oldTM);
+	renderer->setWorldTransform(oldTM * cellMatrix);
 	renderer->beginPickObject(contextNode);
 	renderer->renderLines(renderer->isPicking() ? wireframePrimitives.linesPicking : wireframePrimitives.linesRendering);
 	renderer->endPickObject();

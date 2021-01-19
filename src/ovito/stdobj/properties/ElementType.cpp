@@ -86,7 +86,6 @@ QString ElementType::getElementSettingsKey(const PropertyReference& property, co
 ******************************************************************************/
 Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext)
 {
-	OVITO_ASSERT(!property.isNull());
 	OVITO_ASSERT(!typeName.isEmpty());
 
 	if(property.isNull()) {
