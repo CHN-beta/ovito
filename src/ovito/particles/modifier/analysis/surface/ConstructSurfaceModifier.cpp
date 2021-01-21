@@ -153,7 +153,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 
 	if(method() == AlphaShape) {
 		// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-		return std::make_shared<AlphaShapeEngine>(executionContext, dataset(), 
+		return std::make_shared<AlphaShapeEngine>(modApp, executionContext, dataset(), 
 				posProperty,
 				selProperty,
 				grainProperty,
@@ -167,7 +167,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	}
 	else {
 		// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-		return std::make_shared<GaussianDensityEngine>(executionContext, dataset(), 
+		return std::make_shared<GaussianDensityEngine>(modApp, executionContext, dataset(), 
 				posProperty,
 				selProperty,
 				std::move(mesh),

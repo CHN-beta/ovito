@@ -179,7 +179,7 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 	histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 	
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ComputeIsosurfaceEngine>(executionContext, validityInterval, voxelGrid->shape(), property,
+	return std::make_shared<ComputeIsosurfaceEngine>(modApp, executionContext, validityInterval, voxelGrid->shape(), property,
 			sourceProperty().vectorComponent(), std::move(mesh), isolevel, std::move(auxiliaryProperties),
 			std::move(histogram));
 }

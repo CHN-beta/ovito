@@ -50,6 +50,7 @@ constexpr int GrainSegmentationEngine1::MAX_DISORDERED_NEIGHBORS; // Definition 
 * Constructor.
 ******************************************************************************/
 GrainSegmentationEngine1::GrainSegmentationEngine1(
+			const PipelineObject* dataSource, 
 			ExecutionContext executionContext, 
 			DataSet* dataset, 
 			ParticleOrderingFingerprint fingerprint, 
@@ -61,7 +62,7 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
 			GrainSegmentationModifier::MergeAlgorithm algorithmType, 
 			bool handleCoherentInterfaces,
 			bool outputBonds) :
-	Engine(executionContext),
+	Engine(dataSource, executionContext),
 	_dataset(dataset),
 	_inputFingerprint(std::move(fingerprint)),
 	_positions(std::move(positions)),
@@ -556,6 +557,7 @@ std::shared_ptr<AsynchronousModifier::Engine> GrainSegmentationEngine1::createCo
 	GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(modApp->modifier());
 
 	return std::make_shared<GrainSegmentationEngine2>(
+		modApp,
 		executionContext(),
 		dataset(),
 		static_pointer_cast<GrainSegmentationEngine1>(shared_from_this()),

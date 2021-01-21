@@ -82,10 +82,10 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
+		ComputePolyhedraEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
 				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh) :
-			Engine(executionContext),
+			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_particleTypes(std::move(particleTypes)),

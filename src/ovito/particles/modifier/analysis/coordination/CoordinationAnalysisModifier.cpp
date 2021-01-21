@@ -104,7 +104,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CoordinationAnalysisEngine>(executionContext, dataset(), particles, posProperty, inputCell,
+	return std::make_shared<CoordinationAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, inputCell,
 		cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
 }
 

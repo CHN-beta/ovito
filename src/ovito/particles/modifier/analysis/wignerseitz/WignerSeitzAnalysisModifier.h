@@ -65,10 +65,10 @@ private:
 	public:
 
 		/// Constructor.
-		WignerSeitzAnalysisEngine(ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		WignerSeitzAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
 				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
-			RefConfigEngineBase(executionContext, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(dataSource, executionContext, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
 				nullptr, nullptr, affineMapping, false),
 			_typeProperty(std::move(typeProperty)),
 			_ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),

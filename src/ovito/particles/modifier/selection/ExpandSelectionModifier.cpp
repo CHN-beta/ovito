@@ -87,14 +87,14 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == CutoffRange) {
-		return std::make_shared<ExpandSelectionCutoffEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
+		return std::make_shared<ExpandSelectionCutoffEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
 	}
 	else if(mode() == NearestNeighbors) {
-		return std::make_shared<ExpandSelectionNearestEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
+		return std::make_shared<ExpandSelectionNearestEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
 	}
 	else if(mode() == BondedNeighbors) {
 		particles->expectBonds()->verifyIntegrity();
-		return std::make_shared<ExpandSelectionBondedEngine>(executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+		return std::make_shared<ExpandSelectionBondedEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
 	}
 	else {
 		throwException(tr("Invalid selection expansion mode."));

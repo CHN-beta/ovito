@@ -100,6 +100,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<ComputePolyhedraEngine>(
+			modApp,
 			executionContext, 
 			dataset(),
 			posProperty,

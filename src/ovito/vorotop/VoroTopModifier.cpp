@@ -109,7 +109,8 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
         radii = particles->inputParticleRadii();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(executionContext, 
+    return std::make_shared<VoroTopAnalysisEngine>(modApp, 
+                                                   executionContext, 
                                                    dataset(),
                                                    particles,
                                                    input.stateValidity(),

@@ -90,7 +90,7 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DisplacementEngine>(
-			executionContext, dataset(),
+			modApp, executionContext, dataset(),
 			validityInterval, posProperty, inputCell,
 			particles, refPosProperty, refCell,
 			identifierProperty, refIdentifierProperty,

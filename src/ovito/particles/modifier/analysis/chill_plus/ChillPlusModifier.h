@@ -83,8 +83,8 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(executionContext, dataset, fingerprint, positions, simCell, structureTypes, selection),
+        ChillPlusEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+            StructureIdentificationEngine(dataSource, executionContext, dataset, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 
         /// Computes the modifier's results.

@@ -188,7 +188,8 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CorrelationAnalysisEngine>(executionContext, 
+	return std::make_shared<CorrelationAnalysisEngine>(modApp, 
+													   executionContext, 
 													   dataset(),
 													   posProperty,
 													   property1,

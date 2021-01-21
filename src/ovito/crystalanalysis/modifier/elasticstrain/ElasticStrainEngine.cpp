@@ -34,6 +34,7 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
+		const PipelineObject* dataSource, 
 		ExecutionContext executionContext,
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
@@ -41,7 +42,7 @@ ElasticStrainEngine::ElasticStrainEngine(
 		int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
 		bool calculateDeformationGradients, bool calculateStrainTensors,
 		FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
-	StructureIdentificationModifier::StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, {}),
+	StructureIdentificationModifier::StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), positions, simCell, {}),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations))),
 	_inputCrystalStructure(inputCrystalStructure),
 	_latticeConstant(latticeConstant),

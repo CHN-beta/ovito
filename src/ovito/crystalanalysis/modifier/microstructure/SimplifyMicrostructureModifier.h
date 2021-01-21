@@ -76,8 +76,8 @@ private:
 	public:
 
 		/// Constructor.
-		SimplifyMicrostructureEngine(ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
-			Engine(executionContext),
+		SimplifyMicrostructureEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
+			Engine(dataSource, executionContext),
 			_microstructure(microstructureObj),
             _smoothingLevel(smoothingLevel),
             _kPB(kPB),

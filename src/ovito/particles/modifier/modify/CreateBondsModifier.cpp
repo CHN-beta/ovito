@@ -224,7 +224,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<BondsEngine>(executionContext, particles, posProperty,
+	return std::make_shared<BondsEngine>(modApp, executionContext, particles, posProperty,
 			typeProperty, simCell, cutoffMode(),
 			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), moleculeProperty);
 }

@@ -71,7 +71,7 @@ Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEn
 		throwException(tr("No microstructure found in the modifier's input."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<SimplifyMicrostructureEngine>(executionContext, microstructure, smoothingLevel(), kPB(), lambda());
+	return std::make_shared<SimplifyMicrostructureEngine>(modApp, executionContext, microstructure, smoothingLevel(), kPB(), lambda());
 }
 
 /******************************************************************************

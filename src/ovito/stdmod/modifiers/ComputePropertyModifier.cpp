@@ -184,7 +184,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	TimeInterval validityInterval = input.stateValidity();
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	auto engine = delegate()->createEngine(executionContext, request.time(), input,
+	auto engine = delegate()->createEngine(modApp, executionContext, request.time(), input,
 			objectPath, std::move(outp),
 			std::move(selectionProperty),
 			expressions());
@@ -214,6 +214,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputePropertyModifierDelegate::createEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
@@ -224,6 +225,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 {
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<PropertyComputeEngine>(
+			dataSource, 
 			executionContext,
 			input.stateValidity(),
 			time,
@@ -240,6 +242,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputeP
 * Constructor.
 ******************************************************************************/
 ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
+		const PipelineObject* dataSource, 
 		ExecutionContext executionContext,
 		const TimeInterval& validityInterval,
 		TimePoint time,
@@ -250,7 +253,7 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
 		QStringList expressions,
 		int frameNumber,
 		std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
-	AsynchronousModifier::Engine(executionContext, validityInterval),
+	AsynchronousModifier::Engine(dataSource, executionContext, validityInterval),
 	_selectionArray(std::move(selectionProperty)),
 	_expressions(std::move(expressions)),
 	_frameNumber(frameNumber),

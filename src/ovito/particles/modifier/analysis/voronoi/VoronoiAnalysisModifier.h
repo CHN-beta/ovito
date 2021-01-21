@@ -81,10 +81,10 @@ private:
 	public:
 
 		/// Constructor.
-		VoronoiAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
+		VoronoiAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
 							const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
 							bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-			Engine(executionContext, validityInterval),
+			Engine(dataSource, executionContext, validityInterval),
 			_positions(positions),
 			_selection(std::move(selection)),
 			_particleIdentifiers(std::move(particleIdentifiers)),

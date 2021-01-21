@@ -41,6 +41,7 @@ namespace Ovito { namespace CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
+		const PipelineObject* dataSource, 
 		ExecutionContext executionContext, 
 		DataSet* dataset,
 		ParticleOrderingFingerprint fingerprint,
@@ -51,7 +52,7 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		std::vector<Matrix3> preferredCrystalOrientations,
 		bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
 		int lineSmoothingLevel, FloatType linePointInterval) :
-	StructureIdentificationModifier::StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
+	StructureIdentificationModifier::StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
 	_simCellVolume(simCell->volume3D()),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
 	_tessellation(std::make_unique<DelaunayTessellation>()),

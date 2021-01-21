@@ -68,6 +68,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext, 
 				TimePoint time,
 				const PipelineFlowState& input,
@@ -85,6 +86,7 @@ private:
 
 		/// Constructor.
 		Engine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext, 
 				const TimeInterval& validityInterval,
 				TimePoint time,

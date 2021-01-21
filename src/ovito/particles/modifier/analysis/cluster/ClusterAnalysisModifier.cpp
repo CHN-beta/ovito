@@ -131,6 +131,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	if(neighborMode() == CutoffRange) {
 		const PropertyObject* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(BondsObject::TopologyProperty) : nullptr;
 		return std::make_shared<CutoffClusterAnalysisEngine>(
+			modApp,
 			executionContext,
 			dataset(),
 			particles, 
@@ -149,6 +150,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	else if(neighborMode() == Bonding) {
 		particles->expectBonds()->verifyIntegrity();
 		return std::make_shared<BondClusterAnalysisEngine>(
+			modApp,
 			executionContext,
 			dataset(),
 			particles, 

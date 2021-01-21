@@ -100,7 +100,7 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	}
 
 	// Create compute engine instance. Pass all relevant modifier parameters and the input data to the engine.
-	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(executionContext, validityInterval, posProperty, inputCell,
+	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(modApp, executionContext, validityInterval, posProperty, inputCell,
 			referenceState,
 			refPosProperty, refCell, affineMapping(), typeProperty, ptypeMinId, ptypeMaxId,
 			referenceTypeProperty, referenceIdentifierProperty);

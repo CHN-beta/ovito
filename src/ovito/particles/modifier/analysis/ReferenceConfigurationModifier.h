@@ -93,7 +93,8 @@ protected:
 	public:
 
 		/// Constructor.
-		RefConfigEngineBase(ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		RefConfigEngineBase(const PipelineObject* dataSource, ExecutionContext executionContext, 
+				const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, bool useMinimumImageConvention);

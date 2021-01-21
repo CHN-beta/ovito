@@ -51,6 +51,7 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsComputePropertyModifierDelegate::createEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext, 
 				TimePoint time,
 				const PipelineFlowState& input,
@@ -61,6 +62,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 {
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<Engine>(
+			dataSource,
 			executionContext, 
 			input.stateValidity(),
 			time,
@@ -76,6 +78,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 * Constructor.
 ******************************************************************************/
 BondsComputePropertyModifierDelegate::Engine::Engine(
+		const PipelineObject* dataSource, 
 		ExecutionContext executionContext, 
 		const TimeInterval& validityInterval,
 		TimePoint time,
@@ -86,6 +89,7 @@ BondsComputePropertyModifierDelegate::Engine::Engine(
 		int frameNumber,
 		const PipelineFlowState& input) :
 	ComputePropertyModifierDelegate::PropertyComputeEngine(
+			dataSource, 
 			executionContext, 
 			validityInterval,
 			time,

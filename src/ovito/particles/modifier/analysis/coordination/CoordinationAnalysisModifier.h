@@ -82,9 +82,9 @@ private:
 	public:
 
 		/// Constructor.
-		CoordinationAnalysisEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		CoordinationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
-			Engine(executionContext),
+			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_simCell(simCell),
 			_cutoff(cutoff),

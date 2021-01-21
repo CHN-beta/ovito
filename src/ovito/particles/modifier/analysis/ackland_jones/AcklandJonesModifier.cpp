@@ -74,7 +74,7 @@ Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AcklandJonesAnalysisEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+	return std::make_shared<AcklandJonesAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************

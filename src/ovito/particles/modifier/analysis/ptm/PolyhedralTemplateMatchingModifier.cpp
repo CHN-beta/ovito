@@ -134,7 +134,7 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 	// Get particle types if needed.
 	const PropertyObject* typeProperty = outputOrderingTypes() ? particles->expectProperty(ParticlesObject::TypeProperty) : nullptr;
 
-	return std::make_shared<PTMEngine>(executionContext, dataset(), posProperty, particles, typeProperty, simCell,
+	return std::make_shared<PTMEngine>(modApp, executionContext, dataset(), posProperty, particles, typeProperty, simCell,
 			structureTypes(), orderingTypes(), selectionProperty,
 			outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
 }
@@ -142,10 +142,10 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
 		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
-	StructureIdentificationEngine(executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
+	StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
 	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("RMSD"), false)),
 	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Interatomic Distance"), true) : nullptr),
 	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true, executionContext) : nullptr),

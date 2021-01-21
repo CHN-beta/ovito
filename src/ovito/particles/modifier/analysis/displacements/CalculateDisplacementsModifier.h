@@ -71,6 +71,7 @@ private:
 
 		/// Constructor.
 		DisplacementEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext, 
 				DataSet* dataset,
 				const TimeInterval& validityInterval, 
@@ -83,7 +84,7 @@ private:
 				ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, 
 				bool useMinimumImageConvention) :
-			RefConfigEngineBase(executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(dataSource, executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false, executionContext)),
 			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false, executionContext)),

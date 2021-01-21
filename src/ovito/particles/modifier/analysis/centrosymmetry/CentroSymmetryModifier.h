@@ -88,8 +88,8 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
-			Engine(executionContext),
+		CentroSymmetryEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+			Engine(dataSource, executionContext),
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),

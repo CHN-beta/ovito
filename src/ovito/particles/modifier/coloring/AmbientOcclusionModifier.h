@@ -70,7 +70,7 @@ public:
 	public:
 
 		/// Constructor.
-		AmbientOcclusionEngine(ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+		AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 			ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer);
 
 		/// Destructor.

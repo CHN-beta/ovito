@@ -87,19 +87,19 @@ Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEn
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == AdaptiveCutoffMode) {
-		return std::make_shared<AdaptiveCNAEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+		return std::make_shared<AdaptiveCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == IntervalCutoffMode) {
-		return std::make_shared<IntervalCNAEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+		return std::make_shared<IntervalCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == BondMode) {
 		particles->expectBonds()->verifyIntegrity();
 		const PropertyObject* topologyProperty = particles->expectBonds()->expectProperty(BondsObject::TopologyProperty);
 		const PropertyObject* periodicImagesProperty = particles->expectBonds()->getProperty(BondsObject::PeriodicImageProperty);
-		return std::make_shared<BondCNAEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
+		return std::make_shared<BondCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
 	}
 	else {
-		return std::make_shared<FixedCNAEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
+		return std::make_shared<FixedCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 	}
 }
 

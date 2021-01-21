@@ -53,7 +53,7 @@ protected:
 	public:
 
 		/// Constructor.
-		PropertyComputeEngine(ExecutionContext executionContext, const TimeInterval& validityInterval,
+		PropertyComputeEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -142,6 +142,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<PropertyComputeEngine> createEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,

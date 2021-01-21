@@ -99,7 +99,8 @@ private:
 	public:
 
 		/// Constructor.
-		CorrelationAnalysisEngine(ExecutionContext executionContext, 
+		CorrelationAnalysisEngine(const PipelineObject* dataSource, 
+								  ExecutionContext executionContext, 
 								  DataSet* dataset,
 								  ConstPropertyPtr positions,
 								  ConstPropertyPtr sourceProperty1,
@@ -113,7 +114,7 @@ private:
 								  FloatType neighCutoff,
 								  int numberOfNeighBins,
 								  AveragingDirectionType averagingDirection) :
-			Engine(executionContext),
+			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
 			_sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),

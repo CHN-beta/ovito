@@ -24,6 +24,7 @@
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ElasticStrainModifier.h"
 #include "ElasticStrainEngine.h"
 
@@ -106,7 +107,7 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(executionContext, dataset(), particles, posProperty,
+	return std::make_shared<ElasticStrainEngine>(modApp, executionContext, dataset(), particles, posProperty,
 			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
 			calculateDeformationGradients(), calculateStrainTensors(),
 			latticeConstant(), axialRatio(), pushStrainTensorsForward());

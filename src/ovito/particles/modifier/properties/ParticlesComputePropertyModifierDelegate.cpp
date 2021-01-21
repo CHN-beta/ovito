@@ -81,6 +81,7 @@ void ParticlesComputePropertyModifierDelegate::setComponentCount(int componentCo
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ParticlesComputePropertyModifierDelegate::createEngine(
+				const PipelineObject* dataSource, 
 				ExecutionContext executionContext, 
 				TimePoint time,
 				const PipelineFlowState& input,
@@ -98,6 +99,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<Engine>(
+			dataSource, 
 			executionContext, 
 			input.stateValidity(),
 			time,
@@ -116,6 +118,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
 * Constructor.
 ******************************************************************************/
 ParticlesComputePropertyModifierDelegate::Engine::Engine(
+		const PipelineObject* dataSource, 
 		ExecutionContext executionContext, 
 		const TimeInterval& validityInterval,
 		TimePoint time,
@@ -129,6 +132,7 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
 		QStringList neighborExpressions,
 		FloatType cutoff) :
 	ComputePropertyModifierDelegate::PropertyComputeEngine(
+			dataSource,
 			executionContext, 
 			validityInterval,
 			time,

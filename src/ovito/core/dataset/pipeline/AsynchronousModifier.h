@@ -47,8 +47,8 @@ public:
 	public:
 
 		/// Constructor.
-		explicit Engine(ExecutionContext executionContext, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-			_executionContext(executionContext), _validityInterval(validityInterval) {}
+		explicit Engine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+			_dataSource(dataSource), _executionContext(executionContext), _validityInterval(validityInterval) {}
 
 #ifdef Q_OS_LINUX
 		/// Destructor.
@@ -86,7 +86,13 @@ public:
 		/// Returns the type of context the engine is running in (interactive or scripting).
 		ExecutionContext executionContext() const { return _executionContext; }
 
+		/// Returns the object to be set as data source of data objects newly created by the engine.
+		const PipelineObject* dataSource() const { OVITO_CHECK_OBJECT_POINTER(_dataSource); return _dataSource; }
+
 	private:
+
+		/// The object to be set as data source of data objects newly created by the engine.
+		const PipelineObject* _dataSource;
 
 		/// The type of context the engine is running in (interactive or scripting).
 		ExecutionContext _executionContext;

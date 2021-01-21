@@ -87,7 +87,7 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	histogram->setAxisLabelX(tr("CSP"));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CentroSymmetryEngine>(executionContext, dataset(), particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
+	return std::make_shared<CentroSymmetryEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
 }
 
 /******************************************************************************

@@ -82,7 +82,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
+    return std::make_shared<ChillPlusEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 }
 
 /******************************************************************************
