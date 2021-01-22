@@ -50,7 +50,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	# Speed up compilation by using precompiled headers.
 	IF(OVITO_USE_PRECOMPILED_HEADERS AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
 		FOREACH(precompiled_header ${precompiled_headers})
-			TARGET_PRECOMPILE_HEADERS(${target_name} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/${precompiled_header}>")
+			TARGET_PRECOMPILE_HEADERS(${target_name} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/${precompiled_header}>")
 		ENDFOREACH()
 	ENDIF()
 
