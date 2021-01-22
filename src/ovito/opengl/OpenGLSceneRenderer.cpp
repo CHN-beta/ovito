@@ -121,12 +121,14 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 ******************************************************************************/
 bool OpenGLSceneRenderer::contextSharingEnabled(bool forceDefaultSetting)
 {
+#if 0
 	if(!forceDefaultSetting) {
 		// The user can override the use of multiple GL contexts.
 		QVariant userSetting = QSettings().value("display/share_opengl_context");
 		if(userSetting.isValid())
 			return userSetting.toBool();
 	}
+#endif
 
 	// By default, all viewports of a main window use the same GL context.
 	return true;
@@ -142,12 +144,14 @@ bool OpenGLSceneRenderer::geometryShadersEnabled(bool forceDefaultSetting)
 	return false;
 #endif
 
+#if 0
 	if(!forceDefaultSetting) {
 		// The user can override the use of geometry shaders.
 		QVariant userSetting = QSettings().value("display/use_geometry_shaders");
 		if(userSetting.isValid())
 			return userSetting.toBool() && geometryShadersSupported();
 	}
+#endif
 
 	if(Application::instance()->guiMode())
 		return geometryShadersSupported();

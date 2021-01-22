@@ -55,56 +55,6 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	layout2->addWidget(_sortModifiersByCategory, 1, 0);
 	_sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
 
-	QGroupBox* openglGroupBox = new QGroupBox(tr("Viewport rendering / OpenGL"));
-	layout1->addWidget(openglGroupBox);
-	layout2 = new QGridLayout(openglGroupBox);
-
-	// OpenGL context sharing:
-	_overrideGLContextSharing = new QCheckBox(tr("Override context sharing"), openglGroupBox);
-	_overrideGLContextSharing->setToolTip(tr("<p>Activate this option to explicitly control the sharing of OpenGL contexts between viewport windows.</p>"));
-	layout2->addWidget(_overrideGLContextSharing, 0, 0);
-	_contextSharingMode = new QComboBox(openglGroupBox);
-	_contextSharingMode->setEnabled(false);
-	if(OpenGLSceneRenderer::contextSharingEnabled(true)) {
-		_contextSharingMode->addItem(tr("Enable sharing (default)"));
-		_contextSharingMode->addItem(tr("Disable sharing"));
-	}
-	else {
-		_contextSharingMode->addItem(tr("Enable sharing"));
-		_contextSharingMode->addItem(tr("Disable sharing (default)"));
-	}
-	layout2->addWidget(_contextSharingMode, 0, 1);
-	connect(_overrideGLContextSharing, &QCheckBox::toggled, _contextSharingMode, &QComboBox::setEnabled);
-	_overrideGLContextSharing->setChecked(settings.contains("display/share_opengl_context"));
-	_contextSharingMode->setCurrentIndex(OpenGLSceneRenderer::contextSharingEnabled() ? 0 : 1);
-
-	// OpenGL geometry shaders:
-	_overrideUseOfGeometryShaders = new QCheckBox(tr("Override use of geometry shaders"), openglGroupBox);
-	_overrideUseOfGeometryShaders->setToolTip(tr("<p>Activate this option to explicitly control the usage of OpenGL geometry shaders.</p>"));
-	layout2->addWidget(_overrideUseOfGeometryShaders, 1, 0);
-	_geometryShaderMode = new QComboBox(openglGroupBox);
-	_geometryShaderMode->setEnabled(false);
-	if(OpenGLSceneRenderer::geometryShadersEnabled(true)) {
-		_geometryShaderMode->addItem(tr("Use geometry shaders (default)"));
-		_geometryShaderMode->addItem(tr("Don't use geometry shaders"));
-	}
-	else {
-		_geometryShaderMode->addItem(tr("Use geometry shaders"));
-		_geometryShaderMode->addItem(tr("Don't use geometry shaders (default)"));
-	}
-	layout2->addWidget(_geometryShaderMode, 1, 1);
-	connect(_overrideUseOfGeometryShaders, &QCheckBox::toggled, _geometryShaderMode, &QComboBox::setEnabled);
-	_overrideUseOfGeometryShaders->setChecked(settings.contains("display/use_geometry_shaders"));
-	_geometryShaderMode->setCurrentIndex(OpenGLSceneRenderer::geometryShadersEnabled() ? 0 : 1);
-
-	_restartRequiredLabel = new QLabel(tr("<p style=\"font-size: small; color: #DD2222;\">Restart required for changes to take effect.</p>"));
-	_restartRequiredLabel->hide();
-	layout2->addWidget(_restartRequiredLabel, 2, 0, 1, 2);
-	connect(_overrideGLContextSharing, &QCheckBox::toggled, _restartRequiredLabel, &QLabel::show);
-	connect(_contextSharingMode, &QComboBox::currentTextChanged, _restartRequiredLabel, &QLabel::show);
-	connect(_overrideUseOfGeometryShaders, &QCheckBox::toggled, _restartRequiredLabel, &QLabel::show);
-	connect(_geometryShaderMode, &QComboBox::currentTextChanged, _restartRequiredLabel, &QLabel::show);
-
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QGroupBox* updateGroupBox = new QGroupBox(tr("Program updates"), page);
 	layout1->addWidget(updateGroupBox);
@@ -144,14 +94,6 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 	settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
 	settings.setValue("updates/transmit_id", _enableUsageStatistics->isChecked());
 #endif
-	if(_overrideGLContextSharing->isChecked())
-		settings.setValue("display/share_opengl_context", _contextSharingMode->currentIndex() == 0);
-	else
-		settings.remove("display/share_opengl_context");
-	if(_overrideUseOfGeometryShaders->isChecked())
-		settings.setValue("display/use_geometry_shaders", _geometryShaderMode->currentIndex() == 0);
-	else
-		settings.remove("display/use_geometry_shaders");
 	return true;
 }
 
