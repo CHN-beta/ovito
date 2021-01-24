@@ -65,6 +65,8 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor& field)
 		Q_EMIT speedChanged(ticksPerFrame());
 	else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
 		adjustAnimationInterval();
+
+	RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************
