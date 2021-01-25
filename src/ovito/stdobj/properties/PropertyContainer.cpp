@@ -395,6 +395,16 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
 {
 	DataObject::loadFromStreamComplete(stream);
 
+	// For backward compatibility with old OVITO versions.
+	// Make sure size of deserialized property arrays is consistent. 
+	if(stream.formatVersion() < 30004) {
+		for(const PropertyObject* property : properties()) {
+			if(property->size() != elementCount()) {
+				makeMutable(property)->resize(elementCount(), true);
+			}
+		}
+	}
+
 	// For backward compatibility with OVITO 3.3.5: 
 	// The ElementType::ownerProperty parameter field did not exist in older OVITO versions and does not have
 	// a valid value when loaded from a state file. The following code initializes the parameter field to 

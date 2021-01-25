@@ -54,6 +54,7 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(Modifier* modifier
 
 	// Get the particle selection.
 	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
+		inputParticles->verifyIntegrity();
 		numParticles = inputParticles->elementCount();
 		if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
 
@@ -114,6 +115,7 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(Modifier* modifier, Pi
 	// Get the bond selection.
 	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
 		if(const BondsObject* inputBonds = inputParticles->bonds()) {
+			inputBonds->verifyIntegrity();
 			numBonds = inputBonds->elementCount();
 			if(const PropertyObject* selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
 				// Generate filter mask.
