@@ -34,7 +34,7 @@ namespace Ovito {
 DataCollection* PipelineFlowState::mutableData()
 {
     OVITO_ASSERT(_data);
-    if(!_data->isSafeToModify()) {
+    if(_data && !_data->isSafeToModify()) {
         _data = CloneHelper().cloneObject(_data.get(), false);
 		OVITO_ASSERT(_data->isSafeToModify());
     }
