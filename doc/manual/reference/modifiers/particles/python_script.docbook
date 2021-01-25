@@ -36,7 +36,7 @@
         <imagedata fileref="images/modifiers/python_script_code_editor.png" format="PNG" scale="75" />
       </imageobject></mediaobject></screenshot></informalfigure>
       After inserting a new Python script modifier into the pipeline you can open the integrated code editor using the
-      <guibutton>Code editor</guibutton> button. The editor window lets you change the source code for the user-defined modifier function,
+      <guibutton>Edit script</guibutton> button. The editor window lets you change the source code for the user-defined modifier function,
       which initially consists of a few example statements. You should replace these statements with your own code, performing the 
       specific computations or actions that are needed to solve your problem. 
       The <pydoc-link href="introduction/custom_modifiers" anchor="custom-modifier-functions" no-pro-tag="1">scripting manual</pydoc-link> gives further
