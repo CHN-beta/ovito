@@ -267,7 +267,7 @@ T* const_pointer_cast(const T* p) noexcept {
 /// (or a subclass); otherwise returns \c NULL.
 ///
 /// \relates OORef, DataOORef
-template<class T, class U, template<typename> typename Pointer>
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 	return dynamic_pointer_cast<T, U>(obj);
 }
@@ -278,7 +278,7 @@ inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 /// (or a subclass); otherwise returns \c NULL.
 ///
 /// \relates OORef, DataOORef
-template<class T, class U, template<typename> typename Pointer>
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
 	return dynamic_pointer_cast<T, U>(std::move(obj));
 }
@@ -289,7 +289,7 @@ inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
 /// Performs a runtime check of the object type in debug build.
 ///
 /// \relates OORef, DataOORef
-template<class T, class U, template<typename> typename Pointer>
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
@@ -302,7 +302,7 @@ inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 /// Performs a runtime check of the object type in debug build.
 ///
 /// \relates OORef, DataOORef
-template<class T, class U, template<typename> typename Pointer>
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
