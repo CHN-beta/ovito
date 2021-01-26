@@ -396,8 +396,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 
 	_vertexBuffer.detachPositions(renderer, _faceShader);
 	if(!renderer->isPicking()) {
-		if(!useInstancedRendering())
-			_vertexBuffer.detachColors(renderer, _faceShader);
+		_vertexBuffer.detachColors(renderer, _faceShader);
 		_vertexBuffer.detachNormals(renderer, _faceShader);
 		if(blendMode) 
 			renderer->glDisable(GL_BLEND);
