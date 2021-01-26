@@ -59,7 +59,7 @@ public:
 	Q_INVOKABLE ParaDiSImporter(DataSet* dataset) : ParticleImporter(dataset) {}
 
 	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("ParaDiS File"); }
+	virtual QString objectTitle() const override { return tr("ParaDiS"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -83,19 +83,8 @@ protected:
 
     private:
 
-		/// Returns the type of crystal structure.
-		ParticleType::PredefinedStructureType latticeStructure() const { return _latticeStructure; }
-
-		/// Sets the type of crystal ("fcc", "bcc", etc.)
-		void setLatticeStructure(ParticleType::PredefinedStructureType latticeStructure) {
-			_latticeStructure = latticeStructure;
-		}
-
         /// Parses a control parameter from the ParaDiS file.
         static std::pair<QString, QVariant> parseControlParameter(CompressedTextReader& stream);
-
-		/// The type of crystal ("fcc", "bcc", etc.)
-		ParticleType::PredefinedStructureType _latticeStructure = ParticleType::PredefinedStructureType::OTHER;
 	};
 };
 

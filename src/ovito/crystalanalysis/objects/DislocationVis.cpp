@@ -469,7 +469,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 	renderer->renderParticles(primitives.corners);
 
 	// Render Burgers vectors.
-	if(showBurgersVectors())
+	if(showBurgersVectors() && primitives.burgersArrows)
 		renderer->renderCylinders(primitives.burgersArrows);
 
 	renderer->endPickObject();

@@ -23,6 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/crystalanalysis/objects/Microstructure.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/app/Application.h>
@@ -69,8 +70,14 @@ void ParaDiSImporter::FrameLoader::loadFile()
 	}
 	else {
 		microstructureObj = state().createObject<Microstructure>(dataSource(), executionContext());
+		// Create a visual element for the dislocation lines.
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset(), executionContext()));
 	}
 	MicrostructureAccess microstructure(microstructureObj);
+    microstructure.clearMesh();
+
+    /// The type of crystal ("fcc", "bcc", etc.)
+    ParticleType::PredefinedStructureType latticeStructure = ParticleType::PredefinedStructureType::OTHER;
 
     Vector3 minCoordinates = Vector3::Zero();
     Vector3 maxCoordinates = Vector3::Zero();
@@ -112,6 +119,8 @@ void ParaDiSImporter::FrameLoader::loadFile()
         minCoordinates
     ));
 	simulationCell()->setPbcFlags(true, true, true);
+	if(microstructure)
+		microstructure.setCell(simulationCell());
 
     // Skip to third section of data file.
     for(;;) {
@@ -218,20 +227,20 @@ void ParaDiSImporter::FrameLoader::loadFile()
     // Otherwise, if there exists at least one <111>-type dislocation, it's like the BCC crystal structure.
     // Note: This will only work for the default [100] crystal orientation.
     if(std::abs(bmag110 - sqrt(1.0/2.0)) < 1e-4) {
-        setLatticeStructure(ParticleType::PredefinedStructureType::FCC);
+        latticeStructure = ParticleType::PredefinedStructureType::FCC;
         FloatType scaleFactor = 0.5 / sqrt(1.0/2.0);
         for(MicrostructureAccess::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }
     else if(std::abs(bmag111 - sqrt(1.0/3.0)) < 1e-4) {
-        setLatticeStructure(ParticleType::PredefinedStructureType::BCC);
+        latticeStructure = ParticleType::PredefinedStructureType::BCC;
         FloatType scaleFactor = 0.5 / sqrt(1.0/3.0);
         for(MicrostructureAccess::face_index face = 0; face < microstructure.faceCount(); face++) {
             microstructure.setBurgersVector(face, microstructure.burgersVector(face) * scaleFactor);
         }
     }
-    microstructure.createRegion(latticeStructure());
+    microstructure.createRegion(latticeStructure);
 
     // Form continuous dislocation lines from the segments having the same Burgers vector.
     microstructure.makeContinuousDislocationLines();
@@ -239,6 +248,47 @@ void ParaDiSImporter::FrameLoader::loadFile()
 	state().setStatus(tr("Number of nodes: %1\nNumber of dislocations: %2")
 		.arg(microstructure.vertexCount())
 		.arg(microstructure.faceCount()));
+    microstructure.reset();
+
+	// Define crystal phase.
+	PropertyObject* phaseProperty = microstructureObj->makeRegionsMutable()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
+	DataOORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure));
+	if(!phaseProperty->elementType(latticeStructure)) {
+		DataOORef<MicrostructurePhase> phase = new MicrostructurePhase(dataset());
+		phase->setNumericId(latticeStructure);
+		phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure));
+        phase->initializeObject(executionContext());
+        phase->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext());
+    	if(latticeStructure == ParticleType::PredefinedStructureType::BCC) {
+            phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
+            if(phase->burgersVectorFamilies().empty()) {
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset()));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
+            }
+        }
+        else if(latticeStructure == ParticleType::PredefinedStructureType::FCC) {
+            phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
+            if(phase->burgersVectorFamilies().empty()) {
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset()));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 4, tr("1/3<001> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
+                phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
+            }
+        }
+        else {
+            phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::NoSymmetry);
+            if(phase->burgersVectorFamilies().empty()) {
+                BurgersVectorFamily* family = new BurgersVectorFamily(phase->dataset());
+                family->setColor(Color(0.7,0.7,0.7));
+                phase->addBurgersVectorFamily(family);
+            }
+        }
+		phaseProperty->addElementType(phase);
+    }
 
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
@@ -296,75 +346,6 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
 	}
     return {};
 }
-
-#if 0
-/******************************************************************************
-* Inserts the data loaded by the FrameLoader into the provided data collection.
-* This function is called by the system from the main thread after the
-* asynchronous loading operation has finished.
-******************************************************************************/
-OORef<DataCollection> ParaDiSImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
-{
-	// Insert simulation cell.
-	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);
-
-	// Insert microstructure.
-	OORef<Microstructure> microstructureObj;
-	if(const Microstructure* existingMicrostructure = existing ? existing->getObject<Microstructure>() : nullptr) {
-		microstructureObj = cloneHelper.cloneObject(existingMicrostructure, false);
-		output->addObject(microstructureObj);
-	}
-	else {
-		microstructureObj = output->createObject<Microstructure>(fileSource);
-
-		// Create a visual element for the dislocation lines.
-		microstructureObj->setVisElement(OORef<DislocationVis>::create(fileSource->dataset(), Application::instance()->executionContext()));
-	}
-	microstructureObj->setDomain(output->getObject<SimulationCellObject>());
-	microstructure().transferTo(microstructureObj);
-
-	// Define crystal phase.
-	PropertyObject* phaseProperty = microstructureObj->regions()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
-	OORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure()));
-	if(!phase) {
-		phase = new MicrostructurePhase(phaseProperty->dataset());
-		phase->setNumericId(latticeStructure());
-		phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure()));
-		phaseProperty->addElementType(phase);
-	}
-	if(latticeStructure() == ParticleType::PredefinedStructureType::BCC) {
-		phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
-		phase->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, phase->name(), ParticleType::PredefinedStructureType::BCC));
-		if(phase->burgersVectorFamilies().empty()) {
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset()));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
-		}
-	}
-	else if(latticeStructure() == ParticleType::PredefinedStructureType::FCC) {
-		phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
-		phase->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, phase->name(), ParticleType::PredefinedStructureType::FCC));
-		if(phase->burgersVectorFamilies().empty()) {
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset()));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 4, tr("1/3<001> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset(), 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
-		}
-	}
-	else {
-		phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::NoSymmetry);
-		if(phase->burgersVectorFamilies().empty()) {
-			phase->addBurgersVectorFamily(new BurgersVectorFamily(phase->dataset()));
-            phase->defaultBurgersVectorFamily()->setColor(Color(0.7,0.7,0.7));
-		}
-	}
-
-	return output;
-}
-#endif
 
 }	// End of namespace
 }	// End of namespace
