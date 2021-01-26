@@ -5,7 +5,6 @@
 
   <xsl:output method="html" encoding="ISO-8859-1" indent="yes" />
 
-  <xsl:param name="xref.with.number.and.title" select="'0'"/>
   <xsl:param name="callout.graphics" select="'0'"/>
   <xsl:param name="callout.unicode" select="'1'"/>
 

@@ -187,10 +187,7 @@ SaveStream& operator<<(SaveStream& stream, const QUrl& url)
 		if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
 			QFileInfo streamFile(fileDevice->fileName());
 			if(streamFile.isAbsolute()) {
-				QFileInfo dataFile(url.toLocalFile());
-				if(dataFile.path() == streamFile.path()) {
-					relativePath = dataFile.fileName();
-				}
+				relativePath = streamFile.dir().relativeFilePath(url.toLocalFile());
 			}
 		}
 	}

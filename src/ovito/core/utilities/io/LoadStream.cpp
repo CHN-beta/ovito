@@ -264,13 +264,13 @@ LoadStream& operator>>(LoadStream& stream, QUrl& url)
 	QString relativePath;
 	stream >> relativePath;
 	// Resolve relative path against path of current input file.
-	if(relativePath.isEmpty() == false && url.isLocalFile()) {
-		QFileInfo relativeFileInfo(relativePath);
-		OVITO_ASSERT(!relativeFileInfo.isAbsolute());
+	if(!relativePath.isEmpty() && url.isLocalFile()) {
 		if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
 			QFileInfo streamFile(fileDevice->fileName());
 			if(streamFile.isAbsolute()) {
-				url = QUrl::fromLocalFile(QFileInfo(streamFile.dir(), relativeFileInfo.filePath()).absoluteFilePath());
+				QFileInfo resolvedFilePath(streamFile.dir(), relativePath);
+				if(resolvedFilePath.dir().exists())
+					url = QUrl::fromLocalFile(resolvedFilePath.absoluteFilePath());
 			}
 		}
 	}

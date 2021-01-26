@@ -15,18 +15,31 @@
        <imagedata fileref="images/modifiers/python_script_panel.png" format="PNG" scale="50" />
     </imageobject></mediaobject></screenshot></informalfigure>
 
-    This modifier type lets you write your own user-defined function in the Python language to manipulate, analyze or extend the simulation data. 
-    User-defined modifier functions are useful when the toolset of <link linkend="particles.modifiers">built-in modifiers</link> of OVITO is insufficient 
+    This modifier type lets you write your own user-defined modifier function in the Python language. Your Python function runs within the graphical user interface 
+    just like a normal OVITO modifier and can manipulate, analyze or amend the simulation data in exactly the way you need it.
+    Such user-defined modifier functions are useful whenever the standard toolset of <link linkend="particles.modifiers">built-in modifiers</link> of OVITO is insufficient 
     to solve your specific problem.
   </para>
-  <para>
-    The system executes the user-defined Python function whenever it needs to recompute the results of the data pipeline,
-    e.g. when jumping to a new frame of the loaded trajectory. Tne integrated code editor window lets 
-    you edit the function's source code and implement your own data processing algorithms.
-    Within the user-defined Python function you have complete access to the input dataset produced by the upstream data pipeline, 
-    with the possibility to manipulate or extend the dataset as needed via OVITO's comprehensive 
-    <pydoc-link href="index" no-pro-tag="1">Python programming interface</pydoc-link>.
-  </para>
+
+  <simplesect>
+    <title>What is a Python script modifier?</title>
+    <para>
+      A user-defined modifier consists of a single Python function definition, which you enter into the integrated code editor window 
+      of OVITO. For example: 
+      <programlisting>def modify(frame, data):
+    print("Number of particles:", data.particles.count)
+    data.attributes['Time'] = 0.002 * frame</programlisting>
+      This function prints the current number of particles to the log window and generates a new <link linkend="usage.global_attributes">global attribute</link> for the simulation time based on the current
+      animation frame number. OVITO takes care of executing this Python function at the right time(s), e.g.
+      whenever you move the animation time slider and the results of the <link linkend="usage.modification_pipeline">data pipeline</link> need to be recomputed.
+      Note that you only define a Python function, not an entire Python program. OVITO is responsible for calling your user-defined function whenever it needs to.
+    </para>
+    <para>
+      The function receives the current dataset, produced by the upstream data pipeline, as an input argument, and you can implement your own data processing algorithms 
+      within the Python function, operating on the provided input data. Use OVITO's comprehensive <pydoc-link href="index" no-pro-tag="1">Python API</pydoc-link>
+      to access different aspects of the datasets or dynamically generate new data objects, which will then be rendered in OVITO's interactive viewports. 
+    </para>
+  </simplesect>
 
   <simplesect>
     <title>Usage</title>
