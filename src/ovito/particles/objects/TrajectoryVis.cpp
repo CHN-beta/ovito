@@ -139,7 +139,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 			simulationCell));
 
 	// The shading mode for corner spheres.
-	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == CylinderPrimitive::NormalShading)
+	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ShadingMode::NormalShading)
 			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
 	// Check if we already have a valid rendering primitives that are up to date.

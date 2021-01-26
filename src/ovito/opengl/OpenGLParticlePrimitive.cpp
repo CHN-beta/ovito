@@ -433,6 +433,8 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 		_transparenciesBuffer.detach(renderer, shader, "transparency");
 	if(_radiiBuffer.isCreated())
 		_radiiBuffer.detach(renderer, shader, "particle_radius");
+	if(_selectionBuffer.isCreated())
+		_selectionBuffer.detach(renderer, shader, "selection");
 
 	// Reset state.
 	shader->release();

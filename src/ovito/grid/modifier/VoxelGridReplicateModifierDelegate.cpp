@@ -53,6 +53,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(Modifier* modifier, Pip
 
 			if(!existingVoxelGrid->domain())
 				continue;
+			existingVoxelGrid->verifyIntegrity();
 
 			std::array<int,3> nPBC;
 			Box3I newImages = mod->replicaRange();

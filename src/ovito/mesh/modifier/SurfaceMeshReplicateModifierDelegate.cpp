@@ -92,6 +92,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(Modifier* modifier, P
 					}
 				}
 			}
+			positionProperty.reset();
 
 			// Create a copy of the faces sub-object.
 			SurfaceMeshFaces* newFaces = newSurface->makeFacesMutable();

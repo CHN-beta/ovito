@@ -175,7 +175,8 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 ******************************************************************************/
 void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
 {
-	editObject()->setPropertyFieldValue(field, newValue);
+	if(editObject())
+		editObject()->setPropertyFieldValue(field, newValue);
 }
 
 }	// End of namespace
