@@ -81,6 +81,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
 	gridLayout->addWidget(massPUI->label(), 2, 0);
 	gridLayout->addLayout(massPUI->createFieldLayout(), 2, 1);
+	massPUI->spinner()->setStandardValue(0.0);
+	massPUI->textBox()->setPlaceholderText(tr("<unspecified>"));
 
 	QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"), rollout);
 	gridLayout = new QGridLayout(appearanceBox);
