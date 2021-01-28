@@ -22,37 +22,45 @@
 
 # Tell CMake to run Qt moc whenever necessary.
 SET(CMAKE_AUTOMOC ON)
-# As moc files are generated in the binary dir, tell CMake to always look for includes there.
-SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
+SET(CMAKE_AUTORCC ON)
 
 # The set of required Qt modules:
-LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Core Gui)
+LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Core Gui Xml)
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	# QOpenGLFunctions classes have been moved to the OpenGL module in Qt 6.
+	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS OpenGL OpenGLWidgets)
+ENDIF()
 IF(OVITO_BUILD_GUI)
-	# Note: QtConcurrent and QtPrintSupport are a dependency of the Qwt library.
-	# Note: QtDBus is an indirect dependency of the Xcb platform plugin under Linux.
-	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets Concurrent PrintSupport Svg DBus)
+	IF(NOT OVITO_QML_GUI)
+		# Note: QtConcurrent and QtPrintSupport are a dependency of the Qwt library.
+		# Note: QtDBus is an indirect dependency of the Xcb platform plugin under Linux.
+		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets Concurrent PrintSupport Svg DBus)
+	ELSE()
+		# The user interface is implemented using Qt Qml and Quick when running inside a web browser.
+		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml QmlModels QmlWorkerScript Quick QuickControls2 QuickTemplates2 Svg)
+		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QuickControls2Impl)
+		ENDIF()
+			# Additionally, when building for the desktop platform, we need the QtWidgets module.
+		IF(NOT EMSCRIPTEN)
+			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
+		ENDIF()
+	ENDIF()
 ENDIF()
 IF(NOT EMSCRIPTEN)
 	# The Qt Network module is used by the OVITO Core module, except in the wasm build.
 	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Network)
 ENDIF()
-IF(OVITO_BUILD_PLUGIN_GALAMOST)
-	# Note: QtXml is a dependency of the Galamost plugin.
-	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Xml)
-ENDIF()
-IF(OVITO_BUILD_WEBGUI)
-	# The user interface is implemented using Qt Qml and Quick when running inside a web browser.
-	LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml Quick QuickControls2 QuickTemplates2 Svg)
-	# Additionally, when building for the desktop platform, we need the QtWidgets module.
-	IF(NOT EMSCRIPTEN)
-		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
-	ENDIF()
-ENDIF()
 
-# Find the required Qt5 modules.
-FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-	FIND_PACKAGE(Qt5${component} REQUIRED)
-ENDFOREACH()
+# Find the required Qt modules.
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	FIND_PACKAGE(Qt6 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
+ELSEIF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
+	FIND_PACKAGE(Qt5 5.12 COMPONENTS ${OVITO_REQUIRED_QT_COMPONENTS} REQUIRED)
+ELSE()
+	MESSAGE(FATAL_ERROR "Invalid OVITO_QT_MAJOR_VERSION value: ${OVITO_QT_MAJOR_VERSION}. OVITO Supports only Qt5 and Qt6.")
+ENDIF()
 
 # This macro installs a third-party shared library or DLL in the OVITO program directory
 # so that it can be distributed together with the program.
@@ -124,14 +132,14 @@ FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 	ENDIF()
 ENDFUNCTION()
 
-# Ship the required Qt5 libraries with the program package.
+# Ship the required Qt libraries with the program package.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
 	# Install copies of the Qt libraries.
 	FILE(MAKE_DIRECTORY "${OVITO_LIBRARY_DIRECTORY}/lib")
 	FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		GET_TARGET_PROPERTY(lib Qt5::${component} LOCATION)
-		GET_TARGET_PROPERTY(lib_soname Qt5::${component} IMPORTED_SONAME_RELEASE)
+		GET_TARGET_PROPERTY(lib ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION)
+		GET_TARGET_PROPERTY(lib_soname ${OVITO_QT_MAJOR_VERSION}::${component} IMPORTED_SONAME_RELEASE)
 		CONFIGURE_FILE("${lib}" "${OVITO_LIBRARY_DIRECTORY}" COPYONLY)
 		GET_FILENAME_COMPONENT(lib_realname "${lib}" NAME)
 		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${lib_realname}" "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}")
@@ -180,29 +188,44 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_PYTHON_PACKAGE AND NOT OVITO_BUILD_CONDA)
 	# On Windows, the third-party library DLLs need to be installed in the OVITO directory.
 	# Gather Qt dynamic link libraries.
 	FOREACH(component IN LISTS OVITO_REQUIRED_QT_COMPONENTS)
-		GET_TARGET_PROPERTY(dll Qt5::${component} LOCATION_${CMAKE_BUILD_TYPE})
+		GET_TARGET_PROPERTY(dll ${OVITO_QT_MAJOR_VERSION}::${component} LOCATION_${CMAKE_BUILD_TYPE})
+		IF(NOT TARGET ${OVITO_QT_MAJOR_VERSION}::${component} OR NOT dll)
+			MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: ${OVITO_QT_MAJOR_VERSION}::${component}")
+		ENDIF()
 		OVITO_INSTALL_SHARED_LIB("${dll}" ".")
 		IF(${component} MATCHES "Core")
 			GET_FILENAME_COMPONENT(QtBinaryPath ${dll} PATH)
 			IF(dll MATCHES "Cored.dll$")
-				SET(_using_qt_debug_build TRUE)
+				SET(_qt_dll_suffix "d")
+			ELSE()
+				SET(_qt_dll_suffix "")
 			ENDIF()
 		ENDIF()
 	ENDFOREACH()
 
 	# Install Qt plugins.
-	IF(_using_qt_debug_build)
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindowsd.dll" "plugins/platforms/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpegd.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgifd.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicond.dll" "plugins/iconengines/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyled.dll" "plugins/styles/")
-	ELSE()
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows.dll" "plugins/platforms/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon.dll" "plugins/iconengines/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle.dll" "plugins/styles/")
-	ENDIF()
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows${_qt_dll_suffix}.dll" "plugins/platforms/")
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg${_qt_dll_suffix}.dll" "plugins/imageformats/")
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif${_qt_dll_suffix}.dll" "plugins/imageformats/")
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" "plugins/imageformats/")
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" "plugins/iconengines/")
+	OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" "plugins/styles/")
+
+	# Install QML modules.
+#	IF(OVITO_QML_GUI)
+#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick.2/qtquick2plugin${_qt_dll_suffix}.dll" "qml/QtQuick.2/")
+#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Layouts/qquicklayoutsplugin${_qt_dll_suffix}.dll" "qml/QtQuick/Layouts/")
+#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Controls.2/qtquickcontrols2plugin${_qt_dll_suffix}.dll" "qml/QtQuick/Controls.2/")
+
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
+#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
+
+#		INSTALL(FILES "${QtBinaryPath}/../qml/QtQuick.2/qmldir" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
+#		INSTALL(FILES "${QtBinaryPath}/../qml/QtQuick.2/plugins.qmltypes" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
+#	ENDIF()
 
 ENDIF()

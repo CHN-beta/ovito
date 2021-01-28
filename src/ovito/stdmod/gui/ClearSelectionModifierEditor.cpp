@@ -46,7 +46,7 @@ void ClearSelectionModifierEditor::createUI(const RolloutInsertionParameters& ro
 
 	// List only property containers that support element selection.
 	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty);
+		return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
 	});
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,17 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#if __VERSION__ >= 130
-
-	flat in vec4 vertex_color_fs;
-	out vec4 FragColor;
-
-#else
-
-	#define vertex_color_fs gl_Color
-	#define FragColor gl_FragColor
-
-#endif
+flat in vec4 vertex_color_fs;
+out vec4 FragColor;
 
 void main()
 {

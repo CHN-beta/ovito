@@ -148,7 +148,7 @@ protected:
 
 	/// Creates a default delegate for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext);
 
 	/// Lets the modifier's delegate operate on a pipeline flow state.
 	void applyDelegate(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
@@ -156,7 +156,7 @@ protected:
 protected:
 
 	/// The modifier delegate.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ModifierDelegate, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegate, setDelegate, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
 /**
@@ -207,7 +207,7 @@ protected:
 
 	/// Creates the list of delegate objects for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createModifierDelegates(const OvitoClass& delegateType);
+	void createModifierDelegates(const OvitoClass& delegateType, ExecutionContext executionContext);
 
 	/// Lets the registered modifier delegates operate on a pipeline flow state.
 	void applyDelegates(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
@@ -215,7 +215,7 @@ protected:
 protected:
 
 	/// List of modifier delegates.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(ModifierDelegate, delegates, PROPERTY_FIELD_ALWAYS_CLONE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<ModifierDelegate>, delegates, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

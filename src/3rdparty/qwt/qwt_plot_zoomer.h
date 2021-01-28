@@ -12,7 +12,9 @@
 
 #include "qwt_global.h"
 #include "qwt_plot_picker.h"
-#include <qstack.h>
+
+class QSizeF;
+template <typename T> class QStack;
 
 /*!
   \brief QwtPlotZoomer provides stacked zooming for a plot widget
@@ -90,7 +92,7 @@ public:
     QRectF zoomBase() const;
     QRectF zoomRect() const;
 
-    virtual void setAxis( int xAxis, int yAxis );
+    virtual void setAxis( int xAxis, int yAxis ) QWT_OVERRIDE;
 
     void setMaxStackDepth( int );
     int maxStackDepth() const;
@@ -123,12 +125,12 @@ protected:
 
     virtual QSizeF minZoomSize() const;
 
-    virtual void widgetMouseReleaseEvent( QMouseEvent * );
-    virtual void widgetKeyPressEvent( QKeyEvent * );
+    virtual void widgetMouseReleaseEvent( QMouseEvent * ) QWT_OVERRIDE;
+    virtual void widgetKeyPressEvent( QKeyEvent * ) QWT_OVERRIDE;
 
-    virtual void begin();
-    virtual bool end( bool ok = true );
-    virtual bool accept( QPolygon & ) const;
+    virtual void begin() QWT_OVERRIDE;
+    virtual bool end( bool ok = true ) QWT_OVERRIDE;
+    virtual bool accept( QPolygon & ) const QWT_OVERRIDE;
 
 private:
     void init( bool doReplot );

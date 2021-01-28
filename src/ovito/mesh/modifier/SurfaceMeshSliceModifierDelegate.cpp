@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "SurfaceMeshSliceModifierDelegate.h"
 
 namespace Ovito { namespace Mesh {
@@ -65,7 +66,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 				// Create a mesh vertex selection.
 				if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
 					ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty, false);
+					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty, false, Application::instance()->executionContext());
 					size_t numSelectedVertices = 0;
 					boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
 						bool selectionState = 
@@ -81,17 +82,17 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 
 					// Create a mesh face selection.
 					if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false);
+						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false, Application::instance()->executionContext());
 						size_t numSelectedFaces = 0;
-						HalfEdgeMeshPtr topology = outputMesh->topology();
+						const SurfaceMeshTopology* topology = outputMesh->topology();
 						auto firstFaceEdge = topology->firstFaceEdges().cbegin();
 						OVITO_ASSERT(topology->firstFaceEdges().size() == faceSelectionProperty.size());
 						for(int& selected : faceSelectionProperty) {
-							HalfEdgeMesh::edge_index ffe = *firstFaceEdge++;
-							HalfEdgeMesh::edge_index e = ffe;
+							SurfaceMesh::edge_index ffe = *firstFaceEdge++;
+							SurfaceMesh::edge_index e = ffe;
 							selected = 1;
 							do {
-								HalfEdgeMesh::vertex_index ev = topology->vertex2(e);
+								SurfaceMesh::vertex_index ev = topology->vertex2(e);
 								if(ev < 0 || ev >= vertexSelectionProperty.size() || !vertexSelectionProperty[ev]) {
 									selected = 0;
 									break;

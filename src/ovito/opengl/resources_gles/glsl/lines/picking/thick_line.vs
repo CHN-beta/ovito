@@ -27,7 +27,7 @@ uniform mat4 modelview_matrix;
 uniform mat4 projection_matrix;
 uniform bool is_perspective;
 uniform float line_width;
-uniform int pickingBaseID;
+uniform int picking_base_id;
 
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
@@ -51,7 +51,7 @@ void main()
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
 	// Compute sub-object ID from vertex ID.
-	int objectID = pickingBaseID + gl_VertexID / 4;
+	int objectID = picking_base_id + gl_VertexID / 4;
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	vertex_color_fs = vec4(
@@ -63,7 +63,7 @@ void main()
 #else // OpenGL ES 2.0:
 
 	// Compute sub-object ID from vertex ID.
-	float objectID = float(pickingBaseID + int(vertexID) / 4);
+	float objectID = float(picking_base_id + int(vertexID) / 4);
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	vertex_color_fs = vec4(

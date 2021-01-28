@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -25,8 +25,8 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/objects/ParticlesObject.h>
@@ -58,7 +58,7 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
 
 	Q_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
 	Q_CLASSINFO("DisplayName", "Spatial correlation function");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -72,13 +72,13 @@ public:
 		CELL_VECTOR_3 = 2,
 		RADIAL = 3
 	};
-    Q_ENUMS(AveragingDirectionType);
+    Q_ENUM(AveragingDirectionType);
 
     enum NormalizationType {
 		VALUE_CORRELATION = 0,
 		DIFFERENCE_CORRELATION = 1
 	};
-    Q_ENUMS(NormalizationType);
+    Q_ENUM(NormalizationType);
 
 	/// Constructor.
 	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
@@ -89,7 +89,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -99,25 +99,29 @@ private:
 	public:
 
 		/// Constructor.
-		CorrelationAnalysisEngine(ConstPropertyPtr positions,
+		CorrelationAnalysisEngine(const PipelineObject* dataSource, 
+								  ExecutionContext executionContext, 
+								  DataSet* dataset,
+								  ConstPropertyPtr positions,
 								  ConstPropertyPtr sourceProperty1,
 								  size_t vecComponent1,
 								  ConstPropertyPtr sourceProperty2,
 								  size_t vecComponent2,
-								  const SimulationCell& simCell,
+								  const SimulationCellObject* simCell,
 								  FloatType fftGridSpacing,
 								  bool applyWindow,
 								  bool doComputeNeighCorrelation,
 								  FloatType neighCutoff,
 								  int numberOfNeighBins,
 								  AveragingDirectionType averagingDirection) :
+			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
 			_sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),
 			_simCell(simCell), _fftGridSpacing(fftGridSpacing),
 			_applyWindow(applyWindow), _neighCutoff(neighCutoff),
 			_averagingDirection(averagingDirection),
-			_neighCorrelation(doComputeNeighCorrelation ? std::make_shared<PropertyStorage>(numberOfNeighBins, PropertyStorage::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
+			_neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(dataset, numberOfNeighBins, PropertyObject::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -173,7 +177,7 @@ private:
 		const ConstPropertyPtr& sourceProperty2() const { return _sourceProperty2; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the FFT cutoff radius.
 		FloatType fftGridSpacing() const { return _fftGridSpacing; }
@@ -229,7 +233,7 @@ private:
 		std::vector<FloatType> c2rFFT(int nX, int nY, int nZ, std::vector<std::complex<FloatType>>& cData);
 
 		/// Map property onto grid.
-		std::vector<FloatType>  mapToSpatialGrid(const PropertyStorage* property,
+		std::vector<FloatType>  mapToSpatialGrid(const PropertyObject* property,
 							  size_t propertyVectorComponent,
 							  const AffineTransformation& reciprocalCell,
 							  int nX, int nY, int nZ,
@@ -241,7 +245,7 @@ private:
 		const bool _applyWindow;
 		const FloatType _neighCutoff;
 		const AveragingDirectionType _averagingDirection;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _sourceProperty1;
 		ConstPropertyPtr _sourceProperty2;
@@ -318,8 +322,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::SpatialCorrelationFunctionModifier::AveragingDirectionType);
-Q_DECLARE_METATYPE(Ovito::Particles::SpatialCorrelationFunctionModifier::NormalizationType);
-Q_DECLARE_TYPEINFO(Ovito::Particles::SpatialCorrelationFunctionModifier::AveragingDirectionType, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Particles::SpatialCorrelationFunctionModifier::NormalizationType, Q_PRIMITIVE_TYPE);

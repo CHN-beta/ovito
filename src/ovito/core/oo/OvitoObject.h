@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ namespace Ovito {
 /**
  * \brief Universal base class for most objects in OVITO.
  *
- * The OvitoObject class implements a simple reference counting mechanism to manage the
+ * The OvitoObject class offers a reference counting mechanism to manage the
  * the lifetime of object instances. User code should make use of the OORef
  * smart-pointer class, which automatically increments and decrements the reference counter
  * of an OvitoObject when it holds a pointer to it.
@@ -91,7 +91,7 @@ public:
 	/// \brief Returns the current value of the object's reference counter.
 	/// \return The reference count for this object, i.e. the number of references
 	///         pointing to this object.
-	int objectReferenceCount() const noexcept { return _referenceCount; }
+	const QAtomicInt& objectReferenceCount() const noexcept { return _referenceCount; }
 
 #ifdef OVITO_DEBUG
 	/// \brief Returns whether this object has not been deleted yet.
@@ -106,23 +106,6 @@ public:
 
 	/// Returns the class descriptor for this object.
 	const OvitoClass& getOOMetaClass() const { return OOClass(); }
-
-	/// \brief Internal method that calls this object's aboutToBeDeleted() routine.
-	/// It is automatically called when the object's reference counter reaches zero.
-	void deleteObjectInternal() {
-		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT(_referenceCount == 0);
-
-		// Set the reference counter to a positive value to prevent the object
-		// from being deleted a second time during the call to aboutToBeDeleted().
-		_referenceCount = INVALID_REFERENCE_COUNT;
-		aboutToBeDeleted();
-
-		// After returning from aboutToBeDeleted(), the reference count should be back at the
-		// original value (no new references).
-		OVITO_ASSERT(_referenceCount == INVALID_REFERENCE_COUNT);
-		_referenceCount = 0;
-	}
 
 protected:
 
@@ -173,38 +156,38 @@ protected:
 
 private:
 
-	/// The current number of references to this object.
-	int _referenceCount = 0;
+	/// The current number of references to this object that keep it alive.
+	mutable QAtomicInt _referenceCount{0};
 
 	/// This is the special value the reference count of the object is set to while it is being deleted:
-	constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<decltype(_referenceCount)>::max() / 2;
+	constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<int>::max() / 2;
 
 	/// \brief Increments the reference count by one.
-	void incrementReferenceCount() Q_DECL_NOTHROW {
+	void incrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "OvitoObject::incrementReferenceCount()", "OORef class may only be used in main thread.");
-		++_referenceCount;
+		_referenceCount.ref();
 	}
 
 	/// \brief Decrements the reference count by one.
 	///
 	/// When the reference count becomes zero, then the object deletes itself automatically.
-	void decrementReferenceCount() {
+	void decrementReferenceCount() const noexcept {
 		OVITO_CHECK_OBJECT_POINTER(this);
-		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "OvitoObject::decrementReferenceCount()", "OORef class may only be used in main thread.");
-		OVITO_ASSERT_MSG(_referenceCount > 0, "OvitoObject::decrementReferenceCount()", "Reference count became negative.");
-		if(--_referenceCount == 0) {
-			deleteObjectInternal();
-			delete this;
+		if(!_referenceCount.deref()) {
+			const_cast<OvitoObject*>(this)->deleteObjectInternal();
 		}
 	}
 
+	/// Internal method that calls this object's aboutToBeDeleted() routine and the deletes the object.
+	/// It is automatically called when the object's reference counter reaches zero.
+	Q_INVOKABLE void deleteObjectInternal() noexcept;
+
 	/// Returns the name of the plugin class this object is an instance of. 
-	/// This method is an implementation detail required for the Q_PROPERTY macro above.
+	/// This method is an implementation detail required by the Q_PROPERTY macro above.
 	const QString& className() const { return getOOClass().name(); }
 
 	/// Returns the idenitifier of the plugin module this object belongs to. 
-	/// This method is an implementation detail required for the Q_PROPERTY macro above.
+	/// This method is an implementation detail required by the Q_PROPERTY macro above.
 	QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 
 #ifdef OVITO_DEBUG
@@ -214,13 +197,8 @@ private:
 	quint32 _magicAliveCode = 0x87ABCDEF;
 #endif
 
-	// Give OORef smart pointer access to the internal reference count.
+	// Give OORef smart-pointer class access to the internal reference counter.
 	template<class T> friend class OORef;
-
-	// These classes also require direct access to the reference counter since they
-	// don't make use of the OORef smart pointer class.
-	friend class VectorReferenceFieldBase;
-	friend class SingleReferenceFieldBase;
 
 	// These classes need to access the protected serialization functions.
 	friend class ObjectSaveStream;
@@ -234,7 +212,7 @@ private:
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline T* dynamic_object_cast(U* obj) {
+inline T* dynamic_object_cast(U* obj) noexcept {
 	return qobject_cast<T*>(obj);
 }
 
@@ -245,7 +223,7 @@ inline T* dynamic_object_cast(U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline const T* dynamic_object_cast(const U* obj) {
+inline const T* dynamic_object_cast(const U* obj) noexcept {
 	return qobject_cast<const T*>(obj);
 }
 
@@ -257,7 +235,7 @@ inline const T* dynamic_object_cast(const U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline T* static_object_cast(U* obj) {
+inline T* static_object_cast(U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<T*>(obj);
@@ -271,35 +249,64 @@ inline T* static_object_cast(U* obj) {
 ///
 /// \relates OvitoObject
 template<class T, class U>
-inline const T* static_object_cast(const U* obj) {
+inline const T* static_object_cast(const U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<const T*>(obj);
 }
 
-
-/// \brief Dynamic cast operator for OORef smart pointers.
-///
-/// Returns a smart pointer to the input object, cast to type \c T if the object is of type \c T
-/// (or a subclass); otherwise returns \c NULL.
-///
-/// \relates OORef
-template<class T, class U>
-inline OORef<T> dynamic_object_cast(const OORef<U>& obj) {
-	return qobject_cast<T*>(obj.get());
+/// \brief Turns a pointer to a const object into a pointer to a non-const object.
+template<class T>
+T* const_pointer_cast(const T* p) noexcept {
+    return const_cast<T*>(p);
 }
 
-/// \brief Static cast operator for smart pointers to OvitoObject derived objects.
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
+///
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
+/// (or a subclass); otherwise returns \c NULL.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
+	return dynamic_pointer_cast<T, U>(obj);
+}
+
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
+///
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
+/// (or a subclass); otherwise returns \c NULL.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
+	return dynamic_pointer_cast<T, U>(std::move(obj));
+}
+
+/// \brief Static cast operator for fancy pointers to OVITO objects.
 ///
 /// Returns the given object cast to type \c T.
 /// Performs a runtime check of the object type in debug build.
 ///
-/// \relates OORef
-template<class T, class U>
-inline OORef<T> static_object_cast(const OORef<U>& obj) {
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
 		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
-	return static_pointer_cast<T>(obj);
+	return static_pointer_cast<T, U>(obj);
+}
+
+/// \brief Static cast operator for fancy pointers to OVITO objects.
+///
+/// Returns the given object cast to type \c T.
+/// Performs a runtime check of the object type in debug build.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
+	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
+		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+	return static_pointer_cast<T, U>(std::move(obj));
 }
 
 }	// End of namespace

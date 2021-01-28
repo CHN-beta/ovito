@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/core/app/Application.h>
 #include "DataTableInspectionApplet.h"
 
 namespace Ovito { namespace StdObj {
@@ -70,7 +71,7 @@ QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
 	_switchToPlotAction->setChecked(true);
 	toolbar->addSeparator();
 
-	_exportTableToFileAction = new QAction(QIcon(":/gui/actions/file/file_save_as.bw.svg"), tr("Export data plot"), this);
+	_exportTableToFileAction = new QAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Export data plot"), this);
 	connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
 	toolbar->addAction(_exportTableToFileAction);
 
@@ -99,14 +100,11 @@ QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
 /******************************************************************************
 * Creates an optional ad-hoc property that serves as header column for the table.
 ******************************************************************************/
-OORef<PropertyObject> DataTableInspectionApplet::createHeaderColumnProperty(const PropertyContainer* container)
+ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const PropertyContainer* container)
 {
 	const DataTable* table = static_object_cast<DataTable>(container);
-	if(!table->getX()) {
-		if(ConstPropertyPtr x = table->getXStorage()) {
-			return DataTable::OOClass().createFromStorage(container->dataset(), std::move(x));
-		}
-	}
+	if(!table->getX())
+		return table->getXValues();
 	return {};
 }
 
@@ -164,7 +162,6 @@ void DataTableInspectionApplet::exportDataToFile()
 	dialog.setOption(QFileDialog::DontUseNativeDialog);
 	dialog.setAcceptMode(QFileDialog::AcceptSave);
 	dialog.setFileMode(QFileDialog::AnyFile);
-	dialog.setConfirmOverwrite(true);
 
 	// Go to the last directory used.
 	QSettings settings;
@@ -185,12 +182,9 @@ void DataTableInspectionApplet::exportDataToFile()
 		// Create exporter service.
 		OORef<FileExporter> exporter;
 		if(_stackedWidget->currentIndex() == 0)
-			exporter = new DataTablePlotExporter(table->dataset());
+			exporter = OORef<DataTablePlotExporter>::create(table->dataset(), Application::instance()->executionContext());
 		else
-			exporter = new DataTableExporter(table->dataset());
-
-		// Load user-defined default settings.
-		exporter->loadUserDefaults();
+			exporter = OORef<DataTableExporter>::create(table->dataset(), Application::instance()->executionContext());
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

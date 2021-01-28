@@ -90,16 +90,7 @@ public:
 
 	/// Returns the internal replacement for the given data vis element.
 	/// If there is no replacement, the original vis element is returned.
-	DataVis* getReplacementVisElement(DataVis* vis) const {
-		OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
-		OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
-		OVITO_ASSERT(vis);
-		int index = replacedVisElements().indexOf(vis);
-		if(index >= 0)
-			return replacementVisElements()[index];
-		else
-			return vis;
-	}
+	DataVis* getReplacementVisElement(DataVis* vis) const;
 
 protected:
 
@@ -107,7 +98,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;
@@ -143,19 +134,19 @@ private:
 	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, std::vector<const DataObject*>& objectStack) const;
 
 	/// The terminal object of the pipeline that outputs the data to be rendered by this PipelineSceneNode.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(PipelineObject, dataProvider, setDataProvider);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PipelineObject>, dataProvider, setDataProvider);
 
 	/// The transient list of display objects that render the node's data in the viewports.
 	/// This list is for internal caching purposes only and is rebuilt every time the node's
 	/// pipeline is newly evaluated.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// List of weak references to visual elements coming from the pipeline which shall be replaced with
-	/// independent versions owned by this node.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+	/// independent versions owned by this pipeline.
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis*, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
-	/// Visual elements owned by the node which replace the ones produced by the pipeline.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	/// Visual elements owned by the pipeline itself, which replace the ones generated within the pipeline.
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Activates the precomputation of the pipeline results for all animation frames.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);

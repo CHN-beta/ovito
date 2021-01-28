@@ -10,12 +10,12 @@
 #include "qwt_symbol.h"
 #include "qwt_painter.h"
 #include "qwt_graphic.h"
-#include <qapplication.h>
+#include "qwt_math.h"
+
 #include <qpainter.h>
 #include <qpainterpath.h>
 #include <qpixmap.h>
 #include <qpaintengine.h>
-#include <qmath.h>
 #ifndef QWT_NO_SVG
 #include <qsvgrenderer.h>
 #endif
@@ -337,8 +337,8 @@ static inline void qwtDrawTriangleSymbols(
 
     if ( doAlign )
     {
-        sw2 = qFloor( sw2 );
-        sh2 = qFloor( sh2 );
+        sw2 = std::floor( sw2 );
+        sh2 = std::floor( sh2 );
     }
 
     QPolygonF triangle( 3 );
@@ -441,8 +441,8 @@ static inline void qwtDrawLineSymbols(
 
     if ( QwtPainter::roundingAlignment( painter ) )
     {
-        const int sw = qFloor( size.width() );
-        const int sh = qFloor( size.height() );
+        const int sw = qwtFloor( size.width() );
+        const int sh = qwtFloor( size.height() );
         const int sw2 = size.width() / 2;
         const int sh2 = size.height() / 2;
 
@@ -734,8 +734,8 @@ static inline void qwtDrawHexagonSymbols( QPainter *painter,
         double y1 = y - 2 * dy;
         if ( doAlign )
         {
-            x1 = qCeil( x1 );
-            y1 = qCeil( y1 );
+            x1 = std::ceil( x1 );
+            y1 = std::ceil( y1 );
         }
 
         const double x2 = x1 + 1 * dx;
@@ -1325,31 +1325,60 @@ void QwtSymbol::drawSymbols( QPainter *painter,
         }
         else if ( d_data->cache.policy == QwtSymbol::AutoCache )
         {
-            if ( painter->paintEngine()->type() == QPaintEngine::Raster )
+            switch( painter->paintEngine()->type() )
             {
-                useCache = true;
-            }
-            else
-            {
-                switch( d_data->style )
+                case QPaintEngine::OpenGL:
+                case QPaintEngine::OpenGL2:
                 {
-                    case QwtSymbol::XCross:
-                    case QwtSymbol::HLine:
-                    case QwtSymbol::VLine:
-                    case QwtSymbol::Cross:
-                        break;
-
-                    case QwtSymbol::Pixmap:
+                    // using a FBO as cache ?
+                    useCache = false;
+                    break;
+                }
+                case QPaintEngine::OpenVG:
+                case QPaintEngine::SVG:
+                case QPaintEngine::Pdf:
+                case QPaintEngine::Picture:
+                {
+                    // vector graphics
+                    useCache = false;
+                    break;
+                }
+                case QPaintEngine::X11:
+                {
+                    switch( d_data->style )
                     {
-                        if ( !d_data->size.isEmpty() &&
-                            d_data->size != d_data->pixmap.pixmap.size() )
+                        case QwtSymbol::XCross:
+                        case QwtSymbol::HLine:
+                        case QwtSymbol::VLine:
+                        case QwtSymbol::Cross:
                         {
-                            useCache = true;
+                            // for the very simple shapes using vector graphics is
+                            // usually faster.
+
+                            useCache = false;
+                            break;
                         }
-                        break;
+
+                        case QwtSymbol::Pixmap:
+                        {
+                            if ( d_data->size.isEmpty() ||
+                                d_data->size == d_data->pixmap.pixmap.size() )
+                            {
+                                // no need to have a pixmap cache for a pixmap
+                                // of the same size
+
+                                useCache = false;
+                            }
+                            break;
+                        }
+                        default:
+                            break;
                     }
-                    default:
-                        useCache = true;
+                    break;
+                }
+                default:
+                {
+                    useCache = true;
                 }
             }
         }
@@ -1368,7 +1397,7 @@ void QwtSymbol::drawSymbols( QPainter *painter,
             p.setRenderHints( painter->renderHints() );
             p.translate( -br.topLeft() );
 
-            const QPointF pos;
+            const QPointF pos( 0.0, 0.0 );
             renderSymbols( &p, &pos, 1 );
         }
 
@@ -1620,7 +1649,7 @@ QRect QwtSymbol::boundingRect() const
         {
             qreal pw = 0.0;
             if ( d_data->pen.style() != Qt::NoPen )
-                pw = qMax( d_data->pen.widthF(), qreal( 1.0 ) );
+                pw = QwtPainter::effectivePenWidth( d_data->pen );
 
             rect.setSize( d_data->size + QSizeF( pw, pw ) );
             rect.moveCenter( QPointF( 0.0, 0.0 ) );
@@ -1639,7 +1668,7 @@ QRect QwtSymbol::boundingRect() const
         {
             qreal pw = 0.0;
             if ( d_data->pen.style() != Qt::NoPen )
-                pw = qMax( d_data->pen.widthF(), qreal( 1.0 ) );
+                pw = QwtPainter::effectivePenWidth( d_data->pen );
 
             rect.setSize( d_data->size + QSizeF( 2 * pw, 2 * pw ) );
             rect.moveCenter( QPointF( 0.0, 0.0 ) );
@@ -1717,10 +1746,10 @@ QRect QwtSymbol::boundingRect() const
     }
 
     QRect r;
-    r.setLeft( qFloor( rect.left() ) );
-    r.setTop( qFloor( rect.top() ) );
-    r.setRight( qCeil( rect.right() ) );
-    r.setBottom( qCeil( rect.bottom() ) );
+    r.setLeft( qwtFloor( rect.left() ) );
+    r.setTop( qwtFloor( rect.top() ) );
+    r.setRight( qwtCeil( rect.right() ) );
+    r.setBottom( qwtCeil( rect.bottom() ) );
 
     if ( d_data->style != QwtSymbol::Pixmap )
         r.adjust( -1, -1, 1, 1 ); // for antialiasing

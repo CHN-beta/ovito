@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2020 Alexander Stukowski
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -25,7 +25,7 @@ OVITO_STANDARD_PLUGIN(Galamost
 	SOURCES
 		GALAMOSTImporter.cpp
 	PLUGIN_DEPENDENCIES Particles
-	LIB_DEPENDENCIES Qt5::Xml
+	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
 )
 
 # Propagate list of plugins to parent scope.

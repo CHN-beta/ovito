@@ -30,50 +30,24 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 OpenGLTextPrimitive::OpenGLTextPrimitive(OpenGLSceneRenderer* renderer) :
-	_contextGroup(QOpenGLContextGroup::currentContextGroup()),
-	_needImageUpdate(true),
 	_imageBuffer(renderer->createImagePrimitive())
 {
 }
 
 /******************************************************************************
-* Returns true if the buffer is filled and can be rendered with the given renderer.
+* Renders the text string.
 ******************************************************************************/
-bool OpenGLTextPrimitive::isValid(SceneRenderer* renderer)
-{
-	return _imageBuffer->isValid(renderer);
-}
-
-/******************************************************************************
-* Renders the text string at the given location given in normalized
-* viewport coordinates ([-1,+1] range).
-******************************************************************************/
-void OpenGLTextPrimitive::renderViewport(SceneRenderer* renderer, const Point2& pos, int alignment)
-{
-	OpenGLSceneRenderer* vpRenderer = dynamic_object_cast<OpenGLSceneRenderer>(renderer);
-	GLint vc[4];
-	vpRenderer->glGetIntegerv(GL_VIEWPORT, vc);
-
-	Point2 windowPos((pos.x() + 1.0) * vc[2] / 2, (-pos.y() + 1.0) * vc[3] / 2);
-	renderWindow(renderer, windowPos, alignment);
-}
-
-/******************************************************************************
-* Renders the text string at the given 2D window (device pixel) coordinates.
-******************************************************************************/
-void OpenGLTextPrimitive::renderWindow(SceneRenderer* renderer, const Point2& pos, int alignment)
+void OpenGLTextPrimitive::render(OpenGLSceneRenderer* renderer)
 {
 	if(text().isEmpty() || renderer->isPicking())
 		return;
-
-	OpenGLSceneRenderer* vpRenderer = static_object_cast<OpenGLSceneRenderer>(renderer);
-    OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
-	if(_needImageUpdate) {
-		_needImageUpdate = false;
+	
+	if(_imageUpdateNeeded) {
+		_imageUpdateNeeded = false;
 
 		// Measure text size.
 		QRect rect;
-		qreal devicePixelRatio = vpRenderer->devicePixelRatio();
+		qreal devicePixelRatio = renderer->devicePixelRatio();
 		{
 			QImage textureImage(1, 1, QImage::Format_RGB32);
 			textureImage.setDevicePixelRatio(devicePixelRatio);
@@ -93,19 +67,18 @@ void OpenGLTextPrimitive::renderWindow(SceneRenderer* renderer, const Point2& po
 			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, text());
 		}
 		_textOffset = rect.topLeft();
-		//textureImage.save(QString("%1.png").arg(text()));
 
 		_imageBuffer->setImage(textureImage);
 	}
-    OVITO_REPORT_OPENGL_ERRORS(vpRenderer);
 
-	Point2 alignedPos = pos;
-	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)vpRenderer->antialiasingLevelInternal();
-	if(alignment & Qt::AlignRight) alignedPos.x() += -size.x();
-	else if(alignment & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
-	if(alignment & Qt::AlignBottom) alignedPos.y() += -size.y();
-	else if(alignment & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
-	_imageBuffer->renderWindow(renderer, alignedPos, size);
+	Point2 alignedPos = position();
+	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)renderer->antialiasingLevelInternal();
+	if(alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
+	else if(alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
+	if(alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
+	else if(alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
+	_imageBuffer->setRectWindow(Box2(alignedPos, alignedPos + size));
+	renderer->renderImage(_imageBuffer);
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,8 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor& field)
 		Q_EMIT speedChanged(ticksPerFrame());
 	else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
 		adjustAnimationInterval();
+
+	RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -203,7 +205,7 @@ void AnimationSettings::setAnimationPlayback(bool on)
 {
 	if(on) {
 		bool reverse = false;
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			if(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
 				reverse = true;
 		}
@@ -348,7 +350,11 @@ void AnimationSettings::adjustAnimationInterval()
 				else {
 					auto additionalLabels = node->dataProvider()->animationFrameLabels();
 					if(!additionalLabels.empty())
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+						_namedFrames.insert(additionalLabels);
+#else
 						_namedFrames.unite(additionalLabels);
+#endif
 				}
 			}
 		}

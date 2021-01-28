@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
@@ -53,7 +53,7 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 
 	Q_CLASSINFO("DisplayName", "Unwrap trajectories");
 	Q_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Modification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -122,7 +122,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Requests the next trajectory frame from the upstream pipeline.
 	void fetchNextFrame();
@@ -153,7 +153,7 @@ private:
 
 	/// Working data used during processing of the input trajectory.
 	std::unordered_map<qlonglong,Point3> _previousPositions;
-	SimulationCell _previousCell;
+	DataOORef<const SimulationCellObject> _previousCell;
 	std::array<int,3> _currentFlipState{{0,0,0}};
 };
 

@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
+#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -107,12 +108,6 @@ public:
 	/// Handler function for exceptions.
 	virtual void reportError(const Exception& exception, bool blocking);
 
-	/// The possibles types of contexts in which the program's actions are performed.
-	enum class ExecutionContext {
-		Interactive,	///< Actions are currently performed by the interactive user.
-		Scripting		///< Actions are currently performed by a script.
-	};
-
 	/// \brief Returns type of context in which the program's actions are currently performed.
 	/// \note It is only safe to call this method from the main thread.
 	ExecutionContext executionContext() const {
@@ -138,23 +133,23 @@ protected:
 	virtual FileManager* createFileManager();
 
 	/// Indicates that the application is running in console mode.
-	bool _consoleMode;
+	bool _consoleMode = true;
 
 	/// Indicates that the application is running in headless mode (without OpenGL support).
-	bool _headlessMode;
+	bool _headlessMode = true;
 
 	/// Indicates that a script engine is executing code right now.
 	/// If false, the program is running in interactive mode and all actions are performed by the human user.
 	ExecutionContext _executionContext = ExecutionContext::Interactive;
 
 	/// In console mode, this is the exit code returned by the application on shutdown.
-	int _exitCode;
+	int _exitCode = 0;
 
 	/// The main dataset container.
 	QPointer<DataSetContainer> _datasetContainer;
 
 	/// The number of parallel threads to be used by the application when doing computations.
-	int _idealThreadCount;
+	int _idealThreadCount = 1;
 
 	/// The global file manager instance.
 	std::unique_ptr<FileManager> _fileManager;

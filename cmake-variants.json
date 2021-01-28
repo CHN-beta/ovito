@@ -23,7 +23,7 @@
                 "short": "Desktop",
                 "long": "Builds the desktop version of OVITO",
                 "settings": {
-                    "OVITO_BUILD_WEBGUI" : "OFF",
+                    "OVITO_QML_GUI" : "OFF",
                     "OVITO_BUILD_GUI" : "ON",
                     "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "ON",
                     "OVITO_BUILD_PLUGIN_GALAMOST" : "ON",
@@ -37,7 +37,7 @@
                 "short": "Web",
                 "long": "Builds the browser version of OVITO",
                 "settings": {
-                    "OVITO_BUILD_WEBGUI" : "ON",
+                    "OVITO_QML_GUI" : "ON",
                     "OVITO_BUILD_GUI" : "OFF",
                     "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "OFF",
                     "OVITO_BUILD_PLUGIN_GALAMOST" : "OFF",

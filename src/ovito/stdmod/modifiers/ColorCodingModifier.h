@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -336,7 +336,7 @@ public:
 
 	/// Loads the user-defined default values of this object's parameter fields from the
 	/// application's settings store.
-	virtual void loadUserDefaults() override;
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
@@ -374,21 +374,21 @@ protected:
 	virtual void initializeModifier(ModifierApplication* modApp) override;
 
 	/// Determines the range of values in the input data for the selected property.
-	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max);
+	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
 	/// This controller stores the start value of the color scale.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, startValueController, setStartValueController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, startValueController, setStartValueController);
 
 	/// This controller stores the end value of the color scale.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, endValueController, setEndValueController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, endValueController, setEndValueController);
 
 	/// This object converts property values to colors.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(ColorCodingGradient, colorGradient, setColorGradient);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ColorCodingGradient>, colorGradient, setColorGradient);
 
 	/// The input property that is used as data source for the coloring.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
@@ -398,6 +398,11 @@ private:
 
 	/// Controls whether the input selection is preserved. If false, the selection is cleared by the modifier.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
+
+	/// Controls whether the value range of the color map is automically adjusted to the range of input values.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustRange, setAutoAdjustRange);
+
+	friend class ColorCodingModifierDelegate;
 };
 
 }	// End of namespace

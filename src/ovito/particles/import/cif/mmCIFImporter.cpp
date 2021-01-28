@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "mmCIFImporter.h"
 
@@ -89,7 +89,7 @@ bool mmCIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
+void mmCIFImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -98,9 +98,6 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 	// Map the whole file into memory for parsing.
 	const char* buffer_start;
@@ -121,12 +118,12 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 		// Unmap the input file from memory.
 		if(fileContents.isEmpty())
 			stream.munmap();
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse the mmCIF data into an molecular structure representation.
 		gemmi::Structure structure = gemmi::make_structure(doc);
 		structure.merge_chain_parts();
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		const gemmi::Model& model = structure.first_model();
 
@@ -139,9 +136,9 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 		}
 
 		// Allocate property arrays for atoms.
-		PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::PositionProperty, false);
-		PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(natoms, ParticlesObject::TypeProperty, false);
-		PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
+		setParticleCount(natoms);
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
 
@@ -149,26 +146,25 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 		bool hasOccupancy = false;
 		for(const gemmi::Chain& chain : model.chains) {
 			for(const gemmi::Residue& residue : chain.residues) {
-				if(isCanceled()) return {};
+				if(isCanceled()) return;
 				for(const gemmi::Atom& atom : residue.atoms) {
 					// Atomic position.
 					*posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
 					// Atomic type.
 					*typeIter++ = atom.element.ordinal();
-					if(!typeList->hasTypeId(atom.element.ordinal()))
-						typeList->addNamedTypeId(atom.element.ordinal(), QString::fromStdString(atom.element.name()), false);
+					addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
 					// Check for presence of occupancy values.
 					if(atom.occ != 1) hasOccupancy = true;
 				}
 			}
 		}
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = frameData->particles().addProperty(std::make_shared<PropertyStorage>(natoms, PropertyStorage::Float, 1, 0, QStringLiteral("Occupancy"), false));
+			PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float, 1, 0, false);
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {
@@ -183,7 +179,7 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 		// Since we created particle types on the go while reading the particles, the assigned particle type IDs
 		// depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
-		typeList->sortTypesById();
+		typeProperty.buffer()->sortElementTypesById();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {
@@ -213,26 +209,27 @@ FileSourceImporter::FrameDataPtr mmCIFImporter::FrameLoader::loadFile()
 				cell(1,2) = structure.cell.c * (std::cos(alpha) - std::cos(beta)*std::cos(gamma)) / std::sin(gamma);
 				cell(2,2) = v / (structure.cell.a * structure.cell.b * std::sin(gamma));
 			}
-			frameData->simulationCell().setMatrix(cell);
+			simulationCell()->setCellMatrix(cell);
 		}
 		else if(posProperty.size() != 0) {
 			// Use bounding box of atomic coordinates as non-periodic simulation cell.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
-			frameData->simulationCell().setPbcFlags(false, false, false);
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			simulationCell()->setPbcFlags(false, false, false);
+			simulationCell()->setCellMatrix(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
 					boundingBox.minc - Point3::Origin()));
 		}
-		frameData->setStatus(tr("Number of atoms: %1").arg(natoms));
+		state().setStatus(tr("Number of atoms: %1").arg(natoms));
 	}
 	catch(const std::exception& e) {
 		throw Exception(tr("mmCIF file reader error: %1").arg(e.what()));
 	}
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

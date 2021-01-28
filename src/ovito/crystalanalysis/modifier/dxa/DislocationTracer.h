@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ public:
 	const std::shared_ptr<DislocationNetwork>& network() { return _network; }
 
 	/// Returns the simulation cell.
-	const SimulationCell& cell() const { return mesh().structureAnalysis().cell(); }
+	const SimulationCellObject* cell() const { return mesh().cell(); }
 
 	/// Performs a dislocation search on the interface mesh by generating
 	/// trial Burgers circuits. Identified dislocation segments are converted to
@@ -106,11 +106,16 @@ private:
 	/// Calculates the shift vector that must be subtracted from point B to bring it close to point A such that
 	/// the vector (B-A) is not a wrapped vector.
 	Vector3 calculateShiftVector(const Point3& a, const Point3& b) const {
-		Vector3 d = cell().absoluteToReduced(b - a);
-		d.x() = cell().hasPbc(0) ? std::floor(d.x() + FloatType(0.5)) : FloatType(0);
-		d.y() = cell().hasPbc(1) ? std::floor(d.y() + FloatType(0.5)) : FloatType(0);
-		d.z() = cell().hasPbc(2) ? std::floor(d.z() + FloatType(0.5)) : FloatType(0);
-		return cell().reducedToAbsolute(d);
+		if(cell()) {
+			Vector3 d = cell()->absoluteToReduced(b - a);
+			d.x() = cell()->hasPbc(0) ? std::floor(d.x() + FloatType(0.5)) : FloatType(0);
+			d.y() = cell()->hasPbc(1) ? std::floor(d.y() + FloatType(0.5)) : FloatType(0);
+			d.z() = cell()->hasPbc(2) ? std::floor(d.z() + FloatType(0.5)) : FloatType(0);
+			return cell()->reducedToAbsolute(d);
+		}
+		else {
+			return b - a;
+		}
 	}
 
 private:

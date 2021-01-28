@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,16 +58,17 @@ void bitmapSort(iterator begin, iterator end, int max)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const SimulationCell& simCell,
+StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const SimulationCellObject* simCell,
 		LatticeStructureType inputCrystalType, ConstPropertyPtr particleSelection,
 		PropertyPtr outputStructures, std::vector<Matrix3> preferredCrystalOrientations,
 		bool identifyPlanarDefects) :
-	_positions(positions), _simCell(simCell),
+	_positions(positions), 
+	_simCell(simCell),
 	_inputCrystalType(inputCrystalType),
 	_structureTypes(std::move(outputStructures)),
 	_structureTypesArray(_structureTypes),
 	_particleSelection(std::move(particleSelection)),
-	_atomClusters(ParticlesObject::OOClass().createStandardStorage(positions->size(), ParticlesObject::ClusterProperty, true)),
+	_atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->dataset(), positions->size(), ParticlesObject::ClusterProperty, true, ExecutionContext::Scripting)),
 	_atomClustersArray(_atomClusters),
 	_atomSymmetryPermutations(positions->size()),
 	_clusterGraph(std::make_shared<ClusterGraph>()),
@@ -88,7 +89,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
 	_neighborLists.resize(_positions->size() * _neighborListsSize, -1);
 
 	// Reset atomic structure types.
-	_structureTypesArray.fill(LATTICE_OTHER);
+	std::fill(_structureTypesArray.begin(), _structureTypesArray.end(), LATTICE_OTHER);
 }
 
 /******************************************************************************
@@ -455,7 +456,7 @@ bool StructureAnalysis::identifyStructures(Task& promise)
 	// Prepare the neighbor list.
 	int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
 	NearestNeighborFinder neighFinder(maxNeighborListSize);
-	if(!neighFinder.prepare(positions(), cell(), _particleSelection.storage(), &promise))
+	if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer(), &promise))
 		return false;
 
 	// Identify local structure around each particle.
@@ -730,10 +731,12 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 			for(int i = 0; i < nn; i++) {
 				const Vector3& neighborVector = neighborVectors[neighborMapping[i]];
 				// Check if neighbor vectors spans more than half of a periodic simulation cell.
-				for(size_t dim = 0; dim < 3; dim++) {
-					if(cell().hasPbc(dim)) {
-						if(std::abs(cell().inverseMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON)
-							StructureAnalysis::generateCellTooSmallError(dim);
+				if(cell()) {
+					for(size_t dim = 0; dim < 3; dim++) {
+						if(cell()->hasPbc(dim)) {
+							if(std::abs(cell()->inverseMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON)
+								StructureAnalysis::generateCellTooSmallError(dim);
+						}
 					}
 				}
 				setNeighbor(particleIndex, i, neighborIndices[neighborMapping[i]]);
@@ -813,7 +816,8 @@ bool StructureAnalysis::buildClusters(Task& promise)
 
 				// Add vector pair to matrices for computing the cluster orientation.
 				const Vector3& latticeVector = latticeStructure.latticeVectors[permutation[neighborIndex]];
-				const Vector3& spatialVector = cell().wrapVector(positionsArray[neighborAtomIndex] - positionsArray[currentAtomIndex]);
+				Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[currentAtomIndex];
+				if(cell()) spatialVector = cell()->wrapVector(spatialVector);
 				for(size_t i = 0; i < 3; i++) {
 					for(size_t j = 0; j < 3; j++) {
 						orientationV(i,j) += (double)(latticeVector[j] * latticeVector[i]);

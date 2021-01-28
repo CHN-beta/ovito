@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,8 +37,16 @@ DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 ******************************************************************************/
 CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset) : ReferenceConfigurationModifier(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void CalculateDisplacementsModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Create vis element for vectors.
-	setVectorVis(new VectorVis(dataset));
+	setVectorVis(OORef<VectorVis>::create(dataset(), executionContext));
 	vectorVis()->setObjectTitle(tr("Displacements"));
 
 	// Don't show vectors by default, because too many vectors can make the
@@ -49,12 +57,14 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset)
 	// to the current particle positions.
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
+
+	ReferenceConfigurationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -75,13 +85,15 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 		throwException(tr("Reference configuration does not contain simulation cell info."));
 
 	// Get particle identifiers.
-	ConstPropertyPtr identifierProperty = particles->getPropertyStorage(ParticlesObject::IdentifierProperty);
-	ConstPropertyPtr refIdentifierProperty = refParticles->getPropertyStorage(ParticlesObject::IdentifierProperty);
+	const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+	const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DisplacementEngine>(validityInterval, posProperty->storage(), inputCell->data(),
-			particles, refPosProperty->storage(), refCell->data(),
-			std::move(identifierProperty), std::move(refIdentifierProperty),
+	return std::make_shared<DisplacementEngine>(
+			modApp, executionContext, dataset(),
+			validityInterval, posProperty, inputCell,
+			particles, refPosProperty, refCell,
+			identifierProperty, refIdentifierProperty,
 			affineMapping(), useMinimumImageConvention());
 }
 
@@ -107,15 +119,15 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 			FloatType* umag = displacementMagnitudesArray.begin() + startIndex;
 			const Point3* p = positionsArray.cbegin() + startIndex;
 			auto index = currentToRefIndexMap().cbegin() + startIndex;
-			const AffineTransformation& reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCell().matrix() : cell().matrix();
+			const AffineTransformation& reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCell()->matrix() : cell()->matrix();
 			for(; count; --count, ++u, ++umag, ++p, ++index) {
 				if(task.isCanceled()) return;
-				Point3 reduced_current_pos = cell().inverseMatrix() * (*p);
-				Point3 reduced_reference_pos = refCell().inverseMatrix() * refPositionsArray[*index];
+				Point3 reduced_current_pos = cell()->inverseMatrix() * (*p);
+				Point3 reduced_reference_pos = refCell()->inverseMatrix() * refPositionsArray[*index];
 				Vector3 delta = reduced_current_pos - reduced_reference_pos;
 				if(useMinimumImageConvention()) {
 					for(size_t k = 0; k < 3; k++) {
-						if(refCell().hasPbc(k))
+						if(refCell()->hasPbc(k))
 							delta[k] -= std::floor(delta[k] + FloatType(0.5));
 					}
 				}
@@ -135,12 +147,12 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 				*u = *p - refPositionsArray[*index];
 				if(useMinimumImageConvention()) {
 					for(size_t k = 0; k < 3; k++) {
-						if(refCell().hasPbc(k)) {
-							while((*u + refCell().matrix().column(k)).squaredLength() < u->squaredLength())
-								*u += refCell().matrix().column(k);
+						if(refCell()->hasPbc(k)) {
+							while((*u + refCell()->matrix().column(k)).squaredLength() < u->squaredLength())
+								*u += refCell()->matrix().column(k);
 
-							while((*u - refCell().matrix().column(k)).squaredLength() < u->squaredLength())
-								*u -= refCell().matrix().column(k);
+							while((*u - refCell()->matrix().column(k)).squaredLength() < u->squaredLength())
+								*u -= refCell()->matrix().column(k);
 						}
 					}
 				}
@@ -165,7 +177,8 @@ void CalculateDisplacementsModifier::DisplacementEngine::applyResults(TimePoint 
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	particles->createProperty(displacements())->setVisElement(modifier->vectorVis());
+	displacements()->setVisElement(modifier->vectorVis());
+	particles->createProperty(displacements());
 	particles->createProperty(displacementMagnitudes());
 }
 

@@ -12,10 +12,10 @@
 
 #include "qwt_global.h"
 #include "qwt_plot_abstract_barchart.h"
-#include "qwt_series_data.h"
 
 class QwtColumnRect;
 class QwtColumnSymbol;
+template <typename T> class QwtSeriesData;
 
 /*!
   \brief QwtPlotBarChart displays a series of a values as bars.
@@ -72,7 +72,7 @@ public:
 
     virtual ~QwtPlotBarChart();
 
-    virtual int rtti() const;
+    virtual int rtti() const QWT_OVERRIDE;
 
     void setSamples( const QVector<QPointF> & );
     void setSamples( const QVector<double> & );
@@ -84,11 +84,11 @@ public:
     void setLegendMode( LegendMode );
     LegendMode legendMode() const;
 
-    virtual void drawSeries( QPainter *painter,
+    virtual void drawSeries( QPainter *,
         const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-        const QRectF &canvasRect, int from, int to ) const;
+        const QRectF &canvasRect, int from, int to ) const QWT_OVERRIDE;
 
-    virtual QRectF boundingRect() const;
+    virtual QRectF boundingRect() const QWT_OVERRIDE;
 
     virtual QwtColumnSymbol *specialSymbol(
         int sampleIndex, const QPointF& ) const;
@@ -105,8 +105,13 @@ protected:
         int sampleIndex, const QPointF& sample,
         const QwtColumnRect & ) const;
 
-    QList<QwtLegendData> legendData() const;
-    QwtGraphic legendIcon( int index, const QSizeF & ) const;
+    QwtColumnRect columnRect(
+        const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+        const QRectF &canvasRect, const QwtInterval &boundingInterval,
+        const QPointF& sample ) const;
+
+    QList<QwtLegendData> legendData() const QWT_OVERRIDE;
+    QwtGraphic legendIcon( int index, const QSizeF & ) const QWT_OVERRIDE;
 
 private:
     void init();

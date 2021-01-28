@@ -74,8 +74,10 @@ LoadStream::LoadStream(QDataStream& source, SynchronousOperation operation) :
 
 	// Check file format version.
 	if(_fileFormat > OVITO_FILE_FORMAT_VERSION)
-		throw Exception(tr("Unsupported file format revision %1. This file has been written by %2 %3. Please upgrade to the newest program version to open this file.")
-				.arg(_fileFormat).arg(_applicationName).arg(_applicationVersionString));
+		throw Exception(tr("Unsupported file format revision %1. This file was written by %2 %3 and you are currently using %4 %5. Please upgrade to a newer program version to open this file.")
+				.arg(_fileFormat)
+				.arg(_applicationName).arg(_applicationVersionString)
+				.arg(Application::applicationName()).arg(Application::applicationVersionString()));
 
 	// OVITO 3.x cannot read state files written by OVITO 2.x:
 	if(_fileFormat < 30001)
@@ -262,13 +264,13 @@ LoadStream& operator>>(LoadStream& stream, QUrl& url)
 	QString relativePath;
 	stream >> relativePath;
 	// Resolve relative path against path of current input file.
-	if(relativePath.isEmpty() == false && url.isLocalFile()) {
-		QFileInfo relativeFileInfo(relativePath);
-		OVITO_ASSERT(!relativeFileInfo.isAbsolute());
+	if(!relativePath.isEmpty() && url.isLocalFile()) {
 		if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
 			QFileInfo streamFile(fileDevice->fileName());
 			if(streamFile.isAbsolute()) {
-				url = QUrl::fromLocalFile(QFileInfo(streamFile.dir(), relativeFileInfo.filePath()).absoluteFilePath());
+				QFileInfo resolvedFilePath(streamFile.dir(), relativePath);
+				if(resolvedFilePath.dir().exists())
+					url = QUrl::fromLocalFile(resolvedFilePath.absoluteFilePath());
 			}
 		}
 	}

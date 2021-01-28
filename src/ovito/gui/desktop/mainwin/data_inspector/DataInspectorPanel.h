@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include "DataInspectionApplet.h"
 
@@ -85,7 +86,7 @@ protected Q_SLOTS:
 protected:
 
 	virtual void mouseReleaseEvent(QMouseEvent* event) override {
-		if(event->button() == Qt::LeftButton && event->y() < _tabBar->height()) {
+		if(event->button() == Qt::LeftButton && ViewportInputMode::getMousePosition(event).y() < _tabBar->height()) {
 			toggle();
 			event->accept();
 		}
@@ -141,10 +142,10 @@ private:
 	QPushButton* _expandCollapseButton;
 
 	// The icon for the expand button state.
-	QIcon _expandIcon{":/gui/actions/modify/modifier_move_up.bw.svg"};
+	QIcon _expandIcon{":/guibase/actions/modify/modifier_move_up.bw.svg"};
 
 	// The icon for the collapse button state.
-	QIcon _collapseIcon{":/gui/actions/modify/modifier_move_down.bw.svg"};
+	QIcon _collapseIcon{":/guibase/actions/modify/modifier_move_down.bw.svg"};
 
 	/// The active page of the inspector.
 	int _activeAppletIndex = -1;

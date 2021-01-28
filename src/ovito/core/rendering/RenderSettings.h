@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,13 +50,17 @@ public:
 		CUSTOM_INTERVAL,	///< Renders a user-defined time interval.
 		CUSTOM_FRAME,		///< Renders a specific animation frame.
 	};
-	Q_ENUMS(RenderingRangeType);
+	Q_ENUM(RenderingRangeType);
 
 public:
 
 	/// Constructor.
 	/// Creates an instance of the default renderer class which can be accessed via the renderer() method.
 	Q_INVOKABLE RenderSettings(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// Returns the aspect ratio (height/width) of the rendered image.
 	FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }
@@ -81,10 +85,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ImageInfo, imageInfo, setImageInfo);
 
 	/// The instance of the plugin renderer class.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SceneRenderer, renderer, setRenderer, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneRenderer>, renderer, setRenderer, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls the background color of the rendered image.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, backgroundColorController, setBackgroundColorController, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, backgroundColorController, setBackgroundColorController, PROPERTY_FIELD_MEMORIZE);
 
 	/// The width of the output image in pixels.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, outputImageWidth, setOutputImageWidth, PROPERTY_FIELD_MEMORIZE);
@@ -126,6 +130,3 @@ private:
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::RenderSettings::RenderingRangeType);
-Q_DECLARE_TYPEINFO(Ovito::RenderSettings::RenderingRangeType, Q_PRIMITIVE_TYPE);

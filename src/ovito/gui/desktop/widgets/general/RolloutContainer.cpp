@@ -46,10 +46,10 @@ RolloutContainer::RolloutContainer(QWidget* parent, MainWindow* mainWindow) : QS
 /******************************************************************************
 * Inserts a new rollout into the container.
 ******************************************************************************/
-Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& params, const char* helpPage)
+Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& params, const QString& helpPageUrl)
 {
 	OVITO_CHECK_POINTER(content);
-	Rollout* rollout = new Rollout(widget(), content, title, params, helpPage);
+	Rollout* rollout = new Rollout(widget(), content, title, params, helpPageUrl.isEmpty() ? params.helpUrl() : helpPageUrl);
 	RolloutContainerLayout* layout = static_cast<RolloutContainerLayout*>(widget()->layout());
 	if(params._afterThisRollout) {
 		Rollout* otherRollout = qobject_cast<Rollout*>(params._afterThisRollout->parent());
@@ -115,8 +115,8 @@ Rollout* RolloutContainer::findRolloutFromWidget(QWidget* content) const
 /******************************************************************************
 * Constructs a rollout widget.
 ******************************************************************************/
-Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const RolloutInsertionParameters& params, const char* helpPage) :
-	QWidget(parent), _content(content), _collapseAnimation(this, "visiblePercentage"), _useAvailableSpace(params._useAvailableSpace), _helpPage(helpPage)
+Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const RolloutInsertionParameters& params, const QString& helpPageUrl) :
+	QWidget(parent), _content(content), _collapseAnimation(this, "visiblePercentage"), _useAvailableSpace(params._useAvailableSpace), _helpPageUrl(helpPageUrl)
 {
 	setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	_collapseAnimation.setDuration(350);
@@ -151,7 +151,7 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
 							   "}");
 	connect(_titleButton, &QPushButton::clicked, this, &Rollout::toggleCollapsed);
 
-	if(helpPage) {
+	if(!helpPageUrl.isEmpty()) {
 		_helpButton = new QPushButton(QStringLiteral("?"), this);
 		_helpButton->setAutoFillBackground(true);
 		_helpButton->setFocusPolicy(Qt::NoFocus);
@@ -344,7 +344,7 @@ void Rollout::onHelpButton()
 	if(!mainWindow)
 		mainWindow = qobject_cast<MainWindow*>(window());
 	if(mainWindow)
-		mainWindow->openHelpTopic(_helpPage);
+		mainWindow->openHelpTopic(_helpPageUrl);
 }
 
 /******************************************************************************

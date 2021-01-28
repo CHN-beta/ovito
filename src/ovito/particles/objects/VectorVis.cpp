@@ -26,9 +26,8 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "VectorVis.h"
 #include "ParticlesVis.h"
 
@@ -69,10 +68,20 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 	_arrowWidth(0.5),
 	_scalingFactor(1),
 	_shadingMode(FlatShading),
-	_renderingQuality(ArrowPrimitive::LowQuality),
+	_renderingQuality(CylinderPrimitive::LowQuality),
 	_offset(Vector3::Zero())
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VectorVis::initializeObject(ExecutionContext executionContext)
+{
+	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	DataVis::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -85,16 +94,16 @@ Box3 VectorVis::boundingBox(TimePoint time, const std::vector<const DataObject*>
 	if(!particles) return {};
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-	if(vectorProperty && (vectorProperty->dataType() != PropertyStorage::Float || vectorProperty->componentCount() != 3))
+	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// Vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		FloatType,					// Scaling factor
-		FloatType,					// Arrow width
-		Vector3						// Offset
+		ConstDataObjectRef,		// Vector property
+		ConstDataObjectRef,		// Particle position property
+		FloatType,				// Scaling factor
+		FloatType,				// Arrow width
+		Vector3					// Offset
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -122,7 +131,7 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Pro
 		return Box3();
 
 	OVITO_ASSERT(positionProperty->type() == ParticlesObject::PositionProperty);
-	OVITO_ASSERT(vectorProperty->dataType() == PropertyStorage::Float);
+	OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float);
 	OVITO_ASSERT(vectorProperty->componentCount() == 3);
 
 	// Compute bounding box of particle positions (only those with non-zero vector).
@@ -168,7 +177,7 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 	if(!particles) return;
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-	if(vectorProperty && (vectorProperty->dataType() != PropertyStorage::Float || vectorProperty->componentCount() != 3))
+	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
 	const PropertyObject* vectorColorProperty = particles->getProperty(ParticlesObject::VectorColorProperty);
 
@@ -180,43 +189,43 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// Vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		FloatType,					// Scaling factor
-		FloatType,					// Arrow width
-		ColorA,						// Arrow color + alpha
-		bool,						// Reverse arrow direction
-		ArrowPosition,				// Arrow position
-		VersionedDataObjectRef		// Vector color property + revision number
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Vector property
+		ConstDataObjectRef,		// Particle position property
+		ShadingMode,			// Arrow shading mode
+		CylinderPrimitive::RenderingQuality,	// Arrow rendering quality
+		FloatType,				// Scaling factor
+		FloatType,				// Arrow width
+		Color,					// Arrow color
+		FloatType,				// Arrow transparency
+		bool,					// Reverse arrow direction
+		ArrowPosition,			// Arrow position
+		ConstDataObjectRef		// Vector color property
 	>;
 
 	// Determine effective color including alpha value.
-	FloatType transp = 0;
+	FloatType transparency = 0;
 	TimeInterval iv;
 	if(transparencyController()) 
-		transp = transparencyController()->getFloatValue(time, iv);
-	ColorA color(arrowColor(), FloatType(1) - transp);
+		transparency = transparencyController()->getFloatValue(time, iv);
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& arrowPrimitive = dataset()->visCache().get<std::shared_ptr<ArrowPrimitive>>(CacheKey(
+	auto& arrows = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
 			renderer,
 			vectorProperty,
 			positionProperty,
+			shadingMode(),
+			renderingQuality(),
 			scalingFactor(),
 			arrowWidth(),
-			color,
+			arrowColor(),
+			transparency,
 			reverseArrowDirection(),
 			arrowPosition(),
 			vectorColorProperty));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrowPrimitive
-			|| !arrowPrimitive->isValid(renderer)
-			|| !arrowPrimitive->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !arrowPrimitive->setRenderingQuality(renderingQuality())) {
-
-		arrowPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::ArrowShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), renderingQuality(), color.a() < 1.0);
+	if(!arrows) {
 
 		// Determine number of non-zero vectors.
 		int vectorCount = 0;
@@ -228,47 +237,59 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 			}
 		}
 
-		arrowPrimitive->startSetElements(vectorCount);
+		// Allocate data buffers.
+		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> arrowColors = vectorColorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
+
+		// Fill data buffers.
 		if(vectorCount) {
 			FloatType scalingFac = scalingFactor();
 			if(reverseArrowDirection())
 				scalingFac = -scalingFac;
-			FloatType width = arrowWidth();
-			ArrowPrimitive* buffer = arrowPrimitive.get();
-			ConstPropertyAccess<Point3> positions(positionProperty);
-			const Point3* pos = positions.cbegin();
+			ConstPropertyAccess<Point3> particlePositions(positionProperty);
 			ConstPropertyAccess<Color> vectorColorData(vectorColorProperty);
-			const Color* pcol = vectorColorData ? vectorColorData.cbegin() : nullptr;
-			int index = 0;
-			for(const Vector3& vec : vectorData) {
+			size_t inIndex = 0;
+			size_t outIndex = 0;
+			for(size_t inIndex = 0; inIndex < particlePositions.size(); inIndex++) {
+				const Vector3& vec = vectorData[inIndex];
 				if(vec != Vector3::Zero()) {
 					Vector3 v = vec * scalingFac;
-					Point3 base = *pos;
+					Point3 base = particlePositions[inIndex];
 					if(arrowPosition() == Head)
 						base -= v;
 					else if(arrowPosition() == Center)
 						base -= v * FloatType(0.5);
-					if(pcol)
-						color.rgb() = *pcol;
-					buffer->setElement(index++, base, v, color, width);
+					arrowBasePositions[outIndex] = base;
+					arrowHeadPositions[outIndex] = base + v;
+					if(vectorColorProperty)
+						arrowColors[outIndex] = vectorColorData[inIndex];
+					outIndex++;
 				}
-				++pos;
-				if(pcol) ++pcol;
 			}
-			OVITO_ASSERT(pos == positions.cend());
-			OVITO_ASSERT(!pcol || pcol == vectorColorData.cend());
-			OVITO_ASSERT(index == vectorCount);
+			OVITO_ASSERT(outIndex == vectorCount);
 		}
-		arrowPrimitive->endSetElements();
+
+		// Create arrow rendering primitive.
+		arrows = renderer->createCylinderPrimitive(CylinderPrimitive::ArrowShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+		arrows->setUniformRadius(arrowWidth());
+		arrows->setUniformColor(arrowColor());
+		arrows->setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
+		arrows->setColors(arrowColors.take());
+		if(transparency > 0.0) {
+			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 1, 0, false);
+			transparencyBuffer->fill(transparency);
+			arrows->setTransparencies(std::move(transparencyBuffer));
+		}
 	}
 
 	if(renderer->isPicking()) {
-		OORef<VectorPickInfo> pickInfo(new VectorPickInfo(this, flowState, vectorProperty));
+		OORef<VectorPickInfo> pickInfo(new VectorPickInfo(this, particles, vectorProperty));
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 	AffineTransformation oldTM = renderer->worldTransform();
 	renderer->setWorldTransform(AffineTransformation::translation(offset()) * oldTM);
-	arrowPrimitive->render(renderer);
+	renderer->renderCylinders(arrows);
 	renderer->setWorldTransform(oldTM);
 	if(renderer->isPicking()) {
 		renderer->endPickObject();
@@ -302,8 +323,9 @@ size_t VectorPickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 QString VectorPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
 {
 	size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
-	if(particleIndex == std::numeric_limits<size_t>::max()) return QString();
-	return ParticlePickInfo::particleInfoString(pipelineState(), particleIndex);
+	if(particleIndex == std::numeric_limits<size_t>::max()) 
+		return QString();
+	return ParticlePickInfo::particleInfoString(*particles(), particleIndex);
 }
 
 }	// End of namespace

@@ -26,14 +26,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "XYZImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -78,25 +76,6 @@ bool XYZImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 	}
 
 	return foundNewline;
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the number of data columns.
-			activateCLocale();
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<XYZFrameData*>(frameData.get())->detectedColumnMapping();
-				});
-		});
 }
 
 /******************************************************************************
@@ -199,7 +178,7 @@ bool XYZImporter::mapVariableToProperty(ParticleInputColumnMapping& columnMappin
 	else if(loweredName == "molecule_type") columnMapping.mapStandardColumn(column, ParticlesObject::MoleculeTypeProperty);
 	else {
 		// Only int or float custom properties are supported
-		if(dataType == PropertyStorage::Float || dataType == PropertyStorage::Int || dataType == PropertyStorage::Int64)
+		if(dataType == PropertyObject::Float || dataType == PropertyObject::Int || dataType == PropertyObject::Int64)
 			columnMapping.mapCustomColumn(column, name, dataType, vec);
 		else
 			return false;
@@ -227,7 +206,7 @@ inline bool parseBool(const char* s, int& d)
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
+void XYZImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -236,9 +215,6 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<XYZFrameData>();
 
 	// Parse number of atoms.
 	unsigned long long numParticlesLong;
@@ -254,18 +230,15 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	if(numParticlesLong > (unsigned long long)std::numeric_limits<int>::max())
 		throw Exception(tr("Too many particles in XYZ file. This program version can read XYZ files with up to %1 particles only.").arg(std::numeric_limits<int>::max()));
 
+	setParticleCount(numParticlesLong);
 	setProgressMaximum(numParticlesLong);
-	QString fileExcerpt = stream.lineString();
-
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
 
 	// Extract some useful information from the comment line.
 	stream.readLine();
 	bool hasSimulationCell = false;
 	int movieMode = -1;
 
-	frameData->simulationCell().setPbcFlags(false, false, false);
+	simulationCell()->setPbcFlags(false, false, false);
 	Vector3 cellOrigin = Vector3::Zero();
 	Vector3 cellVector1 = Vector3::Zero();
 	Vector3 cellVector2 = Vector3::Zero();
@@ -280,14 +253,14 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	else if((index = commentLine.indexOf("boxsize")) >= 0)
 		remainder = commentLine.mid(index + 7).trimmed();
 	if(!remainder.isEmpty()) {
-		QStringList list = remainder.split(ws_re);
+		QStringList list = FileImporter::splitString(remainder);
 		if(list.size() >= 3) {
 			bool ok1, ok2, ok3;
 			FloatType sx = (FloatType)list[0].toDouble(&ok1);
 			FloatType sy = (FloatType)list[1].toDouble(&ok2);
 			FloatType sz = (FloatType)list[2].toDouble(&ok3);
 			if(ok1 && ok2 && ok3) {
-				frameData->simulationCell().setMatrix(AffineTransformation(Vector3(sx, 0, 0), Vector3(0, sy, 0), Vector3(0, 0, sz), Vector3(-sx / 2, -sy / 2, -sz / 2)));
+				simulationCell()->setCellMatrix(AffineTransformation(Vector3(sx, 0, 0), Vector3(0, sy, 0), Vector3(0, 0, sz), Vector3(-sx / 2, -sy / 2, -sz / 2)));
 				hasSimulationCell = true;
 			}
 		}
@@ -295,11 +268,12 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 
 	if((index = commentLine.indexOf(QStringLiteral("Lattice=\""), 0, Qt::CaseInsensitive)) >= 0) {
 		// Extended XYZ format: Lattice="R11 R21 R31 R12 R22 R32 R13 R23 R33"
-		// See http://jrkermode.co.uk/quippy/io.html#extendedxyz for details
+		// See https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz for details.
+		// Or see https://atomsk.univ-lille.fr/doc/en/format_xyz.html.
 
 		QString latticeStr = commentLine.mid(index + 9);
 		latticeStr.truncate(latticeStr.indexOf("\""));
-		QStringList list = latticeStr.split(ws_re, QString::SkipEmptyParts);
+		QStringList list = FileImporter::splitString(latticeStr);
 		if(list.size() >= 9) {
 			for(int k = 0; k < 3; k++)
 				cellVector1[k] = (FloatType)list[k].toDouble();
@@ -314,7 +288,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 		if(origin_index1 >= 0 || origin_index2 >= 0) {
 			QString cellOriginStr = commentLine.mid((origin_index1 >= 0) ? (origin_index1+13) : (origin_index2+8));
 			cellOriginStr.truncate(cellOriginStr.indexOf(QStringLiteral("\"")));
-			QStringList list = cellOriginStr.split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(cellOriginStr);
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellOrigin[k] = (FloatType)list[k].toDouble();
 		}
@@ -349,13 +323,13 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 					bool ok;
 					int intValue = value.toInt(&ok);
 					if(ok)
-						frameData->attributes().insert(key, QVariant::fromValue(intValue));
+						state().setAttribute(key, QVariant::fromValue(intValue), dataSource());
 					else {
 						double doubleValue = value.toDouble(&ok);
 						if(ok)
-							frameData->attributes().insert(key, QVariant::fromValue(doubleValue));
+							state().setAttribute(key, QVariant::fromValue(doubleValue), dataSource());
 						else
-							frameData->attributes().insert(key, QVariant::fromValue(value));
+							state().setAttribute(key, QVariant::fromValue(value), dataSource());
 					}
 				}
 			}
@@ -368,134 +342,60 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 		// Make comment line string available to Python scripts.
 		QString trimmedComment = commentLine.trimmed();
 		if(!trimmedComment.isEmpty())
-			frameData->attributes().insert(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment));
+			state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
 
 		// XYZ file written by Parcas MD code contain simulation cell info in comment line.
 
 		if((index = commentLine.indexOf("cell_orig ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellOrigin[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec1 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector1[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec2 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector2[k] = (FloatType)list[k].toDouble();
 		}
 		if((index = commentLine.indexOf("cell_vec3 ")) >= 0) {
-			QStringList list = commentLine.mid(index + 10).split(ws_re, QString::SkipEmptyParts);
+			QStringList list = FileImporter::splitString(commentLine.mid(index + 10));
 			for(int k = 0; k < list.size() && k < 3; k++)
 				cellVector3[k] = (FloatType)list[k].toDouble();
 		}
 	}
 
 	if(cellVector1 != Vector3::Zero() && cellVector2 != Vector3::Zero() && cellVector3 != Vector3::Zero()) {
-		frameData->simulationCell().setMatrix(AffineTransformation(cellVector1, cellVector2, cellVector3, cellOrigin));
+		simulationCell()->setCellMatrix(AffineTransformation(cellVector1, cellVector2, cellVector3, cellOrigin));
 		hasSimulationCell = true;
 	}
 
 	if((index = commentLine.indexOf("pbc ")) >= 0) {
-		QStringList list = commentLine.mid(index + 4).split(ws_re);
-		frameData->simulationCell().setPbcFlags((bool)list[0].toInt(), (bool)list[1].toInt(), (bool)list[2].toInt());
+		QStringList list = FileImporter::splitString(commentLine.mid(index + 4));
+		simulationCell()->setPbcFlags((bool)list[0].toInt(), (bool)list[1].toInt(), (bool)list[2].toInt());
 	}
 	else if((index = commentLine.indexOf("pbc=\"")) >= 0) {
 		// Look for Extended XYZ PBC keyword
 		QString pbcStr = commentLine.mid(index + 5);
 		pbcStr.truncate(pbcStr.indexOf("\""));
-		QStringList list = pbcStr.split(ws_re);
+		QStringList list = FileImporter::splitString(pbcStr);
 		int pbcFlags[3] = {0, 0, 0};
 		for(int i=0; i < list.size() && i < 3; i++) {
 			QByteArray ba = list[i].toLatin1();
 			parseBool(ba.data(), pbcFlags[i]);
 		}
-		frameData->simulationCell().setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
+		simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
 	}
 	else if(hasSimulationCell) {
-		frameData->simulationCell().setPbcFlags(true, true, true);
+		simulationCell()->setPbcFlags(true, true, true);
 	}
 
-	frameData->detectedColumnMapping() = _columnMapping;
-	if(_parseFileHeaderOnly || _columnMapping.empty()) {
-		// Auto-generate column mapping when Extended XYZ Properties key is present.
-		// Format is described at http://jrkermode.co.uk/quippy/io.html#extendedxyz
-		// Example: Properties=species:S:1:pos:R:3 for atomic species (1 column, string property)
-		// and atomic positions (3 columns, real property)
-		if((index = commentLine.indexOf(QStringLiteral("properties="), 0, Qt::CaseInsensitive)) >= 0) {
-			QString propertiesStr = commentLine.mid(index + 11);
-			propertiesStr = propertiesStr.left(propertiesStr.indexOf(ws_re));
-			QStringList fields = propertiesStr.split(":");
-
-			int col = 0;
-			for(int i = 0; i < fields.size() / 3; i++) {
-				QString propName = (fields[3 * i + 0]);
-				QString propTypeStr = (fields[3 * i + 1]).left(1);
-				QByteArray propTypeBA = propTypeStr.toUtf8();
-				char propType = propTypeBA.data()[0];
-				int nCols = (int)fields[3 * i + 2].toInt();
-				switch(propType) {
-				case 'I':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Int, k);
-						col++;
-					}
-					break;
-				case 'R':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Float, k);
-						col++;
-					}
-					break;
-				case 'L':
-					for(int k = 0; k < nCols; k++) {
-						mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, PropertyStorage::Int, k);
-						col++;
-					}
-					break;
-				case 'S':
-					for(int k = 0; k < nCols; k++) {
-						if(!mapVariableToProperty(frameData->detectedColumnMapping(), col, propName, qMetaTypeId<char>(), k) && k == 0)
-							qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
-						col++;
-					}
-					break;
-				}
-			}
-		}
-		_columnMapping = frameData->detectedColumnMapping();
-	}
-
-	if(_parseFileHeaderOnly) {
-		// Read first atoms line and count number of data columns.
-		fileExcerpt += stream.lineString();
-		QString lineString;
-		for(size_t i = 0; i < 5 && i < numParticlesLong; i++) {
-			stream.readLine();
-			lineString = stream.lineString();
-			fileExcerpt += lineString;
-		}
-		if(numParticlesLong > 5) fileExcerpt += QStringLiteral("...\n");
-		frameData->detectedColumnMapping().resize(lineString.split(ws_re, QString::SkipEmptyParts).size());
-		frameData->detectedColumnMapping().setFileExcerpt(fileExcerpt);
-
-		// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume
-		// it is a standard XYZ file containing the chemical type and the x,y,z positions.
-		if(frameData->detectedColumnMapping().size() == 4) {
-			if(std::none_of(frameData->detectedColumnMapping().begin(), frameData->detectedColumnMapping().end(),
-					[](const InputColumnInfo& col) { return col.isMapped(); })) {
-				frameData->detectedColumnMapping().mapStandardColumn(0, ParticlesObject::TypeProperty);
-				frameData->detectedColumnMapping().mapStandardColumn(1, ParticlesObject::PositionProperty, 0);
-				frameData->detectedColumnMapping().mapStandardColumn(2, ParticlesObject::PositionProperty, 1);
-				frameData->detectedColumnMapping().mapStandardColumn(3, ParticlesObject::PositionProperty, 2);
-			}
-		}
-
-		return frameData;
-	}
+	// If this is an extended XYZ file, extract the column mapping from the comment line.
+	if(_columnMapping.empty())
+		_columnMapping = parseExtendedXYZColumnSpecification(commentLine);
 
 	// In script mode, assume standard set of XYZ columns unless the user has specified otherwise or
 	// the file constains column metadata.
@@ -508,10 +408,10 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	}
 
 	// Parse data columns.
-	InputColumnReader columnParser(_columnMapping, frameData->particles(), numParticlesLong);
+	InputColumnReader columnParser(_columnMapping, particles(), executionContext());
 	try {
 		for(size_t i = 0; i < numParticlesLong; i++) {
-			if(!setProgressValueIntermittent(i)) return {};
+			if(!setProgressValueIntermittent(i)) return;
 			stream.readLine();
 			columnParser.readElement(i, stream.line());
 		}
@@ -524,8 +424,9 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now according to their names.
 	columnParser.sortElementTypes();
+	columnParser.reset();
 
-	PropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty);
+	PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
 	if(posProperty && numParticlesLong != 0) {
 		Box3 boundingBox;
 		boundingBox.addPoints(posProperty);
@@ -533,7 +434,7 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 		if(!hasSimulationCell) {
 			// If the input file does not contain simulation cell info,
 			// use bounding box of particles as simulation cell.
-			frameData->simulationCell().setMatrix(AffineTransformation(
+			simulationCell()->setCellMatrix(AffineTransformation(
 					Vector3(boundingBox.sizeX(), 0, 0),
 					Vector3(0, boundingBox.sizeY(), 0),
 					Vector3(0, 0, boundingBox.sizeZ()),
@@ -544,13 +445,13 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 			// Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
 			if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
 				// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-				const AffineTransformation simCell = frameData->simulationCell().matrix();
+				const AffineTransformation simCell = simulationCell()->cellMatrix();
 				for(Point3& p : posProperty)
 					p = simCell * p;
 			}
 			else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
 				// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-				const AffineTransformation simCell = frameData->simulationCell().matrix();
+				const AffineTransformation simCell = simulationCell()->cellMatrix();
 				for(Point3& p : posProperty)
 					p = simCell * (p + Vector3(FloatType(0.5)));
 			}
@@ -559,18 +460,132 @@ FileSourceImporter::FrameDataPtr XYZImporter::FrameLoader::loadFile()
 
 	// Detect if there are more simulation frames following in the file.
 	if(!stream.eof())
-		frameData->signalAdditionalFrames();
+		signalAdditionalFrames();
 
 	// Sort particles by ID.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
 	if(commentLine.isEmpty())
-		frameData->setStatus(tr("%1 particles").arg(numParticlesLong));
+		state().setStatus(tr("%1 particles").arg(numParticlesLong));
 	else
-		frameData->setStatus(tr("%1 particles\n%2").arg(numParticlesLong).arg(commentLine));
+		state().setStatus(tr("%1 particles\n%2").arg(numParticlesLong).arg(commentLine));
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
+}
+
+/******************************************************************************
+* Interprets the comment line of an extended XYZ file.
+******************************************************************************/
+ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(const QString& commentLine)
+{
+	ParticleInputColumnMapping mapping;
+
+	// Auto-generate column mapping when Extended XYZ Properties key is present.
+	// Format is described at http://jrkermode.co.uk/quippy/io.html#extendedxyz
+	// Example: Properties=species:S:1:pos:R:3 for atomic species (1 column, string property)
+	// and atomic positions (3 columns, real property)
+	int index = commentLine.indexOf(QStringLiteral("properties="), 0, Qt::CaseInsensitive);
+	if(index >= 0) {
+
+		// Regular expression for whitespace characters.
+		QRegularExpression ws_re(QStringLiteral("\\s+"));
+
+		QString propertiesStr = commentLine.mid(index + 11);
+		propertiesStr = propertiesStr.left(propertiesStr.indexOf(ws_re));
+		QStringList fields = propertiesStr.split(":");
+
+		int col = 0;
+		for(int i = 0; i < fields.size() / 3; i++) {
+			QString propName = (fields[3 * i + 0]);
+			QString propTypeStr = (fields[3 * i + 1]).left(1);
+			QByteArray propTypeBA = propTypeStr.toUtf8();
+			char propType = propTypeBA.data()[0];
+			int nCols = (int)fields[3 * i + 2].toInt();
+			switch(propType) {
+			case 'I':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+					col++;
+				}
+				break;
+			case 'R':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Float, k);
+					col++;
+				}
+				break;
+			case 'L':
+				for(int k = 0; k < nCols; k++) {
+					mapVariableToProperty(mapping, col, propName, PropertyObject::Int, k);
+					col++;
+				}
+				break;
+			case 'S':
+				for(int k = 0; k < nCols; k++) {
+					if(!mapVariableToProperty(mapping, col, propName, qMetaTypeId<char>(), k) && k == 0)
+						qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
+					col++;
+				}
+				break;
+			}
+		}
+	}
+
+	return mapping;
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the number of file columns.
+******************************************************************************/
+Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& frame)
+{
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then([](const FileHandle& fileHandle) {
+
+			// Parse the file header to determine the number of data columns.
+			activateCLocale();
+
+			// Open file for reading.
+			CompressedTextReader stream(fileHandle);
+
+			// Skip first line (number of atoms).
+			stream.readLine();
+			QString fileExcerpt = stream.lineString();
+
+			// Parse the comment line.
+			stream.readLine();
+			QString commentLine = stream.lineString();
+			fileExcerpt += commentLine;
+
+			// If this is an extended XYZ file, extract the column mapping from the comment line.
+			ParticleInputColumnMapping detectedColumnMapping = parseExtendedXYZColumnSpecification(commentLine);
+
+			// Read first few lines of the atom data and add them to the file excerpt.
+			for(size_t i = 0; i < 5 && !stream.eof(); i++) {
+				stream.readLine();
+				fileExcerpt += stream.lineString();
+			}
+			if(!stream.eof()) 
+				fileExcerpt += QStringLiteral("...\n");
+
+			detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
+			detectedColumnMapping.setFileExcerpt(fileExcerpt);
+
+			// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume
+			// it is a standard XYZ file containing the chemical type and the x,y,z positions.
+			if(detectedColumnMapping.size() == 4) {
+				if(std::none_of(detectedColumnMapping.begin(), detectedColumnMapping.end(), [](const InputColumnInfo& col) { return col.isMapped(); })) {
+					detectedColumnMapping.mapStandardColumn(0, ParticlesObject::TypeProperty);
+					detectedColumnMapping.mapStandardColumn(1, ParticlesObject::PositionProperty, 0);
+					detectedColumnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 1);
+					detectedColumnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 2);
+				}
+			}
+			return detectedColumnMapping;
+		});
 }
 
 /******************************************************************************

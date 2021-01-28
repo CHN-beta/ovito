@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/data/DataVis.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "TrajectoryObject.h"
 
 namespace Ovito { namespace Particles {
@@ -43,10 +43,10 @@ public:
 
 	/// The shading modes supported by the trajectory vis element.
 	enum ShadingMode {
-		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
-		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
+		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// \brief Constructor.
 	Q_INVOKABLE TrajectoryVis(DataSet* dataset);
@@ -64,7 +64,7 @@ public:
 private:
 
 	/// Clips a trajectory line at the periodic box boundaries.
-	static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell& simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback);
+	static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback);
 
 	/// Controls the display width of trajectory lines.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);

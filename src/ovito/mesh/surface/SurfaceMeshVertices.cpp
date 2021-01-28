@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 /******************************************************************************
 * Creates a storage object for standard vertex properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardStorage(size_t vertexCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t vertexCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -40,18 +40,18 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardStorage(size_t verte
 
 	switch(type) {
 	case PositionProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Point3));
 		break;
 	case SelectionProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case ColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
@@ -65,7 +65,7 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardStorage(size_t verte
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(vertexCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, vertexCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
@@ -74,7 +74,7 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardStorage(size_t verte
 		if(type == ColorProperty) {
 			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
 				if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
-					PropertyAccess<Color>(property).fill(vis->surfaceColor());
+					property->fill(vis->surfaceColor());
 					initializeMemory = false;
 				}
 			}
@@ -104,9 +104,9 @@ void SurfaceMeshVertices::OOMetaClass::initialize()
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Vertex colors"));
-	registerStandardProperty(PositionProperty, tr("Position"), PropertyStorage::Float, xyzList, nullptr, tr("Vertex positions"));
+	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Vertex colors"));
+	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList, nullptr, tr("Vertex positions"));
 }
 
 /******************************************************************************
@@ -121,6 +121,21 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 		str += obj->objectTitle();
 	}
 	return str;
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SurfaceMeshVertices::initializeObject(ExecutionContext executionContext)
+{
+	// Assign the default data object identifier.
+	setIdentifier(OOClass().pythonName());
+
+	// Create the standard 'Position' property.
+	createProperty(SurfaceMeshVertices::PositionProperty, false, executionContext);
+
+	PropertyContainer::initializeObject(executionContext);
 }
 
 }	// End of namespace

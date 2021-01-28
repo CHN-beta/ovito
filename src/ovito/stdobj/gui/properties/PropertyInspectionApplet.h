@@ -83,12 +83,12 @@ protected:
 	virtual QVariant headerColumnText(int section) { return section; }
 
 	/// Determines whether the given property represents a color.
-	virtual bool isColorProperty(PropertyObject* property) const {
-		return property->type() == PropertyStorage::GenericColorProperty;
+	virtual bool isColorProperty(const PropertyObject* property) const {
+		return property->type() == PropertyObject::GenericColorProperty;
 	}
 
 	/// Creates an optional ad-hoc property that serves as header column for the table.
-	virtual OORef<PropertyObject> createHeaderColumnProperty(const PropertyContainer* container) { return {}; }
+	virtual ConstPropertyPtr createHeaderColumnProperty(const PropertyContainer* container) { return {}; }
 
 Q_SIGNALS:
 
@@ -151,7 +151,7 @@ private:
 		void setContents(const PropertyContainer* container);
 
 		/// Returns the list of properties managed by this table model.
-		const std::vector<OORef<PropertyObject>>& properties() const { return _properties; }
+		const std::vector<ConstPropertyPtr>& properties() const { return _properties; }
 
 	private:
 
@@ -159,7 +159,7 @@ private:
 		PropertyInspectionApplet* _applet;
 
 		/// The list of properties.
-		std::vector<OORef<PropertyObject>> _properties;
+		std::vector<ConstPropertyPtr> _properties;
 	};
 
 	/// A proxy model for filtering the property list.

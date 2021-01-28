@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,7 +93,7 @@ public:
 		ResetScene,				///< Clear the contents of the current scene first before importing the data.
 		DontAddToScene			///< Do not add the imported data to the scene.
 	};
-	Q_ENUMS(ImportMode);
+	Q_ENUM(ImportMode);
 
 	/// \brief Asks the importer if the option to replace the currently selected object
 	///        with the new file(s) is available.
@@ -115,18 +115,21 @@ public:
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
 	/// \throw Exception if url is invalid or if operation has been canceled by the user.
 	/// \note This is a blocking function, which downloads the file and can take a long time to return.
-	static Future<OORef<FileImporter>> autodetectFileFormat(DataSet* dataset, const QUrl& url);
+	static Future<OORef<FileImporter>> autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const QUrl& url);
 
 	/// \brief Tries to detect the format of the given file.
 	/// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
-	static OORef<FileImporter> autodetectFileFormat(DataSet* dataset, const FileHandle& file);
+	static OORef<FileImporter> autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file);
 
 	/// Helper function that is called by sub-classes prior to file parsing in order to
 	/// activate the default "C" locale.
 	static void activateCLocale();
+
+	/// Utility method which splits a string at whitespace separators into tokens.
+	static QStringList splitString(const QString& str);
+
+	/// Utility method which splits a string at whitespace separators into tokens.
+	static QStringList splitString(QStringView str) { return splitString(str.toString()); }
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::FileImporter::ImportMode);
-Q_DECLARE_TYPEINFO(Ovito::FileImporter::ImportMode, Q_PRIMITIVE_TYPE);

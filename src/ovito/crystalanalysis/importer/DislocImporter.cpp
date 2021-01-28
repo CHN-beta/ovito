@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/crystalanalysis/objects/SlipSurfaceVis.h>
 #include <ovito/crystalanalysis/modifier/microstructure/SimplifyMicrostructureModifier.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "DislocImporter.h"
@@ -83,15 +84,15 @@ void DislocImporter::setupPipeline(PipelineSceneNode* pipeline, FileSource* impo
 
 	// Insert a SimplyMicrostructureModifier into the data pipeline by default.
 //	OORef<SimplifyMicrostructureModifier> modifier = new SimplifyMicrostructureModifier(pipeline->dataset());
-//	if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-//		modifier->loadUserDefaults();
+//	if(Application::instance()->executionContext() == ExecutionContext::Interactive)
+//		modifier->initializeObject();
 //	pipeline->applyModifier(modifier);
 }
 
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
+void DislocImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading disloc file %1").arg(fileHandle().toString()));
 
@@ -99,21 +100,36 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 	if(filename.isEmpty())
 		throw Exception(tr("The disloc file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
-	// Create the container structures for holding the loaded data.
-	auto frameData = std::make_shared<DislocFrameData>();
-	MicrostructureData& microstructure = frameData->microstructure();
-
 	// Fix disloc specific data.
 	std::vector<Vector3> latticeVectors;
 	std::vector<Vector3> transformedLatticeVectors;
 	size_t segmentCount = 0;
+
+	// Create data object.
+	Microstructure* microstructureObj;
+	if(const Microstructure* existingMicrostructureObj = state().getObject<Microstructure>()) {
+		microstructureObj = state().makeMutable(existingMicrostructureObj);
+	}
+	else {
+		microstructureObj = state().createObject<Microstructure>(dataSource(), executionContext());
+
+		// Create a visual element for the dislocation lines.
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset(), executionContext()));
+
+		// Create a visual element for the slip surfaces.
+		microstructureObj->addVisElement(OORef<SlipSurfaceVis>::create(dataset(), executionContext()));
+	}
+
+	/// The loaded microstructure.
+	MicrostructureAccess microstructure(microstructureObj);
+	microstructure.clearMesh();
 
 	// Temporary data structure.
 	std::vector<std::pair<qlonglong,qlonglong>> slipSurfaceMap;
 
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
 	NetCDFExclusiveAccess locker(this);
-	if(!locker.isLocked()) return {};
+	if(!locker.isLocked()) return;
 
 	int root_ncid = 0;
 	try {
@@ -182,9 +198,9 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 		NCERR(nc_get_vara_double(root_ncid, cell_origin_var, startp, countp, cellMatrix.column(3).data()));
 #endif
 		NCERR(nc_get_vara_int(root_ncid, cell_pbc_var, startp, countp, cellPbc));
-		frameData->simulationCell().setPbcFlags({cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0});
-		frameData->simulationCell().setMatrix(cellMatrix);
-		frameData->microstructure().cell() = frameData->simulationCell();
+		simulationCell()->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
+		simulationCell()->setCellMatrix(cellMatrix);
+		microstructure.setCell(DataOORef<SimulationCellObject>::create(dataset(), executionContext(), cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
 
 		// Read lattice orientation matrix.
 		int lattice_orientation_var;
@@ -195,14 +211,14 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 #else
 		NCERR(nc_get_var_double(root_ncid, lattice_orientation_var, latticeOrientation.elements()));
 #endif
-		if(strcmp(lattice_structure_str.get(), "bcc") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::BCC, latticeOrientation);
-		else if(strcmp(lattice_structure_str.get(), "fcc") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
-		else if(strcmp(lattice_structure_str.get(), "fcc_perfect") == 0) frameData->setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
+		if(strcmp(lattice_structure_str.get(), "bcc") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::BCC, latticeOrientation);
+		else if(strcmp(lattice_structure_str.get(), "fcc") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
+		else if(strcmp(lattice_structure_str.get(), "fcc_perfect") == 0) setLatticeStructure(ParticleType::PredefinedStructureType::FCC, latticeOrientation);
 		else throw Exception(tr("File parsing error. Unknown lattice structure type: %1").arg(lattice_structure_str.get()));
 
 		// Create microstructure regions.
 		int emptyRegion = microstructure.createRegion(0);
-		int crystalRegion = microstructure.createRegion(frameData->latticeStructure());
+		int crystalRegion = microstructure.createRegion(latticeStructure());
 
 		// Read node list.
 		int nodal_ids_var, nodal_positions_var;
@@ -226,9 +242,9 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 		}
 
 		// Build list of unique nodes.
-		std::vector<MicrostructureData::vertex_index> vertexMap;
-		std::unordered_map<std::array<qlonglong,3>, MicrostructureData::vertex_index, boost::hash<std::array<qlonglong,3>>> idMap3;
-		std::unordered_map<std::array<qlonglong,4>, MicrostructureData::vertex_index, boost::hash<std::array<qlonglong,4>>> idMap4;
+		std::vector<MicrostructureAccess::vertex_index> vertexMap;
+		std::unordered_map<std::array<qlonglong,3>, MicrostructureAccess::vertex_index, boost::hash<std::array<qlonglong,3>>> idMap3;
+		std::unordered_map<std::array<qlonglong,4>, MicrostructureAccess::vertex_index, boost::hash<std::array<qlonglong,4>>> idMap4;
 		auto nodalPositionsIter = nodalPositions.cbegin();
 		if(fileConvention == CONVENTION_1_1) {
 			vertexMap.resize(numNodeRecords);
@@ -278,8 +294,8 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 			for(const auto& seg : dislocationSegments2) {
 				OVITO_ASSERT(seg[0] >= 0 && seg[0] < (qlonglong)vertexMap.size());
 				OVITO_ASSERT(seg[1] >= 0 && seg[1] < (qlonglong)vertexMap.size());
-				MicrostructureData::vertex_index vertex1 = vertexMap[seg[0]];
-				MicrostructureData::vertex_index vertex2 = vertexMap[seg[1]];
+				MicrostructureAccess::vertex_index vertex1 = vertexMap[seg[0]];
+				MicrostructureAccess::vertex_index vertex2 = vertexMap[seg[1]];
 				microstructure.createDislocationSegment(vertex1, vertex2, Vector3(*burgersVector++), crystalRegion);
 			}
 			segmentCount = dislocationSegments2.size();
@@ -300,8 +316,8 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 				if(iter2 == idMap3.end())
 					throw Exception(tr("Detected inconsistent dislocation segment information in NetCDF file."));
 
-				MicrostructureData::vertex_index vertex1 = iter1->second;
-				MicrostructureData::vertex_index vertex2 = iter2->second;
+				MicrostructureAccess::vertex_index vertex1 = iter1->second;
+				MicrostructureAccess::vertex_index vertex2 = iter2->second;
 				microstructure.createDislocationSegment(vertex1, vertex2, Vector3(*burgersVector++), crystalRegion);
 			}
 			segmentCount = dislocationSegments3.size();
@@ -357,11 +373,11 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 			for(const auto& slippedEdge : slippedEdges) {
 
 				// Create first mesh face.
-				MicrostructureData::face_index face = microstructure.createFace({}, crystalRegion, MicrostructureData::SLIP_FACET,
+				MicrostructureAccess::face_index face = microstructure.createFace({}, crystalRegion, MicrostructureAccess::SLIP_FACET,
 					Vector3(*slipVector), slipFacetNormals.empty() ? Vector3::Zero() : Vector3(*slipFacetNormal));
-				MicrostructureData::vertex_index node0 = vertexMap[*slipFacetVertex++];
-				MicrostructureData::vertex_index node1 = node0;
-				MicrostructureData::vertex_index node2;
+				MicrostructureAccess::vertex_index node0 = vertexMap[*slipFacetVertex++];
+				MicrostructureAccess::vertex_index node1 = node0;
+				MicrostructureAccess::vertex_index node2;
 				for(int i = 1; i < *slipFacetEdgeCount; i++, node1 = node2) {
 					node2 = vertexMap[*slipFacetVertex++];
 					microstructure.createEdge(node1, node2, face);
@@ -369,15 +385,15 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 				microstructure.createEdge(node1, node0, face);
 
 				// Create the opposite mesh face.
-				MicrostructureData::face_index oppositeFace = microstructure.createFace({}, crystalRegion, MicrostructureData::SLIP_FACET,
+				MicrostructureAccess::face_index oppositeFace = microstructure.createFace({}, crystalRegion, MicrostructureAccess::SLIP_FACET,
 					-Vector3(*slipVector), slipFacetNormals.empty() ? Vector3::Zero() : -Vector3(*slipFacetNormal));
-				MicrostructureData::edge_index edge = microstructure.firstFaceEdge(face);
+				MicrostructureAccess::edge_index edge = microstructure.firstFaceEdge(face);
 				do {
 					microstructure.createEdge(microstructure.vertex2(edge), microstructure.vertex1(edge), oppositeFace);
 					edge = microstructure.prevFaceEdge(edge);
 				}
 				while(edge != microstructure.firstFaceEdge(face));
-				microstructure.topology()->linkOppositeFaces(face, oppositeFace);
+				microstructure.linkOppositeFaces(face, oppositeFace);
 
 				slipSurfaceMap.push_back({ slippedEdge[0], slippedEdge[1] });
 				slipSurfaceMap.push_back({ slippedEdge[1], slippedEdge[0] });
@@ -403,14 +419,14 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 	// Connect half-edges of slip faces.
 	connectSlipFaces(microstructure, slipSurfaceMap);
 
-	frameData->setStatus(tr("Number of nodes: %1\nNumber of segments: %2")
+	state().setStatus(tr("Number of nodes: %1\nNumber of segments: %2")
 		.arg(microstructure.vertexCount())
 		.arg(segmentCount));
 
 	// Verify dislocation network (Burgers vector conservation at nodes).
-	for(MicrostructureData::vertex_index vertex = 0; vertex < microstructure.vertexCount(); vertex++) {
+	for(MicrostructureAccess::vertex_index vertex = 0; vertex < microstructure.vertexCount(); vertex++) {
 		Vector3 sum = Vector3::Zero();
-		for(auto e = microstructure.firstVertexEdge(vertex); e != HalfEdgeMesh::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+		for(auto e = microstructure.firstVertexEdge(vertex); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
 			if(microstructure.isPhysicalDislocationEdge(e))
 				sum += microstructure.burgersVector(microstructure.adjacentFace(e));
 		}
@@ -418,29 +434,30 @@ FileSourceImporter::FrameDataPtr DislocImporter::FrameLoader::loadFile()
 			qDebug() << "Detected violation of Burgers vector conservation at location" << microstructure.vertexPosition(vertex) << "(" << microstructure.countDislocationArms(vertex) << "arms; delta_b =" << sum << ")";
 	}
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /*************************************************************************************
 * Connects the slip faces to form two-dimensional manifolds.
 **************************************************************************************/
-void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap)
+void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureAccess& microstructure, const std::vector<std::pair<qlonglong,qlonglong>>& slipSurfaceMap)
 {
 	// Link slip surface faces with their neighbors, i.e. find the opposite edge for every half-edge of a slip face.
-	MicrostructureData::size_type edgeCount = microstructure.edgeCount();
-	for(MicrostructureData::edge_index edge1 = 0; edge1 < edgeCount; edge1++) {
+	MicrostructureAccess::size_type edgeCount = microstructure.edgeCount();
+	for(MicrostructureAccess::edge_index edge1 = 0; edge1 < edgeCount; edge1++) {
 		// Only process edges which haven't been linked to their neighbors yet.
-		if(microstructure.nextManifoldEdge(edge1) != HalfEdgeMesh::InvalidIndex) continue;
-		MicrostructureData::face_index face1 = microstructure.adjacentFace(edge1);
+		if(microstructure.nextManifoldEdge(edge1) != SurfaceMeshAccess::InvalidIndex) continue;
+		MicrostructureAccess::face_index face1 = microstructure.adjacentFace(edge1);
 		if(!microstructure.isSlipSurfaceFace(face1)) continue;
 
 		OVITO_ASSERT(!microstructure.hasOppositeEdge(edge1));
-		MicrostructureData::vertex_index vertex1 = microstructure.vertex1(edge1);
-		MicrostructureData::vertex_index vertex2 = microstructure.vertex2(edge1);
-		MicrostructureData::edge_index oppositeEdge1 = microstructure.findEdge(microstructure.oppositeFace(face1), vertex2, vertex1);
-		OVITO_ASSERT(oppositeEdge1 != HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) == HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) == HalfEdgeMesh::InvalidIndex);
+		MicrostructureAccess::vertex_index vertex1 = microstructure.vertex1(edge1);
+		MicrostructureAccess::vertex_index vertex2 = microstructure.vertex2(edge1);
+		MicrostructureAccess::edge_index oppositeEdge1 = microstructure.findEdge(microstructure.oppositeFace(face1), vertex2, vertex1);
+		OVITO_ASSERT(oppositeEdge1 != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) == SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) == SurfaceMeshAccess::InvalidIndex);
 
 		// At an edge, either 1, 2, or 3 slip surface manifolds can meet.
 		// Here, we will link them together in the right order.
@@ -448,42 +465,42 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 		const std::pair<qulonglong,qulonglong>& edgeVertexCodes = slipSurfaceMap[face1];
 
 		// Find the other two manifolds meeting at the current edge (if they exist).
-		MicrostructureData::edge_index edge2 = HalfEdgeMesh::InvalidIndex;
-		MicrostructureData::edge_index edge3 = HalfEdgeMesh::InvalidIndex;
-		MicrostructureData::edge_index oppositeEdge2 = HalfEdgeMesh::InvalidIndex;
-		MicrostructureData::edge_index oppositeEdge3 = HalfEdgeMesh::InvalidIndex;
-		for(MicrostructureData::edge_index e = microstructure.firstVertexEdge(vertex1); e != HalfEdgeMesh::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
-			MicrostructureData::face_index face2 = microstructure.adjacentFace(e);
+		MicrostructureAccess::edge_index edge2 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureAccess::edge_index edge3 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureAccess::edge_index oppositeEdge2 = SurfaceMeshAccess::InvalidIndex;
+		MicrostructureAccess::edge_index oppositeEdge3 = SurfaceMeshAccess::InvalidIndex;
+		for(MicrostructureAccess::edge_index e = microstructure.firstVertexEdge(vertex1); e != SurfaceMeshAccess::InvalidIndex; e = microstructure.nextVertexEdge(e)) {
+			MicrostructureAccess::face_index face2 = microstructure.adjacentFace(e);
 			if(microstructure.vertex2(e) == vertex2 && microstructure.isSlipSurfaceFace(face2) && face2 != face1) {
 				const std::pair<qulonglong,qulonglong>& edgeVertexCodes2 = slipSurfaceMap[face2];
 				if(edgeVertexCodes.second == edgeVertexCodes2.first) {
 					OVITO_ASSERT(edgeVertexCodes.first != edgeVertexCodes2.second);
-					OVITO_ASSERT(edge2 == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(edge2 == SurfaceMeshAccess::InvalidIndex);
 					OVITO_ASSERT(!microstructure.hasOppositeEdge(e));
-					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshAccess::InvalidIndex);
 					edge2 = e;
 					oppositeEdge2 = microstructure.findEdge(microstructure.oppositeFace(face2), vertex2, vertex1);
-					OVITO_ASSERT(oppositeEdge2 != HalfEdgeMesh::InvalidIndex);
-					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge2) == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(oppositeEdge2 != SurfaceMeshAccess::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge2) == SurfaceMeshAccess::InvalidIndex);
 				}
 				else {
 					OVITO_ASSERT(edgeVertexCodes.first == edgeVertexCodes2.second);
-					OVITO_ASSERT(edge3 == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(edge3 == SurfaceMeshAccess::InvalidIndex);
 					OVITO_ASSERT(!microstructure.hasOppositeEdge(e));
-					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(e) == SurfaceMeshAccess::InvalidIndex);
 					edge3 = e;
 					oppositeEdge3 = microstructure.findEdge(microstructure.oppositeFace(face2), vertex2, vertex1);
-					OVITO_ASSERT(oppositeEdge3 != HalfEdgeMesh::InvalidIndex);
-					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge3) == HalfEdgeMesh::InvalidIndex);
+					OVITO_ASSERT(oppositeEdge3 != SurfaceMeshAccess::InvalidIndex);
+					OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge3) == SurfaceMeshAccess::InvalidIndex);
 				}
 			}
 		}
 
-		if(edge2 != HalfEdgeMesh::InvalidIndex) {
+		if(edge2 != SurfaceMeshAccess::InvalidIndex) {
 			microstructure.linkOppositeEdges(edge1, oppositeEdge2);
 			microstructure.setNextManifoldEdge(edge1, edge2);
 			microstructure.setNextManifoldEdge(oppositeEdge2, oppositeEdge1);
-			if(edge3 != HalfEdgeMesh::InvalidIndex) {
+			if(edge3 != SurfaceMeshAccess::InvalidIndex) {
 				microstructure.linkOppositeEdges(edge2, oppositeEdge3);
 				microstructure.linkOppositeEdges(edge3, oppositeEdge1);
 				microstructure.setNextManifoldEdge(edge2, edge3);
@@ -505,7 +522,7 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 			}
 		}
 		else {
-			if(edge3 != HalfEdgeMesh::InvalidIndex) {
+			if(edge3 != SurfaceMeshAccess::InvalidIndex) {
 				microstructure.linkOppositeEdges(edge1, oppositeEdge3);
 				microstructure.linkOppositeEdges(oppositeEdge1, edge3);
 				microstructure.setNextManifoldEdge(edge1, edge3);
@@ -525,23 +542,24 @@ void DislocImporter::FrameLoader::connectSlipFaces(MicrostructureData& microstru
 			}
 		}
 
-		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) != HalfEdgeMesh::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(edge1) != SurfaceMeshAccess::InvalidIndex);
 		OVITO_ASSERT(microstructure.vertex2(microstructure.nextManifoldEdge(edge1)) == vertex2);
 		OVITO_ASSERT(microstructure.vertex1(microstructure.nextManifoldEdge(edge1)) == vertex1);
-		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) != HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(edge2 == HalfEdgeMesh::InvalidIndex || microstructure.nextManifoldEdge(edge2) != HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(oppositeEdge2 == HalfEdgeMesh::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge2) != HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(edge3 == HalfEdgeMesh::InvalidIndex || microstructure.nextManifoldEdge(edge3) != HalfEdgeMesh::InvalidIndex);
-		OVITO_ASSERT(oppositeEdge3 == HalfEdgeMesh::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge3) != HalfEdgeMesh::InvalidIndex);
+		OVITO_ASSERT(microstructure.nextManifoldEdge(oppositeEdge1) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(edge2 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(edge2) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(oppositeEdge2 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge2) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(edge3 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(edge3) != SurfaceMeshAccess::InvalidIndex);
+		OVITO_ASSERT(oppositeEdge3 == SurfaceMeshAccess::InvalidIndex || microstructure.nextManifoldEdge(oppositeEdge3) != SurfaceMeshAccess::InvalidIndex);
 	}
 }
 
+#if 0
 /******************************************************************************
 * Inserts the data loaded by the FrameLoader into the provided data collection.
 * This function is called by the system from the main thread after the
 * asynchronous loading operation has finished.
 ******************************************************************************/
-OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
+OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource, const QString& identifierPrefix)
 {
 	// Insert simulation cell.
 	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);
@@ -556,16 +574,10 @@ OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollec
 		microstructureObj = output->createObject<Microstructure>(fileSource);
 
 		// Create a visual element for the dislocation lines.
-		OORef<DislocationVis> dislocationVis = new DislocationVis(fileSource->dataset());
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			dislocationVis->loadUserDefaults();
-		microstructureObj->setVisElement(dislocationVis);
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(fileSource->dataset(), Application::instance()->executionContext()));
 
 		// Create a visual element for the slip surfaces.
-		OORef<SlipSurfaceVis> slipSurfaceVis = new SlipSurfaceVis(fileSource->dataset());
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			slipSurfaceVis->loadUserDefaults();
-		microstructureObj->addVisElement(slipSurfaceVis);
+		microstructureObj->addVisElement(OORef<SlipSurfaceVis>::create(fileSource->dataset(), Application::instance()->executionContext()));
 	}
 	microstructureObj->setDomain(output->getObject<SimulationCellObject>());
 	microstructure().transferTo(microstructureObj);
@@ -618,6 +630,7 @@ OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollec
 
 	return output;
 }
+#endif
 
 }	// End of namespace
 }	// End of namespace

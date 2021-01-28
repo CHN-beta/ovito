@@ -38,25 +38,26 @@ IMPLEMENT_OVITO_CLASS(DelegatingModifier);
 DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 
 IMPLEMENT_OVITO_CLASS(MultiDelegatingModifier);
-DEFINE_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
+DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 
 /******************************************************************************
 * Returns the modifier to which this delegate belongs.
 ******************************************************************************/
 Modifier* ModifierDelegate::modifier() const
 {
-	for(RefMaker* dependent : this->dependents()) {
+	Modifier* result = nullptr;
+	visitDependents([&](RefMaker* dependent) {
 		if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) return modifier;
+			if(modifier->delegate() == this) result = modifier;
 		}
 		else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
-			if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) return modifier;
+			if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
 		}
 		else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(dependent)) {
-			if(modifier->delegate() == this) return modifier;
+			if(modifier->delegate() == this) result = modifier;
 		}
-	}
-	return nullptr;
+	});
+	return result;
 }
 
 /******************************************************************************
@@ -82,14 +83,14 @@ TimeInterval DelegatingModifier::validityInterval(const PipelineEvaluationReques
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName)
+void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Find the delegate type that corresponds to the given name string.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
 		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset()));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext));
 			setDelegate(delegate);
 			break;
 		}
@@ -177,13 +178,15 @@ TimeInterval MultiDelegatingModifier::validityInterval(const PipelineEvaluationR
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
 ******************************************************************************/
-void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType)
+void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegateType, ExecutionContext executionContext)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Generate the list of delegate objects.
-	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
-		_delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(dataset())));
+	if(delegates().empty()) {
+		for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
+			_delegates.push_back(this, PROPERTY_FIELD(delegates), static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext)));
+		}
 	}
 }
 

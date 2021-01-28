@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,33 +29,34 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for drawing bitmaps in the viewports.
+ * \brief Rendering primitive for drawing 2d images.
  */
 class OVITO_CORE_EXPORT ImagePrimitive : public PrimitiveBase
 {
 public:
 
 	/// \brief Sets the mage to be rendered.
-	virtual void setImage(const QImage& image) { _image = image; }
+	void setImage(const QImage& image) { _image = image; }
 
 	/// \brief Returns the image stored in the buffer.
 	const QImage& image() const { return _image; }
 
-	/// \brief Renders the image in a rectangle given in pixel coordinates.
-	virtual void renderWindow(SceneRenderer* renderer, const Point2& pos, const Vector2& size) = 0;
+	/// \brief Sets the destination rectangle for rendering the image in window coordinates.
+	void setRectWindow(const Box2& rect) { _windowRect = rect; }
 
-	/// \brief Renders the image in a rectangle given in viewport coordinates.
-	virtual void renderViewport(SceneRenderer* renderer, const Point2& pos, const Vector2& size) = 0;
+	/// \brief Sets the destination rectangle for rendering the image in viewport coordinates.
+	void setRectViewport(const SceneRenderer* renderer, const Box2& rect);
 
-	/// \brief Renders the primitive using the given renderer.
-	virtual void render(SceneRenderer* renderer) override {}
+	/// \brief Returns the destination rectangle in window coordinates.
+	const Box2& windowRect() const { return _windowRect; }
 
 private:
 
 	/// The image to be rendered.
 	QImage _image;
+
+	/// The destination rectangle in window coordinates.
+	Box2 _windowRect;
 };
 
 }	// End of namespace
-
-

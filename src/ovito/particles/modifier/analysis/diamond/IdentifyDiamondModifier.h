@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_PARTICLES_EXPORT IdentifyDiamondModifier : public StructureIdentific
 
 	Q_CLASSINFO("DisplayName", "Identify diamond structure");
 	Q_CLASSINFO("Description", "Identify particles arranged in cubic and hexagonal diamond structures.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -58,17 +58,21 @@ public:
 
 		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
 	};
-	Q_ENUMS(StructureType);
+	Q_ENUM(StructureType);
 
 public:
 
 	/// Constructor.
 	Q_INVOKABLE IdentifyDiamondModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -78,8 +82,7 @@ private:
 	public:
 
 		/// Constructor.
-		DiamondIdentificationEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection) :
-			StructureIdentificationEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)) {}
+		using StructureIdentificationEngine::StructureIdentificationEngine;
 
 		/// Computes the modifier's results.
 		virtual void perform() override;

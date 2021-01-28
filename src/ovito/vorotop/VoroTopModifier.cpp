@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2017 Emanuel A. Lazar
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -53,7 +53,7 @@ VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModi
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation, ExecutionContext executionContext)
 {
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -69,11 +69,11 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
     // Rebuild structure types list.
     setStructureTypes({});
     for(int i = 0; i < filter->structureTypeCount(); i++) {
-        OORef<ParticleType> stype(new ParticleType(dataset()));
+        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), executionContext);
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), i));
-        addStructureType(stype);
+        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext);
+        addStructureType(std::move(stype));
     }
 
     // Filter file was successfully loaded. Accept it as the new filter.
@@ -86,7 +86,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
     // Get the current positions.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -101,25 +101,26 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
     const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 
     // Get selection particle property.
-    ConstPropertyPtr selectionProperty;
-    if(onlySelectedParticles())
-        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Get particle radii.
-    std::vector<FloatType> radii;
+    ConstPropertyPtr radii;
     if(useRadii())
         radii = particles->inputParticleRadii();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(particles,
+    return std::make_shared<VoroTopAnalysisEngine>(modApp, 
+                                                   executionContext, 
+                                                   dataset(),
+                                                   particles,
                                                    input.stateValidity(),
-                                                   posProperty->storage(),
-                                                   std::move(selectionProperty),
+                                                   posProperty,
+                                                   selectionProperty,
                                                    std::move(radii),
-                                                   inputCell->data(),
+                                                   inputCell,
                                                    filterFile(),
                                                    filter(),
-                                                   getTypesToIdentify(structureTypes().size()));
+                                                   structureTypes());
 }
 
 /******************************************************************************
@@ -387,17 +388,18 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     ConstPropertyAccess<Point3> positionsArray(positions());
     ConstPropertyAccess<int> selectionArray(selection());
+    ConstPropertyAccess<FloatType> radiiArray(_radii);
     PropertyAccess<int> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
-    if(cell().isAxisAligned()) {
+    if(cell()->isAxisAligned()) {
         // Use Voro++ container.
-        double ax = cell().matrix()(0,3);
-        double ay = cell().matrix()(1,3);
-        double az = cell().matrix()(2,3);
-        double bx = ax + cell().matrix()(0,0);
-        double by = ay + cell().matrix()(1,1);
-        double bz = az + cell().matrix()(2,2);
+        double ax = cell()->matrix()(0,3);
+        double ay = cell()->matrix()(1,3);
+        double az = cell()->matrix()(2,3);
+        double bx = ax + cell()->matrix()(0,0);
+        double by = ay + cell()->matrix()(1,1);
+        double bz = az + cell()->matrix()(2,2);
         if(ax > bx) std::swap(ax,bx);
         if(ay > by) std::swap(ay,by);
         if(az > bz) std::swap(az,bz);
@@ -407,9 +409,9 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         int ny = (int)std::ceil((by - ay) / cellSize);
         int nz = (int)std::ceil((bz - az) / cellSize);
 
-        if(_radii.empty()) {
+        if(!radiiArray) {
             voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                          cell().hasPbc(0), cell().hasPbc(1), cell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                          cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -445,7 +447,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         }
         else {
             voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                               cell().hasPbc(0), cell().hasPbc(1), cell().hasPbc(2), (int)std::ceil(voro::optimal_particles));
+                                               cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
 
             // Insert particles into Voro++ container.
             size_t count = 0;
@@ -456,7 +458,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
                     continue;
                 }
                 const Point3& p = positionsArray[index];
-                voroContainer.put(index, p.x(), p.y(), p.z(), _radii[index]);
+                voroContainer.put(index, p.x(), p.y(), p.z(), radiiArray[index]);
                 count++;
             }
 
@@ -486,24 +488,20 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
         if(!nearestNeighborFinder.prepare(positions(), cell(), selection(), this))
             return;
 
-        // Squared particle radii (input was just radii).
-        for(auto& r : _radii)
-            r = r*r;
-
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
         double boxDiameter = sqrt(
-                                  cell().matrix().column(0).squaredLength()
-                                  + cell().matrix().column(1).squaredLength()
-                                  + cell().matrix().column(2).squaredLength());
+                                  cell()->matrix().column(0).squaredLength()
+                                  + cell()->matrix().column(1).squaredLength()
+                                  + cell()->matrix().column(2).squaredLength());
 
         // The normal vectors of the three cell planes.
         std::array<Vector3,3> planeNormals;
-        planeNormals[0] = cell().cellNormalVector(0);
-        planeNormals[1] = cell().cellNormalVector(1);
-        planeNormals[2] = cell().cellNormalVector(2);
+        planeNormals[0] = cell()->cellNormalVector(0);
+        planeNormals[1] = cell()->cellNormalVector(1);
+        planeNormals[2] = cell()->cellNormalVector(2);
 
-        Point3 corner1 = Point3::Origin() + cell().matrix().column(3);
-        Point3 corner2 = corner1 + cell().matrix().column(0) + cell().matrix().column(1) + cell().matrix().column(2);
+        Point3 corner1 = Point3::Origin() + cell()->matrix().column(3);
+        Point3 corner2 = corner1 + cell()->matrix().column(0) + cell()->matrix().column(1) + cell()->matrix().column(2);
 
         // Perform analysis, particle-wise parallel.
         parallelFor(positions()->size(), *this, [&](size_t index) {
@@ -524,7 +522,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
             // Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
             bool skipParticle = false;
             for(size_t dim = 0; dim < 3; dim++) {
-                if(!cell().hasPbc(dim)) {
+                if(!cell()->hasPbc(dim)) {
                     double r;
                     r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
                     if(r <= 0) skipParticle = true;
@@ -544,8 +542,8 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
                 // Skip unselected particles (if requested).
                 OVITO_ASSERT(!selectionArray || selectionArray[n.index]);
                 FloatType rs = n.distanceSq;
-                if(!_radii.empty())
-                    rs += _radii[index] - _radii[n.index];
+                if(radiiArray)
+                    rs += radiiArray[index]*radiiArray[index] - radiiArray[n.index]*radiiArray[n.index];
                 v.nplane(n.delta.x(), n.delta.y(), n.delta.z(), rs, n.index);
                 if(nvisits == 0) {
                     mrs = v.max_radius_squared();
@@ -563,7 +561,8 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     // Release data that is no longer needed.
     releaseWorkingData();
-    decltype(_radii){}.swap(_radii);
+    radiiArray.reset();
+    _radii.reset();
 }
 
 /******************************************************************************

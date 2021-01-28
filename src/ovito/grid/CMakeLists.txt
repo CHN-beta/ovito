@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2020 Alexander Stukowski
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,6 +26,7 @@ SET(SourceFiles
 	modifier/CreateIsosurfaceModifier.cpp
 	modifier/MarchingCubes.cpp
 	io/VTKVoxelGridExporter.cpp
+	io/ParaViewVTIGridImporter.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)
@@ -44,11 +45,14 @@ OVITO_STANDARD_PLUGIN(Grid
 	PLUGIN_DEPENDENCIES Mesh StdObj
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Grid.h
+	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

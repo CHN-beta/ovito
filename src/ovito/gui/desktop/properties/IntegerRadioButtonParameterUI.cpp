@@ -38,7 +38,11 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &IntegerRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &IntegerRadioButtonParameterUI::updatePropertyValue);
+#endif
 }
 
 /******************************************************************************
@@ -48,7 +52,11 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &IntegerRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &IntegerRadioButtonParameterUI::updatePropertyValue);
+#endif
 }
 
 /******************************************************************************
@@ -105,8 +113,8 @@ void IntegerRadioButtonParameterUI::updateUI()
 		else {
 			if(isQtPropertyUI()) {
 				QVariant val = editObject()->property(propertyName());
-				OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::Int), "IntegerRadioButtonParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-				if(!val.isValid() || !val.canConvert(QVariant::Int)) {
+				OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerRadioButtonParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+				if(!val.isValid() || !val.canConvert<int>()) {
 					editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 				}
 				id = val.toInt();
@@ -162,11 +170,11 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 				}
 				else if(isQtPropertyUI()) {
 					if(!editObject()->setProperty(propertyName(), id)) {
-						OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+						OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 					}
 				}
 				else if(isPropertyFieldUI()) {
-					editObject()->setPropertyFieldValue(*propertyField(), id);
+					editor()->changePropertyFieldValue(*propertyField(), id);
 				}
 				Q_EMIT valueEntered();
 			});

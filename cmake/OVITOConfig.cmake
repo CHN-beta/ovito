@@ -23,7 +23,7 @@ FUNCTION(OVITO_PLUGIN plugin_name)
 	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Ovito::Core)
 
 	# Link Qt5.
-	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Concurrent)
+	TARGET_LINK_LIBRARIES(${plugin_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui ${OVITO_QT_MAJOR_VERSION}::Widgets ${OVITO_QT_MAJOR_VERSION}::Concurrent)
 
 	# Link to plugin dependencies.
 	FOREACH(name ${OVITO_PLUGIN_PLUGIN_DEPENDENCIES})

@@ -136,7 +136,7 @@ public Q_SLOTS:
 private:
 
 	/// The object whose parameter is being edited.
-	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Stores whether this UI is enabled.
 	bool _enabled;
@@ -202,7 +202,7 @@ public:
 public:
 
 	Q_PROPERTY(const char* propertyName READ propertyName);
-	Q_PROPERTY(RefTarget parameterObject READ parameterObject);
+	Q_PROPERTY(Ovito::RefTarget* parameterObject READ parameterObject);
 
 protected Q_SLOTS:
 
@@ -224,7 +224,7 @@ private:
 	/// The controller or sub-object whose value is being edited.
 	/// This may be \c NULL either when there is no editable object selected in the parent editor
 	/// or if the editable object's reference field is currently empty.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget, parameterObject, setParameterObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, parameterObject, setParameterObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The property or reference field being edited or NULL if bound to a Qt property.
 	const PropertyFieldDescriptor* _propField;

@@ -57,8 +57,8 @@ void DislocationVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
 	// Shading mode.
 	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(DislocationVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue(ArrowPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue(ArrowPrimitive::FlatShading));
+	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
+	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
 	sublayout->addWidget(new QLabel(tr("Shading mode:")), 0, 0);
 	sublayout->addWidget(shadingModeUI->comboBox(), 0, 1);
 

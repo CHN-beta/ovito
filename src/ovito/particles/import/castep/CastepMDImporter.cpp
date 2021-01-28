@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CastepMDImporter.h"
 
@@ -101,7 +101,7 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
+void CastepMDImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -112,13 +112,9 @@ FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
 	std::vector<Point3> coords;
-	std::vector<int> types;
+	std::vector<QString> types;
 	std::vector<Vector3> velocities;
 	std::vector<Vector3> forces;
-	std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	AffineTransformation cell = AffineTransformation::Identity();
 	int numCellVectors = 0;
@@ -145,7 +141,7 @@ FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
 			coords.push_back(pos);
 			const char* typeNameEnd = line;
 			while(*typeNameEnd > ' ') typeNameEnd++;
-			types.push_back(typeList->addTypeName(line, typeNameEnd));
+			types.push_back(QLatin1String(line, typeNameEnd));
 		}
 		else if(stream.lineEndsWith("<-- V")) {
 			Vector3 v;
@@ -163,34 +159,38 @@ FileSourceImporter::FrameDataPtr CastepMDImporter::FrameLoader::loadFile()
 		}
 
 		if(isCanceled())
-			return {};
+			return;
 	}
-	frameData->simulationCell().setMatrix(cell);
+	simulationCell()->setCellMatrix(cell);
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(coords.size(), ParticlesObject::PositionProperty, false);
+	setParticleCount(coords.size());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	boost::copy(coords, posProperty.begin());
 
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(types.size(), ParticlesObject::TypeProperty, false);
-	boost::copy(types, typeProperty.begin());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
+		return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+	});
 
-	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+	// Since we created particle types on the go while reading the particles, the particle type ordering
+	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeList->sortTypesByName(typeProperty);
-	frameData->particles().setPropertyTypesList(typeProperty, std::move(typeList));
+	typeProperty.buffer()->sortElementTypesByName();
 
 	if(velocities.size() == coords.size()) {
-		PropertyAccess<Vector3> velocityProperty = frameData->particles().createStandardProperty<ParticlesObject>(velocities.size(), ParticlesObject::VelocityProperty, false);
+		PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
 		boost::copy(velocities, velocityProperty.begin());
 	}
 	if(forces.size() == coords.size()) {
-		PropertyAccess<Vector3> forceProperty = frameData->particles().createStandardProperty<ParticlesObject>(forces.size(), ParticlesObject::ForceProperty, false);
+		PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, executionContext());
 		boost::copy(forces, forceProperty.begin());
 	}
 
-	frameData->setStatus(tr("%1 atoms").arg(coords.size()));
-	return frameData;
+	state().setStatus(tr("%1 atoms").arg(coords.size()));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

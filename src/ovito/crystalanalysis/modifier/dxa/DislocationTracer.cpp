@@ -919,7 +919,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
 
 	// Make sure the line is not wrapped at periodic boundaries.
 	const Point3& lastPoint = node.isForwardNode() ? segment.line.back() : segment.line.front();
-	Point3 newPoint = lastPoint + cell().wrapVector(node.circuit->calculateCenter() - lastPoint);
+	Point3 newPoint = lastPoint + mesh().wrapVector(node.circuit->calculateCenter() - lastPoint);
 
 	if(node.isForwardNode()) {
 		// Add a new point to end the line.
@@ -1083,7 +1083,7 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
 				break;
 			}
 			armCount++;
-			centerOfMassVector += cell().wrapVector(armNode->position() - basePoint);
+			centerOfMassVector += mesh().wrapVector(armNode->position() - basePoint);
 			armNode = armNode->junctionRing;
 		}
 
@@ -1110,11 +1110,11 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
 				// Extend arm to junction's exact center point.
 				std::deque<Point3>& line = armNode->segment->line;
 				if(armNode->isForwardNode()) {
-					line.push_back(line.back() + cell().wrapVector(centerOfMass - line.back()));
+					line.push_back(line.back() + mesh().wrapVector(centerOfMass - line.back()));
 					armNode->segment->coreSize.push_back(armNode->segment->coreSize.back());
 				}
 				else {
-					line.push_front(line.front() + cell().wrapVector(centerOfMass - line.front()));
+					line.push_front(line.front() + mesh().wrapVector(centerOfMass - line.front()));
 					armNode->segment->coreSize.push_front(armNode->segment->coreSize.front());
 				}
 				armNode->circuit->numPreliminaryPoints = 0;
@@ -1145,9 +1145,9 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
 				OVITO_ASSERT(loop->isClosedLoop());
 
 				// Make both ends of the segment coincide by adding an extra point if necessary.
-				if(!cell().wrapVector(node1->position() - node2->position()).isZero(CA_ATOM_VECTOR_EPSILON)) {
-					loop->line.push_back(loop->line.back() + cell().wrapVector(loop->line.front() - loop->line.back()));
-					OVITO_ASSERT(cell().wrapVector(node1->position() - node2->position()).isZero(CA_ATOM_VECTOR_EPSILON));
+				if(!mesh().wrapVector(node1->position() - node2->position()).isZero(CA_ATOM_VECTOR_EPSILON)) {
+					loop->line.push_back(loop->line.back() + mesh().wrapVector(loop->line.front() - loop->line.back()));
+					OVITO_ASSERT(mesh().wrapVector(node1->position() - node2->position()).isZero(CA_ATOM_VECTOR_EPSILON));
 					loop->coreSize.push_back(loop->coreSize.back());
 				}
 

@@ -54,7 +54,7 @@ public:
 
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
-	virtual void loadUserDefaults() override;
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 public:
 

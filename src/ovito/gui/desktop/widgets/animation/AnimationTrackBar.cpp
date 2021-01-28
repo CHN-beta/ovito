@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -218,15 +218,16 @@ void AnimationTrackBar::findControllers(RefTarget* target)
 	for(const PropertyFieldDescriptor* field : target->getOOMetaClass().propertyFields()) {
 		if(field->isReferenceField() && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			hasSubAnimatables = true;
-			if(field->isVector() == false) {
-				if(RefTarget* subTarget = target->getReferenceField(*field)) {
+			if(!field->isVector()) {
+				if(RefTarget* subTarget = target->getReferenceFieldTarget(*field)) {
 					findControllers(subTarget);
 					addController(subTarget, target, field);
 				}
 			}
 			else {
-				for(RefTarget* subTarget : target->getVectorReferenceField(*field).targets()) {
-					if(subTarget) {
+				int count = target->getVectorReferenceFieldSize(*field);
+				for(int i = 0; i < count; i++) {
+					if(RefTarget* subTarget = target->getVectorReferenceFieldTarget(*field, i)) {
 						findControllers(subTarget);
 						addController(subTarget, target, field);
 					}
@@ -264,8 +265,7 @@ void AnimationTrackBar::addController(RefTarget* target, RefTarget* owner, const
 void AnimationTrackBar::onObjectNotificationEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	// Rebuild the complete controller list whenever the reference object changes.
-	if(event.type() == ReferenceEvent::ReferenceChanged
-			|| event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
+	if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
 		if(!_objects.targets().empty()) {
 			_objects.clear();
 			_controllers.clear();
@@ -279,9 +279,7 @@ void AnimationTrackBar::onObjectNotificationEvent(RefTarget* source, const Refer
 ******************************************************************************/
 void AnimationTrackBar::onControllerNotificationEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged ||
-			event.type() == ReferenceEvent::ReferenceChanged
-			|| event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
+	if(event.type() == ReferenceEvent::TargetChanged || event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
 		// Repaint track bar whenever a key has been created, deleted, or moved.
 		update();
 	}

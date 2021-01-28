@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/RenderSettings.h>
@@ -174,16 +175,17 @@ void ViewportSceneRenderer::renderGrid()
 
 		// Allocate vertex buffer.
 		int numVertices = 2 * (numLinesX + numLinesY);
-		std::unique_ptr<Point3[]> vertexPositions(new Point3[numVertices]);
-		std::unique_ptr<ColorA[]> vertexColors(new ColorA[numVertices]);
+
+		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 4, 0, false);
 
 		// Build lines array.
 		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
 		ColorA majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS);
 		ColorA majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS);
 
-		Point3* v = vertexPositions.get();
-		ColorA* c = vertexColors.get();
+		Point3* v = vertexPositions.begin();
+		ColorA* c = vertexColors.begin();
 		FloatType x = xstartF;
 		for(int i = xstart; i < xstart + numLinesX; i++, x += gridSpacing, c += 2) {
 			*v++ = Point3(x, ystartF, 0);
@@ -206,15 +208,14 @@ void ViewportSceneRenderer::renderGrid()
 			else
 				c[0] = c[1] = majorMajorColor;
 		}
-		OVITO_ASSERT(c == vertexColors.get() + numVertices);
+		OVITO_ASSERT(c == vertexColors.end());
 
 		// Render grid lines.
-		if(!_constructionGridGeometry || !_constructionGridGeometry->isValid(this))
+		if(!_constructionGridGeometry)
 			_constructionGridGeometry = createLinePrimitive();
-		_constructionGridGeometry->setVertexCount(numVertices);
-		_constructionGridGeometry->setVertexPositions(vertexPositions.get());
-		_constructionGridGeometry->setVertexColors(vertexColors.get());
-		_constructionGridGeometry->render(this);
+		_constructionGridGeometry->setPositions(vertexPositions.take());
+		_constructionGridGeometry->setColors(vertexColors.take());
+		renderLines(_constructionGridGeometry);
 	}
 	else {
 		addToLocalBoundingBox(Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));

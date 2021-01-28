@@ -279,6 +279,20 @@ inline LoadStream& operator>>(LoadStream& stream, QVector<T>& v)
 	return stream;
 }
 
+/// \brief Reads a Qt string list from the input stream.
+/// \relates LoadStream
+///
+/// \param stream The source stream.
+/// \param a The QStringList that the will receive the loaded data.
+/// \return The source stream.
+/// \throw Exception if an I/O error has occurred.
+inline LoadStream& operator>>(LoadStream& stream, QStringList& v)
+{
+	OVITO_ASSERT(stream.isOpen());
+	stream.dataStream() >> v;
+	return stream;
+}
+
 /// \brief Reads a vector with a variable number of values from the input stream.
 /// \relates LoadStream
 ///
@@ -383,22 +397,5 @@ extern OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, QUrl& url);
 /// \return The source stream.
 /// \throw Exception if an I/O error has occurred.
 extern OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, OvitoClassPtr& clazz);
-
-/// \brief Reads a reference to an OvitoObject derived class type from the input stream.
-/// \relates LoadStream
-///
-/// \param stream The source stream.
-/// \param clazz Reference to the class pointer that the will receive the loaded data.
-/// \return The source stream.
-/// \throw Exception if an I/O error has occurred.
-template<class OvitoSubclass>
-auto operator>>(LoadStream& stream, OvitoSubclass const*& clazz)
-	-> std::enable_if_t<std::is_base_of<OvitoClass, OvitoSubclass>::value, LoadStream&>
-{
-	OvitoClassPtr ptr;
-	stream >> ptr;
-	clazz = static_cast<OvitoSubclass const*>(ptr);
-	return stream;
-}
 
 }	// End of namespace

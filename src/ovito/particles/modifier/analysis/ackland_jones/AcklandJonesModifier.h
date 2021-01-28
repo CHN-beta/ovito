@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_PARTICLES_EXPORT AcklandJonesModifier : public StructureIdentificati
 	OVITO_CLASS(AcklandJonesModifier)
 	Q_CLASSINFO("DisplayName", "Ackland-Jones analysis");
 	Q_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -57,17 +57,21 @@ public:
 
 		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
 	};
-	Q_ENUMS(StructureType);
+	Q_ENUM(StructureType);
 
 public:
 
 	/// Constructor.
 	Q_INVOKABLE AcklandJonesModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -84,10 +88,12 @@ private:
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
-	};
 
-	/// Determines the coordination structure of a single particle using the bond-angle analysis method.
-	static StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify);
+	private:
+	
+		/// Determines the coordination structure of a single particle using the bond-angle analysis method.
+		StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
+	};
 };
 
 }	// End of namespace

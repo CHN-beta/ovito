@@ -49,10 +49,10 @@ public:
 	virtual Box3 boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
 	/// Determines the effective rendering colors for the backbone sites of the nucleotides.
-	std::vector<ColorA> backboneColors(const ParticlesObject* particles, bool highlightSelection) const;
+	ConstPropertyPtr backboneColors(const ParticlesObject* particles, bool highlightSelection) const;
 
 	/// Determines the effective rendering colors for the base sites of the nucleotides.
-	std::vector<ColorA> nucleobaseColors(const ParticlesObject* particles, bool highlightSelection) const;
+	ConstPropertyPtr nucleobaseColors(const ParticlesObject* particles, bool highlightSelection) const;
 
 	/// Returns the typed particle property used to determine the rendering colors of particles (if no per-particle colors are defined).
 	virtual const PropertyObject* getParticleTypeColorProperty(const ParticlesObject* particles) const override;

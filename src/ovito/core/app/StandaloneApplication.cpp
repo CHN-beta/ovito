@@ -90,8 +90,16 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		return false;
 	}
 
-	// Always use desktop OpenGL implementation (avoid ANGLE on Windows).
+#if 1
+	// Always use desktop OpenGL (avoid ANGLE on Windows):
 	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#elif 0
+	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
+	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+#else
+	// Use software rasterizer on Windows:
+	QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+#endif
 
 	// Create Qt application object.
 	createQtApplication(argc, argv);
@@ -106,7 +114,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
 		// Load application service classes and let them register their custom command line options.
 		for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ApplicationService::OOClass())) {
-			OORef<ApplicationService> service = static_object_cast<ApplicationService>(clazz->createInstance(nullptr));
+			OORef<ApplicationService> service = static_object_cast<ApplicationService>(clazz->createInstance());
 			service->registerCommandLineOptions(_cmdLineParser);
 			_applicationServices.push_back(std::move(service));
 		}

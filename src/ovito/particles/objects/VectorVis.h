@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito { namespace Particles {
@@ -46,10 +47,10 @@ public:
 
 	/// The shading modes supported by the vector vis element.
 	enum ShadingMode {
-		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
-		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
+		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// The position mode for the arrows.
 	enum ArrowPosition {
@@ -57,12 +58,16 @@ public:
 		Center,
 		Head
 	};
-	Q_ENUMS(ArrowPosition);
+	Q_ENUM(ArrowPosition);
 
 public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE VectorVis(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// \brief Lets the visualization element render the data object.
 	virtual void render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -79,7 +84,7 @@ public:
 public:
 
     Q_PROPERTY(Ovito::Particles::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
-    Q_PROPERTY(Ovito::ArrowPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
+    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
 
 protected:
 
@@ -107,10 +112,10 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls the rendering quality mode for arrows.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(ArrowPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 
 	/// Controls the transparency of the arrows.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, transparencyController, setTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
 	/// Controls the displacement offset to be applied to all arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
@@ -128,11 +133,11 @@ class OVITO_PARTICLES_EXPORT VectorPickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	VectorPickInfo(VectorVis* visElement, const PipelineFlowState& pipelineState, const PropertyObject* vectorProperty) :
-		_visElement(visElement), _pipelineState(pipelineState), _vectorProperty(vectorProperty) {}
+	VectorPickInfo(VectorVis* visElement, DataOORef<const ParticlesObject> particles, ConstPropertyPtr vectorProperty) :
+		_visElement(visElement), _particles(std::move(particles)), _vectorProperty(std::move(vectorProperty)) {}
 
-	/// The pipeline flow state containing the particle properties.
-	const PipelineFlowState& pipelineState() const { return _pipelineState; }
+	/// Returns the particles object.
+	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
 	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
@@ -143,19 +148,15 @@ public:
 
 private:
 
-	/// The pipeline flow state containing the particle properties.
-	PipelineFlowState _pipelineState;
-
 	/// The vis element that rendered the arrows.
 	OORef<VectorVis> _visElement;
 
+	/// The particles object.
+	DataOORef<const ParticlesObject> _particles;
+
 	/// The vector property.
-	OORef<PropertyObject> _vectorProperty;
+	ConstPropertyPtr _vectorProperty;
 };
 
-
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::VectorVis::ArrowPosition);
-Q_DECLARE_TYPEINFO(Ovito::Particles::VectorVis::ArrowPosition, Q_PRIMITIVE_TYPE);

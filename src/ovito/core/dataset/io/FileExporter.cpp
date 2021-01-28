@@ -66,7 +66,7 @@ FileExporter::FileExporter(DataSet* dataset) : RefTarget(dataset),
 	_endFrame(-1),
 	_everyNthFrame(1),
 	_floatOutputPrecision(10),
-	_ignorePipelineErrors(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
+	_ignorePipelineErrors(Application::instance()->executionContext() == ExecutionContext::Interactive)
 {
 	// Use the entire animation interval as default export interval.
 	int lastFrame = dataset->animationSettings()->timeToFrame(dataset->animationSettings()->animationInterval().end());
@@ -292,7 +292,9 @@ bool FileExporter::exportFrame(int frameNumber, TimePoint time, const QString& f
 ******************************************************************************/
 void FileExporter::activateCLocale()
 {
-	std::setlocale(LC_ALL, "C");
+	// The setlocale() function is not thread-safe and should only be called from the main thread.
+	if(QThread::currentThread() == QCoreApplication::instance()->thread())
+		std::setlocale(LC_ALL, "C");
 }
 
 /******************************************************************************

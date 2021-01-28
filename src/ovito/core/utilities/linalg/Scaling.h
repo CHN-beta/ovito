@@ -235,8 +235,4 @@ using Scaling = ScalingT<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Scaling);
-Q_DECLARE_METATYPE(Ovito::Scaling*);
 Q_DECLARE_TYPEINFO(Ovito::Scaling, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Scaling*, Q_PRIMITIVE_TYPE);
-
-

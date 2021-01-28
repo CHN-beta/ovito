@@ -20,9 +20,6 @@
 #
 #######################################################################################
 
-# Compile Qt resources, which will be linked into the plugin.
-QT5_ADD_RESOURCES(ResourceFiles resources/gui.qrc)
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Gui
 	SOURCES
@@ -32,13 +29,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/cmdpanel/CommandPanel.cpp
 		mainwin/cmdpanel/RenderCommandPage.cpp
 		mainwin/cmdpanel/ModifyCommandPage.cpp
-		mainwin/cmdpanel/PipelineListModel.cpp
-		mainwin/cmdpanel/PipelineListItem.cpp
-		mainwin/cmdpanel/ModifierListModel.cpp
 		mainwin/cmdpanel/OverlayCommandPage.cpp
-		mainwin/cmdpanel/OverlayTypesModel.cpp
-		mainwin/cmdpanel/OverlayListModel.cpp
-		mainwin/cmdpanel/OverlayListItem.cpp
 		mainwin/data_inspector/DataInspectorPanel.cpp
 		mainwin/data_inspector/DataInspectionApplet.cpp
 		mainwin/data_inspector/GlobalAttributesInspectionApplet.cpp
@@ -59,13 +50,10 @@ OVITO_STANDARD_PLUGIN(Gui
 		dialogs/ClonePipelineDialog.cpp
 		dialogs/FontSelectionDialog.cpp
 		dialogs/ModalPropertiesEditorDialog.cpp
-		actions/ActionManager.cpp
+		actions/WidgetActionManager.cpp
 		actions/FileActions.cpp
-		actions/ViewportActions.cpp
-		actions/AnimationActions.cpp
 		actions/RenderActions.cpp
 		actions/SearchActions.cpp
-		actions/ViewportModeAction.cpp
 		dataset/GuiDataSetContainer.cpp
 		dataset/io/FileSourceEditor.cpp
 		dataset/io/FileSourcePlaybackRateEditor.cpp
@@ -80,6 +68,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		widgets/general/AutocompleteLineEdit.cpp
 		widgets/general/AutocompleteTextEdit.cpp
 		widgets/general/HtmlListWidget.cpp
+		widgets/general/ViewportModeButton.cpp
 		widgets/animation/AnimationTimeSpinner.cpp
 		widgets/animation/AnimationFramesToolButton.cpp
 		widgets/animation/AnimationTimeSlider.cpp
@@ -129,16 +118,21 @@ OVITO_STANDARD_PLUGIN(Gui
 		app/GuiApplicationService.cpp
 		utilities/io/GuiFileManager.cpp
 		utilities/concurrent/ProgressDialog.cpp
-		${ResourceFiles}
+		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
-		Qt5::Widgets 
-		Qt5::Network
+		${OVITO_QT_MAJOR_VERSION}::Widgets 
+		${OVITO_QT_MAJOR_VERSION}::Network
 	PRECOMPILED_HEADERS
 		GUI.h
 )
+
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	# QOpenGLWidget class has been moved to the OpenGLWidgets module in Qt 6.
+	TARGET_LINK_LIBRARIES(Gui PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGLWidgets)
+ENDIF()
 
 # Inject copyright notice text into the source code.
 SET_PROPERTY(SOURCE actions/FileActions.cpp
@@ -148,10 +142,6 @@ SET_PROPERTY(SOURCE actions/FileActions.cpp
 # Compute the relative path where the documentation files get installed relative to the executable. 
 FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
 TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
-
-# Compute the relative path where the Python extension scripts get installed relative to the executable. 
-FILE(RELATIVE_PATH OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/scripts/")
-TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH=\"${OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH}\"")
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

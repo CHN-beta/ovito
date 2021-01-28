@@ -81,7 +81,7 @@ void Vector3ParameterUI::updatePropertyValue()
 					currentValue.setValue(val);
 				}
 				if(!editObject()->setProperty(propertyName(), currentValue)) {
-					OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {
@@ -96,7 +96,7 @@ void Vector3ParameterUI::updatePropertyValue()
 					val[_component] = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editObject()->setPropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(*propertyField(), currentValue);
 			}
 
 			Q_EMIT valueEntered();
@@ -122,7 +122,7 @@ void Vector3ParameterUI::updateUI()
 			QVariant val;
 			if(isQtPropertyUI()) {
 				val = editObject()->property(propertyName());
-				OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()), "Vector3ParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
+				OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()), "Vector3ParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 				if(!val.isValid() || !(val.canConvert<Vector3>() || val.canConvert<Point3>())) {
 					editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 				}
@@ -142,4 +142,3 @@ void Vector3ParameterUI::updateUI()
 }
 
 }	// End of namespace
-

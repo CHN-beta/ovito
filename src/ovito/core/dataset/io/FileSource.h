@@ -49,9 +49,6 @@ public:
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
-	/// \brief Asks the object for the result of the data pipeline.
-	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
-
 	/// \brief Sets the source location(s) for importing data.
 	/// \param sourceUrls The new source location(s).
 	/// \param importer The importer object that will parse the input file.
@@ -93,7 +90,7 @@ public:
 
 	/// Returns the list of data objects that are managed by this data source.
 	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
-	virtual DataCollection* getSourceDataCollection() const override { return dataCollection(); }
+	virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
 
 	/// \brief Scans the external data file(s) to find all contained frames.
 	/// This method is an implementation detail. Please use the high-level method updateListOfFrames() instead.
@@ -112,22 +109,22 @@ protected:
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// Handles reference events sent by reference targets of this object.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+	/// Sets the source frame number that is currently used as a sub-object data collection.
+	void setDataCollectionFrame(int frame) { _dataCollectionFrame = frame; }
 
 private:
 
 	/// Requests a source frame from the input sequence.
 	Future<PipelineFlowState> requestFrameInternal(int frame);
-
-	/// Sets which frame is currently stored in the data collection sub-object.
-	void setDataCollectionFrame(int frameIndex);
 
 	/// Updates the internal list of input frames.
 	/// Invalidates cached frames in case they did change.
@@ -146,7 +143,7 @@ private:
 private:
 
 	/// The associated importer object that is responsible for parsing the input file.
-	DECLARE_REFERENCE_FIELD_FLAGS(FileSourceImporter, importer, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_UNDO);
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, importer, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_UNDO);
 
 	/// The list of source files (may include wild-card patterns).
 	DECLARE_PROPERTY_FIELD_FLAGS(std::vector<QUrl>, sourceUrls, PROPERTY_FIELD_NO_UNDO);
@@ -160,8 +157,8 @@ private:
 	/// Specifies the starting animation frame to which the first frame of the file sequence is mapped.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackStartTime, setPlaybackStartTime);
 
-	/// Stores the prototypes of the loaded data objects.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataCollection, dataCollection, setDataCollection, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
+	/// Stores the master copy of the loaded data collection.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Controls the automatic generation of a file name pattern in the GUI.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);
@@ -181,19 +178,16 @@ private:
 	/// The active future if loading the list of frames is in progress.
 	SharedFuture<QVector<FileSourceImporter::Frame>> _framesListFuture;
 
-	/// The source frame that is currently used as a sub-object data collection.
+	/// The source frame that is currently stored in the internal data collection.
 	int _dataCollectionFrame = -1;
-
-	/// Indicates that the file currently being loaded has been newly selected by the user.
-	/// Otherwise it is is just another frame from the already loaded trajectory.
-	bool _isNewFile = false;
 
 	/// The file that was originally selected by the user for import.
 	/// The animation time slider will automatically be positioned to show the frame corresponding to this file.
 	QString _originallySelectedFilename;
 
-	/// Indicates that the data from a frame loader is currently being handed over to the FileSource.
-	bool _handOverInProgress = false;
+	/// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
+	/// and that change signals received from the data collection should be ignored.
+	bool _updatingEditableProxies = false;
 };
 
 }	// End of namespace

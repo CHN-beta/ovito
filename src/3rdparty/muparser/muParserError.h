@@ -123,7 +123,7 @@ private:
 
   Part of the math parser package.
 */
-class MUPARSER_EXPORT ParserError : public std::exception
+class MUPARSER_EXPORT ParserError
 {
 private:
 
@@ -158,10 +158,6 @@ public:
     std::size_t GetPos() const;
     const string_type& GetToken() const;
     EErrorCodes GetCode() const;
-
-    virtual const char* what() const noexcept override {
-        return GetMsg().c_str();
-    }
 
 private:
     string_type m_strMsg;     ///< The message string

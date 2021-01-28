@@ -38,7 +38,7 @@ namespace Ovito { namespace Delaunay {
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-bool DelaunayTessellation::generateTessellation(const SimulationCell& simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, Task& promise)
+bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, Task& promise)
 {
 	promise.setProgressMaximum(0);
 
@@ -47,8 +47,16 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell& simCell, c
 	GEO::set_assert_mode(GEO::ASSERT_ABORT);
 
 	// Make the magnitude of the randomly perturbed particle positions dependent on the size of the system.
-	const double lengthScale = (simCell.matrix().column(0) + simCell.matrix().column(1) + simCell.matrix().column(2)).length();
-	const double epsilon = 1e-10 * lengthScale;
+	double lengthScale;
+	if(simCell) {
+		lengthScale = (simCell->matrix().column(0) + simCell->matrix().column(1) + simCell->matrix().column(2)).length();
+	}
+	else {
+		Box3 bbox;
+		bbox.addPoints(positions, numPoints);
+		lengthScale = bbox.size().length();
+	}
+	double epsilon = 1e-10 * lengthScale;
 
 	// Set up random number generator to generate random perturbations.
 #if 0
@@ -79,7 +87,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell& simCell, c
 
 		// Add a small random perturbation to the particle positions to make the Delaunay triangulation more robust
 		// against singular input data, e.g. all particles positioned on ideal crystal lattice sites.
-		Point3 wp = simCell.wrapPoint(*positions);
+		Point3 wp = simCell ? simCell->wrapPoint(*positions) : *positions;
 		_pointData.emplace_back(
 			(double)wp.x() + displacement(rng),
 			(double)wp.y() + displacement(rng),
@@ -92,53 +100,55 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell& simCell, c
 	}
 	_primaryVertexCount = _particleIndices.size();
 
-	// Determine how many periodic copies of the input particles are needed in each cell direction
-	// to ensure a consistent periodic topology in the border region. 
-	Vector3I stencilCount;
-	FloatType cuts[3][2];
-	Vector3 cellNormals[3];
-	for(size_t dim = 0; dim < 3; dim++) {
-		cellNormals[dim] = simCell.cellNormalVector(dim);
-		cuts[dim][0] = cellNormals[dim].dot(simCell.reducedToAbsolute(Point3(0,0,0)) - Point3::Origin());
-		cuts[dim][1] = cellNormals[dim].dot(simCell.reducedToAbsolute(Point3(1,1,1)) - Point3::Origin());
+	if(simCell) {
+		// Determine how many periodic copies of the input particles are needed in each cell direction
+		// to ensure a consistent periodic topology in the border region. 
+		Vector3I stencilCount;
+		FloatType cuts[3][2];
+		Vector3 cellNormals[3];
+		for(size_t dim = 0; dim < 3; dim++) {
+			cellNormals[dim] = simCell->cellNormalVector(dim);
+			cuts[dim][0] = cellNormals[dim].dot(simCell->reducedToAbsolute(Point3(0,0,0)) - Point3::Origin());
+			cuts[dim][1] = cellNormals[dim].dot(simCell->reducedToAbsolute(Point3(1,1,1)) - Point3::Origin());
 
-		if(simCell.hasPbc(dim)) {
-			stencilCount[dim] = (int)ceil(ghostLayerSize / simCell.matrix().column(dim).dot(cellNormals[dim]));
-			cuts[dim][0] -= ghostLayerSize;
-			cuts[dim][1] += ghostLayerSize;
+			if(simCell->hasPbc(dim)) {
+				stencilCount[dim] = (int)ceil(ghostLayerSize / simCell->matrix().column(dim).dot(cellNormals[dim]));
+				cuts[dim][0] -= ghostLayerSize;
+				cuts[dim][1] += ghostLayerSize;
+			}
+			else {
+				stencilCount[dim] = 0;
+				cuts[dim][0] -= ghostLayerSize;
+				cuts[dim][1] += ghostLayerSize;
+			}
 		}
-		else {
-			stencilCount[dim] = 0;
-			cuts[dim][0] -= ghostLayerSize;
-			cuts[dim][1] += ghostLayerSize;
-		}
-	}
 
-	// Create ghost images of input vertices.
-	for(int ix = -stencilCount[0]; ix <= +stencilCount[0]; ix++) {
-		for(int iy = -stencilCount[1]; iy <= +stencilCount[1]; iy++) {
-			for(int iz = -stencilCount[2]; iz <= +stencilCount[2]; iz++) {
-				if(ix == 0 && iy == 0 && iz == 0) continue;
+		// Create ghost images of input vertices.
+		for(int ix = -stencilCount[0]; ix <= +stencilCount[0]; ix++) {
+			for(int iy = -stencilCount[1]; iy <= +stencilCount[1]; iy++) {
+				for(int iz = -stencilCount[2]; iz <= +stencilCount[2]; iz++) {
+					if(ix == 0 && iy == 0 && iz == 0) continue;
 
-				Vector3 shift = simCell.reducedToAbsolute(Vector3(ix,iy,iz));
-				for(size_t vertexIndex = 0; vertexIndex < _primaryVertexCount; vertexIndex++) {
-					if(promise.isCanceled())
-						return false;
+					Vector3 shift = simCell->reducedToAbsolute(Vector3(ix,iy,iz));
+					for(size_t vertexIndex = 0; vertexIndex < _primaryVertexCount; vertexIndex++) {
+						if(promise.isCanceled())
+							return false;
 
-					Point3 pimage = _pointData[vertexIndex] + shift;
-					bool isClipped = false;
-					for(size_t dim = 0; dim < 3; dim++) {
-						if(simCell.hasPbc(dim)) {
-							FloatType d = cellNormals[dim].dot(pimage - Point3::Origin());
-							if(d < cuts[dim][0] || d > cuts[dim][1]) {
-								isClipped = true;
-								break;
+						Point3 pimage = _pointData[vertexIndex] + shift;
+						bool isClipped = false;
+						for(size_t dim = 0; dim < 3; dim++) {
+							if(simCell->hasPbc(dim)) {
+								FloatType d = cellNormals[dim].dot(pimage - Point3::Origin());
+								if(d < cuts[dim][0] || d > cuts[dim][1]) {
+									isClipped = true;
+									break;
+								}
 							}
 						}
-					}
-					if(!isClipped) {
-						_pointData.push_back(pimage);
-						_particleIndices.push_back(_particleIndices[vertexIndex]);
+						if(!isClipped) {
+							_pointData.push_back(pimage);
+							_particleIndices.push_back(_particleIndices[vertexIndex]);
+						}
 					}
 				}
 			}
@@ -148,9 +158,10 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell& simCell, c
 	// In order to cover the simulation box completely with finite tetrahedra, add 8 extra input points to the Delaunay tessellation,
 	// far away from the simulation cell and real particles. These 8 points form a convex hull, whose interior will get completely tessellated.
 	if(coverDomainWithFiniteTets) {
+		OVITO_ASSERT(simCell);
 
 		// Compute bounding box of input points and simulation cell.
-		Box3 bb = Box3(Point3(0), Point3(1)).transformed(simCell.matrix());
+		Box3 bb = Box3(Point3(0), Point3(1)).transformed(simCell->matrix());
 		bb.addPoints(_pointData.data(), _pointData.size());
 		// Add extra padding.
 		bb = bb.padBox(ghostLayerSize);

@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "SmoothTrajectoryModifier.h"
 
 namespace Ovito { namespace Particles {
@@ -253,7 +254,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 	ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true);
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
 	std::unordered_map<qlonglong, size_t> idmap;
 	if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
@@ -265,14 +266,13 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 			index++;
 		}
 
-		if(useMinimumImageConvention() && cell1 != nullptr) {
-			SimulationCell cell = cell1->data();
+		if(useMinimumImageConvention() && cell1) {
 			auto id = idProperty1.cbegin();
 			for(Point3& p1 : outputPositions) {
 				auto mapEntry = idmap.find(*id);
 				if(mapEntry == idmap.end())
 					throwException(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-				Vector3 delta = cell.wrapVector(posProperty2[mapEntry->second] - p1);
+				Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
 				p1 += delta * t;
 				++id;
 			}
@@ -290,10 +290,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	}
 	else {
 		const Point3* p2 = posProperty2.cbegin();
-		if(useMinimumImageConvention() && cell1 != nullptr) {
-			SimulationCell cell = cell1->data();
+		if(useMinimumImageConvention() && cell1) {
 			for(Point3& p1 : outputPositions) {
-				Vector3 delta = cell.wrapVector((*p2++) - p1);
+				Vector3 delta = cell1->wrapVector((*p2++) - p1);
 				p1 += delta * t;
 			}
 		}
@@ -306,7 +305,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Interpolate particle orientations.
 	if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true);
+		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext());
 		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 			auto id = idProperty1.cbegin();
 			for(Quaternion& q1 : outputOrientations) {
@@ -324,11 +323,38 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 		}
 	}
 
+	// Interpolate all scalar and continuous particle properties.
+	for(const PropertyObject* property1 : particles1->properties()) {
+		if(property1->dataType() == PropertyObject::Float && property1->componentCount() == 1) {
+			const PropertyObject* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
+			if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
+				PropertyAccess<FloatType> data1 = outputParticles->makeMutable(property1);
+				ConstPropertyAccess<FloatType> data2(property2);
+				if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
+					auto id = idProperty1.cbegin();
+					for(FloatType& v1 : data1) {
+						auto mapEntry = idmap.find(*id);
+						OVITO_ASSERT(mapEntry != idmap.end());
+						v1 = v1 * (FloatType(1) - t) + data2[mapEntry->second] * t;
+						++id;
+					}
+				}
+				else {
+					const FloatType* v2 = data2.cbegin();
+					for(FloatType& v1 : data1) {
+						v1 = v1 * (FloatType(1) - t) + *v2++ * t;
+					}
+				}
+
+			}
+		}
+	}
+
 	// Interpolate simulation cell vectors.
 	if(cell1 && cell2) {
-		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
-		const AffineTransformation& cellMat1 = cell1->cellMatrix();
+		const AffineTransformation cellMat1 = cell1->cellMatrix();
 		const AffineTransformation delta = cell2->cellMatrix() - cellMat1;
+		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
 		outputCell->setCellMatrix(cellMat1 + delta * t);
 	}
 
@@ -352,12 +378,20 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 	// Create a modifiable copy of the particle coordinates array.
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true);
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
 
 	// Create output orientations array if smoothing particle orientations.
 	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true)
+		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext())
 		: nullptr;
+
+	// Create copies of all scalar continuous particle properties.
+	std::vector<PropertyAccess<FloatType>> outputScalarProperties;
+	for(const PropertyObject* property : particles1->properties()) {
+		if(property->dataType() == PropertyObject::Float && property->componentCount() == 1) {
+			outputScalarProperties.emplace_back(outputParticles->makeMutable(property));
+		}
+	}
 
 	// For interpolating the simulation cell vectors.
 	AffineTransformation averageCellMat;
@@ -397,14 +431,13 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 			// Average particle positions over time.
 			const Point3* p1 = posProperty1.cbegin();
-			if(useMinimumImageConvention() && cell2 != nullptr) {
-				SimulationCell cell = cell2->data();
+			if(useMinimumImageConvention() && cell2) {
 				auto id = idProperty1.cbegin();
 				for(Point3& pout : outputPositions) {
 					auto mapEntry = idmap.find(*id);
 					if(mapEntry == idmap.end())
 						throwException(tr("Cannot smooth trajectories, because the set of particles doesn't remain the same from frame to frame."));
-					pout += cell.wrapVector(posProperty2[mapEntry->second] - (*p1++)) * weight;
+					pout += cell2->wrapVector(posProperty2[mapEntry->second] - (*p1++)) * weight;
 					++id;
 				}
 			}
@@ -435,15 +468,29 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 					}
 				}
 			}
+
+			// Average all scalar continuous properties.
+			for(auto& accessor : outputScalarProperties) {
+				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+					ConstPropertyAccess<FloatType> accessor2(property2);
+					auto id = idProperty1.cbegin();
+					for(FloatType& v : accessor) {
+						auto mapEntry = idmap.find(*id);
+						OVITO_ASSERT(mapEntry != idmap.end());
+						v += accessor2[mapEntry->second];
+						++id;
+					}
+				}
+			}
 		}
 		else {
 			// Average particle positions over time.
 			const Point3* p1 = posProperty1.cbegin();
 			const Point3* p2 = posProperty2.cbegin();
-			if(useMinimumImageConvention() && cell2 != nullptr) {
-				SimulationCell cell = cell2->data();
+			if(useMinimumImageConvention() && cell2) {
 				for(Point3& pout : outputPositions) {
-					pout += cell.wrapVector((*p2++) - (*p1++)) * weight;
+					pout += cell2->wrapVector((*p2++) - (*p1++)) * weight;
 				}
 			}
 			else {
@@ -465,6 +512,18 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 					}
 				}
 			}
+
+			// Average all scalar continuous properties.
+			for(auto& accessor : outputScalarProperties) {
+				const PropertyObject* property2 = (accessor.buffer()->type() != 0) ? particles2->getProperty(accessor.buffer()->type()) : particles2->getProperty(accessor.buffer()->name());
+				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
+					ConstPropertyAccess<FloatType> accessor2(property2);
+					const FloatType* v2 = accessor2.cbegin();
+					for(FloatType& v : accessor) {
+						v += *v2++;
+					}
+				}
+			}
 		}
 	}
 
@@ -474,6 +533,12 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 			if(q.dot(q) >= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
 				q.normalize();
 		}
+	}
+
+	// Normalize the auxiliary properties.
+	for(auto& accessor : outputScalarProperties) {
+		for(FloatType& v : accessor)
+			v *= weight;
 	}
 
 	// Compute average of simulation cell vectors.

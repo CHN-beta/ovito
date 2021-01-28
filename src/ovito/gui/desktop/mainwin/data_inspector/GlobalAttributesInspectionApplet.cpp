@@ -62,7 +62,7 @@ QWidget* GlobalAttributesInspectionApplet::createWidget(MainWindow* mainWindow)
 	toolbar->setIconSize(QSize(22,22));
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
-	QAction* exportToFileAction = new QAction(QIcon(":/gui/actions/file/file_save_as.bw.svg"), tr("Export attributes to text file"), this);
+	QAction* exportToFileAction = new QAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Export attributes to text file"), this);
 	connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);
 	toolbar->addAction(exportToFileAction);
 
@@ -142,10 +142,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 	// Export to selected file.
 	try {
 		// Create exporter service.
-		OORef<AttributeFileExporter> exporter = new AttributeFileExporter(currentPipeline()->dataset());
-
-		// Load user-defined default settings.
-		exporter->loadUserDefaults();
+		OORef<AttributeFileExporter> exporter = OORef<AttributeFileExporter>::create(currentPipeline()->dataset(), ExecutionContext::Interactive);
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

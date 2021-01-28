@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,9 +66,9 @@ public:
 	virtual QString objectTitle() const override { return tr("VTK"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file);
+		return std::make_shared<FrameLoader>(request);
 	}
 
 protected:
@@ -84,7 +84,7 @@ protected:
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 		/// Reads from the input stream and throws an exception if the given keyword is not present.
 		static void expectKeyword(CompressedTextReader& stream, const char* keyword);

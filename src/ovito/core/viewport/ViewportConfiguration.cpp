@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
-DEFINE_REFERENCE_FIELD(ViewportConfiguration, viewports);
+DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
 DEFINE_PROPERTY_FIELD(ViewportConfiguration, orbitCenterMode);
@@ -41,7 +41,7 @@ DEFINE_PROPERTY_FIELD(ViewportConfiguration, userOrbitCenter);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportSuspender::ViewportSuspender(RefMaker* object) : ViewportSuspender(object->dataset()->viewportConfig())
+ViewportSuspender::ViewportSuspender(RefMaker* object) noexcept : ViewportSuspender(object->dataset()->viewportConfig())
 {
 }
 
@@ -59,15 +59,15 @@ ViewportConfiguration::ViewportConfiguration(DataSet* dataset) : RefTarget(datas
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(activeViewport)) {
-		Q_EMIT activeViewportChanged(_activeViewport);
+		Q_EMIT activeViewportChanged(activeViewport());
 	}
 	else if(field == PROPERTY_FIELD(maximizedViewport)) {
-		Q_EMIT maximizedViewportChanged(_maximizedViewport);
+		Q_EMIT maximizedViewportChanged(maximizedViewport());
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -162,6 +162,24 @@ Point3 ViewportConfiguration::orbitCenter()
 		return _userOrbitCenter;
 	}
 	return Point3::Origin();
+}
+
+/******************************************************************************
+* Zooms all viewports to the extents of the currently selected nodes.
+******************************************************************************/
+void ViewportConfiguration::zoomToSelectionExtents() 
+{
+	for(Viewport* vp : viewports())
+		vp->zoomToSelectionExtents();
+}
+
+/******************************************************************************
+* Zooms to the extents of the scene.
+******************************************************************************/
+void ViewportConfiguration::zoomToSceneExtents() 
+{
+	for(Viewport* vp : viewports())
+		vp->zoomToSceneExtents();
 }
 
 }	// End of namespace

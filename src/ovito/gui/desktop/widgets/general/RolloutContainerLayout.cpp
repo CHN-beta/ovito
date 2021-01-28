@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,10 +57,10 @@ QSize RolloutContainerLayout::sizeHint() const
 	QSize size(0,0);
 	for(QLayoutItem* item : list) {
 		QSize itemSize = item->sizeHint();
-		size.rwidth() = std::max(size.width(), itemSize.width());
+		size.rwidth() =qMax(size.width(), itemSize.width());
 		size.rheight() += itemSize.height();
 	}
-	size.rheight() += spacing() * std::max(0, list.size() - 1);
+	size.rheight() += spacing() * qMax(0, list.size() - 1);
 	return size;
 }
 
@@ -69,10 +69,10 @@ QSize RolloutContainerLayout::minimumSize() const
 	QSize size(0,0);
 	for(QLayoutItem* item : list) {
 		QSize itemSize = item->minimumSize();
-		size.rwidth() = std::max(size.width(), itemSize.width());
+		size.rwidth() = qMax(size.width(), itemSize.width());
 		size.rheight() += itemSize.height();
 	}
-	size.rheight() += spacing() * std::max(0, list.size() - 1);
+	size.rheight() += spacing() * qMax(0, list.size() - 1);
 	return size;
 }
 

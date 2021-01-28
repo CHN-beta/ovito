@@ -21,8 +21,8 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2.0 FATAL_ERROR)
-CMAKE_POLICY(VERSION 3.2.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0 FATAL_ERROR)
+CMAKE_POLICY(VERSION 3.3.0)
 
 # Choose CMake policies.
 CMAKE_POLICY(SET CMP0020 NEW) 	# Automatically link to qtmain.lib on Windows.
@@ -49,13 +49,6 @@ ENDIF()
 
 PROJECT(Ovito)
 
-# Check compiler requirements.
-IF(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
-	IF(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19")
-		MESSAGE(FATAL_ERROR "OVITO requires Visual C++ 2015 or newer.")
-	ENDIF()
-ENDIF()
-
 # This is to enable target debugging within Visual Studio Code.
 # It is ignored outside of Visual Studio Code/CMake tools.
 INCLUDE(CMakeToolsHelpers OPTIONAL)
@@ -71,8 +64,8 @@ INCLUDE(cmake/Plugins.cmake)
 
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
-OPTION(OVITO_BUILD_GUI "Build the graphical user interface for the desktop application." "ON")
-OPTION(OVITO_BUILD_WEBGUI "Build the graphical user interface for the web brwoser." "OFF")
+OPTION(OVITO_BUILD_GUI "Build the graphical user interface." "ON")
+OPTION(OVITO_QML_GUI "Build the new graphical user interface, which is based on Qt QML." "OFF")
 OPTION(OVITO_BUILD_MONOLITHIC "Build a monolithic executable, statically linking all plugins." "OFF")
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
@@ -80,7 +73,9 @@ OPTION(OVITO_RUN_CLANG_TIDY "Run the clang-tidy tool to check code." "OFF")
 OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up build (requires CMake 3.16)." "ON")
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
-OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include git revision number in OVITO version string." "OFF")
+OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
+SET(OVITO_QT_MAJOR_VERSION "Qt5" CACHE STRING "The major version of the Qt framework to use (Qt5 or Qt6).")
+SET_PROPERTY(CACHE OVITO_QT_MAJOR_VERSION PROPERTY STRINGS Qt5 Qt6)
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")

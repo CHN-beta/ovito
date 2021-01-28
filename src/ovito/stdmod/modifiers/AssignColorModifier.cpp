@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
@@ -29,6 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include "AssignColorModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -47,24 +47,28 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(dataset),
 	_keepSelection(true)
 {
-	setColorController(ControllerManager::createColorController(dataset));
-	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
-
-	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"));
 }
 
 /******************************************************************************
-* Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AssignColorModifier::loadUserDefaults()
+void AssignColorModifier::initializeObject(ExecutionContext executionContext)
 {
-	Modifier::loadUserDefaults();
+	if(!colorController())
+		setColorController(ControllerManager::createColorController(dataset(), executionContext));
+	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
 
-	// In the graphical program environment, we clear the
-	// selection by default to make the assigned colors visible.
-	setKeepSelection(false);
+	// Let this modifier operate on particles by default.
+	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), executionContext);
+
+	if(executionContext == ExecutionContext::Interactive) {
+		// In the graphical program environment, we clear the
+		// selection by default to make the assigned colors visible.
+		setKeepSelection(false);
+	}
+
+	DelegatingModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -92,9 +96,9 @@ PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFl
 	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
 	// Get the input selection property.
-	ConstPropertyAccessAndRef<int> selProperty;
-	if(container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)) {
-		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyStorage::GenericSelectionProperty)) {
+	ConstPropertyPtr selProperty;
+	if(container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 			selProperty = selPropertyObj;
 
 			// Clear selection if requested.
@@ -108,9 +112,9 @@ PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFl
 	mod->colorController()->getColorValue(time, color, state.mutableStateValidity());
 
 	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, objectPath);
+    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, Application::instance()->executionContext(), objectPath);
 	// Assign color to selected elements (or all elements if there is no selection).
-	colorProperty.fillSelected(color, selProperty.storage().get());
+	colorProperty->fillSelected(color, selProperty.get());
 
 	return PipelineStatus::Success;
 }

@@ -35,96 +35,28 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 /******************************************************************************
 * Constructs a new BondType.
 ******************************************************************************/
-BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0)
+BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0.0)
 {
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-bool BondType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	if(!ElementType::initialize(isNewlyCreated, name, attributes, typePropertyId))
-		return false;
+	ElementType::updateEditableProxies(state, dataPath);
 
-	// Initialize color value.
-	if(isNewlyCreated && !attributes.contains(QStringLiteral("color"))) {
-		setColor(getDefaultBondColor(static_cast<BondsObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-	}
+	// Note: 'this' may no longer exist at this point, because the base method implementationmay
+	// have already replaced it with a mutable copy.
+	const BondType* self = static_object_cast<BondType>(dataPath.back());
 
-	// Initialize radius value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("radius"))) {
-			setRadius(attributes.value(QStringLiteral("radius")).value<FloatType>());
-		}
-		else {
-			setRadius(getDefaultBondRadius(static_cast<BondsObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
+	if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
+		if(proxy->radius() != self->radius()) {
+			// Make this data object mutable first.
+			BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
+			mutableSelf->setRadius(proxy->radius());
 		}
 	}
-	else {
-		FloatType r = attributes.value(QStringLiteral("radius"), QVariant::fromValue(radius())).value<FloatType>();
-		if(r != radius()) {
-			if(!isSafeToModify())
-				return false;
-			setRadius(r);
-		}
-	}
-
-	return true;
-}
-
-/******************************************************************************
-* Returns the default color for a bond type ID.
-******************************************************************************/
-Color BondType::getDefaultBondColorForId(BondsObject::Type typeClass, int bondTypeId)
-{
-	// Initial standard colors assigned to new bond types:
-	static const Color defaultTypeColors[] = {
-		Color(1.0,  1.0,  0.0),
-		Color(0.7,  0.0,  1.0),
-		Color(0.2,  1.0,  1.0),
-		Color(1.0,  0.4,  1.0),
-		Color(0.4,  1.0,  0.4),
-		Color(1.0,  0.4,  0.4),
-		Color(0.4,  0.4,  1.0),
-		Color(1.0,  1.0,  0.7),
-		Color(0.97, 0.97, 0.97)
-	};
-	return defaultTypeColors[std::abs(bondTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
-}
-
-/******************************************************************************
-* Returns the default color for a bond type name.
-******************************************************************************/
-Color BondType::getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults)
-{
-	if(userDefaults) {
-		QSettings settings;
-		settings.beginGroup("bonds/defaults/color");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(bondTypeName);
-		if(v.isValid() && v.type() == QVariant::Color)
-			return v.value<Color>();
-	}
-
-	return getDefaultBondColorForId(typeClass, bondTypeId);
-}
-
-/******************************************************************************
-* Returns the default radius for a bond type name.
-******************************************************************************/
-FloatType BondType::getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults)
-{
-	if(userDefaults) {
-		QSettings settings;
-		settings.beginGroup("bonds/defaults/radius");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(bondTypeName);
-		if(v.isValid() && v.canConvert<FloatType>())
-			return v.value<FloatType>();
-	}
-
-	return 0;
 }
 
 }	// End of namespace

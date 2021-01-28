@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TargetObject.h"
 
@@ -36,7 +37,18 @@ IMPLEMENT_OVITO_CLASS(TargetVis);
 ******************************************************************************/
 TargetObject::TargetObject(DataSet* dataset) : DataObject(dataset)
 {
-	addVisElement(new TargetVis(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TargetObject::initializeObject(ExecutionContext executionContext)
+{
+	if(!visElement())
+		setVisElement(OORef<TargetVis>::create(dataset(), executionContext));
+
+	DataObject::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -55,33 +67,28 @@ void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	if(!renderer->isBoundingBoxPass()) {
 
-		// The key type used for caching the geometry primitive:
+		// The key type used for caching the rendering primitives:
 		using CacheKey = std::tuple<
 			CompatibleRendererGroup,	// The scene renderer
 			Color						// Display color
 		>;
 
-		// The values stored in the vis cache.
+		// The value stored in the vis cache.
 		struct CacheValue {
-			std::shared_ptr<LinePrimitive> icon;
-			std::shared_ptr<LinePrimitive> pickIcon;
+			std::shared_ptr<LinePrimitive> iconRendering;
+			std::shared_ptr<LinePrimitive> iconPicking;
 		};
 
 		// Determine icon color depending on selection state.
 		Color color = ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS);
 
 		// Lookup the rendering primitive in the vis cache.
-		auto& targetPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, color));
+		auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(renderer, color));
 
 		// Check if we already have a valid rendering primitive that is up to date.
-		if(!targetPrimitives.icon || !targetPrimitives.pickIcon
-				|| !targetPrimitives.icon->isValid(renderer)
-				|| !targetPrimitives.pickIcon->isValid(renderer)) {
+		if(!visCache.iconRendering || !visCache.iconPicking) {
 
-			targetPrimitives.icon = renderer->createLinePrimitive();
-			targetPrimitives.pickIcon = renderer->createLinePrimitive();
-
-			// Initialize lines.
+			// Initialize geometry of wireframe cube.
 			static const Point3 linePoints[] = {
 					{-1, -1, -1}, { 1,-1,-1},
 					{-1, -1,  1}, { 1,-1, 1},
@@ -96,21 +103,21 @@ void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 					{ 1, -1,  1}, { 1, 1, 1},
 					{-1, -1,  1}, {-1, 1, 1}
 			};
+			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3, 0, false);
+			boost::copy(linePoints, vertices.begin());
 
-			targetPrimitives.icon->setVertexCount(24);
-			targetPrimitives.icon->setVertexPositions(linePoints);
-			targetPrimitives.icon->setLineColor(ColorA(color));
+			visCache.iconRendering = renderer->createLinePrimitive();
+			visCache.iconRendering->setPositions(vertices.take());
+			visCache.iconRendering->setUniformColor(color);
 
-			targetPrimitives.pickIcon->setVertexCount(24, renderer->defaultLinePickingWidth());
-			targetPrimitives.pickIcon->setVertexPositions(linePoints);
-			targetPrimitives.pickIcon->setLineColor(ColorA(color));
+			visCache.iconPicking = renderer->createLinePrimitive();
+			visCache.iconPicking->setLineWidth(renderer->defaultLinePickingWidth());
+			visCache.iconPicking->setPositions(visCache.iconRendering->positions());
+			visCache.iconPicking->setUniformColor(color);
 		}
 
 		renderer->beginPickObject(contextNode);
-		if(!renderer->isPicking())
-			targetPrimitives.icon->render(renderer);
-		else
-			targetPrimitives.pickIcon->render(renderer);
+		renderer->renderLines(renderer->isPicking() ? visCache.iconPicking : visCache.iconRendering);
 		renderer->endPickObject();
 	}
 	else {
@@ -124,7 +131,7 @@ void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 ******************************************************************************/
 Box3 TargetVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	// This is not a physical object. It doesn't have a size.
+	// This is not a physical object. It is point-like and doesn't have any size.
 	return Box3(Point3::Origin(), Point3::Origin());
 }
 

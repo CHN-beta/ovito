@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -45,23 +45,31 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUn
 ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentificationModifier(dataset),
     _cutoff(3.5)
 {
-    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
-    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE);
-    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE);
-    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE);
-    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE);
-    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE);
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ChillPlusModifier::initializeObject(ExecutionContext executionContext)
+{
+	// Create the structure types.
+    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, executionContext);
+    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, executionContext);
+    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, executionContext);
+    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, executionContext);
+    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, executionContext);
+
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
-    if(structureTypes().size() != NUM_STRUCTURE_TYPES)
-        throwException(tr("The number of structure types has changed. Please remove this modifier from the pipeline and insert it again."));
-
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -71,12 +79,10 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
         throwException(tr("Chill+ modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    ConstPropertyPtr selectionProperty;
-    if(onlySelectedParticles())
-        selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
+    return std::make_shared<ChillPlusEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 }
 
 /******************************************************************************
@@ -120,7 +126,7 @@ void ChillPlusModifier::ChillPlusEngine::perform()
             return;
         }
 
-        output[index] = determineStructure(neighborListBuilder, index, typesToIdentify());
+        output[index] = determineStructure(neighborListBuilder, index);
     });
 
 	// Release data that is no longer needed.
@@ -139,10 +145,9 @@ std::complex<float> ChillPlusModifier::ChillPlusEngine::compute_q_lm(CutoffNeigh
 }
 
 /******************************************************************************
-* Determines the structure of each atom based on the number of eclipsed and
-* staggered bonds.
+* Determines the structure of an atom based on the number of eclipsed and staggered bonds.
 ******************************************************************************/
-ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify)
+ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex)
 {
     int num_eclipsed = 0;
     int num_staggered = 0;

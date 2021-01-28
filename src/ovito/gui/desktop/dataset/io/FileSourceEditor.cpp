@@ -63,13 +63,13 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	layout->addWidget(toolbar);
 
-	toolbar->addAction(QIcon(":/gui/actions/file/import_object_changefile.bw.svg"), tr("Pick new file"), this, SLOT(onPickLocalInputFile()));
+	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_changefile.bw.svg"), tr("Pick new file"), this, SLOT(onPickLocalInputFile()));
 #ifdef OVITO_SSH_CLIENT
-	toolbar->addAction(QIcon(":/gui/actions/file/file_import_remote.bw.svg"), tr("Pick new remote file"), this, SLOT(onPickRemoteInputFile()));
+	toolbar->addAction(QIcon(":/guibase/actions/file/file_import_remote.bw.svg"), tr("Pick new remote file"), this, SLOT(onPickRemoteInputFile()));
 #endif
-	toolbar->addAction(QIcon(":/gui/actions/file/import_object_reload.bw.svg"), tr("Reload file"), this, SLOT(onReloadFrame()));
-	toolbar->addAction(QIcon(":/gui/actions/file/import_object_refresh_animation.bw.svg"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
-	QAction* preloadTrajAction = toolbar->addAction(QIcon(":/gui/actions/file/cache_pipeline_output.svg"), tr("Load entire trajectory into memory"));
+	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_reload.bw.svg"), tr("Reload file"), this, SLOT(onReloadFrame()));
+	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_refresh_animation.bw.svg"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
+	QAction* preloadTrajAction = toolbar->addAction(QIcon(":/guibase/actions/file/cache_pipeline_output.svg"), tr("Load entire trajectory into memory"));
 	BooleanActionParameterUI* preloadTrajectoryUI = new BooleanActionParameterUI(this, PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
 
 	QGroupBox* sourceBox = new QGroupBox(tr("Data source"), rollout);
@@ -284,43 +284,40 @@ void FileSourceEditor::onPickRemoteInputFile()
 ******************************************************************************/
 bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType)
 {
-	OORef<FileImporter> fileimporter;
+	OORef<FileImporter> fileImporter;
 
 	// Create file importer instance.
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), url);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), ExecutionContext::Interactive, url);
 		if(!fileSource->dataset()->taskManager().waitForFuture(importerFuture))
 			return false;
 
-		fileimporter = importerFuture.result();
-		if(!fileimporter)
+		fileImporter = importerFuture.result();
+		if(!fileImporter)
 			fileSource->throwException(tr("Could not detect the format of the file to be imported. The format might not be supported."));
 	}
 	else {
 		// Caller has provided a specific importer type.
-		fileimporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
-		if(!fileimporter)
+		fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset(), ExecutionContext::Interactive));
+		if(!fileImporter)
 			return false;
 	}
 
 	// The importer must be a FileSourceImporter.
-	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileimporter);
+	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileImporter);
 	if(!newImporter)
 		fileSource->throwException(tr("The selected file type is not compatible."));
 
 	// Temporarily suppress viewport updates while setting up the newly imported data.
 	ViewportSuspender noVPUpdate(fileSource->dataset()->viewportConfig());
 
-	// Load user-defined default import settings.
-	newImporter->loadUserDefaults();
-
 	// Show the optional user interface (which is provided by the corresponding FileImporterEditor class) for the new importer.
 	for(OvitoClassPtr clazz = &newImporter->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
 		OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
 		if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-			OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance(nullptr));
+			OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
 			if(editor) {
 				if(!editor->inspectNewFile(newImporter, url, mainWindow()))
 					return false;

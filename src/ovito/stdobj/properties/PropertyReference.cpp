@@ -92,7 +92,7 @@ PropertyReference PropertyReference::convertToContainerClass(PropertyContainerCl
 SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 {
 	stream.beginChunk(0x02);
-	stream << r.containerClass();
+	stream << static_cast<const OvitoClassPtr&>(r.containerClass());
 	stream << r.type();
 	stream << r.name();
 	stream << r.vectorComponent();
@@ -105,7 +105,9 @@ SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 {
 	stream.expectChunk(0x02);
-	stream >> r._containerClass;
+	OvitoClassPtr clazz;
+	stream >> clazz;
+	r._containerClass = static_cast<PropertyContainerClassPtr>(clazz);
 	stream >> r._type;
 	stream >> r._name;
 	stream >> r._vectorComponent;

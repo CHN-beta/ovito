@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,49 +26,36 @@ uniform mat4 projection_matrix;
 uniform mat4 modelviewprojection_matrix;
 uniform vec3 cubeVerts[14];
 uniform float radius_scalingfactor;
+uniform bool is_picking_mode;
+uniform int picking_base_id;
+uniform vec4 selection_color;
 
-#if __VERSION__ >= 130
+// The particle data:
+in vec3 position;
+in vec3 color;
+in float transparency;
+in float particle_radius;
+in int selection;
 
-	// The particle data:
-	in vec3 position;
-	in vec4 color;
-	in float particle_radius;
-
-	// Outputs to fragment shader
-	flat out vec4 particle_color_fs;
-	flat out float particle_radius_squared_fs;
-	flat out vec3 particle_view_pos_fs;
-
-#else
-
-	// The particle data:
-	attribute float particle_radius;
-	attribute float vertexID;
-
-	// Output to fragment shader:
-	#define particle_radius_squared_fs gl_TexCoord[1].w
-	#define particle_view_pos_fs gl_TexCoord[1].xyz
-
-#endif
+// Outputs to fragment shader
+flat out vec4 particle_color_fs;
+flat out float particle_radius_squared_fs;
+flat out vec3 particle_view_pos_fs;
 
 void main()
 {
-#if __VERSION__ >= 130
-	// Forward color to fragment shader.
-	particle_color_fs = color;
-	particle_radius_squared_fs = particle_radius * particle_radius * radius_scalingfactor * radius_scalingfactor;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 14); 
+	}
+
+	particle_radius_squared_fs = (particle_radius * particle_radius) * (radius_scalingfactor * radius_scalingfactor);
 	particle_view_pos_fs = vec3(modelview_matrix * vec4(position, 1));
 
 	// Transform and project vertex.
 	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[gl_VertexID % 14] * particle_radius, 1);
-#else
-	// Forward color to fragment shader.
-	gl_FrontColor = gl_Color;
-	particle_radius_squared_fs = particle_radius * particle_radius * radius_scalingfactor * radius_scalingfactor;
-	particle_view_pos_fs = vec3(modelview_matrix * gl_Vertex);
-
-	// Transform and project vertex.
-	int cubeCorner = int(mod(vertexID+0.5, 14.0));
-	gl_Position = modelviewprojection_matrix * (gl_Vertex + vec4(cubeVerts[cubeCorner] * particle_radius * radius_scalingfactor, 0));
-#endif
 }

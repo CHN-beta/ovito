@@ -50,7 +50,7 @@ namespace Ovito {
 		struct DislocationNode;
 		struct DislocationSegment;
 		class Microstructure;
-		class MicrostructureData;
+		class MicrostructureAccess;
 	}
 }
 

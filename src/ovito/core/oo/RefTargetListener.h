@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ protected:
 	/// This method is called after the reference counter of this object has reached zero
 	/// and before the object is being deleted.
 	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with reference counting pointers.");
+		OVITO_ASSERT_MSG(false, "RefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A RefTargetListener should not be used with OORef smart-pointers.");
 	}
 
 	/// \brief Is called when the RefTarget referenced by this listener has generated an event.
@@ -72,7 +72,7 @@ protected:
 private:
 
 	/// The RefTarget which is being monitored by this listener.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget, target, setTarget, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, target, setTarget, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 };
 
 /**
@@ -127,6 +127,9 @@ public:
 	/// \brief Inserts a new object into the list of targets this listener should listen to.
 	void insert(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.insert(this, PROPERTY_FIELD(targets), index, target); }
 
+	/// \brief Replaces an object in the list of targets this listener should listen to.
+	void set(int index, RefTarget* target) { OVITO_CHECK_OBJECT_POINTER(target); _targets.set(this, PROPERTY_FIELD(targets), index, target); }
+
 	/// \brief Removes an object from the list of targets this listener should listen to.
 	void remove(RefTarget* target) {
 		OVITO_CHECK_OBJECT_POINTER(target);
@@ -153,7 +156,7 @@ protected:
 	/// This method is called after the reference counter of this object has reached zero
 	/// and before the object is being deleted.
 	virtual void aboutToBeDeleted() override {
-		OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with reference counting pointers.");
+		OVITO_ASSERT_MSG(false, "VectorRefTargetListenerBase::aboutToBeDeleted()", "Invalid use of this class. A VectorRefTargetListener should not be used with OORef smart-pointers.");
 	}
 
 	/// \brief Is called when a RefTarget referenced by this listener has generated an event.
@@ -162,7 +165,7 @@ protected:
 private:
 
 	/// The list of RefTargets which are being monitored by this listener.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget*, targets, setTargets, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 };
 
 /**
@@ -184,13 +187,19 @@ public:
 	/// \brief Sets the list of targets this listener should listen to.
 	/// \param newTargets The new list of targets.
 	/// \sa targets()
-	void setTargets(const QVector<T*>& newTargets) { VectorRefTargetListenerBase::setTargets(reinterpret_cast<const QVector<RefTarget*>&>(newTargets)); }
+	template<typename U>
+	void setTargets(U&& newTargets) { 
+		VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
+	}
 
 	/// \brief Adds a new object to the list of targets this listener should listen to.
 	void push_back(T* target) { VectorRefTargetListenerBase::push_back(target); }
 
 	/// \brief Inserts a new object into the list of targets this listener should listen to.
 	void insert(int index, T* target) { VectorRefTargetListenerBase::insert(index, target); }
+
+	/// \brief Replaces an object in the list of targets this listener should listen to.
+	void set(int index, T* target) { VectorRefTargetListenerBase::set(index, target); }
 };
 
 }	// End of namespace

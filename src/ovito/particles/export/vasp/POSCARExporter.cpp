@@ -53,10 +53,9 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 	// Write POSCAR header including the simulation cell geometry.
 	textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 	textStream() << "1\n";
-	const SimulationCell& cell = simulationCell->data();
 	for(size_t i = 0; i < 3; i++)
-		textStream() << cell.matrix()(0, i) << ' ' << cell.matrix()(1, i) << ' ' << cell.matrix()(2, i) << '\n';
-	const Vector3& origin = cell.matrix().translation();
+		textStream() << simulationCell->matrix()(0, i) << ' ' << simulationCell->matrix()(1, i) << ' ' << simulationCell->matrix()(2, i) << '\n';
+	const Vector3& origin = simulationCell->matrix().translation();
 
 	// Count number of particles per particle type.
 	QMap<int,int> particleCounts;
@@ -106,7 +105,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 			if(particleTypeArray && particleTypeArray[i] != ptype)
 				continue;
 			if(writeReducedCoordinates()) {
-				Point3 rp = cell.absoluteToReduced(*p);
+				Point3 rp = simulationCell->absoluteToReduced(*p);
 				textStream() << rp.x() << ' ' << rp.y() << ' ' << rp.z() << '\n';
 			}
 			else {
@@ -129,7 +128,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 					continue;
 
 				if(writeReducedCoordinates()) {
-					Vector3 rv = cell.absoluteToReduced(*v);
+					Vector3 rv = simulationCell->absoluteToReduced(*v);
 					textStream() << rv.x() << ' ' << rv.y() << ' ' << rv.z() << '\n';
 				}
 				else {

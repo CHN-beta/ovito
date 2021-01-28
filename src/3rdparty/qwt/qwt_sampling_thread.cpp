@@ -9,6 +9,7 @@
 
 #include "qwt_sampling_thread.h"
 #include "qwt_system_clock.h"
+#include "moc_qwt_sampling_thread.cpp"
 
 class QwtSamplingThread::PrivateData
 {
@@ -104,3 +105,7 @@ void QwtSamplingThread::run()
         }
     }
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_sampling_thread.cpp"
+#endif

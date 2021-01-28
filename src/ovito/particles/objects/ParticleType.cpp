@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/io/FileSource.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ParticleType.h"
 
@@ -30,13 +29,15 @@ namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
+DEFINE_PROPERTY_FIELD(ParticleType, shape);
 DEFINE_REFERENCE_FIELD(ParticleType, shapeMesh);
 DEFINE_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
 DEFINE_PROPERTY_FIELD(ParticleType, mass);
 SET_PROPERTY_FIELD_LABEL(ParticleType, radius, "Radius");
-SET_PROPERTY_FIELD_LABEL(ParticleType, shapeMesh, "Shape");
+SET_PROPERTY_FIELD_LABEL(ParticleType, shape, "Shape");
+SET_PROPERTY_FIELD_LABEL(ParticleType, shapeMesh, "Shape Mesh");
 SET_PROPERTY_FIELD_LABEL(ParticleType, highlightShapeEdges, "Highlight edges");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeBackfaceCullingEnabled, "Back-face culling");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeUseMeshColor, "Use mesh color");
@@ -48,6 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, radius, WorldParameterUnit, 0
 ******************************************************************************/
 ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 	_radius(0),
+	_shape(ParticlesVis::ParticleShape::Default),
 	_highlightShapeEdges(false),
 	_shapeBackfaceCullingEnabled(true),
 	_shapeUseMeshColor(false),
@@ -56,73 +58,53 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-bool ParticleType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void ParticleType::initializeType(const PropertyReference& property, ExecutionContext executionContext)
 {
-	if(!ElementType::initialize(isNewlyCreated, name, attributes, typePropertyId))
-		return false;
+	ElementType::initializeType(property, executionContext);
 
-	// Initialize color value.
-	if(isNewlyCreated && !attributes.contains(QStringLiteral("color"))) {
-		setColor(getDefaultParticleColor(static_cast<ParticlesObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-	}
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext));
+}
 
-	// Initialize radius value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("radius"))) {
-			setRadius(attributes.value(QStringLiteral("radius")).value<FloatType>());
-		}
-		else {
-			setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(typePropertyId), nameOrNumericId(), numericId()));
-		}
-	}
-	else {
-		FloatType r = attributes.value(QStringLiteral("radius"), QVariant::fromValue(radius())).value<FloatType>();
-		if(r != radius()) {
-			if(!isSafeToModify())
-				return false;
-			setRadius(r);
-		}
-	}
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	ElementType::updateEditableProxies(state, dataPath);
 
-	// Initialize mass value.
-	if(isNewlyCreated) {
-		if(attributes.contains(QStringLiteral("mass"))) {
-			setMass(attributes.value(QStringLiteral("mass")).value<FloatType>());
-		}
-	}
-	else {
-		FloatType m = attributes.value(QStringLiteral("mass"), QVariant::fromValue(mass())).value<FloatType>();
-		if(m != mass()) {
-			if(!isSafeToModify())
-				return false;
-			setMass(m);
-		}
-	}	
+	// Note: 'this' may no longer exist at this point, because the base method implementationmay
+	// have already replaced it with a mutable copy.
+	const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
 
-	// Initialize particle shape.
-	if(attributes.contains(QStringLiteral("shape"))) {
-		if(!isSafeToModify())
-			return false;
+	if(ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
 
-		TriMeshObject* shapeObject = new TriMeshObject(dataset());
-		shapeObject->setMesh(attributes.value(QStringLiteral("shape")).value<std::shared_ptr<TriMesh>>());
-		setShapeMesh(shapeObject);
-	}
-	else {
-		// Note: Do not automatically reset shape, because we don't want to loose
-		// a shape manually assigned by the user to this particle type.
-		//setShapeMesh(nullptr);
-	}
+		// This allows the GSD file importer to update the generated shape mesh as long as the user didn't replace the mesh with a custom one.
+		if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
+			proxy->setShapeMesh(self->shapeMesh());
+		}
 	
-	return true;
+		// Copy properties changed by the user over to the data object.
+		if(proxy->radius() != self->radius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges() 
+				|| proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
+			// Make this data object mutable first.
+			ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
+			mutableSelf->setRadius(proxy->radius());
+			mutableSelf->setMass(proxy->mass());
+			mutableSelf->setShape(proxy->shape());
+			mutableSelf->setShapeMesh(proxy->shapeMesh());
+			mutableSelf->setHighlightShapeEdges(proxy->highlightShapeEdges());
+			mutableSelf->setShapeBackfaceCullingEnabled(proxy->shapeBackfaceCullingEnabled());
+			mutableSelf->setShapeUseMeshColor(proxy->shapeUseMeshColor());
+		}
+	}
 }
 
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -133,45 +115,64 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, c
 	if(!importerType) {
 
 		// Inspect input file to detect its format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), sourceUrl);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), executionContext, sourceUrl);
 		if(!operation.waitForFuture(importerFuture))
 			return false;
 
 		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
 	}
 	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset()));
+		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset(), executionContext));
 	}
 	if(!importer)
 		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
 	// Create a temporary FileSource for loading the geometry data from the file.
-	OORef<FileSource> fileSource = new FileSource(dataset());
+	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), executionContext);
 	fileSource->setSource({sourceUrl}, importer, false);
 	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
 	if(!operation.waitForFuture(stateFuture))
 		return false;
 
 	// Check if the FileSource has provided some useful data.
-	const PipelineFlowState& state = stateFuture.result();
+	PipelineFlowState state = stateFuture.result();
 	if(state.status().type() == PipelineStatus::Error) {
 		operation.cancel();
 		return false;
 	}
 	if(!state)
 		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
-	const TriMeshObject* meshObj = state.expectObject<TriMeshObject>();
+	TriMeshObject* meshObj = state.expectMutableObject<TriMeshObject>();
 	if(!meshObj->mesh())
 		throwException(tr("The loaded geometry file does not contain a valid mesh."));
+
+	// Show sharp edges of the mesh.
+	meshObj->modifiableMesh()->determineEdgeVisibility();
 
 	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	noUndo.reset();
 	setShapeMesh(meshObj);
 
-	// Show sharp edges of the mesh.
-	shapeMesh()->modifiableMesh()->determineEdgeVisibility();
+	// Also switch the particle type's visualization shape to mesh-based.
+	setShape(ParticlesVis::Mesh);
 
     return !operation.isCanceled();
+}
+
+/******************************************************************************
+* Is called once for this object after it has been completely loaded from a stream.
+******************************************************************************/
+void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+	ElementType::loadFromStreamComplete(stream);
+
+	// For backward compatibility with OVITO 3.3.5: 
+	// The 'shape' parameter field of the ParticleType class does not exist yet in state files written by older program versions.
+	// Automatically switch the type's shape to 'Mesh' if a mesh geometry has been assigned to the type. 
+	if(stream.formatVersion() < 30007) {
+		if(shape() == ParticlesVis::ParticleShape::Default && shapeMesh())
+			setShape(ParticlesVis::ParticleShape::Mesh);
+	}
 }
 
 // Define default names, colors, and radii for some predefined particle types.
@@ -224,7 +225,7 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal diamond (1st neighbor)"), Color(254.0f/255.0f, 220.0f/255.0f, 0.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal diamond (2nd neighbor)"), Color(204.0f/255.0f, 229.0f/255.0f, 81.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Simple cubic"), Color(160.0f/255.0f, 20.0f/255.0f, 254.0f/255.0f), 0 },
-	ParticleType::PredefinedTypeInfo{ QString("Graphene"), Color(160.0f/255.0f, 120.0f/255.0f, 254.0f/255.0f), 0 },	//todo: pick a different colour
+	ParticleType::PredefinedTypeInfo{ QString("Graphene"), Color(160.0f/255.0f, 120.0f/255.0f, 254.0f/255.0f), 0 },
 	ParticleType::PredefinedTypeInfo{ QString("Hexagonal ice"), Color(0.0f, 0.9f, 0.9f), 0  },
 	ParticleType::PredefinedTypeInfo{ QString("Cubic ice"), Color(1.0f, 193.0f/255.0f, 5.0f/255.0f), 0  },
 	ParticleType::PredefinedTypeInfo{ QString("Interfacial ice"), Color(0.5f, 0.12f, 0.4f), 0 },
@@ -233,79 +234,37 @@ std::array<ParticleType::PredefinedTypeInfo, ParticleType::NUMBER_OF_PREDEFINED_
 }};
 
 /******************************************************************************
-* Returns the default color for a particle type name.
+* Returns the default radius for a particle type.
 ******************************************************************************/
-Color ParticleType::getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& typeName, int numericTypeId, ExecutionContext executionContext)
 {
-	if(userDefaults) {
-		QSettings settings;
-		settings.beginGroup("particles/defaults/color");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(particleTypeName);
-		if(v.isValid() && v.type() == QVariant::Color)
-			return v.value<Color>();
-	}
+	// Interactive execution context means that we are supposed to load the user-defined
+	// settings from the settings store.
+	if(executionContext == ExecutionContext::Interactive && typeClass != ParticlesObject::UserProperty) {
 
-	if(typeClass == ParticlesObject::StructureTypeProperty) {
-		for(const PredefinedTypeInfo& predefType : _predefinedStructureTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
-				return std::get<1>(predefType);
-		}
-		return Color(1,1,1);
-	}
-	else if(typeClass == ParticlesObject::TypeProperty) {
-		for(const PredefinedTypeInfo& predefType : _predefinedParticleTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
-				return std::get<1>(predefType);
-		}
+		// Use the type's name, property type and container class to look up the 
+		// default radius saved by the user.
+		QVariant v = QSettings().value(ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), typeName));
+		if(v.isValid() && v.canConvert<FloatType>())
+			return v.value<FloatType>();
 
-		// Sometimes atom type names have additional letters/numbers appended.
-		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleColor(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, userDefaults);
-		}
-	}
-
-	return getDefaultColorForId(typeClass, particleTypeId);
-}
-
-/******************************************************************************
-* Changes the default color for a particle type name.
-******************************************************************************/
-void ParticleType::setDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, const Color& color)
-{
-	QSettings settings;
-	settings.beginGroup("particles/defaults/color");
-	settings.beginGroup(QString::number((int)typeClass));
-
-	if(getDefaultParticleColor(typeClass, particleTypeName, 0, false) != color)
-		settings.setValue(particleTypeName, QVariant::fromValue((QColor)color));
-	else
-		settings.remove(particleTypeName);
-}
-
-/******************************************************************************
-* Returns the default radius for a particle type name.
-******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults)
-{
-	if(userDefaults) {
-		QSettings settings;
-		settings.beginGroup("particles/defaults/radius");
-		settings.beginGroup(QString::number((int)typeClass));
-		QVariant v = settings.value(particleTypeName);
+		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+		// default radii in a different branch of the settings registry.
+		v = QSettings().value(QStringLiteral("particles/defaults/radius/%1/%2").arg(typeClass).arg(typeName));
 		if(v.isValid() && v.canConvert<FloatType>())
 			return v.value<FloatType>();
 	}
 
 	if(typeClass == ParticlesObject::TypeProperty) {
 		for(const PredefinedTypeInfo& predefType : _predefinedParticleTypes) {
-			if(std::get<0>(predefType) == particleTypeName)
+			if(std::get<0>(predefType) == typeName) {
 				return std::get<2>(predefType);
+			}
 		}
 
 		// Sometimes atom type names have additional letters/numbers appended.
-		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), particleTypeId, userDefaults);
+		if(typeName.length() > 1 && typeName.length() <= 5) {
+			return getDefaultParticleRadius(typeClass, typeName.left(typeName.length() - 1), numericTypeId, executionContext);
 		}
 	}
 
@@ -313,18 +272,20 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 }
 
 /******************************************************************************
-* Changes the default radius for a particle type name.
+* Changes the default radius for a particle type.
 ******************************************************************************/
 void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius)
 {
-	QSettings settings;
-	settings.beginGroup("particles/defaults/radius");
-	settings.beginGroup(QString::number((int)typeClass));
+	if(typeClass == ParticlesObject::UserProperty)
+		return;
 
-	if(getDefaultParticleRadius(typeClass, particleTypeName, 0, false) != radius)
-		settings.setValue(particleTypeName, QVariant::fromValue(radius));
+	QSettings settings;
+	QString settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), QStringLiteral("radius"), particleTypeName);
+	
+	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting) - radius) > 1e-6)
+		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
-		settings.remove(particleTypeName);
+		settings.remove(settingsKey);
 }
 
 }	// End of namespace

@@ -81,6 +81,9 @@ protected:
 	/// Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) override;
 
+	/// Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
 private:
 
 	/// The type of modifier delegates, which the user can choose from.
@@ -96,7 +99,7 @@ private:
 	QVector<QComboBox*> _delegateBoxes;
 
 	/// The current list of delegates.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(ModifierDelegate, delegates, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(ModifierDelegate*, delegates, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
 }	// End of namespace

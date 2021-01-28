@@ -126,15 +126,15 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
 	OVITO_ASSERT(container != nullptr);
 
 	// Take a snapshot of the current selection state.
-	if(ConstPropertyAccess<int> selectionProperty = container->getProperty(PropertyStorage::GenericSelectionProperty)) {
+	if(ConstPropertyAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 
 		// Make a backup of the old snapshot so it may be restored.
 		dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
 		// Obtain access to the unique identifiers of the data elements (if present).
 		ConstPropertyAccess<qlonglong> identifierProperty;
-		if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty))
-			identifierProperty = container->getProperty(PropertyStorage::GenericIdentifierProperty);
+		if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+			identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 		OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
 
 		if(identifierProperty && selectionProperty.size() == identifierProperty.size()) {
@@ -174,7 +174,7 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 	// Make a backup of the old selection state so it may be restored.
 	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty) && container->getProperty(PropertyStorage::GenericIdentifierProperty)) {
+	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) && container->getProperty(PropertyObject::GenericIdentifierProperty)) {
 		_selection.clear();
 		_selectedIdentifiers.clear();
 	}
@@ -196,8 +196,8 @@ void ElementSelectionSet::setSelection(const PropertyContainer* container, const
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstPropertyAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyStorage::GenericIdentifierProperty);
+	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 	OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
 
 	if(identifierProperty) {
@@ -250,8 +250,8 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstPropertyAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyStorage::GenericIdentifierProperty);
+	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
 	if(identifierProperty) {
 		_selection.clear();
@@ -303,8 +303,8 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
 
 	// Obtain access to the unique identifiers of the data elements (if present).
 	ConstPropertyAccess<qlonglong> identifierProperty;
-	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty))
-		identifierProperty = container->getProperty(PropertyStorage::GenericIdentifierProperty);
+	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
 	if(identifierProperty) {
 		_selection.clear();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ class OVITO_CORE_EXPORT ThreadSafeTask : public ProgressiveTask
 public:
 
 	/// Constructor.
-	ThreadSafeTask() = default;
+	using ProgressiveTask::ProgressiveTask;
 
 #ifdef OVITO_DEBUG
 	/// Destructor.

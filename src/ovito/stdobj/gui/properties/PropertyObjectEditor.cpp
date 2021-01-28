@@ -68,7 +68,7 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->addWidget(subEditorContainer);
 
 	RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(PropertyObject::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
-	layout->insertWidget(0, elementTypesListUI->listWidget());
+	layout->insertWidget(0, elementTypesListUI->listWidget(150));
 }
 
 }	// End of namespace

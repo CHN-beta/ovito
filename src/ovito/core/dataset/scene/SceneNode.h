@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -220,13 +220,17 @@ public:
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return _nodeName; }
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
+
 protected:
 
 	/// From RefMaker.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// From RefMaker.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// From RefMaker.
 	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;
@@ -257,7 +261,7 @@ private:
 	SceneNode* _parentNode = nullptr;
 
 	/// Transformation matrix controller.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, transformationController, setTransformationController, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, transformationController, setTransformationController, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
 	/// The name of this scene node.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, nodeName, setNodeName);
@@ -267,10 +271,10 @@ private:
 
 	/// Stores the target node this scene node is bound to using a look
 	/// at controller or null if this scene node is not bound to a target node.
-	DECLARE_REFERENCE_FIELD_FLAGS(SceneNode, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Contains all child nodes.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// This node's cached world transformation matrix.
 	/// It contains the transformation of the parent node.

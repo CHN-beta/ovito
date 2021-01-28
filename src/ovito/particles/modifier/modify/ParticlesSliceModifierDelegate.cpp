@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "ParticlesSliceModifierDelegate.h"
 
 namespace Ovito { namespace Particles {
@@ -106,6 +107,8 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			}
 		}
 	}
+	posProperty.reset();
+	selProperty.reset();
 
 	// Make sure we can safely modify the particles object.
 	ParticlesObject* outputParticles = state.makeMutable(inputParticles);
@@ -118,7 +121,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	}
 	else {
 		size_t numSelected = 0;
-		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
+		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty, false, Application::instance()->executionContext());
 		OVITO_ASSERT(mask.size() == newSelProperty.size());
 		boost::dynamic_bitset<>::size_type i = 0;
 		for(int& s : newSelProperty) {

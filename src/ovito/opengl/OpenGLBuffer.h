@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "OpenGLHelpers.h"
 #include "OpenGLSceneRenderer.h"
 #include <QOpenGLBuffer>
@@ -45,6 +46,23 @@ public:
 	/// Constructor.
 	OpenGLBuffer(QOpenGLBuffer::Type type = QOpenGLBuffer::VertexBuffer) : _elementCount(0), _verticesPerElement(0), _buffer(type) {}
 
+	/// Transfers a local OVITO data buffer into the OpenGL VBO.
+	template<typename U>
+	void uploadData(const ConstDataBufferPtr& sourceBuffer, int verticesPerElement = 1) {
+		if(_sourceBuffer == sourceBuffer && isCreated() && _verticesPerElement == verticesPerElement) {
+			OVITO_ASSERT(!sourceBuffer || sourceBuffer->size() == _elementCount);
+			return;
+		}
+		_sourceBuffer = sourceBuffer;
+		if(_sourceBuffer) {
+			create(QOpenGLBuffer::StaticDraw, _sourceBuffer->size(), verticesPerElement);
+			fill(ConstDataBufferAccess<U>(_sourceBuffer).cbegin());
+		}
+		else {
+			destroy();
+		}
+	}
+
 	/// Creates the buffer object in the OpenGL server. This function must be called with a current QOpenGLContext.
 	/// The buffer will be bound to and can only be used in that context (or any other context that is shared with it).
 	bool create(QOpenGLBuffer::UsagePattern usagePattern, int elementCount, int verticesPerElement = 1) {
@@ -55,6 +73,7 @@ public:
 			_elementCount = elementCount;
 			_verticesPerElement = verticesPerElement;
 			if(!_buffer.isCreated()) {
+				_isOpenGLES = QOpenGLContext::currentContext()->isOpenGLES();
 				if(!_buffer.create())
 					throw Exception(QStringLiteral("Failed to create OpenGL vertex buffer."));
 				_buffer.setUsagePattern(usagePattern);
@@ -98,46 +117,48 @@ public:
 		OVITO_ASSERT(isCreated());
 		if(elementCount() == 0)
 			return nullptr;
-#ifndef Q_OS_WASM
-		if(!_buffer.bind()) {
-			qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::map()";
-			qWarning() << "Parameters: access =" << access << "elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+		if(!_isOpenGLES) {
+			if(!_buffer.bind()) {
+				qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::map()";
+				qWarning() << "Parameters: access =" << access << "elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
+				throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+			}
+			T* data = static_cast<T*>(_buffer.map(access));
+			if(!data)
+				throw Exception(QStringLiteral("Failed to map OpenGL vertex buffer to memory."));
+			return data;
 		}
-		T* data = static_cast<T*>(_buffer.map(access));
-		if(!data)
-			throw Exception(QStringLiteral("Failed to map OpenGL vertex buffer to memory."));
-		return data;
-#else
-		// WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
-		// Need to emulate the map() method by providing a temporary memory buffer on the host. 
-		OVITO_ASSERT(access == QOpenGLBuffer::WriteOnly);
-		_temporaryBuffer.resize(elementCount() * verticesPerElement());
-		return _temporaryBuffer.data();
-#endif
+		else {
+			// WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
+			// Need to emulate the map() method by providing a temporary memory buffer on the host. 
+			OVITO_ASSERT(access == QOpenGLBuffer::WriteOnly);
+			_temporaryBuffer.resize(elementCount() * verticesPerElement());
+			return _temporaryBuffer.data();
+		}
 	}
 
 	/// Unmaps the buffer after it was mapped into the application's memory space with a previous call to map().
 	void unmap() {
 		if(elementCount() == 0)
 			return;
-#ifndef Q_OS_WASM
-		if(!_buffer.unmap())
-			throw Exception(QStringLiteral("Failed to unmap OpenGL vertex buffer from memory."));
-		_buffer.release();
-#else
-		// Upload the data in the temporary memory buffer to graphics memory.
-		if(!_buffer.bind()) {
-			qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::unmap()";
-			qWarning() << "Parameters: elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+		if(!_isOpenGLES) {
+			if(!_buffer.unmap())
+				throw Exception(QStringLiteral("Failed to unmap OpenGL vertex buffer from memory."));
+			_buffer.release();
 		}
-		OVITO_ASSERT(_temporaryBuffer.size() == _elementCount * _verticesPerElement);
-		_buffer.write(0, _temporaryBuffer.data(), sizeof(T) * _elementCount * _verticesPerElement);
-		_buffer.release();
-		// Free temporary buffer.
-		decltype(_temporaryBuffer)().swap(_temporaryBuffer);
-#endif
+		else {
+			// Upload the data in the temporary memory buffer to graphics memory.
+			if(!_buffer.bind()) {
+				qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLBuffer::unmap()";
+				qWarning() << "Parameters: elementCount =" << _elementCount << "verticesPerElement =" << _verticesPerElement;
+				throw Exception(QStringLiteral("Failed to bind OpenGL vertex buffer."));
+			}
+			OVITO_ASSERT(_temporaryBuffer.size() == _elementCount * _verticesPerElement);
+			_buffer.write(0, _temporaryBuffer.data(), sizeof(T) * _elementCount * _verticesPerElement);
+			_buffer.release();
+			// Free temporary buffer.
+			decltype(_temporaryBuffer)().swap(_temporaryBuffer);
+		}
 	}
 
 	/// Fills the vertex buffer with the given data.
@@ -205,108 +226,46 @@ public:
 
 	/// Binds this buffer to the vertex position attribute of a vertex shader.
 	void bindPositions(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_STATIC_ASSERT(sizeof(T) >= sizeof(GLfloat)*3);
-
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex positions buffer."));
-
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("position"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("position", GL_FLOAT, byteOffset, 3, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex coordinates through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_VERTEX_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glVertexPointer(3, GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+		bind(renderer, shader, "position", GL_FLOAT, byteOffset, 3, sizeof(T));
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex position attribute.
 	void detachPositions(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("position"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_VERTEX_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "position");
 	}
 
 	/// Binds this buffer to the vertex color attribute of a vertex shader.
 	void bindColors(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, int components, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_ASSERT(sizeof(T) >= sizeof(GLfloat)*components);
-		OVITO_ASSERT(components == 3 || components == 4);
+		bind(renderer, shader, "color", GL_FLOAT, byteOffset, components, sizeof(T));
+	}
 
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex color buffer."));
+	void setUniformColor(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, const Color& c) {
+		shader->setAttributeValue("color", c.r(), c.g(), c.b());
+	}
 
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("color"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("color", GL_FLOAT, byteOffset, components, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex colors through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_COLOR_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glColorPointer(components, GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+	void setUniformColor(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, const ColorA& c) {
+		shader->setAttributeValue("color", c.r(), c.g(), c.b(), c.a());
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex color attribute.
 	void detachColors(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("color"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_COLOR_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "color");
 	}
 
 	/// Binds this buffer to the vertex normal attribute of a vertex shader.
 	void bindNormals(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader, size_t byteOffset = 0) {
-		OVITO_ASSERT(isCreated());
-		OVITO_STATIC_ASSERT(sizeof(T) >= sizeof(GLfloat)*3);
-
-		if(!_buffer.bind())
-			throw Exception(QStringLiteral("Failed to bind OpenGL vertex normal buffer."));
-
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->enableAttributeArray("normal"));
-			OVITO_CHECK_OPENGL(renderer, shader->setAttributeBuffer("normal", GL_FLOAT, byteOffset, 3, sizeof(T)));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			// Older OpenGL implementations cannot take vertex normals through a custom shader attribute.
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glEnableClientState(GL_NORMAL_ARRAY));
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glNormalPointer(GL_FLOAT, sizeof(T), reinterpret_cast<const GLvoid*>(byteOffset)));
-		}
-#endif		
-		_buffer.release();
+		bind(renderer, shader, "normal", GL_FLOAT, byteOffset, 3, sizeof(T));
 	}
 
 	/// After rendering is done, release the binding of the buffer to the vertex normal attribute.
 	void detachNormals(OpenGLSceneRenderer* renderer, QOpenGLShaderProgram* shader) {
-		if(renderer->glformat().majorVersion() >= 3 || renderer->glcontext()->isOpenGLES()) {
-			OVITO_CHECK_OPENGL(renderer, shader->disableAttributeArray("normal"));
-		}
-#ifndef Q_OS_WASM
-		else if(renderer->oldGLFunctions()) {
-			OVITO_CHECK_OPENGL(renderer, renderer->oldGLFunctions()->glDisableClientState(GL_NORMAL_ARRAY));
-		}
-#endif		
+		detach(renderer, shader, "normal");
 	}
 
 private:
+
+	/// Indicates the use of OpenGL ES instead of desktop OpenGL.
+	bool _isOpenGLES = false;
 
 	/// The OpenGL vertex buffer.
 	QOpenGLBuffer _buffer;
@@ -317,11 +276,12 @@ private:
 	/// The number of vertices per element.
 	int _verticesPerElement;
 
-#ifdef Q_OS_WASM
-	// WebGL may not support memory mapping a GL buffer.
-	// This is a host memory buffer used to emulate the map() method on this platform.
-	std::vector<T> _temporaryBuffer; 
-#endif
+	/// OpenGL ES may not support memory mapping a GL buffer.
+	/// This is a host memory buffer used to emulate the map() method on this platform.
+	std::vector<T> _temporaryBuffer;
+
+	/// The OVITO data buffer that is used to fill the VBO.
+	ConstDataBufferPtr _sourceBuffer;
 };
 
 }	// End of namespace

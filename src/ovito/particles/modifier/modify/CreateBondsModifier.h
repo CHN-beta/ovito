@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,18 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+/// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
+/// The < operator for QVraiant has been removed in Qt 6. Redefining it here is an ugly hack and should be 
+/// solved in a different way in the future.
+inline bool operator<(const QVariant& a, const QVariant& b) {
+	return a.toString() < b.toString();
+}
+#endif
 
 namespace Ovito { namespace Particles {
 
@@ -62,10 +72,10 @@ public:
 		UniformCutoff,		///< A single cutoff radius for all particles.
 		PairCutoff,			///< Individual cutoff radius for each pair of particle types.
 	};
-	Q_ENUMS(CutoffMode);
+	Q_ENUM(CutoffMode);
 
 	/// The container type used to store the pair-wise cutoffs.
-	typedef QMap<QPair<QVariant,QVariant>, FloatType> PairwiseCutoffsList;
+	using PairwiseCutoffsList = QMap<QPair<QVariant,QVariant>, FloatType>;
 
 private:
 
@@ -75,9 +85,10 @@ private:
 	public:
 
 		/// Constructor.
-		BondsEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-				const SimulationCell& simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
+		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
+				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				ConstPropertyPtr moleculeIDs) :
+					Engine(dataSource, executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
 					_simCell(simCell),
@@ -112,7 +123,7 @@ private:
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		ParticleOrderingFingerprint _inputFingerprint;
 		std::vector<Bond> _bonds;
 	};
@@ -122,8 +133,11 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CreateBondsModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	/// \param modApp The ModifierApplication object that has been created for this modifier.
 	virtual void initializeModifier(ModifierApplication* modApp) override;
 
 	/// Sets the cutoff radius for a pair of particle types.
@@ -138,7 +152,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.
@@ -165,10 +179,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
 
 	/// The bond type object that will be assigned to the newly created bonds.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(BondType, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondType>, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
 	/// The vis element for rendering the bonds.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(BondsVis, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
 	/// Controls whether the modifier should automatically turn off the display in case the number of bonds is unusually large.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoDisableBondDisplay, setAutoDisableBondDisplay, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
@@ -176,6 +190,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::CreateBondsModifier::CutoffMode);
-Q_DECLARE_TYPEINFO(Ovito::Particles::CreateBondsModifier::CutoffMode, Q_PRIMITIVE_TYPE);

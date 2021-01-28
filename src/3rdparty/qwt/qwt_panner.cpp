@@ -10,6 +10,8 @@
 #include "qwt_panner.h"
 #include "qwt_picker.h"
 #include "qwt_painter.h"
+#include "moc_qwt_panner.cpp"
+
 #include <qpainter.h>
 #include <qpixmap.h>
 #include <qevent.h>
@@ -44,9 +46,9 @@ public:
         restoreCursor( NULL ),
         hasCursor( false ),
 #endif
-        isEnabled( false )
+        isEnabled( false ),
+        orientations( Qt::Vertical | Qt::Horizontal )
     {
-        orientations = Qt::Vertical | Qt::Horizontal;
     }
 
     ~PrivateData()
@@ -255,10 +257,7 @@ void QwtPanner::paintEvent( QPaintEvent *event )
     int dy = d_data->pos.y() - d_data->initialPos.y();
 
     QRectF r;
-    r.setSize( d_data->pixmap.size() );
-#if QT_VERSION >= 0x050000
-    r.setSize( r.size() / d_data->pixmap.devicePixelRatio() );
-#endif
+    r.setSize( d_data->pixmap.size() / QwtPainter::devicePixelRatio( &d_data->pixmap ) );
     r.moveCenter( QPointF( r.center().x() + dx, r.center().y() + dy ) );
 
     QPixmap pm = QwtPainter::backingStore( this, size() );
@@ -539,4 +538,8 @@ void QwtPanner::showCursor( bool on )
             w->unsetCursor();
     }
 }
+#endif
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_panner.cpp"
 #endif

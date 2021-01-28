@@ -34,10 +34,10 @@ static void registerQtResources()
 #ifdef OVITO_BUILD_MONOLITHIC
 	Q_INIT_RESOURCE(core);
 	Q_INIT_RESOURCE(opengl);
-	#if defined(OVITO_BUILD_GUI) || defined(OVITO_BUILD_WEBGUI)
+	#if defined(OVITO_BUILD_GUI)
 		Q_INIT_RESOURCE(guibase);
 		Q_INIT_RESOURCE(gui);
-		#ifdef OVITO_BUILD_WEBGUI
+		#ifdef OVITO_QML_GUI
 			Q_INIT_RESOURCE(stdobjgui);
 			Q_INIT_RESOURCE(stdmodgui);
 			Q_INIT_RESOURCE(particlesgui);
@@ -68,7 +68,7 @@ void Application::qtMessageOutput(QtMsgType type, const QMessageLogContext& cont
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application() : _exitCode(0), _consoleMode(true), _headlessMode(true)
+Application::Application()
 {
 	// Set global application pointer.
 	OVITO_ASSERT(_instance == nullptr);	// Only allowed to create one Application class instance.
@@ -155,6 +155,7 @@ bool Application::initialize()
 	qRegisterMetaType<OORef<OvitoObject>>("OORef<OvitoObject>");
 
 	// Register Qt stream operators for basic types.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<Vector2>("Ovito::Vector2");
 	qRegisterMetaTypeStreamOperators<Vector3>("Ovito::Vector3");
 	qRegisterMetaTypeStreamOperators<Vector4>("Ovito::Vector4");
@@ -170,6 +171,7 @@ bool Application::initialize()
 	qRegisterMetaTypeStreamOperators<Quaternion>("Ovito::Quaternion");
 	qRegisterMetaTypeStreamOperators<Color>("Ovito::Color");
 	qRegisterMetaTypeStreamOperators<ColorA>("Ovito::ColorA");
+#endif
 
 	// Register Qt conversion operators for custom types.
 	QMetaType::registerConverter<QColor, Color>();

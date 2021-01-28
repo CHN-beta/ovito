@@ -45,7 +45,6 @@ namespace Ovito {
 	class TaskWatcher;
 	class AsynchronousTaskBase;
 	class MainThreadTask;
-	template<typename tuple_type> class ContinuationTask;
 	template<typename... R> class Future;
 	template<typename... R> class SharedFuture;
 	template<typename... R> class Promise;
@@ -64,6 +63,7 @@ namespace Ovito {
 	class OvitoObject;
 	class OvitoClass;
 	using OvitoClassPtr = const OvitoClass*;
+	template<class T> class OORef;
 	class CloneHelper;
 	class RefMaker;
 	class RefMakerClass;
@@ -72,10 +72,8 @@ namespace Ovito {
 	class PropertyFieldBase;
 	template<typename property_data_type> class RuntimePropertyField;
 	template<typename property_data_type> class PropertyField;
-	class SingleReferenceFieldBase;
-	template<typename RefTargetType> class ReferenceField;
-	class VectorReferenceFieldBase;
-	template<typename RefTargetType> class VectorReferenceField;
+	template<typename T> class ReferenceField;
+	template<typename T> class VectorReferenceField;
 	class DataSet;
 	class DataSetContainer;
 	class ParameterUnit;
@@ -86,9 +84,14 @@ namespace Ovito {
 	class DataObjectReference;
 	class ConstDataObjectPath;
 	class DataObjectPath;
+	template<class T> class DataOORef;
+	using ConstDataObjectRef = DataOORef<const DataObject>;
 	class TransformedDataObject;
 	class AttributeDataObject;
 	class RootSceneNode;
+	class DataBuffer;
+	using DataBufferPtr = DataOORef<DataBuffer>;
+	using ConstDataBufferPtr = DataOORef<const DataBuffer>;
 	class SelectionSet;
 	class Modifier;
 	class ModifierClass;
@@ -116,7 +119,7 @@ namespace Ovito {
 	class ViewportPickResult;
 	class RenderSettings;
 	class FrameBuffer;
-	class ArrowPrimitive;
+	class CylinderPrimitive;
 	class ImagePrimitive;
 	class LinePrimitive;
 	class MarkerPrimitive;

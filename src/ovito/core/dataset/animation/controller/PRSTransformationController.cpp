@@ -22,8 +22,9 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/controller/PRSTransformationController.h>
-#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/linalg/AffineDecomposition.h>
 
 namespace Ovito {
@@ -44,9 +45,20 @@ SET_PROPERTY_FIELD_UNITS(PRSTransformationController, scalingController, Percent
 ******************************************************************************/
 PRSTransformationController::PRSTransformationController(DataSet* dataset) : Controller(dataset)
 {
-	setPositionController(ControllerManager::createPositionController(dataset));
-	setRotationController(ControllerManager::createRotationController(dataset));
-	setScalingController(ControllerManager::createScalingController(dataset));
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void PRSTransformationController::initializeObject(ExecutionContext executionContext)
+{
+	// Create sub-controllers.
+	setPositionController(ControllerManager::createPositionController(dataset(), executionContext));
+	setRotationController(ControllerManager::createRotationController(dataset(), executionContext));
+	setScalingController(ControllerManager::createScalingController(dataset(), executionContext));
+
+	Controller::initializeObject(executionContext);
 }
 
 /******************************************************************************

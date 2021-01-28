@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/data/DataVis.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito { namespace Particles {
@@ -46,10 +46,10 @@ public:
 
 	/// The shading modes supported by the bonds vis element.
 	enum ShadingMode {
-		NormalShading = ArrowPrimitive::ShadingMode::NormalShading,
-		FlatShading = ArrowPrimitive::ShadingMode::FlatShading
+		NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+		FlatShading = CylinderPrimitive::ShadingMode::FlatShading
 	};
-	Q_ENUMS(ShadingMode);
+	Q_ENUM(ShadingMode);
 
 	/// Constructor.
 	Q_INVOKABLE BondsVis(DataSet* dataset);
@@ -65,12 +65,12 @@ public:
 
 	/// Determines the display colors of half-bonds.
 	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-	std::vector<ColorA> halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const;
+	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const;
 
 public:
 
     Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
-    Q_PROPERTY(Ovito::ArrowPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
+    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
 
 protected:
 
@@ -87,7 +87,7 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls the rendering quality mode for bonds.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(ArrowPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 };
 
 /**

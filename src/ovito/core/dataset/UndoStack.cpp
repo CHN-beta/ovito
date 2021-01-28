@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,21 +31,22 @@ namespace Ovito {
 * Increments the suspend count of the undo stack associated with the given
 * object.
 ******************************************************************************/
-UndoSuspender::UndoSuspender(const RefMaker* object)
+UndoSuspender::UndoSuspender(const RefMaker* object) noexcept
 {
 	OVITO_CHECK_OBJECT_POINTER(object);
-	if(object->dataset()) {
+	if(object->dataset() && QThread::currentThread() == object->thread()) {
 		_suspendCount = &object->dataset()->undoStack()._suspendCount;
 		++(*_suspendCount);
 	}
-	else _suspendCount = nullptr;
+	else {
+		_suspendCount = nullptr;
+	}
 }
 
 /******************************************************************************
 * Initializes the undo manager.
 ******************************************************************************/
-UndoStack::UndoStack() : _suspendCount(0), _index(-1), _cleanIndex(-1),
-		_isUndoing(false), _isRedoing(false), _undoLimit(20)
+UndoStack::UndoStack()
 {
 }
 
@@ -56,6 +57,7 @@ UndoStack::UndoStack() : _suspendCount(0), _index(-1), _cleanIndex(-1),
 void UndoStack::push(std::unique_ptr<UndoableOperation> operation)
 {
 	OVITO_CHECK_POINTER(operation.get());
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
 	OVITO_ASSERT_MSG(isUndoingOrRedoing() == false, "UndoStack::push()", "Cannot record an operation while undoing or redoing another operation.");
 	OVITO_ASSERT_MSG(!isSuspended(), "UndoStack::push()", "Not in recording state.");
 
@@ -87,6 +89,7 @@ void UndoStack::push(std::unique_ptr<UndoableOperation> operation)
 ******************************************************************************/
 void UndoStack::beginCompoundOperation(const QString& displayName)
 {
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::beginCompoundOperation()", "This function may only be called from the main thread.");
 	OVITO_ASSERT_MSG(isUndoingOrRedoing() == false, "UndoStack::beginCompoundOperation()", "Cannot record an operation while undoing or redoing another operation.");
 	_compoundStack.push_back(std::make_unique<CompoundOperation>(displayName));
 }
@@ -100,7 +103,6 @@ void UndoStack::endCompoundOperation(bool commit)
 	OVITO_ASSERT_MSG(!_compoundStack.empty(), "UndoStack::endCompoundOperation()", "Missing call to beginCompoundOperation().");
 
 	if(!commit) {
-		UndoSuspender noUndo(*this);
 		// Undo operations in current compound operation first.
 		resetCurrentCompoundOperation();
 		// Then discard compound operation.

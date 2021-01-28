@@ -31,6 +31,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "ClusterAnalysisModifier.h"
 
 namespace Ovito { namespace Particles {
@@ -80,7 +81,7 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -91,18 +92,16 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get the periodic image bond property if there are bonds.
 	PropertyPtr periodicImageBondProperty;
 	if(unwrapParticleCoordinates() && particles->bonds()) {
 		// Create a copy of the input bond PBC vectors so that it is safe to modify them.
-		periodicImageBondProperty = PropertyStorage::makeMutable(particles->bonds()->getPropertyStorage(BondsObject::PeriodicImageProperty));
+		periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
 		// If no PBC vectors are present, create ad-hoc vectors initialized to zero.
 		if(!periodicImageBondProperty)
-			periodicImageBondProperty = BondsObject::OOClass().createStandardStorage(particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true);
+			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true, executionContext);
 	}
 
 	// Get particle masses, needed for center-of-mass calculation.
@@ -110,55 +109,61 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 	if(computeCentersOfMass() || computeRadiusOfGyration()) {
 		if(const PropertyObject* massProperty = particles->getProperty(ParticlesObject::MassProperty)) {
 			// Directly use per-particle mass information.
-			masses = massProperty->storage();
+			masses = massProperty;
 		}
 		else if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 			// Use per-type mass information and generate a per-particle mass array from it.
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
 			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
-				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardStorage(particles->elementCount(), ParticlesObject::MassProperty, false));
+				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty, false, executionContext));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
 					if(iter != massMap.end()) return iter->second;
 					return FloatType(0);
 				});
-				masses = massArray.takeStorage();
+				masses = massArray.take();
 			}
 		}
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(neighborMode() == CutoffRange) {
-		ConstPropertyPtr bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getPropertyStorage(BondsObject::TopologyProperty) : nullptr;
+		const PropertyObject* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(BondsObject::TopologyProperty) : nullptr;
 		return std::make_shared<CutoffClusterAnalysisEngine>(
+			modApp,
+			executionContext,
+			dataset(),
 			particles, 
-			posProperty->storage(), 
+			posProperty, 
 			std::move(masses), 
-			inputCell->data(), 
+			inputCell, 
 			sortBySize(), 
 			unwrapParticleCoordinates(), 
 			computeCentersOfMass(), 
 			computeRadiusOfGyration(),
-			std::move(selectionProperty), 
+			selectionProperty, 
 			std::move(periodicImageBondProperty), 
-			std::move(bondTopology), 
+			bondTopology, 
 			cutoff());
 	}
 	else if(neighborMode() == Bonding) {
 		particles->expectBonds()->verifyIntegrity();
 		return std::make_shared<BondClusterAnalysisEngine>(
+			modApp,
+			executionContext,
+			dataset(),
 			particles, 
-			posProperty->storage(), 
+			posProperty, 
 			std::move(masses), 
-			inputCell->data(), 
+			inputCell, 
 			sortBySize(), 
 			unwrapParticleCoordinates(), 
 			computeCentersOfMass(), 
 			computeRadiusOfGyration(),
-			std::move(selectionProperty), 
+			selectionProperty, 
 			std::move(periodicImageBondProperty), 
-			particles->expectBondsTopology()->storage());
+			particles->expectBondsTopology());
 	}
 	else {
 		throwException(tr("Invalid cluster neighbor mode"));
@@ -247,18 +252,18 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 	if(_periodicImageBondProperty && _periodicImageBondProperty->size() == bondTopology()->size()) {
 		OVITO_ASSERT(_unwrappedPositions);
 
-		const std::array<bool, 3> pbcFlags = cell().pbcFlags();
-		if(!pbcFlags[0] && !pbcFlags[1] && !pbcFlags[2]) {
+		if(!cell() || !cell()->hasPbc()) {
 			// No wrapping of bonds needed if simulation cell is non-periodic.
 			_periodicImageBondProperty.reset(); 
 		}
 		else {
+			const std::array<bool, 3> pbcFlags = cell()->pbcFlags();
+
 			// If any particles have been unwrapped by the modifier, update the PBC vectors
 			// of the incident bonds accordingly.
-			OVITO_ASSERT(_periodicImageBondProperty.use_count() == 1);
 			ConstPropertyAccess<Point3> positionsArray(positions());
 			ConstPropertyAccess<Point3> unwrappedPositionsArray(_unwrappedPositions);
-			const AffineTransformation inverseSimCell = cell().inverseMatrix();
+			const AffineTransformation inverseSimCell = cell()->inverseMatrix();
 			PropertyAccess<Vector3I> pbcArray(_periodicImageBondProperty);
 			Vector3I* pbcVec = pbcArray.begin();
 			for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondTopology())) {
@@ -280,7 +285,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 	}
 
 	// Determine cluster sizes.
-	_clusterSizes = std::make_shared<PropertyStorage>(numClusters(), PropertyStorage::Int64, 1, 0, QStringLiteral("Cluster Size"), true, DataTable::YProperty);
+	_clusterSizes->resize(numClusters(), true);
 	PropertyAccess<qlonglong> clusterSizeArray(_clusterSizes);
 	for(auto id : ConstPropertyAccess<qlonglong>(particleClusters())) {
 		if(id != 0) clusterSizeArray[id-1]++;
@@ -289,7 +294,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 		return;
 
 	// Create custer ID property.
-	_clusterIds =  std::make_shared<PropertyStorage>(numClusters(), PropertyStorage::Int64, 1, 0, QStringLiteral("Cluster Identifier"), false, DataTable::XProperty);
+	_clusterIds->resize(numClusters(), true);
 	boost::algorithm::iota_n(PropertyAccess<qlonglong>(_clusterIds).begin(), size_t(1), _clusterIds->size());
 
 	// Sort clusters by size.
@@ -306,21 +311,15 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
 		// Reorder centers of mass.
 		if(_centersOfMass) {
-			PropertyPtr oldCentersOfMass = _centersOfMass;
-			PropertyStorage::makeMutable(_centersOfMass);
-			oldCentersOfMass->mappedCopyTo(*_centersOfMass, mapping);
+			_centersOfMass->reorderElements(mapping);
 		}
 		// Reorder radii of gyration.
 		if(_radiiOfGyration) {
-			PropertyPtr oldRadiiOfGyration = _radiiOfGyration;
-			PropertyStorage::makeMutable(_radiiOfGyration);
-			oldRadiiOfGyration->mappedCopyTo(*_radiiOfGyration, mapping);
+			_radiiOfGyration->reorderElements(mapping);
 		}
 		// Reorder gyration tensors.
 		if(_gyrationTensors) {
-			PropertyPtr oldGyrationTensors = _gyrationTensors;
-			PropertyStorage::makeMutable(_gyrationTensors);
-			oldGyrationTensors->mappedCopyTo(*_gyrationTensors, mapping);
+			_gyrationTensors->reorderElements(mapping);
 		}
 
 		// Remap cluster IDs of particles.
@@ -489,7 +488,8 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
 				toProcess.push_back(neighborIndex);
 
 				if(unwrappedCoordinates) {
-					Vector3 delta = cell().wrapVector(unwrappedCoordinates[neighborIndex] - unwrappedCoordinates[currentParticle]);
+					Vector3 delta = unwrappedCoordinates[neighborIndex] - unwrappedCoordinates[currentParticle];
+					if(cell()) delta = cell()->wrapVector(delta);
 					unwrappedCoordinates[neighborIndex] = unwrappedCoordinates[currentParticle] + delta;
 					FloatType weight = particleMassesData ? particleMassesData[neighborIndex] : FloatType(1);
 					centerOfMass += weight * (unwrappedCoordinates[neighborIndex] - Point3::Origin());
@@ -537,7 +537,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 		clusterColors[0] = Color(0.8, 0.8, 0.8);
 
 		// Assign colors to particles according to the clusters they belong to.
-		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty, false);
+		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty, false, Application::instance()->executionContext());
 		boost::transform(ConstPropertyAccess<qlonglong>(particleClusters()), colorsArray.begin(), [&](qlonglong cluster) { 
 			OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
 			return clusterColors[cluster];
@@ -559,7 +559,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 		state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), modApp);
 
 	// Output a data table with the cluster list.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), modApp, ExecutionContext::Scripting, DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
 	// Output centers of mass.
 	if(modifier->computeCentersOfMass() && _centersOfMass)

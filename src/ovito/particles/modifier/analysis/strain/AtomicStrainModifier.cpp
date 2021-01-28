@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,7 +66,7 @@ AtomicStrainModifier::AtomicStrainModifier(DataSet* dataset) : ReferenceConfigur
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -93,12 +93,12 @@ Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineIntern
 		throwException(tr("Simulation cell is degenerate in the reference configuration."));
 
 	// Get particle identifiers.
-	ConstPropertyPtr identifierProperty = particles->getPropertyStorage(ParticlesObject::IdentifierProperty);
-	ConstPropertyPtr refIdentifierProperty = refParticles->getPropertyStorage(ParticlesObject::IdentifierProperty);
+	const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+	const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AtomicStrainEngine>(validityInterval, particles, posProperty->storage(), inputCell->data(), refPosProperty->storage(), refCell->data(),
-			std::move(identifierProperty), std::move(refIdentifierProperty),
+	return std::make_shared<AtomicStrainEngine>(modApp, executionContext, dataset(), validityInterval, particles, posProperty, inputCell, refPosProperty, refCell,
+			identifierProperty, refIdentifierProperty,
 			cutoff(), affineMapping(), useMinimumImageConvention(), calculateDeformationGradients(), calculateStrainTensors(),
 			calculateNonaffineSquaredDisplacements(), calculateRotations(), calculateStretchTensors(), selectInvalidParticles());
 }
@@ -129,16 +129,16 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 				u->setZero();
 				continue;
 			}
-			Point3 reduced_reference_pos = refCell().inverseMatrix() * (*p0);
-			Point3 reduced_current_pos = cell().inverseMatrix() * positionsArray[*index];
+			Point3 reduced_reference_pos = refCell()->inverseMatrix() * (*p0);
+			Point3 reduced_current_pos = cell()->inverseMatrix() * positionsArray[*index];
 			Vector3 delta = reduced_current_pos - reduced_reference_pos;
 			if(useMinimumImageConvention()) {
 				for(size_t k = 0; k < 3; k++) {
-					if(refCell().hasPbc(k))
+					if(refCell()->hasPbc(k))
 						delta[k] -= std::floor(delta[k] + FloatType(0.5));
 				}
 			}
-			*u = refCell().matrix() * delta;
+			*u = refCell()->matrix() * delta;
 		}
 	});
 	if(isCanceled())
@@ -202,7 +202,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 		}
 
 		// Special handling for 2D systems.
-		if(cell().is2D()) {
+		if(cell()->is2D()) {
 			// Assume plane strain.
 			V(2,2) = W(2,2) = 1;
 			V(0,2) = V(1,2) = V(2,0) = V(2,1) = 0;
@@ -212,7 +212,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 		// Check if matrix can be inverted.
 		Matrix_3<double> inverseV;
 		double detThreshold = (double)sumSquaredDistance * 1e-12;
-		if(numNeighbors < 2 || (!cell().is2D() && numNeighbors < 3) || !V.inverse(inverseV, detThreshold) || std::abs(W.determinant()) <= detThreshold) {
+		if(numNeighbors < 2 || (!cell()->is2D() && numNeighbors < 3) || !V.inverse(inverseV, detThreshold) || std::abs(W.determinant()) <= detThreshold) {
 			if(invalidParticlesArray)
 				invalidParticlesArray[particleIndex] = 1;
 			if(deformationGradientsArray)
@@ -297,7 +297,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 		// Calculate von Mises shear strain.
 		double xydiff = strain.xx() - strain.yy();
 		double shearStrain;
-		if(!cell().is2D()) {
+		if(!cell()->is2D()) {
 			double xzdiff = strain.xx() - strain.zz();
 			double yzdiff = strain.yy() - strain.zz();
 			shearStrain = sqrt(strain.xy()*strain.xy() + strain.xz()*strain.xz() + strain.yz()*strain.yz() +
@@ -311,7 +311,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 
 		// Calculate volumetric component.
 		double volumetricStrain;
-		if(!cell().is2D()) {
+		if(!cell()->is2D()) {
 			volumetricStrain = (strain(0,0) + strain(1,1) + strain(2,2)) / 3.0;
 		}
 		else {

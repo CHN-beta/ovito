@@ -33,11 +33,19 @@ ELSE()
 	SET(OVITO_WIN32_EXECUTABLE "")
 ENDIF()
 
-# Builds the main executable of the application
+# Builds the main executable of the application.
 ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES})
 
-# The executable depends on the core and the gui modules, of course.
-TARGET_LINK_LIBRARIES(Ovito PRIVATE Core Gui)
+# The executable depends on the core module, of course.
+TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
+
+# The executable depends on the gui module.
+TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
+IF(NOT OVITO_QML_GUI)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui)
+ELSE()
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui ${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 ${OVITO_QT_MAJOR_VERSION}::Svg)
+ENDIF()
 
 # Put the executable into the right directory.
 IF(APPLE AND NOT OVITO_BUILD_CONDA)
@@ -56,17 +64,43 @@ ELSEIF(WIN32)
 	ENDIF()
 ENDIF()
 
+# Copy in HTML/JS launch files.
+IF(EMSCRIPTEN)
+	CONFIGURE_FILE("${_qt5Core_install_prefix}/plugins/platforms/qtloader.js" "${OVITO_BINARY_DIRECTORY}/qtloader.js" COPYONLY)
+	CONFIGURE_FILE("wasm/wasm_shell.html" "${OVITO_BINARY_DIRECTORY}/wasm_shell.html")
+	CONFIGURE_FILE("wasm/index.html" "${OVITO_BINARY_DIRECTORY}/index.html" COPYONLY)
+	CONFIGURE_FILE("../ovito/gui/base/resources/mainwin/window_icon_256.png" "${OVITO_BINARY_DIRECTORY}/ovito_logo.png" COPYONLY)
+ENDIF()
+
 # Set name of executable.
 SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
-
-# Link Qt5.
-TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt5::Core Qt5::Gui)
 
 # Under Linux, Qt's Xcb platform plugin will dynamically load the DBus Qt module.
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt5::DBus)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::DBus)
+ENDIF()
+
+IF(EMSCRIPTEN)
+	# Link to missing Qt libraries (the order does matter).
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE
+		"${_qt5Core_install_prefix}/qml/QtQuick.2/libqtquick2plugin.a"      # QtQuick2Plugin
+		"${_qt5Core_install_prefix}/qml/QtQuick/Window.2/libwindowplugin.a" # QtQuick2WindowPlugin
+		"${_qt5Core_install_prefix}/qml/QtQuick/Layouts/libqquicklayoutsplugin.a" # QtQuick2LayoutsPlugin
+		"${_qt5Core_install_prefix}/qml/QtQuick/Controls.2/libqtquickcontrols2plugin.a" # QtQuickControls2Plugin
+		"${_qt5Core_install_prefix}/qml/QtQuick/Templates.2/libqtquicktemplates2plugin.a" # QtQuickTemplates2Plugin
+		"${_qt5Core_install_prefix}/plugins/iconengines/libqsvgicon.a"		# SVG Icon engine plugin
+		"${_qt5Core_install_prefix}/plugins/imageformats/libqsvg.a"			# SVG image format plugin
+		"${_qt5Core_install_prefix}/plugins/platforms/libqwasm.a"       	# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5QuickControls2.a" 			# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5QuickTemplates2.a" 			# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5Quick.a"						# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5EventDispatcherSupport.a"		# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5FontDatabaseSupport.a"		# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libqtfreetype.a"					# No longer needed in Qt 5.14
+		"${_qt5Core_install_prefix}/lib/libQt5Svg.a"						# No longer needed in Qt 5.14
+	)
 ENDIF()
 
 SET_TARGET_PROPERTIES(Ovito PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)

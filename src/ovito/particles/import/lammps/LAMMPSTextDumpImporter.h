@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -69,15 +68,9 @@ public:
 	virtual bool isTrajectoryFormat() const override { return true; } 
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, sortParticles(), useCustomColumnMapping(), customColumnMapping());
-	}
-
-	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	static std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file, bool sortParticles, bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping) {
-		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, sortParticles, useCustomColumnMapping, customColumnMapping);
+		return std::make_shared<FrameLoader>(request, sortParticles(), useCustomColumnMapping(), customColumnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -94,41 +87,19 @@ public:
 
 private:
 
-	class LAMMPSFrameData : public ParticleFrameData
+	/// The format-specific task object that is responsible for reading an input file.
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Returns the file column mapping generated from the information in the file header.
-		ParticleInputColumnMapping& detectedColumnMapping() { return _detectedColumnMapping; }
-
-	private:
-
-		ParticleInputColumnMapping _detectedColumnMapping;
-	};
-
-	/// The format-specific task object that is responsible for reading an input file in the background.
-	class OVITO_PARTICLES_EXPORT FrameLoader : public FileSourceImporter::FrameLoader
-	{
-	public:
-
-		/// Normal constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file,
-				bool sortParticles,
-				bool useCustomColumnMapping, const ParticleInputColumnMapping& customColumnMapping)
-			: FileSourceImporter::FrameLoader(frame, file),
-				_parseFileHeaderOnly(false),
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, 
+				bool sortParticles, bool useCustomColumnMapping, 
+				const ParticleInputColumnMapping& customColumnMapping)
+			: ParticleImporter::FrameLoader(request),
 				_sortParticles(sortParticles),
 				_useCustomColumnMapping(useCustomColumnMapping),
 				_customColumnMapping(customColumnMapping) {}
-
-		/// Constructor used when reading only the file header information.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file),
-				_parseFileHeaderOnly(true),
-				_useCustomColumnMapping(false) {}
 
 		/// Returns the file column mapping used to load the file.
 		const ParticleInputColumnMapping& columnMapping() const { return _customColumnMapping; }
@@ -136,18 +107,17 @@ private:
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 	private:
 
 		bool _sortParticles;
-		bool _parseFileHeaderOnly;
 		bool _useCustomColumnMapping;
 		ParticleInputColumnMapping _customColumnMapping;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class OVITO_PARTICLES_EXPORT FrameFinder : public FileSourceImporter::FrameFinder
+	class FrameFinder : public FileSourceImporter::FrameFinder
 	{
 	public:
 

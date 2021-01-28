@@ -41,6 +41,7 @@
 #include <QtDebug>
 #include <QtGui>
 #include <QCommandLineParser>
+#include <QOpenGLWidget>
 
 /******************************************************************************
 * Forward declaration of classes.
@@ -52,7 +53,7 @@ namespace Ovito {
 	class GuiAutoStartObject;
 	class MainWindow;
 	class GuiApplication;
-	class ActionManager;
+	class WidgetActionManager;
 	class DataInspectionApplet;
 	class PropertiesPanel;
 	class SpinnerWidget;

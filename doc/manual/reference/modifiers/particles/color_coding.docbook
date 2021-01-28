@@ -16,11 +16,11 @@
     </imageobject></mediaobject></screenshot></informalfigure>
 
     This modifier assigns colors to particles, bonds, vector glyphs, <link linkend="scene_objects.voxel_grid">voxels</link> or <link linkend="scene_objects.surface_mesh">surfaces</link> according to a selected input property.
-    It thus provides a simple way of visualizing local property values by means of a coloring scheme.
+    It thus provides a simple way of visualizing local values by means of a color scheme.
   </para>
 
   <para>
-    The <emphasis>Operate on</emphasis> field selects the kind of elements the modifier should assign the colors to:
+    The <emphasis>Operate on</emphasis> field selects the kind of data elements the modifier should color:
     <informaltable>
       <tgroup cols="2">
         <thead>
@@ -55,37 +55,41 @@
             <entry>Mesh&#xA0;vertices</entry>
             <entry><para>Colors the vertices of a <link linkend="scene_objects.surface_mesh">surface mesh</link> according to a local property.</para></entry>
           </row>
+          <row>
+            <entry>Mesh&#xA0;regions</entry>
+            <entry><para>Colors the volumetric components of a <link linkend="scene_objects.surface_mesh">surface mesh</link>.</para></entry>
+          </row>
         </tbody>
       </tgroup>
     </informaltable>
   </para>
 
   <para>
-    The color getting assigned to an element (e.g. a particle) is determined as follows by the modifier:
+    The color getting assigned to an element (e.g. a particle) is determined by the modifier as follows:
     First, the value of the selected input property of the element is linearly mapped (and clamped) to the unit interval [0,1] according to the
-    <emphasis>Start value</emphasis> and <emphasis>End value</emphasis>
-    parameters of the modifier. This normalized value is then mapped to an RGB color based on the selected color gradient type.
+    <emphasis>start value</emphasis> and <emphasis>end value</emphasis>
+    parameters of the modifier. The normalized value is then mapped to an RGB color based on the selected color gradient.
   </para>
 
   <para>
-    The <guibutton>Adjust range</guibutton> function resets the <emphasis>Start value</emphasis> and
-    <emphasis>End value</emphasis> parameters to the minimum and maximum value
-    of the selected input property, respectively. This ensures that no clamping of value occurs for the current
-    simulation frame. The <guibutton>Adjust range (all frames)</guibutton> button does the same but will take into account all frames
-    of the loaded animation sequence when determining the range of property values.
-    The <guibutton>Reverse range</guibutton> button
-    swaps the <emphasis>Start value</emphasis> and <emphasis>End
+    The <guibutton>Adjust range</guibutton> button resets the <emphasis>start value</emphasis> and
+    <emphasis>end value</emphasis> parameters to the current minimum and maximum 
+    of the selected input property, respectively. This ensures that no clamping of input values occurs for the current
+    simulation frame. The <guibutton>Adjust range (all frames)</guibutton> button does the same but takes into account 
+    the entire simulation trajectory to determine the range of input property values.
+    The <guibutton>Reverse range</guibutton> button simply
+    swaps the <emphasis>start value</emphasis> and <emphasis>end
     value</emphasis> parameters to effectively reverse the color scale.
   </para>
 
   <simplesect>
-    <title>Custom color maps</title>
+    <title>Custom color gradients</title>
     <para>
-      The modifier offers a set of predefined color maps that you can choose from. If you would like to define your
-      own type of color map instead, select <guilabel>Load custom color map...</guilabel> from the gradient list box.
-      The program will ask you to pick an image file containing the custom color gradient.
-      You can prepare an appropriate image using any image editing program. OVITO will use the colors
-      along one row of pixels of the imported image to generate the user-defined color map. Here are two examples of color map images:
+      The modifier offers a set of predefined color gradients that you can choose from. If you would like to define your
+      own type of color map instead, select <guilabel>Load custom color map...</guilabel> from the gradients list box.
+      The program will ask you to pick an image file on your computer containing the custom color gradient.
+      You can prepare such a file using any image editing program. OVITO will use the RGB colors
+      of one row of pixels of the imported image to generate the user-defined color map. Here are two examples of color gradient images:
       <screenshot><mediaobject><imageobject>
         <imagedata fileref="images/modifiers/color_coding_custom_map.png" format="PNG" />
       </imageobject></mediaobject></screenshot>
@@ -98,7 +102,7 @@
   <simplesect>
     <title>Color legend</title>
     <para>
-       You can let OVITO paint the color map as a legend for the color coding into rendered images by adding a
+       If you want to include the color map of the modifier in rendered images or animations as a legend, add the
        <link linkend="viewport_layers"><guilabel>Color legend</guilabel></link> layer to the active viewport.
     </para>
   </simplesect>
@@ -112,28 +116,36 @@
       <varlistentry>
         <term>Operate on</term>
         <listitem>
-          <para>Selects the kind of data elements to be colored by the modifier.</para>
+          <para>Selects the kind of data elements to be colored by the modifier. Note that the modifier lets you select only from those 
+          data elements that are currently present in the dataset the modifier receives as input from the data pipeline.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>Property</term>
         <listitem>
-          <para>The input particle property or bond property whose values should be used for coloring.</para>
+          <para>The input property of the data elements to be used as basis for the coloring.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>Color gradient</term>
         <listitem>
-          <para>Selects the color gradient for mapping scalar values to colors.</para>
+          <para>Selects the color gradient for mapping property values to colors.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>Start &amp; end value</term>
         <listitem>
-          <para>Controls the value range for the linear mapping of input values to the [0,1] interval.</para>
+          <para>These parameters specify the source range of input property values getting mapped to the normalized [0,1] interval of the color map.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>Automatically adjust range</term>
+        <listitem>
+          <para>With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.</para>
         </listitem>
       </varlistentry>
 

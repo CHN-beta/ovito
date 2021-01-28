@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,11 +59,11 @@ void FloatParameterUI::updatePropertyValue()
 		}
 		else if(isQtPropertyUI()) {
 			if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
-				OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+				OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			editObject()->setPropertyFieldValue(*propertyField(), spinner()->floatValue());
+			editor()->changePropertyFieldValue(*propertyField(), spinner()->floatValue());
 		}
 		Q_EMIT valueEntered();
 	}
@@ -84,8 +84,8 @@ void FloatParameterUI::updateUI()
 				QVariant val(0.0);
 				if(isQtPropertyUI()) {
 					val = editObject()->property(propertyName());
-					OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::Double), "FloatParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-					if(!val.isValid() || !val.canConvert(QVariant::Double)) {
+					OVITO_ASSERT_MSG(val.isValid() && val.canConvert<FloatType>(), "FloatParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+					if(!val.isValid() || !val.canConvert<FloatType>()) {
 						editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 					}
 				}

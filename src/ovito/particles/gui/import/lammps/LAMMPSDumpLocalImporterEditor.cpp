@@ -42,7 +42,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 {
 	// Retrieve column information of input file.
 	LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
-	Future<InputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
+	Future<BondInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
 		return false;
 	InputColumnMapping mapping = inspectFuture.result();
@@ -85,7 +85,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
  *****************************************************************************/
 bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame, MainWindow* mainWindow)
 {
-	Future<InputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
+	Future<BondInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
 		return false;
 	InputColumnMapping mapping = inspectFuture.result();

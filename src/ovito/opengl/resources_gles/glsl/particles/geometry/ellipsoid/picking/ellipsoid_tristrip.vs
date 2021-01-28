@@ -27,7 +27,7 @@ uniform mat4 modelview_matrix;
 uniform mat4 projection_matrix;
 uniform mat4 modelviewprojection_matrix;
 uniform vec3 cubeVerts[14];
-uniform int pickingBaseID;
+uniform int picking_base_id;
 
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
@@ -78,7 +78,7 @@ void main()
     particle_quadric_fs = view_rot * qmat * transpose(view_rot);
 
 	// Compute sub-object ID from vertex ID.
-	int objectID = pickingBaseID + gl_VertexID / 14;
+	int objectID = picking_base_id + gl_VertexID / 14;
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(
@@ -158,7 +158,7 @@ void main()
     particle_quadric_fs = view_rot * qmat * transposeMat3(view_rot);
 
 	// Compute sub-object ID from vertex ID.
-	float objectID = float(pickingBaseID + int(vertexID) / 14);
+	float objectID = float(picking_base_id + int(vertexID) / 14);
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(

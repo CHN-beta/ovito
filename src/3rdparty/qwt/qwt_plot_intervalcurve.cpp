@@ -12,9 +12,11 @@
 #include "qwt_scale_map.h"
 #include "qwt_clipper.h"
 #include "qwt_painter.h"
-#include <string.h>
+#include "qwt_graphic.h"
+#include "qwt_text.h"
 
 #include <qpainter.h>
+#include <cstring>
 
 static inline bool qwtIsHSampleInside( const QwtIntervalSample &sample,
     double xMin, double xMax, double yMin, double yMax )
@@ -428,7 +430,7 @@ void QwtPlotIntervalCurve::drawTube( QPainter *painter,
         if ( d_data->paintAttributes & ClipPolygons )
         {
             const qreal m = 1.0;
-            const QPolygonF p = QwtClipper::clipPolygonF(
+            const QPolygonF p = QwtClipper::clippedPolygonF(
                canvasRect.adjusted( -m, -m, m, m ), polygon, true );
 
             QwtPainter::drawPolygon( painter, p );
@@ -446,20 +448,18 @@ void QwtPlotIntervalCurve::drawTube( QPainter *painter,
 
         if ( d_data->paintAttributes & ClipPolygons )
         {
-            qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF() );
+            qreal pw = QwtPainter::effectivePenWidth( painter->pen() );
             const QRectF clipRect = canvasRect.adjusted( -pw, -pw, pw, pw );
 
-            QPolygonF p;
+            QPolygonF p( size );
 
-            p.resize( size );
-            ::memcpy( p.data(), points, size * sizeof( QPointF ) );
-            p = QwtClipper::clipPolygonF( clipRect, p );
-            QwtPainter::drawPolyline( painter, p );
+            std::memcpy( p.data(), points, size * sizeof( QPointF ) );
+            QwtPainter::drawPolyline( painter,
+                QwtClipper::clippedPolygonF( clipRect, p ) );
 
-            p.resize( size );
-            ::memcpy( p.data(), points + size, size * sizeof( QPointF ) );
-            p = QwtClipper::clipPolygonF( clipRect, p );
-            QwtPainter::drawPolyline( painter, p );
+            std::memcpy( p.data(), points + size, size * sizeof( QPointF ) );
+            QwtPainter::drawPolyline( painter,
+                QwtClipper::clippedPolygonF( clipRect, p ) );
         }
         else
         {

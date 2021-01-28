@@ -40,12 +40,20 @@ PipelineObject::PipelineObject(DataSet* dataset) : ActiveObject(dataset)
 }
 
 /******************************************************************************
+* Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
+******************************************************************************/
+PipelineFlowState PipelineObject::evaluateSynchronous(TimePoint time) 
+{ 
+	return {}; 
+}
+
+/******************************************************************************
 * Returns a list of pipeline nodes that have this object in their pipeline.
 ******************************************************************************/
 QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) const
 {
 	QSet<PipelineSceneNode*> pipelineList;
-	for(RefMaker* dependent : this->dependents()) {
+	visitDependents([&](RefMaker* dependent) {
 		if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(dependent)) {
 			pipelineList.unite(pobj->pipelines(onlyScenePipelines));
 		}
@@ -55,7 +63,7 @@ QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) cons
 		    		pipelineList.insert(pipeline);
 			}
 		}
-	}
+	});
 	return pipelineList;
 }
 
@@ -67,7 +75,7 @@ QSet<PipelineSceneNode*> PipelineObject::pipelines(bool onlyScenePipelines) cons
 bool PipelineObject::isPipelineBranch(bool onlyScenePipelines) const
 {
 	int pipelineCount = 0;
-	for(RefMaker* dependent : this->dependents()) {
+	visitDependents([&](RefMaker* dependent) {
 		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
 			if(modApp->input() == this && !modApp->pipelines(onlyScenePipelines).empty())
 				pipelineCount++;
@@ -78,7 +86,7 @@ bool PipelineObject::isPipelineBranch(bool onlyScenePipelines) const
 		    		pipelineCount++;
 			}
 		}
-	}
+	});
 	return pipelineCount > 1;
 }
 

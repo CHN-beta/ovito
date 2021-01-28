@@ -57,7 +57,7 @@ public:
 		ParcasFormat,
 		ExtendedFormat
 	};
-	Q_ENUMS(XYZSubFormat);
+	Q_ENUM(XYZSubFormat);
 
 public:
 
@@ -80,8 +80,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::XYZExporter::XYZSubFormat);
-Q_DECLARE_TYPEINFO(Ovito::Particles::XYZExporter::XYZSubFormat, Q_PRIMITIVE_TYPE);
-
-

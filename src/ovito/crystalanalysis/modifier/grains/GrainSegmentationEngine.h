@@ -293,12 +293,15 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine1(
+			const PipelineObject* dataSource, 
+			ExecutionContext executionContext, 
+			DataSet* dataset, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,
 			ConstPropertyPtr structureProperty,
 			ConstPropertyPtr orientationProperty,
 			ConstPropertyPtr correspondenceProperty,
-			const SimulationCell& simCell,
+			const SimulationCellObject* simCell,
 			GrainSegmentationModifier::MergeAlgorithm algorithmType,
 			bool handleCoherentInterfaces,
 			bool outputBonds);
@@ -327,11 +330,14 @@ public:
 	/// Creates another engine that performs the next stage of the computation. 
 	virtual std::shared_ptr<Engine> createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input) override;
 
+	/// Returns the global dataset object.
+	DataSet* dataset() const { return _dataset; }
+
 	/// Returns the property storage that contains the input particle positions.
 	const ConstPropertyPtr& positions() const { return _positions; }
 
 	/// Returns the simulation cell data.
-	const SimulationCell& cell() const { return _simCell; }
+	const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 	// Returns the merge distances for the scatter plot
 	const PropertyPtr& mergeDistance() const { return _mergeDistance; }
@@ -426,6 +432,9 @@ private:
 	// A hardcoded cutoff, in degrees, used for skipping low-weight edges in Node Pair Sampling mode
 	static constexpr FloatType _misorientationThreshold = 4.0;
 
+	/// The global dataset object.
+	DataSet* _dataset;
+
 	// The linkage criterion used in the merge algorithm
 	GrainSegmentationModifier::MergeAlgorithm _algorithmType;
 
@@ -442,7 +451,7 @@ private:
 	ConstPropertyPtr _positions;
 
 	/// The simulation cell geometry.
-	const SimulationCell _simCell;
+	DataOORef<const SimulationCellObject> _simCell;
 
 	/// Used to detect changes in the input dataset that invalidate cached computation results.
 	ParticleOrderingFingerprint _inputFingerprint;
@@ -498,16 +507,20 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine2(
+			const PipelineObject* dataSource, 
+			ExecutionContext executionContext, 
+			DataSet* dataset, 
 			std::shared_ptr<GrainSegmentationEngine1> engine1,
 			FloatType mergingThreshold, 
 			bool adoptOrphanAtoms, 
 			size_t minGrainAtomCount) :
+		Engine(dataSource, executionContext),
 		_engine1(std::move(engine1)),
 		_numParticles(_engine1->_numParticles),
 		_mergingThreshold(mergingThreshold),
 		_adoptOrphanAtoms(adoptOrphanAtoms),
 		_minGrainAtomCount(minGrainAtomCount),
-		_atomClusters(std::make_shared<PropertyStorage>(_numParticles, PropertyStorage::Int64, 1, 0, QStringLiteral("Grain"), true)) {}
+		_atomClusters(ParticlesObject::OOClass().createUserProperty(dataset, _numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Grain"), true)) {}
 	
 	/// Performs the computation.
 	virtual void perform() override;
@@ -526,6 +539,9 @@ public:
 
 		return Engine::modifierChanged(event);
 	}
+
+	/// Returns the global dataset object.
+	DataSet* dataset() const { return _engine1->dataset(); }
 
 	/// Returns the array storing the cluster ID of each particle.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }

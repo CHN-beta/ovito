@@ -49,14 +49,14 @@ void DataTable::OOMetaClass::initialize()
 	setPythonName(QStringLiteral("table"));
 
 	const QStringList emptyList;
-	registerStandardProperty(XProperty, QString(), PropertyStorage::Float, emptyList);
-	registerStandardProperty(YProperty, QString(), PropertyStorage::Float, emptyList);
+	registerStandardProperty(XProperty, QString(), PropertyObject::Float, emptyList);
+	registerStandardProperty(YProperty, QString(), PropertyObject::Float, emptyList);
 }
 
 /******************************************************************************
 * Creates a storage object for standard data table properties.
 ******************************************************************************/
-PropertyPtr DataTable::OOMetaClass::createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -65,12 +65,12 @@ PropertyPtr DataTable::OOMetaClass::createStandardStorage(size_t elementCount, i
 	switch(type) {
 	case XProperty:
 	case YProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 1;
 		stride = sizeof(FloatType);
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "DataTable::createStandardStorage()", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "DataTable::createStandardProperty()", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard property type: %1").arg(type));
 	}
 
@@ -79,14 +79,14 @@ PropertyPtr DataTable::OOMetaClass::createStandardStorage(size_t elementCount, i
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return std::make_shared<PropertyStorage>(elementCount, dataType, componentCount, stride,
-								propertyName, initializeMemory, type, componentNames);
+	return PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
+			propertyName, initializeMemory, type, componentNames);
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataTable::DataTable(DataSet* dataset, PlotMode plotMode, const QString& title, PropertyPtr y, PropertyPtr x) : PropertyContainer(dataset, title),
+DataTable::DataTable(DataSet* dataset, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(dataset, title),
 	_intervalStart(0),
 	_intervalEnd(0),
 	_plotMode(plotMode)
@@ -94,11 +94,11 @@ DataTable::DataTable(DataSet* dataset, PlotMode plotMode, const QString& title, 
 	OVITO_ASSERT(!x || !y || x->size() == y->size());
 	if(x) {
 		OVITO_ASSERT(x->type() == XProperty);
-		createProperty(std::move(x));
+		addProperty(std::move(x));
 	}
 	if(y) {
 		OVITO_ASSERT(y->type() == YProperty);
-		createProperty(std::move(y));
+		addProperty(std::move(y));
 	}
 }
 
@@ -107,34 +107,30 @@ DataTable::DataTable(DataSet* dataset, PlotMode plotMode, const QString& title, 
 * If no explicit x-coordinate data is available, the array is dynamically generated
 * from the x-axis interval set for this data table.
 ******************************************************************************/
-ConstPropertyPtr DataTable::getXStorage() const
+ConstPropertyPtr DataTable::getXValues() const
 {
-	if(ConstPropertyPtr xStorage = getPropertyStorage(XProperty)) {
-		return xStorage;
+	if(const PropertyObject* xProperty = getX()) {
+		return xProperty;
 	}
 	else if(const PropertyObject* yProperty = getY()) {
-		if(intervalStart() != 0 || intervalEnd() != 0) {
-			auto xstorage = OOClass().createStandardStorage(elementCount(), XProperty, false);
-			xstorage->setName(axisLabelX());
-			PropertyAccess<FloatType> xdata(xstorage);
+		if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
+			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false, ExecutionContext::Scripting);
+			xdata.buffer()->setName(axisLabelX());
 			FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
 			FloatType x = intervalStart() + binSize * FloatType(0.5);
 			for(FloatType& v : xdata) {
 				v = x;
 				x += binSize;
 			}
-			return std::move(xstorage);
+			return xdata.take();
 		}
 		else {
-			auto xstorage = std::make_shared<PropertyStorage>(elementCount(), PropertyStorage::Int64, 1, 0, axisLabelX(), false, DataTable::XProperty);
-			PropertyAccess<qlonglong> xdata(xstorage);
+			PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(dataset(), elementCount(), PropertyObject::Int64, 1, 0, axisLabelX(), false, DataTable::XProperty);
 			std::iota(xdata.begin(), xdata.end(), (size_t)0);
-			return std::move(xstorage);
+			return xdata.take();
 		}
 	}
-	else {
-		return {};
-	}
+	return {};
 }
 
 }	// End of namespace

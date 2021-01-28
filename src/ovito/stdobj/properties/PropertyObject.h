@@ -24,23 +24,22 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/core/dataset/data/DataObject.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include "PropertyStorage.h"
 
 namespace Ovito { namespace StdObj {
 
 /**
  * \brief Stores a property data array.
  */
-class OVITO_STDOBJ_EXPORT PropertyObject : public DataObject
+class OVITO_STDOBJ_EXPORT PropertyObject : public DataBuffer
 {
 	/// Define a new property metaclass for particle containers.
-	class OVITO_STDOBJ_EXPORT OOMetaClass : public DataObject::OOMetaClass
+	class OVITO_STDOBJ_EXPORT OOMetaClass : public DataBuffer::OOMetaClass
 	{
 	public:
 		/// Inherit constructor from base class.
-		using DataObject::OOMetaClass::OOMetaClass;
+		using DataBuffer::OOMetaClass::OOMetaClass;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -52,50 +51,40 @@ class OVITO_STDOBJ_EXPORT PropertyObject : public DataObject
 
 public:
 
-	/// \brief Creates a property object.
-	Q_INVOKABLE PropertyObject(DataSet* dataset, PropertyPtr storage = {});
+	/// \brief The standard property types defined by all property classes.
+	enum GenericStandardType {
+		GenericUserProperty = 0,	//< This is reserved for user-defined properties.
+		GenericSelectionProperty = 1,
+		GenericColorProperty = 2,
+		GenericTypeProperty = 3,
+		GenericIdentifierProperty = 4,
+
+		// This is value at which type IDs of specific standard properties start:
+		FirstSpecificProperty = 1000
+	};
+
+public:
+
+	/// \brief Creates an empty property.
+	Q_INVOKABLE PropertyObject(DataSet* dataset);
+
+	/// \brief Constructor that creates and initializes a new property array.
+	PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList());
 
 	/// \brief Gets the property's name.
-	/// \return The name of property, which is shown to the user.
-	const QString& name() const { return storage()->name(); }
+	/// \return The name of property.
+	const QString& name() const { return _name; }
 
 	/// \brief Sets the property's name.
 	/// \param name The new name string.
 	void setName(const QString& name);
 
-	/// \brief Returns the number of elements.
-	size_t size() const { return storage()->size(); }
-
-	/// \brief Resizes the property storage.
-	/// \param newSize The new number of elements.
-	/// \param preserveData Controls whether the existing per-element data is preserved.
-	///                     This also determines whether newly allocated memory is initialized to zero.
-	void resize(size_t newSize, bool preserveData);
-
 	/// \brief Returns the type of this property.
-	int type() const { return storage()->type(); }
+	int type() const { return _type; }
 
-	/// \brief Returns the data type of the property.
-	/// \return The identifier of the data type used for the elements stored in
-	///         this property storage according to the Qt meta type system.
-	int dataType() const { return storage()->dataType(); }
-
-	/// \brief Returns the number of bytes per value.
-	/// \return Number of bytes used to store a single value of the data type
-	///         specified by dataType().
-	size_t dataTypeSize() const { return storage()->dataTypeSize(); }
-
-	/// \brief Returns the number of bytes used per particle.
-	size_t stride() const { return storage()->stride(); }
-
-	/// \brief Returns the number of values per element.
-	/// \return The number of data values stored per element in this storage object.
-	size_t componentCount() const { return storage()->componentCount(); }
-
-	/// \brief Returns the human-readable names for the components of one element.
-	/// \return The names of the components if this property contains more than one value per element.
-	///         The list may be empty for scalar properties.
-	const QStringList& componentNames() const { return storage()->componentNames(); }
+	/// \brief Changes the type of this property. Note that this method is only for internal use.
+	///        Normally, you should not change the type of a property once it was created.
+	void setType(int newType) { _type = newType; }
 
 	/// \brief Returns the display name of the property including the name of the given
 	///        vector component.
@@ -108,90 +97,52 @@ public:
 			return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent + 1);
 	}
 
-	/// Returns the data encapsulated by this object after making sure it is not shared with other owners.
-	const PropertyPtr& modifiableStorage();
-
-	/// Extends the data array and replicates the existing data N times.
-	void replicate(size_t n, bool replicateValues = true);
-
-	/// Reduces the size of the storage array, removing elements for which
-	/// the corresponding bits in the bit array are set.
-	void filterResize(const boost::dynamic_bitset<>& mask) {
-		modifiableStorage()->filterResize(mask);
-		notifyTargetChanged();
+	/// Creates a copy of the array, not containing those elements for which
+	/// the corresponding bits in the given bit array were set.
+	OORef<PropertyObject> filterCopy(const boost::dynamic_bitset<>& mask) const {
+		return static_object_cast<PropertyObject>(DataBuffer::filterCopy(mask));
 	}
 
-	/// \brief Sets all array elements to the given uniform value.
-	template<typename T>
-	void fill(const T& value) {
-		modifiableStorage()->fill(value);
-	}
-
-	/// \brief Sets all array elements for which the corresponding entries in the 
-	///        selection array are non-zero to the given uniform value.
-	template<typename T>
-	void fillSelected(const T& value, const PropertyStorage& selectionProperty) {
-		modifiableStorage()->fillSelected(value, selectionProperty);
-	}
-
-	/// \brief Sets all array elements for which the corresponding entries in the 
-	///        selection array are non-zero to the given uniform value.
-	template<typename T>
-	void fillSelected(const T& value, const PropertyObject* selectionProperty) {
-		if(selectionProperty)
-			modifiableStorage()->fillSelected(value, *selectionProperty->storage());
-		else
-			modifiableStorage()->fill(value);
-	}
-
-	/// Copies the elements from the given source into this property array using a element mapping.
-	void mappedCopyFrom(const PropertyObject* source, const std::vector<size_t>& mapping) {
-		modifiableStorage()->mappedCopyFrom(*source->storage(), mapping);
-	}
-
-	/// Copies the elements from this property array into the given destination array using an index mapping.
-	void mappedCopyTo(PropertyObject* destination, const std::vector<size_t>& mapping) const {
-		storage()->mappedCopyTo(*destination->modifiableStorage(), mapping);
-	}
-
-	/// Copies the data elements from the given source array into this array. 
-	/// Array size, component count and data type of source and destination must match exactly.
-	void copyFrom(const PropertyObject* source) {
-		modifiableStorage()->copyFrom(*source->storage());
-	}
-
-	/// Copies a range of data elements from the given source array into this array. 
-	/// Component count and data type of source and destination must be compatible.
-	void copyRangeFrom(const PropertyObject* source, size_t sourceIndex, size_t destIndex, size_t count) {
-		modifiableStorage()->copyRangeFrom(*source->storage(), sourceIndex, destIndex, count);
-	}
-
+	/// Checks if this property storage and its contents exactly match those of another property storage.
+	bool equals(const PropertyObject& other) const;
+	
 	//////////////////////////////// Element types //////////////////////////////
 
 	/// Appends an element type to the list of types.
-	void addElementType(const ElementType* type) {
+	const ElementType* addElementType(const ElementType* type) {
 		OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
 		_elementTypes.push_back(this, PROPERTY_FIELD(elementTypes), type);
+		return type;
 	}
 
 	/// Inserts an element type into the list of types.
-	void insertElementType(int index, const ElementType* type) {
+	const ElementType* insertElementType(int index, const ElementType* type) {
 		OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
 		_elementTypes.insert(this, PROPERTY_FIELD(elementTypes), index, type);
+		return type;
 	}
 
 	/// Returns the element type with the given ID, or NULL if no such type exists.
-	ElementType* elementType(int id) const {
-		for(ElementType* type : elementTypes())
+	const ElementType* elementType(int id) const {
+		for(const ElementType* type : elementTypes())
 			if(type->numericId() == id)
 				return type;
 		return nullptr;
 	}
 
 	/// Returns the element type with the given human-readable name, or NULL if no such type exists.
-	ElementType* elementType(const QString& name) const {
+	const ElementType* elementType(const QString& name) const {
 		OVITO_ASSERT(!name.isEmpty());
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
+			if(type->name() == name)
+				return type;
+		return nullptr;
+	}
+
+	/// Returns the element type with the given human-readable name, or NULL if no such type exists.
+	const ElementType* elementType(const QLatin1String& name) const {
+		OVITO_ASSERT(name.size() != 0);
+		for(const ElementType* type : elementTypes())
 			if(type->name() == name)
 				return type;
 		return nullptr;
@@ -210,7 +161,7 @@ public:
 	/// Builds a mapping from numeric IDs to type colors.
 	std::map<int,Color> typeColorMap() const {
 		std::map<int,Color> m;
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
 			m.insert({type->numericId(), type->color()});
 		return m;
 	}
@@ -218,10 +169,19 @@ public:
 	/// Returns an numeric type ID that is not yet used by any of the existing element types.
 	int generateUniqueElementTypeId(int startAt = 1) const {
 		int maxId = startAt;
-		for(ElementType* type : elementTypes())
+		for(const ElementType* type : elementTypes())
 			maxId = std::max(maxId, type->numericId() + 1);
 		return maxId;
 	}
+
+	/// Sorts the element types with respect to the numeric identifier.
+	void sortElementTypesById();
+
+	/// Sorts the types w.r.t. their name. 
+	/// This method is used by file parsers that create element types on the
+	/// go while the read the data. In such a case, the type ordering
+	/// depends on the storage order of data elements in the loaded file, which is not desirable.
+	void sortElementTypesByName();
 
 	/// Helper method that remaps the existing type IDs to a contiguous range starting at the given
 	/// base ID. This method is mainly used for file output, because some file formats
@@ -243,10 +203,7 @@ public:
 
 	/// Puts the property array back into the default read-only state.
 	/// In the read-only state, the Python binding layer will not permit write access to the property's internal data.
-	void makeReadOnlyFromPython() {
-		OVITO_ASSERT(_isWritableFromPython > 0);
-		_isWritableFromPython--;
-	}
+	void makeReadOnlyFromPython();
 
 	/// Returns whether this data object wants to be shown in the pipeline editor
 	/// under the data source section.
@@ -256,6 +213,9 @@ public:
 	virtual bool showInPipelineEditor() const override {
 		return !elementTypes().empty();
 	}
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	/// Returns the display title of this property object in the user interface.
 	virtual QString objectTitle() const override;
@@ -268,24 +228,33 @@ protected:
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// Is called when the value of a non-animatable field of this object changes.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	/// Creates a copy of this object.
+	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 private:
 
-	/// The internal per-element data.
-	DECLARE_RUNTIME_PROPERTY_FIELD(PropertyPtr, storage, setStorage);
-
 	/// Contains the list of defined "types" if this is a typed property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, elementTypes, setElementTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
 
 	/// The user-interface title of this property.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+
+	/// The type of this property.
+	int _type = 0;
+
+	/// The name of the property.
+	QString _name;
 
 	/// This is a special flag used by the Python bindings to indicate that
 	/// this property object has been temporarily put into a writable state.
 	int _isWritableFromPython = 0;
 };
+
+/// Smart-pointer to a PropertyObject.
+using PropertyPtr = DataOORef<PropertyObject>;
+
+/// Smart-pointer to a PropertyObject providing read-only access to the property data.
+using ConstPropertyPtr = DataOORef<const PropertyObject>;
 
 }	// End of namespace
 }	// End of namespace

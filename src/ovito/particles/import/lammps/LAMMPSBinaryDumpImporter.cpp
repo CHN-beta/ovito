@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSBinaryDumpImporter.h"
@@ -148,24 +148,6 @@ bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& fi
 
 	LAMMPSBinaryDumpHeader header;
 	return header.parse(*device);
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the contained data columns.
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<LAMMPSFrameData*>(frameData.get())->detectedColumnMapping();
-				});
-		});
 }
 
 /******************************************************************************
@@ -364,7 +346,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
+void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading binary LAMMPS dump file %1").arg(fileHandle().toString()));
 
@@ -382,28 +364,12 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 	if(!header.parse(*file))
 		throw Exception(tr("Failed to read binary LAMMPS dump file: Invalid file header."));
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<LAMMPSFrameData>();
-
-	if(_parseFileHeaderOnly) {
-		// Set up column-to-property mapping.
-		if(header.columnsString.isEmpty()) {
-			// We are done at this point if we are only supposed to detect the
-			// number of file columns.
-			frameData->detectedColumnMapping().resize(header.size_one);
-		}
-		else {
-			QStringList fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
-			frameData->detectedColumnMapping() = LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
-		}
-		return frameData;
-	}
-
-	frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep));
+	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep), dataSource());
 	if(header.simulationTime != std::numeric_limits<double>::lowest())
-		frameData->attributes().insert(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime));
+		state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime), dataSource());
 
 	setProgressMaximum(header.natoms);
+	setParticleCount(header.natoms);
 
 	// LAMMPS only stores the outer bounding box dimensions of the simulation cell in the dump file.
 	// Now calculate the size of the actual triclinic cell.
@@ -414,22 +380,22 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 	simBox.maxc.x() -= std::max(std::max(std::max(header.tiltFactors[0], header.tiltFactors[1]), header.tiltFactors[0]+header.tiltFactors[1]), 0.0);
 	simBox.minc.y() -= std::min(header.tiltFactors[2], 0.0);
 	simBox.maxc.y() -= std::max(header.tiltFactors[2], 0.0);
-	frameData->simulationCell().setMatrix(AffineTransformation(
+	simulationCell()->setCellMatrix(AffineTransformation(
 			Vector3(simBox.sizeX(), 0, 0),
 			Vector3(header.tiltFactors[0], simBox.sizeY(), 0),
 			Vector3(header.tiltFactors[1], header.tiltFactors[2], simBox.sizeZ()),
 			simBox.minc - Point3::Origin()));
-	frameData->simulationCell().setPbcFlags(header.boundaryFlags[0][0] == 0, header.boundaryFlags[1][0] == 0, header.boundaryFlags[2][0] == 0);
+	simulationCell()->setPbcFlags(header.boundaryFlags[0][0] == 0, header.boundaryFlags[1][0] == 0, header.boundaryFlags[2][0] == 0);
 
 	// Set up column-to-property mapping.
 	QStringList fileColumnNames;
 	if(_columnMapping.empty() && !header.columnsString.isEmpty()) {
-		fileColumnNames = QString::fromLatin1(header.columnsString).split(QRegularExpression(QStringLiteral("\\s+")), QString::SkipEmptyParts);
+		fileColumnNames = FileImporter::splitString(QString::fromLatin1(header.columnsString));
 		_columnMapping = LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
 	}
 
 	// Parse particle data.
-	InputColumnReader columnParser(_columnMapping, frameData->particles(), header.natoms);
+	InputColumnReader columnParser(_columnMapping, particles(), executionContext());
 	try {
 		QVector<double> chunkData;
 		int i = 0;
@@ -462,7 +428,7 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 			for(int nChunkAtoms = n / header.size_one; nChunkAtoms--; ++i, iter += header.size_one) {
 
 				// Update progress indicator.
-				if(!setProgressValueIntermittent(i)) return {};
+				if(!setProgressValueIntermittent(i)) return;
 
 				try {
 					columnParser.readElement(i, iter, header.size_one);
@@ -479,6 +445,7 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 
 	// Sort the particle type list since we created particles on the go and their order depends on the occurrence of types in the file.
 	columnParser.sortElementTypes();
+	columnParser.reset();
 
 	// Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
 	bool reducedCoordinates = false;
@@ -503,7 +470,7 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 		// Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
 		// We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
 		// wraps around particles at the periodic boundaries only occasionally.
-		if(ConstPropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
+		if(ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
 			// Compute bound box of particle positions.
 			Box3 boundingBox;
 			boundingBox.addPoints(posProperty);
@@ -515,8 +482,8 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 
 	if(reducedCoordinates) {
 		// Convert all atom coordinates from reduced to absolute (Cartesian) format.
-		if(PropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty)) {
-			const AffineTransformation simCell = frameData->simulationCell().matrix();
+		if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+			const AffineTransformation simCell = simulationCell()->cellMatrix();
 			for(Point3& p : posProperty)
 				p = simCell * p;
 		}
@@ -527,7 +494,7 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 	if(!fileColumnNames.empty()) {
 		for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
 			if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-				if(PropertyAccess<FloatType> radiusProperty = frameData->particles().findStandardProperty(ParticlesObject::RadiusProperty)) {
+				if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
 					for(FloatType& r : radiusProperty)
 						r /= 2;
 				}
@@ -538,14 +505,49 @@ FileSourceImporter::FrameDataPtr LAMMPSBinaryDumpImporter::FrameLoader::loadFile
 
 	// Detect when there are more simulation frames following in the file.
 	if(!file->atEnd())
-		frameData->signalAdditionalFrames();
+		signalAdditionalFrames();
 
 	// Sort particles by ID.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
+		
+	state().setStatus(tr("%1 particles at timestep %2").arg(header.natoms).arg(header.ntimestep));
 
-	frameData->setStatus(tr("%1 particles at timestep %2").arg(header.natoms).arg(header.ntimestep));
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the number of file columns.
+******************************************************************************/
+Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(const Frame& frame)
+{
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then([](const FileHandle& fileHandle) {
+
+			// Open input file for reading.
+			std::unique_ptr<QIODevice> file = fileHandle.createIODevice();
+			if(!file->open(QIODevice::ReadOnly))
+				throw Exception(tr("Failed to open binary LAMMPS dump file: %1.").arg(file->errorString()));
+
+			// Parse file header.
+			LAMMPSBinaryDumpHeader header;
+			if(!header.parse(*file))
+				throw Exception(tr("Failed to parse binary LAMMPS dump file: Invalid file header."));
+
+			// Parse column names if it is a modern format file.
+			if(!header.columnsString.isEmpty()) {
+				QStringList fileColumnNames = FileImporter::splitString(QString::fromLatin1(header.columnsString));
+				return LAMMPSTextDumpImporter::generateAutomaticColumnMapping(fileColumnNames);
+			}
+			else {
+				// Return the number of file columns.
+				ParticleInputColumnMapping mapping;
+				mapping.resize(header.size_one);
+				return mapping;
+			}
+		});
 }
 
 /******************************************************************************

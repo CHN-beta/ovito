@@ -66,8 +66,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 	size_t oldParticleCount = inputParticles->elementCount();
 	size_t newParticleCount = oldParticleCount * numCopies;
 
-	const SimulationCell cell = state.expectObject<SimulationCellObject>()->data();
-	const AffineTransformation& cellMatrix = cell.matrix();
+	const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+	const AffineTransformation cellMatrix = cell->matrix();
 
 	// Ensure that the particles can be modified.
 	ParticlesObject* outputParticles = state.makeMutable(inputParticles);
@@ -75,7 +75,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 
 	// Replicate particle property values.
 	Box3I newImages = mod->replicaRange();
-	for(PropertyObject* property : outputParticles->properties()) {
+	for(PropertyObject* property : outputParticles->makePropertiesMutable()) {
 		OVITO_ASSERT(property->size() == newParticleCount);
 
 		// Shift particle positions by the periodicity vector.
@@ -120,10 +120,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		ConstPropertyAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
 
 		// Replicate bond property values.
-		outputParticles->makeBondsMutable();
-		outputParticles->bonds()->makePropertiesMutable();
-		outputParticles->bonds()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->bonds()->properties()) {
+		BondsObject* mutableBonds = outputParticles->makeBondsMutable();
+		mutableBonds->replicate(numCopies);
+		for(PropertyObject* property : mutableBonds->makePropertiesMutable()) {
 			OVITO_ASSERT(property->size() == newBondCount);
 
 			size_t destinationIndex = 0;
@@ -139,7 +138,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 								Point3I newImage;
 								for(size_t dim = 0; dim < 3; dim++) {
 									int i = image[dim] + (oldPeriodicImages ? oldPeriodicImages[bindex][dim] : 0) - newImages.minc[dim];
-									newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+									newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 								}
 								OVITO_ASSERT(newImage.x() >= newImages.minc.x() && newImage.x() <= newImages.maxc.x());
 								OVITO_ASSERT(newImage.y() >= newImages.minc.y() && newImage.y() <= newImages.maxc.y());
@@ -188,10 +187,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldAngleCount = outputParticles->angles()->elementCount();
 
 		// Replicate angle property values.
-		outputParticles->makeAnglesMutable();
-		outputParticles->angles()->makePropertiesMutable();
-		outputParticles->angles()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->angles()->properties()) {
+		AnglesObject* mutableAngles = outputParticles->makeAnglesMutable();
+		mutableAngles->replicate(numCopies);
+		for(PropertyObject* property : mutableAngles->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 
@@ -209,10 +207,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}
@@ -235,10 +233,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldDihedralCount = outputParticles->dihedrals()->elementCount();
 
 		// Replicate dihedral property values.
-		outputParticles->makeDihedralsMutable();
-		outputParticles->dihedrals()->makePropertiesMutable();
-		outputParticles->dihedrals()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->dihedrals()->properties()) {
+		DihedralsObject* mutableDihedrals = outputParticles->makeDihedralsMutable();
+		mutableDihedrals->replicate(numCopies);
+		for(PropertyObject* property : mutableDihedrals->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 
@@ -256,10 +253,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}
@@ -282,10 +279,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 		size_t oldImproperCount = outputParticles->impropers()->elementCount();
 
 		// Replicate improper property values.
-		outputParticles->makeImpropersMutable();
-		outputParticles->impropers()->makePropertiesMutable();
-		outputParticles->impropers()->replicate(numCopies);
-		for(PropertyObject* property : outputParticles->impropers()->properties()) {
+		ImpropersObject* mutableImpropers = outputParticles->makeImpropersMutable();
+		mutableImpropers->replicate(numCopies);
+		for(PropertyObject* property : mutableImpropers->makePropertiesMutable()) {
 			size_t destinationIndex = 0;
 			Point3I image;
 
@@ -303,10 +299,10 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 									if(pindex >= 0 && (size_t)pindex < positionArray.size() && referenceParticle >= 0 && (size_t)referenceParticle < positionArray.size()) {
 										Vector3 delta = positionArray[pindex] - positionArray[referenceParticle];
 										for(size_t dim = 0; dim < 3; dim++) {
-											if(cell.hasPbc(dim)) {
-												int imageDelta = (int)std::floor(cell.inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+											if(cell->hasPbc(dim)) {
+												int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
 												int i = image[dim] - newImages.minc[dim] - imageDelta;
-												newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
+												newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
 											}
 										}
 									}

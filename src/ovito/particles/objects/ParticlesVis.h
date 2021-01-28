@@ -24,6 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -43,16 +44,18 @@ class OVITO_PARTICLES_EXPORT ParticlesVis : public DataVis
 
 public:
 
-	/// The shapes supported by the particle vis element.
+	/// The standard shapes supported by the particles visualization element.
 	enum ParticleShape {
-		Sphere,
-		Box,
+		Sphere, 			// Includes ellipsoids and superquadrics
+		Box,				// Includes cubes and non-cubic boxes
 		Circle,
 		Square,
 		Cylinder,
-		Spherocylinder
+		Spherocylinder,
+		Mesh,
+		Default
 	};
-	Q_ENUMS(ParticleShape);
+	Q_ENUM(ParticleShape);
 
 public:
 
@@ -72,22 +75,22 @@ public:
 	Color selectionParticleColor() const { return Color(1,0,0); }
 
 	/// Returns the actual particle shape used to render the particles.
-	ParticlePrimitive::ParticleShape effectiveParticleShape(const PropertyObject* shapeProperty, const PropertyObject* orientationProperty) const;
+	static ParticlePrimitive::ParticleShape effectiveParticleShape(ParticleShape shape, const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty);
 
 	/// Returns the actual rendering quality used to render the particles.
 	ParticlePrimitive::RenderingQuality effectiveRenderingQuality(SceneRenderer* renderer, const ParticlesObject* particles) const;
 
 	/// Determines the color of each particle to be used for rendering.
-	std::vector<ColorA> particleColors(const ParticlesObject* particles, bool highlightSelection, bool includeTransparency) const;
+	ConstPropertyPtr particleColors(const ParticlesObject* particles, bool highlightSelection) const;
 
 	/// Determines the particle radii used for rendering.
-	std::vector<FloatType> particleRadii(const ParticlesObject* particles) const;
+	ConstPropertyPtr particleRadii(const ParticlesObject* particles) const;
 
 	/// Determines the display radius of a single particle.
 	FloatType particleRadius(size_t particleIndex, ConstPropertyAccess<FloatType> radiusProperty, const PropertyObject* typeProperty) const;
 
-	/// s the display color of a single particle.
-	ColorA particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty, ConstPropertyAccess<FloatType> transparencyProperty) const;
+	/// Returns the display color of a single particle.
+	Color particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty) const;
 
 	/// Computes the bounding box of the particles.
 	Box3 particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<FloatType> radiusProperty, ConstPropertyAccess<Vector3> shapeProperty, bool includeParticleRadius) const;
@@ -105,6 +108,17 @@ public:
 
     Q_PROPERTY(Ovito::ParticlePrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
     Q_PROPERTY(Ovito::Particles::ParticlesVis::ParticleShape particleShape READ particleShape WRITE setParticleShape);
+
+private:
+
+	/// Renders particle types that have a mesh-based shape assigned.
+	void renderMeshBasedParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+
+	/// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
+	void renderPrimitiveParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+
+	/// Renders all particles with a (sphero-)cylindrical shape.
+	void renderCylindricParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
 
 private:
 
@@ -130,14 +144,14 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	ParticlePickInfo(ParticlesVis* visElement, const PipelineFlowState& pipelineState, std::vector<size_t> subobjectToParticleMapping = {}) :
-		_visElement(visElement), _pipelineState(pipelineState), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
+	ParticlePickInfo(ParticlesVis* visElement, DataOORef<const ParticlesObject> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) :
+		_visElement(visElement), _particles(std::move(particles)), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
 
-	/// The pipeline flow state containing the particle properties.
-	const PipelineFlowState& pipelineState() const { return _pipelineState; }
+	/// Returns the particles object.
+	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
 
-	/// Replaces the stored pipeline flow state with a new version.
-	void setPipelineState(const PipelineFlowState& pipelineState) { _pipelineState = pipelineState; }
+	/// Updates the reference to the particles object.
+	void setParticles(DataOORef<const ParticlesObject> particles) { _particles = std::move(particles); }
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
 	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
@@ -147,22 +161,19 @@ public:
 	size_t particleIndexFromSubObjectID(quint32 subobjID) const;
 
 	/// Builds the info string for a particle to be displayed in the status bar.
-	static QString particleInfoString(const PipelineFlowState& pipelineState, size_t particleIndex);
+	static QString particleInfoString(const ParticlesObject& particles, size_t particleIndex);
 
 private:
-
-	/// The pipeline flow state containing the particle properties.
-	PipelineFlowState _pipelineState;
 
 	/// The vis element that rendered the particles.
 	OORef<ParticlesVis> _visElement;
 
-	/// Stores the index of the particle that is associated with a rendering primitive sub-object ID.
-	std::vector<size_t> _subobjectToParticleMapping;
+	/// The particles object.
+	DataOORef<const ParticlesObject> _particles;
+
+	/// Stores the indices of the particles associated with the rendering primitives.
+	ConstDataBufferPtr _subobjectToParticleMapping;
 };
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::ParticlesVis::ParticleShape);
-Q_DECLARE_TYPEINFO(Ovito::Particles::ParticlesVis::ParticleShape, Q_PRIMITIVE_TYPE);

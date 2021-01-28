@@ -54,7 +54,7 @@
             <row>
               <entry>XYZ</entry>
               <entry><para>Simple column-based text format for particle data, which is documented <link xlink:href="http://en.wikipedia.org/wiki/XYZ_file_format">here</link>.</para>
-                <para>OVITO can read the <link xlink:href="http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz">extended XYZ format</link>, which supports arbitrary sets of particle data columns, 
+                <para>OVITO can read the <link xlink:href="https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz">"extended XYZ" format</link>, which supports arbitrary sets of particle data columns, 
                 and can store addtional information such as the simulation cell geometry and boundary conditions.</para>
                 </entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
@@ -66,12 +66,12 @@
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.voxel_grid">voxel&#xA0;grids</link></entry>
             </row>
             <row>
-              <entry>Gromacs GRO</entry>
+              <entry>Gromacs&#xA0;GRO</entry>
               <entry><para>Coordinate file format used by the <link xlink:href="http://www.gromacs.org/">GROMACS</link> simulation code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
-              <entry>Gromacs XTC</entry>
+              <entry>Gromacs&#xA0;XTC</entry>
               <entry><para>Trajectory file format used by the <link xlink:href="http://www.gromacs.org/">GROMACS</link> simulation code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
@@ -103,7 +103,7 @@
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
-              <entry>Quantum Espresso</entry>
+              <entry>Quantum&#xA0;Espresso</entry>
               <entry><para>Input data format used by the <link xlink:href="https://www.quantum-espresso.org/">Quantum Espresso</link> electronic-structure calculation code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
@@ -148,9 +148,35 @@
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.bonds">bonds</link></entry>
             </row>
             <row>
-              <entry>VTK</entry>
-              <entry><para>Format used by the <emphasis>Visualization Toolkit</emphasis> (VTK). This text-based format is documented <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. Note that OVITO supports only triangular cells.</para></entry>
+              <entry>VTK (legacy&#xA0;format)</entry>
+              <entry><para>File format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only ASCII-based files containing PolyData and UnstructuredGrid data with triangular cells.</para></entry>
               <entry><link linkend="scene_objects.triangle_mesh">triangle&#xA0;meshes</link></entry>
+            </row>
+            <row>
+              <entry>VTI (VTK&#xA0;ImageData)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only a subset of the full format specification and is geared towards files written by the <link xlink:href="https://www.aspherix-dem.com/">Aspherix</link> simulation code.</para></entry>
+              <entry><link linkend="scene_objects.voxel_grid">voxel&#xA0;grids</link></entry>
+            </row>
+            <row>
+              <entry>VTP (VTK&#xA0;PolyData)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. The format is described <link xlink:href="http://www.vtk.org/VTK/img/file-formats.pdf">here</link>. 
+                The file reader currently supports only a subset of the full format specification and is geared towards mesh geometry and particle data files written by the <link xlink:href="https://www.aspherix-dem.com/">Aspherix</link> simulation code.
+                VTK PolyData blocks consisting of triangle strips or polygons are imported as surface meshes by OVITO. PolyData consisting of vertices only are imported as a set of particles.</para></entry>
+              <entry><link linkend="scene_objects.surface_mesh">surface&#xA0;meshes</link>, <link linkend="scene_objects.particles">particles</link></entry>
+            </row>
+            <row>
+              <entry>VTM (VTK&#xA0;MultiBlock)</entry>
+              <entry><para>XML-based file format used by the <emphasis>Visualization Toolkit</emphasis> (VTK) and the software <emphasis>ParaView</emphasis>. VTK multiblock data files are meta-files that point to a list of VTK XML files,
+                which will all be loaded by OVITO as a single data collection.</para></entry>
+              <entry>any</entry>
+            </row>
+            <row>
+              <entry>PVD (ParaView&#xA0;data&#xA0;file)</entry>
+              <entry><para>XML-based file format used by the software <emphasis>ParaView</emphasis>, which describes a trajectory formed by a sequence of individual data files.
+              The file format is described <link xlink:href="https://www.paraview.org/Wiki/ParaView/Data_formats#PVD_File_Format">here</link>.</para></entry>
+              <entry>any</entry>
             </row>
             <row>
               <entry>OBJ</entry>

@@ -24,7 +24,6 @@
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
-#include <ovito/core/dataset/pipeline/StaticSource.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/PluginManager.h>
@@ -216,25 +215,20 @@ void ViewportMenu::onCreateCamera()
 		// Create and initialize the camera object.
 		OORef<PipelineSceneNode> cameraNode;
 		{
-			UndoSuspender noUndo(_viewport->dataset()->undoStack());
+			UndoSuspender noUndo(_viewport);
+			OVITO_ASSERT(_viewport = _viewport->dataset()->viewportConfig()->activeViewport());
 
-			QVector<OvitoClassPtr> cameraTypes = PluginManager::instance().listClasses(AbstractCameraObject::OOClass());
-			if(cameraTypes.empty())
+			// Create an instance of the StandardCameraSource class.
+			OvitoClassPtr cameraSourceType = PluginManager::instance().findClass(QStringLiteral("StdObj"), QStringLiteral("StandardCameraSource"));
+			if(!cameraSourceType)
 				_viewport->throwException(tr("OVITO has been built without support for camera objects."));
-			OORef<AbstractCameraObject> cameraObj = static_object_cast<AbstractCameraObject>(cameraTypes.front()->createInstance(_viewport->dataset()));
 
-			cameraObj->setPerspectiveCamera(_viewport->isPerspectiveProjection());
-			if(_viewport->isPerspectiveProjection())
-				cameraObj->setFieldOfView(0, _viewport->fieldOfView());
-			else
-				cameraObj->setFieldOfView(0, _viewport->fieldOfView());
+			// Note: The StandardCameraSource::initializeObject() method will adopt the current parameters of this Viewport automatically.
+			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance(_viewport->dataset(), ExecutionContext::Interactive));
 
 			// Create an object node with a data source for the camera.
-			OORef<DataCollection> cameraDataCollection = new DataCollection(_viewport->dataset());
-			cameraDataCollection->addObject(cameraObj);
-			OORef<StaticSource> cameraSource = new StaticSource(_viewport->dataset(), cameraDataCollection);
-			cameraNode = new PipelineSceneNode(_viewport->dataset());
-			cameraNode->setDataProvider(cameraSource);
+			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset(), ExecutionContext::Interactive);
+			cameraNode->setDataProvider(std::move(cameraSource));
 
 			// Give the new node a name.
 			cameraNode->setNodeName(scene->makeNameUnique(tr("Camera")));

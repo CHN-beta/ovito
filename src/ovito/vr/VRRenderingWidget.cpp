@@ -316,7 +316,7 @@ void VRRenderingWidget::paintGL()
             // Render VR controllers.
             for(const AffineTransformation& controllerTM : controllerTMs) {
                 if(!_controllerGeometry || !_controllerGeometry->isValid(_sceneRenderer)) {
-                    _controllerGeometry = _sceneRenderer->createArrowPrimitive(ArrowPrimitive::ArrowShape, ArrowPrimitive::NormalShading, ArrowPrimitive::HighQuality, false);
+                    _controllerGeometry = _sceneRenderer->createArrowPrimitive(CylinderPrimitive::ArrowShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality, false);
                     _controllerGeometry->startSetElements(1);
                     _controllerGeometry->setElement(0, Point3(0,0,_controllerSize), Vector3(0,0,-_controllerSize), ColorA(1.0f, 0.0f, 0.0f, 1.0f), 0.02f);
                     _controllerGeometry->endSetElements();

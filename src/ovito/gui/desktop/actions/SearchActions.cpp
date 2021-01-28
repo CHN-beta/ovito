@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
+#include <ovito/gui/desktop/actions/WidgetActionManager.h>
 
 namespace Ovito {
 
@@ -103,7 +103,7 @@ private:
 	std::map<QString, int> _useCounts;
 };
 
-void ActionManager::setupCommandSearch()
+void WidgetActionManager::setupCommandSearch()
 {
 	// Set up QAction that activates quick command search.
 	QWidgetAction* commandQuickSearchAction = new QWidgetAction(this);
@@ -119,7 +119,7 @@ void ActionManager::setupCommandSearch()
 	// Subclass QLineEdit.
 	class SearchField : public QLineEdit {
 	public:
-		SearchField(ActionManager* actionManager) : _actionManager(actionManager) {
+		SearchField(WidgetActionManager* actionManager) : _actionManager(actionManager) {
 			_completer = new QCompleter(this);
 			_completer->setCompletionMode(QCompleter::PopupCompletion);
 			_completer->setCaseSensitivity(Qt::CaseInsensitive);
@@ -200,7 +200,7 @@ void ActionManager::setupCommandSearch()
 			static_cast<QListView*>(_completer->popup())->setItemDelegate(new ItemDelegate());
 			_completer->popup()->setIconSize(QSize(44, 32));
 
-			connect(_completer, qOverload<const QModelIndex&>(&QCompleter::activated), actionManager, &ActionManager::onQuickSearchCommandSelected);
+			connect(_completer, qOverload<const QModelIndex&>(&QCompleter::activated), actionManager, &WidgetActionManager::onQuickSearchCommandSelected);
 			connect(_completer, qOverload<const QModelIndex&>(&QCompleter::activated), this, &QLineEdit::clear);
 		}
 		void showPopup() {
@@ -221,7 +221,7 @@ void ActionManager::setupCommandSearch()
 			return QSize(textWidth * 5/4, 0).expandedTo(QLineEdit::sizeHint());
 		}
 	protected:
-		ActionManager* _actionManager;
+		WidgetActionManager* _actionManager;
 		QCompleter* _completer;
 		virtual void keyPressEvent(QKeyEvent* event) override {
 			if(_completer->popup()->isVisible()) {
@@ -272,7 +272,7 @@ void ActionManager::setupCommandSearch()
 }
 
 // Is called when the user selects a command in the quick search field.
-void ActionManager::onQuickSearchCommandSelected(const QModelIndex& index)
+void WidgetActionManager::onQuickSearchCommandSelected(const QModelIndex& index)
 {
 	QCompleter* completer = qobject_cast<QCompleter*>(sender());
 	ActionListModel* actionModel = static_cast<ActionListModel*>(completer->model());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,14 +36,6 @@ public:
 
 	/// \brief Virtual base destructor.
 	virtual ~PrimitiveBase() {}
-
-	/// \brief Returns true if the primitive buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) = 0;
-
-	/// \brief Renders the primitive using the given renderer.
-	virtual void render(SceneRenderer* renderer) = 0;
 };
 
 }	// End of namespace
-
-

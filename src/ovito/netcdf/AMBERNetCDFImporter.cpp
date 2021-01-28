@@ -42,6 +42,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/Future.h>
@@ -80,7 +81,7 @@ void fullToVoigt(size_t particleCount, T *full, T *voigt) {
 bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	QString filename = QDir::toNativeSeparators(file.localFilePath());
-	if(filename.isEmpty())
+	if(filename.isEmpty() || filename.startsWith(QChar(':')))
 		return false;
 
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
@@ -114,24 +115,6 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 	}
 
 	return false;
-}
-
-/******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const Frame& frame)
-{
-	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
-		.then(executor(), [this, frame](const FileHandle& fileHandle) {
-
-			// Start task that inspects the file header to determine the contained data columns.
-			FrameLoaderPtr inspectionTask = std::make_shared<FrameLoader>(frame, fileHandle);
-			return dataset()->taskManager().runTaskAsync(inspectionTask)
-				.then([](const FileSourceImporter::FrameDataPtr& frameData) {
-					return static_cast<FrameData*>(frameData.get())->detectedColumnMapping();
-				});
-		});
 }
 
 /******************************************************************************
@@ -177,9 +160,9 @@ void AMBERNetCDFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 /******************************************************************************
 * Open file if not already opened
 ******************************************************************************/
-void AMBERNetCDFImporter::FrameLoader::openNetCDF(const QString &filename, FrameData* frameData)
+QString AMBERNetCDFImporter::NetCDFFile::open(const QString& filename)
 {
-	closeNetCDF();
+	close();
 
 	// Open the input file for reading.
 	NCERR( nc_open(filename.toLocal8Bit().constData(), NC_NOWRITE, &_ncid) );
@@ -188,7 +171,7 @@ void AMBERNetCDFImporter::FrameLoader::openNetCDF(const QString &filename, Frame
 
 	// Particle data may be stored in a subgroup named "AMBER" instead of the root group.
 	int amber_ncid;
-	if (nc_inq_ncid(_root_ncid, "AMBER", &amber_ncid) == NC_NOERR) {
+	if(nc_inq_ncid(_root_ncid, "AMBER", &amber_ncid) == NC_NOERR) {
 		_ncid = amber_ncid;
 	}
 
@@ -199,14 +182,14 @@ void AMBERNetCDFImporter::FrameLoader::openNetCDF(const QString &filename, Frame
 	NCERR( nc_get_att_text(_ncid, NC_GLOBAL, "Conventions", conventions_str.get()) );
 	conventions_str[len] = '\0';
 	if (strcmp(conventions_str.get(), "AMBER"))
-		throw Exception(tr("NetCDF file %1 follows '%2' conventions, expected 'AMBER'.").arg(filename, conventions_str.get()));
+		throw Exception(tr("NetCDF file follows '%1' conventions, expected 'AMBER'.").arg(conventions_str.get()));
 
 	// Read optional file title.
+	QString title;
 	if(nc_inq_attlen(_ncid, NC_GLOBAL, "title", &len) == NC_NOERR) {
 		std::unique_ptr<char[]> title_str(new char[len+1]);
 		NCERR( nc_get_att_text(_ncid, NC_GLOBAL, "title", title_str.get()) );
-		title_str[len] = '\0';
-		frameData->attributes().insert(QStringLiteral("NetCDF_Title"), QVariant::fromValue(QString::fromLocal8Bit(title_str.get())));
+		title = QString::fromLocal8Bit(title_str.get(), len);
 	}
 
 	// Get dimensions
@@ -234,15 +217,17 @@ void AMBERNetCDFImporter::FrameLoader::openNetCDF(const QString &filename, Frame
 	if (nc_inq_varid(_ncid, "cell_angles", &_cell_angles_var) != NC_NOERR)
 		_cell_angles_var = -1;
 	if (nc_inq_varid(_ncid, "shear_dx", &_shear_dx_var) != NC_NOERR)
-		_shear_dx_var = -1;
+		_shear_dx_var = -1;	
+
+	return title;
 }
 
 /******************************************************************************
 * Close the current NetCDF file.
 ******************************************************************************/
-void AMBERNetCDFImporter::FrameLoader::closeNetCDF()
+void AMBERNetCDFImporter::NetCDFFile::close()
 {
-	if (_ncIsOpen) {
+	if(_ncIsOpen) {
 		NCERR( nc_close(_root_ncid) );
 		_ncid = -1;
 		_root_ncid = -1;
@@ -251,9 +236,58 @@ void AMBERNetCDFImporter::FrameLoader::closeNetCDF()
 }
 
 /******************************************************************************
+* Scans the NetCDF file and determines the set of particle properties it contains.
+******************************************************************************/
+ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(size_t movieFrame)
+{
+	// Scan NetCDF and iterate supported column names.
+	ParticleInputColumnMapping columnMapping;
+
+	// Now iterate over all variables and see whether they start with either atom or frame dimensions.
+	int nVars;
+	NCERR( nc_inq_nvars(_ncid, &nVars) );
+	for(int varId = 0; varId < nVars; varId++) {
+		char name[NC_MAX_NAME+1];
+		nc_type type;
+
+		// Retrieve NetCDF meta-information.
+		int nDims, dimIds[NC_MAX_VAR_DIMS];
+		NCERR( nc_inq_var(_ncid, varId, name, &type, &nDims, dimIds, NULL) );
+		OVITO_ASSERT(nDims >= 1);
+
+		int nDimsDetected;
+		size_t componentCount;
+		size_t startp[4];
+		size_t countp[4];
+		// Check if dimensions make sense and we can understand them.
+		if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
+			// Do we support this data type?
+			if(type == NC_BYTE || type == NC_SHORT || type == NC_INT || type == NC_LONG) {
+				columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int, componentCount));
+			}
+			else if(type == NC_INT64) {
+				columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int64, componentCount));
+			}
+			else if(type == NC_FLOAT || type == NC_DOUBLE) {
+				columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Float, componentCount));
+				if(qstrcmp(name, "coordinates") == 0 || qstrcmp(name, "unwrapped_coordinates") == 0)
+					_coordinatesVar = varId;
+			}
+			else {
+				qDebug() << "Skipping NetCDF variable " << name << " because data type is not known.";
+			}
+		}
+	}
+	if(_coordinatesVar == -1)
+		throw Exception(tr("NetCDF file contains no variable named 'coordinates' or 'unwrapped_coordinates'."));
+
+	return columnMapping;
+}
+
+/******************************************************************************
 * Close the current NetCDF file.
 ******************************************************************************/
-bool AMBERNetCDFImporter::FrameLoader::detectDims(int movieFrame, int particleCount, int nDims, int* dimIds, int& nDimsDetected, size_t& componentCount, size_t* startp, size_t* countp)
+bool AMBERNetCDFImporter::NetCDFFile::detectDims(int movieFrame, int particleCount, int nDims, int* dimIds, int& nDimsDetected, size_t& componentCount, size_t* startp, size_t* countp)
 {
 	if(nDims < 1) return false;
 
@@ -303,7 +337,7 @@ bool AMBERNetCDFImporter::FrameLoader::detectDims(int movieFrame, int particleCo
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
+void AMBERNetCDFImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading NetCDF file %1").arg(fileHandle().toString()));
 
@@ -314,376 +348,324 @@ FileSourceImporter::FrameDataPtr AMBERNetCDFImporter::FrameLoader::loadFile()
 	// Get frame number.
 	size_t movieFrame = frame().lineNumber;
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<FrameData>();
-
 	// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
 	NetCDFExclusiveAccess locker(this);
-	if(!locker.isLocked()) return {};
+	if(!locker.isLocked()) return;
 
-	try {
-		openNetCDF(filename, frameData.get());
+	// Open the NetCDF file for reading.
+	NetCDFFile ncFile;
+	QString title = ncFile.open(filename);
+	if(!title.isEmpty())
+		state().setAttribute(QStringLiteral("NetCDF_Title"), QVariant::fromValue(title), dataSource());
 
-		// Scan NetCDF and iterate supported column names.
-		ParticleInputColumnMapping columnMapping;
+	// Scan NetCDF file and enumerate supported column names.
+	ParticleInputColumnMapping columnMapping = ncFile.detectColumnMapping(movieFrame);
 
-		// Now iterate over all variables and see whether they start with either atom or frame dimensions.
-		int nVars;
-		int coordinatesVar = -1;
-		NCERR( nc_inq_nvars(_ncid, &nVars) );
-		for(int varId = 0; varId < nVars; varId++) {
-			char name[NC_MAX_NAME+1];
-			nc_type type;
+	// Set up column-to-property mapping.
+	if(_useCustomColumnMapping && !_customColumnMapping.empty())
+		columnMapping = _customColumnMapping;
 
-			// Retrieve NetCDF meta-information.
-			int nDims, dimIds[NC_MAX_VAR_DIMS];
-			NCERR( nc_inq_var(_ncid, varId, name, &type, &nDims, dimIds, NULL) );
-			OVITO_ASSERT(nDims >= 1);
+	// Enumerate global attributes.
+	int nVars;
+	NCERR( nc_inq_nvars(ncFile._ncid, &nVars) );
+	for(int varId = 0; varId < nVars; varId++) {
+		char name[NC_MAX_NAME+1];
+		nc_type type;
 
-			int nDimsDetected;
-			size_t componentCount;
-			size_t startp[4];
-			size_t countp[4];
-			// Check if dimensions make sense and we can understand them.
-			if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
-				// Do we support this data type?
-				if(type == NC_BYTE || type == NC_SHORT || type == NC_INT || type == NC_LONG) {
-					columnMapping.push_back(mapVariableToColumn(name, PropertyStorage::Int, componentCount));
-				}
-				else if(type == NC_INT64) {
-					columnMapping.push_back(mapVariableToColumn(name, PropertyStorage::Int64, componentCount));
-				}
-				else if(type == NC_FLOAT || type == NC_DOUBLE) {
-					columnMapping.push_back(mapVariableToColumn(name, PropertyStorage::Float, componentCount));
-					if(qstrcmp(name, "coordinates") == 0 || qstrcmp(name, "unwrapped_coordinates") == 0)
-						coordinatesVar = varId;
-				}
-				else {
-					qDebug() << "Skipping NetCDF variable " << name << " because data type is not known.";
-				}
+		// Retrieve NetCDF meta-information.
+		int nDims, dimIds[NC_MAX_VAR_DIMS];
+		NCERR( nc_inq_var(ncFile._ncid, varId, name, &type, &nDims, dimIds, NULL) );
+		OVITO_ASSERT(nDims >= 1);
+
+		// Read in scalar values as attributes.
+		if(nDims == 1 && dimIds[0] == ncFile._frame_dim) {
+			if(type == NC_SHORT || type == NC_INT || type == NC_LONG) {
+				size_t startp[2] = { movieFrame, 0 };
+				size_t countp[2] = { 1, 1 };
+				int value;
+				NCERR( nc_get_vara_int(ncFile._ncid, varId, startp, countp, &value) );
+				state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
 			}
-
-			// Read in scalar values as attributes.
-			if(nDims == 1 && dimIds[0] == _frame_dim) {
-				if(type == NC_SHORT || type == NC_INT || type == NC_LONG) {
-					size_t startp[2] = { movieFrame, 0 };
-					size_t countp[2] = { 1, 1 };
-					int value;
-					NCERR( nc_get_vara_int(_ncid, varId, startp, countp, &value) );
-					frameData->attributes().insert(QString::fromLocal8Bit(name), QVariant::fromValue(value));
-				}
-				else if(type == NC_INT64) {
-					size_t startp[2] = { movieFrame, 0 };
-					size_t countp[2] = { 1, 1 };
-					qlonglong value;
-					NCERR( nc_get_vara_longlong(_ncid, varId, startp, countp, &value) );
-					frameData->attributes().insert(QString::fromLocal8Bit(name), QVariant::fromValue(value));
-				}
-				else if(type == NC_FLOAT || type == NC_DOUBLE) {
-					size_t startp[2] = { movieFrame, 0 };
-					size_t countp[2] = { 1, 1 };
-					double value;
-					NCERR( nc_get_vara_double(_ncid, varId, startp, countp, &value) );
-					frameData->attributes().insert(QString::fromLocal8Bit(name), QVariant::fromValue(value));
-				}
+			else if(type == NC_INT64) {
+				size_t startp[2] = { movieFrame, 0 };
+				size_t countp[2] = { 1, 1 };
+				qlonglong value;
+				NCERR( nc_get_vara_longlong(ncFile._ncid, varId, startp, countp, &value) );
+				state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
+			}
+			else if(type == NC_FLOAT || type == NC_DOUBLE) {
+				size_t startp[2] = { movieFrame, 0 };
+				size_t countp[2] = { 1, 1 };
+				double value;
+				NCERR( nc_get_vara_double(ncFile._ncid, varId, startp, countp, &value) );
+				state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
 			}
 		}
-		if(coordinatesVar == -1)
-			throw Exception(tr("NetCDF file contains no variable named 'coordinates' or 'unwrapped_coordinates'."));
+	}
 
-		// Check if the only thing we need to do is read column information.
-		if(_parseFileHeaderOnly) {
-			frameData->detectedColumnMapping() = std::move(columnMapping);
-			closeNetCDF();
-			return frameData;
-		}
+	// Total number of particles.
+	size_t particleCount;
+	NCERR( nc_inq_dimlen(ncFile._ncid, ncFile._atom_dim, &particleCount) );
 
-		// Set up column-to-property mapping.
-		if(_useCustomColumnMapping && !_customColumnMapping.empty())
-			columnMapping = _customColumnMapping;
+	// Simulation cell. Note that cell_origin is an extension to the AMBER specification.
+	double o[3] = { 0.0, 0.0, 0.0 };
+	double l[3] = { 0.0, 0.0, 0.0 };
+	double a[3] = { 90.0, 90.0, 90.0 };
+	double d[3] = { 0.0, 0.0, 0.0 };
+	size_t startp[4] = { movieFrame, 0, 0, 0 };
+	size_t countp[4] = { 1, 3, 0, 0 };
+	if(ncFile._cell_origin_var != -1)
+		NCERR( nc_get_vara_double(ncFile._ncid, ncFile._cell_origin_var, startp, countp, o) );
+	if(ncFile._cell_lengths_var != -1)
+		NCERR( nc_get_vara_double(ncFile._ncid, ncFile._cell_lengths_var, startp, countp, l) );
+	if(ncFile._cell_angles_var != -1)
+		NCERR( nc_get_vara_double(ncFile._ncid, ncFile._cell_angles_var, startp, countp, a) );
+	if(ncFile._shear_dx_var != -1)
+		NCERR( nc_get_vara_double(ncFile._ncid, ncFile._shear_dx_var, startp, countp, d) );
 
-		// Total number of particles.
-		size_t particleCount;
-		NCERR( nc_inq_dimlen(_ncid, _atom_dim, &particleCount) );
+	// Periodic boundary conditions. Non-periodic dimensions have length zero
+	// according to AMBER specification.
+	std::array<bool,3> pbc;
+	bool isCellOrthogonal = true;
+	for (int i = 0; i < 3; i++) {
+		if (std::abs(l[i]) < 1e-12)  pbc[i] = false;
+		else pbc[i] = true;
+		if(std::abs(a[i] - 90.0) > 1e-12 || std::abs(d[i]) > 1e-12)
+			isCellOrthogonal = false;
+	}
+	simulationCell()->setPbcFlags(pbc[0], pbc[1], pbc[2]);
 
-		// Simulation cell. Note that cell_origin is an extension to the AMBER specification.
-		double o[3] = { 0.0, 0.0, 0.0 };
-		double l[3] = { 0.0, 0.0, 0.0 };
-		double a[3] = { 90.0, 90.0, 90.0 };
-		double d[3] = { 0.0, 0.0, 0.0 };
-		size_t startp[4] = { movieFrame, 0, 0, 0 };
-		size_t countp[4] = { 1, 3, 0, 0 };
-		if(_cell_origin_var != -1)
-			NCERR( nc_get_vara_double(_ncid, _cell_origin_var, startp, countp, o) );
-		if(_cell_lengths_var != -1)
-			NCERR( nc_get_vara_double(_ncid, _cell_lengths_var, startp, countp, l) );
-		if(_cell_angles_var != -1)
-			NCERR( nc_get_vara_double(_ncid, _cell_angles_var, startp, countp, a) );
-		if(_shear_dx_var != -1)
-			NCERR( nc_get_vara_double(_ncid, _shear_dx_var, startp, countp, d) );
+	Vector3 va, vb, vc;
+	if(isCellOrthogonal) {
+		va = Vector3(l[0], 0, 0);
+		vb = Vector3(0, l[1], 0);
+		vc = Vector3(0, 0, l[2]);
+	}
+	else {
+		// Express cell vectors va, vb and vc in the X,Y,Z-system
+		a[0] = qDegreesToRadians(a[0]);
+		a[1] = qDegreesToRadians(a[1]);
+		a[2] = qDegreesToRadians(a[2]);
+		double cosines[3];
+		for(size_t i = 0; i < 3; i++)
+			cosines[i] = (std::abs(a[i] - qRadiansToDegrees(90.0)) > 1e-12) ? cos(a[i]) : 0.0;
+		va = Vector3(l[0], 0, 0);
+		vb = Vector3(l[1]*cosines[2], l[1]*sin(a[2]), 0);
+		double cx = cosines[1];
+		double cy = (cosines[0] - cx*cosines[2])/sin(a[2]);
+		double cz = sqrt(1. - cx*cx - cy*cy);
+		vc = Vector3(l[2]*cx+d[0], l[2]*cy+d[1], l[2]*cz);
+	}
+	simulationCell()->setCellMatrix(AffineTransformation(va, vb, vc, Vector3(o[0], o[1], o[2])));
 
-		// Periodic boundary conditions. Non-periodic dimensions have length zero
-		// according to AMBER specification.
-		std::array<bool,3> pbc;
-		bool isCellOrthogonal = true;
-		for (int i = 0; i < 3; i++) {
-			if (std::abs(l[i]) < 1e-12)  pbc[i] = false;
-			else pbc[i] = true;
-			if(std::abs(a[i] - 90.0) > 1e-12 || std::abs(d[i]) > 1e-12)
-				isCellOrthogonal = false;
-		}
-		frameData->simulationCell().setPbcFlags(pbc);
+	// Report to user.
+	beginProgressSubSteps(columnMapping.size());
 
-		Vector3 va, vb, vc;
-		if(isCellOrthogonal) {
-			va = Vector3(l[0], 0, 0);
-			vb = Vector3(0, l[1], 0);
-			vc = Vector3(0, 0, l[2]);
-		}
-		else {
-			// Express cell vectors va, vb and vc in the X,Y,Z-system
-			a[0] = qDegreesToRadians(a[0]);
-			a[1] = qDegreesToRadians(a[1]);
-			a[2] = qDegreesToRadians(a[2]);
-			double cosines[3];
-			for(size_t i = 0; i < 3; i++)
-				cosines[i] = (std::abs(a[i] - qRadiansToDegrees(90.0)) > 1e-12) ? cos(a[i]) : 0.0;
-			va = Vector3(l[0], 0, 0);
-			vb = Vector3(l[1]*cosines[2], l[1]*sin(a[2]), 0);
-			double cx = cosines[1];
-			double cy = (cosines[0] - cx*cosines[2])/sin(a[2]);
-			double cz = sqrt(1. - cx*cx - cy*cy);
-			vc = Vector3(l[2]*cx+d[0], l[2]*cy+d[1], l[2]*cz);
-		}
-		frameData->simulationCell().setMatrix(AffineTransformation(va, vb, vc, Vector3(o[0], o[1], o[2])));
+	// We inpsect the particle coordinate array in the NetCDF first before any properties are loaded
+	// in order to determine the number of particles (which might actually be lower than the size of the "atoms" dimension).
 
-		// Report to user.
-		beginProgressSubSteps(columnMapping.size());
+	// Retrieve NetCDF variable meta-information.
+	int nDims, dimIds[NC_MAX_VAR_DIMS];
+	NCERR( nc_inq_var(ncFile._ncid, ncFile._coordinatesVar, NULL, NULL, &nDims, dimIds, NULL) );
 
-		// We inpsect the particle coordinate array in the NetCDF first before any properties are loaded
-		// in order to determine the number of particles (which might actually be lower than the size of the "atoms" dimension).
+	// Detect dims
+	int nDimsDetected;
+	size_t componentCount;
+	if(ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
+		auto data = std::make_unique<FloatType[]>(componentCount * particleCount);
+#ifdef FLOATTYPE_FLOAT
+		NCERRI( nc_get_vara_float(ncFile._ncid, ncFile._coordinatesVar, startp, countp, data.get()), tr("(While reading variable 'coordinates'.)"));
+		while(particleCount > 0 && data[componentCount * (particleCount-1)] == NC_FILL_FLOAT) particleCount--;
+#else
+		NCERRI( nc_get_vara_double(ncFile._ncid, ncFile._coordinatesVar, startp, countp, data.get()), tr("(While reading variable 'coordinates'.)"));
+		while(particleCount > 0 && data[componentCount * (particleCount-1)] == NC_FILL_DOUBLE) particleCount--;
+#endif
+	}
+	setParticleCount(particleCount);
+
+	// Now iterate over all NetCDF variables and load the appropriate frame data.
+	std::vector<PropertyObject*> loadedProperties;
+	for(const InputColumnInfo& column : columnMapping) {
+		if(isCanceled())
+			return;
+		if(&column != &columnMapping.front())
+			nextProgressSubStep();
+
+		PropertyObject* property = nullptr;
+		QString columnName = column.columnName;
+		QString propertyName = column.property.name();
+		int dataType = column.dataType;
+		if(dataType == QMetaType::Void) continue;
+
+		if(dataType != PropertyObject::Int && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float)
+			throw Exception(tr("Invalid custom particle property (data type %1) for input file column '%2' of NetCDF file.").arg(dataType).arg(columnName));
 
 		// Retrieve NetCDF variable meta-information.
-		int nDims, dimIds[NC_MAX_VAR_DIMS];
-		NCERR( nc_inq_var(_ncid, coordinatesVar, NULL, NULL, &nDims, dimIds, NULL) );
+		nc_type type;
+		int varId;
+		NCERR( nc_inq_varid(ncFile._ncid, columnName.toLocal8Bit().constData(), &varId) );
+		NCERR( nc_inq_var(ncFile._ncid, varId, NULL, &type, &nDims, dimIds, NULL) );
+		if(nDims == 0) continue;
 
-		// Detect dims
-		int nDimsDetected;
-		size_t componentCount;
-		if(detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
-			auto data = std::make_unique<FloatType[]>(componentCount * particleCount);
-#ifdef FLOATTYPE_FLOAT
-			NCERRI( nc_get_vara_float(_ncid, coordinatesVar, startp, countp, data.get()), tr("(While reading variable 'coordinates'.)"));
-			while(particleCount > 0 && data[componentCount * (particleCount-1)] == NC_FILL_FLOAT) particleCount--;
-#else
-			NCERRI( nc_get_vara_double(_ncid, coordinatesVar, startp, countp, data.get()), tr("(While reading variable 'coordinates'.)"));
-			while(particleCount > 0 && data[componentCount * (particleCount-1)] == NC_FILL_DOUBLE) particleCount--;
-#endif
+		// Construct pointers to NetCDF dimension indices.
+		if(!ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp))
+			continue;
+
+		// Create property to load this information into.
+		ParticlesObject::Type propertyType = (ParticlesObject::Type)column.property.type();
+		if(propertyType != ParticlesObject::UserProperty) {
+			// Create standard property.
+			property = particles()->createProperty(propertyType, true, executionContext());
 		}
+		else {
+			// Create a new user-defined property for the column.
+			property = particles()->createProperty(propertyName, dataType, componentCount, 0, true);
+		}
+		loadedProperties.push_back(property);
 
-		// Now iterate over all NetCDF variables and load the appropriate frame data.
-		for(const InputColumnInfo& column : columnMapping) {
-			if(isCanceled()) {
-				closeNetCDF();
-				return {};
-			}
-			if(&column != &columnMapping.front())
-				nextProgressSubStep();
-
-			PropertyPtr property;
-			QString columnName = column.columnName;
-			QString propertyName = column.property.name();
-			int dataType = column.dataType;
-			if(dataType == QMetaType::Void) continue;
-
-			if(dataType != PropertyStorage::Int && dataType != PropertyStorage::Int64 && dataType != PropertyStorage::Float)
-				throw Exception(tr("Invalid custom particle property (data type %1) for input file column '%2' of NetCDF file.").arg(dataType).arg(columnName));
-
-			// Retrieve NetCDF variable meta-information.
-			nc_type type;
-			int varId;
-			NCERR( nc_inq_varid(_ncid, columnName.toLocal8Bit().constData(), &varId) );
-			NCERR( nc_inq_var(_ncid, varId, NULL, &type, &nDims, dimIds, NULL) );
-			if(nDims == 0) continue;
-
-			// Construct pointers to NetCDF dimension indices.
-			if(!detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp))
-				continue;
-
-			// Create property to load this information into.
-			ParticlesObject::Type propertyType = (ParticlesObject::Type)column.property.type();
-			if(propertyType != ParticlesObject::UserProperty) {
-				// Look for existing standard property.
-				property = frameData->particles().findStandardProperty(propertyType);
-				if(!property) {
-					// Create standard property.
-					property = ParticlesObject::OOClass().createStandardStorage(particleCount, propertyType, true);
-					frameData->particles().addProperty(property);
-				}
+		// Make sure the dimensions match.
+		bool doVoigtConversion = false;
+		if(componentCount != property->componentCount()) {
+			// For standard particle properties describing symmetric tensors in Voigt notion, we perform automatic
+			// conversion from the 3x3 full tensors stored in the NetCDF file.
+			if(componentCount == 9 && property->componentCount() == 6 && property->dataType() == PropertyObject::Float) {
+				doVoigtConversion = true;
 			}
 			else {
-				// Look for existing user-defined property with the same name.
-				property = frameData->particles().findProperty(propertyName);
-				// Discard existing property storage if is has the wrong data type or component count.
-				if(property && (property->dataType() != dataType || property->componentCount() != componentCount)) {
-					frameData->particles().removeProperty(property);
-					property.reset();
-				}
-				if(!property) {
-					// Create a new user-defined property for the column.
-					property = std::make_shared<PropertyStorage>(particleCount, dataType, componentCount, 0, propertyName, true);
-					frameData->particles().addProperty(property);
-				}
+				throw Exception(tr("NetCDF data array '%1' with %2 components cannot be mapped to OVITO particle property '%3', which consists of %4 components.")
+					.arg(columnName).arg(componentCount).arg(propertyName).arg(property->componentCount()));
 			}
-			OVITO_ASSERT(property != nullptr);
-			property->setName(propertyName);
+		}
 
-			// Make sure the dimensions match.
-			bool doVoigtConversion = false;
-			if(componentCount != property->componentCount()) {
-				// For standard particle properties describing symmetric tensors in Voigt notion, we perform automatic
-				// conversion from the 3x3 full tensors stored in the NetCDF file.
-				if(componentCount == 9 && property->componentCount() == 6 && property->dataType() == PropertyStorage::Float) {
-					doVoigtConversion = true;
-				}
-				else {
-					throw Exception(tr("NetCDF data array '%1' with %2 components cannot be mapped to OVITO particle property '%3', which consists of %4 components.")
-						.arg(columnName).arg(componentCount).arg(propertyName).arg(property->componentCount()));
-				}
+		if(property->dataType() == PropertyObject::Int) {
+			// Read integer property data in chunks so that we can report I/O progress.
+			size_t totalCount = countp[1];
+			size_t remaining = totalCount;
+			countp[1] = 1000000;
+			setProgressMaximum(totalCount / countp[1] + 1);
+			OVITO_ASSERT(totalCount <= property->size());
+			PropertyAccess<int,true> propertyArray(property);
+			for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
+				countp[1] = std::min(countp[1], remaining);
+				remaining -= countp[1];
+				OVITO_ASSERT(countp[1] >= 1);
+				NCERRI( nc_get_vara_int(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
+				if(!incrementProgressValue())
+					return;
 			}
+			OVITO_ASSERT(remaining == 0);
+			propertyArray.reset();
 
-			if(property->dataType() == PropertyStorage::Int) {
-				// Read integer property data in chunks so that we can report I/O progress.
+			// Create particles types if this is the typed property.
+			if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
+
+				// Create particle types.
+				for(int ptype : ConstPropertyAccess<int>(property)) {
+					addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
+				}
+
+				// Since we created particle types on the go while reading the particles, the assigned particle type IDs
+				// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+				// why we sort them now according to their numeric IDs.
+				property->sortElementTypesById();
+			}
+		}
+		else if(property->dataType() == PropertyObject::Int64) {
+			// Read 64-bit integer property data in chunks so that we can report I/O progress.
+			size_t totalCount = countp[1];
+			size_t remaining = totalCount;
+			countp[1] = 1000000;
+			setProgressMaximum(totalCount / countp[1] + 1);
+			OVITO_ASSERT(totalCount <= property->size());
+			PropertyAccess<qlonglong,true> propertyArray(property);
+			for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
+				countp[1] = std::min(countp[1], remaining);
+				remaining -= countp[1];
+				OVITO_ASSERT(countp[1] >= 1);
+				NCERRI( nc_get_vara_longlong(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
+				if(!incrementProgressValue())
+					return;
+			}
+			OVITO_ASSERT(remaining == 0);
+		}
+		else if(property->dataType() == PropertyObject::Float) {
+			PropertyAccess<FloatType,true> propertyArray(property);
+
+			// Special handling for tensor arrays that need to be converted to Voigt notation.
+			if(doVoigtConversion) {
+				auto data = std::make_unique<FloatType[]>(9 * particleCount);
+#ifdef FLOATTYPE_FLOAT
+				NCERRI( nc_get_vara_float(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
+#else
+				NCERRI( nc_get_vara_double(ncFile._ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
+#endif
+				fullToVoigt(particleCount, data.get(), propertyArray.begin());
+			}
+			else {
+
+				// Read property data in chunks so that we can report I/O progress.
 				size_t totalCount = countp[1];
 				size_t remaining = totalCount;
 				countp[1] = 1000000;
 				setProgressMaximum(totalCount / countp[1] + 1);
-				OVITO_ASSERT(totalCount <= property->size());
-				PropertyAccess<int,true> propertyArray(property);
 				for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
 					countp[1] = std::min(countp[1], remaining);
 					remaining -= countp[1];
 					OVITO_ASSERT(countp[1] >= 1);
-					NCERRI( nc_get_vara_int(_ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-					if(!incrementProgressValue()) {
-						closeNetCDF();
-						return {};
-					}
-				}
-				OVITO_ASSERT(remaining == 0);
-
-				// Create particles types if this is the typed property.
-				if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
-
-					PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(property, *elementTypeClass);
-
-					// Create particle types.
-					for(int ptype : ConstPropertyAccess<int>(property)) {
-						typeList->addTypeId(ptype);
-					}
-
-					// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-					// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
-					// why we sort them now according to their numeric IDs.
-					typeList->sortTypesById();
-				}
-			}
-			else if(property->dataType() == PropertyStorage::Int64) {
-				// Read 64-bit integer property data in chunks so that we can report I/O progress.
-				size_t totalCount = countp[1];
-				size_t remaining = totalCount;
-				countp[1] = 1000000;
-				setProgressMaximum(totalCount / countp[1] + 1);
-				OVITO_ASSERT(totalCount <= property->size());
-				PropertyAccess<qlonglong,true> propertyArray(property);
-				for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
-					countp[1] = std::min(countp[1], remaining);
-					remaining -= countp[1];
-					OVITO_ASSERT(countp[1] >= 1);
-					NCERRI( nc_get_vara_longlong(_ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-					if(!incrementProgressValue()) {
-						closeNetCDF();
-						return {};
-					}
-				}
-				OVITO_ASSERT(remaining == 0);
-			}
-			else if(property->dataType() == PropertyStorage::Float) {
-				PropertyAccess<FloatType,true> propertyArray(property);
-
-				// Special handling for tensor arrays that need to be converted to Voigt notation.
-				if(doVoigtConversion) {
-					auto data = std::make_unique<FloatType[]>(9 * particleCount);
 #ifdef FLOATTYPE_FLOAT
-					NCERRI( nc_get_vara_float(_ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
+					NCERRI( nc_get_vara_float(_ncFile.ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
 #else
-					NCERRI( nc_get_vara_double(_ncid, varId, startp, countp, data.get()), tr("(While reading variable '%1'.)").arg(columnName) );
+					NCERRI( nc_get_vara_double(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
 #endif
-					fullToVoigt(particleCount, data.get(), propertyArray.begin());
+					if(!incrementProgressValue())
+						return;
 				}
-				else {
-
-					// Read property data in chunks so that we can report I/O progress.
-					size_t totalCount = countp[1];
-					size_t remaining = totalCount;
-					countp[1] = 1000000;
-					setProgressMaximum(totalCount / countp[1] + 1);
-					for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
-						countp[1] = std::min(countp[1], remaining);
-						remaining -= countp[1];
-						OVITO_ASSERT(countp[1] >= 1);
-#ifdef FLOATTYPE_FLOAT
-						NCERRI( nc_get_vara_float(_ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-#else
-						NCERRI( nc_get_vara_double(_ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
-#endif
-						if(!incrementProgressValue()) {
-							closeNetCDF();
-							return {};
-						}
-					}
-				}
-			}
-			else {
-				qDebug() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
 			}
 		}
-
-		endProgressSubSteps();
-
-		// If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
-		if(!pbc[0] || !pbc[1] || !pbc[2]) {
-
-			ConstPropertyAccess<Point3> posProperty = frameData->particles().findStandardProperty(ParticlesObject::PositionProperty);
-			if(posProperty && posProperty.size() != 0) {
-				Box3 boundingBox;
-				boundingBox.addPoints(posProperty);
-
-				AffineTransformation cell = frameData->simulationCell().matrix();
-				for(size_t dim = 0; dim < 3; dim++) {
-					if(!pbc[dim]) {
-						cell.column(3)[dim] = boundingBox.minc[dim];
-						cell.column(dim).setZero();
-						cell.column(dim)[dim] = boundingBox.maxc[dim] - boundingBox.minc[dim];
-					}
-				}
-				frameData->simulationCell().setMatrix(cell);
-			}
+		else {
+			qDebug() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
 		}
-
-		closeNetCDF();
-
-		// Sort particles by ID if requested.
-		if(_sortParticles)
-			frameData->sortParticlesById();
-
-		frameData->setStatus(tr("Loaded %1 particles").arg(particleCount));
-		return frameData;
 	}
-	catch(...) {
-		closeNetCDF();
-		throw;
+
+	// Remove properties from the existing container which are not being parsed.
+	for(int index = particles()->properties().size() - 1; index >= 0; index--) {
+		const PropertyObject* property = particles()->properties()[index];
+		if(std::find(loadedProperties.cbegin(), loadedProperties.cend(), property) == loadedProperties.cend())
+			particles()->removeProperty(property);
 	}
+
+	endProgressSubSteps();
+
+	// If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
+	if(!pbc[0] || !pbc[1] || !pbc[2]) {
+
+		ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+		if(posProperty && posProperty.size() != 0) {
+			Box3 boundingBox;
+			boundingBox.addPoints(posProperty);
+
+			AffineTransformation cell = simulationCell()->cellMatrix();
+			for(size_t dim = 0; dim < 3; dim++) {
+				if(!pbc[dim]) {
+					cell.column(3)[dim] = boundingBox.minc[dim];
+					cell.column(dim).setZero();
+					cell.column(dim)[dim] = boundingBox.maxc[dim] - boundingBox.minc[dim];
+				}
+			}
+			simulationCell()->setCellMatrix(cell);
+		}
+	}
+
+	ncFile.close();
+
+	// Sort particles by ID if requested.
+	if(_sortParticles)
+		particles()->sortById();
+
+	state().setStatus(tr("Loaded %1 particles").arg(particleCount));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
@@ -726,6 +708,32 @@ InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, in
 	column.mapCustomColumn(&ParticlesObject::OOClass(), name, dataType);
 	return column;
 }
+
+
+/******************************************************************************
+* Inspects the header of the given file and returns the number of file columns.
+******************************************************************************/
+Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const Frame& frame)
+{
+	// Retrieve file.
+	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+		.then(executor(), [](const FileHandle& fileHandle) {
+			QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
+			if(filename.isEmpty())
+				throw Exception(tr("The NetCDF file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
+
+			// Only serial access to NetCDF functions is allowed, because they are not thread-safe.
+			NetCDFExclusiveAccess locker;
+
+			// Open the NetCDF file for reading.
+			NetCDFFile ncFile;
+			ncFile.open(filename);
+
+			// Scan NetCDF file and enumerate supported column names.
+			return ncFile.detectColumnMapping();
+		});
+}
+
 
 /******************************************************************************
  * Saves the class' contents to the given stream.

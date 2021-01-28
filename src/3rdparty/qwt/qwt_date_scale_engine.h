@@ -7,9 +7,10 @@
  * modify it under the terms of the Qwt License, Version 1.0
  *****************************************************************************/
 
-#ifndef _QWT_DATE_SCALE_ENGINE_H_
-#define _QWT_DATE_SCALE_ENGINE_H_ 1
+#ifndef QWT_DATE_SCALE_ENGINE_H
+#define QWT_DATE_SCALE_ENGINE_H
 
+#include "qwt_global.h"
 #include "qwt_date.h"
 #include "qwt_scale_engine.h"
 
@@ -41,7 +42,7 @@
 class QWT_EXPORT QwtDateScaleEngine: public QwtLinearScaleEngine
 {
 public:
-    QwtDateScaleEngine( Qt::TimeSpec = Qt::LocalTime );
+    explicit QwtDateScaleEngine( Qt::TimeSpec = Qt::LocalTime );
     virtual ~QwtDateScaleEngine();
 
     void setTimeSpec( Qt::TimeSpec );
@@ -56,13 +57,14 @@ public:
     void setMaxWeeks( int );
     int maxWeeks() const;
 
-    virtual void autoScale( int maxNumSteps,
-        double &x1, double &x2, double &stepSize ) const;
+    virtual void autoScale(
+        int maxNumSteps, double &x1, double &x2,
+        double &stepSize ) const QWT_OVERRIDE;
 
     virtual QwtScaleDiv divideScale(
         double x1, double x2,
         int maxMajorSteps, int maxMinorSteps,
-        double stepSize = 0.0 ) const;
+        double stepSize = 0.0 ) const QWT_OVERRIDE;
 
     virtual QwtDate::IntervalType intervalType(
         const QDateTime &, const QDateTime &, int maxSteps ) const;

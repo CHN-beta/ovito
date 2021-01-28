@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,40 +26,28 @@ uniform mat4 inverse_projection_matrix;
 uniform bool is_perspective;
 uniform vec2 viewport_origin;		// Specifies the transformation from screen coordinates to viewport coordinates.
 uniform vec2 inverse_viewport_size;	// Specifies the transformation from screen coordinates to viewport coordinates.
+uniform bool is_picking_mode;
 
-#if __VERSION__ >= 130
-	flat in vec4 particle_color_fs;
-	flat in vec3 surface_normal_fs;
-	out vec4 FragColor;
-#else
-	#define particle_color_fs gl_Color
-	#define ec_pos gl_TexCoord[1].xyz
-	#define FragColor gl_FragColor
-#endif
-
-const float ambient = 0.4;
-const float diffuse_strength = 1.0 - ambient;
-const float shininess = 6.0;
-const vec3 specular_lightdir = normalize(vec3(-1.8, 1.5, -0.2));
+// Input from vertex shader:
+flat in vec4 particle_color_fs;
+flat in vec3 surface_normal_fs;
+out vec4 FragColor;
 
 void main()
 {
-#if __VERSION__ < 130
-	vec3 surface_normal_fs = normalize(cross(dFdx(ec_pos), dFdy(ec_pos)));
-#endif
-
-	// Calculate viewing ray direction in view space
-	vec3 ray_dir;
-	if(is_perspective) {
-		// Calculate the pixel coordinate in viewport space.
-		vec2 view_c = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;
-		ray_dir = normalize(vec3(inverse_projection_matrix * vec4(view_c.x, view_c.y, 1.0, 1.0)));
+	if(!is_picking_mode) {
+		// Calculate viewing ray direction in view space.
+		if(is_perspective) {
+			// Calculate the pixel coordinate in viewport space.
+			vec2 view_c = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;
+			vec3 ray_dir = normalize(vec3(inverse_projection_matrix * vec4(view_c.x, view_c.y, 1.0, 1.0)));
+			FragColor = shadeSurfaceColor(surface_normal_fs, ray_dir, particle_color_fs.rgb, particle_color_fs.a);
+		}
+		else {
+			FragColor = shadeSurfaceColorQuick(surface_normal_fs, particle_color_fs.rgb, particle_color_fs.a);
+		}
 	}
 	else {
-		ray_dir = vec3(0.0, 0.0, -1.0);
+		FragColor = particle_color_fs;
 	}
-
-	float diffuse = abs(surface_normal_fs.z) * diffuse_strength;
-	float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal_fs), ray_dir)), shininess) * 0.25;
-	FragColor = vec4(particle_color_fs.rgb * (diffuse + ambient) + vec3(specular), particle_color_fs.a);
 }

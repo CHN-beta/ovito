@@ -12,28 +12,45 @@
 #include "qwt_interval.h"
 #include "qwt_scale_map.h"
 #include "qwt_color_map.h"
+#include "qwt_math.h"
+
 #include <qimage.h>
 #include <qpen.h>
 #include <qpainter.h>
-#include <qmath.h>
-#include <qalgorithms.h>
-#if QT_VERSION >= 0x040400
 #include <qthread.h>
 #include <qfuture.h>
 #include <qtconcurrentrun.h>
-#endif
 
 #define DEBUG_RENDER 0
 
 #if DEBUG_RENDER
-#include <QElapsedTimer>
+#include <qelapsedtimer.h>
 #endif
+
+#include <algorithm>
+
+static inline bool qwtIsNaN( double d )
+{
+    // qt_is_nan is private header and qIsNaN is not inlined
+    // so we need these code here too
+
+    const uchar *ch = (const uchar *)&d;
+    if ( QSysInfo::ByteOrder == QSysInfo::BigEndian )
+    {
+        return (ch[0] & 0x7f) == 0x7f && ch[1] > 0xf0;
+    }
+    else
+    {
+        return (ch[7] & 0x7f) == 0x7f && ch[6] > 0xf0;
+    }
+}
 
 class QwtPlotSpectrogram::PrivateData
 {
 public:
     PrivateData():
-        data( NULL )
+        data( NULL ),
+        maxRGBColorTableSize( 0 )
     {
         colorMap = new QwtLinearColorMap();
         displayMode = ImageMode;
@@ -49,6 +66,21 @@ public:
         delete colorMap;
     }
 
+    void updateColorTable()
+    {
+        if ( colorMap->format() == QwtColorMap::Indexed )
+        {
+            colorTable = colorMap->colorTable256();
+        }
+        else
+        {
+            if ( maxRGBColorTableSize == 0 )
+                colorTable.clear();
+            else
+                colorTable = colorMap->colorTable( maxRGBColorTableSize );
+        }
+    }
+
     QwtRasterData *data;
     QwtColorMap *colorMap;
     DisplayModes displayMode;
@@ -56,6 +88,9 @@ public:
     QList<double> contourLevels;
     QPen defaultContourPen;
     QwtRasterData::ConrecFlags conrecFlags;
+
+    int maxRGBColorTableSize;
+    QVector<QRgb> colorTable;
 };
 
 /*!
@@ -140,11 +175,16 @@ bool QwtPlotSpectrogram::testDisplayMode( DisplayMode mode ) const
 */
 void QwtPlotSpectrogram::setColorMap( QwtColorMap *colorMap )
 {
-    if ( d_data->colorMap != colorMap )
+    if ( colorMap == NULL )
+        return;
+
+    if ( colorMap != d_data->colorMap )
     {
         delete d_data->colorMap;
         d_data->colorMap = colorMap;
     }
+
+    d_data->updateColorTable();
 
     invalidateCache();
 
@@ -159,6 +199,22 @@ void QwtPlotSpectrogram::setColorMap( QwtColorMap *colorMap )
 const QwtColorMap *QwtPlotSpectrogram::colorMap() const
 {
     return d_data->colorMap;
+}
+
+void QwtPlotSpectrogram::setMaxRGBTableSize( int numColors )
+{
+    numColors = qMax( numColors, 0 );
+    if ( numColors != d_data->maxRGBColorTableSize )
+    {
+        d_data->maxRGBColorTableSize = numColors;
+        d_data->updateColorTable();
+        invalidateCache();
+    }
+}
+
+int QwtPlotSpectrogram::maxRGBTableSize() const
+{
+    return d_data->maxRGBColorTableSize;
 }
 
 /*!
@@ -286,7 +342,7 @@ bool QwtPlotSpectrogram::testConrecFlag(
 void QwtPlotSpectrogram::setContourLevels( const QList<double> &levels )
 {
     d_data->contourLevels = levels;
-    qSort( d_data->contourLevels );
+    std::sort( d_data->contourLevels.begin(), d_data->contourLevels.end() );
 
     legendChanged();
     itemChanged();
@@ -412,13 +468,13 @@ QImage QwtPlotSpectrogram::renderImage(
     if ( !intensityRange.isValid() )
         return QImage();
 
-    QImage::Format format = ( d_data->colorMap->format() == QwtColorMap::RGB )
+    const QImage::Format format = ( d_data->colorMap->format() == QwtColorMap::RGB )
         ? QImage::Format_ARGB32 : QImage::Format_Indexed8;
 
     QImage image( imageSize, format );
 
     if ( d_data->colorMap->format() == QwtColorMap::Indexed )
-        image.setColorTable( d_data->colorMap->colorTable( intensityRange ) );
+        image.setColorTable( d_data->colorMap->colorTable256() );
 
     d_data->data->initRaster( area, image.size() );
 
@@ -427,7 +483,7 @@ QImage QwtPlotSpectrogram::renderImage(
     time.start();
 #endif
 
-#if QT_VERSION >= 0x040400 && !defined(QT_NO_QFUTURE)
+#if !defined(QT_NO_QFUTURE)
     uint numThreads = renderThreadCount();
 
     if ( numThreads <= 0 )
@@ -438,7 +494,9 @@ QImage QwtPlotSpectrogram::renderImage(
 
     const int numRows = imageSize.height() / numThreads;
 
-    QList< QFuture<void> > futures;
+    QVector< QFuture<void> > futures;
+    futures.reserve( numThreads - 1 );
+
     for ( uint i = 0; i < numThreads; i++ )
     {
         QRect tile( 0, i * numRows, image.width(), numRows );
@@ -450,14 +508,19 @@ QImage QwtPlotSpectrogram::renderImage(
         else
         {
             futures += QtConcurrent::run(
+#if QT_VERSION >= 0x060000
+                &QwtPlotSpectrogram::renderTile, this,
+#else
                 this, &QwtPlotSpectrogram::renderTile,
+#endif
                 xMap, yMap, tile, &image );
         }
     }
+
     for ( int i = 0; i < futures.size(); i++ )
         futures[i].waitForFinished();
 
-#else // QT_VERSION < 0x040400
+#else
     const QRect tile( 0, 0, image.width(), image.height() );
     renderTile( xMap, yMap, tile, &image );
 #endif
@@ -488,11 +551,17 @@ void QwtPlotSpectrogram::renderTile(
     const QRect &tile, QImage *image ) const
 {
     const QwtInterval range = d_data->data->interval( Qt::ZAxis );
-    if ( !range.isValid() )
+    if ( range.width() <= 0.0 )
         return;
+
+    const bool hasGaps = !d_data->data->testAttribute( QwtRasterData::WithoutGaps );
 
     if ( d_data->colorMap->format() == QwtColorMap::RGB )
     {
+        const int numColors = d_data->colorTable.size();
+        const QRgb *rgbTable = d_data->colorTable.constData();
+        const QwtColorMap *colorMap = d_data->colorMap;
+
         for ( int y = tile.top(); y <= tile.bottom(); y++ )
         {
             const double ty = yMap.invTransform( y );
@@ -504,8 +573,21 @@ void QwtPlotSpectrogram::renderTile(
             {
                 const double tx = xMap.invTransform( x );
 
-                *line++ = d_data->colorMap->rgb( range,
-                    d_data->data->value( tx, ty ) );
+                const double value = d_data->data->value( tx, ty );
+
+                if ( hasGaps && qwtIsNaN( value ) )
+                {
+                    *line++ = 0u;
+                }
+                else if ( numColors == 0 )
+                {
+                    *line++ = colorMap->rgb( range, value );
+                }
+                else
+                {
+                    const uint index = colorMap->colorIndex( numColors, range, value );
+                    *line++ = rgbTable[index];
+                }
             }
         }
     }
@@ -522,8 +604,17 @@ void QwtPlotSpectrogram::renderTile(
             {
                 const double tx = xMap.invTransform( x );
 
-                *line++ = d_data->colorMap->colorIndex( range,
-                    d_data->data->value( tx, ty ) );
+                const double value = d_data->data->value( tx, ty );
+
+                if ( hasGaps && qwtIsNaN( value ) )
+                {
+                    *line++ = 0;
+                }
+                else
+                {
+                    const uint index = d_data->colorMap->colorIndex( 256, range, value );
+                    *line++ = static_cast<unsigned char>( index );
+                }
             }
         }
     }
@@ -554,8 +645,8 @@ QSize QwtPlotSpectrogram::contourRasterSize(
     const QRectF pixelRect = pixelHint( area );
     if ( !pixelRect.isEmpty() )
     {
-        const QSize res( qCeil( rect.width() / pixelRect.width() ),
-            qCeil( rect.height() / pixelRect.height() ) );
+        const QSize res( qwtCeil( rect.width() / pixelRect.width() ),
+            qwtCeil( rect.height() / pixelRect.height() ) );
         raster = raster.boundedTo( res );
     }
 

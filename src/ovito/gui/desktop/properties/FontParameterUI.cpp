@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ void FontParameterUI::onButtonClicked()
 		QFont font = FontSelectionDialog::getFont(&ok, currentFont, fontPicker()->window());
 		if(ok && font != currentFont) {
 			undoableTransaction(tr("Change font"), [this, &font]() {
-				editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(font));
+				editor()->changePropertyFieldValue(*propertyField(), QVariant::fromValue(font));
 				Q_EMIT valueEntered();
 			});
 		}

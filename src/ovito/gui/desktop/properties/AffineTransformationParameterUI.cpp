@@ -63,7 +63,7 @@ void AffineTransformationParameterUI::updatePropertyValue()
 					currentValue.setValue(val);
 				}
 				if(!editObject()->setProperty(propertyName(), currentValue)) {
-					OVITO_ASSERT_MSG(false, "AffineTransformationParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "AffineTransformationParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {
@@ -73,7 +73,7 @@ void AffineTransformationParameterUI::updatePropertyValue()
 					val(row, column) = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editObject()->setPropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(*propertyField(), currentValue);
 			}
 			Q_EMIT valueEntered();
 		}

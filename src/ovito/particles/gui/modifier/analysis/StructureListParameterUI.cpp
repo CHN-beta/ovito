@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,8 +85,8 @@ void StructureListParameterUI::updateStructureCounts()
 
 			// Access the data table in the pipeline state containing the structure counts.
 			if(const DataTable* table = state.getObjectBy<DataTable>(modApp, QStringLiteral("structures"))) {
-				_structureCounts = table->getYStorage();
-				if(_structureCounts && _structureCounts->dataType() == PropertyStorage::Int64)
+				_structureCounts = table->getY();
+				if(_structureCounts && _structureCounts->dataType() == PropertyObject::Int64)
 					return;
 			}
 		}
@@ -155,7 +155,7 @@ bool StructureListParameterUI::setItemData(RefTarget* target, const QModelIndex&
 	if(index.column() == 0 && role == Qt::CheckStateRole) {
 		if(ElementType* stype = static_object_cast<ElementType>(objectAtIndex(index.row()))) {
 			bool enabled = (value.toInt() == Qt::Checked);
-			undoableTransaction(tr("Enable/disable structure type"), [stype, enabled]() {
+			undoableTransaction(tr("Enable/disable structure type"), [&]() {
 				stype->setEnabled(enabled);
 			});
 			return true;
@@ -179,7 +179,7 @@ void StructureListParameterUI::onDoubleClickStructureType(const QModelIndex& ind
 	QColor newColor = QColorDialog::getColor(oldColor, editor()->container());
 	if(!newColor.isValid() || newColor == oldColor) return;
 
-	undoableTransaction(tr("Change structure type color"), [stype, newColor]() {
+	undoableTransaction(tr("Change structure type color"), [&]() {
 		stype->setColor(Color(newColor));
 	});
 }

@@ -214,7 +214,11 @@ namespace mu
     stringstream_type::pos_type iEnd = stream.tellg(); // Position after reading
 
     if (iEnd==(stringstream_type::pos_type)-1)
+#if defined(_UNICODE)
+      iEnd = std::wcslen(a_szExpr);
+#else
       iEnd = std::strlen(a_szExpr);
+#endif
 
     *a_iPos += (int)iEnd;
     *a_fVal = fVal;

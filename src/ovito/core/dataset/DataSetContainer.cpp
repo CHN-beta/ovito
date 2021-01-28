@@ -58,7 +58,7 @@ DataSetContainer::~DataSetContainer()
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(currentSet)) {
 
@@ -110,7 +110,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor& field, R
 			Q_EMIT modificationStatusChanged(true);
 		}
 	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget);
+	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

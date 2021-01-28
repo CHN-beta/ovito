@@ -56,10 +56,10 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 	sublayout2->addWidget(displacementToolBar);
 	_displacementDirectionGroup = new QActionGroup(this);
 	_displacementDirectionGroup->setExclusive(true);
-	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_none.svg"), tr("Do not displace clone"));
-	QAction* displacementXAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_x.svg"), tr("Displace clone along X axis"));
-	QAction* displacementYAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_y.svg"), tr("Displace clone along Y axis"));
-	QAction* displacementZAction = displacementToolBar->addAction(QIcon(":/gui/actions/edit/clone_displace_mode_z.svg"), tr("Displace clone along Z axis"));
+	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_none.svg"), tr("Do not displace clone"));
+	QAction* displacementXAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_x.svg"), tr("Displace clone along X axis"));
+	QAction* displacementYAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_y.svg"), tr("Displace clone along Y axis"));
+	QAction* displacementZAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_z.svg"), tr("Displace clone along Z axis"));
 	sublayout2->addStretch(1);
 	displacementNoneAction->setCheckable(true);
 	displacementXAction->setCheckable(true);
@@ -296,14 +296,22 @@ void ClonePipelineDialog::initializeGraphicsScene()
 	}
 
 	// When the user switches an entry to 'join', then all following entries must automatically be set to 'join' too.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(unifiedMapper, &QSignalMapper::mappedInt, this, [this](int index) {
+#else
 	connect(unifiedMapper, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, [this](int index) {
+#endif
 		for(; index < _pipelineItems.size(); index++) {
 			_pipelineItems[index].setCloneMode(CloneMode::Join);
 		}
 	});
 
 	// When the user switches to an entry other than 'join', then all preceding entries must automatically be set to something other too.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(nonunifiedMapper, &QSignalMapper::mappedInt, this, [this](int index) {
+#else
 	connect(nonunifiedMapper, (void (QSignalMapper::*)(int))&QSignalMapper::mapped, this, [this](int index) {
+#endif
 		for(index--; index >= 0; index--) {
 			if(_pipelineItems[index].cloneMode() == CloneMode::Join)
 				_pipelineItems[index].setCloneMode(CloneMode::Copy);

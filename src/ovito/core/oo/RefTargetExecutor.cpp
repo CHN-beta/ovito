@@ -39,10 +39,10 @@ TaskManager* RefTargetExecutor::taskManager() const
 /******************************************************************************
 * Event class constructor.
 ******************************************************************************/
-RefTargetExecutor::WorkEventBase::WorkEventBase(const RefTarget* obj) :
+RefTargetExecutor::WorkEventBase::WorkEventBase(const RefTarget* obj, ExecutionContext executionContext) :
     QEvent(workEventType()),
     _obj(const_cast<RefTarget*>(obj)),
-    _executionContext(static_cast<int>(Application::instance()->executionContext()))
+    _executionContext(executionContext)
 {    
 //    OVITO_ASSERT(!_obj->dataset()->undoStack().isRecording());
 }
@@ -53,9 +53,9 @@ RefTargetExecutor::WorkEventBase::WorkEventBase(const RefTarget* obj) :
 void RefTargetExecutor::WorkEventBase::activateExecutionContext()
 {
     if(Application* app = Application::instance()) {
-        Application::ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(static_cast<Application::ExecutionContext>(_executionContext));
-        _executionContext = static_cast<int>(previousContext);
+        ExecutionContext previousContext = app->executionContext();
+        app->switchExecutionContext(_executionContext);
+        _executionContext = previousContext;
 
         // In the current implementation, deferred work is always executed without undo recording.
         // Thus, we should suspend the undo stack while running the work function.
@@ -70,9 +70,9 @@ void RefTargetExecutor::WorkEventBase::activateExecutionContext()
 void RefTargetExecutor::WorkEventBase::restoreExecutionContext()
 {
     if(Application* app = Application::instance()) {
-        Application::ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(static_cast<Application::ExecutionContext>(_executionContext));
-        _executionContext = static_cast<int>(previousContext);
+        ExecutionContext previousContext = app->executionContext();
+        app->switchExecutionContext(_executionContext);
+        _executionContext = previousContext;
 
         // Restore undo recording state.
         if(_obj->dataset()) 

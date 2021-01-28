@@ -44,11 +44,14 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 	# Give our library file a name to not confuse it with any system versions of the library.
 	SET_TARGET_PROPERTIES(NetCDFIntegration PROPERTIES OUTPUT_NAME "ovito_netcdf")
 
-	# Link to Qt5.
-	TARGET_LINK_LIBRARIES(NetCDFIntegration PUBLIC Qt5::Core)
+	# Link to Qt.
+	TARGET_LINK_LIBRARIES(NetCDFIntegration PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core)
 
 	# This library depends on the Core module of OVITO.
 	TARGET_LINK_LIBRARIES(NetCDFIntegration PUBLIC Core)
+
+	# Inform source code that the NetCDF library is available.
+	TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PUBLIC OVITO_NETCDF_SUPPORT)
 
 	# Define macro for symbol export from the shared library.
 	IF(BUILD_SHARED_LIBS)

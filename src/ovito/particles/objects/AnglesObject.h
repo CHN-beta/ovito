@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT AnglesObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard properties.
-		virtual PropertyPtr createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
@@ -61,8 +61,8 @@ public:
 
 	/// \brief The list of standard angle properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,
-		TypeProperty = PropertyStorage::GenericTypeProperty,
+		UserProperty = PropertyObject::GenericUserProperty,
+		TypeProperty = PropertyObject::GenericTypeProperty,
 		TopologyProperty,
 	};
 

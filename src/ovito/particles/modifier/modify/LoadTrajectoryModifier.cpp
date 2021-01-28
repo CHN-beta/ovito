@@ -42,11 +42,19 @@ SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory s
 ******************************************************************************/
 LoadTrajectoryModifier::LoadTrajectoryModifier(DataSet* dataset) : Modifier(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void LoadTrajectoryModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Create the file source object, which will be responsible for loading
 	// and caching the trajectory data.
-	OORef<FileSource> fileSource(new FileSource(dataset));
+	setTrajectorySource(OORef<FileSource>::create(dataset(), executionContext));
 
-	setTrajectorySource(fileSource);
+	Modifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -213,7 +221,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			bool replacingProperty;
 			if(property->type() != ParticlesObject::UserProperty) {
 				replacingProperty = (particles->getProperty(property->type()) != nullptr);
-				outputProperty = particles->createProperty(property->type(), true);
+				outputProperty = particles->createProperty(property->type(), true, Application::instance()->executionContext());
 				if(outputProperty->dataType() != property->dataType()
 					|| outputProperty->componentCount() != property->componentCount())
 					continue; // Types of source property and output property are not compatible.
@@ -227,7 +235,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			OVITO_ASSERT(outputProperty->stride() == property->stride());
 
 			// Copy and reorder property data.
-			property->mappedCopyTo(outputProperty, indexToIndexMap);
+			property->mappedCopyTo(*outputProperty, indexToIndexMap);
 
 			// Transfer the visual element(s) unless the property already existed in the topology dataset.
 			if(!replacingProperty) {
@@ -252,10 +260,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
 				BondsObject* bonds = particles->makeBondsMutable();
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true);
+					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 
 					// Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
-					SimulationCell cell = trajectoryCell->data();
 					for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 						size_t particleIndex1 = topologyProperty[bondIndex][0];
 						size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -283,7 +290,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		// If the trajectory file contains bond topology, completely replace all existing bonds 
 		// from the topology dataset with the new set of bonds. 
 		if(trajectoryBonds->getProperty(BondsObject::TopologyProperty)) {
-			if(OORef<BondsObject> oldBonds = particles->bonds()) {
+			if(particles->bonds()) {
 				// Replace the property arrays, but make sure BondType instances  
 				// as well as the visual elements from the topology dataset are preserved.
 				particles->makeBondsMutable()->setContent(trajectoryBonds->elementCount(), trajectoryBonds->properties());
@@ -316,7 +323,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				for(const PropertyObject* newProperty : trajectoryBonds->properties()) {
 					const PropertyObject* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
 					if(existingPropertyObj) {
-						bonds->makeMutable(existingPropertyObj)->setStorage(newProperty->storage());
+						bonds->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
 					}
 					else {
 						bonds->addProperty(newProperty);
@@ -368,13 +375,13 @@ bool LoadTrajectoryModifier::referenceEvent(RefTarget* source, const ReferenceEv
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(trajectorySource) && !isBeingLoaded()) {
 		// The animation length might have changed when the trajectory source has been replaced.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
-	Modifier::referenceReplaced(field, oldTarget, newTarget);
+	Modifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 }	// End of namespace

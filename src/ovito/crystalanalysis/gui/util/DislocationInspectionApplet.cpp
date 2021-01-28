@@ -24,9 +24,9 @@
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "DislocationInspectionApplet.h"
 
@@ -140,13 +140,13 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
 			case 4: return segment->burgersVector.cluster()->id;
 			case 5: return _dislocationObj->structureById(segment->burgersVector.cluster()->structure)->name();
 			case 6: { Point3 headLocation = segment->backwardNode().position();
-						if(_dislocationObj->domain()) headLocation = _dislocationObj->domain()->data().wrapPoint(headLocation);
+						if(_dislocationObj->domain()) headLocation = _dislocationObj->domain()->wrapPoint(headLocation);
 						return QStringLiteral("%1 %2 %3")
 							.arg(QLocale::c().toString(headLocation.x(), 'f', 4), 7)
 							.arg(QLocale::c().toString(headLocation.y(), 'f', 4), 7)
 							.arg(QLocale::c().toString(headLocation.z(), 'f', 4), 7); }
 			case 7: { Point3 tailLocation = segment->forwardNode().position();
-						if(_dislocationObj->domain()) tailLocation = _dislocationObj->domain()->data().wrapPoint(tailLocation);
+						if(_dislocationObj->domain()) tailLocation = _dislocationObj->domain()->wrapPoint(tailLocation);
 						return QStringLiteral("%1 %2 %3")
 							.arg(QLocale::c().toString(tailLocation.x(), 'f', 4), 7)
 							.arg(QLocale::c().toString(tailLocation.y(), 'f', 4), 7)
@@ -186,10 +186,10 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
 	}
 	else if(role == Qt::DecorationRole && index.column() == 1) {
 		if(_dislocationObj) {
-			DislocationSegment* segment = _dislocationObj->segments()[index.row()];
-			MicrostructurePhase* crystalStructure = _dislocationObj->structureById(segment->burgersVector.cluster()->structure);
-			BurgersVectorFamily* family = crystalStructure->defaultBurgersVectorFamily();
-			for(BurgersVectorFamily* f : crystalStructure->burgersVectorFamilies()) {
+			const DislocationSegment* segment = _dislocationObj->segments()[index.row()];
+			const MicrostructurePhase* crystalStructure = _dislocationObj->structureById(segment->burgersVector.cluster()->structure);
+			const BurgersVectorFamily* family = crystalStructure->defaultBurgersVectorFamily();
+			for(const BurgersVectorFamily* f : crystalStructure->burgersVectorFamilies()) {
 				if(f->isMember(segment->burgersVector.localVec(), crystalStructure)) {
 					family = f;
 					break;

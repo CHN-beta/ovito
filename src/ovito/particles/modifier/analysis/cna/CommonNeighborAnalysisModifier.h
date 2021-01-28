@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ public:
 		IntervalCutoffMode,	///< Performs the interval CNA, which performs an interval analysis to find the optimal cutoff for each atom.
 		BondMode,			///< Performs the CNA based on the existing network of bonds.
 	};
-	Q_ENUMS(CNAMode);
+	Q_ENUM(CNAMode);
 
 #ifndef Q_CC_MSVC
 	/// The maximum number of neighbor atoms taken into account for the common neighbor analysis.
@@ -70,7 +70,7 @@ public:
 
 		NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
 	};
-	Q_ENUMS(StructureType);
+	Q_ENUM(StructureType);
 
 	/// Pair of neighbor atoms that form a bond (bit-wise storage).
 	typedef unsigned int CNAPairBond;
@@ -116,6 +116,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CommonNeighborAnalysisModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Find all atoms that are nearest neighbors of the given pair of atoms.
 	static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors);
 
@@ -129,7 +133,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -143,6 +147,23 @@ private:
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+
+	protected:
+
+		/// Determines the coordination structure of a single particle using the common neighbor analysis method.
+		StructureType determineStructureAdaptive(NearestNeighborFinder& neighList, size_t particleIndex);
+
+		/// Determines the coordination structure of a single particle using the common neighbor analysis method.
+		StructureType determineStructureInterval(NearestNeighborFinder& neighList, size_t particleIndex);
+
+		/// Determines the coordination structure of a single particle using the common neighbor analysis method.
+		StructureType determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex);
+
+		/// Determines the coordination signature for structures with 12 neighbors.
+		StructureType analyzeSmallSignature(NeighborBondArray& neighborArray);
+
+		/// Determines the coordination signature for structures with 14 neighbors.
+		StructureType analyzeLargeSignature(NeighborBondArray& neighborArray);
 	};
 
 	/// Analysis engine that performs the conventional common neighbor analysis.
@@ -151,8 +172,8 @@ private:
 	public:
 
 		/// Constructor.
-		FixedCNAEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
-			CNAEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+		FixedCNAEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+			CNAEngine(dataSource, executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_cutoff(cutoff) {}
 
 		/// Computes the modifier's results.
@@ -194,11 +215,11 @@ private:
 	public:
 
 		/// Constructor.
-		BondCNAEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-			CNAEngine(std::move(fingerprint), std::move(positions), simCell, std::move(typesToIdentify), std::move(selection)),
+		BondCNAEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+			CNAEngine(dataSource, executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_cnaIndices(std::make_shared<PropertyStorage>(_bondTopology->size(), PropertyStorage::Int, 3, 0, tr("CNA Indices"), false)) {}
+			_cnaIndices(BondsObject::OOClass().createUserProperty(dataset, _bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -221,21 +242,6 @@ private:
 		ConstPropertyPtr _bondPeriodicImages;
 		PropertyPtr _cnaIndices;
 	};
-
-	/// Determines the coordination structure of a single particle using the common neighbor analysis method.
-	static StructureType determineStructureAdaptive(NearestNeighborFinder& neighList, size_t particleIndex, const QVector<bool>& typesToIdentify);
-
-	/// Determines the coordination structure of a single particle using the common neighbor analysis method.
-	static StructureType determineStructureInterval(NearestNeighborFinder& neighList, size_t particleIndex, const QVector<bool>& typesToIdentify);
-
-	/// Determines the coordination structure of a single particle using the common neighbor analysis method.
-	static StructureType determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex, const QVector<bool>& typesToIdentify);
-
-	/// Determines the coordination signature for structures with 12 neighbors.
-	static StructureType analyzeSmallSignature(NeighborBondArray& neighborArray, const QVector<bool>& typesToIdentify);
-
-	/// Determines the coordination signature for structures with 14 neighbors.
-	static StructureType analyzeLargeSignature(NeighborBondArray& neighborArray, const QVector<bool>& typesToIdentify);
 
 	/// The cutoff radius used for the conventional CNA.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);

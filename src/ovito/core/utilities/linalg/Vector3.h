@@ -77,7 +77,7 @@ class Vector_3 : public std::array<T, 3>
 {
 public:
 
-	/// An empty type that denotes the vector (0,0,0).
+	/// An empty type denoting the vector (0,0,0).
 	struct Zero {};
 
 	using typename std::array<T, 3>::size_type;
@@ -407,14 +407,12 @@ inline QDataStream& operator<<(QDataStream& stream, const Vector_3<T>& v) {
 	return stream << v.x() << v.y() << v.z();
 }
 
-
 /// \brief Reads a vector from a Qt data stream.
 /// \relates Vector_3
 template<typename T>
 inline QDataStream& operator>>(QDataStream& stream, Vector_3<T>& v) {
 	return stream >> v.x() >> v.y() >> v.z();
 }
-
 
 /**
  * \brief Instantiation of the Vector_3 class template with the default floating-point type.
@@ -430,13 +428,13 @@ using Vector3I = Vector_3<int>;
 
 }	// End of namespace
 
+// Specialize STL templates for Vector_3.
+namespace std {
+	template<typename T> struct tuple_size<Ovito::Vector_3<T>> : std::integral_constant<std::size_t, 3> {};
+	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Vector_3<T>> { using type = T; };
+};
+
 Q_DECLARE_METATYPE(Ovito::Vector3);
 Q_DECLARE_METATYPE(Ovito::Vector3I);
-Q_DECLARE_METATYPE(Ovito::Vector3*);
-Q_DECLARE_METATYPE(Ovito::Vector3I*);
 Q_DECLARE_TYPEINFO(Ovito::Vector3, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3I, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Vector3*, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Vector3I*, Q_PRIMITIVE_TYPE);
-
-

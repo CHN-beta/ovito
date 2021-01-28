@@ -24,8 +24,9 @@
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "GSDImporter.h"
 #include "GSDFile.h"
@@ -65,7 +66,7 @@ void GSDImporter::propertyChanged(const PropertyFieldDescriptor& field)
 bool GSDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	QString filename = QDir::toNativeSeparators(file.localFilePath());
-	if(!filename.isEmpty()) {
+	if(!filename.isEmpty() && !filename.startsWith(QChar(':'))) {
 		gsd_handle handle;
 		if(::gsd_open(&handle, filename.toLocal8Bit().constData(), GSD_OPEN_READONLY) == gsd_error::GSD_SUCCESS) {
 			::gsd_close(&handle);
@@ -123,7 +124,7 @@ void GSDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
+void GSDImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading GSD file %1").arg(fileHandle().toString()));
 
@@ -137,9 +138,6 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 	if(qstrcmp(gsd.schemaName(), "hoomd") != 0)
 		throw Exception(tr("Failed to open GSD file for reading. File schema must be 'hoomd', but found '%1'.").arg(gsd.schemaName()));
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
-
 	// Parse number of frames in file.
 	uint64_t nFrames = gsd.numerOfFrames();
 
@@ -148,7 +146,7 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 
 	// Parse simulation step.
 	uint64_t simulationStep = gsd.readOptionalScalar<uint64_t>("configuration/step", frameNumber, 0);
-	frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(simulationStep));
+	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(simulationStep), dataSource());
 
 	// Parse number of dimensions.
 	uint8_t ndimensions = gsd.readOptionalScalar<uint8_t>("configuration/dimensions", frameNumber, 3);
@@ -164,69 +162,72 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 	simCell(0,2) = boxValues[4] * boxValues[2];
 	simCell(1,2) = boxValues[5] * boxValues[2];
 	simCell.translation() = simCell.linear() * Vector3(FloatType(-0.5));
-	frameData->simulationCell().setMatrix(simCell);
-	frameData->simulationCell().setPbcFlags(true, true, true);
-	frameData->simulationCell().set2D(ndimensions == 2);
+	if(ndimensions == 2)
+		simulationCell()->setIs2D(true);
+	simulationCell()->setCellMatrix(simCell);
+	simulationCell()->setPbcFlags(true, true, true);
 
 	// Parse number of particles.
 	uint32_t numParticles = gsd.readOptionalScalar<uint32_t>("particles/N", frameNumber, 0);
+	setParticleCount(numParticles);
 
 	// Parse list of particle type names.
 	QByteArrayList particleTypeNames = gsd.readStringTable("particles/types", frameNumber);
 	if(particleTypeNames.empty())
 		particleTypeNames.push_back(QByteArrayLiteral("A"));
 
-	// Read particle positions.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::PositionProperty, false);
-	gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
-	if(isCanceled()) return {};
+	{
+		// Read particle positions.
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
+		if(isCanceled()) return;
+	}
 
-	// Create particle types.
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::TypeProperty, false);
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
-	for(int i = 0; i < particleTypeNames.size(); i++)
-		typeList->addNamedTypeId(i, QString::fromUtf8(particleTypeNames[i]), true);
+	{
+		// Create particle types.
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		for(int i = 0; i < particleTypeNames.size(); i++)
+			addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(particleTypeNames[i]));
 
-	// Read particle types.
-	if(gsd.hasChunk("particles/typeid", frameNumber))
-		gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
-	else
-		typeProperty.fill(0);
-	if(isCanceled()) return {};
+		// Read particle types.
+		if(gsd.hasChunk("particles/typeid", frameNumber))
+			gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
+		else
+			typeProperty.take()->fill(0);
+		if(isCanceled()) return;
+	}
 
 	// Parse particle shape information.
 	QByteArrayList particleTypeShapes = gsd.readStringTable("particles/type_shapes", frameNumber);
-	if(particleTypeShapes.size() == typeList->types().size()) {
+	if(particleTypeShapes.size() == particleTypeNames.size()) {
 		for(int i = 0; i < particleTypeShapes.size(); i++) {
-			if(isCanceled()) return {};
-			parseParticleShape(i, typeList, numParticles, frameData.get(), particleTypeShapes[i]);
+			if(isCanceled()) return;
+			parseParticleShape(i, particleTypeShapes[i]);
 		}
 	}
 
-	readOptionalProperty(gsd, "particles/mass", frameNumber, numParticles, ParticlesObject::MassProperty, false, frameData);
-	readOptionalProperty(gsd, "particles/charge", frameNumber, numParticles, ParticlesObject::ChargeProperty, false, frameData);
-	readOptionalProperty(gsd, "particles/velocity", frameNumber, numParticles, ParticlesObject::VelocityProperty, false, frameData);
-	readOptionalProperty(gsd, "particles/image", frameNumber, numParticles, ParticlesObject::PeriodicImageProperty, false, frameData);
-	PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, numParticles, ParticlesObject::RadiusProperty, false, frameData);
-	if(radiusProperty) {
+	readOptionalProperty(gsd, "particles/mass", frameNumber, ParticlesObject::MassProperty, particles());
+	readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles());
+	readOptionalProperty(gsd, "particles/velocity", frameNumber, ParticlesObject::VelocityProperty, particles());
+	readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles());
+	if(PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles())) {
 		// Convert particle diameters to radii.
 		for(FloatType& r : radiusProperty)
 			r /= 2;
 	}
-	PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, numParticles, ParticlesObject::OrientationProperty, false, frameData);
-	if(orientationProperty) {
+	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles())) {
 		// Convert quaternion representation from GSD format to OVITO's internal format.
 		// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
 		for(Quaternion& q : orientationProperty)
 			std::rotate(q.begin(), q.begin() + 1, q.end());
 	}
-	if(isCanceled()) return {};
+	if(isCanceled()) return;
 
 	// Read any user-defined particle properties.
 	const char* chunkName = gsd.findMatchingChunkName("log/particles/", nullptr);
 	while(chunkName) {
-		if(isCanceled()) return {};
-		readOptionalProperty(gsd, chunkName, frameNumber, numParticles, ParticlesObject::UserProperty, false, frameData);
+		if(isCanceled()) return;
+		readOptionalProperty(gsd, chunkName, frameNumber, ParticlesObject::UserProperty, particles());
 		chunkName = gsd.findMatchingChunkName("log/particles/", chunkName);
 	}
 
@@ -236,21 +237,22 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 		QString key(chunkName);
 		if(key.count(QChar('/')) == 1) {
 			key.remove(0, 4);
-			frameData->attributes().insert(key, gsd.readVariant(chunkName, frameNumber));
+			state().setAttribute(key, gsd.readVariant(chunkName, frameNumber), dataSource());
 		}
 		chunkName = gsd.findMatchingChunkName("log/", chunkName);
 	}
 
 	// Parse number of bonds.
 	uint32_t numBonds = gsd.readOptionalScalar<uint32_t>("bonds/N", frameNumber, 0);
+	setBondCount(numBonds);
 	if(numBonds != 0) {
 		// Read bond list.
 		std::vector<int> bondList(numBonds * 2);
 		gsd.readIntArray("bonds/group", frameNumber, bondList.data(), numBonds, 2);
-		if(isCanceled()) return {};
+		if(isCanceled()) return;
 
 		// Convert to OVITO format.
-		PropertyAccess<ParticleIndexPair> bondTopologyProperty = frameData->bonds().createStandardProperty<BondsObject>(numBonds, BondsObject::TopologyProperty, false);
+		PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
 		auto bondTopoPtr = bondList.cbegin();
 		for(ParticleIndexPair& bond : bondTopologyProperty) {
 			if(*bondTopoPtr >= (qlonglong)numParticles)
@@ -260,8 +262,9 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 				throw Exception(tr("Nonexistent atom tag in bond list in GSD file."));
 			bond[1] = *bondTopoPtr++;
 		}
-		frameData->generateBondPeriodicImageProperty();
-		if(isCanceled()) return {};
+		bondTopologyProperty.reset();
+		generateBondPeriodicImageProperty();
+		if(isCanceled()) return;
 
 		// Read bond types.
 		if(gsd.hasChunk("bonds/types", frameNumber)) {
@@ -272,26 +275,25 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 				bondTypeNames.push_back(QByteArrayLiteral("A"));
 
 			// Create bond types.
-			PropertyAccess<int> bondTypeProperty = frameData->bonds().createStandardProperty<BondsObject>(numBonds, BondsObject::TypeProperty, false);
-			PropertyContainerImportData::TypeList* bondTypeList = frameData->bonds().createPropertyTypesList(bondTypeProperty, BondType::OOClass());
+			PropertyAccess<int> bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
 			for(int i = 0; i < bondTypeNames.size(); i++)
-				bondTypeList->addNamedTypeId(i, QString::fromUtf8(bondTypeNames[i]), true);
+				addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), i, QString::fromUtf8(bondTypeNames[i]));
 
 			// Read bond types.
 			if(gsd.hasChunk("bonds/typeid", frameNumber)) {
 				gsd.readIntArray("bonds/typeid", frameNumber, bondTypeProperty.begin(), numBonds);
 			}
 			else {
-				bondTypeProperty.fill(0);
+				bondTypeProperty.take()->fill(0);
 			}
-			if(isCanceled()) return {};
+			if(isCanceled()) return;
 		}
 
 		// Read any user-defined bond properties.
 		const char* chunkName = gsd.findMatchingChunkName("log/bonds/", nullptr);
 		while(chunkName) {
-			if(isCanceled()) return {};
-			readOptionalProperty(gsd, chunkName, frameNumber, numBonds, BondsObject::UserProperty, true, frameData);
+			if(isCanceled()) return;
+			readOptionalProperty(gsd, chunkName, frameNumber, BondsObject::UserProperty, bonds());
 			chunkName = gsd.findMatchingChunkName("log/bonds/", chunkName);
 		}
 	}
@@ -299,57 +301,77 @@ FileSourceImporter::FrameDataPtr GSDImporter::FrameLoader::loadFile()
 	QString statusString = tr("Number of particles: %1").arg(numParticles);
 	if(numBonds != 0)
 		statusString += tr("\nNumber of bonds: %1").arg(numBonds);
-	frameData->setStatus(statusString);
-	return frameData;
+	state().setStatus(statusString);
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 /******************************************************************************
 * Reads the values of a particle or bond property from the GSD file.
 ******************************************************************************/
-PropertyStorage* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, uint32_t numElements, int propertyType, bool isBondProperty, const std::shared_ptr<ParticleFrameData>& frameData)
+PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container)
 {
+	PropertyObject* prop = nullptr;
 	if(gsd.hasChunk(chunkName, frameNumber)) {
-		PropertyPtr prop;
-		if(propertyType != PropertyStorage::GenericUserProperty) {
-			if(!isBondProperty)
-				prop = ParticlesObject::OOClass().createStandardStorage(numElements, propertyType, false);
-			else
-				prop = BondsObject::OOClass().createStandardStorage(numElements, propertyType, false);
+		if(propertyType != PropertyObject::GenericUserProperty) {
+			prop = container->createProperty(propertyType, false, executionContext());
 		}
 		else {
 			QString propertyName(chunkName);
 			int slashPos = propertyName.lastIndexOf(QChar('/'));
 			if(slashPos != -1) propertyName.remove(0, slashPos + 1);
 			std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
-			prop = std::make_shared<PropertyStorage>(numElements, dataTypeAndComponents.first, dataTypeAndComponents.second, 0, propertyName, false);
+			prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second, 0, false);
 		}
-		if(!isBondProperty)
-			frameData->particles().addProperty(prop);
-		else
-			frameData->bonds().addProperty(prop);
-		if(prop->dataType() == PropertyStorage::Float)
-			gsd.readFloatArray(chunkName, frameNumber, PropertyAccess<FloatType,true>(prop).begin(), numElements, prop->componentCount());
-		else if(prop->dataType() == PropertyStorage::Int)
-			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int,true>(prop).begin(), numElements, prop->componentCount());
-		else if(prop->dataType() == PropertyStorage::Int64)
-			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<qlonglong,true>(prop).begin(), numElements, prop->componentCount());
+		if(prop->dataType() == PropertyObject::Float)
+			gsd.readFloatArray(chunkName, frameNumber, PropertyAccess<FloatType,true>(prop).begin(), container->elementCount(), prop->componentCount());
+		else if(prop->dataType() == PropertyObject::Int)
+			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<int,true>(prop).begin(), container->elementCount(), prop->componentCount());
+		else if(prop->dataType() == PropertyObject::Int64)
+			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<qlonglong,true>(prop).begin(), container->elementCount(), prop->componentCount());
 		else
 			throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
-		return prop.get();
 	}
-	else return nullptr;
+	return prop;
+}
+
+/******************************************************************************
+* Assigns a mesh-based shape to a particle type.
+******************************************************************************/
+void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shapeMesh)
+{
+	const PropertyObject* existingTypeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+	const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId));
+	OVITO_ASSERT(existingType);
+
+	// Check whether the shape mesh is already assigned to the existing particle type.
+	if(!existingType || (existingType->shapeMesh() && existingType->shapeMesh()->mesh() == shapeMesh))
+		return;
+
+	// Create the data object for the mesh.
+	DataOORef<TriMeshObject> shapeObject = DataOORef<TriMeshObject>::create(dataset(), executionContext());
+	shapeObject->setMesh(std::move(shapeMesh));
+	shapeObject->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
+	shapeObject->setVisElement(nullptr);
+
+	// Assign the shape to the particle type.
+	PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
+	ParticleType* mutableType = typeProperty->makeMutable(existingType);
+	mutableType->setShapeMesh(shapeObject);
+	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
 }
 
 /******************************************************************************
 * Parse a JSON string containing a particle shape definition.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseParticleShape(int typeId, PropertyContainerImportData::TypeList* typeList, size_t numParticles, ParticleFrameData* frameData, const QByteArray& shapeSpecString)
+void GSDImporter::FrameLoader::parseParticleShape(int typeId, const QByteArray& shapeSpecString)
 {
 	// Check if an existing geometry is already stored in the cache for the JSON string.
 	TriMeshPtr cacheShapeMesh = _importer->lookupParticleShapeInCache(shapeSpecString);
 	if(cacheShapeMesh) {
 		// Assign shape to particle type.
-		typeList->setTypeAttribute(typeId, QStringLiteral("shape"), QVariant::fromValue(std::move(cacheShapeMesh)));
+		setParticleTypeShape(typeId, std::move(cacheShapeMesh));
 		return; // No need to parse the JSON string again.
 	}
 
@@ -369,22 +391,22 @@ void GSDImporter::FrameLoader::parseParticleShape(int typeId, PropertyContainerI
 		throw Exception(tr("Missing 'type' field in particle shape specification in GSD file."));
 
 	if(shapeType == "Sphere") {
-		parseSphereShape(typeId, typeList, shapeSpec.object());
+		parseSphereShape(typeId, shapeSpec.object());
 	}
 	else if(shapeType == "Ellipsoid") {
-		parseEllipsoidShape(typeId, typeList, numParticles, frameData, shapeSpec.object());
+		parseEllipsoidShape(typeId, shapeSpec.object());
 	}
 	else if(shapeType == "Polygon") {
-		parsePolygonShape(typeId, typeList, shapeSpec.object(), shapeSpecString);
+		parsePolygonShape(typeId, shapeSpec.object(), shapeSpecString);
 	}
 	else if(shapeType == "ConvexPolyhedron") {
-		parseConvexPolyhedronShape(typeId, typeList, shapeSpec.object(), shapeSpecString);
+		parseConvexPolyhedronShape(typeId, shapeSpec.object(), shapeSpecString);
 	}
 	else if(shapeType == "Mesh") {
-		parseMeshShape(typeId, typeList, shapeSpec.object(), shapeSpecString);
+		parseMeshShape(typeId, shapeSpec.object(), shapeSpecString);
 	}
 	else if(shapeType == "SphereUnion") {
-		parseSphereUnionShape(typeId, typeList, shapeSpec.object(), shapeSpecString);
+		parseSphereUnionShape(typeId, shapeSpec.object(), shapeSpecString);
 	}
 	else {
 		qWarning() << "GSD file reader: The following particle shape type is not supported by this version of OVITO:" << shapeType;
@@ -394,18 +416,28 @@ void GSDImporter::FrameLoader::parseParticleShape(int typeId, PropertyContainerI
 /******************************************************************************
 * Parsing routine for 'Sphere' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseSphereShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition)
+void GSDImporter::FrameLoader::parseSphereShape(int typeId, QJsonObject definition)
 {
 	double diameter = definition.value("diameter").toDouble();
 	if(diameter <= 0)
 		throw Exception(tr("Missing or invalid 'diameter' field in 'Sphere' particle shape definition in GSD file."));
-	typeList->setTypeRadius(typeId, diameter / 2);
+
+	FloatType radius = diameter / 2;
+
+	// Assign the radius value to the particle type.
+	const PropertyObject* existingTypeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+	if(const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId))) {
+		if(existingType->radius() != radius) {
+			PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
+			typeProperty->makeMutable(existingType)->setRadius(radius);
+		}
+	}
 }
 
 /******************************************************************************
 * Parsing routine for 'Ellipsoid' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, PropertyContainerImportData::TypeList* typeList, size_t numParticles, ParticleFrameData* frameData, QJsonObject definition)
+void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject definition)
 {
 	Vector3 abc;
 	abc.x() = definition.value("a").toDouble();
@@ -425,13 +457,11 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, PropertyContainer
 		throw Exception(tr("Invalid 'c' field in 'Ellipsoid' particle shape definition in GSD file. Value must not be negative."));
 
 	// Create the 'Aspherical Shape' particle property if it doesn't exist yet.
-	PropertyAccess<Vector3> ashapeProperty = frameData->particles().findStandardProperty(ParticlesObject::AsphericalShapeProperty);
-	if(!ashapeProperty)
-		ashapeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numParticles, ParticlesObject::AsphericalShapeProperty, true);
+	PropertyAccess<Vector3> ashapeProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
 
 	// Assign the [a,b,c] values to those particles which are of the given type.
-	ConstPropertyAccess<int> typeProperty = frameData->particles().findStandardProperty(ParticlesObject::TypeProperty);
-	for(size_t i = 0; i < numParticles; i++) {
+	ConstPropertyAccess<int> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
+	for(size_t i = 0; i < typeProperty.size(); i++) {
 		if(typeProperty[i] == typeId)
 			ashapeProperty[i] = abc;
 	}
@@ -440,7 +470,7 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, PropertyContainer
 /******************************************************************************
 * Parsing routine for 'Polygon' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parsePolygonShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString)
+void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString)
 {
 	// Parse the list of vertices.
 	const QJsonValue vertexArrayVal = definition.value("vertices");
@@ -509,25 +539,25 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, PropertyContainerIm
 	_importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
 	// Assign shape to particle type.
-	typeList->setTypeAttribute(typeId, QStringLiteral("shape"), QVariant::fromValue(std::move(triMesh)));
+	setParticleTypeShape(typeId, std::move(triMesh));
 }
 
 /******************************************************************************
 * Recursive helper function that tessellates a corner face.
 ******************************************************************************/
-static void tessellateCornerFacet(SurfaceMeshData::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshData& mesh, std::vector<Vector3>& vertexNormals, const Point3& center)
+static void tessellateCornerFacet(SurfaceMeshAccess::face_index seedFace, int recursiveDepth, FloatType roundingRadius, SurfaceMeshAccess& mesh, std::vector<Vector3>& vertexNormals, const Point3& center)
 {
 	if(recursiveDepth <= 1) return;
 
 	// List of edges that should be split during the next iteration.
-	std::set<SurfaceMeshData::edge_index> edgeList;
+	std::set<SurfaceMeshAccess::edge_index> edgeList;
 
 	// List of faces that should be subdivided during the next iteration.
-	std::vector<SurfaceMeshData::face_index> faceList, faceList2;
+	std::vector<SurfaceMeshAccess::face_index> faceList, faceList2;
 
 	// Initialize lists.
 	faceList.push_back(seedFace);
-	SurfaceMeshData::edge_index e = mesh.firstFaceEdge(seedFace);
+	SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(seedFace);
 	do {
 		edgeList.insert(e);
 		e = mesh.nextFaceEdge(e);
@@ -538,26 +568,26 @@ static void tessellateCornerFacet(SurfaceMeshData::face_index seedFace, int recu
 	for(int iteration = 1; iteration < recursiveDepth; iteration++) {
 
 		// Create new vertices at the midpoints of the existing edges.
-		for(SurfaceMeshData::edge_index edge : edgeList) {
+		for(SurfaceMeshAccess::edge_index edge : edgeList) {
 			Point3 midpoint = mesh.vertexPosition(mesh.vertex1(edge));
 			midpoint += mesh.vertexPosition(mesh.vertex2(edge)) - Point3::Origin();
 			Vector3 normal = (midpoint * FloatType(0.5)) - center;
 			normal.normalizeSafely();
-			SurfaceMeshData::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius);
+			SurfaceMeshAccess::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius);
 			vertexNormals.push_back(normal);
 		}
 		edgeList.clear();
 
 		// Subdivide the faces.
-		for(SurfaceMeshData::face_index face : faceList) {
+		for(SurfaceMeshAccess::face_index face : faceList) {
 			int order = mesh.topology()->countFaceEdges(face) / 2;
-			SurfaceMeshData::edge_index e = mesh.firstFaceEdge(face);
+			SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
 			for(int i = 0; i < order; i++) {
-				SurfaceMeshData::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
+				SurfaceMeshAccess::edge_index edge2 = mesh.nextFaceEdge(mesh.nextFaceEdge(e));
 				e = mesh.splitFace(e, edge2);
 				// Put edges and the sub-face itself into the list so that
 				// they get refined during the next iteration of the algorithm.
-				SurfaceMeshData::edge_index oe = mesh.oppositeEdge(e);
+				SurfaceMeshAccess::edge_index oe = mesh.oppositeEdge(e);
 				for(int j = 0; j < 3; j++) {
 					edgeList.insert((oe < mesh.oppositeEdge(oe)) ? oe : mesh.oppositeEdge(oe));
 					oe = mesh.nextFaceEdge(oe);
@@ -574,7 +604,7 @@ static void tessellateCornerFacet(SurfaceMeshData::face_index seedFace, int recu
 /******************************************************************************
 * Parsing routine for 'ConvexPolyhedron' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString)
+void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString)
 {
 	// Parse the list of vertices.
 	std::vector<Point3> vertices;
@@ -595,7 +625,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 
 	// Construct the convex hull of the vertices.
 	// This yields a half-edge surface mesh data structure.
-	SurfaceMeshData mesh;
+	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
 	mesh.constructConvexHull(std::move(vertices));
 	mesh.joinCoplanarFaces();
 
@@ -603,22 +633,22 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 	FloatType roundingRadius = definition.value("rounding_radius").toDouble();
 	std::vector<Vector3> vertexNormals;
 	if(roundingRadius > 0) {
-		SurfaceMeshData roundedMesh;
+		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
 
 		// Maps edges of the old mesh to edges of the new mesh.
-		std::vector<SurfaceMeshData::edge_index> edgeMapping(mesh.edgeCount());
+		std::vector<SurfaceMeshAccess::edge_index> edgeMapping(mesh.edgeCount());
 
 		// Copy the faces of the existing mesh over to the new mesh data structure.
-		SurfaceMeshData::size_type originalFaceCount = mesh.faceCount();
-		for(SurfaceMeshData::face_index face = 0; face <originalFaceCount; face++) {
+		SurfaceMeshAccess::size_type originalFaceCount = mesh.faceCount();
+		for(SurfaceMeshAccess::face_index face = 0; face <originalFaceCount; face++) {
 
 			// Compute the offset by which the face needs to be extruded outward.
 			Vector3 faceNormal = mesh.computeFaceNormal(face);
 			Vector3 offset = faceNormal * roundingRadius;
 
 			// Duplicate the vertices and shift them along the extrusion vector.
-			SurfaceMeshData::size_type faceVertexCount = 0;
-			SurfaceMeshData::edge_index e = mesh.firstFaceEdge(face);
+			SurfaceMeshAccess::size_type faceVertexCount = 0;
+			SurfaceMeshAccess::edge_index e = mesh.firstFaceEdge(face);
 			do {
 				roundedMesh.createVertex(mesh.vertexPosition(mesh.vertex1(e)) + offset);
 				vertexNormals.push_back(faceNormal);
@@ -628,10 +658,10 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 			while(e != mesh.firstFaceEdge(face));
 
 			// Connect the duplicated vertices by a new face.
-			SurfaceMeshData::face_index new_f = roundedMesh.createFace(roundedMesh.topology()->end_vertices() - faceVertexCount, roundedMesh.topology()->end_vertices());
+			SurfaceMeshAccess::face_index new_f = roundedMesh.createFace(roundedMesh.topology()->end_vertices() - faceVertexCount, roundedMesh.topology()->end_vertices());
 
 			// Register the newly created edges.
-			SurfaceMeshData::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
+			SurfaceMeshAccess::edge_index new_e = roundedMesh.firstFaceEdge(new_f);
 			do {
 				edgeMapping[e] = new_e;
 				e = mesh.nextFaceEdge(e);
@@ -641,14 +671,14 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 		}
 
 		// Insert new faces in between two faces that share an edge.
-		for(SurfaceMeshData::edge_index e = 0; e < mesh.edgeCount(); e++) {
+		for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
 			// Skip every other half-edge.
 			if(e > mesh.oppositeEdge(e)) continue;
 
-			SurfaceMeshData::edge_index edge = edgeMapping[e];
-			SurfaceMeshData::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
+			SurfaceMeshAccess::edge_index edge = edgeMapping[e];
+			SurfaceMeshAccess::edge_index opposite_edge = edgeMapping[mesh.oppositeEdge(e)];
 
-			SurfaceMeshData::face_index new_f = roundedMesh.createFace({
+			SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({
 				roundedMesh.vertex2(edge),
 				roundedMesh.vertex1(edge),
 				roundedMesh.vertex2(opposite_edge),
@@ -659,23 +689,23 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 		}
 
 		// Fill in the holes at the vertices of the old mesh.
-		for(SurfaceMeshData::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
-			SurfaceMeshData::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
-			SurfaceMeshData::edge_index border_edges[2] = {
+		for(SurfaceMeshAccess::edge_index original_edge = 0; original_edge < edgeMapping.size(); original_edge++) {
+			SurfaceMeshAccess::edge_index new_edge = roundedMesh.oppositeEdge(edgeMapping[original_edge]);
+			SurfaceMeshAccess::edge_index border_edges[2] = {
 				roundedMesh.nextFaceEdge(new_edge),
 				roundedMesh.prevFaceEdge(new_edge)
 			};
-			SurfaceMeshData::vertex_index corner_vertices[2] = {
+			SurfaceMeshAccess::vertex_index corner_vertices[2] = {
 				mesh.vertex1(original_edge),
 				mesh.vertex2(original_edge)
 			};
 			for(int i = 0; i < 2; i++) {
-				SurfaceMeshData::edge_index e = border_edges[i];
+				SurfaceMeshAccess::edge_index e = border_edges[i];
 				if(roundedMesh.hasOppositeEdge(e)) continue;
-				SurfaceMeshData::face_index new_f = roundedMesh.createFace({});
-				SurfaceMeshData::edge_index edge = e;
+				SurfaceMeshAccess::face_index new_f = roundedMesh.createFace({});
+				SurfaceMeshAccess::edge_index edge = e;
 				do {
-					SurfaceMeshData::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
+					SurfaceMeshAccess::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
 					edge = roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(edge)))));
 				}
 				while(edge != e);
@@ -686,13 +716,13 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 		}
 
 		// Tessellate the inserted edge elements.
-		for(SurfaceMeshData::edge_index e = 0; e < mesh.edgeCount(); e++) {
+		for(SurfaceMeshAccess::edge_index e = 0; e < mesh.edgeCount(); e++) {
 			// Skip every other half-edge.
 			if(e > mesh.oppositeEdge(e)) continue;
 
-			SurfaceMeshData::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
-			SurfaceMeshData::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
-			SurfaceMeshData::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
+			SurfaceMeshAccess::edge_index startEdge = roundedMesh.oppositeEdge(edgeMapping[e]);
+			SurfaceMeshAccess::edge_index edge1 = roundedMesh.prevFaceEdge(roundedMesh.prevFaceEdge(startEdge));
+			SurfaceMeshAccess::edge_index edge2 = roundedMesh.nextFaceEdge(startEdge);
 
 			for(int i = 1; i < (1<<(_roundingResolution-1)); i++) {
 				edge2 = roundedMesh.splitFace(edge1, edge2);
@@ -730,13 +760,13 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, PropertyCo
 	_importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
 	// Assign shape to particle type.
-	typeList->setTypeAttribute(typeId, QStringLiteral("shape"), QVariant::fromValue(std::move(triMesh)));
+	setParticleTypeShape(typeId, std::move(triMesh));
 }
 
 /******************************************************************************
 * Parsing routine for 'Mesh' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseMeshShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString)
+void GSDImporter::FrameLoader::parseMeshShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString)
 {
 	// Parse the list of vertices.
 	std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
@@ -788,13 +818,13 @@ void GSDImporter::FrameLoader::parseMeshShape(int typeId, PropertyContainerImpor
 	_importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
 	// Assign shape to particle type.
-	typeList->setTypeAttribute(typeId, QStringLiteral("shape"), QVariant::fromValue(std::move(triMesh)));
+	setParticleTypeShape(typeId, std::move(triMesh));
 }
 
 /******************************************************************************
 * Parsing routine for 'SphereUnion' particle shape definitions.
 ******************************************************************************/
-void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, PropertyContainerImportData::TypeList* typeList, QJsonObject definition, const QByteArray& shapeSpecString)
+void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString)
 {
 	// Parse the list of sphere centers.
 	std::vector<Point3> centers;
@@ -859,7 +889,7 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, PropertyContain
 	_importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
 	// Assign shape to particle type.
-	typeList->setTypeAttribute(typeId, QStringLiteral("shape"), QVariant::fromValue(std::move(triMesh)));
+	setParticleTypeShape(typeId, std::move(triMesh));
 }
 
 }	// End of namespace

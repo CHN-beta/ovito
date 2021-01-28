@@ -51,7 +51,15 @@ public:
 	const QString& pythonName() const { return _pythonName; }
 
 	/// Creates a new property storage for one of the registered standard properties.
-	virtual PropertyPtr createStandardStorage(size_t elementCount, int typeId, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const { return {}; }
+	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const { return {}; }
+
+	/// Creates a new property object for a standard property of this container class.
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {}) const;
+
+	/// Creates a new property object for a user-defined property.
+	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
+		return PropertyPtr::create(dataset, ExecutionContext::Scripting, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames));
+	}
 
 	/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 	virtual bool supportsViewportPicking() const { return false; }
@@ -76,13 +84,8 @@ public:
 	/// on the mapping of the file data columns to internal properties.
 	virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const {}
 
-	/// Creates a new instace of the property object type.
-	OORef<PropertyObject> createFromStorage(DataSet* dataset, PropertyPtr storage) const;
-
-	/// Creates a new instace of the property object type.
-	OORef<PropertyObject> createFromStorage(DataSet* dataset, ConstPropertyPtr storage) const {
-		return createFromStorage(dataset, const_pointer_cast<PropertyStorage>(std::move(storage)));
-	}
+	/// Returns a default color for an ElementType given its numeric type ID.
+	virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const;
 
 	/// Determines whether a standard property ID is defined for this property class.
 	bool isValidStandardPropertyId(int id) const {
@@ -117,18 +120,13 @@ public:
 	/// Returns the number of vector components per element used by the given standard property type.
 	size_t standardPropertyComponentCount(int typeId) const {
 		OVITO_ASSERT(_standardPropertyComponents.find(typeId) != _standardPropertyComponents.end());
-		return std::max(_standardPropertyComponents.find(typeId)->second.size(), 1);
+		return std::max((size_t)_standardPropertyComponents.find(typeId)->second.size(), (size_t)1);
 	}
 
 	/// Returns the list of component names for the given standard property type.
 	const QStringList& standardPropertyComponentNames(int typeId) const {
 		OVITO_ASSERT(_standardPropertyComponents.find(typeId) != _standardPropertyComponents.end());
 		return _standardPropertyComponents.find(typeId)->second;
-	}
-
-	/// Returns the list of standard property type IDs.
-	const QList<int>& standardProperties() const {
-		return _standardPropertyList;
 	}
 
 	/// Returns the mapping from standard property names to standard property type IDs.
@@ -162,9 +160,6 @@ protected:
 	/// Sets the name by which this property class is referred to from Python scripts.
 	void setPythonName(const QString& name) { _pythonName = name; }
 
-	/// Gives the property class the opportunity to set up a newly created property object.
-	virtual void prepareNewProperty(PropertyObject* property) const {}
-
 private:
 
 	/// The human-readable display name of this property class used in the user interface,
@@ -176,9 +171,6 @@ private:
 
 	/// The name by which this property class is referred to from Python scripts.
 	QString _pythonName;
-
-	/// The list of standard property type IDs.
-	QList<int> _standardPropertyList;
 
 	/// Mapping from standard property names to standard property type IDs.
 	QMap<QString, int> _standardPropertyIds;
@@ -203,4 +195,3 @@ private:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerClassPtr);
-Q_DECLARE_TYPEINFO(Ovito::StdObj::PropertyContainerClassPtr, Q_PRIMITIVE_TYPE);

@@ -122,11 +122,11 @@ bool PropertyInspectionApplet::selectDataObject(PipelineObject* dataSource, cons
 void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
 {
 	// Generate the new list of properties.
-	std::vector<OORef<PropertyObject>> newProperties;
+	std::vector<ConstPropertyPtr> newProperties;
 	if(container) {
 		// Let the sub-class insert an extra ad-hoc column. 
 		// This option is used for DataTables, for example, which compute the x-axis dynamically.
-		if(OORef<PropertyObject> headerColumn = _applet->createHeaderColumnProperty(container))
+		if(ConstPropertyPtr headerColumn = _applet->createHeaderColumnProperty(container))
 			newProperties.push_back(std::move(headerColumn));
 		// Insert regular properties of the container.
 		newProperties.insert(newProperties.end(), container->properties().begin(), container->properties().end());
@@ -138,7 +138,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
 
 	// Try to preserve the columns of the model as far as possible.
 	auto iter_pair = std::mismatch(_properties.begin(), _properties.end(), newProperties.begin(), newProperties.end(),
-		[](PropertyObject* prop1, PropertyObject* prop2) {
+		[](const PropertyObject* prop1, const PropertyObject* prop2) {
 			return prop1->type() == prop2->type() && prop1->name() == prop2->name();
 		});
 
@@ -203,9 +203,9 @@ void PropertyInspectionApplet::PropertyFilterModel::setupEvaluator()
 	if(_filterExpression.isEmpty() == false && _applet->currentState()) {
 		if(const PropertyContainer* container = _applet->selectedContainerObject()) {
 			try {
-				// Check if expression contains an assignment ('=' operator).
+				// Check if expression contains a variable assignment ('=' operator).
 				// This should be considered an error, because the user is probably referring to the comparison operator '=='.
-				if(_filterExpression.contains(QRegExp("[^=!><]=(?!=)")))
+				if(_filterExpression.contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
 					throw Exception(tr("The entered expression contains the assignment operator '='. Please use the correct comparison operator '==' instead."));
 
 				_evaluator = _applet->createExpressionEvaluator();
@@ -232,26 +232,26 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
 	if(role == Qt::DisplayRole) {
 		OVITO_ASSERT(index.column() >= 0 && index.column() < _properties.size());
 		size_t elementIndex = index.row();
-		PropertyObject* property = _properties[index.column()];
+		const auto& property = _properties[index.column()];
 		if(elementIndex < property->size()) {
 			QString str;
 			for(size_t component = 0; component < property->componentCount(); component++) {
 				if(component != 0) str += QStringLiteral(" ");
-				if(property->dataType() == PropertyStorage::Int) {
+				if(property->dataType() == PropertyObject::Int) {
 					ConstPropertyAccess<int, true> data(property);
 					str += QString::number(data.get(elementIndex, component));
 					if(property->elementTypes().empty() == false) {
-						if(ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
+						if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
 							if(!ptype->name().isEmpty())
 								str += QStringLiteral(" (%1)").arg(ptype->name());
 						}
 					}
 				}
-				else if(property->dataType() == PropertyStorage::Int64) {
+				else if(property->dataType() == PropertyObject::Int64) {
 					ConstPropertyAccess<qlonglong, true> data(property);
 					str += QString::number(data.get(elementIndex, component));
 				}
-				else if(property->dataType() == PropertyStorage::Float) {
+				else if(property->dataType() == PropertyObject::Float) {
 					ConstPropertyAccess<FloatType, true> data(property);
 					str += QString::number(data.get(elementIndex, component));
 				}
@@ -261,16 +261,16 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
 	}
 	else if(role == Qt::DecorationRole) {
 		OVITO_ASSERT(index.column() >= 0 && index.column() < _properties.size());
-		PropertyObject* property = _properties[index.column()];
+		const auto& property = _properties[index.column()];
 		size_t elementIndex = index.row();
 		if(elementIndex < property->size()) {
 			if(_applet->isColorProperty(property)) {
 				ConstPropertyAccess<Color> data(property);
 				return (QColor)data[elementIndex];
 			}
-			else if(property->dataType() == PropertyStorage::Int && property->componentCount() == 1 && property->elementTypes().empty() == false) {
+			else if(property->dataType() == PropertyObject::Int && property->componentCount() == 1 && property->elementTypes().empty() == false) {
 				ConstPropertyAccess<int> data(property);
-				if(ElementType* ptype = property->elementType(data[elementIndex]))
+				if(const ElementType* ptype = property->elementType(data[elementIndex]))
 					return (QColor)ptype->color();
 			}
 		}

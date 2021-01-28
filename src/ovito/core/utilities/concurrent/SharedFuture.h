@@ -153,7 +153,7 @@ typename Ovito::detail::resulting_future_type<FC,std::add_lvalue_reference_t<con
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = ContinuationTask<result_promise_type>;
+	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
@@ -216,11 +216,11 @@ void SharedFuture<R...>::force_then(Executor&& executor, bool defer, FC&& cont) 
 			return;
 
 		// Don't run continuation function either in case of an exception state.
-		if(task->_exceptionStore)
+		if(task->exceptionStore())
 			return;
 
 		// Now it's time to execute the continuation function.
-		Ovito::detail::apply(std::forward<FC>(cont), task->template getResults<tuple_type>());
+		Ovito::detail::apply_cpp14(std::forward<FC>(cont), task->template getResults<tuple_type>());
 	});
 }
 
@@ -233,7 +233,7 @@ typename Ovito::detail::resulting_future_type<FC,std::tuple<SharedFuture<R...>>>
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = ContinuationTask<result_promise_type>;
+	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");

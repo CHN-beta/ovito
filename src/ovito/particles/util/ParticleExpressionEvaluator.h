@@ -47,7 +47,7 @@ public:
 protected:
 
 	/// Initializes the list of input variables from the given input state.
-	virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame) override;
+	virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame) override;
 };
 
 /**

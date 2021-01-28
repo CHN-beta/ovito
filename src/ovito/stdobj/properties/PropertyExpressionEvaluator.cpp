@@ -31,7 +31,7 @@
 namespace Ovito { namespace StdObj {
 
 /// List of characters allowed in variable names.
-QByteArray PropertyExpressionEvaluator::_validVariableNameChars("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.@");
+mu::string_type PropertyExpressionEvaluator::_validVariableNameChars(_T("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.@"));
 
 /******************************************************************************
 * Specifies the expressions to be evaluated for each data element and create the
@@ -44,13 +44,11 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 	// Build list of properties that will be made available as expression variables.
 	std::vector<ConstPropertyPtr> inputProperties;
 	for(const PropertyObject* property : container->properties())
-		inputProperties.push_back(property->storage());
+		inputProperties.push_back(property);
 	_elementDescriptionName = container->getOOMetaClass().elementDescriptionName();
 
 	// Get simulation cell information.
-	SimulationCell simCell;
-	const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>();
-	if(simCellObj) simCell = simCellObj->data();
+	const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();
 
 	// Determine number of input elements.
 	_elementCount = container->elementCount();
@@ -58,17 +56,17 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 	OVITO_ASSERT(inputProperties.empty() || _elementCount == inputProperties.front()->size());
 
 	// Create list of input variables.
-	createInputVariables(inputProperties, simCellObj ? &simCell : nullptr, state.buildAttributesMap(), animationFrame);
+	createInputVariables(inputProperties, simCell, state.buildAttributesMap(), animationFrame);
 
 	// Copy expression strings into internal array.
 	_expressions.resize(expressions.size());
-	std::transform(expressions.begin(), expressions.end(), _expressions.begin(), [](const QString& s) -> std::string { return s.toStdString(); });
+	std::transform(expressions.begin(), expressions.end(), _expressions.begin(), &convertQString);
 }
 
 /******************************************************************************
 * Initializes the list of input variables from the given input state.
 ******************************************************************************/
-void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame)
+void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame)
 {
 	// Register the list of expression variables that refer to input properties.
 	registerPropertyVariables(inputProperties, 0);
@@ -88,8 +86,8 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 
 	// Global attributes
 	for(auto entry = attributes.constBegin(); entry != attributes.constEnd(); ++entry) {
-		if(entry.value().type() == QVariant::String)
-			continue;
+//		if(entry.value().type() == QMetaType::String)
+//			continue;
 
 		if(entry.value().canConvert<double>())
 			registerGlobalParameter(entry.key(), entry.value().toDouble());
@@ -99,7 +97,7 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 
 	if(simCell) {
 		// Store simulation cell data.
-		_simCell = *simCell;
+		_simCell = simCell;
 
 		// Cell volume
 		registerGlobalParameter("CellVolume", simCell->volume3D(), tr("simulation cell volume"));
@@ -117,22 +115,21 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 /******************************************************************************
 * Registers the list of expression variables that refer to input properties.
 ******************************************************************************/
-void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const char* namePrefix)
+void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const mu::char_type* namePrefix)
 {
 	int propertyIndex = 1;
 	for(const ConstPropertyPtr& property : inputProperties) {
 		ExpressionVariable v;
 
 		// Properties with custom data type are not supported by this modifier.
-		if(property->dataType() == PropertyStorage::Int)
+		if(property->dataType() == PropertyObject::Int)
 			v.type = INT_PROPERTY;
-		else if(property->dataType() == PropertyStorage::Int64)
+		else if(property->dataType() == PropertyObject::Int64)
 			v.type = INT64_PROPERTY;
-		else if(property->dataType() == PropertyStorage::Float)
+		else if(property->dataType() == PropertyObject::Float)
 			v.type = FLOAT_PROPERTY;
 		else
 			continue;
-		v.property = property;
 		v.variableClass = variableClass;
 		v.propertyArray = property;
 
@@ -151,9 +148,9 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
 			if(property->componentNames().size() == property->componentCount())
 				fullPropertyName += "." + property->componentNames()[k];
 			if(!namePrefix)
-				v.name = fullPropertyName.toStdString();
+				v.name = convertQString(fullPropertyName);
 			else
-				v.name = namePrefix + fullPropertyName.toStdString();
+				v.name = namePrefix + convertQString(fullPropertyName);
 
 			// Initialize data pointer into property storage.
 			v.dataPointer = v.propertyArray.cdata(k);
@@ -179,7 +176,7 @@ size_t PropertyExpressionEvaluator::addVariable(ExpressionVariable v)
 		// Remove whitespace from variable names.
 		if(c <= ' ') continue;
 		// Replace other invalid characters in variable names with an underscore.
-		v.mangledName.push_back(_validVariableNameChars.contains(c) ? c : '_');
+		v.mangledName.push_back(_validVariableNameChars.find(c) != mu::string_type::npos ? c : '_');
 	}
 	if(!v.mangledName.empty()) {
 		// Check if mangled name is unique.
@@ -200,7 +197,7 @@ QStringList PropertyExpressionEvaluator::inputVariableNames() const
 	QStringList vlist;
 	for(const ExpressionVariable& v : _variables) {
 		if(v.isRegistered)
-			vlist << QString::fromStdString(v.mangledName);
+			vlist << convertMuString(v.mangledName);
 	}
 	return vlist;
 }
@@ -208,7 +205,7 @@ QStringList PropertyExpressionEvaluator::inputVariableNames() const
 /******************************************************************************
 * Returns whether a variable is being referenced in one of the expressions.
 ******************************************************************************/
-bool PropertyExpressionEvaluator::isVariableUsed(const char* varName)
+bool PropertyExpressionEvaluator::isVariableUsed(const mu::char_type* varName)
 {
 	if(!_referencedVariablesKnown) {
 		Worker worker(*this);
@@ -296,10 +293,10 @@ PropertyExpressionEvaluator::Worker::Worker(PropertyExpressionEvaluator& evaluat
 		try {
 
 			// Configure parser to accept alpha-numeric characters and '.' in variable names.
-			parser->DefineNameChars(_validVariableNameChars.constData());
+			parser->DefineNameChars(_validVariableNameChars.c_str());
 
 			// Define some extra math functions.
-			parser->DefineFun("fmod", static_cast<double (*)(double,double)>(fmod), false);
+			parser->DefineFun(_T("fmod"), static_cast<double (*)(double,double)>(fmod), false);
 
 			// Let the muParser process the math expression.
 			parser->SetExpr(*expr);
@@ -320,7 +317,7 @@ PropertyExpressionEvaluator::Worker::Worker(PropertyExpressionEvaluator& evaluat
 			}
 		}
 		catch(mu::Parser::exception_type& ex) {
-			throw Exception(QString::fromStdString(ex.GetMsg()));
+			throw Exception(convertMuString(ex.GetMsg()));
 		}
 	}
 }
@@ -364,7 +361,7 @@ double PropertyExpressionEvaluator::Worker::evaluate(size_t elementIndex, size_t
 		return _parsers[component].Eval();
 	}
 	catch(const mu::Parser::exception_type& ex) {
-		throw Exception(QString::fromStdString(ex.GetMsg()));
+		throw Exception(convertMuString(ex.GetMsg()));
 	}
 }
 
@@ -379,15 +376,15 @@ void PropertyExpressionEvaluator::ExpressionVariable::updateValue(size_t element
 
 	switch(type) {
 	case FLOAT_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const FloatType*>(dataPointer + stride * elementIndex);
 		break;
 	case INT_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const int*>(dataPointer + stride * elementIndex);
 		break;
 	case INT64_PROPERTY:
-		if(elementIndex < property->size())
+		if(elementIndex < propertyArray.size())
 			value = *reinterpret_cast<const qlonglong*>(dataPointer + stride * elementIndex);
 		break;
 	case ELEMENT_INDEX:
@@ -412,27 +409,27 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
 	for(const ExpressionVariable& v : _variables) {
 		if((v.type == FLOAT_PROPERTY || v.type == INT_PROPERTY || v.type == INT64_PROPERTY || v.type == ELEMENT_INDEX || v.type == DERIVED_PROPERTY) && v.isRegistered && v.variableClass == 0) {
 			if(v.description.isEmpty())
-				str.append(QStringLiteral("<li>%1</li>").arg(QString::fromStdString(v.mangledName)));
+				str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
 			else
-				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(QString::fromStdString(v.mangledName)).arg(v.description));
+				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
 		}
 	}
 	str.append(QStringLiteral("</ul></p><p><b>Global values:</b><ul>"));
 	for(const ExpressionVariable& v : _variables) {
 		if(v.type == GLOBAL_PARAMETER && v.isRegistered) {
 			if(v.description.isEmpty())
-				str.append(QStringLiteral("<li>%1</li>").arg(QString::fromStdString(v.mangledName)));
+				str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
 			else
-				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(QString::fromStdString(v.mangledName)).arg(v.description));
+				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
 		}
 	}
 	str.append(QStringLiteral("</ul></p><p><b>Constants:</b><ul>"));
 	for(const ExpressionVariable& v : _variables) {
 		if(v.type == CONSTANT && v.isRegistered) {
 			if(v.description.isEmpty())
-				str.append(QStringLiteral("<li>%1</li>").arg(QString::fromStdString(v.mangledName)));
+				str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
 			else
-				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(QString::fromStdString(v.mangledName)).arg(v.description));
+				str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
 		}
 	}
 	str.append(QStringLiteral("</ul></p>"));

@@ -82,7 +82,7 @@ protected:
 private:
 
 	/// Stores the list of animation keys.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(AnimationKey, keys, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<AnimationKey>, keys, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**
@@ -286,5 +286,3 @@ protected:
 };
 
 }	// End of namespace
-
-

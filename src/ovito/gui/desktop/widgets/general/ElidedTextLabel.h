@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,14 +43,14 @@ public:
 
 	/// \brief Constructs an empty label.
 	/// \param parent The parent widget for the new widget.
-	/// \param f Passed to the QFrame constructor.
-	ElidedTextLabel(QWidget* parent = nullptr, Qt::WindowFlags f = 0) : QLabel(parent, f) {}
+	/// \param f Flags to be passed to the QLabel constructor.
+	ElidedTextLabel(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags()) : QLabel(parent, f) {}
 
 	/// \brief Constructs a label with text.
 	/// \param text The text string to display.
 	/// \param parent The parent widget for the new widget.
-	/// \param f Passed to the QFrame constructor.
-	ElidedTextLabel(const QString& string, QWidget* parent = nullptr, Qt::WindowFlags f = 0) : QLabel(string, parent, f) {}
+	/// \param f Flags to be passed to the QLabel constructor.
+	ElidedTextLabel(const QString& string, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags()) : QLabel(string, parent, f) {}
 
 protected:
 
@@ -62,5 +62,3 @@ protected:
 };
 
 }	// End of namespace
-
-

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ OORef<PropertiesEditor> PropertiesEditor::create(RefTarget* obj)
 			if(editorClass) {
 				if(!editorClass->isDerivedFrom(PropertiesEditor::OOClass()))
 					throw Exception(tr("The editor class %1 assigned to the RefTarget-derived class %2 is not derived from PropertiesEditor.").arg(editorClass->name(), clazz->name()));
-				return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance(nullptr));
+				return dynamic_object_cast<PropertiesEditor>(editorClass->createInstance());
 			}
 		}
 	}
@@ -76,6 +76,17 @@ void PropertiesEditor::initialize(PropertiesPanel* container, MainWindow* mainWi
 	_parentEditor = parentEditor;
 	createUI(rolloutParams);
 	Q_EMIT contentsReplaced(nullptr);
+}
+
+/******************************************************************************
+* Sets the object being edited in this editor.
+******************************************************************************/
+void PropertiesEditor::setEditObject(RefTarget* newObject) 
+{
+	OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
+			"PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
+
+	_editObject.set(this, PROPERTY_FIELD(editObject), newObject);
 }
 
 /******************************************************************************
@@ -147,7 +158,7 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(editObject)) {
 		setDataset(editObject() ? editObject()->dataset() : nullptr);
@@ -156,7 +167,16 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 		Q_EMIT contentsReplaced(editObject());
 		Q_EMIT contentsChanged(editObject());
 	}
-	RefMaker::referenceReplaced(field, oldTarget, newTarget);
+	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Changes the value of a non-animatable property field of the object being edited.
+******************************************************************************/
+void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
+{
+	if(editObject())
+		editObject()->setPropertyFieldValue(field, newValue);
 }
 
 }	// End of namespace

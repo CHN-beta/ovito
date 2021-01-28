@@ -42,28 +42,13 @@ public:
 	/// Constructor.
 	OpenGLImagePrimitive(OpenGLSceneRenderer* renderer);
 
-	/// \brief Sets the image to be rendered.
-	virtual void setImage(const QImage& image) override {
-		_needTextureUpdate = true;
-		ImagePrimitive::setImage(image);
-	}
-
-	/// \brief Returns true if the geometry buffer is filled and can be rendered with the given renderer.
-	virtual bool isValid(SceneRenderer* renderer) override;
-
-	/// \brief Renders the image in a rectangle given in pixel coordinates.
-	virtual void renderWindow(SceneRenderer* renderer, const Point2& pos, const Vector2& size) override;
-
-	/// \brief Renders the image in a rectangle given in viewport coordinates.
-	virtual void renderViewport(SceneRenderer* renderer, const Point2& pos, const Vector2& size) override;
+	/// \brief Renders the primitive.
+	void render(OpenGLSceneRenderer* renderer);
 
 private:
 
 	/// Converts the QImage into the unnamed format expected by OpenGL functions such as glTexImage2D().
 	static QImage convertToGLFormat(const QImage& img);
-
-	/// The GL context group under which the GL vertex buffer has been created.
-	QOpenGLContextGroup* _contextGroup;
 
 	/// The OpenGL shader program used to render the image.
 	QOpenGLShaderProgram* _shader;
@@ -74,8 +59,8 @@ private:
 	/// The OpenGL texture that is used for rendering the image.
 	OpenGLTexture _texture;
 
-	/// Indicates that the texture needs to be updated.
-	bool _needTextureUpdate = true;
+	/// Is used to detect when the image has been changed and the corresponding OpenGL texture needs to be updated.
+	qint64 _imageCacheKey = 0;
 };
 
 }	// End of namespace

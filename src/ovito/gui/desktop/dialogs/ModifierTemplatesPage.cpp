@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
-#include <ovito/gui/desktop/mainwin/cmdpanel/PipelineListModel.h>
+#include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include "ModifierTemplatesPage.h"
 

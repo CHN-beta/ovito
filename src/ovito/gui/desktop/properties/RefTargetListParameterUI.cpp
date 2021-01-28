@@ -26,7 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RefTargetListParameterUI);
-DEFINE_REFERENCE_FIELD(RefTargetListParameterUI, targets);
+DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 
 /******************************************************************************
 * The constructor.
@@ -129,8 +129,9 @@ void RefTargetListParameterUI::resetUI()
 
 		if(editObject()) {
 			// Create a local copy of the list of ref targets.
-			const QVector<RefTarget*>& reflist = editObject()->getVectorReferenceField(referenceField());
-			for(RefTarget* t : reflist) {
+			int count = editObject()->getVectorReferenceFieldSize(referenceField());
+			for(int i = 0; i < count; i++) {
+				RefTarget* t = editObject()->getVectorReferenceFieldTarget(referenceField(), i);
 				_targetToRow.push_back(_rowToTarget.size());
 				if(t != nullptr)
 					_rowToTarget.push_back(_targets.size());
@@ -171,7 +172,7 @@ void RefTargetListParameterUI::openSubEditor()
 					subEditor()->editObject()->getOOClass() != selection->getOOClass()) {
 
 				if(selection || &subEditor()->getOOClass() != _defaultEditorClass)
-					_subEditor = nullptr;
+					_subEditor.reset();
 			}
 		}
 		if(!subEditor() && editor()) {
@@ -179,13 +180,14 @@ void RefTargetListParameterUI::openSubEditor()
 				_subEditor = PropertiesEditor::create(selection);
 			}
 			else if(_defaultEditorClass) {
-				_subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance(nullptr));
+				_subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance());
 			}
 			else {
 				return;
 			}
-			if(subEditor())
+			if(subEditor()) {
 				subEditor()->initialize(editor()->container(), editor()->mainWindow(), _rolloutParams, editor());
+			}
 		}
 		if(subEditor()) {
 			subEditor()->setEditObject(selection);
@@ -204,8 +206,8 @@ RefTarget* RefTargetListParameterUI::objectAtIndex(int index) const
 	if(index >= _rowToTarget.size()) return nullptr;
 	int targetIndex = _rowToTarget[index];
 	OVITO_ASSERT(targetIndex < _targets.size());
-	OVITO_CHECK_OBJECT_POINTER(_targets[targetIndex]);
-	return _targets[targetIndex];
+	OVITO_CHECK_OBJECT_POINTER(targets()[targetIndex]);
+	return targets()[targetIndex];
 }
 
 /******************************************************************************
@@ -261,7 +263,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 					_rowToTarget[i]++;
 				if(refevent.newTarget() != nullptr) {
 					_rowToTarget.insert(rowIndex, refevent.index());
-					for(int i=refevent.index()+1; i<_targetToRow.size(); i++)
+					for(int i = refevent.index()+1; i < _targetToRow.size(); i++)
 						_targetToRow[i]++;
 					_model->endInsert();
 				}
@@ -269,9 +271,10 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 				// Check internal list structures.
 				int numRows = 0;
 				int numTargets = 0;
-				const QVector<RefTarget*>& reflist = editObject()->getVectorReferenceField(referenceField());
-				for(RefTarget* t : reflist) {
-					OVITO_ASSERT(_targets[numTargets] == t);
+				int count = editObject()->getVectorReferenceFieldSize(referenceField());
+				for(int i = 0; i < count; i++) {
+					RefTarget* t = editObject()->getVectorReferenceFieldTarget(referenceField(), i);
+					OVITO_ASSERT(targets()[numTargets] == t);
 					OVITO_ASSERT(_targetToRow[numTargets] == numRows);
 					if(t != nullptr) {
 						OVITO_ASSERT(_rowToTarget[numRows] == numTargets);
@@ -284,18 +287,19 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 		}
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			OVITO_ASSERT(false);
 			if(refevent.field() == &referenceField()) {
 				int rowIndex = _targetToRow[refevent.index()];
 				if(refevent.oldTarget())
 					_model->beginRemove(rowIndex);
-				OVITO_ASSERT(refevent.oldTarget() == _targets[refevent.index()]);
+				OVITO_ASSERT(refevent.oldTarget() == targets()[refevent.index()]);
 				_targets.remove(this, PROPERTY_FIELD(targets), refevent.index());
 				_targetToRow.remove(refevent.index());
-				for(int i=rowIndex; i<_rowToTarget.size(); i++)
+				for(int i = rowIndex; i < _rowToTarget.size(); i++)
 					_rowToTarget[i]--;
 				if(refevent.oldTarget()) {
 					_rowToTarget.remove(rowIndex);
-					for(int i=refevent.index(); i<_targetToRow.size(); i++)
+					for(int i = refevent.index(); i < _targetToRow.size(); i++)
 						_targetToRow[i]--;
 					_model->endRemove();
 				}
@@ -303,9 +307,10 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 				// Check internal list structures.
 				int numRows = 0;
 				int numTargets = 0;
-				const QVector<RefTarget*>& reflist = editObject()->getVectorReferenceField(referenceField());
-				for(RefTarget* t : reflist) {
-					OVITO_ASSERT(_targets[numTargets] == t);
+				int count = editObject()->getVectorReferenceFieldSize(referenceField());
+				for(int i = 0; i < count; i++) {
+					RefTarget* t = editObject()->getVectorReferenceFieldTarget(referenceField(), i);
+					OVITO_ASSERT(targets()[numTargets] == t);
 					OVITO_ASSERT(_targetToRow[numTargets] == numRows);
 					if(t != NULL) {
 						OVITO_ASSERT(_rowToTarget[numRows] == numTargets);
@@ -316,6 +321,33 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 #endif
 			}
 		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refevent.field() == &referenceField()) {
+				OVITO_ASSERT(refevent.newTarget() != nullptr && refevent.oldTarget() != nullptr);
+				_targets.set(this, PROPERTY_FIELD(targets), refevent.index(), refevent.newTarget());
+				// Update a single item.
+				int rowIndex = _targetToRow[refevent.index()];
+				_model->updateItem(rowIndex);
+				onSelectionChanged();
+#ifdef OVITO_DEBUG
+				// Check internal list structures.
+				int numRows = 0;
+				int numTargets = 0;
+				int count = editObject()->getVectorReferenceFieldSize(referenceField());
+				for(int i = 0; i < count; i++) {
+					RefTarget* t = editObject()->getVectorReferenceFieldTarget(referenceField(), i);
+					OVITO_ASSERT(targets()[numTargets] == t);
+					OVITO_ASSERT(_targetToRow[numTargets] == numRows);
+					if(t != nullptr) {
+						OVITO_ASSERT(_rowToTarget[numRows] == numTargets);
+						numRows++;
+					}
+					numTargets++;
+				}
+#endif
+			}
+		}		
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged || event.type() == ReferenceEvent::TargetChanged) {
 		OVITO_ASSERT(_targetToRow.size() == _targets.size());

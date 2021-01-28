@@ -60,4 +60,3 @@ public:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::ModifierClassPtr);
-Q_DECLARE_TYPEINFO(Ovito::ModifierClassPtr, Q_PRIMITIVE_TYPE);

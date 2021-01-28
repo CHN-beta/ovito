@@ -46,7 +46,7 @@ void InvertSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// List only property container that support element selection.
 	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty);
+		return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
 	});
 }
 

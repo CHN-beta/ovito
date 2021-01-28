@@ -15,27 +15,25 @@
        <imagedata fileref="images/scene_objects/simulation_cell_panel.png" format="PNG" scale="50" />
     </imageobject></mediaobject></screenshot></informalfigure>
 
-    This <link linkend="scene_objects">data object type</link> represents the geometry of the two- or three-dimensional simulation cell
-    and the applied boundary conditions. You can access the simulation cell information by selecting the corresponding entry under the 
+    This <link linkend="scene_objects">object</link> represents the geometry of the two- or three-dimensional simulation domain
+    and the boundary conditions (PBC flags). You can find the cell object that was loaded from the imported simulation file in the 
     <emphasis>Data source</emphasis> section of the <link linkend="usage.modification_pipeline.pipeline_listbox">pipeline editor</link> (see screenshot).
-    Note that usually a second list entry named <emphasis>Simulation cell</emphasis> exists in the pipeline editor,
-    which is the <link linkend="visual_elements.simulation_cell">visual element</link> controlling the display of the simulation cell as a wireframe box
-    in the viewports.
+    Note that the pipeline editor usually shows another item also called <emphasis>Simulation cell</emphasis>.
+    This is the corresponding <link linkend="visual_elements.simulation_cell">visual element</link> controlling the appearance of the simulation cell in rendered images.
   </para>
 
   <para>
-    Not all input file formats store the simulation cell that was originally used in a simulation.
-    In such cases, OVITO automatically computes an axis-aligned bounding box fully enclosing all particles 
-    and uses it as an ad-hoc simulation cell.
+    Some simulation file formats do not store the dimensions of the simulation cell that was used in the original simulation.
+    If OVITO cannot find the cell dimensions in the imported file, it automatically generated an ad-hoc simulation box that corresponds to the axis-aligned 
+    bounding box of all particle coordinates.
   </para>
 
   <simplesect>
     <title>Dimensionality</title>
     <para>
-      OVITO supports 2- and 3-dimensional datasets. The <emphasis>dimensionality</emphasis> is a setting that can be 
-      changed in the simulation cell panel.
-      In "2D" mode, the z-coordinates of particles and the third simulation cell vector will be ignored in
-      most computations performed by OVITO.
+      OVITO supports 2- and 3-dimensional datasets. The <emphasis>dimensionality</emphasis> detected by OVITO during file import can be 
+      overridden by the user in the simulation cell panel.
+      In "2D" mode, the z-coordinates of particles and the third simulation cell vector will be ignored by most computations performed by OVITO.
     </para>
   </simplesect>
 
@@ -44,17 +42,18 @@
     <para>
       The <emphasis>periodic boundary condition</emphasis> (PBC) flags of the simulation cell determine whether OVITO performs calculations within
       a periodic domain or not. If possible, OVITO tries to read or guess these flags from the imported simulation file, 
-      but you can manually override them within OVITO if needed.
+      but you can manually override them here if needed.
     </para>
   </simplesect>
 
   <simplesect>
-    <title>Cell geometry</title>
+    <title>Geometry</title>
     <para>
-      The shape of the three-dimensional simulation cell is defined by three vectors spanning a parallelepiped. 
-      The input fields in for the cell vectors in the simulation cell panel allow you to override the current cell geometry if needed.
-      However, the cell shape will be reset to its original state whenever OVITO reloads the input file.
-      To permanently change the simulation cell geometry, you should apply the <link linkend="particles.modifiers.affine_transformation">Affine transformation</link> modifier.
+      The shape of the three-dimensional simulation cell is defined by three vectors spanning a parallelepiped and the coordinates of 
+      one corner of the parallelepiped (the cell's origin).
+      The panel displays the original shape information loaded from the imported simulation file. 
+      To modify the simulation cell vectors, you can insert the <link linkend="particles.modifiers.affine_transformation">Affine transformation</link> modifier
+      into the data pipeline.
     </para>
   </simplesect>
 

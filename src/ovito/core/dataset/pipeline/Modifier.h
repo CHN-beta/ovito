@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -150,4 +150,3 @@ private:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Modifier*);
-Q_DECLARE_TYPEINFO(Ovito::Modifier*, Q_PRIMITIVE_TYPE);

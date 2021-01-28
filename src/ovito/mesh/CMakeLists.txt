@@ -23,17 +23,20 @@
 SET(SourceFiles
 	tri/TriMeshObject.cpp
 	tri/TriMeshVis.cpp
-	surface/HalfEdgeMesh.cpp
 	surface/SurfaceMesh.cpp
-	surface/SurfaceMeshData.cpp
+	surface/SurfaceMeshAccess.cpp
 	surface/RenderableSurfaceMesh.cpp
 	surface/SurfaceMeshVis.cpp
+	surface/SurfaceMeshTopology.cpp
 	surface/SurfaceMeshVertices.cpp
 	surface/SurfaceMeshFaces.cpp
 	surface/SurfaceMeshRegions.cpp
-	io/TriMeshFrameData.cpp
 	io/VTKFileImporter.cpp
 	io/VTKTriangleMeshExporter.cpp
+	io/ParaViewVTPMeshImporter.cpp
+	io/ParaViewVTRSimulationCellImporter.cpp
+	io/ParaViewVTMImporter.cpp
+	io/ParaViewPVDImporter.cpp
 	io/WavefrontOBJImporter.cpp
 	io/STLImporter.cpp
 )
@@ -59,6 +62,7 @@ OVITO_STANDARD_PLUGIN(Mesh
 		${GLUSourceFiles}
 	PLUGIN_DEPENDENCIES StdObj
 	PRECOMPILED_HEADERS Mesh.h
+	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml
 )
 
 # Polytess code does not support unity build. Need to turn it off.
@@ -68,7 +72,9 @@ ENDFOREACH()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "TriMeshObject.h"
+#include "TriMeshVis.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -33,6 +35,18 @@ DEFINE_PROPERTY_FIELD(TriMeshObject, mesh);
 ******************************************************************************/
 TriMeshObject::TriMeshObject(DataSet* dataset) : DataObject(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TriMeshObject::initializeObject(ExecutionContext executionContext)
+{
+	if(!visElement())
+		setVisElement(OORef<TriMeshVis>::create(dataset(), executionContext));
+
+	DataObject::initializeObject(executionContext);
 }
 
 /******************************************************************************

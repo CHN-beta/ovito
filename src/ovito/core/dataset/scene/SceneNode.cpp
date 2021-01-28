@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,15 +28,16 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/oo/CloneHelper.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
-DEFINE_REFERENCE_FIELD(SceneNode, children);
+DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
 DEFINE_PROPERTY_FIELD(SceneNode, nodeName);
 DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
@@ -55,12 +56,22 @@ SceneNode::SceneNode(DataSet* dataset) : RefTarget(dataset),
 	_boundingBoxValidity(TimeInterval::empty()),
 	_displayColor(0,0,0)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SceneNode::initializeObject(ExecutionContext executionContext)
+{
 	// Assign random color to node.
 	static std::default_random_engine rng;
 	setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
 
 	// Create a transformation controller for the node.
-	setTransformationController(ControllerManager::createTransformationController(dataset));
+	setTransformationController(ControllerManager::createTransformationController(dataset(), executionContext));
+
+	RefTarget::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -152,11 +163,11 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 			// Create a look at controller.
 			OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
 			if(!lookAtCtrl)
-				lookAtCtrl = new LookAtController(dataset());
+				lookAtCtrl = OORef<LookAtController>::create(dataset(), Application::instance()->executionContext());
 			lookAtCtrl->setTargetNode(targetNode);
 
 			// Assign it as rotation sub-controller.
-			prs->setRotationController(lookAtCtrl);
+			prs->setRotationController(std::move(lookAtCtrl));
 
 			return dynamic_object_cast<LookAtController>(prs->rotationController());
 		}
@@ -168,9 +179,9 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 			prs->rotationController()->getRotationValue(time, rotation, iv);
 
 			// Reset to default rotation controller.
-			OORef<Controller> controller = ControllerManager::createRotationController(dataset());
+			OORef<Controller> controller = ControllerManager::createRotationController(dataset(), Application::instance()->executionContext());
 			controller->setRotationValue(time, rotation, true);
-			prs->setRotationController(controller);
+			prs->setRotationController(std::move(controller));
 		}
 	}
 
@@ -207,13 +218,30 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * From RefMaker.
 ******************************************************************************/
-void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(transformationController)) {
 		// TM controller has changed -> rebuild world tm cache.
 		invalidateWorldTransformation();
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	else if(field == PROPERTY_FIELD(children)) {
+		// A child node has been replaced.
+		SceneNode* oldChild = static_object_cast<SceneNode>(oldTarget);
+		OVITO_ASSERT(oldChild->parentNode() == this);
+		oldChild->_parentNode = nullptr;
+
+		SceneNode* newChild = static_object_cast<SceneNode>(newTarget);
+		OVITO_CHECK_OBJECT_POINTER(newChild);
+		OVITO_ASSERT(newChild->parentNode() == nullptr);
+		newChild->_parentNode = this;
+
+		// Invalidate cached world bounding box of this parent node.
+		invalidateBoundingBox();
+
+		// The animation length might have changed when an object has been removed from the scene.
+		notifyDependents(ReferenceEvent::AnimationFramesChanged);
+	}
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

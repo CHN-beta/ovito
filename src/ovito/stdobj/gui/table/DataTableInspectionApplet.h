@@ -57,12 +57,12 @@ public:
 	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 	/// Determines whether the given property represents a color.
-	virtual bool isColorProperty(PropertyObject* property) const override {
-		return property->dataType() == PropertyStorage::Float && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
+	virtual bool isColorProperty(const PropertyObject* property) const override {
+		return property->dataType() == PropertyObject::Float && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
 	}
 
 	/// Creates an optional ad-hoc property that serves as header column for the table.
-	virtual OORef<PropertyObject> createHeaderColumnProperty(const PropertyContainer* container) override;
+	virtual ConstPropertyPtr createHeaderColumnProperty(const PropertyContainer* container) override;
 
 private Q_SLOTS:
 

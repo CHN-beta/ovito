@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -68,9 +67,9 @@ public:
 	virtual bool isTrajectoryFormat() const override { return true; } 
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, columnMapping());
+		return std::make_shared<FrameLoader>(request, columnMapping());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -80,40 +79,18 @@ public:
 	}
 
 	/// Inspects the header of the given file and returns the number of file columns.
-	Future<InputColumnMapping> inspectFileHeader(const Frame& frame);
+	Future<BondInputColumnMapping> inspectFileHeader(const Frame& frame);
 
 private:
 
-	class LAMMPSFrameData : public ParticleFrameData
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Returns the file column mapping generated from the information in the file header.
-		InputColumnMapping& detectedColumnMapping() { return _detectedColumnMapping; }
-
-	private:
-
-		BondInputColumnMapping _detectedColumnMapping;
-	};
-
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class OVITO_PARTICLES_EXPORT FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
-		/// Normal constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file, const BondInputColumnMapping& columnMapping)
-			: FileSourceImporter::FrameLoader(frame, file),
-				_parseFileHeaderOnly(false),
-				_columnMapping(columnMapping) {}
-
-		/// Constructor used when reading only the file header information.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file),
-				_parseFileHeaderOnly(true) {}
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, const BondInputColumnMapping& columnMapping)
+			: ParticleImporter::FrameLoader(request), _columnMapping(columnMapping) {}
 
 		/// Returns the file column mapping used to load the file.
 		const BondInputColumnMapping& columnMapping() const { return _columnMapping; }
@@ -121,16 +98,15 @@ private:
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 	private:
 
-		bool _parseFileHeaderOnly;
 		BondInputColumnMapping _columnMapping;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.
-	class OVITO_PARTICLES_EXPORT FrameFinder : public FileSourceImporter::FrameFinder
+	class FrameFinder : public FileSourceImporter::FrameFinder
 	{
 	public:
 

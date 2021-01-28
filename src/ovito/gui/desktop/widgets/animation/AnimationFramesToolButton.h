@@ -40,7 +40,7 @@ public:
 
 	/// Constructs the widget.
 	AnimationFramesToolButton(DataSetContainer& datasetContainer, QWidget* parent = 0) : QToolButton(parent), _datasetContainer(datasetContainer) {
-		setIcon(QIcon(QString(":/gui/actions/animation/named_frames.svg")));
+		setIcon(QIcon(QString(":/guibase/actions/animation/named_frames.svg")));
 		setToolTip(tr("Jump to animation frame"));
 		setFocusPolicy(Qt::NoFocus);
 		connect(this, &QToolButton::clicked, this, &AnimationFramesToolButton::onClicked);

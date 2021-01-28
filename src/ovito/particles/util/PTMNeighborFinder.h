@@ -48,14 +48,10 @@ public:
 	PTMNeighborFinder(bool all_properties);
 
 	/// \brief Prepares the tree data structure.
-	/// \param posProperty The positions of the particles.
-	/// \param cell The simulation cell geometry.
-	/// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-	/// \param task A callback object for reporting progress.
 	/// \return \c false when the operation has been canceled by the user;
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCell& cell, ConstPropertyAccess<int> selection,
+	bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
 				 ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray,
 				 ConstPropertyAccess<Quaternion> orientationsArray,
 				 ConstPropertyAccess<qlonglong> correspondencesArray,

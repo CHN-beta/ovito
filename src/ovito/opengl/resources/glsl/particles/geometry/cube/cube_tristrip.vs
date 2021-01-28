@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,52 +27,36 @@ uniform mat4 modelviewprojection_matrix;
 uniform mat3 normal_matrix;
 uniform vec3 cubeVerts[14];
 uniform vec3 normals[14];
+uniform bool is_picking_mode;
+uniform int picking_base_id;
+uniform vec4 selection_color;
 
-#if __VERSION__ >= 130
+// The particle data:
+in vec3 position;
+in vec3 color;
+in float transparency;
+in float particle_radius;
+in int selection;
 
-	// The particle data:
-	in vec3 position;
-	in vec4 color;
-	in float particle_radius;
-
-	// Outputs to fragment shader
-	flat out vec4 particle_color_fs;
-	flat out vec3 surface_normal_fs;
-
-#else
-
-	// The particle data:
-	attribute float particle_radius;
-	attribute float vertexID;
-
-	// Outputs to fragment shader
-	#define ec_pos gl_TexCoord[1].xyz
-
-#endif
+// Outputs to fragment shader
+flat out vec4 particle_color_fs;
+flat out vec3 surface_normal_fs;
 
 void main()
 {
-#if __VERSION__ >= 130
-
-	// Forward color to fragment shader.
-	particle_color_fs = color;
-
 	// Transform and project vertex.
 	int cubeCorner = gl_VertexID % 14;
 	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[cubeCorner] * particle_radius, 1);
 
-	// Determine face normal.
-	surface_normal_fs = normal_matrix * normals[cubeCorner];
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
 
-#else
-
-	// Forward color to fragment shader.
-	gl_FrontColor = gl_Color;
-
-	// Transform and project vertex.
-	int cubeCorner = int(mod(vertexID+0.5, 14.0));
-	ec_pos = (modelview_matrix * vec4(gl_Vertex.xyz + cubeVerts[cubeCorner] * particle_radius, 1)).xyz;
-	gl_Position = projection_matrix * vec4(ec_pos,1);
-
-#endif
+		// Determine face normal.
+		surface_normal_fs = normal_matrix * normals[cubeCorner];
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 14); 
+	}
 }

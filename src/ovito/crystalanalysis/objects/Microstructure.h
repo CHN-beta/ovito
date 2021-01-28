@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -35,7 +35,7 @@ namespace Ovito { namespace CrystalAnalysis {
  * The class is used in the implementation of algorithms to build up or operate on microstructure
  * data.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT MicrostructureData : public SurfaceMeshData
+class OVITO_CRYSTALANALYSIS_EXPORT MicrostructureAccess : public SurfaceMeshAccess
 {
 public:
 
@@ -46,40 +46,37 @@ public:
 		SLIP_FACET = 2
 	};
 
-	/// Constructor creating an empty microstructure.
-	MicrostructureData(const SimulationCell& cell = {});
-
 	/// Constructor that adopts the data from the given pipeline data object into this structure.
-	explicit MicrostructureData(const SurfaceMesh* mo);
+	explicit MicrostructureAccess(const Microstructure* mo);
 
 	/// Returns the Burgers vector of a dislocation mesh face or the slip vector of a slip facet.
 	const Vector3& burgersVector(face_index face) const {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		return burgersVectors()[face];
+		return faces().getPropertyValue<SurfaceMeshFaces::BurgersVectorProperty, Vector3>(face);
 	}
 
 	/// Assigns a Burgers vector to a dislocation mesh face or the slip vector to a slip facet.
 	void setBurgersVector(face_index face, const Vector3& b) {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		burgersVectors()[face] = b;
+        mutableFaces().setPropertyValue<SurfaceMeshFaces::BurgersVectorProperty, Vector3>(face, b);
 	}
 
 	/// Returns the crystallographic normal vector of a mesh face.
 	const Vector3& crystallographicNormal(face_index face) const {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		return crystallographicNormals()[face];
+		return faces().getPropertyValue<SurfaceMeshFaces::CrystallographicNormalProperty, Vector3>(face);
 	}
 
 	/// Assigns a crystallographic normal vector to a mesh face.
 	void setCrystallographicNormal(face_index face, const Vector3& b) {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		crystallographicNormals()[face] = b;
+        mutableFaces().setPropertyValue<SurfaceMeshFaces::CrystallographicNormalProperty, Vector3>(face, b);
 	}
 
 	/// Returns whether the given mesh face represents a dislocation line.
 	bool isDislocationFace(face_index face) const {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		return faceTypes()[face] == DISLOCATION;
+		return faces().getPropertyValue<SurfaceMeshFaces::FaceTypeProperty, MicrostructureFaceType>(face) == DISLOCATION;
 	}
 
 	/// Returns whether the given mesh edge is a physical dislocation segment.
@@ -90,19 +87,19 @@ public:
 	/// Returns whether the given mesh face represents a slip facet.
 	bool isSlipSurfaceFace(face_index face) const {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		return faceTypes()[face] == SLIP_FACET;
+		return faces().getPropertyValue<SurfaceMeshFaces::FaceTypeProperty, MicrostructureFaceType>(face) == SLIP_FACET;
 	}
 
 	/// Sets the type of the given mesh face.
 	void setFaceType(face_index face, MicrostructureFaceType type) {
 		OVITO_ASSERT(face >= 0 && face < faceCount());
-		faceTypes()[face] = type;
+        mutableFaces().setPropertyValue<SurfaceMeshFaces::FaceTypeProperty, MicrostructureFaceType>(face, type);
 	}
 
 	/// Determines the number of dislocation arms connected to the given mesh vertex.
 	int countDislocationArms(vertex_index vertex) const {
 		int armCount = 0;
-		for(edge_index e = firstVertexEdge(vertex); e != HalfEdgeMesh::InvalidIndex; e = nextVertexEdge(e)) {
+		for(edge_index e = firstVertexEdge(vertex); e != SurfaceMeshAccess::InvalidIndex; e = nextVertexEdge(e)) {
 			if(isPhysicalDislocationEdge(e)) armCount++;
 		}
 		return armCount;
@@ -117,18 +114,11 @@ public:
 	/// Creates a new face without any edges.
 	/// Returns the index of the new face.
 	face_index createFace(std::initializer_list<vertex_index> vertices, region_index faceRegion, MicrostructureFaceType faceType, const Vector3& burgersVector, const Vector3& slipFacetNormal) {
-		face_index fidx = SurfaceMeshData::createFace(std::move(vertices), faceRegion);
-		faceTypes()[fidx] = faceType;
-		burgersVectors()[fidx] = burgersVector;
-		crystallographicNormals()[fidx] = slipFacetNormal;
+		face_index fidx = SurfaceMeshAccess::createFace(std::move(vertices), faceRegion);
+		setFaceType(fidx, faceType);
+		setBurgersVector(fidx, burgersVector);
+		setCrystallographicNormal(fidx, slipFacetNormal);
 		return fidx;
-	}
-
-	/// Returns the phase ID of the given region.
-	int regionPhase(region_index region) const {
-		OVITO_ASSERT(regionPhases());
-		OVITO_ASSERT(region >= 0 && region < regionCount());
-		return regionPhases()[region];
 	}
 };
 
@@ -145,6 +135,10 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE Microstructure(DataSet* dataset) : SurfaceMesh(dataset) {}
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Microstructure"); }

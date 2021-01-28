@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
@@ -70,19 +70,17 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 			if(!regionProperty) continue; // Nothing to do if there is no face region information.
 
 			// Create a work data structure for modifying the mesh.
-			SurfaceMeshData mesh(existingSurface);
+			SurfaceMeshAccess mesh(existingSurface);
 			OVITO_ASSERT(mesh.hasFaceRegions());
 			numRegions += mesh.regionCount();
 
-			// Make the topology and property arrays mutable.
-			mesh.makeTopologyMutable();
-			mesh.makeFacePropertiesMutable();
-			mesh.makeRegionPropertiesMutable();
+			// Remove selection property from the regions.
+			mesh.removeRegionProperty(SurfaceMeshRegions::SelectionProperty);
 
 			// Delete all faces that belong to one of the selected mesh regions.
 			boost::dynamic_bitset<> faceMask(mesh.faceCount());
-			for(SurfaceMeshData::face_index face = 0; face < mesh.faceCount(); face++) {
-				SurfaceMeshData::region_index region = mesh.faceRegion(face);
+			for(SurfaceMeshAccess::face_index face = 0; face < mesh.faceCount(); face++) {
+				SurfaceMeshAccess::region_index region = mesh.faceRegion(face);
 				if(region >= 0 && region < selectionProperty.size() && selectionProperty[region]) {
 					faceMask.set(face);
 				}
@@ -91,7 +89,7 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 
 			// Delete the selected regions.
 			boost::dynamic_bitset<> regionMask(mesh.regionCount());
-			for(SurfaceMeshData::region_index region = mesh.regionCount() - 1; region >= 0; region--) {
+			for(SurfaceMeshAccess::region_index region = mesh.regionCount() - 1; region >= 0; region--) {
 				if(selectionProperty[region]) {
 					regionMask.set(region);
 					numSelected++;
@@ -99,13 +97,8 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 			}
 			mesh.deleteRegions(regionMask);
 
-			// Create a mutable copy of the SurfaceMesh.
-			SurfaceMesh* newSurface = state.makeMutable(existingSurface);
-			// Write the modified mesh back to the output object.
-			mesh.transferTo(newSurface);
-
-			// Remove selection property.
-			newSurface->makeRegionsMutable()->removeProperty(newSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty));
+			// Write SurfaceMesh back to the output pipeline state.
+			state.replaceObject(existingSurface, mesh.take());
 		}
 	}
 

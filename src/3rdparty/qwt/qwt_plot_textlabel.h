@@ -8,11 +8,12 @@
  *****************************************************************************/
 
 #ifndef QWT_PLOT_TEXT_LABEL_H
-#define QWT_PLOT_TEXT_LABEL_H 1
+#define QWT_PLOT_TEXT_LABEL_H
 
 #include "qwt_global.h"
 #include "qwt_plot_item.h"
-#include "qwt_text.h"
+
+class QwtText;
 
 /*!
   \brief A plot item, which displays a text label
@@ -50,7 +51,7 @@ public:
     QwtPlotTextLabel();
     virtual ~QwtPlotTextLabel();
 
-    virtual int rtti() const;
+    virtual int rtti() const QWT_OVERRIDE;
 
     void setText( const QwtText & );
     QwtText text() const;
@@ -63,7 +64,7 @@ public:
 protected:
     virtual void draw( QPainter *,
         const QwtScaleMap &, const QwtScaleMap &,
-        const QRectF &) const;
+        const QRectF &) const QWT_OVERRIDE;
 
     void invalidateCache();
 

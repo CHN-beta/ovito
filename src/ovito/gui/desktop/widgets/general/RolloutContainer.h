@@ -89,12 +89,19 @@ public:
 		return p;
 	}
 
+	RolloutInsertionParameters setHelpUrl(const QString& helpUrl) const {
+		RolloutInsertionParameters p(*this);
+		p._helpUrl = helpUrl;
+		return p;
+	}
+
 	/// Returns the container set by insertInto() into which the properties editor should inserted.
 	QWidget* container() const {
 		return _intoThisContainer;
 	}
 
 	const QString& title() const { return _title; }
+	const QString& helpUrl() const { return _helpUrl; }
 
 private:
 
@@ -105,6 +112,7 @@ private:
 	QPointer<QWidget> _beforeThisRollout;
 	QPointer<QWidget> _intoThisContainer;
 	QString _title;
+	QString _helpUrl;
 
 	friend class Rollout;
 	friend class RolloutContainer;
@@ -122,7 +130,7 @@ class OVITO_GUI_EXPORT Rollout : public QWidget
 public:
 
 	/// Constructor.
-	Rollout(QWidget* parent, QWidget* content, const QString& title, const RolloutInsertionParameters& params, const char* helpPage = nullptr);
+	Rollout(QWidget* parent, QWidget* content, const QString& title, const RolloutInsertionParameters& params, const QString& helpPageUrl = {});
 
 	/// Returns true if this rollout is currently in the collapsed state.
 	bool isCollapsed() const { return visiblePercentage() != 100; }
@@ -207,7 +215,7 @@ private:
 	bool _useAvailableSpace;
 
 	/// The help page in the user manual for this rollout.
-	const char* _helpPage;
+	QString _helpPageUrl;
 };
 
 /******************************************************************************
@@ -223,7 +231,7 @@ public:
 	RolloutContainer(QWidget* parent = nullptr, MainWindow* mainWindow = nullptr);
 
 	/// Adds a new rollout to the container.
-	Rollout* addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& param = RolloutInsertionParameters(), const char* helpPage = nullptr);
+	Rollout* addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& param = RolloutInsertionParameters(), const QString& helpPageUrl = {});
 
 	virtual QSize minimumSizeHint() const override {
 		return QSize(QFrame::minimumSizeHint().width(), 10);

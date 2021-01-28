@@ -129,15 +129,15 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
 	/// Provides the input to which the modifier is applied.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, input, setInput, PROPERTY_FIELD_NEVER_CLONE_TARGET);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, input, setInput, PROPERTY_FIELD_NEVER_CLONE_TARGET);
 
 	/// The modifier that is inserted into the pipeline.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Modifier, modifier, setModifier, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Modifier>, modifier, setModifier, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 /// This macro registers some ModifierApplication-derived class as the pipeline application type of some Modifier-derived class.

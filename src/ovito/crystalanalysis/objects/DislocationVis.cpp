@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/app/Application.h>
 #include "DislocationVis.h"
 #include "RenderableDislocationLines.h"
 
@@ -60,7 +60,7 @@ IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
 ******************************************************************************/
 DislocationVis::DislocationVis(DataSet* dataset) : TransformingDataVis(dataset),
 	_lineWidth(1.0),
-	_shadingMode(ArrowPrimitive::NormalShading),
+	_shadingMode(CylinderPrimitive::NormalShading),
 	_burgersVectorWidth(0.6),
 	_burgersVectorScaling(3.0),
 	_burgersVectorColor(0.7, 0.7, 0.7),
@@ -86,7 +86,6 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 		return std::move(flowState);
 
 	// Generate the list of clipped line segments.
-	const SimulationCell cellData = cellObject->data();
 	std::vector<RenderableDislocationLines::Segment> outputSegments;
 	std::shared_ptr<ClusterGraph> clusterGraph;
 
@@ -111,7 +110,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 					continue;
 				}
 			}
-			clipDislocationLine(segment->line, cellData, periodicDomainObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+			clipDislocationLine(segment->line, *cellObject, periodicDomainObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
 				outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
 			});
 			segmentIndex++;
@@ -122,13 +121,13 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 		std::deque<Point3> line(2);
 		microstructureObj->verifyMeshIntegrity();
 		const PropertyObject* phaseProperty = microstructureObj->regions()->getProperty(SurfaceMeshRegions::PhaseProperty);
-		MicrostructureData mdata(microstructureObj);
+		const MicrostructureAccess mdata(microstructureObj);
 		// Since every dislocation line is represented by a pair two directed lines in the data structure,
 		// make sure we render only every other dislocation line (the "even" ones).
-		for(MicrostructureData::face_index face = 0; face < mdata.faceCount(); face += 2) {
+		for(MicrostructureAccess::face_index face = 0; face < mdata.faceCount(); face += 2) {
 			if(mdata.isDislocationFace(face)) {
 				const Vector3& b = mdata.burgersVector(face);
-				MicrostructureData::region_index region = mdata.faceRegion(face);
+				MicrostructureAccess::region_index region = mdata.faceRegion(face);
 
 				// Determine if the display of dislocations of this type is enabled.
 				int phaseId = mdata.regionPhase(region);
@@ -146,16 +145,16 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 				}
 
 				// Walk along the sequence of segments that make up the continous dislocation line.
-				MicrostructureData::edge_index edge = mdata.firstFaceEdge(face);
+				MicrostructureAccess::edge_index edge = mdata.firstFaceEdge(face);
 				Point3 p = mdata.vertexPosition(mdata.vertex1(edge));
 				do {
 					line[0] = p;
 					p += mdata.edgeVector(edge);
 					line[1] = p;
-					clipDislocationLine(line, cellData, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+					clipDislocationLine(line, *cellObject, periodicDomainObj->cuttingPlanes(), [face, &outputSegments, &b, region](const Point3& p1, const Point3& p2, bool isInitialSegment) {
 						outputSegments.push_back({ { p1, p2 }, b, region, face });
 					});
-					MicrostructureData::vertex_index v1 = mdata.vertex1(edge);
+					MicrostructureAccess::vertex_index v1 = mdata.vertex1(edge);
 					edge = mdata.nextFaceEdge(edge);
 					if(mdata.vertex2(edge) == v1) break;	// Reached end of continuous dislocation line.
 				}
@@ -165,10 +164,11 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	OORef<RenderableDislocationLines> renderableLines = new RenderableDislocationLines(this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), Application::instance()->executionContext(), this, dataObject);
+	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
-	flowState.addObject(renderableLines);
+	flowState.addObject(std::move(renderableLines));
 
 	return std::move(flowState);
 }
@@ -184,22 +184,21 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 	if(!domainObj) return {};
 	const SimulationCellObject* cellObject = domainObj->domain();
 	if(!cellObject) return {};
-	SimulationCell cell = cellObject->data();
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,	// Source object + revision number
-		SimulationCell,			// Simulation cell geometry
-		FloatType,				// Line width
-		bool,					// Burgers vector display
-		FloatType,				// Burgers vectors scaling
-		FloatType				// Burgers vector width
+		ConstDataObjectRef,	// Source object
+		ConstDataObjectRef,	// Simulation cell
+		FloatType,			// Line width
+		bool,				// Burgers vector display
+		FloatType,			// Burgers vectors scaling
+		FloatType			// Burgers vector width
 	>;
 
 	// Look up the bounding box in the vis cache.
 	auto& bbox = dataset()->visCache().get<Box3>(CacheKey(
 			renderableObj,
-			cell,
+			cellObject,
 			lineWidth(),
 			showBurgersVectors(),
 			burgersVectorScaling(),
@@ -216,7 +215,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 			padding = std::max(padding, burgersVectorWidth() * FloatType(2));
 			if(const DislocationNetworkObject* dislocationObj = dynamic_object_cast<DislocationNetworkObject>(domainObj)) {
 				for(const DislocationSegment* segment : dislocationObj->segments()) {
-					Point3 center = cell.wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					bb.addPoint(center + dir);
 				}
@@ -246,29 +245,27 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 
 	// The key type used for caching the rendering primitives:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// The scene renderer
-		VersionedDataObjectRef,	// Source object + revision number
-		VersionedDataObjectRef,	// Renderable object + revision number
-		SimulationCell,			// Simulation cell geometry
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Source object
+		ConstDataObjectRef,		// Renderable object
+		ConstDataObjectRef,		// Simulation cell geometry
 		FloatType,				// Line width
 		bool,					// Burgers vector display
 		FloatType,				// Burgers vectors scaling
 		FloatType,				// Burgers vector width
 		Color,					// Burgers vector color
-		LineColoringMode		// Way to color lines
+		bool,					// Indicate line directions
+		LineColoringMode,		// Way to color lines
+		CylinderPrimitive::ShadingMode	// Line shading mode
 	>;
 
 	// The values stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<ArrowPrimitive> segments;
+		std::shared_ptr<CylinderPrimitive> segments;
 		std::shared_ptr<ParticlePrimitive> corners;
-		std::shared_ptr<ArrowPrimitive> burgersArrows;
+		std::shared_ptr<CylinderPrimitive> burgersArrows;
 		OORef<DislocationPickInfo> pickInfo;
 	};
-
-	ArrowPrimitive::Shape segmentShape = (showLineDirections() ? ArrowPrimitive::ArrowShape : ArrowPrimitive::CylinderShape);
-	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ArrowPrimitive::NormalShading)
-			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
 	// Get the renderable dislocation lines.
 	const RenderableDislocationLines* renderableLines = dynamic_object_cast<RenderableDislocationLines>(objectStack.back());
@@ -297,32 +294,22 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		renderer,
 		domainObj,
 		renderableLines,
-		cellObject->data(),
+		cellObject,
 		lineWidth(),
 		showBurgersVectors(),
 		burgersVectorScaling(),
 		burgersVectorWidth(),
 		burgersVectorColor(),
-		lineColoringMode()));
+		showLineDirections(),
+		lineColoringMode(),
+		shadingMode()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!primitives.segments || !primitives.corners || !primitives.burgersArrows
-			|| !primitives.segments->isValid(renderer)
-			|| !primitives.corners->isValid(renderer)
-			|| !primitives.burgersArrows->isValid(renderer)
-			|| !primitives.segments->setShadingMode(shadingMode())
-			|| !primitives.corners->setShadingMode(cornerShadingMode)
-			|| !primitives.burgersArrows->setShadingMode(shadingMode())
-			|| primitives.segments->shape() != segmentShape) {
-
-		primitives.segments = renderer->createArrowPrimitive(segmentShape, shadingMode(), ArrowPrimitive::HighQuality);
-		primitives.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
-		primitives.burgersArrows.reset();
+	if(!primitives.segments) {
 
 		ConstPropertyAccess<int> phaseArray(phaseProperty);
 		ConstPropertyAccess<Matrix3> correspondenceArray(correspondenceProperty);
 
-		SimulationCell cellData = cellObject->data();
 		// First determine number of corner vertices/segments that are going to be rendered.
 		int lineSegmentCount = renderableLines->lineSegments().size();
 		int cornerCount = 0;
@@ -331,14 +318,18 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 			const auto& s2 = renderableLines->lineSegments()[i];
 			if(s1.verts[1].equals(s2.verts[0])) cornerCount++;
 		}
-		// Allocate render buffer.
-		primitives.segments->startSetElements(lineSegmentCount);
+		// Allocate rendering data buffers.
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
 		FloatType lineRadius = std::max(lineWidth() / 2, FloatType(0));
-		std::vector<Point3> cornerPoints;
-		std::vector<Color> cornerColors;
-		cornerPoints.reserve(cornerCount);
-		cornerColors.reserve(cornerCount);
+		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, cornerCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, cornerCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
+
+		// Build list of line segments.
+		auto cornerPointsIter = cornerPoints.begin();
+		auto cornerColorsIter = cornerColors.begin();
 		Color lineColor;
 		Vector3 normalizedBurgersVector;
 		Vector3 lastBurgersVector = Vector3::Zero();
@@ -388,9 +379,9 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 				}
 			}
 			subobjToSegmentMap[lineSegmentIndex] = lineSegment.dislocationIndex;
-			Vector3 delta = lineSegment.verts[1] - lineSegment.verts[0];
 			Color segmentColor = lineColor;
 			if(lineColoringMode() == ColorByCharacter) {
+				Vector3 delta = lineSegment.verts[1] - lineSegment.verts[0];
 				FloatType dot = std::abs(delta.dot(normalizedBurgersVector));
 				if(dot != 0) dot /= delta.length();
 				if(dot > 1) dot = 1;
@@ -413,31 +404,38 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 					}
 				}
 			}
-			primitives.segments->setElement(lineSegmentIndex, lineSegment.verts[0], delta, segmentColor, lineRadius);
+			baseSegmentPoints[lineSegmentIndex] = lineSegment.verts[0];
+			headSegmentPoints[lineSegmentIndex] = lineSegment.verts[1];
+			segmentColors[lineSegmentIndex] = segmentColor;
 			if(lineSegmentIndex != 0 && lineSegment.verts[0].equals(renderableLines->lineSegments()[lineSegmentIndex-1].verts[1])) {
-				subobjToSegmentMap[cornerPoints.size() + lineSegmentCount] = lineSegment.dislocationIndex;
-				cornerPoints.push_back(lineSegment.verts[0]);
-				cornerColors.push_back(segmentColor);
+				subobjToSegmentMap[(cornerPointsIter - cornerPoints.begin()) + lineSegmentCount] = lineSegment.dislocationIndex;
+				*cornerPointsIter++ = lineSegment.verts[0];
+				*cornerColorsIter++ = segmentColor;
 			}
 		}
-		OVITO_ASSERT(cornerPoints.size() == cornerCount);
-		primitives.segments->endSetElements();
-		primitives.corners->setSize(cornerPoints.size());
-		primitives.corners->setParticlePositions(cornerPoints.empty() ? nullptr : cornerPoints.data());
-		primitives.corners->setParticleColors(cornerColors.empty() ? nullptr : cornerColors.data());
-		primitives.corners->setParticleRadius(lineRadius);
+		OVITO_ASSERT(cornerPointsIter == cornerPoints.end());
+
+		// Create rendering primitive for the line segments.
+		primitives.segments = renderer->createCylinderPrimitive(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape, shadingMode(), CylinderPrimitive::HighQuality);
+		primitives.segments->setUniformRadius(lineRadius);
+		primitives.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+		primitives.segments->setColors(segmentColors.take());
+
+		// Create rendering primitive for the line corner points.
+		primitives.corners = renderer->createParticlePrimitive((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+		primitives.corners->setPositions(cornerPoints.take());
+		primitives.corners->setColors(cornerColors.take());
+		primitives.corners->setUniformRadius(lineRadius);
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
-				primitives.burgersArrows = renderer->createArrowPrimitive(ArrowPrimitive::ArrowShape, shadingMode(), ArrowPrimitive::HighQuality);
-				primitives.burgersArrows->startSetElements(dislocationsObj->segments().size());
+				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
 				subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
 				int arrowIndex = 0;
-				ColorA arrowColor = burgersVectorColor();
-				FloatType arrowRadius = std::max(burgersVectorWidth() / 2, FloatType(0));
 				for(const DislocationSegment* segment : dislocationsObj->segments()) {
 					subobjToSegmentMap.push_back(arrowIndex);
-					Point3 center = cellData.wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					// Check if arrow is clipped away by cutting planes.
 					for(const Plane3& plane : dislocationsObj->cuttingPlanes()) {
@@ -446,9 +444,14 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 							break;
 						}
 					}
-					primitives.burgersArrows->setElement(arrowIndex++, center, dir, arrowColor, arrowRadius);
+					baseArrowPoints[arrowIndex] = center;
+					headArrowPoints[arrowIndex++] = center + dir;
 				}
-				primitives.burgersArrows->endSetElements();
+				// Create rendering primitive for the Burgers vector arrows.
+				primitives.burgersArrows = renderer->createCylinderPrimitive(CylinderPrimitive::ArrowShape, shadingMode(), CylinderPrimitive::HighQuality);
+				primitives.burgersArrows->setUniformRadius(std::max(burgersVectorWidth() / 2, FloatType(0)));
+				primitives.burgersArrows->setUniformColor(burgersVectorColor());
+				primitives.burgersArrows->setPositions(baseArrowPoints.take(), headArrowPoints.take());
 			}
 			primitives.pickInfo = new DislocationPickInfo(this, dislocationsObj, std::move(subobjToSegmentMap));
 		}
@@ -460,15 +463,14 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 	renderer->beginPickObject(contextNode, primitives.pickInfo);
 
 	// Render dislocation segments.
-	primitives.segments->render(renderer);
+	renderer->renderCylinders(primitives.segments);
 
 	// Render segment vertices.
-	primitives.corners->render(renderer);
+	renderer->renderParticles(primitives.corners);
 
 	// Render Burgers vectors.
-	if(primitives.burgersArrows && showBurgersVectors()) {
-		primitives.burgersArrows->render(renderer);
-	}
+	if(showBurgersVectors() && primitives.burgersArrows)
+		renderer->renderCylinders(primitives.burgersArrows);
 
 	renderer->endPickObject();
 }
@@ -490,7 +492,6 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const SimulationCellObject* cellObject = dislocationsObj->domain();
 	if(!cellObject)
 		return;
-	SimulationCell cellData = cellObject->data();
 
 	if(segmentIndex < 0 || segmentIndex >= dislocationsObj->segments().size())
 		return;
@@ -498,10 +499,12 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
 	// Generate the polyline segments to render.
-	std::vector<std::pair<Point3,Point3>> lineSegments;
-	std::vector<Point3> cornerVertices;
-	clipDislocationLine(segment->line, cellData, dislocationsObj->cuttingPlanes(), [&lineSegments, &cornerVertices](const Point3& v1, const Point3& v2, bool isInitialSegment) {
-		lineSegments.push_back({v1,v2});
+	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
+		baseSegmentPoints.push_back(v1);
+		headSegmentPoints.push_back(v2);
 		if(!isInitialSegment)
 			cornerVertices.push_back(v1);
 	});
@@ -516,10 +519,8 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	// Compute bounding box if requested.
 	if(renderer->isBoundingBoxPass()) {
 		Box3 bb;
-		for(const auto& seg : lineSegments) {
-			bb.addPoint(seg.first);
-			bb.addPoint(seg.second);
-		}
+		bb.addPoints(baseSegmentPoints);
+		bb.addPoints(headSegmentPoints);
 		renderer->addToLocalBoundingBox(bb.padBox(headRadius));
 		return;
 	}
@@ -527,29 +528,26 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	// Draw the marker on top of everything.
 	renderer->setDepthTestEnabled(false);
 
-	std::shared_ptr<ArrowPrimitive> segmentBuffer = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, ArrowPrimitive::FlatShading, ArrowPrimitive::HighQuality);
-	segmentBuffer->startSetElements(lineSegments.size());
-	int index = 0;
-	for(const auto& seg : lineSegments)
-		segmentBuffer->setElement(index++, seg.first, seg.second - seg.first, ColorA(1,1,1), lineRadius);
-	segmentBuffer->endSetElements();
-	segmentBuffer->render(renderer);
+	std::shared_ptr<CylinderPrimitive> segmentBuffer = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::FlatShading, CylinderPrimitive::HighQuality);
+	segmentBuffer->setUniformRadius(lineRadius);
+	segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+	segmentBuffer->setUniformColor(Color(1,1,1));
+	renderer->renderCylinders(segmentBuffer);
 
 	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-	cornerBuffer->setSize(cornerVertices.size());
-	cornerBuffer->setParticlePositions(cornerVertices.data());
-	cornerBuffer->setParticleColor(Color(1,1,1));
-	cornerBuffer->setParticleRadius(lineRadius);
-	cornerBuffer->render(renderer);
+	cornerBuffer->setPositions(cornerVertices.take());
+	cornerBuffer->setUniformColor(Color(1,1,1));
+	cornerBuffer->setUniformRadius(lineRadius);
+	renderer->renderParticles(cornerBuffer);
 
 	if(!segment->line.empty()) {
-		Point3 wrappedHeadPos = cellData.wrapPoint(segment->line.front());
+		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false); 
+		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
 		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-		headBuffer->setSize(1);
-		headBuffer->setParticlePositions(&wrappedHeadPos);
-		headBuffer->setParticleColor(Color(1,1,1));
-		headBuffer->setParticleRadius(headRadius);
-		headBuffer->render(renderer);
+		headBuffer->setPositions(wrappedHeadPos.take());
+		headBuffer->setUniformColor(Color(1,1,1));
+		headBuffer->setUniformRadius(headRadius);
+		renderer->renderParticles(headBuffer);
 	}
 
 	// Restore old state.
@@ -559,7 +557,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 /******************************************************************************
 * Clips a dislocation line at the periodic box boundaries.
 ******************************************************************************/
-void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
+void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCellObject& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
 {
 	bool isInitialSegment = true;
 	auto clippingFunction = [&clippingPlanes, &segmentCallback, &isInitialSegment](Point3 p1, Point3 p2) {
@@ -754,7 +752,7 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 	if(dislocationObj()) {
 		if(segmentIndex >= 0 && segmentIndex < dislocationObj()->segments().size()) {
 			DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
-			MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
+			const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
 			QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), structure);
 			str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
 			Vector3 transformedVector = segment->burgersVector.toSpatialVector();

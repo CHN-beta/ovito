@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,19 +27,20 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
 #include "SliceModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -122,7 +123,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	_pickPlanePointsInputMode = new PickPlanePointsInputMode(this);
 	connect(this, &QObject::destroyed, _pickPlanePointsInputMode, &ViewportInputMode::removeMode);
 	_pickPlanePointsInputModeAction = new ViewportModeAction(mainWindow(), tr("Pick three points"), this, _pickPlanePointsInputMode);
-	layout->addWidget(_pickPlanePointsInputModeAction->createPushButton());
+	layout->addWidget(new ViewportModeButton(_pickPlanePointsInputModeAction));
 
 	// Deactivate input mode when editor is reset.
 	connect(this, &PropertiesEditor::contentsReplaced, _pickPlanePointsInputModeAction, &ViewportModeAction::deactivateMode);
@@ -294,7 +295,7 @@ void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QM
 {
 	ViewportInputMode::mouseMoveEvent(vpwin, event);
 
-	ViewportPickResult pickResult = vpwin->pick(event->localPos());
+	ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 	setCursor(pickResult.isValid() ? SelectionMode::selectionCursor() : QCursor());
 	if(pickResult.isValid() && _numPickedPoints < 3) {
 		_pickedPoints[_numPickedPoints] = pickResult.hitLocation();
@@ -320,7 +321,7 @@ void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin,
 			requestViewportUpdate();
 		}
 
-		ViewportPickResult pickResult = vpwin->pick(event->localPos());
+		ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 		if(pickResult.isValid()) {
 
 			// Do not select the same point twice.
@@ -404,35 +405,33 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 	renderer->setWorldTransform(AffineTransformation::Identity());
 	if(!renderer->isBoundingBoxPass()) {
 		std::shared_ptr<MarkerPrimitive> markers = renderer->createMarkerPrimitive(MarkerPrimitive::BoxShape);
-		markers->setCount(npoints);
-		markers->setMarkerPositions(_pickedPoints);
-		markers->setMarkerColor(ColorA(1, 1, 1));
-		markers->render(renderer);
+		markers->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + npoints);
+		markers->setColor(ColorA(1, 1, 1));
+		renderer->renderMarkers(markers);
 
 		if(npoints == 2) {
 			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
-			lines->setVertexCount(2);
-			lines->setVertexPositions(_pickedPoints);
-			lines->setLineColor(ColorA(1, 1, 1));
-			lines->render(renderer);
+			lines->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + 2);
+			lines->setUniformColor(ColorA(1, 1, 1));
+			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			std::shared_ptr<MeshPrimitive> mesh = renderer->createMeshPrimitive();
+			std::shared_ptr<MeshPrimitive> meshPrimitive = renderer->createMeshPrimitive();
 			TriMesh tri;
 			tri.setVertexCount(3);
 			tri.setVertex(0, _pickedPoints[0]);
 			tri.setVertex(1, _pickedPoints[1]);
 			tri.setVertex(2, _pickedPoints[2]);
 			tri.addFace().setVertices(0, 1, 2);
-			mesh->setMesh(tri, ColorA(0.7f, 0.7f, 1.0f, 0.5f));
-			mesh->render(renderer);
+			meshPrimitive->setMesh(tri, MeshPrimitive::ConvexShapeMode);
+			meshPrimitive->setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
+			renderer->renderMesh(std::move(meshPrimitive));
 
 			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
-			lines->setVertexCount(6);
 			const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
-			lines->setVertexPositions(vertices);
-			lines->setLineColor(ColorA(1, 1, 1));
-			lines->render(renderer);
+			lines->setPositions(vp->dataset(), vertices);
+			lines->setUniformColor(ColorA(1, 1, 1));
+			renderer->renderLines(lines);
 		}
 	}
 	else {

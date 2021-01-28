@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,12 +47,12 @@ public:
 	/// This method asks the overlay to paint its contents over the rendered image.
 	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
 		QPainter painter(&frameBuffer->image());
-		renderImplementation(painter, projParams, renderSettings);
+		renderImplementation(time, painter, projParams, renderSettings, false, std::move(operation));
 	}
 
 	/// This method asks the overlay to paint its contents over the given interactive viewport.
 	virtual void renderInteractive(const Viewport* viewport, TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		renderImplementation(painter, projParams, renderSettings);
+		renderImplementation(time, painter, projParams, renderSettings, true, std::move(operation));
 	}
 
 	/// Moves the position of the overlay in the viewport by the given amount,
@@ -69,7 +69,7 @@ public:
 private:
 
 	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings);
+	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation);
 
 	/// The corner of the viewport where the color legend is displayed.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
@@ -105,7 +105,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, label2, setLabel2);
 
 	/// The ColorCodingModifier for which to display the legend.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ColorCodingModifier, modifier, setModifier, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Controls the formatting of the value labels in the color legend.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

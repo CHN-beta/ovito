@@ -267,7 +267,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been added to a VectorReferenceField.
 	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;
@@ -285,7 +285,7 @@ protected:
 	void adjustProjectionForRenderFrame(ViewProjectionParameters& params);
 
 	/// Renders the viewport overlays to an image buffer.
-	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const QVector<ViewportOverlay*>& layers, SynchronousOperation& operation);
+	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation);
 
 private Q_SLOTS:
 
@@ -320,16 +320,16 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, stereoscopicMode, setStereoscopicMode, PROPERTY_FIELD_NO_UNDO);
 
 	/// The scene node (camera) that has been selected as the view node.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// The title of the viewport.
 	DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);
 
 	/// The list of layers which are painted above the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(ViewportOverlay, overlays);
+	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, overlays);
 
 	/// The list of layers which are painted under the 3d scene.
-	DECLARE_VECTOR_REFERENCE_FIELD(ViewportOverlay, underlays);
+	DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, underlays);
 
 	/// This flag is true during the rendering phase.
 	bool _isRendering = false;

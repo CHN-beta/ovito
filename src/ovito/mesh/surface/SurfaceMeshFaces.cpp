@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardStorage(size_t faceCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -42,19 +42,19 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardStorage(size_t faceCoun
 	case SelectionProperty:
 	case RegionProperty:
 	case FaceTypeProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case ColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case BurgersVectorProperty:
 	case CrystallographicNormalProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Vector3));
@@ -68,7 +68,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardStorage(size_t faceCoun
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(faceCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, faceCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
@@ -86,7 +86,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardStorage(size_t faceCoun
 				}
 				else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
 					// Initialize face colors from uniform color set in SurfaceMeshVis.
-					PropertyAccess<Color>(property).fill(vis->surfaceColor());
+					property->fill(vis->surfaceColor());
 					initializeMemory = false;
 				}
 			}
@@ -116,12 +116,12 @@ void SurfaceMeshFaces::OOMetaClass::initialize()
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Face colors"));
-	registerStandardProperty(FaceTypeProperty, tr("Type"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(RegionProperty, tr("Region"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), PropertyStorage::Float, xyzList, nullptr, tr("Burgers vectors"));
-	registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), PropertyStorage::Float, xyzList);
+	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Face colors"));
+	registerStandardProperty(FaceTypeProperty, tr("Type"), PropertyObject::Int, emptyList);
+	registerStandardProperty(RegionProperty, tr("Region"), PropertyObject::Int, emptyList);
+	registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), PropertyObject::Float, xyzList, nullptr, tr("Burgers vectors"));
+	registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), PropertyObject::Float, xyzList);
 }
 
 /******************************************************************************

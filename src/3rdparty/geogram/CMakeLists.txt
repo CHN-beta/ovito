@@ -48,6 +48,8 @@ IF(MSVC)
 	TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4275")
 	# Suppress warning on conversion from size_t to int, possible loss of data.
 	TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4267" "/wd4244" "/wd4334")
+	# Do not warn on use of deprecated std::allocator members.
+	TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=")
 ENDIF()
 
 IF(BUILD_SHARED_LIBS)

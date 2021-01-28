@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -83,13 +83,50 @@ public:
 #define PROPERTY_FIELD(RefMakerClassPlusStorageFieldName) \
 		RefMakerClassPlusStorageFieldName##__propdescr()
 
-#define DEFINE_REFERENCE_FIELD(classname, fieldname) \
-	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
+#define DEFINE_REFERENCE_FIELD(classname, name) \
+	Ovito::NativePropertyFieldDescriptor classname::name##__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
-			&decltype(classname::_##fieldname)::target_type::OOClass(), \
-			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##_flags), \
-			&classname::fieldname##__access_field \
+			&decltype(classname::_##name)::target_object_type::OOClass(), \
+			#name, \
+			static_cast<Ovito::PropertyFieldFlags>(classname::__##name##_flags), \
+			[](const Ovito::RefMaker* obj) -> Ovito::RefTarget* { \
+				return const_cast<classname::__##name##_target_object_type*>(static_cast<const classname*>(obj)->_##name.get()); \
+			}, \
+			[](Ovito::RefMaker* obj, const Ovito::RefTarget* newTarget) { \
+				static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
+					static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
+			}, \
+			[](Ovito::RefMaker* obj, Ovito::OORef<Ovito::RefTarget> newTarget) { \
+				OVITO_ASSERT(!((classname::__##name##_flags) & Ovito::PropertyFieldFlag::PROPERTY_FIELD_WEAK_REF)); \
+				static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
+					static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
+			} \
+		);
+
+#define DEFINE_VECTOR_REFERENCE_FIELD(classname, name) \
+	Ovito::NativePropertyFieldDescriptor classname::name##__propdescr_instance( \
+			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
+			&decltype(classname::_##name)::target_object_type::OOClass(), \
+			#name, \
+			static_cast<Ovito::PropertyFieldFlags>(classname::__##name##_flags), \
+			[](const Ovito::RefMaker* obj) -> int { \
+				return static_cast<const classname*>(obj)->_##name.size(); \
+			}, \
+			[](const Ovito::RefMaker* obj, int index) -> Ovito::RefTarget* { \
+				return const_cast<classname::__##name##_target_object_type*>(static_cast<const classname*>(obj)->_##name.get(index)); \
+			}, \
+			[](Ovito::RefMaker* obj, int index, const Ovito::RefTarget* newTarget) { \
+				static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), index, \
+					static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
+			}, \
+			[](Ovito::RefMaker* obj, int index) { \
+				static_cast<classname*>(obj)->_##name.remove(obj, PROPERTY_FIELD(classname::name), index); \
+			}, \
+			[](Ovito::RefMaker* obj, int index, Ovito::OORef<Ovito::RefTarget> newTarget) { \
+				OVITO_ASSERT(!((classname::__##name##_flags) & Ovito::PropertyFieldFlag::PROPERTY_FIELD_WEAK_REF)); \
+				static_cast<classname*>(obj)->_##name.insert(obj, PROPERTY_FIELD(classname::name), index, \
+					static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
+			} \
 		);
 
 /// Adds a reference field to a class definition.
@@ -97,17 +134,13 @@ public:
 /// The second parameter determines the name of the reference field. It must be unique within the current class.
 #define DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags) \
 	private: \
-		static Ovito::SingleReferenceFieldBase& name##__access_field(const RefMaker* obj) { \
-			return static_cast<ovito_class*>(const_cast<RefMaker*>(obj))->_##name; \
-		} \
 		enum { __##name##_flags = flags }; \
+		using __##name##_target_object_type = Ovito::ReferenceField<type>::target_object_type; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { \
-			return name##__propdescr_instance; \
-		} \
+		static inline Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { return name##__propdescr_instance; } \
 		Ovito::ReferenceField<type> _##name; \
-		type* name() const { return _##name; } \
+		inline decltype(std::declval<Ovito::ReferenceField<type>>().get()) name() const { return _##name.get(); } \
 	private:
 
 /// Adds a reference field to a class definition.
@@ -121,9 +154,11 @@ public:
 /// The second parameter determines the name of the reference field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this reference field.
 #define DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(type, name, setterName, flags) \
+	DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags) \
 	public: \
-		void setterName(const type* obj) { _##name.set(this, PROPERTY_FIELD(name), obj); } \
-		DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags)
+		template<typename U> inline void setterName(U&& newValue) { _##name.set(this, PROPERTY_FIELD(name), std::forward<U>(newValue)); } \
+		inline void setterName##PYTHON(__##name##_target_object_type* newValue) { _##name.set(this, PROPERTY_FIELD(name), newValue); } \
+	private:
 
 /// Adds a settable reference field to a class definition.
 /// The first parameter specifies the RefTarget derived class of the referenced object.
@@ -137,17 +172,13 @@ public:
 /// The second parameter determines the name of the vector reference field. It must be unique within the current class.
 #define DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, flags) \
 	private: \
-		static Ovito::VectorReferenceFieldBase& name##__access_field(const RefMaker* obj) { \
-			return static_cast<ovito_class*>(const_cast<RefMaker*>(obj))->_##name; \
-		} \
 		enum { __##name##_flags = flags | PROPERTY_FIELD_VECTOR }; \
+		using __##name##_target_object_type = Ovito::VectorReferenceField<type>::target_object_type; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { \
-			return name##__propdescr_instance; \
-		} \
+		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { return name##__propdescr_instance; } \
 		Ovito::VectorReferenceField<type> _##name; \
-		const QVector<type*>& name() const { return _##name.targets(); } \
+		inline decltype(std::declval<Ovito::VectorReferenceField<type>>().targets()) name() const { return _##name.targets(); } \
 	private:
 
 /// Adds a vector reference field to a class definition.
@@ -161,9 +192,11 @@ public:
 /// The second parameter determines the name of the vector reference field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this reference field.
 #define DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, setterName, flags) \
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, flags) \
 	public: \
-		void setterName(const QVector<type*>& lst) { _##name.set(this, PROPERTY_FIELD(name), lst); } \
-		DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, flags)
+		template<typename U> inline void setterName(U&& newList) { _##name.setTargets(this, PROPERTY_FIELD(name), std::forward<U>(newList)); } \
+		inline void setterName(std::initializer_list<type> newList) { _##name.setTargets(this, PROPERTY_FIELD(name), newList); } \
+	private:
 
 /// Adds a vector reference field to a class definition that is settable.
 /// The first parameter specifies the RefTarget-derived class of the objects stored in the vector reference field.

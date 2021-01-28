@@ -114,11 +114,41 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 * Creates an instance of this object class.
 * Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
-OORef<OvitoObject> OvitoClass::createInstance(DataSet* dataset) const
+OORef<OvitoObject> OvitoClass::createInstance() const
 {
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {
+			OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+			// Load plugin first.
+			try {
+				plugin()->loadPlugin();
+			}
+			catch(Exception& ex) {
+				ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
+				throw ex;
+			}
+		}
+	}
+	if(isAbstract())
+		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
+
+	OVITO_ASSERT_MSG(!isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must not be used to instantiate RefTarget derived classes.");
+
+	// Instantiate the class.
+	return createInstanceImpl(nullptr);
+}
+
+/******************************************************************************
+* Creates an instance of this object class.
+* Throws an exception if the containing plugin failed to load.
+******************************************************************************/
+OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ExecutionContext executionContext) const
+{
+	if(plugin()) {
+		OVITO_CHECK_POINTER(plugin());
+		if(!plugin()->isLoaded()) {
+			OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
 			// Load plugin first.
 			try {
 				plugin()->loadPlugin();
@@ -132,10 +162,16 @@ OORef<OvitoObject> OvitoClass::createInstance(DataSet* dataset) const
 	if(isAbstract())
 		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()), dataset);
 
-	OVITO_ASSERT_MSG(!isDerivedFrom(RefTarget::OOClass()) || dataset != nullptr || *this == DataSet::OOClass(), "OvitoClass::createInstance()", "Tried to create instance of RefTarget derived class without passing a DatSet.");
-	OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()) || dataset == nullptr, "OvitoClass::createInstance()", "Passed a DatSet to the constructor of a class that is not derived from RefTarget.");
+	OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
+	OVITO_ASSERT_MSG(dataset != nullptr || *this == DataSet::OOClass(), "OvitoClass::createInstance()", "Tried to create instance of RefTarget derived class without passing a DatSet.");
 
-	return createInstanceImpl(dataset);
+	// Instantiate the class.
+	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(dataset));
+
+	// Initialize the parameters of the new object to default values.
+	obj->initializeObject(executionContext);
+
+	return obj;
 }
 
 /******************************************************************************
@@ -159,7 +195,7 @@ OvitoObject* OvitoClass::createInstanceImpl(DataSet* dataset) const
 
 	if(isDerivedFrom(RefTarget::OOClass()) && *this != DataSet::OOClass()) {
 		OVITO_ASSERT(dataset != nullptr);
-		UndoSuspender noUndo(dataset->undoStack());
+		UndoSuspender noUndo(dataset);
 		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(DataSet*, dataset)));
 	}
 	else {

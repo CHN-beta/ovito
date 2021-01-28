@@ -173,8 +173,4 @@ using Ray3 = Ray_3<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Ray3);
-Q_DECLARE_METATYPE(Ovito::Ray3*);
 Q_DECLARE_TYPEINFO(Ovito::Ray3, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Ray3*, Q_PRIMITIVE_TYPE);
-
-

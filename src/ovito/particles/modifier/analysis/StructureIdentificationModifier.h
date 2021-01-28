@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -60,19 +60,13 @@ public:
 	public:
 
 		/// Constructor.
-		StructureIdentificationEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection = {}) :
-			_positions(std::move(positions)),
-			_simCell(simCell),
-			_typesToIdentify(std::move(typesToIdentify)),
-			_selection(std::move(selection)),
-			_structures(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::StructureTypeProperty, false)),
-			_inputFingerprint(std::move(fingerprint)) {}
+		StructureIdentificationEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
-		/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
+		/// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
 		/// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
 		virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 			// Avoid a recomputation if the user toggles just the color-by-type option.
@@ -91,10 +85,15 @@ public:
 		const ConstPropertyPtr& selection() const { return _selection; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
-		/// Returns the list of structure types to search for.
-		const QVector<bool>& typesToIdentify() const { return _typesToIdentify; }
+		/// Returns whether a given structural type is enabled for identification.
+		bool typeIdentificationEnabled(int typeId) const {
+			OVITO_ASSERT(typeId >= 0);
+			if(typeId >= structures()->elementTypes().size()) return false;
+			OVITO_ASSERT(structures()->elementTypes()[typeId]->numericId() == typeId);
+			return structures()->elementTypes()[typeId]->enabled();
+		}
 
 		/// Returns the number of identified particles of the given structure type.
 		qlonglong getTypeCount(int typeIndex) const {
@@ -108,7 +107,7 @@ public:
 		void releaseWorkingData() {
 			_positions.reset();
 			_selection.reset();
-			decltype(_typesToIdentify){}.swap(_typesToIdentify);
+			_simCell.reset();
 		}
 
 		/// Gives subclasses the possibility to post-process per-particle structure types
@@ -121,8 +120,7 @@ public:
 
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _selection;
-		const SimulationCell _simCell;
-		QVector<bool> _typesToIdentify;
+		DataOORef<const SimulationCellObject> _simCell;
 		const PropertyPtr _structures;
 		ParticleOrderingFingerprint _inputFingerprint;
 		std::vector<qlonglong> _typeCounts;
@@ -133,6 +131,13 @@ public:
 	/// Constructor.
 	StructureIdentificationModifier(DataSet* dataset);
 
+	/// Returns an existing structure type managed by the modifier.
+	ElementType* structureTypeById(int id) const {
+		for(ElementType* type : structureTypes())
+			if(type->numericId() == id) return type;
+		return nullptr;
+	}
+
 protected:
 
 	/// Saves the class' contents to the given stream.
@@ -142,18 +147,19 @@ protected:
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// Inserts a structure type into the list.
-	void addStructureType(ElementType* type) { _structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type); }
+	void addStructureType(ElementType* type) { 
+		// Make sure the numeric type ID is unique.
+		OVITO_ASSERT(std::none_of(structureTypes().begin(), structureTypes().end(), [&](const ElementType* t) { return t->numericId() == type->numericId(); }));
+		_structureTypes.push_back(this, PROPERTY_FIELD(structureTypes), type); 
+	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType);
-
-	/// Returns a bit flag array which indicates what structure types to search for.
-	QVector<bool> getTypesToIdentify(int numTypes) const;
+	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
 
 private:
 
 	/// Contains the list of structure types recognized by this analysis modifier.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(ElementType, structureTypes, setStructureTypes);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, structureTypes, setStructureTypes);
 
 	/// Controls whether analysis should take into account only selected particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
@@ -164,5 +170,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT ChillPlusModifier : public StructureIdentificationM
 
     Q_CLASSINFO("DisplayName", "Chill+");
 	Q_CLASSINFO("Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Structure identification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -53,23 +53,27 @@ public:
     /// The structure types recognized by the Chill+ algorithm.
     enum StructureType {
         OTHER = 0,				//< Unidentified structure
-        HEXAGONAL_ICE,			//< Cubic ice
-        CUBIC_ICE,				//< Hexagonal ice
+        HEXAGONAL_ICE,			//< Hexagonal ice
+        CUBIC_ICE,				//< Cubic ice
         INTERFACIAL_ICE,		//< Interfacial ice
         HYDRATE,				//< Hydrate
         INTERFACIAL_HYDRATE,    //< Interfacial hydrate
 
         NUM_STRUCTURE_TYPES 	//< This just counts the number of defined structure types.
     };
-    Q_ENUMS(StructureType);
+    Q_ENUM(StructureType);
 
     /// Constructor.
     Q_INVOKABLE ChillPlusModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+    
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+    virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -79,8 +83,8 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, QVector<bool> typesToIdentify, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(fingerprint, positions, simCell, typesToIdentify, selection),
+        ChillPlusEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+            StructureIdentificationEngine(dataSource, executionContext, dataset, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 
         /// Computes the modifier's results.
@@ -89,12 +93,13 @@ private:
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-        StructureType determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify);
-
         /// Returns the value of the cutoff parameter.
         FloatType cutoff() const { return _cutoff; }
 
     private:
+
+        /// Implementation of the identification algorithm.
+        StructureType determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex);
 
         /// Helper method.
         static std::complex<float> compute_q_lm(CutoffNeighborFinder& neighFinder, size_t particleIndex, int, int);

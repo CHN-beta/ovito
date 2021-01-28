@@ -25,6 +25,8 @@
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 
 namespace Ovito {
 
@@ -97,18 +99,18 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 	static const QString labels[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
 
 	// Create line buffer.
-	if(!_orientationTripodGeometry || !_orientationTripodGeometry->isValid(renderer)) {
+	if(!_orientationTripodGeometry) {
 		_orientationTripodGeometry = renderer->createLinePrimitive();
-		_orientationTripodGeometry->setVertexCount(18);
-		ColorA vertexColors[18];
-		for(int i = 0; i < 18; i++)
-			vertexColors[i] = axisColors[i / 6];
-		_orientationTripodGeometry->setVertexColors(vertexColors);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 18, DataBuffer::Float, 4, 0, false);
+		std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0]);
+		std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1]);
+		std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2]);
+		_orientationTripodGeometry->setColors(vertexColors.take());
 	}
 
 	// Render arrows.
-	Point3 vertices[18];
-	for(int axis = 0, index = 0; axis < 3; axis++) {
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 18, DataBuffer::Float, 3, 0, false);
+	for(size_t axis = 0, index = 0; axis < 3; axis++) {
 		Vector3 dir = viewport()->projectionParams().viewMatrix.column(axis).normalized();
 		vertices[index++] = Point3::Origin();
 		vertices[index++] = Point3::Origin() + dir;
@@ -117,25 +119,25 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 		vertices[index++] = Point3::Origin() + dir;
 		vertices[index++] = Point3::Origin() + (dir + tripodArrowSize * Vector3(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z()));
 	}
-	_orientationTripodGeometry->setVertexPositions(vertices);
-	_orientationTripodGeometry->render(renderer);
+	_orientationTripodGeometry->setPositions(vertices.take());
+	renderer->renderLines(_orientationTripodGeometry);
 
 	// Render x,y,z labels.
 	for(int axis = 0; axis < 3; axis++) {
 
 		// Create a rendering buffer that is responsible for rendering the text label.
-		if(!_orientationTripodLabels[axis] || !_orientationTripodLabels[axis]->isValid(renderer)) {
+		if(!_orientationTripodLabels[axis]) {
 			_orientationTripodLabels[axis] = renderer->createTextPrimitive();
 			_orientationTripodLabels[axis]->setFont(ViewportSettings::getSettings().viewportFont());
 			_orientationTripodLabels[axis]->setColor(axisColors[axis]);
 			_orientationTripodLabels[axis]->setText(labels[axis]);
+			_orientationTripodLabels[axis]->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		}
 
 		Point3 p = Point3::Origin() + viewport()->projectionParams().viewMatrix.column(axis).resized(1.2);
 		Point3 ndcPoint = projParams.projectionMatrix * p;
-		Point2 windowPoint(( ndcPoint.x() + FloatType(1)) * imageSize.width() / 2,
-							(-ndcPoint.y() + FloatType(1)) * imageSize.height() / 2);
-		_orientationTripodLabels[axis]->renderWindow(renderer, windowPoint, Qt::AlignHCenter | Qt::AlignVCenter);
+		_orientationTripodLabels[axis]->setPositionViewport(renderer, {ndcPoint.x(), ndcPoint.y()});
+		renderer->renderText(_orientationTripodLabels[axis]);
 	}
 
 	// Restore old rendering attributes.
@@ -148,20 +150,25 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
 {
 	// Create a rendering buffer that is responsible for rendering the frame.
-	if(!_renderFrameOverlay || !_renderFrameOverlay->isValid(renderer)) {
+	if(!_renderFrameOverlay) {
 		_renderFrameOverlay = renderer->createImagePrimitive();
 		QImage image(1, 1, QImage::Format_ARGB32);
 		image.fill(0xA0A0A0A0);
 		_renderFrameOverlay->setImage(image);
 	}
 
-	Box2 rect = viewport()->renderFrameRect();
+	// The render frame in viewport coordinates.
+	Box2 frameRect = viewport()->renderFrameRect();
 
-	// Render rectangle borders
-	_renderFrameOverlay->renderViewport(renderer, Point2(-1,-1), Vector2(FloatType(1) + rect.minc.x(), 2));
-	_renderFrameOverlay->renderViewport(renderer, Point2(rect.maxc.x(),-1), Vector2(FloatType(1) - rect.maxc.x(), 2));
-	_renderFrameOverlay->renderViewport(renderer, Point2(rect.minc.x(),-1), Vector2(rect.width(), FloatType(1) + rect.minc.y()));
-	_renderFrameOverlay->renderViewport(renderer, Point2(rect.minc.x(),rect.maxc.y()), Vector2(rect.width(), FloatType(1) - rect.maxc.y()));
+	// Fill area around frame rectangle with semi-transparent color. 
+	_renderFrameOverlay->setRectViewport(renderer, Box2({-1,-1}, {frameRect.minc.x(),1}));
+	renderer->renderImage(_renderFrameOverlay);
+	_renderFrameOverlay->setRectViewport(renderer, Box2({frameRect.maxc.x(),-1}, {1,1}));
+	renderer->renderImage(_renderFrameOverlay);
+	_renderFrameOverlay->setRectViewport(renderer, Box2({frameRect.minc.x(),-1}, {frameRect.maxc.x(),frameRect.minc.y()}));
+	renderer->renderImage(_renderFrameOverlay);
+	_renderFrameOverlay->setRectViewport(renderer, Box2({frameRect.minc.x(),frameRect.maxc.y()}, {frameRect.maxc.x(),1}));
+	renderer->renderImage(_renderFrameOverlay);
 }
 
 /******************************************************************************
@@ -170,9 +177,10 @@ void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
 QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, bool hoverState)
 {
 	// Create a rendering buffer that is responsible for rendering the viewport's caption text.
-	if(!_captionBuffer || !_captionBuffer->isValid(renderer)) {
+	if(!_captionBuffer) {
 		_captionBuffer = renderer->createTextPrimitive();
 		_captionBuffer->setFont(ViewportSettings::getSettings().viewportFont());
+		_captionBuffer->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 	}
 
 	if(hoverState && !_captionBuffer->font().underline()) {
@@ -200,10 +208,11 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
 
 	QFontMetricsF metrics(_captionBuffer->font());
 	Point2 pos = Point2(2, 2) * renderer->devicePixelRatio();
-	_captionBuffer->renderWindow(renderer, pos, Qt::AlignLeft | Qt::AlignTop);
+	_captionBuffer->setPositionWindow(pos);
+	renderer->renderText(_captionBuffer);
 
 	// Compute the area covered by the caption text.
-	return QRectF(0, 0, std::max(metrics.width(_captionBuffer->text()), 30.0) + pos.x(), metrics.height() + pos.y());
+	return QRectF(0, 0, std::max(metrics.horizontalAdvance(_captionBuffer->text()), 30.0) + pos.x(), metrics.height() + pos.y());
 }
 
 }	// End of namespace

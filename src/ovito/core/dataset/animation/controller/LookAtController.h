@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,6 +50,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE LookAtController(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
+
 	/// \brief Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
 
@@ -82,10 +86,10 @@ public:
 private:
 
 	/// The sub-controller for rolling.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, rollController, setRollController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, rollController, setRollController);
 
 	/// The target scene node to look at.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SceneNode, targetNode, setTargetNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, targetNode, setTargetNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Stores the cached position of the source node.
 	Vector3 _sourcePos;
@@ -95,5 +99,3 @@ private:
 };
 
 }	// End of namespace
-
-

@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
@@ -145,7 +144,7 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 * Creates and initializes a computation engine that will compute the 
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// What is the reference frame number to use?
 	TimeInterval validityInterval = input.stateValidity();
@@ -208,7 +207,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	}
 
 	// Wait for the reference configuration to become available.
-	return refState.then(executor(), [this, request, modApp, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
+	return refState.then(executor(), [this, request, modApp, input = input, referenceFrame, executionContext, validityInterval](const PipelineFlowState& referenceInput) {
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(referenceInput.status().type() == PipelineStatus::Error)
@@ -225,7 +224,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 		}
 
 		// Let subclass create the compute engine.
-		return createEngineInternal(request, modApp, std::move(input), referenceInput, validityInterval);
+		return createEngineInternal(request, modApp, std::move(input), referenceInput, executionContext, validityInterval);
 	});
 }
 
@@ -233,46 +232,51 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 * Constructor.
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
+	const PipelineObject* dataSource, 
+	ExecutionContext executionContext, 
 	const TimeInterval& validityInterval,
-	ConstPropertyPtr positions, const SimulationCell& simCell,
-	ConstPropertyPtr refPositions, const SimulationCell& simCellRef,
+	ConstPropertyPtr positions, const SimulationCellObject* simCell,
+	ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 	ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 	AffineMappingType affineMapping, bool useMinimumImageConvention) :
-	Engine(validityInterval),
+	Engine(dataSource, executionContext, validityInterval),
 	_positions(std::move(positions)),
-	_simCell(simCell),
 	_refPositions(std::move(refPositions)),
-	_simCellRef(simCellRef),
 	_identifiers(std::move(identifiers)),
 	_refIdentifiers(std::move(refIdentifiers)),
 	_affineMapping(affineMapping),
 	_useMinimumImageConvention(useMinimumImageConvention)
 {
+	// Clone the input simulation cells, because we need to slightly adjust for the computation. 
+	CloneHelper cloneHelper;
+	_simCell = cloneHelper.cloneObject(simCell, false);
+	_simCellRef = cloneHelper.cloneObject(simCellRef, false);
+
 	// Automatically disable PBCs in Z direction for 2D systems.
-	if(_simCell.is2D()) {
-		_simCell.setPbcFlags(_simCell.hasPbc(0), _simCell.hasPbc(1), false);
+	if(_simCell->is2D()) {
+		_simCell->setPbcFlags(_simCell->hasPbc(0), _simCell->hasPbc(1), false);
 		// Make sure the matrix is invertible.
-		AffineTransformation m = _simCell.matrix();
+		AffineTransformation m = _simCell->matrix();
 		m.column(2) = Vector3(0,0,1);
-		_simCell.setMatrix(m);
-		m = _simCellRef.matrix();
+		_simCell->setCellMatrix(m);
+		m = _simCellRef->matrix();
 		m.column(2) = Vector3(0,0,1);
-		_simCellRef.setMatrix(m);
+		_simCellRef->setCellMatrix(m);
 	}
 
 	if(affineMapping != NO_MAPPING) {
-		if(std::abs(cell().matrix().determinant()) < FLOATTYPE_EPSILON || std::abs(refCell().matrix().determinant()) < FLOATTYPE_EPSILON)
+		if(std::abs(cell()->matrix().determinant()) < FLOATTYPE_EPSILON || std::abs(refCell()->matrix().determinant()) < FLOATTYPE_EPSILON)
 			throw Exception(tr("Simulation cell is degenerate in either the deformed or the reference configuration."));
 	}
 
 	// PBCs flags of the current configuration always override PBCs flags
 	// of the reference config.
-	_simCellRef.setPbcFlags(_simCell.pbcFlags());
-	_simCellRef.set2D(_simCell.is2D());
+	_simCellRef->setPbcFlags(_simCell->pbcFlags());
+	_simCellRef->setIs2D(_simCell->is2D());
 
 	// Precompute matrices for transforming points/vector between the two configurations.
-	_refToCurTM = cell().matrix() * refCell().inverseMatrix();
-	_curToRefTM = refCell().matrix() * cell().inverseMatrix();
+	_refToCurTM = cell()->matrix() * refCell()->inverseMatrix();
+	_curToRefTM = refCell()->matrix() * cell()->inverseMatrix();
 }
 
 /******************************************************************************

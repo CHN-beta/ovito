@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,36 +24,54 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "SurfaceMesh.h"
 #include "SurfaceMeshVis.h"
+#include "SurfaceMeshAccess.h"
 
 namespace Ovito { namespace Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMesh);
-DEFINE_PROPERTY_FIELD(SurfaceMesh, topology);
 DEFINE_PROPERTY_FIELD(SurfaceMesh, spaceFillingRegion);
+DEFINE_REFERENCE_FIELD(SurfaceMesh, topology);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, vertices);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, faces);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, regions);
+SET_PROPERTY_FIELD_LABEL(SurfaceMesh, topology, "Topology");
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, vertices, "Vertices");
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, faces, "Faces");
 SET_PROPERTY_FIELD_LABEL(SurfaceMesh, regions, "Regions");
+
+constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 
 /******************************************************************************
 * Constructs an empty surface mesh object.
 ******************************************************************************/
 SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomainDataObject(dataset, title),
-	_spaceFillingRegion(0)
+	_spaceFillingRegion(SurfaceMesh::InvalidIndex)
+{
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void SurfaceMesh::initializeObject(ExecutionContext executionContext)
 {
 	// Attach a visualization element for rendering the surface mesh.
-	addVisElement(new SurfaceMeshVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
+
+	// Create the sub-object for storing the mesh topology.
+	setTopology(DataOORef<SurfaceMeshTopology>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the vertex properties.
-	setVertices(new SurfaceMeshVertices(dataset));
+	setVertices(DataOORef<SurfaceMeshVertices>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the face properties.
-	setFaces(new SurfaceMeshFaces(dataset));
+	setFaces(DataOORef<SurfaceMeshFaces>::create(dataset(), executionContext));
 
 	// Create the sub-object for storing the region properties.
-	setRegions(new SurfaceMeshRegions(dataset));
+	setRegions(DataOORef<SurfaceMeshRegions>::create(dataset(), executionContext));
+
+	PeriodicDomainDataObject::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -63,25 +81,33 @@ SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomai
 ******************************************************************************/
 void SurfaceMesh::verifyMeshIntegrity() const
 {
+	OVITO_CHECK_OBJECT_POINTER(topology());
 	if(!topology())
 		throwException(tr("Surface mesh has no topology object attached."));
 
+	OVITO_CHECK_OBJECT_POINTER(vertices());
 	if(!vertices())
 		throwException(tr("Surface mesh has no vertex properties container attached."));
+	OVITO_CHECK_OBJECT_POINTER(vertices()->getProperty(SurfaceMeshVertices::PositionProperty));
 	if(!vertices()->getProperty(SurfaceMeshVertices::PositionProperty))
 		throwException(tr("Invalid data structure. Surface mesh is missing the position vertex property."));
+	OVITO_ASSERT(topology()->vertexCount() == vertices()->elementCount());
 	if(topology()->vertexCount() != vertices()->elementCount())
 		throwException(tr("Length of vertex property arrays of surface mesh do not match number of vertices in the mesh topology."));
 
+	OVITO_CHECK_OBJECT_POINTER(faces());
 	if(!faces())
 		throwException(tr("Surface mesh has no face properties container attached."));
+	OVITO_ASSERT(faces()->properties().empty() || topology()->faceCount() == faces()->elementCount());
 	if(!faces()->properties().empty() && topology()->faceCount() != faces()->elementCount())
 		throwException(tr("Length of face property arrays of surface mesh do not match number of faces in the mesh topology."));
 
+	OVITO_CHECK_OBJECT_POINTER(regions());
 	if(!regions())
 		throwException(tr("Surface mesh has no region properties container attached."));
 
-	if(spaceFillingRegion() != HalfEdgeMesh::InvalidIndex && spaceFillingRegion() < 0)
+	OVITO_ASSERT(spaceFillingRegion() == InvalidIndex || spaceFillingRegion() >= 0);
+	if(spaceFillingRegion() != InvalidIndex && spaceFillingRegion() < 0)
 		throwException(tr("Space filling region ID set for surface mesh must not be negative."));
 
 	vertices()->verifyIntegrity();
@@ -90,27 +116,13 @@ void SurfaceMesh::verifyMeshIntegrity() const
 }
 
 /******************************************************************************
-* Returns the topology data after making sure it is not shared with other owners.
-******************************************************************************/
-const HalfEdgeMeshPtr& SurfaceMesh::modifiableTopology()
-{
-	// Copy data if there is more than one reference to the storage.
-	OVITO_ASSERT(topology());
-	OVITO_ASSERT(topology().use_count() >= 1);
-	if(topology().use_count() > 1)
-		_topology.mutableValue() = std::make_shared<HalfEdgeMesh>(*topology());
-	OVITO_ASSERT(topology().use_count() == 1);
-	return topology();
-}
-
-/******************************************************************************
 * Determines which spatial region contains the given point in space.
 * Returns -1 if the point is exactly on a region boundary.
 ******************************************************************************/
-boost::optional<std::pair<SurfaceMeshData::region_index, FloatType>> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
+boost::optional<std::pair<SurfaceMesh::region_index, FloatType>> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
 {
 	verifyMeshIntegrity();
-	return SurfaceMeshData(this).locatePoint(location, epsilon);
+	return SurfaceMeshAccess(this).locatePoint(location, epsilon);
 }
 
 }	// End of namespace

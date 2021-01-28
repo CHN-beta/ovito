@@ -68,7 +68,7 @@ void SceneNodeSelectionBox::onSceneSelectionChanged()
 		setCurrentText(tr("%i selected pipelines").arg(selection->nodes().size()));
 	}
 	else {
-		int index = findData(QVariant::fromValue(selection->nodes().front()));
+		int index = findData(QVariant::fromValue(selection->nodes().front().get()));
 		setCurrentIndex(index);
 	}
 }

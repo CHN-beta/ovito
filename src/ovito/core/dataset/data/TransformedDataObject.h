@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 
 namespace Ovito {
@@ -42,30 +41,21 @@ class OVITO_CORE_EXPORT TransformedDataObject : public DataObject
 
 public:
 
-	/// \brief Standard constructor.
-	using DataObject::DataObject;
-
-	/// \brief Initialization constructor.
-	TransformedDataObject(TransformingDataVis* creator, const DataObject* sourceData) :
-		DataObject(creator->dataset()),
-		_sourceDataObject(sourceData),
-		_visElementRevision(creator->revisionNumber())
-	{
-		setVisElement(creator);
-	}
+	/// Constructor.
+	TransformedDataObject(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(dataset), 
+		_sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
 
 private:
 
-	/// Stores a weak reference to + revision version number of the original DataObject
-	/// this TransformedDataObject was derived from.
+	/// Stores a reference to the original DataObject this TransformedDataObject was generated from.
 	/// We use it to detect changes to the source object and avoid unnecessary regeneration
 	/// of the transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(VersionedDataObjectRef, sourceDataObject, setSourceDataObject);
+	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const DataObject>, sourceDataObject, setSourceDataObject);
 
 	/// Stores a revision version number of the TransformingDataVis that created this TransformedDataObject.
 	/// We use this to detect changes to the TransformingDataVis's parameters that require a re-generation of the
 	/// transient data object.
-	DECLARE_RUNTIME_PROPERTY_FIELD(unsigned int, visElementRevision, setVisElementRevision);
+	DECLARE_RUNTIME_PROPERTY_FIELD(int, visElementRevision, setVisElementRevision);
 };
 
 }	// End of namespace

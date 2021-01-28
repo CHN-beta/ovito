@@ -105,8 +105,8 @@ public:
 		// This future must be valid for on_error() to work.
 		OVITO_ASSERT_MSG(isValid(), "FutureBase::on_error()", "Future must be valid.");
 		task()->finally(std::forward<Executor>(executor), false, [f = std::forward<F>(f)](const TaskPtr& task) mutable {
-			if(!task->isCanceled() && task->_exceptionStore)
-				std::move(f)(task->_exceptionStore);
+			if(!task->isCanceled() && task->exceptionStore())
+				std::move(f)(task->exceptionStore());
 		});
 	}
 
@@ -172,6 +172,11 @@ public:
 		return promise_type::createCanceled();
 	}
 
+	/// Create a future that is ready and provides an immediate default-constructed result.
+	static Future createImmediateEmpty() {
+		return promise_type::createImmediateEmpty();
+	}
+
 	/// Create a future that is ready and provides an immediate result.
 	template<typename... V>
 	static Future createImmediate(V&&... result) {
@@ -196,6 +201,7 @@ public:
 
 	/// Create a new Future that is associated with the given task object.
 	static Future createFromTask(TaskPtr task, tuple_type& resultsStorage) {
+		OVITO_ASSERT(task);
 		OVITO_ASSERT(task->_resultsTuple == nullptr || task->_resultsTuple == &resultsStorage);
 		task->_resultsTuple = &resultsStorage;
 		return Future(std::move(task));
@@ -204,11 +210,19 @@ public:
 	/// Overload of the function above that works for tuples with a single element.
 	template<typename T>
 	static Future createFromTask(TaskPtr task, T& resultsStorage) {
+		OVITO_ASSERT(task);
 		static_assert(std::is_same<T, std::tuple_element_t<0, tuple_type>>::value && std::tuple_size<tuple_type>::value == 1, "This function can only be used to set the result storage of a future with a single result value.");
 		OVITO_ASSERT(task->_resultsTuple == nullptr || task->_resultsTuple == &resultsStorage);
 		task->_resultsTuple = &resultsStorage;
 		return Future(std::move(task));
 	}	
+
+	/// Create a new Future that is associated with the given task object.
+	static Future createFromTask(TaskPtr task) {
+		OVITO_ASSERT(task);
+		OVITO_ASSERT(task->_resultsTuple != nullptr || sizeof...(R) == 0);
+		return Future(std::move(task));
+	}
 
 	/// Cancels the shared state associated with this Future.
 	/// The Future is no longer valid after calling this function.
@@ -229,9 +243,8 @@ public:
 	}
 
 	/// Returns the results computed by the associated Promise.
-	/// This function may only be called after the Promise was fulfilled (and not canceled).
 	auto result() {
-		return std::get<0>(results());
+		return firstTupleElement(std::integral_constant<bool, sizeof...(R) != 0>{});
 	}
 
 	/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -261,6 +274,11 @@ public:
 	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
 	then_future(Executor&& executor, FC&& cont) noexcept { return then_future(std::forward<Executor>(executor), false, std::forward<FC>(cont)); }
 
+	/// Overload of the function above using the default inline executor.
+	template<typename FC>
+	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
+	then_future(FC&& cont) noexcept { return then_future(Ovito::detail::InlineExecutor(), std::forward<FC>(cont)); }
+
 #ifndef Q_CC_GNU
 protected:
 #else
@@ -279,6 +297,9 @@ public:
 	/// Move constructor taking the promise state pointer from a r-value Promise.
 	Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
 
+	void firstTupleElement(std::false_type) {}
+	auto firstTupleElement(std::true_type) { return std::get<0>(results()); }
+
 	template<typename... R2> friend class Future;
 	template<typename... R2> friend class Promise;
 	template<typename... R2> friend class SharedFuture;
@@ -295,7 +316,7 @@ typename Ovito::detail::resulting_future_type<FC,std::add_rvalue_reference_t<typ
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = ContinuationTask<result_promise_type>;
+	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "Future::then()", "Future must be valid.");
@@ -326,9 +347,9 @@ typename Ovito::detail::resulting_future_type<FC,std::add_rvalue_reference_t<typ
 
 		// Don't execute continuation function in case of an exception state in the original task.
 		// In such a case, forward the exception state to the continuation promise.
-		if(finishedTask->_exceptionStore) {
+		if(finishedTask->exceptionStore()) {
 			continuationTask->setStarted();
-			continuationTask->setException(std::move(finishedTask->_exceptionStore));
+			continuationTask->setException(finishedTask->takeExceptionStore());
 			continuationTask->setFinished();
 			return;
 		}
@@ -351,7 +372,7 @@ typename Ovito::detail::resulting_future_type<FC,std::tuple<Future<R...>>>::type
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = ContinuationTask<result_promise_type>;
+	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
 
 	// This future must be valid for then_future() to work.
 	OVITO_ASSERT_MSG(isValid(), "Future::then_future()", "Future must be valid.");

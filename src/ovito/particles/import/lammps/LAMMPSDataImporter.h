@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -82,9 +81,9 @@ public:
 		AtomStyle_Template,
 		AtomStyle_Tri,
 		AtomStyle_Wavepacket,
-		AtomStyle_Hybrid
+		AtomStyle_Hybrid,
 	};
-	Q_ENUMS(LAMMPSAtomStyle);
+	Q_ENUM(LAMMPSAtomStyle);
 
 public:
 
@@ -95,9 +94,9 @@ public:
 	virtual QString objectTitle() const override { return tr("LAMMPS Data"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file, sortParticles(), atomStyle());
+		return std::make_shared<FrameLoader>(request, sortParticles(), atomStyle());
 	}
 
 	/// Inspects the header of the given file and returns the detected LAMMPS atom style.
@@ -105,62 +104,21 @@ public:
 
 private:
 
-	class LAMMPSFrameData : public ParticleFrameData
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Returns the LAMMPS atom style used in the data file.
-		LAMMPSAtomStyle detectedAtomStyle() const { return _detectedAtomStyle; }
-
-		/// Returns the LAMMPS atom sub-styles used in the data file if the main style is "hybrid".
-		const std::vector<LAMMPSAtomStyle>& detectedAtomSubStyles() const { return _detectedAtomSubStyles; }
-
-		/// Sets the LAMMPS atom style used in the data file.
-		void setDetectedAtomStyle(LAMMPSAtomStyle style, std::vector<LAMMPSAtomStyle> subStyles) {
-			_detectedAtomStyle = style;
-			_detectedAtomSubStyles = std::move(subStyles);
-		}
-
-	private:
-
-		/// The LAMMPS atom style used in the data file.
-		LAMMPSAtomStyle _detectedAtomStyle;
-
-		/// The LAMMPS atom sub-styles if the atom style is "hybrid".
-		std::vector<LAMMPSAtomStyle> _detectedAtomSubStyles;
-	};
-
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file,
-				bool sortParticles,
-				LAMMPSAtomStyle atomStyle = AtomStyle_Unknown,
-				bool detectAtomStyle = false)
-			: FileSourceImporter::FrameLoader(frame, file),
+		FrameLoader(const LoadOperationRequest& request, bool sortParticles, LAMMPSAtomStyle atomStyle = AtomStyle_Unknown)
+			: ParticleImporter::FrameLoader(request),
 				_atomStyle(atomStyle),
-				_detectAtomStyle(detectAtomStyle),
 				_sortParticles(sortParticles) {}
 
-		/// Detects or verifies the LAMMPS atom style used by the data file.
-		bool detectAtomStyle(const char* firstLine, const QByteArray& keywordLine);
-
-	protected:
+	private:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
-
-		/// Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
-		static ParticleInputColumnMapping createColumnMapping(LAMMPSAtomStyle atomStyle, bool includeImageFlags);
-
-		/// Parses a hint string for the LAMMPS atom style.
-		static LAMMPSAtomStyle parseAtomStyleHint(const QString& atomStyleHint);
+		virtual void loadFile() override;
 
 		/// The LAMMPS atom style to assume.
 		LAMMPSAtomStyle _atomStyle;
@@ -168,9 +126,17 @@ private:
 		/// The LAMMPS atom sub-styles if the atom style is "hybrid".
 		std::vector<LAMMPSAtomStyle> _atomSubStyles;
 
-		bool _detectAtomStyle;
 		bool _sortParticles;
 	};
+
+	/// Detects or verifies the LAMMPS atom style used by the data file.
+	static bool detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyle& atomStyle, std::vector<LAMMPSAtomStyle>& atomSubStyles);
+
+	/// Parses a hint string for the LAMMPS atom style.
+	static LAMMPSAtomStyle parseAtomStyleHint(const QString& atomStyleHint);
+
+	/// Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
+	static ParticleInputColumnMapping createColumnMapping(LAMMPSAtomStyle atomStyle, bool includeImageFlags);
 
 	/// The LAMMPS atom style used by the data format.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(LAMMPSAtomStyle, atomStyle, setAtomStyle);
@@ -178,6 +144,3 @@ private:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::LAMMPSDataImporter::LAMMPSAtomStyle);
-Q_DECLARE_TYPEINFO(Ovito::Particles::LAMMPSDataImporter::LAMMPSAtomStyle, Q_PRIMITIVE_TYPE);

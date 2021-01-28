@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public AsynchronousModif
 
 	Q_CLASSINFO("DisplayName", "Ambient occlusion");
 	Q_CLASSINFO("Description", "Perform an ambient occlusion calculation to shade particles.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Coloring");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -70,8 +70,8 @@ public:
 	public:
 
 		/// Constructor.
-		AmbientOcclusionEngine(const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, PropertyPtr positions,
-			const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer);
+		AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+			ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer);
 
 		/// Destructor.
 		virtual ~AmbientOcclusionEngine();
@@ -95,17 +95,20 @@ public:
 		/// Returns the property storage that contains the computed per-particle brightness values.
 		const PropertyPtr& brightness() const { return _brightness; }
 
-		/// Returns the property storage that contains the input particle positions.
-		const PropertyPtr& positions() const { return _positions; }
+		/// Returns the data buffer containing the input particle positions.
+		const ConstPropertyPtr& positions() const { return _positions; }
+
+		/// Returns the data buffer containing the input particle radii.
+		const ConstPropertyPtr& particleRadii() const { return _particleRadii; }
 
 	private:
 
 		AmbientOcclusionRenderer* _renderer;
 		const int _resolution;
 		const int _samplingCount;
-		PropertyPtr _positions;
+		ConstPropertyPtr _positions;
+		ConstPropertyPtr _particleRadii;
 		const Box3 _boundingBox;
-		std::vector<FloatType> _particleRadii;
 		PropertyPtr _brightness;
 		ParticleOrderingFingerprint _inputFingerprint;
 	};
@@ -118,7 +121,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 

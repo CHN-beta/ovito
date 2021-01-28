@@ -28,12 +28,8 @@
 namespace Ovito {
 
 // The minimum OpenGL version required by Ovito:
-#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR 			2
-#define OVITO_OPENGL_MINIMUM_VERSION_MINOR			1
-
-// The standard OpenGL version used by Ovito:
-#define OVITO_OPENGL_REQUESTED_VERSION_MAJOR 		3
-#define OVITO_OPENGL_REQUESTED_VERSION_MINOR		2
+#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR 			3
+#define OVITO_OPENGL_MINIMUM_VERSION_MINOR			0
 
 // OpenGL debugging macro:
 #ifdef OVITO_DEBUG

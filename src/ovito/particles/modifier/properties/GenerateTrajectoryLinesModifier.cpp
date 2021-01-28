@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,8 +68,18 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(DataSet* datase
 	_everyNthFrame(1),
 	_unwrapTrajectories(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void GenerateTrajectoryLinesModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Create the vis element for rendering the trajectories created by the modifier.
-	setTrajectoryVis(new TrajectoryVis(dataset));
+	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), executionContext));
+
+	Modifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -159,7 +169,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		std::vector<Point3> pointData;
 		std::vector<int> timeData;
 		std::vector<qlonglong> idData;
-		std::vector<SimulationCell> cells;
+		std::vector<DataOORef<const SimulationCellObject>> cells;
 		int timeIndex = 0;
 		for(TimePoint time : sampleTimes) {
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
@@ -228,10 +238,10 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 			// Onbtain the simulation cell geometry at the current animation time.
 			if(unwrapTrajectories()) {
 				if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
-					cells.push_back(simCellObj->data());
+					cells.push_back(simCellObj);
 				}
 				else {
-					cells.push_back(SimulationCell());
+					cells.push_back({});
 				}
 			}
 
@@ -258,25 +268,25 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		UndoSuspender noUndo(dataset());
 
 		// Store generated trajectory lines in the ModifierApplication.
-		OORef<TrajectoryObject> trajObj = new TrajectoryObject(dataset());
+		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset(), Application::instance()->executionContext());
 
 		// Copy re-ordered trajectory points.
 		trajObj->setElementCount(pointData.size());
-		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false);
+		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false, Application::instance()->executionContext());
 		auto piter = permutation.cbegin();
 		for(Point3& p : trajPosProperty) {
 			p = pointData[*piter++];
 		}
 
 		// Copy re-ordered trajectory time stamps.
-		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false);
+		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false, Application::instance()->executionContext());
 		piter = permutation.cbegin();
 		for(int& t : trajTimeProperty) {
 			t = sampleFrames[timeData[*piter++]];
 		}
 
 		// Copy re-ordered trajectory ids.
-		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false);
+		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false, Application::instance()->executionContext());
 		piter = permutation.cbegin();
 		for(qlonglong& id : trajIdProperty) {
 			id = idData[*piter++];
@@ -286,7 +296,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 			return false;
 
 		// Unwrap trajectory vertices at periodic boundaries of the simulation cell.
-		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front().pbcFlags() != std::array<bool,3>{false, false, false}) {
+		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbc()) {
 			operation.setProgressText(tr("Unwrapping trajectory lines"));
 			operation.setProgressMaximum(trajPosProperty.size() - 1);
 			Point3* pos = trajPosProperty.begin();
@@ -296,18 +306,20 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 				if(!operation.incrementProgressValue())
 					return false;
 				if(id[0] == id[1]) {
-					const SimulationCell& cell1 = cells[timeData[piter[0]]];
-					const SimulationCell& cell2 = cells[timeData[piter[1]]];
-					const Point3& p1 = pos[0];
-					Point3 p2 = pos[1];
-					for(size_t dim = 0; dim < 3; dim++) {
-						if(cell1.hasPbc(dim)) {
-							FloatType reduced1 = cell1.inverseMatrix().prodrow(p1, dim);
-							FloatType reduced2 = cell2.inverseMatrix().prodrow(p2, dim);
-							FloatType delta = reduced2 - reduced1;
-							FloatType shift = std::floor(delta + FloatType(0.5));
-							if(shift != 0) {
-								pos[1] -= cell2.matrix().column(dim) * shift;
+					const SimulationCellObject* cell1 = cells[timeData[piter[0]]];
+					const SimulationCellObject* cell2 = cells[timeData[piter[1]]];
+					if(cell1 && cell2) {
+						const Point3& p1 = pos[0];
+						Point3 p2 = pos[1];
+						for(size_t dim = 0; dim < 3; dim++) {
+							if(cell1->hasPbc(dim)) {
+								FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
+								FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
+								FloatType delta = reduced2 - reduced1;
+								FloatType shift = std::floor(delta + FloatType(0.5));
+								if(shift != 0) {
+									pos[1] -= cell2->matrix().column(dim) * shift;
+								}
 							}
 						}
 					}
@@ -319,7 +331,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 
 		noUndo.reset(); // The trajectory line generation should be an undoable operation.
 
-		myModApp->setTrajectoryData(trajObj);
+		myModApp->setTrajectoryData(std::move(trajObj));
 	}
 	return true;
 }

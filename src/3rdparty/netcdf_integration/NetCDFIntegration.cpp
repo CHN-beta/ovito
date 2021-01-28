@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (2018) Alexander Stukowski
+//  Copyright (2020) Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,11 @@
 namespace Ovito {
 
 // The global mutex used to serialize access to the NetCDF library functions.
-QMutex NetCDFExclusiveAccess::_netcdfMutex(QMutex::Recursive);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+QRecursiveMutex NetCDFExclusiveAccess::_netcdfMutex;
+#else
+QMutex NetCDFExclusiveAccess::_netcdfMutex{QMutex::Recursive};
+#endif
 
 /******************************************************************************
 * Constructor, which blocks until exclusive access to the NetCDF functions is

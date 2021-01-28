@@ -38,13 +38,19 @@ class OVITO_GUIBASE_EXPORT MainWindowInterface
 public:
 
 	/// Constructor.
-	explicit MainWindowInterface() {}
+	explicit MainWindowInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
+
+	/// Returns the container that keeps a reference to the current dataset.
+	DataSetContainer& datasetContainer() { return _datasetContainer; }
 
 	/// Sets the window's viewport input manager.
 	void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
 
 	/// Returns the window's viewport input manager.
 	ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
+
+	/// Gives the active viewport the input focus.
+	virtual void setViewportInputFocus() {}
 	
 	/// Displays a message string in the window's status bar.
 	virtual void showStatusBarMessage(const QString& message, int timeout = 0) {}
@@ -52,10 +58,24 @@ public:
 	/// Hides any messages currently displayed in the window's status bar.
 	virtual void clearStatusBarMessage() {}
 
+	/// Returns the window's action manager.
+	ActionManager* actionManager() const { return _actionManager; }
+
+protected:
+
+	/// Assigns an ActionManager to this window.
+	void setActionManager(ActionManager* manager) { _actionManager = manager; }
+
 private:
+
+	/// This object manages the DataSet currently being edited in the window.
+	DataSetContainer& _datasetContainer;
 
 	/// The associated viewport input manager.
 	ViewportInputManager* _viewportInputManager = nullptr;
+
+	/// The action manager assigned to this window.
+	ActionManager* _actionManager = nullptr;
 };
 
 }	// End of namespace

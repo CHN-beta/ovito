@@ -24,6 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
 namespace Ovito { namespace StdObj {
@@ -42,11 +43,14 @@ public:
 	/// \brief Constructs a new type.
 	Q_INVOKABLE ElementType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId);
+	/// Initializes the element type to default parameter values.
+	virtual void initializeType(const PropertyReference& property, ExecutionContext executionContext);
 
-	/// \brief Returns the name of this type, or a dynamically generated string representing the
-	///        numeric ID if the type has no assigned name.
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+
+	/// Returns the name of this type, or a dynamically generated string representing the
+	/// numeric ID if the type has no assigned name.
 	QString nameOrNumericId() const {
 		if(!name().isEmpty())
 			return name();
@@ -54,22 +58,23 @@ public:
 			return generateDefaultTypeName(numericId());
 	}
 
-	/// \brief Returns an automatically generated name for a type based on its numeric ID.
+	/// Returns an automatically generated name for a type based on its numeric ID.
 	static QString generateDefaultTypeName(int id) {
 		return tr("Type %1").arg(id);
 	}
 
-	/// \brief Returns the title of this object. Same as nameOrNumericId().
+	/// Returns the title of this object. Same as nameOrNumericId().
 	virtual QString objectTitle() const override { return nameOrNumericId(); }
 
-	/// Returns the default color for the element type with the given ID.
-	static const Color& getDefaultColorForId(int typeClass, int typeId);
-
 	/// Returns the default color for a named element type.
-	static Color getDefaultColor(int typeClass, const QString& typeName, int typeId, bool useUserDefaults = true);
+	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext);
 
 	/// Changes the default color for a named element type.
-	static void setDefaultColor(int typeClass, const QString& typeName, const Color& color);
+	static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);
+
+	/// Returns the QSettings path for storing or accessing the user-defined 
+	/// default values of some ElementType parameter.
+	static QString getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName);
 
 protected:
 
@@ -86,6 +91,9 @@ protected:
 	/// This makes only sense in some sorts of types. For example, structure identification modifiers
 	/// use this field to determine which structural types they should look for.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
+
+	/// Stores a reference to the property object this element type belongs to.
+	DECLARE_PROPERTY_FIELD(PropertyReference, ownerProperty);
 };
 
 }	// End of namespace

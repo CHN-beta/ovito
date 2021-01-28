@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 	OVITO_CLASS(ScatterPlotModifier)
 	Q_CLASSINFO("DisplayName", "Scatter plot");
 	Q_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");

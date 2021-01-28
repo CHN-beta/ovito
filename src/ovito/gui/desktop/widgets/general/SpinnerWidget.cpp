@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "SpinnerWidget.h"
 
 namespace Ovito {
@@ -101,16 +102,18 @@ void SpinnerWidget::onTextChanged()
 {
 	OVITO_CHECK_POINTER(textBox());
 
-	FloatType newValue;
 	try {
 		if(textBox()->text() == _originalText) return;
-		if(unit()) {
-			newValue = unit()->parseString(textBox()->text());
+		if(textBox()->text().isEmpty() && std::isfinite(standardValue())) {
+			setFloatValue(standardValue(), true);
+		}
+		else if(unit()) {
+			FloatType newValue = unit()->parseString(textBox()->text());
 			setFloatValue(unit()->userToNative(newValue), true);
 		}
 		else {
 			bool ok;
-			newValue = textBox()->text().toDouble(&ok);
+			FloatType newValue = textBox()->text().toDouble(&ok);
 			if(!ok)
 				throw Exception(tr("Invalid floating-point value: %1").arg(textBox()->text()), this);
 			setFloatValue(newValue, true);
@@ -128,7 +131,9 @@ void SpinnerWidget::onTextChanged()
 void SpinnerWidget::updateTextBox()
 {
 	if(textBox()) {
-		if(unit())
+		if(floatValue() == standardValue() && !textBox()->placeholderText().isEmpty())
+			_originalText.clear();
+		else if(unit())
 			_originalText = unit()->formatValue(unit()->nativeToUser(floatValue()));
 		else
 			_originalText = QString::number(floatValue());
@@ -197,6 +202,14 @@ void SpinnerWidget::setMaxValue(FloatType maxValue)
 }
 
 /******************************************************************************
+* Specifies the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
+******************************************************************************/
+void SpinnerWidget::setStandardValue(FloatType value)
+{
+	_standardValue = value;
+}
+
+/******************************************************************************
 * Sets the units of this spinner's value.
 ******************************************************************************/
 void SpinnerWidget::setUnit(ParameterUnit* unit)
@@ -238,7 +251,7 @@ void SpinnerWidget::mousePressEvent(QMouseEvent* event)
 
 		OVITO_ASSERT(_lowerBtnPressed == false && _upperBtnPressed == false);
 
-		if(event->y() <= height()/2)
+		if(ViewportInputMode::getMousePosition(event).y() <= height()/2)
 			_upperBtnPressed = true;
 		else
 			_lowerBtnPressed = true;
@@ -314,7 +327,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 {
 	if(_upperBtnPressed || _lowerBtnPressed) {
 		if(_upperBtnPressed && !_lowerBtnPressed) {
-			if(event->y() > height()/2 || event->y() < 0) {
+			if(ViewportInputMode::getMousePosition(event).y() > height()/2 || ViewportInputMode::getMousePosition(event).y() < 0) {
 				_lowerBtnPressed = true;
 				_lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
 				update();
@@ -322,7 +335,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 			}
 		}
 		else if(!_upperBtnPressed && _lowerBtnPressed) {
-			if(event->y() <= height()/2 || event->y() > height()) {
+			if(ViewportInputMode::getMousePosition(event).y() <= height()/2 || ViewportInputMode::getMousePosition(event).y() > height()) {
 				_upperBtnPressed = true;
 				_lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
 				update();
@@ -333,7 +346,11 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 			QPoint cursorPos = QCursor::pos();
 			int screenY = cursorPos.y();
 			if(screenY != _lastMouseY) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+				int screenHeight = screen()->size().height();
+#else
 				int screenHeight = QApplication::desktop()->screenGeometry().height();
+#endif
 				if(screenY <= 5 && _lastMouseY == screenHeight - 1) return;
 				if(screenY >= screenHeight - 5 && _lastMouseY == 0) return;
 

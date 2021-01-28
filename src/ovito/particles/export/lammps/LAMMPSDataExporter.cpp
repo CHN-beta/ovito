@@ -147,14 +147,14 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	int numLAMMPSAtomTypes = 1;
 	if(particleTypeArray && particleTypeArray.size() > 0) {
-		numLAMMPSAtomTypes = std::max(particleTypeProperty->elementTypes().size(), *boost::max_element(particleTypeArray));
+		numLAMMPSAtomTypes = qMax(particleTypeProperty->elementTypes().size(), *boost::max_element(particleTypeArray));
 		textStream() << numLAMMPSAtomTypes << " atom types\n";
 	}
 	else textStream() << "1 atom types\n";
 
 	if(writeBonds) {
 		if(bondTypeArray && bondTypeArray.size() > 0) {
-			int numBondTypes = std::max(bondTypeProperty->elementTypes().size(), *boost::max_element(bondTypeArray));
+			int numBondTypes = qMax(bondTypeProperty->elementTypes().size(), *boost::max_element(bondTypeArray));
 			textStream() << numBondTypes << " bond types\n";
 		}
 		else textStream() << "1 bond types\n";
@@ -162,7 +162,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	if(writeAngles) {
 		if(angleTypeArray && angleTypeArray.size() > 0) {
-			int numAngleTypes = std::max(angleTypeProperty->elementTypes().size(), *boost::max_element(angleTypeArray));
+			int numAngleTypes = qMax(angleTypeProperty->elementTypes().size(), *boost::max_element(angleTypeArray));
 			textStream() << numAngleTypes << " angle types\n";
 		}
 		else textStream() << "1 angle types\n";
@@ -170,7 +170,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	if(writeDihedrals) {
 		if(dihedralTypeArray && dihedralTypeArray.size() > 0) {
-			int numDihedralTypes = std::max(dihedralTypeProperty->elementTypes().size(), *boost::max_element(dihedralTypeArray));
+			int numDihedralTypes = qMax(dihedralTypeProperty->elementTypes().size(), *boost::max_element(dihedralTypeArray));
 			textStream() << numDihedralTypes << " dihedral types\n";
 		}
 		else textStream() << "1 dihedral types\n";
@@ -178,7 +178,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
 	if(writeImpropers) {
 		if(improperTypeArray && improperTypeArray.size() > 0) {
-			int numImproperTypes = std::max(improperTypeProperty->elementTypes().size(), *boost::max_element(improperTypeArray));
+			int numImproperTypes = qMax(improperTypeProperty->elementTypes().size(), *boost::max_element(improperTypeArray));
 			textStream() << numImproperTypes << " improper types\n";
 		}
 		else textStream() << "1 improper types\n";

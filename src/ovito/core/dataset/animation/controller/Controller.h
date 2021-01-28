@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,6 +66,14 @@ protected:
 	/// \brief Constructor.
 	/// \param dataset The context dataset.
 	Controller(DataSet* dataset) : RefTarget(dataset) {}
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override {
+		RefTarget::loadFromStreamComplete(stream);
+		
+		// Inform dependents that it is now safe to query the controller for its value.
+		Q_EMIT controllerLoadingCompleted();
+	}
 
 public:
 
@@ -278,6 +286,12 @@ public:
 	/// \param time The animation at which the scaling should be applied to the transformation.
 	/// \param scaling The scaling to add to the transformation.
 	virtual void scale(TimePoint time, const Scaling& scaling) { OVITO_ASSERT_MSG(false, "Controller::scale()", "This method should be overridden."); }
+
+Q_SIGNALS:
+
+	/// This signal is emitted by the Controller after its data has been completely loaded from an ObjectLoadStream.
+	/// After this signal was sent, it is safe to query the controller for its value.
+	void controllerLoadingCompleted();
 };
 
 
@@ -291,30 +305,28 @@ class OVITO_CORE_EXPORT ControllerManager
 public:
 
 	/// \brief Creates a new float controller.
-	static OORef<Controller> createFloatController(DataSet* dataset);
+	static OORef<Controller> createFloatController(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new integer controller.
-	static OORef<Controller> createIntController(DataSet* dataset);
+	static OORef<Controller> createIntController(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new Vector3 controller.
-	static OORef<Controller> createVector3Controller(DataSet* dataset);
+	static OORef<Controller> createVector3Controller(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new Color controller.
-	static OORef<Controller> createColorController(DataSet* dataset) { return createVector3Controller(dataset); }
+	static OORef<Controller> createColorController(DataSet* dataset, ExecutionContext executionContext) { return createVector3Controller(dataset, executionContext); }
 
 	/// \brief Creates a new position controller.
-	static OORef<Controller> createPositionController(DataSet* dataset);
+	static OORef<Controller> createPositionController(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new rotation controller.
-	static OORef<Controller> createRotationController(DataSet* dataset);
+	static OORef<Controller> createRotationController(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new scaling controller.
-	static OORef<Controller> createScalingController(DataSet* dataset);
+	static OORef<Controller> createScalingController(DataSet* dataset, ExecutionContext executionContext);
 
 	/// \brief Creates a new transformation controller.
-	static OORef<Controller> createTransformationController(DataSet* dataset);
+	static OORef<Controller> createTransformationController(DataSet* dataset, ExecutionContext executionContext);
 };
 
 }	// End of namespace
-
-

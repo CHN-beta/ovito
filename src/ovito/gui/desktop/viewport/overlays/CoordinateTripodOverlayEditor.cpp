@@ -30,8 +30,10 @@
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/overlays/CoordinateTripodOverlay.h>
 #include "CoordinateTripodOverlayEditor.h"
 
@@ -74,7 +76,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	layout->addWidget(moveOverlayAction->createPushButton(), row++, 1);
+	layout->addWidget(new ViewportModeButton(moveOverlayAction), row++, 1);
 
 	FloatParameterUI* sizePUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::tripodSize));
 	layout->addWidget(sizePUI->label(), row, 0);

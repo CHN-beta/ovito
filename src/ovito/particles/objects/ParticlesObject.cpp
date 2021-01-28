@@ -52,11 +52,22 @@ SET_PROPERTY_FIELD_LABEL(ParticlesObject, impropers, "Impropers");
 ******************************************************************************/
 ParticlesObject::ParticlesObject(DataSet* dataset) : PropertyContainer(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ParticlesObject::initializeObject(ExecutionContext executionContext)
+{
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
-	
+
 	// Create and attach a default visualization element for rendering the particles.
-	addVisElement(new ParticlesVis(dataset));
+	if(!visElement())
+		setVisElement(OORef<ParticlesVis>::create(dataset(), executionContext));
+
+	PropertyContainer::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -334,20 +345,83 @@ size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
 }
 
 /******************************************************************************
+* Sorts the particles list with respect to particle IDs.
+* Does nothing if particles do not have IDs.
+******************************************************************************/
+std::vector<size_t> ParticlesObject::sortById()
+{
+	std::vector<size_t> invertedPermutation = PropertyContainer::sortById();
+
+	// If the storage order of particles has changed, we need to update other topological 
+	// structures that refer to the particle indices.
+	if(!invertedPermutation.empty()) {
+
+		// Update bond topology data to match new particle ordering.
+		if(bonds()) {
+			if(PropertyAccess<ParticleIndexPair> bondTopology = makeBondsMutable()->getMutableProperty(BondsObject::TopologyProperty)) {
+				for(ParticleIndexPair& bond : bondTopology) {
+					for(qlonglong& idx : bond) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update angle topology data to match new particle ordering.
+		if(angles()) {
+			if(PropertyAccess<ParticleIndexTriplet> angleTopology = makeAnglesMutable()->getMutableProperty(AnglesObject::TopologyProperty)) {
+				for(ParticleIndexTriplet& angle : angleTopology) {
+					for(qlonglong& idx : angle) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update dihedral topology data to match new particle ordering.
+		if(dihedrals()) {
+			if(PropertyAccess<ParticleIndexQuadruplet> dihedralTopology = makeDihedralsMutable()->getMutableProperty(DihedralsObject::TopologyProperty)) {
+				for(ParticleIndexQuadruplet& dihedral : dihedralTopology) {
+					for(qlonglong& idx : dihedral) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+
+		// Update improper topology data to match new particle ordering.
+		if(impropers()) {
+			if(PropertyAccess<ParticleIndexQuadruplet> improperTopology = makeImpropersMutable()->getMutableProperty(ImpropersObject::TopologyProperty)) {
+				for(ParticleIndexQuadruplet& improper : improperTopology) {
+					for(qlonglong& idx : improper) {
+						if(idx >= 0 && idx < (qlonglong)invertedPermutation.size())
+							idx = invertedPermutation[idx];
+					}
+				}
+			}
+		}
+	}
+	return invertedPermutation;
+}
+
+/******************************************************************************
 * Adds a set of new bonds to the particle system.
 ******************************************************************************/
-void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties, const BondType* bondType)
+void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	// Check if there are existing bonds.
 	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
 		// Create the bonds object.
-		setBonds(new BondsObject(dataset()));
-		bonds()->setElementCount(newBonds.size());
+		DataOORef<BondsObject> bonds = DataOORef<BondsObject>::create(dataset(), executionContext);
+		bonds->setElementCount(newBonds.size());
 
 		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false);
-		PropertyAccess<Vector3I> periodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false);
-		PropertyObject* bondTypeProperty = bondType ? bonds()->createProperty(BondsObject::TypeProperty, false) : nullptr;
+		PropertyAccess<ParticleIndexPair> topologyProperty = bonds->createProperty(BondsObject::TopologyProperty, false, executionContext);
+		PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
+		PropertyObject* bondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
 
 		// Copy data into property arrays.
 		auto t = topologyProperty.begin();
@@ -364,7 +438,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		// Insert property objects into the output pipeline state.
 		if(bondTypeProperty) {
 			bondTypeProperty->fill<int>(bondType->numericId());
-			bondTypeProperty->addElementType(bondType);
+			bondTypeProperty->addElementType(std::move(bondType));
 		}
 
 		// Insert other bond properties.
@@ -373,8 +447,13 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
 			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
 			OVITO_ASSERT(!bondTypeProperty || bprop->type() != BondsObject::TypeProperty);
-			bonds()->createProperty(bprop);
+			bonds->createProperty(bprop);
 		}
+
+		if(bondsVis)
+			bonds->setVisElement(bondsVis);
+
+		setBonds(std::move(bonds));
 	}
 	else {
 		BondsObject* bonds = makeBondsMutable();
@@ -405,11 +484,11 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		bonds->setElementCount(outputBondCount);
 
 		PropertyAccess<ParticleIndexPair> newBondsTopology = bonds->expectMutableProperty(BondsObject::TopologyProperty);
-		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true);
-		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true) : nullptr;
+		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
+		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
 
-		if(newBondTypeProperty && !newBondTypeProperty.propertyObject()->elementType(bondType->numericId()))
-			newBondTypeProperty.propertyObject()->addElementType(bondType);
+		if(newBondTypeProperty && !newBondTypeProperty.buffer()->elementType(bondType->numericId()))
+			newBondTypeProperty.buffer()->addElementType(bondType);
 
 		// Copy bonds information into the extended arrays.
 		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
@@ -426,13 +505,9 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 		}
 
 		// Initialize property values of new bonds.
-		for(PropertyObject* bondPropertyObject : bonds->properties()) {
+		for(PropertyObject* bondPropertyObject : bonds->makePropertiesMutable()) {
 			if(bondPropertyObject->type() == BondsObject::ColorProperty) {
-				const std::vector<ColorA>& colors = inputBondColors(true);
-				OVITO_ASSERT(colors.size() == bondPropertyObject->size());
-				std::transform(colors.cbegin() + originalBondCount, colors.cend(), 
-					PropertyAccess<Color>(bondPropertyObject).begin() + originalBondCount, 
-					[](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
+				bondPropertyObject->copyFrom(*inputBondColors(true));
 			}
 		}
 
@@ -445,60 +520,63 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 
 			PropertyObject* propertyObject;
 			if(bprop->type() != BondsObject::UserProperty) {
-				propertyObject = bonds->createProperty(bprop->type(), true);
+				propertyObject = bonds->createProperty(bprop->type(), true, executionContext);
 			}
 			else {
 				propertyObject = bonds->createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
 			}
 
 			// Copy bond property data.
-			propertyObject->modifiableStorage()->mappedCopyFrom(*bprop, mapping);
+			propertyObject->mappedCopyFrom(*bprop, mapping);
 		}
-	}
 
-	if(bondsVis)
-		bonds()->setVisElement(bondsVis);
+		if(bondsVis)
+			bonds->setVisElement(bondsVis);
+	}
 }
 
 /******************************************************************************
 * Returns a vector with the input particle colors.
 ******************************************************************************/
-std::vector<ColorA> ParticlesObject::inputParticleColors() const
+ConstPropertyPtr ParticlesObject::inputParticleColors() const
 {
-	// Obtain the particle vis element.
+	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
-		
 		// Query particle colors from vis element.
-		return particleVis->particleColors(this, false, true);
+		return particleVis->particleColors(this, false);
 	}
 
 	// Return an array with uniform colors if there is no vis element attached to the particles object.
-	return std::vector<ColorA>(elementCount(), ColorA(1,1,1,1));
+	PropertyPtr colors = ParticlesObject::OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::ColorProperty, false, ExecutionContext::Scripting);
+	colors->fill(Color(1,1,1));
+	return colors;
 }
 
 /******************************************************************************
 * Returns a vector with the input bond colors.
 ******************************************************************************/
-std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
+ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
 {
-	// Obtain the bonds vis element.
+	// Access the bonds vis element.
     if(bonds()) {
 		if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
 
 			// Query half-bond colors from vis element.
-			std::vector<ColorA> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->useParticleColors(), ignoreExistingColorProperty);
+			std::vector<Color> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->useParticleColors(), ignoreExistingColorProperty);
 			OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
 			// Map half-bond colors to full bond colors.
-			std::vector<ColorA> colors(bonds()->elementCount());
+			PropertyAccessAndRef<Color> colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
 			auto ci = halfBondColors.cbegin();
-			for(ColorA& co : colors) {
-				co = ColorA(ci->r(), ci->g(), ci->b(), 1);
+			for(Color& co : colors) {
+				co = *ci;
 				ci += 2;
 			}
-			return colors;
+			return colors.take();
 		}
-    	return std::vector<ColorA>(bonds()->elementCount(), ColorA(1,1,1,1));
+		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
+		colors->fill(Color(1,1,1));
+		return colors;
     }
 	return {};
 }
@@ -506,9 +584,9 @@ std::vector<ColorA> ParticlesObject::inputBondColors(bool ignoreExistingColorPro
 /******************************************************************************
 * Returns a vector with the input particle radii.
 ******************************************************************************/
-std::vector<FloatType> ParticlesObject::inputParticleRadii() const
+ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 {
-	// Obtain the particle vis element.
+	// Access the particles vis element.
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
 
 		// Query particle radii from vis element.
@@ -516,50 +594,35 @@ std::vector<FloatType> ParticlesObject::inputParticleRadii() const
 	}
 
 	// Return uniform default radius for all particles.
-	return std::vector<FloatType>(elementCount(), FloatType(1));
-}
-
-/******************************************************************************
-* Gives the property class the opportunity to set up a newly created
-* property object.
-******************************************************************************/
-void ParticlesObject::OOMetaClass::prepareNewProperty(PropertyObject* property) const
-{
-	if(property->type() == ParticlesObject::DisplacementProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Displacements"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		property->addVisElement(vis);
-	}
-	else if(property->type() == ParticlesObject::ForceProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Forces"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		vis->setReverseArrowDirection(false);
-		vis->setArrowPosition(VectorVis::Base);
-		property->addVisElement(vis);
-	}
-	else if(property->type() == ParticlesObject::DipoleOrientationProperty) {
-		OORef<VectorVis> vis = new VectorVis(property->dataset());
-		vis->setObjectTitle(tr("Dipoles"));
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-			vis->loadUserDefaults();
-		vis->setEnabled(false);
-		vis->setReverseArrowDirection(false);
-		vis->setArrowPosition(VectorVis::Center);
-		property->addVisElement(vis);
-	}
+	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::RadiusProperty, false, ExecutionContext::Scripting);
+	buffer->fill(FloatType(1));
+	return buffer;
 }
 
 /******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
-PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t particleCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
+	// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+	if(initializeMemory && !containerPath.empty()) {
+		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+		if(type == ColorProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				ConstPropertyPtr property = particles->inputParticleColors();
+				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+		else if(type == RadiusProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				ConstPropertyPtr property = particles->inputParticleRadii();
+				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+	}
+
 	int dataType;
 	size_t componentCount;
 	size_t stride;
@@ -572,14 +635,14 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 	case MoleculeTypeProperty:
 	case NucleobaseTypeProperty:
 	case DNAStrandProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case IdentifierProperty:
 	case ClusterProperty:
 	case MoleculeProperty:
-		dataType = PropertyStorage::Int64;
+		dataType = PropertyObject::Int64;
 		componentCount = 1;
 		stride = sizeof(qlonglong);
 		break;
@@ -594,14 +657,14 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 	case AsphericalShapeProperty:
 	case NucleotideAxisProperty:
 	case NucleotideNormalProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = sizeof(Vector3);
 		OVITO_ASSERT(stride == sizeof(Point3));
 		break;
 	case ColorProperty:
 	case VectorColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
@@ -618,7 +681,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 	case CentroSymmetryProperty:
 	case DisplacementMagnitudeProperty:
 	case VelocityMagnitudeProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 1;
 		stride = sizeof(FloatType);
 		break;
@@ -626,31 +689,37 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 	case StrainTensorProperty:
 	case ElasticStrainTensorProperty:
 	case StretchTensorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 6;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(SymmetricTensor2));
 		break;
 	case DeformationGradientProperty:
 	case ElasticDeformationGradientProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 9;
 		stride = componentCount * sizeof(FloatType);
 		break;
 	case OrientationProperty:
 	case RotationProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 4;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Quaternion));
 		break;
 	case PeriodicImageProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 3;
 		stride = componentCount * sizeof(int);
 		break;
+	case SuperquadricRoundnessProperty:
+		dataType = PropertyObject::Float;
+		componentCount = 2;
+		stride = componentCount * sizeof(FloatType);
+		OVITO_ASSERT(stride == sizeof(Vector2));
+		break;
 	default:
-		OVITO_ASSERT_MSG(false, "ParticlesObject::createStandardStorage()", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "ParticlesObject::createStandardProperty()", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard property type: %1").arg(type));
 	}
 
@@ -660,29 +729,13 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
 	// Allocate the storage array.
-	PropertyPtr property = std::make_shared<PropertyStorage>(particleCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, particleCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
 	if(initializeMemory && !containerPath.empty()) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
-		if(type == ColorProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
-				const std::vector<ColorA>& colors = particles->inputParticleColors();
-				OVITO_ASSERT(colors.size() == property->size());
-				boost::transform(colors, PropertyAccess<Color>(property).begin(), [](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
-				initializeMemory = false;
-			}
-		}
-		else if(type == RadiusProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
-				const std::vector<FloatType>& radii = particles->inputParticleRadii();
-				OVITO_ASSERT(radii.size() == property->size());
-				boost::copy(radii, PropertyAccess<FloatType>(property).begin());
-				initializeMemory = false;
-			}
-		}
-		else if(type == MassProperty) {
+		if(type == MassProperty) {
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
 				if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 					// Use per-type mass information and initialize the per-particle mass array from it.
@@ -708,6 +761,30 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardStorage(size_t particleC
 				}
 			}
 		}
+	}
+
+	// Some properties get an attached visual element.
+	if(type == ParticlesObject::DisplacementProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Displacements"));
+		vis->setEnabled(false);
+		property->addVisElement(std::move(vis));
+	}
+	else if(type == ParticlesObject::ForceProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Forces"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Base);
+		property->addVisElement(std::move(vis));
+	}
+	else if(type == ParticlesObject::DipoleOrientationProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
+		vis->setObjectTitle(tr("Dipoles"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Center);
+		property->addVisElement(std::move(vis));
 	}
 
 	if(initializeMemory) {
@@ -740,50 +817,78 @@ void ParticlesObject::OOMetaClass::initialize()
 	const QStringList tensorList = QStringList() << "XX" << "YX" << "ZX" << "XY" << "YY" << "ZY" << "XZ" << "YZ" << "ZZ";
 	const QStringList quaternionList = QStringList() << "X" << "Y" << "Z" << "W";
 
-	registerStandardProperty(TypeProperty, tr("Particle Type"), PropertyStorage::Int, emptyList, &ParticleType::OOClass(), tr("Particle types"));
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ClusterProperty, tr("Cluster"), PropertyStorage::Int64, emptyList);
-	registerStandardProperty(CoordinationProperty, tr("Coordination"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(PositionProperty, tr("Position"), PropertyStorage::Float, xyzList, nullptr, tr("Particle positions"));
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Particle colors"));
-	registerStandardProperty(DisplacementProperty, tr("Displacement"), PropertyStorage::Float, xyzList, nullptr, tr("Displacements"));
-	registerStandardProperty(DisplacementMagnitudeProperty, tr("Displacement Magnitude"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(VelocityProperty, tr("Velocity"), PropertyStorage::Float, xyzList, nullptr, tr("Velocities"));
-	registerStandardProperty(PotentialEnergyProperty, tr("Potential Energy"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(KineticEnergyProperty, tr("Kinetic Energy"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(TotalEnergyProperty, tr("Total Energy"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(RadiusProperty, tr("Radius"), PropertyStorage::Float, emptyList, nullptr, tr("Radii"));
-	registerStandardProperty(StructureTypeProperty, tr("Structure Type"), PropertyStorage::Int, emptyList, &ParticleType::OOClass(), tr("Structure types"));
-	registerStandardProperty(IdentifierProperty, tr("Particle Identifier"), PropertyStorage::Int64, emptyList, nullptr, tr("Particle identifiers"));
-	registerStandardProperty(StressTensorProperty, tr("Stress Tensor"), PropertyStorage::Float, symmetricTensorList);
-	registerStandardProperty(StrainTensorProperty, tr("Strain Tensor"), PropertyStorage::Float, symmetricTensorList);
-	registerStandardProperty(DeformationGradientProperty, tr("Deformation Gradient"), PropertyStorage::Float, tensorList);
-	registerStandardProperty(OrientationProperty, tr("Orientation"), PropertyStorage::Float, quaternionList);
-	registerStandardProperty(ForceProperty, tr("Force"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(MassProperty, tr("Mass"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(ChargeProperty, tr("Charge"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyStorage::Int, xyzList);
-	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(DipoleOrientationProperty, tr("Dipole Orientation"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(DipoleMagnitudeProperty, tr("Dipole Magnitude"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(AngularVelocityProperty, tr("Angular Velocity"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(AngularMomentumProperty, tr("Angular Momentum"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(TorqueProperty, tr("Torque"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(SpinProperty, tr("Spin"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(CentroSymmetryProperty, tr("Centrosymmetry"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(VelocityMagnitudeProperty, tr("Velocity Magnitude"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(MoleculeProperty, tr("Molecule Identifier"), PropertyStorage::Int64, emptyList);
-	registerStandardProperty(AsphericalShapeProperty, tr("Aspherical Shape"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(VectorColorProperty, tr("Vector Color"), PropertyStorage::Float, rgbList, nullptr, tr("Vector colors"));
-	registerStandardProperty(ElasticStrainTensorProperty, tr("Elastic Strain"), PropertyStorage::Float, symmetricTensorList);
-	registerStandardProperty(ElasticDeformationGradientProperty, tr("Elastic Deformation Gradient"), PropertyStorage::Float, tensorList);
-	registerStandardProperty(RotationProperty, tr("Rotation"), PropertyStorage::Float, quaternionList);
-	registerStandardProperty(StretchTensorProperty, tr("Stretch Tensor"), PropertyStorage::Float, symmetricTensorList);
-	registerStandardProperty(MoleculeTypeProperty, tr("Molecule Type"), PropertyStorage::Float, emptyList, &ElementType::OOClass(), tr("Molecule types"));
-	registerStandardProperty(NucleobaseTypeProperty, tr("Nucleobase"), PropertyStorage::Int, emptyList, &ElementType::OOClass(), tr("Nucleobases"));
-	registerStandardProperty(DNAStrandProperty, tr("DNA Strand"), PropertyStorage::Int, emptyList, &ElementType::OOClass(), tr("DNA Strands"));
-	registerStandardProperty(NucleotideAxisProperty, tr("Nucleotide Axis"), PropertyStorage::Float, xyzList);
-	registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), PropertyStorage::Float, xyzList);
+	registerStandardProperty(TypeProperty, tr("Particle Type"), PropertyObject::Int, emptyList, &ParticleType::OOClass(), tr("Particle types"));
+	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ClusterProperty, tr("Cluster"), PropertyObject::Int64, emptyList);
+	registerStandardProperty(CoordinationProperty, tr("Coordination"), PropertyObject::Int, emptyList);
+	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList, nullptr, tr("Particle positions"));
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Particle colors"));
+	registerStandardProperty(DisplacementProperty, tr("Displacement"), PropertyObject::Float, xyzList, nullptr, tr("Displacements"));
+	registerStandardProperty(DisplacementMagnitudeProperty, tr("Displacement Magnitude"), PropertyObject::Float, emptyList);
+	registerStandardProperty(VelocityProperty, tr("Velocity"), PropertyObject::Float, xyzList, nullptr, tr("Velocities"));
+	registerStandardProperty(PotentialEnergyProperty, tr("Potential Energy"), PropertyObject::Float, emptyList);
+	registerStandardProperty(KineticEnergyProperty, tr("Kinetic Energy"), PropertyObject::Float, emptyList);
+	registerStandardProperty(TotalEnergyProperty, tr("Total Energy"), PropertyObject::Float, emptyList);
+	registerStandardProperty(RadiusProperty, tr("Radius"), PropertyObject::Float, emptyList, nullptr, tr("Radii"));
+	registerStandardProperty(StructureTypeProperty, tr("Structure Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Structure types"));
+	registerStandardProperty(IdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList, nullptr, tr("Particle identifiers"));
+	registerStandardProperty(StressTensorProperty, tr("Stress Tensor"), PropertyObject::Float, symmetricTensorList);
+	registerStandardProperty(StrainTensorProperty, tr("Strain Tensor"), PropertyObject::Float, symmetricTensorList);
+	registerStandardProperty(DeformationGradientProperty, tr("Deformation Gradient"), PropertyObject::Float, tensorList);
+	registerStandardProperty(OrientationProperty, tr("Orientation"), PropertyObject::Float, quaternionList);
+	registerStandardProperty(ForceProperty, tr("Force"), PropertyObject::Float, xyzList);
+	registerStandardProperty(MassProperty, tr("Mass"), PropertyObject::Float, emptyList);
+	registerStandardProperty(ChargeProperty, tr("Charge"), PropertyObject::Float, emptyList);
+	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyObject::Int, xyzList);
+	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyObject::Float, emptyList);
+	registerStandardProperty(DipoleOrientationProperty, tr("Dipole Orientation"), PropertyObject::Float, xyzList);
+	registerStandardProperty(DipoleMagnitudeProperty, tr("Dipole Magnitude"), PropertyObject::Float, emptyList);
+	registerStandardProperty(AngularVelocityProperty, tr("Angular Velocity"), PropertyObject::Float, xyzList);
+	registerStandardProperty(AngularMomentumProperty, tr("Angular Momentum"), PropertyObject::Float, xyzList);
+	registerStandardProperty(TorqueProperty, tr("Torque"), PropertyObject::Float, xyzList);
+	registerStandardProperty(SpinProperty, tr("Spin"), PropertyObject::Float, emptyList);
+	registerStandardProperty(CentroSymmetryProperty, tr("Centrosymmetry"), PropertyObject::Float, emptyList);
+	registerStandardProperty(VelocityMagnitudeProperty, tr("Velocity Magnitude"), PropertyObject::Float, emptyList);
+	registerStandardProperty(MoleculeProperty, tr("Molecule Identifier"), PropertyObject::Int64, emptyList);
+	registerStandardProperty(AsphericalShapeProperty, tr("Aspherical Shape"), PropertyObject::Float, xyzList);
+	registerStandardProperty(VectorColorProperty, tr("Vector Color"), PropertyObject::Float, rgbList, nullptr, tr("Vector colors"));
+	registerStandardProperty(ElasticStrainTensorProperty, tr("Elastic Strain"), PropertyObject::Float, symmetricTensorList);
+	registerStandardProperty(ElasticDeformationGradientProperty, tr("Elastic Deformation Gradient"), PropertyObject::Float, tensorList);
+	registerStandardProperty(RotationProperty, tr("Rotation"), PropertyObject::Float, quaternionList);
+	registerStandardProperty(StretchTensorProperty, tr("Stretch Tensor"), PropertyObject::Float, symmetricTensorList);
+	registerStandardProperty(MoleculeTypeProperty, tr("Molecule Type"), PropertyObject::Float, emptyList, &ElementType::OOClass(), tr("Molecule types"));
+	registerStandardProperty(NucleobaseTypeProperty, tr("Nucleobase"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Nucleobases"));
+	registerStandardProperty(DNAStrandProperty, tr("DNA Strand"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("DNA Strands"));
+	registerStandardProperty(NucleotideAxisProperty, tr("Nucleotide Axis"), PropertyObject::Float, xyzList);
+	registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), PropertyObject::Float, xyzList);
+	registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), PropertyObject::Float, QStringList() << "Phi" << "Theta");
+}
+
+/******************************************************************************
+* Returns the default color for a numeric type ID.
+******************************************************************************/
+Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+{
+	if(property.type() == ParticlesObject::TypeProperty) {
+		for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
+			if(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(predefType)) == typeName)
+				return ParticleType::getPredefinedParticleTypeColor(static_cast<ParticleType::PredefinedParticleType>(predefType));
+		}
+
+		// Sometimes atom type names have additional letters/numbers appended.
+		if(typeName.length() > 1 && typeName.length() <= 5) {
+			return ElementType::getDefaultColor(property, typeName.left(typeName.length() - 1), numericTypeId, executionContext);
+		}
+	}
+	else if(property.type() == ParticlesObject::StructureTypeProperty) {
+		for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; predefType++) {
+			if(ParticleType::getPredefinedStructureTypeName(static_cast<ParticleType::PredefinedStructureType>(predefType)) == typeName)
+				return ParticleType::getPredefinedStructureTypeColor(static_cast<ParticleType::PredefinedStructureType>(predefType));
+		}
+		return Color(1,1,1);
+	}
+
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 }
 
 /******************************************************************************
@@ -793,11 +898,10 @@ std::pair<size_t, ConstDataObjectPath> ParticlesObject::OOMetaClass::elementFrom
 {
 	// Check if a particle was picked.
 	if(const ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(pickResult.pickInfo())) {
-		if(const ParticlesObject* particles = pickInfo->pipelineState().getObject<ParticlesObject>()) {
-			size_t particleIndex = pickInfo->particleIndexFromSubObjectID(pickResult.subobjectId());
-			if(particleIndex < particles->elementCount())
-				return std::make_pair(particleIndex, ConstDataObjectPath({particles}));
-		}
+		const ParticlesObject* particles = pickInfo->particles();
+		size_t particleIndex = pickInfo->particleIndexFromSubObjectID(pickResult.subobjectId());
+		if(particleIndex < particles->elementCount())
+			return std::make_pair(particleIndex, ConstDataObjectPath({particles}));
 	}
 
 	return std::pair<size_t, ConstDataObjectPath>(std::numeric_limits<size_t>::max(), {});

@@ -73,6 +73,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE SliceModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
 
@@ -117,16 +121,16 @@ protected:
 	void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
 
 	/// Computes the intersection lines of a plane and a quad.
-	void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, QVector<Point3>& vertices) const;
+	void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;
 
 	/// This controller stores the normal of the slicing plane.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, normalController, setNormalController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, normalController, setNormalController);
 
 	/// This controller stores the distance of the slicing plane from the origin.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, distanceController, setDistanceController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, distanceController, setDistanceController);
 
 	/// Controls the slab width.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, widthController, setWidthController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, widthController, setWidthController);
 
 	/// Controls whether the data elements should only be selected instead of being deleted.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, createSelection, setCreateSelection);
@@ -141,7 +145,7 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
 
 	/// The vis element for plane.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshVis, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

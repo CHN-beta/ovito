@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,14 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "FHIAimsLogFileImporter.h"
 
 #include <boost/algorithm/string.hpp>
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -86,7 +85,7 @@ void FHIAimsLogFileImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
+void FHIAimsLogFileImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -95,9 +94,6 @@ FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
 	// Jump to byte offset.
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
-
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
 
 	// First pass: determine the cell geometry and number of atoms.
 	AffineTransformation cell = AffineTransformation::Identity();
@@ -123,9 +119,9 @@ FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
 		throw Exception(tr("Invalid FHI-aims log file: No atoms found."));
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(totalAtomCount, ParticlesObject::TypeProperty, false);
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
+	setParticleCount(totalAtomCount);
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 
 	// Return to beginning of frame.
 	stream.seek(frame().byteOffset, frame().lineNumber);
@@ -145,37 +141,39 @@ FileSourceImporter::FrameDataPtr FHIAimsLogFileImporter::FrameLoader::loadFile()
 						throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 					pos = cell * pos;
 				}
-				typeProperty[i] = typeList->addTypeName(atomTypeName);
+				typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), atomTypeName)->numericId();
 				break;
 			}
 		}
 	}
 
-	// Since we created particle types on the go while reading the particles, the assigned particle type IDs
-	// depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
+	// Since we created particle types on the go while reading the particles, the ordering of the type list
+	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeList->sortTypesByName(typeProperty);
+	typeProperty.buffer()->sortElementTypesByName();
 
 	// Set simulation cell.
 	if(lattVecCount == 3) {
-		frameData->simulationCell().setMatrix(cell);
-		frameData->simulationCell().setPbcFlags(true, true, true);
+		simulationCell()->setCellMatrix(cell);
+		simulationCell()->setPbcFlags(true, true, true);
 	}
 	else {
 		// If the input file does not contain simulation cell info,
 		// Use bounding box of particles as simulation cell.
 		Box3 boundingBox;
 		boundingBox.addPoints(posProperty);
-		frameData->simulationCell().setMatrix(AffineTransformation(
+		simulationCell()->setCellMatrix(AffineTransformation(
 				Vector3(boundingBox.sizeX(), 0, 0),
 				Vector3(0, boundingBox.sizeY(), 0),
 				Vector3(0, 0, boundingBox.sizeZ()),
 				boundingBox.minc - Point3::Origin()));
-		frameData->simulationCell().setPbcFlags(false, false, false);
+		simulationCell()->setPbcFlags(false, false, false);
 	}
 
-	frameData->setStatus(tr("%1 atoms").arg(totalAtomCount));
-	return frameData;
+	state().setStatus(tr("%1 atoms").arg(totalAtomCount));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

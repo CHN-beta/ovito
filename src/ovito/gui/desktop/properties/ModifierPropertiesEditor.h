@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,13 +51,13 @@ public:
 	StatusWidget* statusLabel();
 
 	/// Returns the list of all ModifierApplications of the modifier currently being edited.
-	QVector<ModifierApplication*> modifierApplications();
+	QVector<ModifierApplication*> modifierApplications() const;
 
 	/// Return the input data of the Modifier being edited (for the selected ModifierApplication).
-	PipelineFlowState getModifierInput();
+	PipelineFlowState getModifierInput() const;
 
 	/// Return the output data of the Modifier being edited (for the selected ModifierApplication).
-	PipelineFlowState getModifierOutput();
+	PipelineFlowState getModifierOutput() const;
 
 Q_SIGNALS:
 
@@ -74,7 +74,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private Q_SLOTS:
 
@@ -87,7 +87,7 @@ private:
 	QPointer<StatusWidget> _statusLabel;
 
 	/// The modifier application being edited.
-	DECLARE_REFERENCE_FIELD_FLAGS(ModifierApplication, modifierApplication, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+	DECLARE_REFERENCE_FIELD_FLAGS(ModifierApplication*, modifierApplication, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
 }	// End of namespace

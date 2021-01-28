@@ -20,13 +20,12 @@
 #
 #######################################################################################
 
-IF(OVITO_BUILD_GUI OR OVITO_BUILD_WEBGUI)
+IF(OVITO_BUILD_GUI)
 	ADD_SUBDIRECTORY(base)
-	IF(OVITO_BUILD_GUI)
+	IF(NOT OVITO_QML_GUI)
 		ADD_SUBDIRECTORY(desktop)
-	ENDIF()
-	IF(OVITO_BUILD_WEBGUI)
-		ADD_SUBDIRECTORY(web)
+	ELSE()
+		ADD_SUBDIRECTORY(qml)
 	ENDIF()
 ENDIF()
 

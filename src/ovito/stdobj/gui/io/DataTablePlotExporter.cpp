@@ -92,8 +92,8 @@ bool DataTablePlotExporter::exportFrame(int frameNumber, TimePoint time, const Q
 
 	DataTablePlotWidget plotWidget;
 	plotWidget.setTable(table);
-	plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidth(1);
-	plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidth(1);
+	plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
+	plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);
 	QwtPlotRenderer plotRenderer;
 	plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardBackground);
 	plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);

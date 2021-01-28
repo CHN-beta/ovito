@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,7 +70,7 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the input particles.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -87,14 +87,14 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == CutoffRange) {
-		return std::make_shared<ExpandSelectionCutoffEngine>(particles, posProperty->storage(), inputCell->data(), inputSelection->storage(), numberOfIterations(), cutoffRange());
+		return std::make_shared<ExpandSelectionCutoffEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
 	}
 	else if(mode() == NearestNeighbors) {
-		return std::make_shared<ExpandSelectionNearestEngine>(particles, posProperty->storage(), inputCell->data(), inputSelection->storage(), numberOfIterations(), numNearestNeighbors());
+		return std::make_shared<ExpandSelectionNearestEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
 	}
 	else if(mode() == BondedNeighbors) {
 		particles->expectBonds()->verifyIntegrity();
-		return std::make_shared<ExpandSelectionBondedEngine>(particles, posProperty->storage(), inputCell->data(), inputSelection->storage(), numberOfIterations(), particles->expectBondsTopology()->storage());
+		return std::make_shared<ExpandSelectionBondedEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
 	}
 	else {
 		throwException(tr("Invalid selection expansion mode."));
@@ -114,7 +114,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 	for(int i = 0; i < _numIterations; i++) {
 		if(i != 0) {
 			_inputSelection = outputSelection();
-			setOutputSelection(std::make_shared<PropertyStorage>(*inputSelection()));
+			setOutputSelection(_inputSelection.makeCopy());
 			nextProgressSubStep();
 		}
 		expandSelection();
@@ -127,6 +127,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 	// Release data that is no longer needed.
 	_positions.reset();
 	_inputSelection.reset();
+	_simCell.reset();
 }
 
 /******************************************************************************

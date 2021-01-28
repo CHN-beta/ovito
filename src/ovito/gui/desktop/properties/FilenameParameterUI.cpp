@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,8 +82,8 @@ void FilenameParameterUI::updateUI()
 		QVariant val;
 		if(propertyName()) {
 			val = editObject()->property(propertyName());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::String), "FilenameParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-			if(!val.isValid() || !val.canConvert(QVariant::String)) {
+			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "FilenameParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+			if(!val.isValid() || !val.canConvert<QString>()) {
 				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
 		}
@@ -109,7 +109,8 @@ void FilenameParameterUI::setEnabled(bool enabled)
 {
 	if(enabled == isEnabled()) return;
 	PropertyParameterUI::setEnabled(enabled);
-	if(selectorWidget()) selectorWidget()->setEnabled(editObject() && isEnabled());
+	if(selectorWidget()) 
+		selectorWidget()->setEnabled(editObject() && isEnabled());
 }
 
 }	// End of namespace

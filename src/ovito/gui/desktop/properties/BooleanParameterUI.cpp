@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -135,11 +135,11 @@ void BooleanParameterUI::updatePropertyValue()
 		undoableTransaction(tr("Change parameter"), [this]() {
 			if(isQtPropertyUI()) {
 				if(!editObject()->setProperty(propertyName(), checkBox()->isChecked())) {
-					OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editObject()->setPropertyFieldValue(*propertyField(), checkBox()->isChecked());
+				editor()->changePropertyFieldValue(*propertyField(), checkBox()->isChecked());
 			}
 			Q_EMIT valueEntered();
 		});

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TrajectoryVis.h"
 
@@ -68,9 +67,9 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObje
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// The data object + revision number
-		FloatType,					// Line width
-		VersionedDataObjectRef		// Simulation cell + revision number
+		ConstDataObjectRef,		// Trajectory object
+		FloatType,				// Line width
+		ConstDataObjectRef		// Simulation cell
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -109,48 +108,46 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
-	const SimulationCell cell = simulationCell ? simulationCell->data() : SimulationCell();
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// The trajectory data object + revision number
-		FloatType,					// Line width
-		Color,						// Line color,
-		FloatType,					// End frame
-		SimulationCell				// Simulation cell
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Trajectory data object
+		FloatType,				// Line width
+		Color,					// Line color,
+		ShadingMode,			// Shading mode
+		FloatType,				// End frame
+		ConstDataObjectRef		// Simulation cell
 	>;
 
 	// The data structure stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<ArrowPrimitive> segments;
+		std::shared_ptr<CylinderPrimitive> segments;
 		std::shared_ptr<ParticlePrimitive> corners;
 	};
 
-	// The shading mode.
-	ParticlePrimitive::ShadingMode cornerShadingMode = (static_cast<ArrowPrimitive::ShadingMode>(shadingMode()) == ArrowPrimitive::NormalShading)
-			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 	FloatType endFrame = showUpToCurrentTime() ? dataset()->animationSettings()->timeToFrame(time) : std::numeric_limits<FloatType>::max();
 
 	// Lookup the rendering primitives in the vis cache.
-	auto& renderingPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(
+	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
 			renderer,
 			trajObj,
 			lineWidth(),
 			lineColor(),
+			shadingMode(),
 			endFrame,
-			cell));
+			simulationCell));
+
+	// The shading mode for corner spheres.
+	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ShadingMode::NormalShading)
+			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
 	// Check if we already have a valid rendering primitives that are up to date.
-	if(!renderingPrimitives.segments || !renderingPrimitives.corners
-			|| !renderingPrimitives.segments->isValid(renderer)
-			|| !renderingPrimitives.corners->isValid(renderer)
-			|| !renderingPrimitives.segments->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !renderingPrimitives.corners->setShadingMode(cornerShadingMode)) {
+	if(!visCache.segments || !visCache.corners) {
 
 		// Update the rendering primitives.
-		renderingPrimitives.segments.reset();
-		renderingPrimitives.corners.reset();
+		visCache.segments.reset();
+		visCache.corners.reset();
 
 		FloatType lineRadius = lineWidth() / 2;
 		if(trajObj && lineRadius > 0) {
@@ -162,15 +159,17 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 			if(posProperty && timeProperty && idProperty && posProperty.size() == timeProperty.size() && timeProperty.size() == idProperty.size() && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
-				size_t lineSegmentCount = 0;
-				std::vector<Point3> cornerPoints;
+				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
 				if(!simulationCell) {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							lineSegmentCount++;
+							baseSegmentPoints.push_back(pos[0]);
+							headSegmentPoints.push_back(pos[1]);
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(pos[1]);
 							}
@@ -180,79 +179,57 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				else {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], cell, [&lineSegmentCount](const Point3& p1, const Point3& p2) {
-								lineSegmentCount++;
+							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
+								baseSegmentPoints.push_back(p1);
+								headSegmentPoints.push_back(p2);
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
-								cornerPoints.push_back(cell.wrapPoint(pos[1]));
+								cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
 							}
 						}
 					}
 				}
 
-				renderingPrimitives.segments = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), ArrowPrimitive::HighQuality);
-				renderingPrimitives.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+				// Create rendering primitive for the line segments.
+				visCache.segments = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), CylinderPrimitive::HighQuality);
+				visCache.segments->setUniformColor(lineColor());
+				visCache.segments->setUniformRadius(lineRadius);
+				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 
-				renderingPrimitives.segments->startSetElements(lineSegmentCount);
-				int lineSegmentIndex = 0;
-
-				// Create the line segment geometry.
-				pos = posProperty.cbegin();
-				sampleTime = timeProperty.cbegin();
-				id = idProperty.cbegin();
-				ColorA color = lineColor();
-				if(!simulationCell) {
-					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
-						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							renderingPrimitives.segments->setElement(lineSegmentIndex++, pos[0], pos[1] - pos[0], color, lineRadius);
-						}
-					}
-				}
-				else {
-					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
-						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], cell, [&](const Point3& p1, const Point3& p2) {
-								renderingPrimitives.segments->setElement(lineSegmentIndex++, p1, p2 - p1, color, lineRadius);
-							});
-						}
-					}
-				}
-				OVITO_ASSERT(lineSegmentIndex == lineSegmentCount);
-				renderingPrimitives.segments->endSetElements();
-
-				// Create corner points.
-				renderingPrimitives.corners->setSize(cornerPoints.size());
-				if(!cornerPoints.empty())
-					renderingPrimitives.corners->setParticlePositions(cornerPoints.data());
-				renderingPrimitives.corners->setParticleColor(color);
-				renderingPrimitives.corners->setParticleRadius(lineRadius);
+				// Create rendering primitive for the corner points.
+				visCache.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+				visCache.corners->setPositions(cornerPoints.take());
+				visCache.corners->setUniformColor(lineColor());
+				visCache.corners->setUniformRadius(lineRadius);
 			}
 		}
 	}
 
-	if(!renderingPrimitives.segments)
+	if(!visCache.segments)
 		return;
 
 	renderer->beginPickObject(contextNode);
-	renderingPrimitives.segments->render(renderer);
-	renderingPrimitives.corners->render(renderer);
+	renderer->renderCylinders(visCache.segments);
+	renderer->renderParticles(visCache.corners);
 	renderer->endPickObject();
 }
 
 /******************************************************************************
 * Clips a trajectory line at the periodic box boundaries.
 ******************************************************************************/
-void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell& simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback)
+void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback)
 {
-	Point3 rp1 = simulationCell.absoluteToReduced(v1);
+	OVITO_ASSERT(simulationCell);
+
+	Point3 rp1 = simulationCell->absoluteToReduced(v1);
 	Vector3 shiftVector = Vector3::Zero();
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(simulationCell.hasPbc(dim)) {
+		if(simulationCell->hasPbc(dim)) {
 			while(rp1[dim] >= 1) { rp1[dim] -= 1; shiftVector[dim] -= 1; }
 			while(rp1[dim] < 0) { rp1[dim] += 1; shiftVector[dim] += 1; }
 		}
 	}
-	Point3 rp2 = simulationCell.absoluteToReduced(v2) + shiftVector;
+	Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
 	FloatType smallestT;
 	bool clippedDimensions[3] = { false, false, false };
 	do {
@@ -260,7 +237,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 		FloatType crossDir;
 		smallestT = FLOATTYPE_MAX;
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(simulationCell.hasPbc(dim) && !clippedDimensions[dim]) {
+			if(simulationCell->hasPbc(dim) && !clippedDimensions[dim]) {
 				int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
 				if(d == 0) continue;
 				FloatType t;
@@ -279,8 +256,8 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 			clippedDimensions[crossDim] = true;
 			Point3 intersection = rp1 + smallestT * (rp2 - rp1);
 			intersection[crossDim] = std::floor(intersection[crossDim] + FloatType(0.5));
-			Point3 rp1abs = simulationCell.reducedToAbsolute(rp1);
-			Point3 intabs = simulationCell.reducedToAbsolute(intersection);
+			Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
+			Point3 intabs = simulationCell->reducedToAbsolute(intersection);
 			if(!intabs.equals(rp1abs)) {
 				segmentCallback(rp1abs, intabs);
 			}
@@ -292,7 +269,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 	}
 	while(smallestT != FLOATTYPE_MAX);
 
-	segmentCallback(simulationCell.reducedToAbsolute(rp1), simulationCell.reducedToAbsolute(rp2));
+	segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2));
 }
 
 }	// End of namespace

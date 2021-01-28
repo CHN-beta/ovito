@@ -25,10 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -64,13 +64,17 @@ public:
 		AlphaShape,
 		GaussianDensity,
 	};
-    Q_ENUMS(SurfaceMethod);
+    Q_ENUM(SurfaceMethod);
 
 public:
 
 	/// Constructor.
 	Q_INVOKABLE ConstructSurfaceModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Decides whether a preliminary viewport update is performed after the modifier has been
 	/// evaluated but before the entire pipeline evaluation is complete.
 	/// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
@@ -80,7 +84,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -90,24 +94,22 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell& simCell, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+		ConstructSurfaceEngineBase(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+			Engine(dataSource, executionContext),
 			_positions(positions),
 			_selection(std::move(selection)),
-			_mesh(simCell),
+			_mesh(std::move(mesh)),
 			_particleProperties(std::move(particleProperties)),
-			_surfaceDistances(computeSurfaceDistance ? std::make_shared<PropertyStorage>(_positions->size(), PropertyStorage::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
-
-		/// Returns the generated surface mesh.
-		const SurfaceMeshData& mesh() const { return _mesh; }
-
-		/// Returns a mutable reference to the surface mesh structure.
-		SurfaceMeshData& mesh() { return _mesh; }
+			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(dataset, _positions->size(), PropertyObject::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
 
 		/// Adds a summation contribution to the total surface area.
 		void addSurfaceArea(FloatType a) { _totalSurfaceArea += a; }
+
+		/// Returns the generated surface mesh.
+		DataOORef<SurfaceMesh>& mesh() { return _mesh; }
 
 		/// Returns the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
@@ -131,7 +133,7 @@ private:
 		}
 
 		/// Compute the distance of each input particle from the constructed surface.
-		void computeSurfaceDistances();
+		void computeSurfaceDistances(const SurfaceMeshAccess& mesh);
 
 	private:
 
@@ -142,7 +144,7 @@ private:
 		ConstPropertyPtr _selection;
 
 		/// The generated surface mesh.
-		SurfaceMeshData _mesh;
+		DataOORef<SurfaceMesh> _mesh;
 
 		/// The computed total surface area.
 		double _totalSurfaceArea = 0;
@@ -160,14 +162,14 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, const SimulationCell& simCell, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(std::move(positions), std::move(selection), simCell, computeSurfaceDistance, std::move(particleProperties)),
-			_particleGrains(particleGrains),
+		AlphaShapeEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(dataSource, executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
+			_particleGrains(std::move(particleGrains)),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
-			_totalCellVolume(simCell.volume3D()),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardStorage(this->positions()->size(), ParticlesObject::SelectionProperty, true) : nullptr) {}
+			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true, executionContext) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -199,10 +201,10 @@ private:
 		ConstPropertyPtr _particleGrains;
 
 		/// Number of filled regions that have been identified.
-		SurfaceMeshData::size_type _filledRegionCount = 0;
+		SurfaceMeshAccess::size_type _filledRegionCount = 0;
 
 		/// Number of empty regions that have been identified.
-		SurfaceMeshData::size_type _emptyRegionCount = 0;
+		SurfaceMeshAccess::size_type _emptyRegionCount = 0;
 
 		/// The computed total volume of filled regions.
 		double _totalFilledVolume = 0;
@@ -213,7 +215,7 @@ private:
 		/// The total volume of the simulation cell.
 		double _totalCellVolume = 0;
 
-		/// The selection set containing the particles right on the constructed surfaces.
+		/// The selection set of particles located right on the constructed surfaces.
 		PropertyPtr _surfaceParticleSelection;
 	};
 
@@ -223,9 +225,9 @@ private:
 	public:
 
 		/// Constructor.
-		GaussianDensityEngine(ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell& simCell,
-				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, std::vector<FloatType> radii, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(std::move(positions), std::move(selection), simCell, computeSurfaceDistance, std::move(particleProperties)),
+		GaussianDensityEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
+				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(dataSource, executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
 			_gridResolution(gridResolution),
@@ -249,11 +251,11 @@ private:
 		const int _gridResolution;
 
 		/// The atomic input radii.
-		std::vector<FloatType> _particleRadii;
+		ConstPropertyPtr _particleRadii;
 	};
 
 	/// The vis element for rendering the surface.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshVis, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
 	/// Surface construction method to use.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SurfaceMethod, method, setMethod, PROPERTY_FIELD_MEMORIZE);

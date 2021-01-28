@@ -53,6 +53,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(Modifier* modifier, Pip
 
 			if(!existingVoxelGrid->domain())
 				continue;
+			existingVoxelGrid->verifyIntegrity();
 
 			std::array<int,3> nPBC;
 			Box3I newImages = mod->replicaRange();
@@ -93,7 +94,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(Modifier* modifier, Pip
 			// We cannot rely on the replicate() method above to duplicate the data in the property
 			// arrays, because for three-dimensional voxel grids, the storage order of voxel data matters.
 			// The following loop takes care of replicating the property values the right way.
-			for(PropertyObject* property : newVoxelGrid->properties()) {
+			for(PropertyObject* property : newVoxelGrid->makePropertiesMutable()) {
 				// First, copy the original property data to a temporary buffer so that
 				// it doesn't get destroyed while we are rewriting it to the replicated property array.
 				PropertyAccess<void,true> array(property);

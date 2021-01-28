@@ -23,8 +23,8 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/mesh/tri/TriMeshVis.h>
 #include "STLImporter.h"
-#include "TriMeshFrameData.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -66,7 +66,7 @@ bool STLImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file and stores the data in the given container object.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr STLImporter::FrameLoader::loadFile()
+void STLImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -77,9 +77,8 @@ FileSourceImporter::FrameDataPtr STLImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Create output data structure.
-	auto frameData = std::make_shared<TriMeshFrameData>();
-	TriMesh& mesh = frameData->mesh();
+	// Create mesh data structure.
+	TriMeshPtr mesh = std::make_shared<TriMesh>();
 
 	// Read first line and make sure it's an STL file.
 	stream.readLine();
@@ -109,11 +108,11 @@ FileSourceImporter::FrameDataPtr STLImporter::FrameLoader::loadFile()
 			Point3 xyz;
 			if(sscanf(line, "vertex " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &xyz.x(), &xyz.y(), &xyz.z()) != 3)
 				throw Exception(tr("Invalid vertex specification in line %1 of STL file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-			vindices[std::min(nVertices,2)] = mesh.addVertex(xyz);
+			vindices[std::min(nVertices,2)] = mesh->addVertex(xyz);
 			nVertices++;
 			// Emit a new face to triangulate the polygon.
 			if(nVertices >= 3) {
-				TriMeshFace& f = mesh.addFace();
+				TriMeshFace& f = mesh->addFace();
 				f.setVertices(vindices[0], vindices[1], vindices[2]);
 				if(nVertices == 3)
 					f.setEdgeVisibility(true, true, false);
@@ -125,7 +124,7 @@ FileSourceImporter::FrameDataPtr STLImporter::FrameLoader::loadFile()
 		else if(stream.lineStartsWithToken("endloop", true)) {
 			// Close the current face.
 			if(nVertices >= 3)
-				mesh.faces().back().setEdgeVisible(2);
+				mesh->faces().back().setEdgeVisible(2);
 			nVertices = -1;
 		}
 		else if(stream.lineStartsWithToken("endsolid", true)) {
@@ -136,17 +135,22 @@ FileSourceImporter::FrameDataPtr STLImporter::FrameLoader::loadFile()
 		}
 
 		if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-			return {};
+			return;
 	}
 
 	// STL files do not use shared vertices.
 	// Try to unite identical vertices now.
-	mesh.removeDuplicateVertices(1e-8 * mesh.boundingBox().size().length());
+	mesh->removeDuplicateVertices(1e-8 * mesh->boundingBox().size().length());
+	mesh->determineEdgeVisibility();
 
-	mesh.determineEdgeVisibility();
+	// Add mesh to the data collection.
+	TriMeshObject* meshObj = state().getMutableObject<TriMeshObject>();
+	if(!meshObj)
+		meshObj = state().createObject<TriMeshObject>(dataSource(), executionContext());
+	meshObj->setMesh(std::move(mesh));
 
-	frameData->setStatus(tr("%1 vertices, %2 triangles").arg(mesh.vertexCount()).arg(mesh.faceCount()));
-	return frameData;
+	// Show some stats to the user.
+	state().setStatus(tr("%1 vertices, %2 triangles").arg(meshObj->mesh()->vertexCount()).arg(meshObj->mesh()->faceCount()));
 }
 
 }	// End of namespace

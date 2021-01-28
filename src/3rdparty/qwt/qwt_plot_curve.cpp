@@ -14,13 +14,23 @@
 #include "qwt_painter.h"
 #include "qwt_scale_map.h"
 #include "qwt_plot.h"
-#include "qwt_curve_fitter.h"
+#include "qwt_spline_curve_fitter.h"
 #include "qwt_symbol.h"
 #include "qwt_point_mapper.h"
+#include "qwt_text.h"
+#include "qwt_graphic.h"
+
 #include <qpainter.h>
-#include <qpixmap.h>
-#include <qalgorithms.h>
-#include <qmath.h>
+#include <qpainterpath.h>
+
+static inline QRectF qwtIntersectedClipRect( const QRectF &rect, QPainter *painter )
+{
+    QRectF clipRect = rect;
+    if ( painter->hasClipping() )
+        clipRect &= painter->clipBoundingRect();
+
+    return clipRect;
+}
 
 static void qwtUpdateLegendIconSize( QwtPlotCurve *curve )
 {
@@ -34,7 +44,7 @@ static void qwtUpdateLegendIconSize( QwtPlotCurve *curve )
         {
             // Avoid, that the line is completely covered by the symbol
 
-            int w = qCeil( 1.5 * sz.width() );
+            int w = qwtCeil( 1.5 * sz.width() );
             if ( w % 2 )
                 w++;
 
@@ -66,12 +76,9 @@ public:
         style( QwtPlotCurve::Lines ),
         baseline( 0.0 ),
         symbol( NULL ),
-        attributes( 0 ),
-        paintAttributes(
-            QwtPlotCurve::ClipPolygons | QwtPlotCurve::FilterPoints ),
-        legendAttributes( 0 )
+        pen( Qt::black ),
+        paintAttributes( QwtPlotCurve::ClipPolygons | QwtPlotCurve::FilterPoints )
     {
-        pen = QPen( Qt::black );
         curveFitter = new QwtSplineCurveFitter;
     }
 
@@ -192,6 +199,32 @@ void QwtPlotCurve::setLegendAttribute( LegendAttribute attribute, bool on )
 bool QwtPlotCurve::testLegendAttribute( LegendAttribute attribute ) const
 {
     return ( d_data->legendAttributes & attribute );
+}
+
+/*!
+  Specify the attributes how to draw the legend icon
+
+  \param attributes Attributes
+  /sa setLegendAttribute(). legendIcon()
+*/
+void QwtPlotCurve::setLegendAttributes( LegendAttributes attributes )
+{
+    if ( attributes != d_data->legendAttributes )
+    {
+        d_data->legendAttributes = attributes;
+
+        qwtUpdateLegendIconSize( this );
+        legendChanged();
+    }
+}
+
+/*!
+  \return Attributes how to draw the legend icon
+  \sa setLegendAttributes(), testLegendAttribute()
+*/
+QwtPlotCurve::LegendAttributes QwtPlotCurve::legendAttributes() const
+{
+    return d_data->legendAttributes;
 }
 
 /*!
@@ -447,96 +480,91 @@ void QwtPlotCurve::drawLines( QPainter *painter,
     if ( from > to )
         return;
 
-    const bool doAlign = QwtPainter::roundingAlignment( painter );
     const bool doFit = ( d_data->attributes & Fitted ) && d_data->curveFitter;
+    const bool doAlign = !doFit && QwtPainter::roundingAlignment( painter );
     const bool doFill = ( d_data->brush.style() != Qt::NoBrush )
             && ( d_data->brush.color().alpha() > 0 );
 
     QRectF clipRect;
     if ( d_data->paintAttributes & ClipPolygons )
     {
-        qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
-        clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
+        clipRect = qwtIntersectedClipRect( canvasRect, painter );
+
+        const qreal pw = QwtPainter::effectivePenWidth( painter->pen() );
+        clipRect = clipRect.adjusted(-pw, -pw, pw, pw);
     }
-
-    bool doIntegers = false;
-
-#if QT_VERSION < 0x040800
-
-    // For Qt <= 4.7 the raster paint engine is significantly faster
-    // for rendering QPolygon than for QPolygonF. So let's
-    // see if we can use it.
-
-    if ( painter->paintEngine()->type() == QPaintEngine::Raster )
-    {
-        // In case of filling or fitting performance doesn't count
-        // because both operations are much more expensive
-        // then drawing the polyline itself
-
-        if ( !doFit && !doFill )
-            doIntegers = true;
-    }
-#endif
-
-    const bool noDuplicates = d_data->paintAttributes & FilterPoints;
 
     QwtPointMapper mapper;
-    mapper.setFlag( QwtPointMapper::RoundPoints, doAlign );
-    mapper.setFlag( QwtPointMapper::WeedOutPoints, noDuplicates );
+
+    if ( doAlign )
+    {
+        mapper.setFlag( QwtPointMapper::RoundPoints, true );
+        mapper.setFlag( QwtPointMapper::WeedOutIntermediatePoints,
+            testPaintAttribute( FilterPointsAggressive ) );
+    }
+
+    mapper.setFlag( QwtPointMapper::WeedOutPoints,
+        testPaintAttribute( FilterPoints ) ||
+        testPaintAttribute( FilterPointsAggressive ) );
+
     mapper.setBoundingRect( canvasRect );
 
-    if ( doIntegers )
-    {
-        QPolygon polyline = mapper.toPolygon(
-            xMap, yMap, data(), from, to );
+    QPolygonF polyline = mapper.toPolygonF( xMap, yMap, data(), from, to );
 
-        if ( d_data->paintAttributes & ClipPolygons )
+    if ( doFill )
+    {
+        if ( doFit )
         {
-            polyline = QwtClipper::clipPolygon(
-                clipRect.toAlignedRect(), polyline, false );
+            // it might be better to extend and draw the curvePath, but for
+            // the moment we keep an implementation, where we translate the
+            // path back to a polyline.
+
+            polyline = d_data->curveFitter->fitCurve( polyline );
         }
 
-        QwtPainter::drawPolyline( painter, polyline );
+        if ( painter->pen().style() != Qt::NoPen )
+        {
+            // here we are wasting memory for the filled copy,
+            // do polygon clipping twice etc .. TODO
+
+            QPolygonF filled = polyline;
+            fillCurve( painter, xMap, yMap, canvasRect, filled );
+            filled.clear();
+
+            if ( d_data->paintAttributes & ClipPolygons )
+                QwtClipper::clipPolygonF( clipRect, polyline, false );
+
+            QwtPainter::drawPolyline( painter, polyline );
+        }
+        else
+        {
+            fillCurve( painter, xMap, yMap, canvasRect, polyline );
+        }
     }
     else
     {
-        QPolygonF polyline = mapper.toPolygonF( xMap, yMap, data(), from, to );
+        if ( testPaintAttribute( ClipPolygons ) )
+        {
+            QwtClipper::clipPolygonF( clipRect, polyline, false );
+        }
 
         if ( doFit )
-            polyline = d_data->curveFitter->fitCurve( polyline );
-
-        if ( doFill )
         {
-            if ( painter->pen().style() != Qt::NoPen )
+            if ( d_data->curveFitter->mode() == QwtCurveFitter::Path )
             {
-                // here we are wasting memory for the filled copy,
-                // do polygon clipping twice etc .. TODO
+                const QPainterPath curvePath =
+                    d_data->curveFitter->fitCurvePath( polyline );
 
-                QPolygonF filled = polyline;
-                fillCurve( painter, xMap, yMap, canvasRect, filled );
-                filled.clear();
-
-                if ( d_data->paintAttributes & ClipPolygons )
-                {
-                    polyline = QwtClipper::clipPolygonF(
-                        clipRect, polyline, false );
-                }
-
-                QwtPainter::drawPolyline( painter, polyline );
+                painter->drawPath( curvePath );
             }
             else
             {
-                fillCurve( painter, xMap, yMap, canvasRect, polyline );
+                polyline = d_data->curveFitter->fitCurve( polyline );
+                QwtPainter::drawPolyline( painter, polyline );
             }
         }
         else
         {
-            if ( d_data->paintAttributes & ClipPolygons )
-            {
-                polyline = QwtClipper::clipPolygonF(
-                    clipRect, polyline, false );
-            }
-
             QwtPainter::drawPolyline( painter, polyline );
         }
     }
@@ -760,10 +788,12 @@ void QwtPlotCurve::drawSteps( QPainter *painter,
 
     if ( d_data->paintAttributes & ClipPolygons )
     {
-        qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
-        const QRectF clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
+        QRectF clipRect = qwtIntersectedClipRect( canvasRect, painter );
 
-        const QPolygonF clipped = QwtClipper::clipPolygonF(
+        const qreal pw = QwtPainter::effectivePenWidth( painter->pen() );
+        clipRect = clipRect.adjusted(-pw, -pw, pw, pw);
+
+        const QPolygonF clipped = QwtClipper::clippedPolygonF(
             clipRect, polygon, false );
 
         QwtPainter::drawPolyline( painter, clipped );
@@ -872,7 +902,10 @@ void QwtPlotCurve::fillCurve( QPainter *painter,
         brush.setColor( d_data->pen.color() );
 
     if ( d_data->paintAttributes & ClipPolygons )
-        polygon = QwtClipper::clipPolygonF( canvasRect, polygon, true );
+    {
+        const QRectF clipRect = qwtIntersectedClipRect( canvasRect, painter );
+        QwtClipper::clipPolygonF( clipRect, polygon, true );
+    }
 
     painter->save();
 
@@ -952,7 +985,9 @@ void QwtPlotCurve::drawSymbols( QPainter *painter, const QwtSymbol &symbol,
         QwtPainter::roundingAlignment( painter ) );
     mapper.setFlag( QwtPointMapper::WeedOutPoints,
         testPaintAttribute( QwtPlotCurve::FilterPoints ) );
-    mapper.setBoundingRect( canvasRect );
+
+    const QRectF clipRect = qwtIntersectedClipRect( canvasRect, painter );
+    mapper.setBoundingRect( clipRect );
 
     const int chunkSize = 500;
 
@@ -975,8 +1010,8 @@ void QwtPlotCurve::drawSymbols( QPainter *painter, const QwtSymbol &symbol,
   the Sticks drawing style.
 
   The interpretation of the baseline depends on the orientation().
-  With Qt::Horizontal, the baseline is interpreted as a horizontal line
-  at y = baseline(), with Qt::Vertical, it is interpreted as a vertical
+  With Qt::Vertical, the baseline is interpreted as a horizontal line
+  at y = baseline(), with Qt::Horizontal, it is interpreted as a vertical
   line at x = baseline().
 
   The default value is 0.0.
@@ -1043,7 +1078,7 @@ int QwtPlotCurve::closestPoint( const QPoint &pos, double *dist ) const
         }
     }
     if ( dist )
-        *dist = qSqrt( dmin );
+        *dist = std::sqrt( dmin );
 
     return index;
 }
@@ -1057,8 +1092,7 @@ int QwtPlotCurve::closestPoint( const QPoint &pos, double *dist ) const
 
    \sa QwtPlotItem::setLegendIconSize(), QwtPlotItem::legendData()
  */
-QwtGraphic QwtPlotCurve::legendIcon( int index,
-    const QSizeF &size ) const
+QwtGraphic QwtPlotCurve::legendIcon( int index, const QSizeF &size ) const
 {
     Q_UNUSED( index );
 
@@ -1126,18 +1160,6 @@ QwtGraphic QwtPlotCurve::legendIcon( int index,
 }
 
 /*!
-  Initialize data with an array of points.
-
-  \param samples Vector of points
-  \note QVector is implicitly shared
-  \note QPolygonF is derived from QVector<QPointF>
-*/
-void QwtPlotCurve::setSamples( const QVector<QPointF> &samples )
-{
-    setData( new QwtPointSeriesData( samples ) );
-}
-
-/*!
   Assign a series of points
 
   setSamples() is just a wrapper for setData() without any additional
@@ -1152,7 +1174,17 @@ void QwtPlotCurve::setSamples( QwtSeriesData<QPointF> *data )
     setData( data );
 }
 
-#ifndef QWT_NO_COMPAT
+/*!
+  Initialize data with an array of points.
+
+  \param samples Vector of points
+  \note QVector is implicitly shared
+  \note QPolygonF is derived from QVector<QPointF>
+*/
+void QwtPlotCurve::setSamples( const QVector<QPointF> &samples )
+{
+    setData( new QwtPointSeriesData( samples ) );
+}
 
 /*!
   \brief Initialize the data by pointing to memory blocks which
@@ -1171,7 +1203,70 @@ void QwtPlotCurve::setSamples( QwtSeriesData<QPointF> *data )
 void QwtPlotCurve::setRawSamples(
     const double *xData, const double *yData, int size )
 {
-    setData( new QwtCPointerData( xData, yData, size ) );
+    setData( new QwtCPointerData<double>( xData, yData, size ) );
+}
+
+/*!
+  \brief Initialize the data by pointing to memory blocks which
+         are not managed by QwtPlotCurve.
+
+  setRawSamples is provided for efficiency.
+  It is important to keep the pointers
+  during the lifetime of the underlying QwtCPointerData class.
+
+  \param xData pointer to x data
+  \param yData pointer to y data
+  \param size size of x and y
+
+  \sa QwtCPointerData
+*/
+void QwtPlotCurve::setRawSamples(
+    const float *xData, const float *yData, int size )
+{
+    setData( new QwtCPointerData<float>( xData, yData, size ) );
+}
+
+/*!
+  \brief Initialize the data by pointing to a memory block which
+         is not managed by QwtPlotCurve.
+
+  The memory contains the y coordinates, while the index is
+  interpreted as x coordinate.
+
+  setRawSamples() is provided for efficiency. It is important to
+  keep the pointers during the lifetime of the underlying
+  QwtCPointerValueData class.
+
+  \param yData pointer to y data
+  \param size size of x and y
+
+  \sa QwtCPointerData
+*/
+void QwtPlotCurve::setRawSamples( const double *yData, int size )
+{
+    setData( new QwtCPointerValueData<double>( yData, size ) );
+}
+
+/*!
+  \brief Initialize the data by pointing to memory blocks which
+         are not managed by QwtPlotCurve.
+
+  The memory contains the y coordinates, while the index is
+  interpreted as x coordinate.
+
+  setRawSamples() is provided for efficiency. It is important to
+  keep the pointers during the lifetime of the underlying
+  QwtCPointerValueData class.
+
+  \param xData pointer to x data
+  \param yData pointer to y data
+  \param size size of x and y
+
+  \sa QwtCPointerData
+*/
+void QwtPlotCurve::setRawSamples( const float *yData, int size )
+{
+    setData( new QwtCPointerValueData<float>( yData, size ) );
 }
 
 /*!
@@ -1188,7 +1283,24 @@ void QwtPlotCurve::setRawSamples(
 void QwtPlotCurve::setSamples(
     const double *xData, const double *yData, int size )
 {
-    setData( new QwtPointArrayData( xData, yData, size ) );
+    setData( new QwtPointArrayData<double>( xData, yData, size ) );
+}
+
+/*!
+  Set data by copying x- and y-values from specified memory blocks.
+  Contrary to setRawSamples(), this function makes a 'deep copy' of
+  the data.
+
+  \param xData pointer to x values
+  \param yData pointer to y values
+  \param size size of xData and yData
+
+  \sa QwtPointArrayData
+*/
+void QwtPlotCurve::setSamples(
+    const float *xData, const float *yData, int size )
+{
+    setData( new QwtPointArrayData<float>( xData, yData, size ) );
 }
 
 /*!
@@ -1202,8 +1314,65 @@ void QwtPlotCurve::setSamples(
 void QwtPlotCurve::setSamples( const QVector<double> &xData,
     const QVector<double> &yData )
 {
-    setData( new QwtPointArrayData( xData, yData ) );
+    setData( new QwtPointArrayData<double>( xData, yData ) );
 }
 
-#endif // !QWT_NO_COMPAT
+/*!
+  Set data by copying y-values from a specified memory block.
 
+  The memory contains the y coordinates, while the index is
+  interpreted as x coordinate.
+
+  \param yData y data
+
+  \sa QwtValuePointData
+*/
+void QwtPlotCurve::setSamples( const double *yData, int size )
+{
+    setData( new QwtValuePointData<double>( yData, size ) );
+}
+
+/*!
+  Set data by copying y-values from a specified memory block.
+
+  The vector contains the y coordinates, while the index is
+  interpreted as x coordinate.
+
+  \param yData y data
+
+  \sa QwtValuePointData
+*/
+void QwtPlotCurve::setSamples( const float *yData, int size )
+{
+    setData( new QwtValuePointData<float>( yData, size ) );
+}
+
+/*!
+  Initialize data with an array of y values (explicitly shared)
+
+  The vector contains the y coordinates, while the index is
+  the x coordinate.
+
+  \param yData y data
+
+  \sa QwtValuePointData
+*/
+void QwtPlotCurve::setSamples( const QVector<double> &yData )
+{
+    setData( new QwtValuePointData<double>( yData ) );
+}
+
+/*!
+  Initialize data with an array of y values (explicitly shared)
+
+  The vector contains the y coordinates, while the index is
+  the x coordinate.
+
+  \param yData y data
+
+  \sa QwtValuePointData
+*/
+void QwtPlotCurve::setSamples( const QVector<float> &yData )
+{
+    setData( new QwtValuePointData<float>( yData ) );
+}

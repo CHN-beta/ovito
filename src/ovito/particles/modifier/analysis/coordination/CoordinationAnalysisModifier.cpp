@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get the current positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -104,8 +104,8 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CoordinationAnalysisEngine>(particles, posProperty->storage(), inputCell->data(),
-		cutoff(), rdfSampleCount, typeProperty ? typeProperty->storage() : nullptr, std::move(uniqueTypeIds));
+	return std::make_shared<CoordinationAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, inputCell,
+		cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
 }
 
 /******************************************************************************
@@ -183,11 +183,11 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
 	// Helper function that normalizes a RDF histogram.
 	auto normalizeRDF = [this,stepSize](size_t type1Count, size_t type2Count, size_t component = 0, FloatType prefactor = 1) {
-		if(!cell().is2D()) {
-			prefactor *= FloatType(4.0/3.0) * FLOATTYPE_PI * type1Count / cell().volume3D() * type2Count;
+		if(!cell()->is2D()) {
+			prefactor *= FloatType(4.0/3.0) * FLOATTYPE_PI * type1Count / cell()->volume3D() * type2Count;
 		}
 		else {
-			prefactor *= FLOATTYPE_PI * type1Count / cell().volume2D() * type2Count;
+			prefactor *= FLOATTYPE_PI * type1Count / cell()->volume2D() * type2Count;
 		}
 		FloatType r1 = 0;
 		size_t cmpntCount = rdfY()->componentCount();
@@ -195,7 +195,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 		PropertyAccess<FloatType,true> rdfData(rdfY());
 		for(FloatType& y : rdfData.componentRange(component)) {
 			double r2 = r1 + stepSize;
-			FloatType vol = cell().is2D() ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
+			FloatType vol = cell()->is2D() ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
 			y /= prefactor * vol;
 			r1 = r2;
 		}
@@ -239,11 +239,10 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(Time
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output coordination numbers as a new particle property.
-	OVITO_ASSERT(coordinationNumbers()->size() == particles->elementCount());
 	particles->createProperty(coordinationNumbers());
 
 	// Output RDF histogram(s).
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, DataTable::Line, tr("Radial distribution function"), rdfY());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Radial distribution function"), rdfY());
 	table->setIntervalStart(0);
 	table->setIntervalEnd(cutoff());
 	table->setAxisLabelX(tr("Pair separation distance"));

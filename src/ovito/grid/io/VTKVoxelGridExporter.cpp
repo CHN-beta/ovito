@@ -102,18 +102,18 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 	textStream() << "POINT_DATA " << voxelGrid->elementCount() << "\n";
 
 	for(const PropertyObject* prop : voxelGrid->properties()) {
-		if(prop->dataType() == PropertyStorage::Int || prop->dataType() == PropertyStorage::Int64 || prop->dataType() == PropertyStorage::Float) {
+		if(prop->dataType() == PropertyObject::Int || prop->dataType() == PropertyObject::Int64 || prop->dataType() == PropertyObject::Float) {
 
 			// Write header of data field.
 			QString dataName = prop->name();
 			dataName.remove(QChar(' '));
-			if(prop->dataType() == PropertyStorage::Float && prop->componentCount() == 3) {
+			if(prop->dataType() == PropertyObject::Float && prop->componentCount() == 3) {
 				textStream() << "\nVECTORS " << dataName << " double\n";
 			}
 			else if(prop->componentCount() <= 4) {
-				if(prop->dataType() == PropertyStorage::Int)
+				if(prop->dataType() == PropertyObject::Int)
 					textStream() << "\nSCALARS " << dataName << " int " << prop->componentCount() << "\n";
-				else if(prop->dataType() == PropertyStorage::Int64)
+				else if(prop->dataType() == PropertyObject::Int64)
 					textStream() << "\nSCALARS " << dataName << " long " << prop->componentCount() << "\n";
 				else
 					textStream() << "\nSCALARS " << dataName << " double " << prop->componentCount() << "\n";
@@ -124,7 +124,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 			// Write payload data.
 			size_t cmpnts = prop->componentCount();
 			OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
-			if(prop->dataType() == PropertyStorage::Float) {
+			if(prop->dataType() == PropertyObject::Float) {
 				ConstPropertyAccess<FloatType, true> data(prop);
 				for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
 					if(operation.isCanceled())
@@ -136,7 +136,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 					textStream() << "\n";
 				}
 			}
-			else if(prop->dataType() == PropertyStorage::Int) {
+			else if(prop->dataType() == PropertyObject::Int) {
 				ConstPropertyAccess<int, true> data(prop);
 				for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
 					if(operation.isCanceled())
@@ -148,7 +148,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 					textStream() << "\n";
 				}
 			}				
-			else if(prop->dataType() == PropertyStorage::Int64) {
+			else if(prop->dataType() == PropertyObject::Int64) {
 				ConstPropertyAccess<qlonglong, true> data(prop);
 				for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
 					if(operation.isCanceled())

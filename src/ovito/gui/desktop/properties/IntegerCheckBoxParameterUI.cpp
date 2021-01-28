@@ -106,8 +106,8 @@ void IntegerCheckBoxParameterUI::updateUI()
 		else {
 			if(isQtPropertyUI()) {
 				QVariant val = editObject()->property(propertyName());
-				OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::Int), "IntegerCheckBoxParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-				if(!val.isValid() || !val.canConvert(QVariant::Int)) {
+				OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerCheckBoxParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+				if(!val.isValid() || !val.canConvert<int>()) {
 					editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 				}
 				value = val.toInt();
@@ -154,11 +154,11 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
 			}
 			else if(isQtPropertyUI()) {
 				if(!editObject()->setProperty(propertyName(), value)) {
-					OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editObject()->setPropertyFieldValue(*propertyField(), value);
+				editor()->changePropertyFieldValue(*propertyField(), value);
 			}
 			Q_EMIT valueEntered();
 		});

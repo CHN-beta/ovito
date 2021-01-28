@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,21 @@
 #include <ovito/core/oo/OORef.h>
 
 namespace Ovito {
+
+// Some helper functions for querying information from Qt's Meta-Type system.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	template<typename T> const char* getQtTypeName() { return QMetaType::fromType<T>().name(); }
+	inline const char* getQtTypeNameFromId(int typeId) { return QMetaType(typeId).name(); }
+	inline qsizetype getQtTypeSizeFromId(int typeId) { return QMetaType(typeId).sizeOf(); }
+	inline int getQtTypeIdFromName(QByteArrayView typeName) { return QMetaType::fromName(std::move(typeName)).id(); }
+	inline int getQVariantTypeId(const QVariant& v) { return v.typeId(); }
+#else
+	template<typename T> const char* getQtTypeName() { return QMetaType::typeName(qMetaTypeId<T>()); }
+	inline const char* getQtTypeNameFromId(int typeId) { return QMetaType::typeName(typeId); }
+	inline int getQtTypeSizeFromId(int typeId) { return QMetaType::sizeOf(typeId); }
+	inline int getQtTypeIdFromName(const QByteArray& typeName) { return QMetaType::type(typeName); }
+	inline int getQVariantTypeId(const QVariant& v) { return static_cast<int>(v.type()); }
+#endif
 
 /**
  * \brief Meta-class for classes derived from OvitoObject.
@@ -104,12 +119,17 @@ public:
 	/// \brief Determines if an object is an instance of the class or one of its subclasses.
 	bool isMember(const OvitoObject* obj) const;
 
-	/// \brief Creates an instance of the class.
+	/// \brief Creates an instance of a class that is not derived from RefTarget.
+	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
+	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
+	OORef<OvitoObject> createInstance() const;
+
+	/// \brief Creates an instance of a RefMaker-derived class.
 	/// \param dataset The dataset the newly created object will belong to.
 	///                This may only be NULL when creating an instance of a class that is not derived from RefTarget.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-	OORef<OvitoObject> createInstance(DataSet* dataset) const;
+	OORef<RefTarget> createInstance(DataSet* dataset, ExecutionContext executionContext) const;
 
 	/// Compares two types.
 	bool operator==(const OvitoClass& other) const { return (this == &other); }
@@ -207,6 +227,7 @@ protected:
 	static OvitoClass* _firstMetaClass;
 
 	friend class PluginManager;
+	friend class RefTarget; 	// Give RefTarget::clone() access to low-level method createInstanceImpl().
 };
 
 /// \brief Static cast operator for OvitoClass pointers.
@@ -275,4 +296,3 @@ private: \
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::OvitoClassPtr);
-Q_DECLARE_TYPEINFO(Ovito::OvitoClassPtr, Q_PRIMITIVE_TYPE);

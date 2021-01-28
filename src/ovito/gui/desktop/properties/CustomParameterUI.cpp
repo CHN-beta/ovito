@@ -106,7 +106,8 @@ void CustomParameterUI::setEnabled(bool enabled)
 {
 	if(enabled == isEnabled()) return;
 	PropertyParameterUI::setEnabled(enabled);
-	if(widget()) widget()->setEnabled(editObject() != NULL && isEnabled());
+	if(widget()) 
+		widget()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************
@@ -121,11 +122,11 @@ void CustomParameterUI::updatePropertyValue()
 
             if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), newValue)) {
-                    OVITO_ASSERT_MSG(false, "CustomParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+                    OVITO_ASSERT_MSG(false, "CustomParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
             else if(isPropertyFieldUI()) {
-                editObject()->setPropertyFieldValue(*propertyField(), newValue);
+                editor()->changePropertyFieldValue(*propertyField(), newValue);
             }
 
 			Q_EMIT valueEntered();

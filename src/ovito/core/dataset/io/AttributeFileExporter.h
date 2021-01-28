@@ -58,7 +58,7 @@ public:
 
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
-	virtual void loadUserDefaults() override;
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
 	virtual bool supportsMultiFrameFiles() const override { return true; }

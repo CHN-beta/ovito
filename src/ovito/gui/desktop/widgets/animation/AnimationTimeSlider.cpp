@@ -25,6 +25,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "AnimationTimeSlider.h"
 
 namespace Ovito {
@@ -197,7 +198,7 @@ void AnimationTimeSlider::mousePressEvent(QMouseEvent* event)
 {
 	QRect thumbRect = thumbRectangle();
 	if(thumbRect.contains(event->pos())) {
-		_dragPos = event->x() - thumbRect.x();
+		_dragPos = ViewportInputMode::getMousePosition(event).x() - thumbRect.x();
 	}
 	else {
 		_dragPos = thumbRect.width() / 2;
@@ -238,9 +239,9 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 	int thumbSize = thumbWidth();
 
 	if(_dragPos < 0)
-		newPos = event->x() - thumbSize / 2;
+		newPos = ViewportInputMode::getMousePosition(event).x() - thumbSize / 2;
 	else
-		newPos = event->x() - _dragPos;
+		newPos = ViewportInputMode::getMousePosition(event).x() - _dragPos;
 
 	int rectWidth = frameRect().width() - 2*frameWidth();
 	TimeInterval interval = _animSettings->animationInterval();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,8 +56,18 @@ ReplicateModifier::ReplicateModifier(DataSet* dataset) : MultiDelegatingModifier
 	_adjustBoxSize(true),
 	_uniqueIdentifiers(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ReplicateModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Generate the list of delegate objects.
-	createModifierDelegates(ReplicateModifierDelegate::OOClass());
+	createModifierDelegates(ReplicateModifierDelegate::OOClass(), executionContext);
+
+	MultiDelegatingModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************

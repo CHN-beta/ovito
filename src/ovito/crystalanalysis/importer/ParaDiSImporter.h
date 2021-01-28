@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,9 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -61,62 +59,27 @@ public:
 	Q_INVOKABLE ParaDiSImporter(DataSet* dataset) : ParticleImporter(dataset) {}
 
 	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("ParaDiS File"); }
+	virtual QString objectTitle() const override { return tr("ParaDiS"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, file);
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+		return std::make_shared<FrameLoader>(request);
 	}
 
 protected:
 
-	/// The format-specific data holder.
-	class DislocFrameData : public ParticleFrameData
-	{
-	public:
-
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Inserts the loaded data into the provided pipeline state structure. This function is
-		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) override;
-
-		/// Returns the loaded microstructure.
-		const MicrostructureData& microstructure() const { return _microstructure; }
-
-		/// Returns the microstructure being loaded.
-		MicrostructureData& microstructure() { return _microstructure; }
-
-		/// Returns the type of crystal structure.
-		ParticleType::PredefinedStructureType latticeStructure() const { return _latticeStructure; }
-
-		/// Sets the type of crystal ("fcc", "bcc", etc.)
-		void setLatticeStructure(ParticleType::PredefinedStructureType latticeStructure) {
-			_latticeStructure = latticeStructure;
-		}
-
-	protected:
-
-		/// The loaded microstructure.
-		MicrostructureData _microstructure;
-
-		/// The type of crystal ("fcc", "bcc", etc.)
-		ParticleType::PredefinedStructureType _latticeStructure = ParticleType::PredefinedStructureType::OTHER;
-	};
-
 	/// The format-specific task object that is responsible for reading an input file in a worker thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
     private:
 

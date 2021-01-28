@@ -53,7 +53,7 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 	Q_CLASSINFO("DisplayName", "Smooth trajectory");
 	Q_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
 	Q_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Modification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");

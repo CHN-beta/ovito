@@ -45,6 +45,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE VoxelGridVis(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;		
+
 	/// Lets the visualization element render the data object.
 	virtual void render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
@@ -60,7 +64,7 @@ public:
 private:
 
 	/// Controls the transparency of the grid's faces.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, transparencyController, setTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
 	/// Controls whether the grid lines should be highlighted.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightGridLines, setHighlightGridLines);

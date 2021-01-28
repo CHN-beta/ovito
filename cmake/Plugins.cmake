@@ -50,7 +50,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	# Speed up compilation by using precompiled headers.
 	IF(OVITO_USE_PRECOMPILED_HEADERS AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
 		FOREACH(precompiled_header ${precompiled_headers})
-			TARGET_PRECOMPILE_HEADERS(${target_name} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/${precompiled_header}>")
+			TARGET_PRECOMPILE_HEADERS(${target_name} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/${precompiled_header}>")
 		ENDFOREACH()
 	ENDIF()
 
@@ -64,7 +64,6 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 		TARGET_COMPILE_OPTIONS(${target_name} 
 			PRIVATE "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
 			PRIVATE "/bigobj" # Compiling template code leads to large object files.
-			PRIVATE "/wd4996" # Suppress warnings for use of Qt 5.15 deprecated functions.
 		)
 		# Do not warn about use of unsafe CRT Library functions.
 		TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "_CRT_SECURE_NO_WARNINGS=")
@@ -87,17 +86,18 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	IF(${ARG_GUI_PLUGIN})
 		IF(OVITO_BUILD_GUI)
 			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Gui)
-			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Widgets)
-		ELSEIF(OVITO_BUILD_WEBGUI)
-			TARGET_LINK_LIBRARIES(${target_name} PUBLIC GuiWeb)
-			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Qml Qt5::Quick Qt5::QuickControls2 Qt5::QuickTemplates2)
+			IF(NOT OVITO_QML_GUI)
+				TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
+			ELSE()
+				TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2)
+			ENDIF()
 		ELSE()
 			MESSAGE(FATAL_ERROR "Cannot build plugin ${target_name} marked as GUI_PLUGIN if building the GUI has been completely disabled.")
 		ENDIF()
 	ENDIF()
 
-	# Link to Qt5 libs.
-	TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt5::Core Qt5::Gui)
+	# Link to Qt libs.
+	TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui)
 
 	# Link to other third-party libraries needed by this specific plugin.
 	TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${lib_dependencies})
@@ -134,16 +134,9 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	STRING(TOUPPER "${target_name}" _uppercase_plugin_name)
 	IF(BUILD_SHARED_LIBS)
 		TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "OVITO_${_uppercase_plugin_name}_EXPORT=Q_DECL_EXPORT")
-		IF(WIN32)
-			TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "OVITO_${_uppercase_plugin_name}_EXPORT_TEMPLATE=")
-		ELSE()
-			TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "OVITO_${_uppercase_plugin_name}_EXPORT_TEMPLATE=Q_DECL_EXPORT")
-		ENDIF()
 		TARGET_COMPILE_DEFINITIONS(${target_name} INTERFACE "OVITO_${_uppercase_plugin_name}_EXPORT=Q_DECL_IMPORT")
-		TARGET_COMPILE_DEFINITIONS(${target_name} INTERFACE "OVITO_${_uppercase_plugin_name}_EXPORT_TEMPLATE=Q_DECL_IMPORT")
 	ELSE()
 		TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "OVITO_${_uppercase_plugin_name}_EXPORT=")
-		TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "OVITO_${_uppercase_plugin_name}_EXPORT_TEMPLATE=")
 	ENDIF()
 
 	# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
@@ -153,7 +146,18 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	IF(APPLE)
 		# This is required to avoid error by install_name_tool.
 		SET_TARGET_PROPERTIES(${target_name} PROPERTIES LINK_FLAGS "-headerpad_max_install_names")
-	ENDIF(APPLE)
+	ELSEIF(UNIX)
+		# Tell linker to detect missing references already at link time (and not at runtime).
+		# This check must NOT be performed when building Python extension modules, because they deliberately do not
+		# link to the Python library at build time, only at runtime. That's because the Python library is assumed to be already 
+		# loaded into the process once the extension module gets loaded. 
+		# Here we assume that all OVITO modules that depend on the PyScript module, and the PyScript module itself, are Python
+		# extension modules. The link-time check will not be enabled for these modules. 
+		GET_PROPERTY(_link_libs TARGET ${target_name} PROPERTY LINK_LIBRARIES)
+		IF(NOT ${target_name} STREQUAL "PyScript" AND NOT "PyScript" IN_LIST _link_libs)
+			TARGET_LINK_OPTIONS(${target_name} PRIVATE "LINKER:--no-undefined" "LINKER:--no-allow-shlib-undefined")
+		ENDIF()
+	ENDIF()
 
 	IF(NOT OVITO_BUILD_PYTHON_PACKAGE)
 		IF(APPLE)

@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "AsynchronousModifier.h"
 
 #ifdef Q_OS_LINUX
@@ -54,10 +55,10 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const PipelineEvaluatio
 	if(!asyncModApp) 
 		return Future<PipelineFlowState>::createFailed(Exception(tr("Wrong type of modifier application.")));
 
-	// Check if there is are existing computation results that can be reused as is.
+	// Check if there is an existing computation result that can be reused as is.
 	if(const EnginePtr& engine = asyncModApp->completedEngine()) {
 		if(engine->validityInterval().contains(request.time())) {
-			// Inject the cached computation results into the pipeline.
+			// Inject the cached computation result into the pipeline.
 			UndoSuspender noUndo(this);
 			PipelineFlowState output = input;
 			engine->applyResults(request.time(), modApp, output);
@@ -104,8 +105,12 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const PipelineEvaluatio
 			_engine->setValidityInterval(iv);
 
 			_validStages.push_back(_engine);
-			_executionFuture = taskManager()->runTaskAsync(_engine);
-			_executionFuture.finally(_modApp->executor(), true, 
+			bool asynchronousMode = !_engine->preferSynchronousExecution();
+			if(asynchronousMode)
+				_executionFuture = taskManager()->runTaskAsync(_engine);
+			else
+				_executionFuture = taskManager()->runTaskSync(_engine);
+			_executionFuture.finally(_modApp->executor(), asynchronousMode, 
 				std::bind(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(shared_from_this()), std::placeholders::_1));
 		}
 
@@ -168,7 +173,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const PipelineEvaluatio
 	}
 	else {
 		// Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
-		return createEngine(request, modApp, input).then(executor(), [this, request = request, input = input, modApp = QPointer<AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
+		return createEngine(request, modApp, input, Application::instance()->executionContext()).then(executor(), [this, request = request, input = input, modApp = QPointer<AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
 			// Create the asynchronous task object and start running the engine.
 			auto task = std::make_shared<EngineExecutionTask>(this, std::move(modApp), std::move(request), std::move(engine), std::move(input));
 			task->go();

@@ -25,7 +25,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -54,7 +54,7 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 
 	Q_CLASSINFO("DisplayName", "Create isosurface");
 	Q_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Visualization");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -65,6 +65,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CreateIsosurfaceModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(ModifierApplication* modApp) override;
 
@@ -84,12 +88,12 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshData& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& cell, VoxelGrid::GridDimensions gridShape);
+	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ExecutionContext executionContext);
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -99,14 +103,15 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, const SimulationCell& simCell, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties) :
-			Engine(validityInterval),
+		ComputeIsosurfaceEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
+			Engine(dataSource, executionContext, validityInterval),
 			_gridShape(gridShape),
 			_property(std::move(property)),
 			_vectorComponent(std::max(vectorComponent, 0)),
-			_mesh(simCell),
+			_mesh(std::move(mesh)),
 			_isolevel(isolevel),
-			_auxiliaryProperties(std::move(auxiliaryProperties)) {}
+			_auxiliaryProperties(std::move(auxiliaryProperties)),
+			_histogram(std::move(histogram)) {}
 			
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -114,32 +119,8 @@ private:
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-		/// Returns the minimum field value that was encountered.
-		FloatType minValue() const { return _minValue; }
-
-		/// Returns the maximum field value that was encountered.
-		FloatType maxValue() const { return _maxValue; }
-
-		/// Returns the generated mesh.
-		const SurfaceMeshData& mesh() const { return _mesh; }
-
-		/// Returns a mutable reference to the isosurface mesh structure.
-		SurfaceMeshData& mesh() { return _mesh; }
-
-		/// Returns the simulation cell geometry.
-		const SimulationCell& cell() { return _mesh.cell(); }
-
-		/// Adjust the min/max values to include the given value.
-		void updateMinMax(FloatType val) {
-			if(val < _minValue) _minValue = val;
-			if(val > _maxValue) _maxValue = val;
-		}
-
 		/// Returns the input voxel property.
 		const ConstPropertyPtr& property() const { return _property; }
-
-		/// Returns the computed histogram of the input field values.
-		const PropertyPtr& histogram() const { return _histogram; }
 
 		/// Returns the list of grid properties to copy over to the generated isosurface mesh.
 		const std::vector<ConstPropertyPtr>& auxiliaryProperties() const { return _auxiliaryProperties; }
@@ -152,16 +133,10 @@ private:
 		ConstPropertyPtr _property;
 
 		/// The surface mesh produced by the modifier.
-		SurfaceMeshData _mesh;
-
-		/// The minimum field value that was encountered.
-		FloatType _minValue =  FLOATTYPE_MAX;
-
-		/// The maximum field value that was encountered.
-		FloatType _maxValue = -FLOATTYPE_MAX;
+		DataOORef<const SurfaceMesh> _mesh;
 
 		/// The computed histogram of the input field values.
-		PropertyPtr _histogram = std::make_shared<PropertyStorage>(64, PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+		DataOORef<DataTable> _histogram;
 
 		/// The list of grid properties to copy over to the generated isosurface mesh.
 		std::vector<ConstPropertyPtr> _auxiliaryProperties;
@@ -174,13 +149,13 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelPropertyReference, sourceProperty, setSourceProperty);
 
 	/// This controller stores the level at which to create the isosurface.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Controller, isolevelController, setIsolevelController, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, isolevelController, setIsolevelController, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls whether auxiliary field values should be copied over from the grid to the generated isosurface vertices.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
 
 	/// The vis element for rendering the surface.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshVis, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 }	// End of namespace

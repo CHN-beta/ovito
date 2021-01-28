@@ -23,6 +23,8 @@
 # Build the library.
 SET(QWT_SOURCE_FILES
 	qwt_abstract_scale_draw.cpp
+	qwt_abstract_scale.cpp
+	qwt_bezier.cpp
 	qwt_clipper.cpp
 	qwt_color_map.cpp
 	qwt_column_symbol.cpp
@@ -58,8 +60,11 @@ SET(QWT_SOURCE_FILES
 	qwt_text.cpp
 	qwt_transform.cpp
 	qwt_widget_overlay.cpp
+	qwt_vectorfield_symbol.cpp
+	qwt_weeding_curve_fitter.cpp
 
 	# QwtPlot files:
+	qwt.cpp
 	qwt_curve_fitter.cpp
 	qwt_abstract_legend.cpp
 	qwt_legend.cpp
@@ -67,6 +72,7 @@ SET(QWT_SOURCE_FILES
 	qwt_legend_label.cpp
 	qwt_plot.cpp
 	qwt_plot_renderer.cpp
+	qwt_plot_abstract_canvas.cpp
 	qwt_plot_xml.cpp
 	qwt_plot_axis.cpp
 	qwt_plot_curve.cpp
@@ -97,6 +103,8 @@ SET(QWT_SOURCE_FILES
 	qwt_plot_zoomer.cpp
 	qwt_plot_magnifier.cpp
 	qwt_plot_rescaler.cpp
+	qwt_plot_graphicitem.cpp
+	qwt_plot_vectorfield.cpp
 	qwt_point_mapper.cpp
 	qwt_raster_data.cpp
 	qwt_matrix_raster_data.cpp
@@ -104,6 +112,12 @@ SET(QWT_SOURCE_FILES
 	qwt_series_data.cpp
 	qwt_point_data.cpp
 	qwt_scale_widget.cpp
+	qwt_spline_basis.cpp
+	qwt_spline_cubic.cpp
+	qwt_spline_curve_fitter.cpp
+	qwt_spline_local.cpp
+	qwt_spline_parametrization.cpp
+	qwt_spline_pleasing.cpp
 )
 
 # Build the library.
@@ -112,8 +126,13 @@ ADD_LIBRARY(Qwt SHARED ${QWT_SOURCE_FILES})
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(Qwt PROPERTIES OUTPUT_NAME "ovito_qwt")
 
-# Link to Qt5.
-TARGET_LINK_LIBRARIES(Qwt PUBLIC Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport Qt5::Concurrent)
+# Link to Qt.
+TARGET_LINK_LIBRARIES(Qwt PUBLIC 
+	${OVITO_QT_MAJOR_VERSION}::Core 
+	${OVITO_QT_MAJOR_VERSION}::Gui 
+	${OVITO_QT_MAJOR_VERSION}::Widgets 
+	${OVITO_QT_MAJOR_VERSION}::PrintSupport 
+	${OVITO_QT_MAJOR_VERSION}::Concurrent)
 
 # Some compile time flags for Qwt.
 TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL QWT_MAKEDLL)

@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
@@ -53,7 +53,7 @@ protected:
 	public:
 
 		/// Constructor.
-		PropertyComputeEngine(const TimeInterval& validityInterval,
+		PropertyComputeEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -65,6 +65,13 @@ protected:
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
+
+		/// Decides whether the computation is sufficiently short to perform
+		/// it synchronously within the GUI thread.
+		virtual bool preferSynchronousExecution() override { 
+			// It's okay to perform the modifier operation synchronously for small inputs.
+			return outputProperty()->size() * _expressions.size() <= 2000; 
+		}
 
 		/// Returns the data accessor to the selection flag array.
 		const ConstPropertyAccessAndRef<int>& selectionArray() const { return _selectionArray; }
@@ -135,6 +142,8 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<PropertyComputeEngine> createEngine(
+				const PipelineObject* dataSource, 
+				ExecutionContext executionContext,
 				TimePoint time,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
@@ -172,6 +181,10 @@ public:
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE ComputePropertyModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// \brief Returns the current delegate of this ComputePropertyModifier.
 	ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
 
@@ -210,10 +223,10 @@ public:
 protected:
 
 	/// \brief Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 protected:
 
@@ -246,7 +259,7 @@ public:
 private:
 
 	/// The cached visualization elements that are attached to the output property.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// The list of input variables during the last evaluation.
 	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList, inputVariableNames, setInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE);

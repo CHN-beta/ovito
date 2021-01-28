@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,15 +42,11 @@ public:
 	PipelineFlowState() = default;
 
 	/// \brief Constructor that initializes the state with the data from a DataCollection.
-	/// \param dataCollection The data which is used to fill the state. A shallow copy of the DataCollection object is automatically made if necessary.
+	/// \param dataCollection The data which is used to fill the state.
 	/// \param status A status object describing the outcome of the pipeline evaluation.
 	/// \param validityInterval The time interval during which the state is valid.
-	PipelineFlowState(const DataCollection* dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-		_data(dataCollection), _status(status), _stateValidity(validityInterval)
-	{
-		// Ensure that the DataCollection object is not referenced by more than one PipelineFlowState.
-		mutableData();
-	}
+	PipelineFlowState(DataOORef<const DataCollection> dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+		_data(std::move(dataCollection)), _status(status), _stateValidity(validityInterval) {}
 
 	/// \brief Discards all contents of this state object and resets it to an empty state.
 	void reset() {
@@ -60,18 +56,23 @@ public:
 	}
 
 	/// \brief Returns whether this flow state has a data collection or not.
-	explicit operator bool() const { return _data; }
+	explicit operator bool() const { return (bool)_data; }
 
 	/// \brief Adds an additional data object to this state.
 	void addObject(const DataObject* obj) {
-		OVITO_ASSERT(data());
 		mutableData()->addObject(obj);
 	}
 
 	/// \brief Removes a data object from this state.
 	void removeObject(const DataObject* obj) {
-		OVITO_ASSERT(data());
 		mutableData()->removeObject(obj);
+	}
+
+	/// \brief Replaces a data object with a new one.
+	bool replaceObject(const DataObject* oldObj, const DataObject* newObj) {
+		if(newObj != oldObj)
+			return mutableData()->replaceObject(oldObj, newObj);
+		return false;
 	}
 
 	/// \brief Gets the validity interval for this pipeline state.
@@ -106,7 +107,8 @@ public:
 
 	const DataCollection* data() const { return _data.get(); }
 	
-	void setData(DataCollection* data) { _data = data; }
+	void setData(const DataCollection* data) { _data = data; }
+	void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }
 
 	/// \brief Finds an object of the given type in the list of data objects stored in this flow state.
 	const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const {
@@ -140,15 +142,22 @@ public:
 
 	/// Throws an exception if the input does not contain a data object of the given type.
 	DataObject* expectMutableObject(const DataObject::OOMetaClass& objectClass) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableObject(objectClass);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type.
 	template<class DataObjectClass>
 	DataObjectClass* expectMutableObject() {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableObject<DataObjectClass>();
+	}
+
+	/// Finds an object of the given type in the list of data objects stored in this flow state.
+	/// If it exists, makes the data object mutable.
+	template<class DataObjectClass>
+	DataObjectClass* getMutableObject() {
+		if(const DataObjectClass* obj = getObject<DataObjectClass>())
+			return mutableData()->makeMutable<DataObjectClass>(obj);
+		return nullptr;
 	}
 
 	/// Finds an object of the given type in the list of data objects stored in this flow state
@@ -260,7 +269,6 @@ public:
 	/// Finds an object of the given type and under the hierarchy path in this flow state.
 	/// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
 	DataObjectPath getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableObject(objectClass, pathString);
 	}
 
@@ -268,108 +276,102 @@ public:
 	/// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
 	template<class DataObjectClass>
 	DataObjectPath getMutableObject(const TypedDataObjectReference<DataObjectClass>& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableObject<DataObjectClass>(dataRef);
 	}
 
 	/// Finds an object of the given type and under the hierarchy path in this flow state.
 	DataObject* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableLeafObject(objectClass, pathString);
 	}
 
 	/// Finds an object of the given type and under the hierarchy path in this flow state.
 	DataObject* getMutableLeafObject(const DataObjectReference& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableLeafObject(dataRef);
 	}
 
 	/// Finds an object of the given type and under the hierarchy path in this flow state.
 	template<class DataObjectClass>
 	DataObjectClass* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableLeafObject<DataObjectClass>(objectClass, pathString);
 	}
 
 	/// Finds an object of the given type and under the hierarchy path in this flow state.
 	template<class DataObjectClass>
 	DataObjectClass* getMutableLeafObject(const TypedDataObjectReference<DataObjectClass>& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->getMutableLeafObject<DataObjectClass>(dataRef);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	DataObjectPath expectMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableObject(objectClass, pathString);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	DataObjectPath expectMutableObject(const DataObjectReference& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableObject(dataRef);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	DataObject* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableLeafObject(objectClass, pathString);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	DataObject* expectMutableLeafObject(const DataObjectReference& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableLeafObject(dataRef);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	template<class DataObjectClass>
 	DataObjectClass* expectMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableLeafObject<DataObjectClass>(objectClass, pathString);
 	}
 
 	/// Throws an exception if the input does not contain a data object of the given type and under the given hierarchy path.
 	template<class DataObjectClass>
 	DataObjectClass* expectMutableLeafObject(const TypedDataObjectReference<DataObjectClass>& dataRef) {
-		OVITO_ASSERT(data());
 		return mutableData()->expectMutableLeafObject<DataObjectClass>(dataRef);
 	}
 
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 	DataObject* makeMutable(const DataObject* obj, bool deepCopy = false) {
-		OVITO_ASSERT(data());
 		return mutableData()->makeMutable(obj, deepCopy);
 	}
 
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 	template<class DataObjectClass>
 	DataObjectClass* makeMutable(const DataObjectClass* obj, bool deepCopy = false) {
-		OVITO_ASSERT(data());
 		return mutableData()->makeMutable<DataObjectClass>(obj, deepCopy);
 	}
 
 	/// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 	DataObjectPath makeMutable(const ConstDataObjectPath& path, bool deepCopy = false) {
-		OVITO_ASSERT(data());
 		return mutableData()->makeMutable(path, deepCopy);
 	}
+
+	/// Makes the last object in the data path mutable and returns a pointer to the mutable copy.
+	/// Also update the data path to point to the new object.
+	DataObject* makeMutableInplace(ConstDataObjectPath& path);
 
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, Args&&... args) {
-		OVITO_ASSERT(data());
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, std::forward<Args>(args)...);
+	DataObjectType* createObject(const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
+		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, executionContext, std::forward<Args>(args)...);
 	}
 
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assign a unique identifier to the object, assigns the given data source object, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, Args&&... args) {
-		OVITO_ASSERT(data());
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, std::forward<Args>(args)...);
+	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
+		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, executionContext, std::forward<Args>(args)...);
+	}
+
+	/// Adds a data object to this collection while making sure the object gets a unique identifier.
+	template<class DataObjectType>
+	void addObjectWithUniqueId(const DataObjectType* obj) {
+		return mutableData()->addObjectWithUniqueId<DataObjectType>(obj);
 	}
 
 	/// Builds a list of the global attributes stored in this pipeline state.
@@ -392,8 +394,12 @@ public:
 
 	/// Inserts a new global attribute into the pipeline state.
 	AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
-		OVITO_ASSERT(data());
 		return mutableData()->addAttribute(key, std::move(value), dataSource);
+	}
+
+	/// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
+	AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
+		return mutableData()->setAttribute(key, std::move(value), dataSource);
 	}
 
 	/// Returns a new unique data object identifier that does not collide with the
@@ -416,9 +422,9 @@ public:
 private:
 
 	/// The payload data.
-	StrongDataObjectRef<DataCollection> _data;
+	DataOORef<const DataCollection> _data;
 
-	/// Contains the validity interval for this pipeline flow state.
+	/// The interval along the animation time line in which the pipeline state is valid.
 	TimeInterval _stateValidity = TimeInterval::empty();
 
 	/// The status of the pipeline evaluation.

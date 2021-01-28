@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito { namespace Particles {
 
@@ -80,7 +80,7 @@ public:
 	/// \return \c false when the operation has been canceled by the user;s
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCell& simCell, ConstPropertyAccess<int> selectionProperty, Task* promise);
+	bool prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* simCell, ConstPropertyAccess<int> selectionProperty, Task* promise);
 
 	/// Returns the cutoff radius set via prepare().
 	FloatType cutoffRadius() const { return _cutoffRadius; }
@@ -162,7 +162,7 @@ private:
 	FloatType _cutoffRadiusSquared = 0;
 
 	// Simulation cell.
-	SimulationCell simCell;
+	DataOORef<const SimulationCellObject> simCell;
 
 	/// Number of bins in each spatial direction.
 	int binDim[3];

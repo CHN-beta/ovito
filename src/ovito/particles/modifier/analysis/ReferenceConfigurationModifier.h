@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
@@ -59,7 +59,7 @@ public:
 		TO_REFERENCE_CELL,
 		TO_CURRENT_CELL
 	};
-	Q_ENUMS(AffineMappingType);
+	Q_ENUM(AffineMappingType);
 
 public:
 
@@ -82,10 +82,10 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) = 0;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) = 0;
 
 	/// Base class for compute engines that make use of a reference configuration.
 	class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public Engine
@@ -93,8 +93,9 @@ protected:
 	public:
 
 		/// Constructor.
-		RefConfigEngineBase(const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell& simCell,
-				ConstPropertyPtr refPositions, const SimulationCell& simCellRef,
+		RefConfigEngineBase(const PipelineObject* dataSource, ExecutionContext executionContext, 
+				const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, bool useMinimumImageConvention);
 
@@ -104,6 +105,8 @@ protected:
 			_refPositions.reset();
 			_identifiers.reset();
 			_refIdentifiers.reset();
+			_simCell.reset();
+			_simCellRef.reset();
 			decltype(_currentToRefIndexMap){}.swap(_currentToRefIndexMap);
 			decltype(_refToCurrentIndexMap){}.swap(_refToCurrentIndexMap);
 		}
@@ -125,10 +128,10 @@ protected:
 		const ConstPropertyPtr& refIdentifiers() const { return _refIdentifiers; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
+		const DataOORef<SimulationCellObject>& cell() const { return _simCell; }
 
 		/// Returns the reference simulation cell data.
-		const SimulationCell& refCell() const { return _simCellRef; }
+		const DataOORef<SimulationCellObject>& refCell() const { return _simCellRef; }
 
 		AffineMappingType affineMapping() const { return _affineMapping; }
 
@@ -148,8 +151,8 @@ protected:
 
 	private:
 
-		SimulationCell _simCell;
-		SimulationCell _simCellRef;
+		DataOORef<SimulationCellObject> _simCell;
+		DataOORef<SimulationCellObject> _simCellRef;
 		AffineTransformation _refToCurTM;
 		AffineTransformation _curToRefTM;
 		ConstPropertyPtr _positions;
@@ -165,7 +168,7 @@ protected:
 protected:
 
 	/// The reference configuration.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Controls the whether the homogeneous deformation of the simulation cell is eliminated from the calculated displacement vectors.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineMappingType, affineMapping, setAffineMapping, PROPERTY_FIELD_MEMORIZE);
@@ -200,6 +203,3 @@ public:
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Particles::ReferenceConfigurationModifier::AffineMappingType);
-Q_DECLARE_TYPEINFO(Ovito::Particles::ReferenceConfigurationModifier::AffineMappingType, Q_PRIMITIVE_TYPE);

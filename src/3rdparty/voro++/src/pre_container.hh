@@ -58,7 +58,7 @@ class pre_container_base {
 		 * within the class.
 		 * \return The number of particles. */
 		inline int total_particles() {
-			return (end_id-pre_id)*pre_container_chunk_size+(ch_id-*end_id);
+			return (int)(end_id-pre_id)*pre_container_chunk_size+(int)(ch_id-*end_id);
 		}
 	protected:
 		/** The number of doubles associated with a single particle

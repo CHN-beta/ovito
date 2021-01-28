@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,23 +26,14 @@ uniform mat4 inverse_projection_matrix;
 uniform bool is_perspective;
 uniform vec2 viewport_origin;		// Specifies the transformation from screen coordinates to viewport coordinates.
 uniform vec2 inverse_viewport_size;	// Specifies the transformation from screen coordinates to viewport coordinates.
+uniform bool is_picking_mode;
 
-#if __VERSION__ >= 130
-	flat in vec4 particle_color_fs;
-	flat in float particle_radius_squared_fs;
-	flat in vec3 particle_view_pos_fs;
-	out vec4 FragColor;
-#else
-	#define particle_color_fs gl_Color
-	#define particle_radius_squared_fs gl_TexCoord[1].w
-	#define particle_view_pos_fs gl_TexCoord[1].xyz
-	#define FragColor gl_FragColor
-#endif
+// Input from vertex shader:
+flat in vec4 particle_color_fs;
+flat in float particle_radius_squared_fs;
+flat in vec3 particle_view_pos_fs;
 
-const float ambient = 0.4;
-const float diffuse_strength = 1.0 - ambient;
-const float shininess = 6.0;
-const vec3 specular_lightdir = normalize(vec3(-1.8, 1.5, -0.2));
+out vec4 FragColor;
 
 void main()
 {
@@ -91,10 +82,12 @@ void main()
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
-	// Calculate surface normal in view coordinate system.
-	vec3 surface_normal = normalize(view_intersection_pnt - particle_view_pos_fs);
-
-	float diffuse = abs(surface_normal.z) * diffuse_strength;
-	float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
-	FragColor = vec4(particle_color_fs.rgb * (diffuse + ambient) + vec3(specular), particle_color_fs.a);
+	if(!is_picking_mode) {
+		// Calculate surface normal in view coordinate system.
+		vec3 surface_normal = normalize(view_intersection_pnt - particle_view_pos_fs);
+		FragColor = shadeSurfaceColor(surface_normal, ray_dir, particle_color_fs.rgb, particle_color_fs.a);
+	}
+	else {
+		FragColor = particle_color_fs;
+	}
 }

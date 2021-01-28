@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/app/Application.h>
 #include "ManualSelectionModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -88,9 +89,9 @@ void ManualSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		container->verifyIntegrity();
 
 		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyStorage::GenericSelectionProperty),
-				container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericIdentifierProperty) ?
-					container->getProperty(PropertyStorage::GenericIdentifierProperty) : nullptr);
+				container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext()),
+				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
+					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 
 		state.setStatus(std::move(status));
 	}

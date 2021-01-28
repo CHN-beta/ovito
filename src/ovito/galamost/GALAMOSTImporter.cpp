@@ -21,16 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GALAMOSTImporter.h"
-
-#include <QXmlDefaultHandler>
-#include <QXmlInputSource>
-#include <QXmlSimpleReader>
 
 #include <boost/algorithm/string.hpp>
 
@@ -43,373 +39,300 @@ IMPLEMENT_OVITO_CLASS(GALAMOSTImporter);
 ******************************************************************************/
 bool GALAMOSTImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
-	// Open input file and test whether it's an XML file.
-	{
-		CompressedTextReader stream(file);
-		const char* line = stream.readLineTrimLeft(1024);
-		if(!boost::algorithm::istarts_with(line, "<?xml "))
-			return false;
-	}
-
-	// Now use a full XML parser to check the schema of the XML file. First XML element must be <galamost_xml>.
-
-	// A minimal XML content handler class that just checks the name of the first XML element:
-	class ContentHandler : public QXmlDefaultHandler
-	{
-	public:
-		virtual bool startElement(const QString& namespaceURI, const QString& localName, const QString& qName, const QXmlAttributes& atts) override {
-			if(localName == "galamost_xml")
-				isGalamostFile = true;
-			return false; // Always stop after the first XML element. We are not interested in any further data.
-		}
-		bool isGalamostFile = false;
-	};
-
-	// Set up XML data source and reader.
+	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = file.createIODevice();
-	QXmlInputSource source(device.get());
-	QXmlSimpleReader reader;
-	ContentHandler contentHandler;
-	reader.setContentHandler(&contentHandler);
-	reader.parse(&source, false);
+	if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
+		return false;
+	QXmlStreamReader xml(device.get());
 
-	return contentHandler.isGalamostFile;
+	// Parse XML. First element must be <galamost_xml version="...">.
+	if(xml.readNext() != QXmlStreamReader::StartDocument)
+		return false;
+	if(xml.readNext() != QXmlStreamReader::StartElement)
+		return false;
+	if(xml.name().compare(QStringLiteral("galamost_xml")) != 0)
+		return false;
+	if(!xml.attributes().hasAttribute("version"))
+		return false;
+
+	return !xml.hasError();
 }
 
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr GALAMOSTImporter::FrameLoader::loadFile()
+void GALAMOSTImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
 
-	// Create the container for the particle data to be loaded.
-	_frameData = std::make_shared<ParticleFrameData>();
-
-	// Set up XML data source and reader, then parse the file.
+	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
-	QXmlInputSource source(device.get());
-	QXmlSimpleReader reader;
-	reader.setContentHandler(this);
-	reader.setErrorHandler(this);
-	reader.parse(&source, false);
+	if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
+		throw Exception(tr("Failed to open VTP file: %1").arg(device->errorString()));
+	QXmlStreamReader xml(device.get());
 
-	// Make sure bonds that cross a periodic cell boundary are correctly wrapped around.
-	_frameData->generateBondPeriodicImageProperty();
+	/// The dimensionality of the dataset.
+	int dimensions = 3;
 
-	// Report number of particles and bonds to the user.
-	QString statusString = tr("Number of particles: %1").arg(_natoms);
-	if(PropertyPtr topologyProperty = _frameData->bonds().findStandardProperty(BondsObject::TopologyProperty))
-		statusString += tr("\nNumber of bonds: %1").arg(topologyProperty->size());
-	_frameData->setStatus(statusString);
+	/// The number of atoms.
+	size_t natoms = 0;
 
-	return std::move(_frameData);
-}
+	/// The number of bonds.
+	size_t nbonds = 0;
 
-/******************************************************************************
-* Is called by the XML parser whenever a new XML element is read.
-******************************************************************************/
-bool GALAMOSTImporter::FrameLoader::fatalError(const QXmlParseException& exception)
-{
-	if(!isCanceled()) {
-		setException(std::make_exception_ptr(
-			Exception(tr("GALAMOST file parsing error on line %1, column %2: %3")
-			.arg(exception.lineNumber()).arg(exception.columnNumber()).arg(exception.message()))));
-	}
-	return false;
-}
-
-/******************************************************************************
-* Is called by the XML parser whenever a new XML element is read.
-******************************************************************************/
-bool GALAMOSTImporter::FrameLoader::startElement(const QString& namespaceURI, const QString& localName, const QString& qName, const QXmlAttributes& atts)
-{
-	// This parser only reads the first <configuration> element in a GALAMOST file.
-	// Additional <configuration> elements will be skipped.
-	if(_numConfigurationsRead == 0) {
-		if(localName == "configuration") {
+	/// Expect <galamost_xml> root element.
+	if(!xml.readNextStartElement() || xml.name().compare(QStringLiteral("galamost_xml")) != 0)
+		xml.raiseError(tr("Expected <galamost_xml> XML element."));
+	else {
+		if(!xml.readNextStartElement() || xml.name().compare(QStringLiteral("configuration")) != 0)
+			xml.raiseError(tr("Expected <configuration> XML element."));
+		else {
 
 			// Parse simulation timestep.
-			QString timeStepStr = atts.value(QStringLiteral("time_step"));
+			auto timeStepStr = xml.attributes().value(QStringLiteral("time_step"));
 			if(!timeStepStr.isEmpty()) {
 				bool ok;
-				_frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)));
+				state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)), dataSource());
 				if(!ok)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'time_step' attribute value in <%1> element: %2").arg(qName).arg(timeStepStr));
+					throw Exception(tr("GALAMOST file parsing error. Invalid 'time_step' attribute value in <%1> element: %2").arg(xml.name()).arg(timeStepStr));
 			}
 
 			// Parse dimensionality.
-			QString dimensionsStr = atts.value(QStringLiteral("dimensions"));
+			auto dimensionsStr = xml.attributes().value(QStringLiteral("dimensions"));
 			if(!dimensionsStr.isEmpty()) {
-				int dimensions = dimensionsStr.toInt();
-				if(dimensions == 2)
-					_frameData->simulationCell().set2D(true);
-				else if(dimensions != 3)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'dimensions' attribute value in <%1> element: %2").arg(qName).arg(dimensionsStr));
+				dimensions = dimensionsStr.toInt();
+				if(dimensions != 2 && dimensions != 3)
+					throw Exception(tr("GALAMOST file parsing error. Invalid 'dimensions' attribute value in <%1> element: %2").arg(xml.name()).arg(dimensionsStr));
 			}
 
 			// Parse number of atoms.
-			QString natomsStr = atts.value(QStringLiteral("natoms"));
+			auto natomsStr = xml.attributes().value(QStringLiteral("natoms"));
 			if(!natomsStr.isEmpty()) {
 				bool ok;
-				_natoms = natomsStr.toULongLong(&ok);
+				natoms = natomsStr.toULongLong(&ok);
 				if(!ok)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'natoms' attribute value in <%1> element: %2").arg(qName).arg(natomsStr));
+					throw Exception(tr("GALAMOST file parsing error. Invalid 'natoms' attribute value in <%1> element: %2").arg(xml.name()).arg(natomsStr));
+				setParticleCount(natoms);
 			}
 			else {
-				throw Exception(tr("GALAMOST file parsing error. Expected 'natoms' attribute in <%1> element.").arg(qName));
+				throw Exception(tr("GALAMOST file parsing error. Expected 'natoms' attribute in <%1> element.").arg(xml.name()));
 			}
-		}
-		else if(localName == "box") {
-			// Parse box dimensions.
-			AffineTransformation cellMatrix = _frameData->simulationCell().matrix();
-			QString lxStr = atts.value(QStringLiteral("lx"));
-			if(!lxStr.isEmpty()) {
-				bool ok;
-				cellMatrix(0,0) = (FloatType)lxStr.toDouble(&ok);
-				if(!ok)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'lx' attribute value in <%1> element: %2").arg(qName).arg(lxStr));
-			}
-			QString lyStr = atts.value(QStringLiteral("ly"));
-			if(!lyStr.isEmpty()) {
-				bool ok;
-				cellMatrix(1,1) = (FloatType)lyStr.toDouble(&ok);
-				if(!ok)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'ly' attribute value in <%1> element: %2").arg(qName).arg(lyStr));
-			}
-			QString lzStr = atts.value(QStringLiteral("lz"));
-			if(!lzStr.isEmpty()) {
-				bool ok;
-				cellMatrix(2,2) = (FloatType)lzStr.toDouble(&ok);
-				if(!ok)
-					throw Exception(tr("GALAMOST file parsing error. Invalid 'lz' attribute value in <%1> element: %2").arg(qName).arg(lzStr));
-			}
-			cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
-			_frameData->simulationCell().setMatrix(cellMatrix);
-		}
-		else if(localName == "position") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::PositionProperty, false);
-		}
-		else if(localName == "velocity") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::VelocityProperty, false);
-		}
-		else if(localName == "image") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::PeriodicImageProperty, false);
-		}
-		else if(localName == "mass") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::MassProperty, false);
-		}
-		else if(localName == "diameter") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::RadiusProperty, false);
-		}
-		else if(localName == "charge") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::ChargeProperty, false);
-		}
-		else if(localName == "quaternion") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::OrientationProperty, false);
-		}
-		else if(localName == "orientation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::OrientationProperty, false);
-		}
-		else if(localName == "type") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::TypeProperty, false);
-		}
-		else if(localName == "molecule") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::MoleculeProperty, false);
-		}
-		else if(localName == "body") {
-			_currentProperty = std::make_shared<PropertyStorage>(_natoms, PropertyStorage::Int64, 1, 0, QStringLiteral("Body"), false);
-		}
-		else if(localName == "Aspheres") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AsphericalShapeProperty, false);
-		}
-		else if(localName == "rotation") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AngularVelocityProperty, false);
-		}
-		else if(localName == "inert") {
-			_currentProperty = ParticlesObject::OOClass().createStandardStorage(_natoms, ParticlesObject::AngularMomentumProperty, false);
-		}
-		else if(localName == "bond") {
-			_currentProperty = BondsObject::OOClass().createStandardStorage(0, BondsObject::TopologyProperty, false);
-		}
-	}
 
-	return !isCanceled();
-}
+			// Parse the child elements.
+			while(xml.readNextStartElement()) {
+				if(isCanceled())
+					return;
 
-/******************************************************************************
-* Is called by the XML parser whenever it has parsed a chunk of character data.
-******************************************************************************/
-bool GALAMOSTImporter::FrameLoader::characters(const QString& ch)
-{
-	if(_currentProperty) {
-		_characterData += ch;
-	}
-	return !isCanceled();
-}
-
-/******************************************************************************
-* Is called by the XML parser whenever it has parsed an end element tag.
-******************************************************************************/
-bool GALAMOSTImporter::FrameLoader::endElement(const QString& namespaceURI, const QString& localName, const QString& qName)
-{
-	if(_currentProperty) {
-		QTextStream stream(&_characterData, QIODevice::ReadOnly | QIODevice::Text);
-		if(localName == "position") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::PositionProperty);
-			for(Point3& p : PropertyAccess<Point3>(_currentProperty)) {
-				stream >> p.x() >> p.y() >> p.z();
-			}
-		}
-		else if(localName == "velocity") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::VelocityProperty);
-			for(Vector3& v : PropertyAccess<Vector3>(_currentProperty)) {
-				stream >> v.x() >> v.y() >> v.z();
-			}
-		}
-		else if(localName == "image") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::PeriodicImageProperty);
-			for(Point3I& p : PropertyAccess<Point3I>(_currentProperty)) {
-				stream >> p.x() >> p.y() >> p.z();
-			}
-		}
-		else if(localName == "mass") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::MassProperty);
-			for(FloatType& mass : PropertyAccess<FloatType>(_currentProperty)) {
-				stream >> mass;
-			}
-		}
-		else if(localName == "diameter") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::RadiusProperty);
-			for(FloatType& radius : PropertyAccess<FloatType>(_currentProperty)) {
-				stream >> radius;
-				radius /= 2;
-			}
-		}
-		else if(localName == "charge") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::ChargeProperty);
-			for(FloatType& charge : PropertyAccess<FloatType>(_currentProperty)) {
-				stream >> charge;
-			}
-		}
-		else if(localName == "quaternion") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::OrientationProperty);
-			for(Quaternion& q : PropertyAccess<Quaternion>(_currentProperty)) {
-				stream >> q.w() >> q.x() >> q.y() >> q.z();
-			}
-		}
-		else if(localName == "orientation") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::OrientationProperty);
-			for(Quaternion& q : PropertyAccess<Quaternion>(_currentProperty)) {
-				Vector3 dir;
-				stream >> dir.x() >> dir.y() >> dir.z();
-				if(!dir.isZero()) {
-					Rotation r(Vector3(0,0,1), dir);
-					q = Quaternion(r);
+				if(xml.name().compare(QStringLiteral("box")) == 0) {
+					// Parse box dimensions.
+					AffineTransformation cellMatrix = simulationCell()->cellMatrix();
+					auto lxStr = xml.attributes().value(QStringLiteral("lx"));
+					if(!lxStr.isEmpty()) {
+						bool ok;
+						cellMatrix(0,0) = (FloatType)lxStr.toDouble(&ok);
+						if(!ok)
+							throw Exception(tr("GALAMOST file parsing error. Invalid 'lx' attribute value in <%1> element: %2").arg(xml.name()).arg(lxStr));
+					}
+					auto lyStr = xml.attributes().value(QStringLiteral("ly"));
+					if(!lyStr.isEmpty()) {
+						bool ok;
+						cellMatrix(1,1) = (FloatType)lyStr.toDouble(&ok);
+						if(!ok)
+							throw Exception(tr("GALAMOST file parsing error. Invalid 'ly' attribute value in <%1> element: %2").arg(xml.name()).arg(lyStr));
+					}
+					auto lzStr = xml.attributes().value(QStringLiteral("lz"));
+					if(!lzStr.isEmpty()) {
+						bool ok;
+						cellMatrix(2,2) = (FloatType)lzStr.toDouble(&ok);
+						if(!ok)
+							throw Exception(tr("GALAMOST file parsing error. Invalid 'lz' attribute value in <%1> element: %2").arg(xml.name()).arg(lzStr));
+					}
+					if(dimensions == 2)
+						simulationCell()->setIs2D(true);
+					cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
+					simulationCell()->setCellMatrix(cellMatrix);
+					xml.skipCurrentElement();
 				}
-				else {
-					q = Quaternion::Identity();
+				else if(xml.name().compare(QStringLiteral("position")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext()));
 				}
-			}
-		}
-		else if(localName == "molecule") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::MoleculeProperty);
-			for(qlonglong& molecule : PropertyAccess<qlonglong>(_currentProperty)) {
-				stream >> molecule;
-			}
-		}
-		else if(localName == "body") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::UserProperty);
-			for(qlonglong& body : PropertyAccess<qlonglong>(_currentProperty)) {
-				stream >> body;
-			}
-		}
-		else if(localName == "rotation") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::AngularVelocityProperty);
-			for(Vector3& rot_vel : PropertyAccess<Vector3>(_currentProperty)) {
-				stream >> rot_vel.x() >> rot_vel.y() >> rot_vel.z();
-			}
-		}
-		else if(localName == "inert") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::AngularMomentumProperty);
-			for(Vector3& ang_moment : PropertyAccess<Vector3>(_currentProperty)) {
-				stream >> ang_moment.x() >> ang_moment.y() >> ang_moment.z();
-			}
-		}
-		else if(localName == "type") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::TypeProperty);
-			QString typeName;
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(ParticleType::OOClass());
-			PropertyAccess<int> typeArray(_currentProperty);
-			for(int& type : typeArray) {
-				stream >> typeName;
-				type = typeList->addTypeName(typeName);
-			}
-			typeList->sortTypesByName(typeArray);
-			_frameData->particles().setPropertyTypesList(typeArray, std::move(typeList));
-		}
-		else if(localName == "Aspheres") {
-			OVITO_ASSERT(_currentProperty->type() == ParticlesObject::AsphericalShapeProperty);
-			ConstPropertyAccess<int> typeProperty = _frameData->particles().findStandardProperty(ParticlesObject::TypeProperty);
-			if(!typeProperty)
-				throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(qName));
-			PropertyContainerImportData::TypeList* typeList = _frameData->particles().createPropertyTypesList(typeProperty.storage(), ParticleType::OOClass());
-			std::vector<Vector3> typesAsphericalShape;
-			while(!stream.atEnd()) {
-				QString typeName;
-				FloatType a,b,c;
-				FloatType eps_a, eps_b, eps_c;
-				stream >> typeName >> a >> b >> c >> eps_a >> eps_b >> eps_c;
-				stream.skipWhiteSpace();
-				for(const PropertyContainerImportData::TypeDefinition& type : typeList->types()) {
-					if(type.name == typeName) {
-						if(typesAsphericalShape.size() <= type.id) typesAsphericalShape.resize(type.id+1, Vector3::Zero());
-						typesAsphericalShape[type.id] = Vector3(a/2,b/2,c/2);
-						break;
+				else if(xml.name().compare(QStringLiteral("velocity")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("image")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::PeriodicImageProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("mass")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::MassProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("diameter")) == 0) {
+					PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::RadiusProperty, false, executionContext()));
+					// Convert diamater values into radii.
+					for(FloatType& radius : PropertyAccess<FloatType>(property))
+						radius /= 2;
+				}
+				else if(xml.name().compare(QStringLiteral("charge")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("quaternion")) == 0) {
+					PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext()));
+					// Convert quaternion representation to OVITO's internal format.
+					// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
+					for(Quaternion& q : PropertyAccess<Quaternion>(property))
+						std::rotate(q.begin(), q.begin() + 1, q.end());
+				}
+				else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
+					DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(dataset(), natoms, PropertyObject::Float, 3, 0, QStringLiteral("Direction"), false);
+					parsePropertyData(xml, directions);
+					ConstPropertyAccess<Vector3> directionsAccess(directions);
+					const Vector3* dir = directionsAccess.cbegin();
+					for(Quaternion& q : PropertyAccess<Quaternion>(particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext()))) {
+						if(!dir->isZero()) {
+							Rotation r(Vector3(0,0,1), *dir);
+							q = Quaternion(r);
+						}
+						else {
+							q = Quaternion::Identity();
+						}
+						++dir;
+					}
+					OVITO_ASSERT(dir == directionsAccess.cend());
+				}
+				else if(xml.name().compare(QStringLiteral("type")) == 0) {
+					QString text = xml.readElementText();
+					QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
+					PropertyObject* property = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+					QString typeName;
+					for(int& type : PropertyAccess<int>(property)) {
+						stream >> typeName;
+						type = addNamedType(ParticlesObject::OOClass(), property, typeName)->numericId();
+					}
+					property->sortElementTypesByName();
+				}
+				else if(xml.name().compare(QStringLiteral("molecule")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::MoleculeProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("body")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(QStringLiteral("Body"), PropertyObject::Int64, 1, 0, false));
+				}
+				else if(xml.name().compare(QStringLiteral("Aspheres")) == 0) {
+					QString text = xml.readElementText();
+					QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
+					ConstPropertyAccess<int> typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
+					if(!typeProperty)
+						throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(xml.name()));
+					std::vector<Vector3> typesAsphericalShape;
+					while(!stream.atEnd()) {
+						QString typeName;
+						FloatType a,b,c;
+						FloatType eps_a, eps_b, eps_c;
+						stream >> typeName >> a >> b >> c >> eps_a >> eps_b >> eps_c;
+						stream.skipWhiteSpace();
+						for(const ElementType* type : typeProperty.buffer()->elementTypes()) {
+							if(type->name() == typeName) {
+								if(typesAsphericalShape.size() <= type->numericId()) typesAsphericalShape.resize(type->numericId()+1, Vector3::Zero());
+								typesAsphericalShape[type->numericId()] = Vector3(a/2,b/2,c/2);
+								break;
+							}
+						}
+						const int* typeIndex = typeProperty.cbegin();
+						for(Vector3& shape : PropertyAccess<Vector3>(particles()->createProperty(ParticlesObject::AsphericalShapeProperty, false, executionContext()))) {
+							if(*typeIndex < typesAsphericalShape.size())
+								shape = typesAsphericalShape[*typeIndex];
+							++typeIndex;
+						}
 					}
 				}
-				const int* typeIndex = typeProperty.cbegin();
-				for(Vector3& shape : PropertyAccess<Vector3>(_currentProperty)) {
-					if(*typeIndex < typesAsphericalShape.size())
-						shape = typesAsphericalShape[*typeIndex];
-					++typeIndex;
+				else if(xml.name().compare(QStringLiteral("rotation")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularVelocityProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("inert")) == 0) {
+					parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularMomentumProperty, false, executionContext()));
+				}
+				else if(xml.name().compare(QStringLiteral("bond")) == 0) {
+					// Parse number of bonds.
+					auto nbondsStr = xml.attributes().value(QStringLiteral("num"));
+					if(!nbondsStr.isEmpty()) {
+						bool ok;
+						nbonds = nbondsStr.toULongLong(&ok);
+						if(!ok)
+							throw Exception(tr("GALAMOST file parsing error. Invalid 'num' attribute value in <%1> element: %2").arg(xml.name()).arg(nbondsStr));
+						setBondCount(nbonds);
+					}
+					else {
+						throw Exception(tr("GALAMOST file parsing error. Expected 'num' attribute in <%1> element.").arg(xml.name()));
+					}
+					QString text = xml.readElementText();
+					QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
+					PropertyAccess<ParticleIndexPair> topologyProperty(bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext()));
+					PropertyAccess<int> typeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
+					QString typeName;
+					for(size_t i = 0; i < nbonds; i++) {
+						stream >> typeName >> topologyProperty[i][0] >> topologyProperty[i][1];
+						typeProperty[i] = addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+						stream.skipWhiteSpace();
+					}
+					typeProperty.buffer()->sortElementTypesByName();
+					typeProperty.reset();
+					topologyProperty.reset();
+					// Make sure bonds that cross a periodic cell boundary are correctly wrapped around.
+					generateBondPeriodicImageProperty();
+				}
+				else {
+					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 				}
 			}
 		}
-		else if(localName == "bond") {
-			OVITO_ASSERT(_currentProperty->type() == BondsObject::TopologyProperty);
-			QString typeName;
-			std::unique_ptr<PropertyContainerImportData::TypeList> typeList = std::make_unique<PropertyContainerImportData::TypeList>(BondType::OOClass());
-			std::vector<ParticleIndexPair> topology;
-			std::vector<int> bondTypes;
-			while(!stream.atEnd()) {
-				qlonglong a,b;
-				stream >> typeName >> a >> b;
-				bondTypes.push_back(typeList->addTypeName(typeName));
-				topology.push_back({a,b});
-				stream.skipWhiteSpace();
-			}
-			PropertyAccess<ParticleIndexPair> topologyProperty = _frameData->bonds().createStandardProperty<BondsObject>(topology.size(), BondsObject::TopologyProperty, false);
-			boost::copy(topology, topologyProperty.begin());
-			PropertyAccess<int> bondTypeProperty = _frameData->bonds().createStandardProperty<BondsObject>(bondTypes.size(), BondsObject::TypeProperty, false);
-			boost::copy(bondTypes, bondTypeProperty.begin());
-			typeList->sortTypesByName(bondTypeProperty);
-			_frameData->bonds().setPropertyTypesList(bondTypeProperty, std::move(typeList));
-			_currentProperty.reset();
-		}
-		if(stream.status() == QTextStream::ReadPastEnd)
-			throw Exception(tr("GALAMOST file parsing error. Unexpected end of data in <%1> element").arg(qName));
-		if(_currentProperty) {
-			_frameData->particles().addProperty(std::move(_currentProperty));
-			_currentProperty.reset();
-		}
-		_characterData.clear();
 	}
-	else {
-		if(localName == "configuration")
-			_numConfigurationsRead++;
+
+	// Handle XML parsing errors.
+	if(xml.hasError()) {
+		throw Exception(tr("GALAMOST file parsing error on line %1, column %2: %3")
+			.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
 	}
-	return !isCanceled();
+
+	// Report number of particles and bonds to the user.
+	QString statusString = tr("Number of particles: %1").arg(natoms);
+	if(nbonds != 0)
+		statusString += tr("\nNumber of bonds: %1").arg(nbonds);
+	state().setStatus(statusString);
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
+}
+
+/******************************************************************************
+* Parses the contents of an XML element and stores the parsed values in a target property.
+******************************************************************************/
+PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReader& xml, PropertyObject* property)
+{
+	// Parse number of data elements.
+	qlonglong numElements = xml.attributes().value("num").toLongLong();
+	if(numElements != property->size()) {
+		xml.raiseError(tr("Element count mismatch. Attribute 'num' is %1 but expected %2 data elements.").arg(numElements).arg(property->size()));
+		return property;
+	}
+	
+	QString text = xml.readElementText();
+	QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
+
+	if(property->dataType() == PropertyObject::Float) {
+		PropertyAccess<FloatType, true> array(property);
+		for(FloatType& v : array.range())
+			stream >> v;
+	}
+	else if(property->dataType() == PropertyObject::Int) {
+		PropertyAccess<int, true> array(property);
+		for(int& v : array.range())
+			stream >> v;
+	}
+	else if(property->dataType() == PropertyObject::Int64) {
+		PropertyAccess<qlonglong, true> array(property);
+		for(qlonglong& v : array.range())
+			stream >> v;
+	}
+	else OVITO_ASSERT(false);
+	return property;
 }
 
 }	// End of namespace

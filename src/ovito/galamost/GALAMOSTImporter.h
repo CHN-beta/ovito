@@ -25,9 +25,8 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 
-#include <QXmlDefaultHandler>
+#include <QXmlStreamReader>
 
 namespace Ovito { namespace Particles {
 
@@ -65,57 +64,29 @@ public:
 	virtual QString objectTitle() const override { return tr("GALAMOST"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, file);
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+		return std::make_shared<FrameLoader>(request);
 	}
 
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader, protected QXmlDefaultHandler
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(const FileSourceImporter::Frame& frame, const FileHandle& file)
-			: FileSourceImporter::FrameLoader(frame, file) {}
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
-
-		/// Is called by the XML parser whenever a new XML element is read.
-		virtual bool startElement(const QString& namespaceURI, const QString& localName, const QString& qName, const QXmlAttributes& atts) override;
-
-		/// Is called by the XML parser whenever it has parsed an end element tag.
-		virtual bool endElement(const QString& namespaceURI, const QString& localName, const QString& qName) override;
-
-		/// Is called by the XML parser whenever it has parsed a chunk of character data.
-		virtual bool characters(const QString& ch) override;
-
-		/// Is called when a non-recoverable error is encountered during parsing of the XML file.
-		virtual bool fatalError(const QXmlParseException& exception) override;
+		virtual void loadFile() override;
 
 	private:
 
-		/// Container for the parsed particle data.
-		std::shared_ptr<ParticleFrameData> _frameData;
-
-		/// The dimensionality of the dataset.
-		int _dimensions = 3;
-
-		/// The number of atoms.
-		size_t _natoms = 0;
-
-		/// The particle/bond property which is currently being parsed.
-		PropertyPtr _currentProperty;
-
-		/// Buffer for text data read from XML file.
-		QString _characterData;
-
-		/// The number of <configuration> elements that have been parsed so far.
-		size_t _numConfigurationsRead = 0;
+		/// Parses the contents of an XML element and stores the parsed values in a target property.
+		PropertyObject* parsePropertyData(QXmlStreamReader& xml, PropertyObject* property);
 	};
 };
 

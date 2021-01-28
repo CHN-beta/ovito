@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,36 +26,33 @@ uniform mat4 projection_matrix;
 uniform vec2 imposter_texcoords[6];
 uniform vec4 imposter_voffsets[6];
 uniform float radius_scalingfactor;
+uniform int picking_base_id;
+uniform bool is_picking_mode;
+uniform vec4 selection_color;
 
-#if __VERSION__ >= 130
+// The particle data:
+in vec3 position;
+in vec3 color;
+in float transparency;
+in float particle_radius;
+in int selection;
 
-	// The particle data:
-	in vec3 position;
-	in vec4 color;
-	in float particle_radius;
-
-	// Output to fragment shader:
-	flat out vec4 particle_color_fs;
-	flat out float particle_radius_fs;	// The particle's radius.
-	flat out float ze0;					// The particle's Z coordinate in eye coordinates.
-	out vec2 texcoords;
-
-#else
-
-	attribute float particle_radius;
-	attribute float vertexID;
-
-	#define particle_radius_fs gl_TexCoord[1].x
-	#define ze0 gl_TexCoord[1].y
-	#define particle_color_fs gl_FrontColor
-#endif
+// Output to fragment shader:
+flat out vec4 particle_color_fs;
+flat out float particle_radius_fs;	// The particle's radius.
+flat out float ze0;					// The particle's Z coordinate in eye coordinates.
+out vec2 texcoords;
 
 void main()
 {
-#if __VERSION__ >= 130
-
-	// Forward color to fragment shader.
-	particle_color_fs = color;
+	if(!is_picking_mode) {
+		// Forward color to fragment shader.
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 6);
+	}
 
 	// Transform and project particle position.
 	vec4 eye_position = modelview_matrix * vec4(position, 1);
@@ -65,22 +62,6 @@ void main()
 
 	// Transform and project particle position.
 	gl_Position = projection_matrix * (eye_position + (particle_radius * radius_scalingfactor) * imposter_voffsets[gl_VertexID % 6]);
-#else
-
-	// Pass color to fragment shader.
-	particle_color_fs = gl_Color;
-
-	// Transform and project particle position.
-	vec4 eye_position = modelview_matrix * gl_Vertex;
-
-	int cornerIndex = int(mod(vertexID+0.5, 6.0));
-
-	// Assign texture coordinates.
-	gl_TexCoord[0].xy = imposter_texcoords[cornerIndex];
-
-	// Transform and project particle position.
-	gl_Position = projection_matrix * (eye_position + (particle_radius * radius_scalingfactor) * imposter_voffsets[cornerIndex]);
-#endif
 
 	// Forward particle radius to fragment shader.
 	particle_radius_fs = particle_radius * radius_scalingfactor;
@@ -88,4 +69,3 @@ void main()
 	// Pass particle position in eye coordinates to fragment shader.
 	ze0 = eye_position.z;
 }
-

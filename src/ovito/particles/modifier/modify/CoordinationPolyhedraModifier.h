@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,10 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsObject.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito { namespace Particles {
 
@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Asynchronous
 
 	Q_CLASSINFO("DisplayName", "Coordination polyhedra");
 	Q_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Visualization");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -65,10 +65,14 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CoordinationPolyhedraModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 private:
 
@@ -78,16 +82,17 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(ConstPropertyPtr positions,
+		ComputePolyhedraEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
-				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, const SimulationCell& simCell) :
+				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh) :
+			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_particleTypes(std::move(particleTypes)),
 			_particleIdentifiers(std::move(particleIdentifiers)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_mesh(simCell) {}
+			_mesh(std::move(mesh)) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -95,14 +100,8 @@ private:
 		/// Injects the computed results into the data pipeline.
 		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
-		/// Returns the generated surface mesh.
-		const SurfaceMeshData& mesh() const { return _mesh; }
-
-		/// Returns the generated surface mesh.
-		SurfaceMeshData& mesh() { return _mesh; }
-
 		/// Returns the simulation cell geometry.
-		const SimulationCell& cell() const { return mesh().cell(); }
+		const SimulationCellObject* cell() const { return _mesh->domain(); }
 
 	private:
 
@@ -113,12 +112,12 @@ private:
 		ConstPropertyPtr _bondTopology;
 		ConstPropertyPtr _bondPeriodicImages;
 
-		/// The output mesh.
-		SurfaceMeshData _mesh;
+		/// The generated mesh structure.
+		DataOORef<SurfaceMesh> _mesh;
 	};
 
 	/// The vis element for rendering the polyhedra.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(SurfaceMeshVis, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 }	// End of namespace

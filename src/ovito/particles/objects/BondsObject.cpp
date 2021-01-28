@@ -42,11 +42,22 @@ IMPLEMENT_OVITO_CLASS(BondsObject);
 ******************************************************************************/
 BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void BondsObject::initializeObject(ExecutionContext executionContext)
+{
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
-	
-	// Attach a visualization element for rendering the bonds.
-	addVisElement(new BondsVis(dataset));
+
+	// Create and attach a default visualization element for rendering the bonds.
+	if(!visElement())
+		setVisElement(OORef<BondsVis>::create(dataset(), executionContext));
+
+	PropertyContainer::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -68,7 +79,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 	const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
 	auto topoIter = bondTopologyProperty.begin();
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, ExecutionContext::Scripting);
 	for(Vector3I& pbcVec : bondPeriodicImageProperty) {
 		size_t particleIndex1 = (*topoIter)[0];
 		size_t particleIndex2 = (*topoIter)[1];
@@ -87,18 +98,22 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 }
 
 /******************************************************************************
-* Gives the property class the opportunity to set up a newly created
-* property object.
-******************************************************************************/
-void BondsObject::OOMetaClass::prepareNewProperty(PropertyObject* property) const
-{
-}
-
-/******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardStorage(size_t bondsCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
 {
+	// Initialize memory if requested.
+	if(initializeMemory && containerPath.size() >= 2) {
+		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
+		if(type == ColorProperty) {
+			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
+				ConstPropertyPtr property = particles->inputBondColors();
+				OVITO_ASSERT(property && property->size() == bondsCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+	}
+
 	int dataType;
 	size_t componentCount;
 	size_t stride;
@@ -106,29 +121,29 @@ PropertyPtr BondsObject::OOMetaClass::createStandardStorage(size_t bondsCount, i
 	switch(type) {
 	case TypeProperty:
 	case SelectionProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 1;
 		stride = sizeof(int);
 		break;
 	case LengthProperty:
 	case TransparencyProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 1;
 		stride = sizeof(FloatType);
 		break;
 	case ColorProperty:
-		dataType = PropertyStorage::Float;
+		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = componentCount * sizeof(FloatType);
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case TopologyProperty:
-		dataType = PropertyStorage::Int64;
+		dataType = PropertyObject::Int64;
 		componentCount = 2;
 		stride = componentCount * sizeof(qlonglong);
 		break;
 	case PeriodicImageProperty:
-		dataType = PropertyStorage::Int;
+		dataType = PropertyObject::Int;
 		componentCount = 3;
 		stride = componentCount * sizeof(int);
 		break;
@@ -136,26 +151,14 @@ PropertyPtr BondsObject::OOMetaClass::createStandardStorage(size_t bondsCount, i
 		OVITO_ASSERT_MSG(false, "BondsObject::createStandardStorage", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard bond property type: %1").arg(type));
 	}
+	
 	const QStringList& componentNames = standardPropertyComponentNames(type);
 	const QString& propertyName = standardPropertyName(type);
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = std::make_shared<PropertyStorage>(bondsCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, bondsCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
-
-	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
-		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
-		if(type == ColorProperty) {
-			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
-				const std::vector<ColorA>& colors = particles->inputBondColors();
-				OVITO_ASSERT(colors.size() == property->size());
-				boost::transform(colors, PropertyAccess<Color>(property).begin(), [](const ColorA& c) { return Color(c.r(), c.g(), c.b()); });
-				initializeMemory = false;
-			}
-		}
-	}
 
 	if(initializeMemory) {
 		// Default-initialize property values with zeros.
@@ -185,13 +188,38 @@ void BondsObject::OOMetaClass::initialize()
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-	registerStandardProperty(TypeProperty, tr("Bond Type"), PropertyStorage::Int, emptyList, &BondType::OOClass(), tr("Bond types"));
-	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyStorage::Int, emptyList);
-	registerStandardProperty(ColorProperty, tr("Color"), PropertyStorage::Float, rgbList, nullptr, tr("Bond colors"));
-	registerStandardProperty(LengthProperty, tr("Length"), PropertyStorage::Float, emptyList);
-	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyStorage::Int64, abList);
-	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyStorage::Int, xyzList);
-	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyStorage::Float, emptyList);
+	registerStandardProperty(TypeProperty, tr("Bond Type"), PropertyObject::Int, emptyList, &BondType::OOClass(), tr("Bond types"));
+	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Bond colors"));
+	registerStandardProperty(LengthProperty, tr("Length"), PropertyObject::Float, emptyList);
+	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abList);
+	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyObject::Int, xyzList);
+	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyObject::Float, emptyList);
+}
+
+/******************************************************************************
+* Returns the default color for a numeric type ID.
+******************************************************************************/
+Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+{
+	if(property.type() == BondsObject::TypeProperty) {
+
+		// Initial standard colors assigned to new bond types:
+		static const Color defaultTypeColors[] = {
+			Color(1.0,  1.0,  0.0), // 0
+			Color(0.7,  0.0,  1.0), // 1
+			Color(0.2,  1.0,  1.0), // 2
+			Color(1.0,  0.4,  1.0), // 3
+			Color(0.4,  1.0,  0.4), // 4
+			Color(1.0,  0.4,  0.4), // 5
+			Color(0.4,  0.4,  1.0), // 6
+			Color(1.0,  1.0,  0.7), // 7
+			Color(0.97, 0.97, 0.97) // 8
+		};
+		return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+	}
+
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 }
 
 /******************************************************************************

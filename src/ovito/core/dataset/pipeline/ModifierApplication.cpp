@@ -136,7 +136,7 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(modifier)) {
 		// Reset all caches when the modifier is replaced.
@@ -167,7 +167,7 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
 
-	CachingPipelineObject::referenceReplaced(field, oldTarget, newTarget);
+	CachingPipelineObject::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************

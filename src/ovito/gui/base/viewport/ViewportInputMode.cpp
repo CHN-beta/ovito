@@ -107,14 +107,14 @@ void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEv
 		else {
 			activateTemporaryNavigationMode(manager->panMode());
 			if(manager->activeMode() == manager->panMode()) {
-				QMouseEvent leftMouseEvent(event->type(), event->localPos(), event->windowPos(), event->screenPos(), Qt::LeftButton, Qt::LeftButton, event->modifiers());
+				QMouseEvent leftMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), Qt::LeftButton, Qt::LeftButton, event->modifiers());
 				manager->activeMode()->mousePressEvent(vpwin, &leftMouseEvent);
 			}
 		}
 	}
 	else if(event->button() == Qt::LeftButton) {
 		if(!(event->modifiers() & Qt::ShiftModifier)) {
-			_lastMousePressEvent.reset(new QMouseEvent(event->type(), event->localPos(), event->windowPos(), event->screenPos(), event->button(), event->buttons(), event->modifiers()));
+			_lastMousePressEvent.reset(new QMouseEvent(event->type(), getMousePosition(event), getWindowMousePosition(event), getGlobalMousePosition(event), event->button(), event->buttons(), event->modifiers()));
 		}
 		else {
 			activateTemporaryNavigationMode(manager->panMode());
@@ -122,7 +122,7 @@ void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEv
 				manager->activeMode()->mousePressEvent(vpwin, event);
 		}
 	}
-	else if(event->button() == Qt::MidButton) {
+	else if(event->button() == Qt::MiddleButton) {
 		activateTemporaryNavigationMode(manager->panMode());
 		if(manager->activeMode() == manager->panMode())
 			manager->activeMode()->mousePressEvent(vpwin, event);

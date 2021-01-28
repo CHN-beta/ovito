@@ -27,11 +27,12 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/dataset/pipeline/PipelineObject.h>
 
 namespace Ovito {
 
 /**
- * \brief Abstract base class for all objects that represent data.
+ * \brief Abstract base class for all objects that represent a part of a data collection.
  */
 class OVITO_CORE_EXPORT DataObject : public RefTarget
 {
@@ -113,52 +114,35 @@ public:
 		return nullptr;
 	}
 
-	/// \brief Returns the number of strong references to this data object.
-	///        Strong references are either RefMaker derived classes that hold a reference to this data object
-	///        or PipelineFlowState instances that contain this data object.
-	int numberOfStrongReferences() const {
-		return _referringFlowStates + dependents().size();
-	}
-
-	/// Determines if it is safe to modify this data object without unwanted side effects.
+	/// Determines if it is safe to modify this data object without unwanted sideeffects.
 	/// Returns true if there is only one exclusive owner of this data object (if any).
 	/// Returns false if there are multiple references to this data object from several
 	/// data collections or other container data objects.
 	bool isSafeToModify() const;
-
-	/// \brief Returns the current value of the revision counter of this scene object.
-	/// This counter is increment every time the object changes.
-	unsigned int revisionNumber() const Q_DECL_NOTHROW { return _revisionNumber; }
-
-	/// Returns the pipeline object that created this data object (may be NULL).
-	PipelineObject* dataSource() const;
-
-	/// Sets the internal pointer to the pipeline object that created this data object.
-	void setDataSource(PipelineObject* dataSource);
 
 	/// Returns whether this data object wants to be shown in the pipeline editor
 	/// under the data source section. The default implementation returns false.
 	virtual bool showInPipelineEditor() const { return false; }
 
 	/// \brief Visits the direct sub-objects of this data object
-	///        and invokes the given visitor function for every sub-objects.
+	///        and invokes the given visitor function for every sub-object.
 	///
 	/// \param fn A functor that takes a DataObject pointer as argument and returns a bool to
-	///           indicate whether visiting of further sub-objects should be stopped.
+	///           indicate whether visiting of further sub-objects should continue.
 	template<class Function>
 	bool visitSubObjects(Function fn) const {
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 				if(!field->isVector()) {
-					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceField(*field).getInternal())) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(*field))) {
 						if(fn(subObject))
 							return true;
 					}
 				}
 				else {
-					const QVector<RefTarget*>& list = getVectorReferenceField(*field);
-					for(const RefTarget* target : list) {
-						if(const DataObject* subObject = static_object_cast<DataObject>(target)) {
+					int count = getVectorReferenceFieldSize(*field);
+					for(int i = 0; i < count; i++) {
+						if(const DataObject* subObject = static_object_cast<DataObject>(getVectorReferenceFieldTarget(*field, i))) {
 							if(fn(subObject))
 								return true;
 						}
@@ -182,14 +166,14 @@ public:
 		return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(subObject)));
 	}
 
+	/// Returns the absolute path of this DataObject within the DataCollection.
+	/// Returns an empty path if the DataObject is not exclusively owned by one DataCollection.
+	ConstDataObjectPath exclusiveDataObjectPath() const;
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
+
 protected:
-
-	/// \brief Sends an event to all dependents of this RefTarget.
-	/// \param event The notification event to be sent to all dependents of this RefTarget.
-	virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
-
-	/// Handles reference events sent by reference targets of this object.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
@@ -197,8 +181,20 @@ protected:
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// Creates a copy of this object.
-	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
+private:
+
+	/// Increments the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
+	void incrementDataReferenceCount() const noexcept {
+		OVITO_CHECK_OBJECT_POINTER(this);
+		_dataReferenceCount.ref();
+	}
+
+	/// Decrements the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
+	void decrementDataReferenceCount() const noexcept {
+		OVITO_CHECK_OBJECT_POINTER(this);
+		OVITO_ASSERT(_dataReferenceCount.loadAcquire() > 0);
+		_dataReferenceCount.deref();
+	}
 
 private:
 
@@ -206,20 +202,19 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
 
 	/// The attached visual elements that are responsible for rendering this object's data.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
-	/// The revision counter of this object.
-	/// The counter is incremented every time the object changes.
-	/// See the VersionedDataObjectRef class for more information.
-	unsigned int _revisionNumber = 0;
+	/// The pipeline object that created this data object (may be null).
+	DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
 
-	/// Counts the current number of PipelineFlowState containers that contain this data object.
-	int _referringFlowStates = 0;
+	/// The attached editable proxy object.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
 
-	/// Pointer to the pipeline object that created this data object (may be NULL).
-	QPointer<PipelineObject> _dataSource;
+	/// The current number of strong references to this DataObject that exist.
+	mutable QAtomicInt _dataReferenceCount{0};
 
-	template<typename DataObjectClass> friend class StrongDataObjectRef;
+	// Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
+	template<typename DataObjectClass> friend class DataOORef;
 };
 
 /// A pointer to a DataObject-derived metaclass.
@@ -227,4 +222,15 @@ using DataObjectClassPtr = const DataObject::OOMetaClass*;
 
 }	// End of namespace
 
-#include <ovito/core/dataset/data/StrongDataObjectRef.h>
+#include <ovito/core/dataset/data/DataOORef.h>
+
+namespace Ovito {
+// Instantiate class templates.
+#if !defined(Core_EXPORTS)
+extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+#endif
+}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,8 +28,7 @@
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
-#include <ovito/mesh/surface/HalfEdgeMesh.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -67,9 +66,9 @@ public:
 	virtual QString objectTitle() const override { return tr("CA File"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(frame, file);
+		return std::make_shared<FrameLoader>(request);
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -80,90 +79,18 @@ public:
 
 protected:
 
-	/// The format-specific data holder.
-	class CrystalAnalysisFrameData : public ParticleFrameData
-	{
-	public:
-
-		struct BurgersVectorFamilyInfo {
-			int id = 0;
-			QString name;
-			Vector3 burgersVector = Vector3::Zero();
-			Color color = Color(1,1,1);
-		};
-
-		struct PatternInfo {
-			int id = 0;
-			MicrostructurePhase::Dimensionality type = MicrostructurePhase::Dimensionality::Volumetric;
-			MicrostructurePhase::CrystalSymmetryClass symmetryType = MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry;
-			QString shortName;
-			QString longName;
-			Color color = Color(1,1,1);
-			QVector<BurgersVectorFamilyInfo> burgersVectorFamilies;
-		};
-
-	public:
-
-		/// Inherit constructor from base class.
-		using ParticleFrameData::ParticleFrameData;
-
-		/// Inserts the loaded data into the provided pipeline state structure. This function is
-		/// called by the system from the main thread after the asynchronous loading task has finished.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) override;
-
-		void addPattern(PatternInfo pattern) {
-			_patterns.push_back(std::move(pattern));
-		}
-
-		Cluster* createCluster(int patternId) {
-			return clusterGraph()->createCluster(patternId);
-		}
-
-		const std::shared_ptr<ClusterGraph>& clusterGraph() const {
-			OVITO_ASSERT(_clusterGraph);
-			return _clusterGraph;
-		}
-
-		const std::shared_ptr<DislocationNetwork>& dislocations() {
-			if(!_dislocations) _dislocations = std::make_shared<DislocationNetwork>(clusterGraph());
-			return _dislocations;
-		}
-
-		const std::unique_ptr<SurfaceMeshData>& defectSurface() const {
-			return _defectSurface;
-		}
-
-		void setDefectSurface(std::unique_ptr<SurfaceMeshData> mesh) {
-			_defectSurface = std::move(mesh);
-		}
-
-	protected:
-
-		/// The structure pattern catalog.
-		QVector<PatternInfo> _patterns;
-
-		/// The crystal cluster list.
-		ClusterGraphPtr _clusterGraph = std::make_shared<ClusterGraph>();
-
-		/// The dislocation lines.
-		std::shared_ptr<DislocationNetwork> _dislocations;
-
-		/// The defect surface mesh.
-		std::unique_ptr<SurfaceMeshData> _defectSurface;
-	};
-
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

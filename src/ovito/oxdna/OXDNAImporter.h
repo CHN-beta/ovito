@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/core/app/Application.h>
 
 namespace Ovito { namespace Particles {
@@ -68,10 +67,9 @@ public:
 	virtual QString objectTitle() const override { return tr("oxDNA"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		bool isInteractiveContext = (Application::instance()->executionContext() == Application::ExecutionContext::Interactive);
-		return std::make_shared<FrameLoader>(frame, file, topologyFileUrl(), isInteractiveContext);
+		return std::make_shared<FrameLoader>(request, topologyFileUrl());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -83,26 +81,22 @@ public:
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(const Frame& frame, const FileHandle& file, const QUrl& userSpecifiedTopologyUrl, bool isInteractiveContext) :
-			FileSourceImporter::FrameLoader(frame, file), 
-			_userSpecifiedTopologyUrl(userSpecifiedTopologyUrl), 
-			_isInteractiveContext(isInteractiveContext) {}
+		FrameLoader(const LoadOperationRequest& request, const QUrl& userSpecifiedTopologyUrl) :
+			ParticleImporter::FrameLoader(request), 
+			_userSpecifiedTopologyUrl(userSpecifiedTopologyUrl) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 
 		/// URL of the topology file if explicitly specified by the user.
 		QUrl _userSpecifiedTopologyUrl;
-
-		/// Are we running in the interactive environment?
-		bool _isInteractiveContext;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

@@ -21,13 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "IMDImporter.h"
-
-#include <QRegularExpression>
 
 namespace Ovito { namespace Particles {
 
@@ -51,7 +49,7 @@ bool IMDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
+void IMDImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -61,17 +59,11 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<ParticleFrameData>();
-
-	// Regular expression for whitespace characters.
-	QRegularExpression ws_re(QStringLiteral("\\s+"));
-
 	// Read first header line.
 	stream.readLine();
 	if(!stream.lineStartsWith("#F"))
 		throw Exception(tr("Not an IMD atom file."));
-	QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
+	QStringList tokens = FileImporter::splitString(stream.lineString());
 	if(tokens.size() < 2 || tokens[1] != "A")
 		throw Exception(tr("Not an IMD atom file in ASCII format."));
 
@@ -86,8 +78,8 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 		if(stream.line()[1] == '#') continue;
 		else if(stream.line()[1] == 'E') break;
 		else if(stream.line()[1] == 'C') {
-			QStringList tokens = stream.lineString().split(ws_re, QString::SkipEmptyParts);
-			columnMapping.resize(std::max(0, tokens.size() - 1));
+			QStringList tokens = FileImporter::splitString(stream.lineString());
+			columnMapping.resize(qMax(0, tokens.size() - 1));
 			for(int t = 1; t < tokens.size(); t++) {
 				const QString& token = tokens[t];
 				int columnIndex = t - 1;
@@ -126,7 +118,7 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 						if(isStandardProperty) break;
 					}
 					if(!isStandardProperty)
-						columnMapping.mapCustomColumn(columnIndex, token, PropertyStorage::Float);
+						columnMapping.mapCustomColumn(columnIndex, token, PropertyObject::Float);
 				}
 			}
 		}
@@ -144,7 +136,7 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 		}
 		else throw Exception(tr("Invalid header line key in IMD atom file (line %2).").arg(stream.lineNumber()));
 	}
-	frameData->simulationCell().setMatrix(cell);
+	simulationCell()->setCellMatrix(cell);
 
 	// Save file position.
 	qint64 headerOffset = stream.byteOffset();
@@ -157,18 +149,18 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 		numAtoms++;
 
 		if(isCanceled())
-			return {};
+			return;
 	}
-
+	setParticleCount(numAtoms);
 	setProgressMaximum(numAtoms);
 
 	// Jump back to beginning of atom list.
 	stream.seek(headerOffset, headerLineNumber);
 
 	// Parse data columns.
-	InputColumnReader columnParser(columnMapping, frameData->particles(), numAtoms);
+	InputColumnReader columnParser(columnMapping, particles(), executionContext());
 	for(size_t i = 0; i < numAtoms; i++) {
-		if(!setProgressValueIntermittent(i)) return {};
+		if(!setProgressValueIntermittent(i)) return;
 		try {
 			columnParser.readElement(i, stream.readLine());
 		}
@@ -176,13 +168,16 @@ FileSourceImporter::FrameDataPtr IMDImporter::FrameLoader::loadFile()
 			throw ex.prependGeneralMessage(tr("Parsing error in line %1 of IMD file.").arg(headerLineNumber + i));
 		}
 	}
+	columnParser.reset();
 
 	// Sort particles by ID if requested.
 	if(_sortParticles)
-		frameData->sortParticlesById();
+		particles()->sortById();
 
-	frameData->setStatus(tr("Number of particles: %1").arg(numAtoms));
-	return frameData;
+	state().setStatus(tr("Number of particles: %1").arg(numAtoms));
+
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

@@ -27,8 +27,8 @@
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/oo/RefTargetListener.h>
-#include "ModifierListModel.h"
 
 namespace Ovito {
 

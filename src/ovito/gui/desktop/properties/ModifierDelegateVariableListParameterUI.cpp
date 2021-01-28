@@ -29,7 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ModifierDelegateVariableListParameterUI);
-DEFINE_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates);
+DEFINE_VECTOR_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates);
 
 /******************************************************************************
 * Constructor.
@@ -46,7 +46,7 @@ ModifierDelegateVariableListParameterUI::ModifierDelegateVariableListParameterUI
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	toolbar->setFloatable(false);
 	toolbar->setIconSize(QSize(16,16));
-	QAction* addDelegateAction = toolbar->addAction(QIcon(":/gui/actions/animation/add_animation_key.bw.svg"), tr("Add entry"));
+	QAction* addDelegateAction = toolbar->addAction(QIcon(":/guibase/actions/animation/add_animation_key.bw.svg"), tr("Add entry"));
 	connect(addDelegateAction, &QAction::triggered, this, &ModifierDelegateVariableListParameterUI::onAddDelegate);
 	layout->addWidget(toolbar, 0, Qt::AlignRight | Qt::AlignTop);
 }
@@ -71,7 +71,7 @@ void ModifierDelegateVariableListParameterUI::resetUI()
 {
 	// Create our own copy of the list of delegates of the modifier.
 	if(editObject())
-		_delegates.set(this, PROPERTY_FIELD(delegates), static_object_cast<MultiDelegatingModifier>(editObject())->delegates());
+		_delegates.setTargets(this, PROPERTY_FIELD(delegates), static_object_cast<MultiDelegatingModifier>(editObject())->delegates());
 	else
 		_delegates.clear(this, PROPERTY_FIELD(delegates));
 
@@ -91,7 +91,7 @@ void ModifierDelegateVariableListParameterUI::updateUI()
 	ParameterUI::updateUI();
 
 	MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(editObject());
-	OVITO_ASSERT(!modifier || modifier->delegates() == delegates());
+	OVITO_ASSERT(!modifier || boost::range::equal(modifier->delegates(), delegates()));
 	OVITO_ASSERT(modifier || delegates().empty());
 	OVITO_ASSERT(_delegateBoxes.size() == delegates().size());
 
@@ -117,8 +117,14 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
 			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
-				OVITO_ASSERT(refevent.oldTarget() == _delegates[refevent.index()]);
+				OVITO_ASSERT(refevent.oldTarget() == delegates()[refevent.index()]);
 				_delegates.remove(this, PROPERTY_FIELD(delegates), refevent.index());
+			}
+		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
+				_delegates.set(this, PROPERTY_FIELD(delegates), refevent.index(), static_object_cast<ModifierDelegate>(refevent.newTarget()));
 			}
 		}
 		else if(event.type() == ReferenceEvent::ModifierInputChanged) {
@@ -145,7 +151,7 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
 		toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 		toolbar->setFloatable(false);
 		toolbar->setIconSize(QSize(16,16));
-		QAction* removeDelegateAction = toolbar->addAction(QIcon(":/gui/actions/animation/delete_animation_key.bw.svg"), tr("Remove entry"));
+		QAction* removeDelegateAction = toolbar->addAction(QIcon(":/guibase/actions/animation/delete_animation_key.bw.svg"), tr("Remove entry"));
 		connect(removeDelegateAction, &QAction::triggered, this, &ModifierDelegateVariableListParameterUI::onRemoveDelegate);
 		_removeDelegateActions.insert(listIndex, removeDelegateAction);
 		_delegateBoxes.insert(listIndex, comboBox);
@@ -179,6 +185,20 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 		editor()->container()->updateRolloutsLater();
 	}
 	ParameterUI::referenceRemoved(field, oldTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+******************************************************************************/
+void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
+		QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
+		QComboBox* comboBox = _delegateBoxes[listIndex];
+		ModifierDelegateParameterUI::populateComboBox(comboBox, static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
+			newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
+	}
+	ParameterUI::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -250,12 +270,12 @@ void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 
 	undoableTransaction(tr("Select modifier input"), [&]() {
 		MultiDelegatingModifier* modifier = static_object_cast<MultiDelegatingModifier>(editObject());
-		OVITO_ASSERT(modifier->delegates() == delegates());
+		OVITO_ASSERT(boost::range::equal(modifier->delegates(), delegates()));
 
 		ModifierDelegate* oldDelegate = delegates()[delegateIndex];
 		if(!oldDelegate || &oldDelegate->getOOClass() != delegateType || oldDelegate->inputDataObject() != ref) {
 			// Create the new delegate object.
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset()));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance(modifier->dataset(), ExecutionContext::Interactive));
 			// Set which input data object the delegate should operate on.
 			delegate->setInputDataObject(ref);
 			// Activate the new delegate.

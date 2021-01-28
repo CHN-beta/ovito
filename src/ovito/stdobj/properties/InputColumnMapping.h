@@ -24,11 +24,11 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
-#include <ovito/stdobj/properties/PropertyContainerImportData.h>
+#include <ovito/stdobj/properties/PropertyAccess.h>
 
 namespace Ovito { namespace StdObj {
 
@@ -70,7 +70,7 @@ public:
 	/// \param vectorComponent The component index if the target property is a vector property.
 	void mapStandardColumn(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = 0) {
 		OVITO_ASSERT(pclass);
-		OVITO_ASSERT(typeId != PropertyStorage::GenericUserProperty);
+		OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
 		this->property = PropertyReference(pclass, typeId, vectorComponent);
 		this->dataType = pclass->standardPropertyDataType(typeId);
 	}
@@ -217,10 +217,9 @@ public:
 	/// \brief Initializes the object.
 	/// \param mapping Defines the mapping of columns of the input file
 	///        to the target properties.
-	/// \param destination The container where the parsed data will be stored in.
-	/// \param elementCount The number of data elements that will be read from the input file.
+	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(const InputColumnMapping& mapping, PropertyContainerImportData& destination, size_t elementCount);
+	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ExecutionContext executionContext, bool removeExistingProperties = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);
@@ -245,6 +244,9 @@ public:
 	/// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
 	void sortElementTypes();
 
+	/// \brief Explicitly release the target properties written to by this class.
+	void reset() { _properties.clear(); }
+
 private:
 
 	/// Parse a single field from a text line.
@@ -257,25 +259,28 @@ private:
 	InputColumnMapping _mapping;
 
 	/// The container that receives the parsed data.
-	PropertyContainerImportData& _destination;
+	PropertyContainer* _container;
 
+	/// Indicates whether the file parsing is happening in an interactive GUI or in the context of a running script.
+	ExecutionContext _executionContext;
+	
 	struct TargetPropertyRecord {
-		PropertyPtr property;
+		PropertyObject* property = nullptr;
 		PropertyAccess<void,true> propertyArray;
 		uint8_t* data;
 		size_t stride;
 		size_t count;
 		int vectorComponent;
 		int dataType;
-		PropertyContainerImportData::TypeList* typeList = nullptr;
+		OvitoClassPtr elementTypeClass = nullptr;
 		bool numericElementTypes;
 		int nameOfNumericTypeColumn = -1;
 		std::pair<const char*, const char*> typeName{nullptr, nullptr};
 		int lastTypeId = -1;
 	};
 
-	/// Specifies the destinations for the column data.
-	QVector<TargetPropertyRecord> _properties;
+	/// Mapping of input file columns to target memory.
+	std::vector<TargetPropertyRecord> _properties;
 
 	/// Indicates that the element names of at least one typed property are read from 
 	/// a separate file column.

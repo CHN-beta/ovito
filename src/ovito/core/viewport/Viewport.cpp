@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,8 +53,8 @@ DEFINE_PROPERTY_FIELD(Viewport, isGridVisible);
 DEFINE_PROPERTY_FIELD(Viewport, stereoscopicMode);
 DEFINE_PROPERTY_FIELD(Viewport, viewportTitle);
 DEFINE_REFERENCE_FIELD(Viewport, viewNode);
-DEFINE_REFERENCE_FIELD(Viewport, overlays);
-DEFINE_REFERENCE_FIELD(Viewport, underlays);
+DEFINE_VECTOR_REFERENCE_FIELD(Viewport, overlays);
+DEFINE_VECTOR_REFERENCE_FIELD(Viewport, underlays);
 SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
@@ -367,7 +367,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(viewNode)) {
 		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
@@ -384,7 +384,10 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget
 		// Update viewport when the camera has been replaced by another scene node.
 		updateViewportTitle();
 	}
-	RefTarget::referenceReplaced(field, oldTarget, newTarget);
+	else if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
+		updateViewport();
+	}
+	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -623,7 +626,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 /******************************************************************************
 * Renders the viewport layers to an image buffer.
 ******************************************************************************/
-void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const QVector<ViewportOverlay*>& layers, SynchronousOperation& operation)
+void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
 {
 	// Let layers paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
 	QImage paintBuffer(vpSize, QImage::Format_ARGB32_Premultiplied);
@@ -646,7 +649,8 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 	}
 	std::shared_ptr<ImagePrimitive> paintBufferPrim = renderer->createImagePrimitive();
 	paintBufferPrim->setImage(paintBuffer);
-	paintBufferPrim->renderViewport(renderer, Point2(-1,-1), Vector2(2, 2));
+	paintBufferPrim->setRectViewport(renderer, Box2({-1,-1}, {1,1}));
+	renderer->renderImage(paintBufferPrim);
 }
 
 /******************************************************************************

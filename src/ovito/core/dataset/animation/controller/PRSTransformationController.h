@@ -48,6 +48,10 @@ public:
 	/// Default constructor.
 	Q_INVOKABLE PRSTransformationController(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
+
 	/// \brief Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }
 
@@ -150,15 +154,13 @@ public:
 private:
 
 	/// The sub-controller for translation.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, positionController, setPositionController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, positionController, setPositionController);
 
 	/// The sub-controller for rotation.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, rotationController, setRotationController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, rotationController, setRotationController);
 
 	/// The sub-controller for scaling.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, scalingController, setScalingController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, scalingController, setScalingController);
 };
 
 }	// End of namespace
-
-

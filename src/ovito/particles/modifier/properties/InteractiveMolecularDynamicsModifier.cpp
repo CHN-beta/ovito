@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/app/Application.h>
 #include "InteractiveMolecularDynamicsModifier.h"
 
 #include <QtEndian>
@@ -56,7 +57,11 @@ InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(DataS
 	connect(&_socket, &QAbstractSocket::stateChanged, this, &InteractiveMolecularDynamicsModifier::connectionStateChanged);
 
 	// Update modifier status whenever the a connection error occurs.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(&_socket, &QAbstractSocket::errorOccurred, this, &InteractiveMolecularDynamicsModifier::connectionError);
+#else
 	connect(&_socket, qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error), this, &InteractiveMolecularDynamicsModifier::connectionError);
+#endif
 
 	// Process incoming data. 
 	connect(&_socket, &QAbstractSocket::readyRead, this, &InteractiveMolecularDynamicsModifier::dataReceived);
@@ -244,7 +249,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardStorage(numCoords, ParticlesObject::PositionProperty, false);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false, Application::instance()->executionContext());
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return static_cast<Point3>(p); });
 
 				// Notify pipeline system that this modifier has new results. 
@@ -302,31 +307,29 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 	ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
 	outputParticles->verifyIntegrity();
 
-	// Try to replace particle positions with coordinates received from server.
-	PropertyObject* posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
-	if(_coordinates->size() != posProperty->size())
-		throwException(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(posProperty->size()).arg(_coordinates->size()));
+	if(_coordinates->size() != outputParticles->elementCount())
+		throwException(tr("Number of local particles (%1) does not match number of coordinates received from IMD server (%2).").arg(outputParticles->elementCount()).arg(_coordinates->size()));
 
-	posProperty->setStorage(_coordinates);
+	// Try to replace particle positions with coordinates received from server.
+	outputParticles->createProperty(_coordinates);
 
 	// Check if there are any bonds and a simulation cell with periodic boundary conditions.
+	// If so, their PBC flags need to be updated. 
 	if(outputParticles->bonds()) {
-		if(const SimulationCellObject* cellObj = state.getObject<SimulationCellObject>()) {
-			const SimulationCell cell = cellObj->data();
-			if(cell.hasPbc()) {
+		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+			if(cell->hasPbc()) {
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-					outputParticles->makeBondsMutable();
-					ConstPropertyAccess<Point3> positions(posProperty);
-					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+					ConstPropertyAccess<Point3> positions(_coordinates);
+					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
 					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
 						for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {
 							size_t index1 = topologyProperty[bondIndex][0];
 							size_t index2 = topologyProperty[bondIndex][1];
 							if(index1 < positions.size() && index2 < positions.size()) {
-								Vector3 delta = cell.absoluteToReduced(positions[index1] - positions[index2]);
+								Vector3 delta = cell->absoluteToReduced(positions[index1] - positions[index2]);
 								for(size_t dim = 0; dim < 3; dim++) {
-									if(cell.hasPbc(dim))
+									if(cell->hasPbc(dim))
 										periodicImageProperty[bondIndex][dim] = (int)std::round(delta[dim]);
 								}
 							}

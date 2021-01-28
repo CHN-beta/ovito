@@ -81,6 +81,7 @@ SET(SourceFiles
 	dataset/scene/SelectionSet.cpp
 	dataset/data/DataVis.cpp
 	dataset/data/DataObject.cpp
+	dataset/data/DataBuffer.cpp
 	dataset/data/DataCollection.cpp
 	dataset/data/TransformingDataVis.cpp
 	dataset/data/TransformedDataObject.cpp
@@ -116,14 +117,6 @@ SET(SourceFiles
 	utilities/concurrent/AsynchronousTask.cpp
 	utilities/mesh/TriMesh.cpp
 	rendering/SceneRenderer.cpp
-	rendering/noninteractive/NonInteractiveSceneRenderer.cpp
-	rendering/noninteractive/DefaultLinePrimitive.cpp
-	rendering/noninteractive/DefaultParticlePrimitive.cpp
-	rendering/noninteractive/DefaultTextPrimitive.cpp
-	rendering/noninteractive/DefaultImagePrimitive.cpp
-	rendering/noninteractive/DefaultArrowPrimitive.cpp
-	rendering/noninteractive/DefaultMeshPrimitive.cpp
-	rendering/noninteractive/DefaultMarkerPrimitive.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
 	viewport/Viewport.cpp
@@ -172,19 +165,16 @@ ELSE()
 	MESSAGE("zlib library not found. OVITO will be built without I/O support for gzip compressed data files.")
 ENDIF()
 
-# Compile Qt resources, which will be linked into the executable.
-QT5_ADD_RESOURCES(ResourceFiles resources/core.qrc)
-
 # Define library target.
 OVITO_STANDARD_PLUGIN(Core
-	SOURCES ${SourceFiles} ${ResourceFiles}
+	SOURCES ${SourceFiles} resources/core.qrc
 	LIB_DEPENDENCIES Boost::boost
 	PRECOMPILED_HEADERS Core.h
 )
 
 IF(NOT EMSCRIPTEN)
 	# Qt Network module is used by the Core module, except in the wasm build.
-	TARGET_LINK_LIBRARIES(Core PUBLIC Qt5::Network)
+	TARGET_LINK_LIBRARIES(Core PUBLIC ${OVITO_QT_MAJOR_VERSION}::Network)
 ENDIF()
 
 # Link to zlib.
@@ -240,8 +230,8 @@ ENDIF()
 IF(OVITO_BUILD_GUI)
 	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_GUI")
 ENDIF()
-IF(OVITO_BUILD_WEBGUI)
-	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_WEBGUI")
+IF(OVITO_QML_GUI)
+	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_QML_GUI")
 ENDIF()
 IF(OVITO_BUILD_PROFESSIONAL)
 	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_PROFESSIONAL")

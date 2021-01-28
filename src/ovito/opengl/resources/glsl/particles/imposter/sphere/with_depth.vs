@@ -24,27 +24,32 @@
 uniform mat4 modelviewprojection_matrix;
 uniform mat4 modelview_matrix;
 uniform float radius_scalingfactor;
-
-#if __VERSION__ >= 130
+uniform int picking_base_id;
+uniform bool is_picking_mode;
+uniform vec4 selection_color;
 
 // The particle data:
 in vec3 position;
-in vec4 color;
+in vec3 color;
+in float transparency;
 in float particle_radius;
+in int selection;
 
 // Output to geometry shader.
 out vec4 particle_color_gs;
 out float particle_radius_gs;
 out float particle_ze0_gs;
 
-#endif
-
 void main()
 {
-#if __VERSION__ >= 130
-	particle_color_gs = color;
+	if(!is_picking_mode) {
+		particle_color_gs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_gs = pickingModeColor(picking_base_id, gl_VertexID);
+	}
 	particle_radius_gs = particle_radius * radius_scalingfactor;
 	particle_ze0_gs = modelview_matrix[0][2] * position.x + modelview_matrix[1][2] * position.y + modelview_matrix[2][2] * position.z + modelview_matrix[3][2];
 	gl_Position = modelviewprojection_matrix * vec4(position, 1.0);
-#endif
 }

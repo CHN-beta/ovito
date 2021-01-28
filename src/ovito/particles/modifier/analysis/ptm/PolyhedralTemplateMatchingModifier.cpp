@@ -22,7 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
@@ -42,7 +42,7 @@ DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputInteratomicDista
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputOrientation);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputDeformationGradient);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputOrderingTypes);
-DEFINE_REFERENCE_FIELD(PolyhedralTemplateMatchingModifier, orderingTypes);
+DEFINE_VECTOR_REFERENCE_FIELD(PolyhedralTemplateMatchingModifier, orderingTypes);
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, rmsdCutoff, "RMSD cutoff");
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, outputRmsd, "Output RMSD values");
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, outputInteratomicDistance, "Output interatomic distance");
@@ -63,21 +63,30 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 		_outputDeformationGradient(false),
 		_outputOrderingTypes(false)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void PolyhedralTemplateMatchingModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Define the structure types.
-	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER);
-	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC);
-	createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP);
-	createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC);
-	createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO)->setEnabled(false);
-	createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC)->setEnabled(false);
-	createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND)->setEnabled(false);
-	createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND)->setEnabled(false);
-	createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE)->setEnabled(false);
+	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
+	createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
+	createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
+	createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, executionContext)->setEnabled(false);
+	createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE, executionContext)->setEnabled(false);
 
 	// Define the ordering types.
 	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-		OORef<ParticleType> otype = new ParticleType(dataset);
+		OORef<ParticleType> otype = OORef<ParticleType>::create(dataset(), executionContext);
 		otype->setNumericId(id);
+		otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")), executionContext);
 		otype->setColor({0.75f, 0.75f, 0.75f});
 		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
 	}
@@ -90,6 +99,8 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 	orderingTypes()[PTMAlgorithm::ORDERING_B2]->setName(tr("B2"));
 	orderingTypes()[PTMAlgorithm::ORDERING_ZINCBLENDE_WURTZITE]->setName(tr("Zincblende/Wurtzite"));
 	orderingTypes()[PTMAlgorithm::ORDERING_BORON_NITRIDE]->setName(tr("Boron/Nitride"));
+
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -107,11 +118,8 @@ void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDesc
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
-	if(structureTypes().size() != PTMAlgorithm::NUM_STRUCTURE_TYPES)
-		throwException(tr("The number of structure types has changed. Please remove this modifier from the data pipeline and insert it again."));
-
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -121,18 +129,45 @@ Future<AsynchronousModifier::EnginePtr> PolyhedralTemplateMatchingModifier::crea
 		throwException(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle types if needed.
-	ConstPropertyPtr typeProperty;
-	if(outputOrderingTypes())
-		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty)->storage();
+	const PropertyObject* typeProperty = outputOrderingTypes() ? particles->expectProperty(ParticlesObject::TypeProperty) : nullptr;
 
-	return std::make_shared<PTMEngine>(posProperty->storage(), particles, std::move(typeProperty), simCell->data(),
-			getTypesToIdentify(PTMAlgorithm::NUM_STRUCTURE_TYPES), std::move(selectionProperty),
+	return std::make_shared<PTMEngine>(modApp, executionContext, dataset(), posProperty, particles, typeProperty, simCell,
+			structureTypes(), orderingTypes(), selectionProperty,
 			outputInteratomicDistance(), outputOrientation(), outputDeformationGradient());
+}
+
+/******************************************************************************
+* Compute engine constructor.
+******************************************************************************/
+PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
+		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
+	StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
+	_rmsd(ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("RMSD"), false)),
+	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Interatomic Distance"), true) : nullptr),
+	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::OrientationProperty, true, executionContext) : nullptr),
+	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(dataset, positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true, executionContext) : nullptr),
+	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int, 1, 0, QStringLiteral("Ordering Type"), true) : nullptr),
+	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(dataset, positions->size(), PropertyObject::Int64, 1, 0, QStringLiteral("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
+	_rmsdHistogram(DataTable::OOClass().createUserProperty(dataset, 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
+{
+	_algorithm.emplace();
+	_algorithm->setCalculateDefGradient(outputDeformationGradient);
+	_algorithm->setIdentifyOrdering(particleTypes);
+	_algorithm->setRmsdCutoff(0.0); // Note: We do our own RMSD threshold filtering in postProcessStructureTypes().
+
+	// Attach ordering types to output particle property.
+	if(_orderingTypes) {
+		// Create deep copies of the elements types, because data objects owned by the modifier should
+		// not be passed to the data pipeline.
+		for(const ElementType* type : orderingTypes) {
+			// Attach element type to output particle property.
+			_orderingTypes->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
+		}
+	}
 }
 
 /******************************************************************************
@@ -143,12 +178,12 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 //TODO: separate pre-calculation of neighbor ordering, so that we don't have to call it again unless the pipeline has changed.
 //	i.e.: if user adds the option "Output RMSD", the old neighbor ordering is still valid.
 
-	if(cell().is2D())
+	if(cell() && cell()->is2D())
 		throw Exception(tr("The PTM modifier does not support 2D simulation cells."));
 
 	// Specify the structure types the PTM should look for.
-	for(int i = 0; i < typesToIdentify().size() && i < PTMAlgorithm::NUM_STRUCTURE_TYPES; i++) {
-		_algorithm->setStructureTypeIdentification(static_cast<PTMAlgorithm::StructureType>(i), typesToIdentify()[i]);
+	for(int i = 0; i < PTMAlgorithm::NUM_STRUCTURE_TYPES; i++) {
+		_algorithm->setStructureTypeIdentification(static_cast<PTMAlgorithm::StructureType>(i), typeIdentificationEnabled(i));
 	}
 
 	// Initialize the algorithm object.
@@ -247,8 +282,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 		return;
 
 	// Determine histogram bin size based on maximum RMSD value.
-	const size_t numHistogramBins = 100;
-	_rmsdHistogram = std::make_shared<PropertyStorage>(numHistogramBins, PropertyStorage::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	const size_t numHistogramBins = _rmsdHistogram->size();
 	FloatType rmsdHistogramBinSize = (rmsdArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(rmsdArray) / numHistogramBins) : 0;
 	if(rmsdHistogramBinSize <= 0) rmsdHistogramBinSize = 1;
 	_rmsdHistogramRange = rmsdHistogramBinSize * numHistogramBins;
@@ -285,7 +319,7 @@ PropertyPtr PolyhedralTemplateMatchingModifier::PTMEngine::postProcessStructureT
 	if(rmsdCutoff > 0 && rmsd()) {
 
 		// Start off with the original particle classifications and make a copy.
-		PropertyPtr finalStructureTypes = std::make_shared<PropertyStorage>(*structures);
+		PropertyPtr finalStructureTypes = structures.makeCopy();
 
 		// Mark those particles whose RMSD exceeds the cutoff as 'OTHER'.
 		ConstPropertyAccess<FloatType> rmdsArray(rmsd());
@@ -345,13 +379,11 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(TimePoint time,
 		particles->createProperty(deformationGradients());
 	}
 	if(orderingTypes() && modifier->outputOrderingTypes()) {
-		PropertyObject* orderingProperty = particles->createProperty(orderingTypes());
-		// Attach ordering types to output particle property.
-		orderingProperty->setElementTypes(modifier->orderingTypes());
+		particles->createProperty(orderingTypes());
 	}
 
 	// Output RMSD histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
 	table->setAxisLabelX(tr("RMSD"));
 	table->setIntervalStart(0);
 	table->setIntervalEnd(rmsdHistogramRange());

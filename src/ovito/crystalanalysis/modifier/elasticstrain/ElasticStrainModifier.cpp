@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ElasticStrainModifier.h"
 #include "ElasticStrainEngine.h"
 
@@ -56,6 +57,14 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 	_axialRatio(sqrt(8.0/3.0)),
 	_pushStrainTensorsForward(true)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ElasticStrainModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Create the structure types.
 	ParticleType::PredefinedStructureType predefTypes[] = {
 			ParticleType::PredefinedStructureType::OTHER,
@@ -67,19 +76,21 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 	};
 	OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
 	for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-		OORef<MicrostructurePhase> stype = new MicrostructurePhase(dataset);
+		DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
 		stype->setNumericId(id);
 		stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
 		stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-		stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
-		addStructureType(stype);
+		stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, executionContext));
+		addStructureType(std::move(stype));
 	}
+
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get modifier inputs.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -96,8 +107,8 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(particles, posProperty->storage(),
-			simCell->data(), inputCrystalStructure(), std::move(preferredCrystalOrientations),
+	return std::make_shared<ElasticStrainEngine>(modApp, executionContext, dataset(), particles, posProperty,
+			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
 			calculateDeformationGradients(), calculateStrainTensors(),
 			latticeConstant(), axialRatio(), pushStrainTensorsForward());
 }

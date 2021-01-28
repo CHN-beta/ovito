@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,23 +44,19 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
 	/// Constructor.
-	DislocationAnalysisEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell,
-			int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
+	DislocationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+			const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,
 			std::vector<Matrix3> preferredCrystalOrientations,
-			bool onlyPerfectDislocations, int defectMeshSmoothingLevel,
-			int lineSmoothingLevel, FloatType linePointInterval,
-			bool doOutputInterfaceMesh);
+			bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
+			int lineSmoothingLevel, FloatType linePointInterval);
 
 	/// Computes the modifier's results and stores them in this object for later retrieval.
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
 	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
-
-	/// Returns the generated defect mesh.
-	const SurfaceMeshData& defectMesh() const { return _defectMesh; }
 
 	/// Returns the array of atom cluster IDs.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -73,9 +69,6 @@ public:
 
 	/// Sets the created cluster graph.
 	void setClusterGraph(std::shared_ptr<ClusterGraph> graph) { _clusterGraph = std::move(graph); }
-
-	/// Returns the defect interface.
-	const HalfEdgeMeshPtr& outputInterfaceMesh() const { return _outputInterfaceMesh; }
 
 	/// Returns the extracted dislocations.
 	const std::shared_ptr<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
@@ -110,16 +103,10 @@ private:
 	ConstPropertyPtr _crystalClusters;
 
 	/// The defect mesh produced by the modifier.
-	SurfaceMeshData _defectMesh;
-
-	/// Indicates whether the engine should output the generated interface mesh to the pipeline for debugging purposes.
-	bool _doOutputInterfaceMesh;
+	DataOORef<SurfaceMesh> _defectMesh;
 
 	/// This stores the interface mesh produced by the modifier for visualization purposes.
-	HalfEdgeMeshPtr _outputInterfaceMesh;
-
-	/// Stores the vertex coordinates of the interface output mesh.
-	PropertyPtr _outputInterfaceMeshVerts;
+	DataOORef<SurfaceMesh> _outputInterfaceMesh;
 
 	/// This stores the cached atom-to-cluster assignments computed by the modifier.
 	PropertyPtr _atomClusters;

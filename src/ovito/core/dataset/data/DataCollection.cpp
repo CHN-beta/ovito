@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataCollection);
-DEFINE_REFERENCE_FIELD(DataCollection, objects);
+DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
 /******************************************************************************
@@ -101,6 +101,9 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 ******************************************************************************/
 void DataCollection::makeAllMutableRecursive()
 {
+	// Note: This method is not thread-safe. Must only be called from the main thread.
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	CloneHelper cloneHelper;
 	makeAllMutableImpl(this, cloneHelper);
 }
@@ -111,8 +114,7 @@ void DataCollection::makeAllMutableRecursive()
 void DataCollection::makeAllMutableImpl(DataObject* parent, CloneHelper& cloneHelper)
 {
 	parent->visitSubObjects([&](const DataObject* subObject) {
-		OVITO_ASSERT(subObject->numberOfStrongReferences() >= 1);
-		if(subObject->numberOfStrongReferences() > 1) {
+		if(!subObject->isSafeToModify()) {
 			OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
 			parent->replaceReferencesTo(subObject, clone);
 			subObject = clone;
@@ -143,7 +145,7 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
 	if(const DataObject* obj = getObject(objectClass))
 		return obj;
 	else {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 		}
 		else {
@@ -160,7 +162,7 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 {
 	const DataObject* obj = getLeafObject(objectClass, pathString);
 	if(!obj) {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -181,14 +183,14 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 ******************************************************************************/
 DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
 {
-	OVITO_ASSERT(obj != nullptr);
+	OVITO_CHECK_OBJECT_POINTER(obj);
 	OVITO_ASSERT(contains(obj));
-	OVITO_ASSERT(obj->numberOfStrongReferences() >= 1);
-	if(obj->numberOfStrongReferences() > 1) {
+	if(!obj->isSafeToModify()) {
 		OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
-		if(replaceObject(obj, clone)) {
-			OVITO_ASSERT(clone->numberOfStrongReferences() == 1);
-			return clone;
+		DataObject* clonedObj = clone.get();
+		if(replaceObject(obj, std::move(clone))) {
+			OVITO_ASSERT(clonedObj->isSafeToModify());
+			return clonedObj;
 		}
 	}
 	return const_cast<DataObject*>(obj);
@@ -202,7 +204,13 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, bool
 	DataObjectPath result;
 	DataObject* parent = this;
 	for(const DataObject* obj : path) {
-		result.push_back(parent->makeMutable(obj));
+		if(obj == this) {
+			OVITO_ASSERT(path.front() == this);
+			result.push_back(this);
+		}
+		else {
+			result.push_back(parent->makeMutable(obj));
+		}
 		parent = result.back();
 	}
 	return result;
@@ -269,7 +277,7 @@ ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& obj
 		// Perform a recursive path lookup of the requested object.
 		for(const DataObject* obj : objects()) {
 			result.push_back(obj);
-			if(getObjectImpl(objectClass, &pathString, result))
+			if(getObjectImpl(objectClass, pathString, result))
 				break;
 			result.pop_back();
 		}
@@ -293,7 +301,7 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 {
 	ConstDataObjectPath path = getObject(objectClass, pathString);
 	if(path.empty()) {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -317,7 +325,7 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 {
 	DataObjectPath path = getMutableObject(objectClass, pathString);
 	if(path.empty()) {
-		if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive) {
+		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -347,7 +355,7 @@ DataObject* DataCollection::expectMutableLeafObject(const DataObject::OOMetaClas
 /******************************************************************************
 * Implementation detail of getObject().
 ******************************************************************************/
-bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, ConstDataObjectPath& path)
+bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, ConstDataObjectPath& path)
 {
 	const DataObject* object = path.back();
 	if(pathString.isEmpty()) {
@@ -362,7 +370,11 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 		});
 	}
 	else {
-		int separatorPos = pathString.indexOf(QChar('/'));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+		qsizetype separatorPos = pathString.indexOf(QChar('/'));
+#else
+		int separatorPos = pathString.toString().indexOf(QChar('/'));
+#endif
 		if(separatorPos == -1) {
 			if(object->identifier() != pathString) return false;
 			if(objectClass.isMember(object)) return true;
@@ -375,7 +387,7 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 			});
 		}
 		else if(object->identifier() == pathString.left(separatorPos)) {
-			QStringRef subPath = pathString.mid(separatorPos + 1);
+			QStringView subPath = pathString.mid(separatorPos + 1);
 			return object->visitSubObjects([&](const DataObject* subObject) {
 				path.push_back(subObject);
 				if(getObjectImpl(objectClass, subPath, path))
@@ -395,7 +407,7 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 {
 	if(!pathString.isEmpty()) {
 		for(const DataObject* obj : objects()) {
-			if(const DataObject* result = getLeafObjectImpl(objectClass, &pathString, obj))
+			if(const DataObject* result = getLeafObjectImpl(objectClass, pathString, obj))
 				return result;
 		}
 		return nullptr;
@@ -413,7 +425,7 @@ const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& o
 /******************************************************************************
 * Implementation detail of getLeafObject().
 ******************************************************************************/
-const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringRef pathString, const DataObject* parent)
+const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClass& objectClass, QStringView pathString, const DataObject* parent)
 {
 	if(pathString.isEmpty()) {
 		if(objectClass.isMember(parent)) return parent;
@@ -426,13 +438,17 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 		return result;
 	}
 	else {
-		int separatorPos = pathString.indexOf(QChar('/'));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+		qsizetype separatorPos = pathString.indexOf(QChar('/'));
+#else
+		int separatorPos = pathString.toString().indexOf(QChar('/'));
+#endif
 		if(separatorPos == -1) {
 			if(objectClass.isMember(parent) && parent->identifier() == pathString)
 				return parent;
 		}
 		else if(parent->identifier() == pathString.left(separatorPos)) {
-			QStringRef subPath = pathString.mid(separatorPos + 1);
+			QStringView subPath = pathString.mid(separatorPos + 1);
 			const DataObject* result = nullptr;
 			parent->visitSubObjects([&](const DataObject* subObject) {
 				result = getLeafObjectImpl(objectClass, subPath, subObject);
@@ -534,7 +550,26 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 ******************************************************************************/
 AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, ExecutionContext::Scripting, std::move(value));
+}
+
+/******************************************************************************
+* Inserts a new global attribute into the pipeline state overwritting any 
+* existing attribute with the same name.
+******************************************************************************/
+AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
+{
+	for(const DataObject* obj : objects()) {
+		if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+			if(attribute->identifier() == key) {
+				AttributeDataObject* newAttribute = makeMutable(attribute);
+				newAttribute->setValue(std::move(value));
+				newAttribute->setDataSource(const_cast<PipelineObject*>(dataSource));
+				return newAttribute;
+			}
+		}
+	}
+	return createObject<AttributeDataObject>(key, dataSource, ExecutionContext::Scripting, std::move(value));
 }
 
 /******************************************************************************

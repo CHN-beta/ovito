@@ -35,6 +35,9 @@
 #include <QResource>
 #include <QtDebug>
 #include <QtGui>
+#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObjectFormat>
+#include <QAction>
 
 /*! \namespace Ovito::Gui
     \brief This namespace contains the graphical user interface classes.
@@ -58,6 +61,8 @@
 namespace Ovito {
 
     class MainWindowInterface;
+    class ActionManager;
+    class ViewportModeAction;
     class PickingSceneRenderer;
     class ViewportSceneRenderer;
     class ViewportInputManager;

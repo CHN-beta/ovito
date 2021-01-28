@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,8 +112,8 @@ void StringParameterUI::updateUI()
 		QVariant val;
 		if(isQtPropertyUI()) {
 			val = editObject()->property(propertyName());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert(QVariant::String), "StringParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
-			if(!val.isValid() || !val.canConvert(QVariant::String)) {
+			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "StringParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
+			if(!val.isValid() || !val.canConvert<QString>()) {
 				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
 		}
@@ -163,11 +163,11 @@ void StringParameterUI::updatePropertyValue()
 		undoableTransaction(tr("Change parameter"), [this,text]() {
 			if(isQtPropertyUI()) {
 				if(!editObject()->setProperty(propertyName(), text)) {
-					OVITO_ASSERT_MSG(false, "StringParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "StringParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editObject()->setPropertyFieldValue(*propertyField(), text);
+				editor()->changePropertyFieldValue(*propertyField(), text);
 			}
 			Q_EMIT valueEntered();
 		});

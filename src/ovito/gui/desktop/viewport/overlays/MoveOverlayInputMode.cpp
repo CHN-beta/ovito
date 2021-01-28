@@ -66,7 +66,7 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 			ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
 			if(layer && (vpwin->viewport()->overlays().contains(layer) || vpwin->viewport()->underlays().contains(layer))) {
 				_viewport = vpwin->viewport();
-				_startPoint = event->localPos();
+				_startPoint = getMousePosition(event);
 				viewport()->dataset()->undoStack().beginCompoundOperation(tr("Move overlay"));
 			}
 		}

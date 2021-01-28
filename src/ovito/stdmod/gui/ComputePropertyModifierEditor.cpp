@@ -79,7 +79,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 	});
 	connect(outputPropertyUI, &PropertyReferenceParameterUI::valueEntered, this, [this]() {
 		if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject())) {
-			if(modifier->delegate() && modifier->outputProperty().type() != PropertyStorage::GenericUserProperty)
+			if(modifier->delegate() && modifier->outputProperty().type() != PropertyObject::GenericUserProperty)
 				modifier->setPropertyComponentCount(modifier->delegate()->inputContainerClass()->standardPropertyComponentCount(modifier->outputProperty().type()));
 			else
 				modifier->setPropertyComponentCount(1);
@@ -197,7 +197,7 @@ void ComputePropertyModifierEditor::updateExpressionFields()
 	}
 
 	QStringList standardPropertyComponentNames;
-	if(!mod->outputProperty().isNull() && mod->outputProperty().type() != PropertyStorage::GenericUserProperty) {
+	if(!mod->outputProperty().isNull() && mod->outputProperty().type() != PropertyObject::GenericUserProperty) {
 		standardPropertyComponentNames = mod->outputProperty().containerClass()->standardPropertyComponentNames(mod->outputProperty().type());
 	}
 

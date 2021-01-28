@@ -127,7 +127,7 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 			case ParticlesObject::MoleculeTypeProperty: columnName = QStringLiteral("molecule_type"); break;
 			default:
 				columnName = pref.name();
-				columnName.remove(QRegExp("[^A-Za-z\\d_]"));
+				columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
 			}
 
 			// Find matching property
@@ -141,18 +141,18 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 				nCols++;
 
 			// Convert OVITO property data type to extended XYZ type code: 'I','R','S','L'
-			int dataType = property ? property->dataType() : PropertyStorage::Int;
+			int dataType = property ? property->dataType() : PropertyObject::Int;
 			QString dataTypeStr;
-			if(dataType == PropertyStorage::Float)
+			if(dataType == PropertyObject::Float)
 				dataTypeStr = QStringLiteral("R");
 			else if(dataType == qMetaTypeId<char>() || pref.type() == ParticlesObject::TypeProperty)
 				dataTypeStr = QStringLiteral("S");
-			else if(dataType == PropertyStorage::Int || dataType == PropertyStorage::Int64)
+			else if(dataType == PropertyObject::Int || dataType == PropertyObject::Int64)
 				dataTypeStr = QStringLiteral("I");
 			else if(dataType == qMetaTypeId<bool>())
 				dataTypeStr = QStringLiteral("L");
 			else
-				throwException(tr("Unexpected data type '%1' for property '%2'.").arg(QMetaType::typeName(dataType) ? QMetaType::typeName(dataType) : "unknown").arg(pref.name()));
+				throwException(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
 
 			if(!propertiesStr.isEmpty()) propertiesStr += QStringLiteral(":");
 			propertiesStr += QStringLiteral("%1:%2:%3").arg(columnName).arg(dataTypeStr).arg(nCols);

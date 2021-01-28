@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,17 +95,17 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 	textStream() << "CA_FILE_VERSION 6\n";
 	textStream() << "CA_LIB_VERSION 0.0.0\n";
 
-	std::vector<MicrostructurePhase*> crystalStructures;
+	std::vector<const MicrostructurePhase*> crystalStructures;
 	if(dislocationObj) {
-		for(MicrostructurePhase* phase : dislocationObj->crystalStructures()) {
+		for(const MicrostructurePhase* phase : dislocationObj->crystalStructures()) {
 			if(phase->numericId() != 0)
 				crystalStructures.push_back(phase);
 		}
 	}
 	else if(microstructureObj) {
 		const PropertyObject* phaseProperty = microstructureObj->regions()->expectProperty(SurfaceMeshRegions::PhaseProperty);
-		for(ElementType* t : phaseProperty->elementTypes()) {
-			if(MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(t))
+		for(const ElementType* t : phaseProperty->elementTypes()) {
+			if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(t))
 				if(phase->numericId() != 0)
 					crystalStructures.push_back(phase);
 		}
@@ -123,7 +123,7 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 		else if(s->dimensionality() == MicrostructurePhase::Dimensionality::Pointlike) textStream() << "TYPE POINTDEFECT\n";
 		textStream() << "BURGERS_VECTOR_FAMILIES " << s->burgersVectorFamilies().size() << "\n";
 		int bvfId = 0;
-		for(BurgersVectorFamily* bvf : s->burgersVectorFamilies()) {
+		for(const BurgersVectorFamily* bvf : s->burgersVectorFamilies()) {
 			textStream() << "BURGERS_VECTOR_FAMILY ID " << bvfId << "\n" << bvf->name() << "\n";
 			textStream() << bvf->burgersVector().x() << " " << bvf->burgersVector().y() << " " << bvf->burgersVector().z() << "\n";
 			textStream() << bvf->color().r() << " " << bvf->color().g() << " " << bvf->color().b() << "\n";
@@ -236,8 +236,8 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 
 	if(defectMesh && defectMesh->topology()->isClosed()) {
 		defectMesh->verifyMeshIntegrity();
-		const ConstPropertyPtr& vertexCoords = defectMesh->vertices()->getPropertyStorage(SurfaceMeshVertices::PositionProperty);
-		ConstHalfEdgeMeshPtr topology = defectMesh->topology();
+		const PropertyObject* vertexCoords = defectMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty);
+		const SurfaceMeshTopology* topology = defectMesh->topology();
 
 		// Serialize list of vertices.
 		textStream() << "DEFECT_MESH_VERTICES " << vertexCoords->size() << "\n";
@@ -247,8 +247,8 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 
 		// Serialize list of facets.
 		textStream() << "DEFECT_MESH_FACETS " << topology->faceCount() << "\n";
-		for(HalfEdgeMesh::face_index face = 0; face < topology->faceCount(); face++) {
-			HalfEdgeMesh::edge_index e = topology->firstFaceEdge(face);
+		for(SurfaceMesh::face_index face = 0; face < topology->faceCount(); face++) {
+			SurfaceMesh::edge_index e = topology->firstFaceEdge(face);
 			do {
 				textStream() << topology->vertex1(e) << " ";
 				e = topology->nextFaceEdge(e);
@@ -258,8 +258,8 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 		}
 
 		// Serialize face adjacency information.
-		for(HalfEdgeMesh::face_index face = 0; face < topology->faceCount(); face++) {
-			HalfEdgeMesh::edge_index e = topology->firstFaceEdge(face);
+		for(SurfaceMesh::face_index face = 0; face < topology->faceCount(); face++) {
+			SurfaceMesh::edge_index e = topology->firstFaceEdge(face);
 			do {
 				textStream() << topology->adjacentFace(topology->oppositeEdge(e)) << " ";
 				e = topology->nextFaceEdge(e);

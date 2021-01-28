@@ -12,7 +12,6 @@
 
 #include "qwt_global.h"
 #include "qwt_plot_seriesitem.h"
-#include "qwt_series_data.h"
 
 /*!
   \brief Abstract base class for bar chart items
@@ -80,8 +79,8 @@ public:
 
     virtual void getCanvasMarginHint(
         const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-        const QRectF &canvasRect,
-        double &left, double &top, double &right, double &bottom) const;
+        const QRectF &canvasRect, double &left, double &top,
+        double &right, double &bottom) const QWT_OVERRIDE;
 
 
 protected:

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include "VTKFileImporter.h"
-#include "TriMeshFrameData.h"
 
 namespace Ovito { namespace Mesh {
 
@@ -59,7 +58,7 @@ bool VTKFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Parses the given input file and stores the data in the given container object.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
+void VTKFileImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -100,12 +99,12 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 	if(sscanf(stream.line() + 6, "%i", &pointCount) != 1 || pointCount < 0)
 		throw Exception(tr("Invalid number of points in VTK file (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-	// Create output data.
-	auto frameData = std::make_shared<TriMeshFrameData>();
+	// Create mesh data structure.
+	TriMeshPtr mesh = std::make_shared<TriMesh>();
 
 	// Parse point coordinates.
-	frameData->mesh().setVertexCount(pointCount);
-	auto v = frameData->mesh().vertices().begin();
+	mesh->setVertexCount(pointCount);
+	auto v = mesh->vertices().begin();
 	size_t component = 0;
 	for(int i = 0; i < pointCount; ) {
 		if(stream.eof())
@@ -122,7 +121,7 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 			while(*s > ' ') ++s;						// Proceed to end of token
 		}
 	}
-	frameData->mesh().invalidateVertices();
+	mesh->invalidateVertices();
 
 	int polygonCount;
 	if(!isPolyData) {
@@ -152,14 +151,14 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 			if(j >= 2) {
 				if(vindices[0] >= pointCount || vindices[1] >= pointCount || vindices[2] >= pointCount)
 					throw Exception(tr("Vertex indices out of range in polygon/cell (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
-				TriMeshFace& f = frameData->mesh().addFace();
+				TriMeshFace& f = mesh->addFace();
 				f.setVertices(vindices[0], vindices[1], vindices[2]);
 				vindices[1] = vindices[2];
 			}
 		}
 	}
-	frameData->mesh().determineEdgeVisibility();
-	frameData->mesh().invalidateFaces();
+	mesh->determineEdgeVisibility();
+	mesh->invalidateFaces();
 
 	if(!isPolyData) {
 		// Parse cell types
@@ -184,8 +183,8 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 			if(sscanf(stream.line(), "COLOR_SCALARS %*s %i", &componentCount) != 1 || (componentCount != 3 && componentCount != 4))
 				throw Exception(tr("Invalid COLOR_SCALARS property in line %1 of VTK file. Component count must be 3 or 4.").arg(stream.lineNumber()));
 			if(!isPointData) {
-				frameData->mesh().setHasFaceColors(true);
-				auto& faceColors = frameData->mesh().faceColors();
+				mesh->setHasFaceColors(true);
+				auto& faceColors = mesh->faceColors();
 				std::fill(faceColors.begin(), faceColors.end(), ColorA(1,1,1,1));
 				component = 0;
 				for(int i = 0; i < polygonCount;) {
@@ -203,11 +202,11 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 						while(*s > ' ') ++s;						// Proceed to end of token
 					}
 				}
-				frameData->mesh().invalidateFaces();
+				mesh->invalidateFaces();
 			}
 			else {
-				frameData->mesh().setHasVertexColors(true);
-				auto& vertexColors = frameData->mesh().vertexColors();
+				mesh->setHasVertexColors(true);
+				auto& vertexColors = mesh->vertexColors();
 				std::fill(vertexColors.begin(), vertexColors.end(), ColorA(1,1,1,1));
 				component = 0;
 				for(int i = 0; i < pointCount;) {
@@ -225,7 +224,7 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 						while(*s > ' ') ++s;						// Proceed to end of token
 					}
 				}
-				frameData->mesh().invalidateVertices();
+				mesh->invalidateVertices();
 			}
 		}
 	}
@@ -233,8 +232,14 @@ FileSourceImporter::FrameDataPtr VTKFileImporter::FrameLoader::loadFile()
 		// ...to be implemented.
 	}
 
-	frameData->setStatus(tr("%1 vertices, %2 triangles").arg(pointCount).arg(frameData->mesh().faceCount()));
-	return frameData;
+	// Show some stats to the user.
+	state().setStatus(tr("%1 vertices, %2 triangles").arg(pointCount).arg(mesh->faceCount()));
+
+	// Add mesh to the data collection.
+	TriMeshObject* meshObj = state().getMutableObject<TriMeshObject>();
+	if(!meshObj)
+		meshObj = state().createObject<TriMeshObject>(dataSource(), executionContext());
+	meshObj->setMesh(std::move(mesh));	
 }
 
 /******************************************************************************

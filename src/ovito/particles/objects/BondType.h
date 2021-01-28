@@ -42,8 +42,8 @@ public:
 	/// \brief Constructs a new bond type.
 	Q_INVOKABLE BondType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId) override;
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	//////////////////////////////////// Utility methods ////////////////////////////////
 
@@ -55,17 +55,6 @@ public:
 				m.insert({ type->numericId(), bondType->radius() });
 		return m;
 	}
-
-	//////////////////////////////////// Default settings ////////////////////////////////
-
-	/// Returns the default color for the bond type with the given ID.
-	static Color getDefaultBondColorForId(BondsObject::Type typeClass, int bondTypeId);
-
-	/// Returns the default color for a named bond type.
-	static Color getDefaultBondColor(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults = true);
-
-	/// Returns the default radius for a named bond type.
-	static FloatType getDefaultBondRadius(BondsObject::Type typeClass, const QString& bondTypeName, int bondTypeId, bool userDefaults = true);
 
 private:
 

@@ -26,7 +26,8 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 namespace Ovito { namespace Particles {
@@ -61,7 +62,7 @@ public:
 		ConventionalMode,	///< Performs the conventional CSP.
 		MatchingMode,		///< Performs the minimum-weight matching CSP.
 	};
-	Q_ENUMS(CSPMode);
+	Q_ENUM(CSPMode);
 
 	/// The maximum number of neighbors that can be taken into account to compute the CSP.
 	enum { MAX_CSP_NEIGHBORS = 32 };
@@ -74,7 +75,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// Computes the centrosymmetry parameter of a single particle.
 	static FloatType computeCSP(NearestNeighborFinder& neighList, size_t particleIndex, CSPMode mode);
@@ -87,13 +88,15 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell& simCell, int nneighbors, CSPMode mode) :
+		CentroSymmetryEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+			Engine(dataSource, executionContext),
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false)),
-			_inputFingerprint(std::move(fingerprint)) {}
+			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false, executionContext)),
+			_inputFingerprint(std::move(fingerprint)),
+			_histogram(std::move(histogram)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -108,25 +111,19 @@ private:
 		const ConstPropertyPtr& positions() const { return _positions; }
 
 		/// Returns the simulation cell data.
-		const SimulationCell& cell() const { return _simCell; }
-
-		/// Returns the CSP value range of the histogram.
-		FloatType cspHistogramRange() const { return _cspHistogramRange; }
-
-		/// Returns the histogram of computed CSP values.
-		const PropertyPtr& cspHistogram() const { return _cspHistogram; }
+		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
 	private:
 
 		const int _nneighbors;
         const CSPMode _mode;
-		const SimulationCell _simCell;
+		DataOORef<const SimulationCellObject> _simCell;
 		ConstPropertyPtr _positions;
 		const PropertyPtr _csp;
 		ParticleOrderingFingerprint _inputFingerprint;
 
-		PropertyPtr _cspHistogram;
-		FloatType _cspHistogramRange;
+		/// The computed distribution of the CSP values.
+		DataOORef<DataTable> _histogram;
 	};
 
 	/// Specifies the number of nearest neighbors to take into account when computing the CSP.

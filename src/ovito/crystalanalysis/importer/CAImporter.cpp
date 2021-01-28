@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,8 +26,7 @@
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/io/FileSource.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CAImporter.h"
 
@@ -96,7 +95,7 @@ void CAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::F
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
+void CAImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
@@ -115,8 +114,22 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 	if(!stream.lineStartsWith("CA_LIB_VERSION"))
 		throw Exception(tr("Failed to parse file. This is not a proper CA file written by OVITO or the Crystal Analysis Tool."));
 
-	// Create the destination container for loaded data.
-	auto frameData = std::make_shared<CrystalAnalysisFrameData>();
+	struct BurgersVectorFamilyInfo {
+		int id = 0;
+		QString name;
+		Vector3 burgersVector = Vector3::Zero();
+		Color color = Color(1,1,1);
+	};
+
+	struct PatternInfo {
+		int id = 0;
+		MicrostructurePhase::Dimensionality type = MicrostructurePhase::Dimensionality::Volumetric;
+		MicrostructurePhase::CrystalSymmetryClass symmetryType = MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry;
+		QString shortName;
+		QString longName;
+		Color color = Color(1,1,1);
+		QVector<BurgersVectorFamilyInfo> burgersVectorFamilies;
+	};
 
 	QString caFilename;
 	QString atomsFilename;
@@ -125,6 +138,10 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 	int numClusters = 0;
 	int numClusterTransitions = 0;
 	int numDislocationSegments = 0;
+	SurfaceMeshAccess defectSurface;
+	ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
+	std::shared_ptr<DislocationNetwork> dislocations;
+	QVector<PatternInfo> patterns;
 
 	while(!stream.eof()) {
 		stream.readLineTrimLeft();
@@ -143,7 +160,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 				throw Exception(tr("Failed to parse file. Invalid number of structure types in line %1.").arg(stream.lineNumber()));
 			std::vector<int> patternId2Index;
 			for(int index = 0; index < numPatterns; index++) {
-				CrystalAnalysisFrameData::PatternInfo pattern;
+				PatternInfo pattern;
 				if(fileFormatVersion <= 4) {
 					if(sscanf(stream.readLine(), "PATTERN ID %i", &pattern.id) != 1)
 						throw Exception(tr("Failed to parse file. Invalid pattern ID in line %1.").arg(stream.lineNumber()));
@@ -179,7 +196,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 						if(sscanf(stream.line(), "BURGERS_VECTOR_FAMILIES %i", &numFamilies) != 1 || numFamilies < 0)
 							throw Exception(tr("Failed to parse file. Invalid number of Burgers vectors families in line %1.").arg(stream.lineNumber()));
 						for(int familyIndex = 0; familyIndex < numFamilies; familyIndex++) {
-							CrystalAnalysisFrameData::BurgersVectorFamilyInfo family;
+							BurgersVectorFamilyInfo family;
 							if(sscanf(stream.readLine(), "BURGERS_VECTOR_FAMILY ID %i", &family.id) != 1)
 								throw Exception(tr("Failed to parse file. Invalid Burgers vector family ID in line %1.").arg(stream.lineNumber()));
 							stream.readLine();
@@ -196,7 +213,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 				}
 				if(pattern.longName.isEmpty())
 					pattern.longName = pattern.shortName;
-				frameData->addPattern(std::move(pattern));
+				patterns.push_back(std::move(pattern));
 			}
 		}
 		else if(stream.lineStartsWith("SIMULATION_CELL_ORIGIN ")) {
@@ -230,7 +247,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 			setProgressMaximum(numClusters);
 			for(int index = 0; index < numClusters; index++) {
 				if(!setProgressValueIntermittent(index))
-					return {};
+					return;
 				if(fileFormatVersion <= 4) {
 					int patternId = 0, clusterId = 0, clusterProc = 0;
 					stream.readLine();
@@ -238,7 +255,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 						throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
 					if(sscanf(stream.readLine(), "%i", &patternId) != 1)
 						throw Exception(tr("Failed to parse file. Invalid cluster pattern index in line %1.").arg(stream.lineNumber()));
-					Cluster* cluster = frameData->createCluster(patternId);
+					Cluster* cluster = clusterGraph->createCluster(patternId);
 					OVITO_ASSERT(cluster->structure != 0);
 					if(sscanf(stream.readLine(), "%i", &cluster->atomCount) != 1)
 						throw Exception(tr("Failed to parse file. Invalid cluster atom count in line %1.").arg(stream.lineNumber()));
@@ -289,7 +306,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 						else if(stream.lineStartsWith("END_CLUSTER"))
 							break;
 					}
-					Cluster* cluster = frameData->createCluster(patternId);
+					Cluster* cluster = clusterGraph->createCluster(patternId);
 					if(cluster->id != clusterId)
 						throw Exception(tr("Failed to parse file. Invalid cluster id: %1.").arg(clusterId));
 					cluster->atomCount = atomCount;
@@ -307,7 +324,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 			setProgressMaximum(numClusterTransitions);
 			for(int index = 0; index < numClusterTransitions; index++) {
 				if(!setProgressValueIntermittent(index))
-					return {};
+					return;
 				int clusterIndex1, clusterIndex2;
 				if(sscanf(stream.readLine(), "TRANSITION %i %i", &clusterIndex1, &clusterIndex2) != 2 || clusterIndex1 >= numClusters || clusterIndex2 >= numClusters) {
 					throw Exception(tr("Failed to parse file. Invalid cluster transition in line %1.").arg(stream.lineNumber()));
@@ -320,7 +337,7 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 						&tm(1,0), &tm(1,1), &tm(1,2),
 						&tm(2,0), &tm(2,1), &tm(2,2)) != 9)
 					throw Exception(tr("Failed to parse file. Invalid cluster transition matrix in line %1.").arg(stream.lineNumber()));
-				frameData->clusterGraph()->createClusterTransition(frameData->clusterGraph()->clusters()[clusterIndex1+1], frameData->clusterGraph()->clusters()[clusterIndex2+1], tm);
+				clusterGraph->createClusterTransition(clusterGraph->clusters()[clusterIndex1+1], clusterGraph->clusters()[clusterIndex2+1], tm);
 			}
 		}
 		else if(stream.lineStartsWith("DISLOCATIONS ")) {
@@ -329,9 +346,10 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 				throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
 			setProgressText(tr("Reading dislocations"));
 			setProgressMaximum(numDislocationSegments);
+			dislocations = std::make_shared<DislocationNetwork>(clusterGraph);
 			for(int index = 0; index < numDislocationSegments; index++) {
 				if(!setProgressValueIntermittent(index))
-					return {};
+					return;
 				int segmentId;
 				if(sscanf(stream.readLine(), "%i", &segmentId) != 1)
 					throw Exception(tr("Failed to parse file. Invalid segment ID in line %1.").arg(stream.lineNumber()));
@@ -345,18 +363,18 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 					int clusterIndex;
 					if(sscanf(stream.readLine(), "%i", &clusterIndex) != 1 || clusterIndex < 0 || clusterIndex >= numClusters)
 						throw Exception(tr("Failed to parse file. Invalid cluster index in line %1.").arg(stream.lineNumber()));
-					cluster = frameData->clusterGraph()->clusters()[clusterIndex+1];
+					cluster = clusterGraph->clusters()[clusterIndex+1];
 				}
 				else {
 					int clusterId;
 					if(sscanf(stream.readLine(), "%i", &clusterId) != 1 || clusterId <= 0)
 						throw Exception(tr("Failed to parse file. Invalid cluster ID in line %1.").arg(stream.lineNumber()));
-					cluster = frameData->clusterGraph()->findCluster(clusterId);
+					cluster = clusterGraph->findCluster(clusterId);
 				}
 				if(!cluster)
 					throw Exception(tr("Failed to parse file. Invalid cluster reference in line %1.").arg(stream.lineNumber()));
 
-				DislocationSegment* segment = frameData->dislocations()->createSegment(ClusterVector(burgersVector, cluster));
+				DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector, cluster));
 
 				// Read polyline.
 				int numPoints;
@@ -387,9 +405,8 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 				}
 			}
 		}
-		else if(stream.lineStartsWith("DISLOCATION_JUNCTIONS")) {
+		else if(stream.lineStartsWith("DISLOCATION_JUNCTIONS") && dislocations) {
 			// Read dislocation junctions.
-			auto dislocations = frameData->dislocations();
 			for(int index = 0; index < numDislocationSegments; index++) {
 				DislocationSegment* segment = dislocations->segments()[index];
 				for(int nodeIndex = 0; nodeIndex < 2; nodeIndex++) {
@@ -401,32 +418,46 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
+
+			// Create surface mesh.
+			SurfaceMesh* defectSurfaceObj;
+			if(const SurfaceMesh* existingSurfaceObj = state().getObject<SurfaceMesh>()) {
+				defectSurfaceObj = state().makeMutable(existingSurfaceObj);
+			}
+			else {
+				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), executionContext(), tr("Defect mesh"));
+				SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
+				vis->setShowCap(true);
+				vis->setSmoothShading(true);
+				vis->setReverseOrientation(true);
+				vis->setCapTransparency(0.5);
+				vis->setObjectTitle(tr("Defect mesh"));
+			}
+			defectSurface.reset(defectSurfaceObj);
+			defectSurface.clearMesh();
 			// Read defect mesh vertices.
 			int numDefectMeshVertices;
 			if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
 				throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
 			setProgressText(tr("Reading defect surface"));
 			setProgressMaximum(numDefectMeshVertices);
-			std::unique_ptr<SurfaceMeshData> defectSurface = std::make_unique<SurfaceMeshData>();
 			for(int index = 0; index < numDefectMeshVertices; index++) {
-				if(!setProgressValueIntermittent(index)) return {};
+				if(!setProgressValueIntermittent(index)) return;
 				Point3 p;
 				if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
 					throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
-				defectSurface->createVertex(p);
+				defectSurface.createVertex(p);
 			}
-			frameData->setDefectSurface(std::move(defectSurface));
 		}
-		else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && frameData->defectSurface()) {
+		else if(stream.lineStartsWith("DEFECT_MESH_FACETS ") && defectSurface) {
 			// Read defect mesh facets.
 			int numDefectMeshFacets;
 			if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
 				throw Exception(tr("Failed to parse file. Invalid number of defect mesh facets in line %1.").arg(stream.lineNumber()));
 			setProgressMaximum(numDefectMeshFacets * 2);
-			SurfaceMeshData& defectSurface = *frameData->defectSurface();
 			for(int index = 0; index < numDefectMeshFacets; index++) {
 				if(!setProgressValueIntermittent(index))
-					return {};
+					return;
 				int v[3];
 				if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3
 					 	|| v[0] < 0 || v[0] >= defectSurface.vertexCount()
@@ -439,15 +470,15 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 			// Read facet adjacency information.
 			for(int index = 0; index < numDefectMeshFacets; index++) {
 				if(!setProgressValueIntermittent(index + numDefectMeshFacets))
-					return {};
+					return;
 				int v[3];
 				if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
 					throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
-				HalfEdgeMesh::edge_index edge = defectSurface.firstFaceEdge(index);
+				SurfaceMesh::edge_index edge = defectSurface.firstFaceEdge(index);
 				for(int i = 0; i < 3; i++, edge = defectSurface.nextFaceEdge(edge)) {
 					if(defectSurface.hasOppositeEdge(edge)) continue;
-					HalfEdgeMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
-					if(oppositeEdge == HalfEdgeMesh::InvalidIndex)
+					SurfaceMesh::edge_index oppositeEdge = defectSurface.findEdge(v[i], defectSurface.vertex2(edge), defectSurface.vertex1(edge));
+					if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
 						throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));
 					defectSurface.linkOppositeEdges(edge, oppositeEdge);
 				}
@@ -457,14 +488,14 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 			int timestep;
 			if(sscanf(stream.line(), "METADATA SIMULATION_TIMESTEP %i", &timestep) != 1)
 				throw Exception(tr("CA file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-			frameData->attributes().insert(QStringLiteral("Timestep"), QVariant::fromValue(timestep));
+			state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
 		}
 		else if(stream.lineStartsWith("METADATA ")) {
 			// Ignore. This is for future use.
 		}
 		else if(stream.lineStartsWith("CA_FILE_VERSION ")) {
 			// Beginning of next frame.
-			frameData->signalAdditionalFrames();
+			signalAdditionalFrames();
 			break;
 		}
 		else if(stream.line()[0] != '\0') {
@@ -472,115 +503,68 @@ FileSourceImporter::FrameDataPtr CAImporter::FrameLoader::loadFile()
 		}
 	}
 
-	frameData->simulationCell().setMatrix(cell);
-	frameData->simulationCell().setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
-
-	frameData->setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
-	return frameData;
-}
-
-/******************************************************************************
-* Inserts the data loaded by perform() into the provided pipeline state.
-* This function is called by the system from the main thread after the
-* asynchronous loading task has finished.
-******************************************************************************/
-OORef<DataCollection> CAImporter::CrystalAnalysisFrameData::handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource)
-{
-	// Output simulation cell.
-	OORef<DataCollection> output = ParticleFrameData::handOver(existing, isNewFile, cloneHelper, fileSource);
-
-	// Output defect surface.
-	if(defectSurface()) {
-		OORef<SurfaceMesh> defectSurfaceObj;
-		if(const SurfaceMesh* existingSurfaceObj = existing ? existing->getObject<SurfaceMesh>() : nullptr) {
-			defectSurfaceObj = cloneHelper.cloneObject(existingSurfaceObj, false);
-			output->addObject(defectSurfaceObj);
-		}
-		else {
-			defectSurfaceObj = output->createObject<SurfaceMesh>(fileSource, tr("Defect mesh"));
-			OORef<SurfaceMeshVis> vis = new SurfaceMeshVis(fileSource->dataset());
-			vis->setShowCap(true);
-			vis->setSmoothShading(true);
-			vis->setReverseOrientation(true);
-			vis->setCapTransparency(0.5);
-			vis->setObjectTitle(tr("Defect mesh"));
-			if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-				vis->loadUserDefaults();
-			defectSurfaceObj->setVisElement(vis);
-		}
-		defectSurface()->transferTo(defectSurfaceObj);
-		defectSurfaceObj->setDomain(output->getObject<SimulationCellObject>());
-	}
+	simulationCell()->setCellMatrix(cell);
+	simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
+	if(defectSurface)
+		defectSurface.setCell(simulationCell());
 
 	// Insert cluster graph.
-	if(_clusterGraph) {
-		ClusterGraphObject* clusterGraphObj = output->createObject<ClusterGraphObject>(fileSource);
-		clusterGraphObj->setStorage(clusterGraph());
+	if(clusterGraph) {
+		ClusterGraphObject* clusterGraphObj;
+		if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
+			clusterGraphObj = state().makeMutable(existingClusterGraphObj);
+		}
+		else {
+			clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource(), executionContext());
+		}
+		clusterGraphObj->setStorage(std::move(clusterGraph));
 	}
 
 	// Insert dislocations.
-	if(_dislocations) {
-		OORef<DislocationNetworkObject> dislocationNetwork;
-		if(const DislocationNetworkObject* existingDislocationsObj = existing ? existing->getObject<DislocationNetworkObject>() : nullptr) {
-			dislocationNetwork = cloneHelper.cloneObject(existingDislocationsObj, false);
-			output->addObject(dislocationNetwork);
+	if(dislocations) {
+		DislocationNetworkObject* dislocationNetwork;
+		if(const DislocationNetworkObject* existingDislocationsObj = state().getObject<DislocationNetworkObject>()) {
+			dislocationNetwork = state().makeMutable(existingDislocationsObj);
 		}
 		else {
-			dislocationNetwork = output->createObject<DislocationNetworkObject>(fileSource);
-			OORef<DislocationVis> vis = new DislocationVis(fileSource->dataset());
-			if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-				vis->loadUserDefaults();
-			dislocationNetwork->setVisElement(vis);
+			dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource(), executionContext());
 		}
-		dislocationNetwork->setDomain(output->getObject<SimulationCellObject>());
-		dislocationNetwork->setStorage(dislocations());
+		dislocationNetwork->setDomain(simulationCell());
+		dislocationNetwork->setStorage(dislocations);
 
 		// Update structure catalog.
-		for(int i = 0; i < _patterns.size(); i++) {
-			OORef<MicrostructurePhase> pattern;
-			if(dislocationNetwork->crystalStructures().size() > i+1) {
-				pattern = dislocationNetwork->crystalStructures()[i+1];
-			}
-			else {
-				pattern.reset(new MicrostructurePhase(dislocationNetwork->dataset()));
-				dislocationNetwork->addCrystalStructure(pattern);
-			}
-			if(pattern->shortName() != _patterns[i].shortName)
-				pattern->setColor(_patterns[i].color);
-			pattern->setShortName(_patterns[i].shortName);
-			pattern->setLongName(_patterns[i].longName);
-			pattern->setDimensionality(_patterns[i].type);
-			pattern->setNumericId(_patterns[i].id);
-			pattern->setCrystalSymmetryClass(_patterns[i].symmetryType);
+		for(int i = 0; i < patterns.size(); i++) {
+			if(dislocationNetwork->structureByName(patterns[i].longName))
+				continue;
 
-			// Update Burgers vector families.
-			for(int j = 0; j < _patterns[i].burgersVectorFamilies.size(); j++) {
-				OORef<BurgersVectorFamily> family;
-				if(j < pattern->burgersVectorFamilies().size()) {
-					family = pattern->burgersVectorFamilies()[j];
-				}
-				else {
-					family.reset(new BurgersVectorFamily(pattern->dataset()));
-					pattern->addBurgersVectorFamily(family);
-				}
-				if(family->name() != _patterns[i].burgersVectorFamilies[j].name)
-					family->setColor(_patterns[i].burgersVectorFamilies[j].color);
-				family->setName(_patterns[i].burgersVectorFamilies[j].name);
-				family->setBurgersVector(_patterns[i].burgersVectorFamilies[j].burgersVector);
+			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create(dataset(), executionContext());
+			pattern->setColor(patterns[i].color);
+			pattern->setShortName(patterns[i].shortName);
+			pattern->setLongName(patterns[i].longName);
+			pattern->setDimensionality(patterns[i].type);
+			pattern->setNumericId(patterns[i].id);
+			pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
+			dislocationNetwork->addCrystalStructure(pattern);
+
+			// Add Burgers vector families.
+			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
+				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());
+				family->setColor(patterns[i].burgersVectorFamilies[j].color);
+				family->setName(patterns[i].burgersVectorFamilies[j].name);
+				family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
+				pattern->addBurgersVectorFamily(family);
 			}
-			// Remove excess families.
-			for(int j = pattern->burgersVectorFamilies().size() - 1; j >= _patterns[i].burgersVectorFamilies.size(); j--)
-				pattern->removeBurgersVectorFamily(j);
-			// Make sure there is a default family.
+
+			// Make sure there always is a default family.
 			if(pattern->burgersVectorFamilies().empty())
-				pattern->addBurgersVectorFamily(new BurgersVectorFamily(pattern->dataset()));
+				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext()));
 		}
-		// Remove excess patterns from the catalog.
-		for(int i = dislocationNetwork->crystalStructures().size() - 1; i > _patterns.size(); i--)
-			dislocationNetwork->removeCrystalStructure(i);
 	}
 
-	return output;
+	state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
+	
+	// Call base implementation to finalize the loaded data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

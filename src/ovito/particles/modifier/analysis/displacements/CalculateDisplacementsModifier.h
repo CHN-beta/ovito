@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 
 namespace Ovito { namespace Particles {
 
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceCo
 
 	Q_CLASSINFO("DisplayName", "Displacement vectors");
 	Q_CLASSINFO("Description", "Calculate the displacements of particles based on two input configurations.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -53,10 +53,14 @@ public:
 	/// Constructor.
 	Q_INVOKABLE CalculateDisplacementsModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
 
 private:
 
@@ -66,20 +70,24 @@ private:
 	public:
 
 		/// Constructor.
-		DisplacementEngine(const TimeInterval& validityInterval, 
+		DisplacementEngine(
+				const PipelineObject* dataSource, 
+				ExecutionContext executionContext, 
+				DataSet* dataset,
+				const TimeInterval& validityInterval, 
 				ConstPropertyPtr positions, 
-				const SimulationCell& simCell,
+				const SimulationCellObject* simCell,
 				ParticleOrderingFingerprint fingerprint,
 				ConstPropertyPtr refPositions, 
-				const SimulationCell& simCellRef,
+				const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, 
 				ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, 
 				bool useMinimumImageConvention) :
-			RefConfigEngineBase(validityInterval, positions, simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(dataSource, executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-			_displacements(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false)),
-			_displacementMagnitudes(ParticlesObject::OOClass().createStandardStorage(fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false, executionContext)),
+			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false, executionContext)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.
@@ -102,7 +110,7 @@ private:
 	};
 
 	/// The vis element for rendering the displacement vectors.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(VectorVis, vectorVis, setVectorVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<VectorVis>, vectorVis, setVectorVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

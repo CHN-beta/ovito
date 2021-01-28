@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,9 +29,9 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/HtmlListWidget.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
@@ -232,6 +232,8 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 		undoableTransaction(tr("Change output dimensions"), [settings, index]() {
 			settings->setOutputImageWidth(imageSizePresets[index-2][0]);
 			settings->setOutputImageHeight(imageSizePresets[index-2][1]);
+			PROPERTY_FIELD(RenderSettings::outputImageWidth).memorizeDefaultValue(settings);
+			PROPERTY_FIELD(RenderSettings::outputImageHeight).memorizeDefaultValue(settings);
 		});
 	}
 	sizePresetsBox->setCurrentIndex(0);
@@ -303,9 +305,8 @@ void RenderSettingsEditor::onSwitchRenderer()
 	int newIndex = rendererListWidget->row(selItems.front());
 	if(!settings->renderer() || &settings->renderer()->getOOClass() != rendererClasses[newIndex]) {
 		undoableTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
-			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset()));
-			renderer->loadUserDefaults();
-			settings->setRenderer(renderer);
+			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset(), ExecutionContext::Interactive));
+			settings->setRenderer(std::move(renderer));
 		});
 	}
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/core/app/Application.h>
 #include "InvertSelectionModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -48,7 +49,7 @@ void InvertSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		throwException(tr("No data element type set."));
 
    	PropertyContainer* container = state.expectMutableLeafObject(subject());
-	PropertyAccess<int> selProperty = container->createProperty(PropertyStorage::GenericSelectionProperty, true);
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, true, Application::instance()->executionContext());
 	for(int& s : selProperty)
 		s = !s;
 }

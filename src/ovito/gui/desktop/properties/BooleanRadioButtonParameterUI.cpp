@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,11 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), (void (QButtonGroup::*)(int))&QButtonGroup::buttonClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#endif
 
 	QRadioButton* buttonNo = new QRadioButton();
 	QRadioButton* buttonYes = new QRadioButton();
@@ -50,7 +54,11 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEdit
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#else
 	connect(_buttonGroup.data(), (void (QButtonGroup::*)(int))&QButtonGroup::buttonClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
+#endif
 
 	QRadioButton* buttonNo = new QRadioButton();
 	QRadioButton* buttonYes = new QRadioButton();
@@ -136,11 +144,11 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 			if(id != -1) {
 				if(propertyName()) {
 					if(!editObject()->setProperty(propertyName(), (bool)id)) {
-						OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+						OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 					}
 				}
 				else if(propertyField()) {
-					editObject()->setPropertyFieldValue(*propertyField(), (bool)id);
+					editor()->changePropertyFieldValue(*propertyField(), (bool)id);
 				}
 			}
 			Q_EMIT valueEntered();

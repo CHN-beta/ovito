@@ -23,12 +23,12 @@
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(StdObj
 	SOURCES
-		camera/CameraObject.cpp
+		camera/StandardCameraObject.cpp
+		camera/StandardCameraSource.cpp
 		camera/TargetObject.cpp
 		simcell/SimulationCellObject.cpp
 		simcell/SimulationCellVis.cpp
 		simcell/PeriodicDomainDataObject.cpp
-		properties/PropertyStorage.cpp
 		properties/PropertyObject.cpp
 		properties/PropertyReference.cpp
 		properties/PropertyContainerClass.cpp
@@ -36,11 +36,11 @@ OVITO_STANDARD_PLUGIN(StdObj
 		properties/ElementType.cpp
 		properties/GenericPropertyModifier.cpp
 		properties/PropertyExpressionEvaluator.cpp
-		properties/PropertyContainerImportData.cpp
 		properties/InputColumnMapping.cpp
 		table/DataTable.cpp
 		io/DataTableExporter.cpp
 		io/PropertyOutputWriter.cpp
+		io/StandardFrameLoader.cpp
 		util/ElementSelectionSet.cpp
 	LIB_DEPENDENCIES
 		muParser
@@ -50,10 +50,11 @@ OVITO_STANDARD_PLUGIN(StdObj
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
-ENDIF()
-IF(OVITO_BUILD_WEBGUI)
-	ADD_SUBDIRECTORY(webgui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ELSE()
+		ADD_SUBDIRECTORY(guiqml)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

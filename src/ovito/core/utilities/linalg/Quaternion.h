@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -496,9 +496,11 @@ using Quaternion = QuaternionT<FloatType>;
 
 }	// End of namespace
 
+// Specialize STL templates for QuaternionT.
+namespace std {
+	template<typename T> struct tuple_size<Ovito::QuaternionT<T>> : std::integral_constant<std::size_t, 4> {};
+	template<std::size_t I, typename T> struct tuple_element<I, Ovito::QuaternionT<T>> { using type = T; };
+};
+
 Q_DECLARE_METATYPE(Ovito::Quaternion);
-Q_DECLARE_METATYPE(Ovito::Quaternion*);
 Q_DECLARE_TYPEINFO(Ovito::Quaternion, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Quaternion*, Q_PRIMITIVE_TYPE);
-
-

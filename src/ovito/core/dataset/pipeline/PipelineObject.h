@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/ActiveObject.h>
-#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 namespace Ovito {
 
@@ -52,7 +51,7 @@ public:
 	Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times);
 
 	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time) { return {}; }
+	virtual PipelineFlowState evaluateSynchronous(TimePoint time);
 
 	/// \brief Returns a list of pipeline nodes that have this object in their pipeline.
 	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
@@ -79,7 +78,7 @@ public:
 
 	/// Returns the data collection that is managed by this object (if it is a data source).
 	/// The returned data collection will be displayed under the data source in the pipeline editor.
-	virtual DataCollection* getSourceDataCollection() const { return nullptr; }
+	virtual const DataCollection* getSourceDataCollection() const { return nullptr; }
 };
 
 }	// End of namespace

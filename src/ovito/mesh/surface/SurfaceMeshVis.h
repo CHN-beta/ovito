@@ -24,8 +24,8 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/mesh/surface/SurfaceMeshData.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
@@ -49,6 +49,10 @@ public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE SurfaceMeshVis(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// Lets the visualization element render the data object.
 	virtual void render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -94,7 +98,7 @@ protected:
 		virtual void perform() override;
 
 		/// Returns the input surface mesh.
-		const SurfaceMeshData& inputMesh() const { return _inputMesh; }
+		const SurfaceMesh* inputMesh() const { return _inputMesh; }
 
 	protected:
 
@@ -115,8 +119,8 @@ protected:
 		/// Generates the cap polygons where the surface mesh intersects the periodic domain boundaries.
 		void buildCapTriangleMesh();
 
-		/// Returns the periodic domain the surface mesh is embedded in.
-		const SimulationCell& cell() const { return _inputMesh.cell(); }
+		/// Returns the periodic domain the surface mesh is embedded in (if any).
+		const SimulationCellObject* cell() const { return inputMesh()->domain(); }
 
 	private:
 
@@ -124,7 +128,7 @@ protected:
 		bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
 		/// Traces the closed contour of the surface-boundary intersection.
-		std::vector<Point2> traceContour(HalfEdgeMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
+		std::vector<Point2> traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
 
 		/// Clips a 2d contour at a periodic boundary.
 		static void clipContour(std::vector<Point2>& input, std::array<bool,2> periodic, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
@@ -137,7 +141,7 @@ protected:
 
 	protected:
 
-		SurfaceMeshData _inputMesh;			///< The input surface mesh.
+		DataOORef<const SurfaceMesh> _inputMesh;	///< The input surface mesh.
 		bool _reverseOrientation;			///< Flag for inside-out display of the mesh.
 		bool _smoothShading;				///< Flag for interpolated-normal shading
 		bool _generateCapPolygons;			///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.
@@ -183,10 +187,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
 
 	/// Controls the transparency of the surface mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, surfaceTransparencyController, setSurfaceTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, surfaceTransparencyController, setSurfaceTransparencyController);
 
 	/// Controls the transparency of the surface cap mesh.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(Controller, capTransparencyController, setCapTransparencyController);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, capTransparencyController, setCapTransparencyController);
 
 	/// Internal field indicating whether the surface meshes rendered by this viz element are closed or not.
 	/// Depending on this setting, the UI will show the cap polygon option to the user.

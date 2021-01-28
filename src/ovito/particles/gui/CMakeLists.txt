@@ -20,15 +20,11 @@
 #
 #######################################################################################
 
-# Compile resources.
-QT5_ADD_RESOURCES(ResourceFiles resources/particles_gui.qrc)
-
 # Define the GUI module, which provides the user interface for the parent module.
 OVITO_STANDARD_PLUGIN(ParticlesGui
 	SOURCES
 		objects/ParticlesVisEditor.cpp
 		objects/ParticleTypeEditor.cpp
-		objects/BondTypeEditor.cpp
 		objects/VectorVisEditor.cpp
 		objects/BondsVisEditor.cpp
 		objects/TrajectoryVisEditor.cpp
@@ -78,7 +74,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
 		export/lammps/LAMMPSDumpExporterEditor.cpp
 		export/vasp/POSCARExporterEditor.cpp
 		export/xyz/XYZExporterEditor.cpp
-		${ResourceFiles}
+		resources/particles_gui.qrc
 	PRIVATE_LIB_DEPENDENCIES Qwt PolyhedralTemplateMatching
 	PLUGIN_DEPENDENCIES Particles StdObjGui 
 	PRECOMPILED_HEADERS ParticlesGui.h

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/core/app/Application.h>
 #include "WrapPeriodicImagesModifier.h"
 
 namespace Ovito { namespace Particles {
@@ -69,8 +70,7 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 	// Wrap bonds by adjusting their PBC shift vectors.
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			outputParticles->makeBondsMutable();
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->bonds()->createProperty(BondsObject::PeriodicImageProperty, true);
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];

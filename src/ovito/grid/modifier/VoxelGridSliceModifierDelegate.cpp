@@ -26,8 +26,10 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "VoxelGridSliceModifierDelegate.h"
 #include "MarchingCubes.h"
 
@@ -41,13 +43,23 @@ DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 ******************************************************************************/
 VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset) : SliceModifierDelegate(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void VoxelGridSliceModifierDelegate::initializeObject(ExecutionContext executionContext)
+{
 	// Create the vis element for rendering the mesh.
-	setSurfaceMeshVis(new SurfaceMeshVis(dataset));
+	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
 	surfaceMeshVis()->setShowCap(false);
 	surfaceMeshVis()->setHighlightEdges(false);
 	surfaceMeshVis()->setSmoothShading(false);
 	surfaceMeshVis()->setSurfaceIsClosed(false);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
+
+	SliceModifierDelegate::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -79,21 +91,34 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	// Note: Using index-based instead of range-based for-loop here, because the 
 	// object list gets modified within the loop.
 	for(int idx = 0; idx < state.data()->objects().size(); idx++) {
-		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx])) {
+		if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[idx].get())) {
 			// Get domain of voxel grid.
 			VoxelGrid::GridDimensions gridShape = voxelGrid->shape();
-			SimulationCell cell = voxelGrid->domain()->data();
-			if(cell.is2D())
-				continue;
 
 			// Verify consistency of input property container.
 			voxelGrid->verifyIntegrity();
 
-			// Construct cross section mesh using a special version of the marching cubes algorithm.
-			SurfaceMeshData mesh(cell);
+			// Get the simulation cell.
+			DataOORef<const SimulationCellObject> cell = voxelGrid->domain();
+			OVITO_ASSERT(cell);
+			if(cell->is2D())
+				continue;
 
-			// The slice plane does NOT exist in a periodic domain.
-			mesh.cell().setPbcFlags(false, false, false);
+			// The slice plane does NOT exist in a periodic domain. 
+			// Remove any periodic boundary conditions from the surface mesh domain cell.
+			if(cell->hasPbc()) {
+				DataOORef<SimulationCellObject> nonperiodicCell = cell.makeCopy();
+				nonperiodicCell->setPbcFlags(false, false, false);
+				cell = std::move(nonperiodicCell);
+			}
+
+			// Create an empty surface mesh object.
+			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, Application::instance()->executionContext(), tr("Volume slice"));
+			meshObj->setDomain(cell);
+			meshObj->setVisElement(surfaceMeshVis());
+
+			// Construct cross section mesh using a special version of the marching cubes algorithm.
+			SurfaceMeshAccess mesh(meshObj);
 
 			// The level of subdivision.
 			const int resolution = 2;
@@ -104,7 +129,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 				planeGridSpace = (Matrix3(
 					gridShape[0]*resolution, 0, 0,
 					0, gridShape[1]*resolution, 0,
-					0, 0, gridShape[2]*resolution) * cell.inverseMatrix()) * planes[pidx];
+					0, 0, gridShape[2]*resolution) * cell->inverseMatrix()) * planes[pidx];
 
 				// Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
 				auto getFieldValue = [&](int i, int j, int k) {
@@ -136,14 +161,14 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			// Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices.
 			std::vector<ConstPropertyPtr> fieldProperties;
 			for(const PropertyObject* property : voxelGrid->properties())
-				fieldProperties.push_back(property->storage());
+				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
 			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager());
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, cell, gridShape);
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, gridShape, Application::instance()->executionContext());
 
 			// Transform mesh vertices from orthogonal grid space to world space.
-			const AffineTransformation tm = cell.matrix() * Matrix3(
+			const AffineTransformation tm = cell->matrix() * Matrix3(
 				FloatType(1) / gridShape[0], 0, 0,
 				0, FloatType(1) / gridShape[1], 0,
 				0, 0, FloatType(1) / gridShape[2]) *
@@ -153,11 +178,6 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			// Flip surface orientation if cell matrix is a mirror transformation.
 			if(tm.determinant() < 0)
 				mesh.flipFaces();
-			
-			// Create the output mesh data object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, tr("Volume slice"));
-			mesh.transferTo(meshObj);
-			meshObj->setVisElement(surfaceMeshVis());
 		}
 	}
 

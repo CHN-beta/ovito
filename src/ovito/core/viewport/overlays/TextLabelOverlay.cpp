@@ -99,7 +99,7 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSetti
 		for(auto a = attributes.cbegin(); a != attributes.cend(); ++a) {
 
 			QString valueString;
-			if(a.value().type() == QMetaType::Double || a.value().type() == QMetaType::Float) {
+			if(getQVariantTypeId(a.value()) == QMetaType::Double || getQVariantTypeId(a.value()) == QMetaType::Float) {
 				valueString = QString::asprintf(format.constData(), a.value().toDouble());
 			}
 			else {

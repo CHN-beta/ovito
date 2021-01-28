@@ -21,9 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleFrameData.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GaussianCubeImporter.h"
@@ -103,14 +104,11 @@ bool GaussianCubeImporter::OOMetaClass::checkFileFormat(const FileHandle& file) 
 /******************************************************************************
 * Parses the given input file.
 ******************************************************************************/
-FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
+void GaussianCubeImporter::FrameLoader::loadFile()
 {
 	// Open file for reading.
 	CompressedTextReader stream(fileHandle());
 	setProgressText(tr("Reading Gaussian Cube file %1").arg(fileHandle().toString()));
-
-	// Create the destination container for loaded data.
-	std::shared_ptr<ParticleFrameData> frameData = std::make_shared<ParticleFrameData>();
 
 	// Ignore two comment lines.
 	stream.readLine();
@@ -129,7 +127,7 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 
 	// Read voxel counts and cell vectors.
 	bool isBohrUnits = true;
-	size_t gridSize[3];
+	VoxelGrid::GridDimensions gridSize;
 	for(size_t dim = 0; dim < 3; dim++) {
 		int gs;
 		if(sscanf(stream.readLine(), "%i " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &gs, &cellMatrix.column(dim).x(), &cellMatrix.column(dim).y(), &cellMatrix.column(dim).z()) != 4)
@@ -146,19 +144,20 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 	// Automatically convert from Bohr units to Angstroms units.
 	if(isBohrUnits)
 		cellMatrix = cellMatrix * 0.52917721067;
-	frameData->simulationCell().setPbcFlags(true, true, true);
-	frameData->simulationCell().setMatrix(cellMatrix);
+	simulationCell()->setPbcFlags(true, true, true);
+	simulationCell()->setCellMatrix(cellMatrix);
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::PositionProperty, false);
-	PropertyAccess<int> typeProperty = frameData->particles().createStandardProperty<ParticlesObject>(numAtoms, ParticlesObject::TypeProperty, false);
+	setParticleCount(numAtoms);
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 
 	// Read atomic coordinates.
 	Point3* p = posProperty.begin();
 	int* a = typeProperty.begin();
 	setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
 	for(qlonglong i = 0; i < numAtoms; i++, ++p, ++a) {
-		if(!setProgressValueIntermittent(i)) return {};
+		if(!setProgressValueIntermittent(i)) return;
 		FloatType secondColumn;
 		if(sscanf(stream.readLine(), "%i " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
 				a, &secondColumn, &p->x(), &p->y(), &p->z()) != 5)
@@ -169,12 +168,11 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 	}
 
 	// Translate atomic numbers into element names.
-	PropertyContainerImportData::TypeList* typeList = frameData->particles().createPropertyTypesList(typeProperty, ParticleType::OOClass());
 	for(int a : typeProperty) {
 		if(a >= 0 && a < sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
-			typeList->addNamedTypeId(a, chemical_symbols[a], false);
+			addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), a, QLatin1String(chemical_symbols[a]));
 		else
-			typeList->addTypeId(a);
+			addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), a, {});
 	}
 
 	// Parse voxel field table.
@@ -212,10 +210,20 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 		// No field table present. Assume file contains a single field property.
 		nfields = 1;
 	}
-	PropertyAccess<FloatType, true> fieldQuantity = frameData->voxels().addProperty(std::make_shared<PropertyStorage>(gridSize[0]*gridSize[1]*gridSize[2], PropertyStorage::Float, nfields, 0, QStringLiteral("Property"), false, 0, std::move(componentNames)));
+
+	// Create the voxel grid data object.
+	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
+	if(!voxelGrid)
+		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext());
+	voxelGrid->setDomain(simulationCell());
+	voxelGrid->setIdentifier(QStringLiteral("imported"));
+	voxelGrid->setShape(gridSize);
+	voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
+
+	// Create the voxel grid property.
+	PropertyAccess<FloatType, true> fieldQuantity = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, 0, false, std::move(componentNames));
 
 	// Parse voxel data.
-	frameData->setVoxelGridShape({gridSize[0], gridSize[1], gridSize[2]});
 	for(size_t x = 0; x < gridSize[0]; x++) {
 		for(size_t y = 0; y < gridSize[1]; y++) {
 			for(size_t z = 0; z < gridSize[2]; z++) {
@@ -236,14 +244,16 @@ FileSourceImporter::FrameDataPtr GaussianCubeImporter::FrameLoader::loadFile()
 						s++;
 				}
 				if(!setProgressValueIntermittent(progressValue() + 1))
-					return {};
+					return;
 			}
 		}
 	}
+	voxelGrid->verifyIntegrity();
 
-	frameData->setStatus(tr("%1 atoms\n%2 x %3 x %4 voxel grid").arg(numAtoms).arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]));
+	state().setStatus(tr("%1 atoms\n%2 x %3 x %4 voxel grid").arg(numAtoms).arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]));
 
-	return frameData;
+	// Call base implementation to finalize the loaded particle data.
+	ParticleImporter::FrameLoader::loadFile();
 }
 
 }	// End of namespace

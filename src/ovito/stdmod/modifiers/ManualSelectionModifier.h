@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 
 	Q_CLASSINFO("DisplayName", "Manual selection");
 	Q_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Selection");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -98,7 +98,7 @@ public:
 private:
 
 	/// The per-application data of the modifier.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(ElementSelectionSet, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ElementSelectionSet>, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
 };
 
 }	// End of namespace

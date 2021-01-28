@@ -51,14 +51,14 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
 	layout->addWidget(new QLabel(tr("LAMMPS atom style:")), 0, 0);
 
 	VariantComboBoxParameterUI* atomStyleUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::atomStyle));
-	atomStyleUI->comboBox()->addItem("angle", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Angle));
-	atomStyleUI->comboBox()->addItem("atomic", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Atomic));
-	atomStyleUI->comboBox()->addItem("bond", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Bond));
-	atomStyleUI->comboBox()->addItem("charge", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Charge));
-	atomStyleUI->comboBox()->addItem("dipole", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Dipole));
-	atomStyleUI->comboBox()->addItem("full", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Full));
-	atomStyleUI->comboBox()->addItem("molecular", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Molecular));
-	atomStyleUI->comboBox()->addItem("sphere", QVariant::fromValue(LAMMPSDataImporter::AtomStyle_Sphere));
+	atomStyleUI->comboBox()->addItem("angle", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Angle));
+	atomStyleUI->comboBox()->addItem("atomic", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Atomic));
+	atomStyleUI->comboBox()->addItem("bond", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Bond));
+	atomStyleUI->comboBox()->addItem("charge", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Charge));
+	atomStyleUI->comboBox()->addItem("dipole", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Dipole));
+	atomStyleUI->comboBox()->addItem("full", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Full));
+	atomStyleUI->comboBox()->addItem("molecular", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Molecular));
+	atomStyleUI->comboBox()->addItem("sphere", QVariant::fromValue((int)LAMMPSDataImporter::AtomStyle_Sphere));
 	layout->addWidget(atomStyleUI->comboBox(), 0, 1);
 
 	IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));

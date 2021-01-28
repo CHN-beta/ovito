@@ -20,8 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/app/GuiApplication.h>
+#ifndef OVITO_QML_GUI
+	#include <ovito/gui/desktop/GUI.h>
+	#include <ovito/gui/desktop/app/GuiApplication.h>
+#else
+	#include <ovito/core/Core.h>
+	#include <ovito/gui/qml/app/WasmApplication.h>
+#endif
 
 #if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
 	// Explicitly build 'ovito' executable against Python library.
@@ -46,7 +51,11 @@ int main(int argc, char** argv)
 #endif
 
 	// Initialize the application.
+#ifndef OVITO_QML_GUI
 	Ovito::GuiApplication app;
+#else
+	Ovito::WasmApplication app;
+#endif
 	if(!app.initialize(argc, argv))
 		return 1;
 

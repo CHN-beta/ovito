@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,13 +47,13 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 
 	// Shape.
 	VariantComboBoxParameterUI* particleShapeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticlesVis::particleShape));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue(ParticlesVis::Sphere));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue(ParticlesVis::Circle));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue(ParticlesVis::Box));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_square.png"), tr("Square"), QVariant::fromValue(ParticlesVis::Square));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cylinder.png"), tr("Cylinder"), QVariant::fromValue(ParticlesVis::Cylinder));
-	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue(ParticlesVis::Spherocylinder));
-	layout->addWidget(new QLabel(tr("Shape:")), 1, 0);
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue((int)ParticlesVis::Box));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_square.png"), tr("Square"), QVariant::fromValue((int)ParticlesVis::Square));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cylinder.png"), tr("Cylinder"), QVariant::fromValue((int)ParticlesVis::Cylinder));
+	particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
+	layout->addWidget(new QLabel(tr("Standard shape:")), 1, 0);
 	layout->addWidget(particleShapeUI->comboBox(), 1, 1);
 
 	// Default radius.
@@ -61,23 +61,14 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	layout->addWidget(radiusUI->label(), 2, 0);
 	layout->addLayout(radiusUI->createFieldLayout(), 2, 1);
 
-	// Create a second rollout.
-	rollout = createRollout(tr("Advanced settings"), rolloutParams.after(rollout), "visual_elements.particles.html");
-
-    // Create the rollout contents.
-	layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
-
 	// Rendering quality.
 	VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticlesVis::renderingQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue(ParticlePrimitive::LowQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue(ParticlePrimitive::MediumQuality));
-	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue(ParticlePrimitive::HighQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Automatic"), QVariant::fromValue(ParticlePrimitive::AutoQuality));
-	layout->addWidget(new QLabel(tr("Rendering quality:")), 1, 0);
-	layout->addWidget(renderingQualityUI->comboBox(), 1, 1);
+	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)ParticlePrimitive::LowQuality));
+	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)ParticlePrimitive::MediumQuality));
+	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)ParticlePrimitive::HighQuality));
+	renderingQualityUI->comboBox()->addItem(tr("Automatic"), QVariant::fromValue((int)ParticlePrimitive::AutoQuality));
+	layout->addWidget(new QLabel(tr("Rendering quality:")), 3, 0);
+	layout->addWidget(renderingQualityUI->comboBox(), 3, 1);
 }
 
 }	// End of namespace

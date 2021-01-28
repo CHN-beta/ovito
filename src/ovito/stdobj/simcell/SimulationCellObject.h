@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,15 +25,14 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include "SimulationCell.h"
 
 namespace Ovito { namespace StdObj {
 
 /**
  * \brief Stores the geometry and boundary conditions of a simulation box.
  *
- * The simulation box geometry is a parallelepiped defined by three edge vectors.
- * A fourth vector specifies the origin of the simulation box in space.
+ * The geometry of a simulation cell is a parallelepiped defined by three edge vectors.
+ * A fourth vector specifies the coordinates of the origin of the simulation cell.
  */
 class OVITO_STDOBJ_EXPORT SimulationCellObject : public DataObject
 {
@@ -45,16 +44,8 @@ public:
 	/// \brief Constructor. Creates an empty simulation cell.
 	Q_INVOKABLE SimulationCellObject(DataSet* dataset) : DataObject(dataset),
 		_cellMatrix(AffineTransformation::Zero()),
-		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false) {
-		init(dataset);
-	}
-
-	/// \brief Constructs a cell from the given cell data structure.
-	explicit SimulationCellObject(DataSet* dataset, const SimulationCell& data) : DataObject(dataset),
-			_cellMatrix(data.matrix()),
-			_pbcX(data.hasPbc(0)), _pbcY(data.hasPbc(1)), _pbcZ(data.hasPbc(2)), _is2D(data.is2D()) {
-		init(dataset);
-	}
+		_reciprocalSimulationCell(AffineTransformation::Zero()),
+		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false) {}
 
 	/// \brief Constructs a cell from three vectors specifying the cell's edges.
 	/// \param a1 The first edge vector.
@@ -65,17 +56,13 @@ public:
 			const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
 		DataObject(dataset),
 		_cellMatrix(a1, a2, a3, origin - Point3::Origin()),
-		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
-	}
+		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
 
 	/// \brief Constructs a cell from a matrix that specifies its shape and position in space.
 	/// \param cellMatrix The matrix
 	SimulationCellObject(DataSet* dataset, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
 		DataObject(dataset),
-		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
-	}
+		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
 
 	/// \brief Constructs a cell with an axis-aligned box shape.
 	/// \param box The axis-aligned box.
@@ -86,31 +73,28 @@ public:
 		DataObject(dataset),
 		_cellMatrix(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()),
 		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
-		init(dataset);
 		OVITO_ASSERT_MSG(box.sizeX() >= 0 && box.sizeY() >= 0 && box.sizeZ() >= 0, "SimulationCellObject constructor", "The simulation box must have a non-negative volume.");
 	}
-
-	/// \brief Sets the cell geometry to match the given cell data structure.
-	void setData(const SimulationCell& data, bool setBoundaryFlags = true) {
-		setCellMatrix(data.matrix());
-		if(setBoundaryFlags) {
-			setPbcX(data.hasPbc(0));
-			setPbcY(data.hasPbc(1));
-			setPbcZ(data.hasPbc(2));
-			setIs2D(data.is2D());
-		}
-	}
-
-	/// \brief Returns a simulation cell data structure that stores the cell's properties.
-	SimulationCell data() const {
-		return SimulationCell(cellMatrix(), pbcFlags(), is2D());
-	}
+	
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
 
 	/// Returns inverse of the simulation cell matrix.
 	/// This matrix maps the simulation cell to the unit cube ([0,1]^3).
-	AffineTransformation reciprocalCellMatrix() const {
-		return cellMatrix().inverse();
+	const AffineTransformation& reciprocalCellMatrix() const {
+		if(!_isReciprocalMatrixValid)
+			computeInverseMatrix();
+		return _reciprocalSimulationCell;
 	}
+
+	void invalidateReciprocalCellMatrix() { _isReciprocalMatrixValid = false; }
+
+	/// Returns the current simulation cell matrix.
+	const AffineTransformation& matrix() const { return cellMatrix(); }
+
+	/// Returns the current reciprocal simulation cell matrix.
+	const AffineTransformation& inverseMatrix() const { return reciprocalCellMatrix(); }
 
 	/// Computes the (positive) volume of the three-dimensional cell.
 	FloatType volume3D() const {
@@ -123,16 +107,29 @@ public:
 	}
 
 	/// \brief Enables or disables periodic boundary conditions in the three spatial directions.
-	void setPBCFlags(const std::array<bool,3>& flags) {
+	void setPbcFlags(const std::array<bool,3>& flags) {
 		setPbcX(flags[0]);
 		setPbcY(flags[1]);
 		setPbcZ(flags[2]);
+	}
+
+	/// Sets the PBC flags.
+	void setPbcFlags(bool pbcX, bool pbcY, bool pbcZ) { 
+		setPbcX(pbcX); 
+		setPbcY(pbcY); 
+		setPbcZ(pbcZ); 
 	}
 
 	/// \brief Returns the periodic boundary flags in all three spatial directions.
 	std::array<bool,3> pbcFlags() const {
 		return {{ pbcX(), pbcY(), pbcZ() }};
 	}
+
+	/// Returns whether the simulation cell has periodic boundary conditions applied in the given direction.
+	bool hasPbc(size_t dim) const { OVITO_ASSERT(dim < 3); return dim == 0 ? pbcX() : (dim == 1 ? pbcY() : pbcZ()); }
+
+	/// Returns whether the simulation cell has periodic boundary conditions applied in at least one direction.
+	bool hasPbc() const { return pbcX() || pbcY() || pbcZ(); }
 
 	/// \brief Returns the first edge vector of the cell.
 	const Vector3& cellVector1() const { return cellMatrix().column(0); }
@@ -146,9 +143,99 @@ public:
 	/// \brief Returns the origin point of the cell.
 	const Point3& cellOrigin() const { return Point3::Origin() + cellMatrix().column(3); }
 
+	/// Returns true if the three edges of the cell are parallel to the three coordinates axes.
+	bool isAxisAligned() const {
+		if(cellMatrix()(1,0) != 0 || cellMatrix()(2,0) != 0) return false;
+		if(cellMatrix()(0,1) != 0 || cellMatrix()(2,1) != 0) return false;
+		if(cellMatrix()(0,2) != 0 || cellMatrix()(1,2) != 0) return false;
+		return true;
+	}
+
+	/// Checks if two simulation cells are identical.
+	bool equals(const SimulationCellObject& other) const {
+		return cellMatrix() == other.cellMatrix() && pbcX() == other.pbcX() && pbcY() == other.pbcY() && pbcZ() == other.pbcZ() && is2D() == other.is2D();
+	}
+
+	/// Converts a point given in reduced cell coordinates to a point in absolute coordinates.
+	Point3 reducedToAbsolute(const Point3& reducedPoint) const { return cellMatrix() * reducedPoint; }
+
+	/// Converts a point given in absolute coordinates to a point in reduced cell coordinates.
+	Point3 absoluteToReduced(const Point3& absPoint) const { return reciprocalCellMatrix() * absPoint; }
+
+	/// Converts a vector given in reduced cell coordinates to a vector in absolute coordinates.
+	Vector3 reducedToAbsolute(const Vector3& reducedVec) const { return cellMatrix() * reducedVec; }
+
+	/// Converts a vector given in absolute coordinates to a point in vector cell coordinates.
+	Vector3 absoluteToReduced(const Vector3& absVec) const { return reciprocalCellMatrix() * absVec; }
+
+	/// Wraps a point at the periodic boundaries of the cell.
+	Point3 wrapPoint(const Point3& p) const {
+		Point3 pout = p;
+		for(size_t dim = 0; dim < 3; dim++) {
+			if(hasPbc(dim)) {
+				if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(p, dim)))
+					pout -= s * cellMatrix().column(dim);
+			}
+		}
+		return pout;
+	}
+
+	/// Wraps a vector at the periodic boundaries of the cell using minimum image convention.
+	Vector3 wrapVector(const Vector3& v) const {
+		Vector3 vout = v;
+		for(size_t dim = 0; dim < 3; dim++) {
+			if(hasPbc(dim)) {
+				if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(v, dim) + FloatType(0.5)))
+					vout -= s * cellMatrix().column(dim);
+			}
+		}
+		return vout;
+	}
+
+	/// Calculates the normal vector of the given simulation cell side.
+	Vector3 cellNormalVector(size_t dim) const {
+		Vector3 normal = cellMatrix().column((dim+1)%3).cross(cellMatrix().column((dim+2)%3));
+		// Flip normal if necessary.
+		if(normal.dot(cellMatrix().column(dim)) < 0)
+			return normal / (-normal.length());
+		else
+			return normal.safelyNormalized();
+	}
+
+	/// Tests if a vector so long that it would be wrapped at a periodic boundary when using the minimum image convention.
+	bool isWrappedVector(const Vector3& v) const {
+		for(size_t dim = 0; dim < 3; dim++) {
+			if(hasPbc(dim)) {
+				if(std::abs(reciprocalCellMatrix().prodrow(v, dim)) >= FloatType(0.5))
+					return true;
+			}
+		}
+		return false;
+	}
+
+	/// \brief Helper function that computes the modulo operation for two integer numbers k and n.
+	///
+	/// This function can handle negative numbers k. This allows mapping any number k that is
+	/// outside the interval [0,n) back into the interval. Use this to implement periodic boundary conditions.
+	static inline int modulo(int k, int n) {
+		return ((k %= n) < 0) ? k+n : k;
+	}
+
+	/// \brief Helper function that computes the modulo operation for two floating-point numbers k and n.
+	///
+	/// This function can handle negative numbers k. This allows mapping any number k that is
+	/// outside the interval [0,n) back into the interval. Use this to implement periodic boundary conditions.
+	static inline FloatType modulo(FloatType k, FloatType n) {
+		k = std::fmod(k, n);
+		return (k < 0) ? k+n : k;
+	}	
+
 	/// Returns whether this data object wants to be shown in the pipeline editor
 	/// under the data source section.
 	virtual bool showInPipelineEditor() const override { return true; }
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Simulation cell"); }
@@ -172,11 +259,21 @@ public:
 
 protected:
 
-	/// Creates the storage for the internal parameters.
-	void init(DataSet* dataset);
+	/// Is called when the value of a non-animatable field of this object changes.
+	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+
+private:
+
+	/// Computes the inverse of the cell matrix.
+	void computeInverseMatrix() const;
 
 	/// Stores the three cell vectors and the position of the cell origin.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, cellMatrix, setCellMatrix);
+
+	/// The inverse of the cell matrix, which is kept in sync with the cell matrix at all times.
+	mutable AffineTransformation _reciprocalSimulationCell;
+	/// Indicates whether the reciprocal matrix is in sync with the cell's matrix.
+	mutable bool _isReciprocalMatrixValid = false;
 
 	/// Specifies periodic boundary condition in the X direction.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcX, setPbcX);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ public:
 		Planar,			///< Planar interface, grain boundary, stacking fault, etc.
 		Pointlike		///< Zero-dimensional defect
 	};
-	Q_ENUMS(Dimensionality);
+	Q_ENUM(Dimensionality);
 
 	/// The type of symmetry of the crystal lattice.
 	enum CrystalSymmetryClass {
@@ -55,7 +55,7 @@ public:
 		CubicSymmetry,		///< Used for cubic crystals like FCC, BCC, diamond.
 		HexagonalSymmetry	///< Used for hexagonal crystals like HCP, hexagonal diamond.
 	};
-	Q_ENUMS(CrystalSymmetryClass);
+	Q_ENUM(CrystalSymmetryClass);
 
 public:
 
@@ -69,20 +69,23 @@ public:
 	void setLongName(const QString& name) { setName(name); }
 
 	/// Adds a new family to this phase's list of Burgers vector families.
-	void addBurgersVectorFamily(BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
+	void addBurgersVectorFamily(const BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
 
 	/// Removes a family from this lattice pattern's list of Burgers vector families.
 	void removeBurgersVectorFamily(int index) { _burgersVectorFamilies.remove(this, PROPERTY_FIELD(burgersVectorFamilies), index); }
 
 	/// Returns the default Burgers vector family, which is assigned to dislocation segments that
 	/// don't belong to any family.
-	BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
+	const BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
 
 	/// Returns the display color to be used for a given Burgers vector.
 	static Color getBurgersVectorColor(const QString& latticeName, const Vector3& b);
 
 	/// Returns the display color to be used for a given Burgers vector.
 	static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 private:
 
@@ -96,13 +99,8 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
 
 	/// List of Burgers vector families defined for the phase if it is crystalline.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(BurgersVectorFamily, burgersVectorFamilies, setBurgersVectorFamilies);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
 };
 
 }	// End of namespace
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::CrystalAnalysis::MicrostructurePhase::Dimensionality);
-Q_DECLARE_TYPEINFO(Ovito::CrystalAnalysis::MicrostructurePhase::Dimensionality, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(Ovito::CrystalAnalysis::MicrostructurePhase::CrystalSymmetryClass);
-Q_DECLARE_TYPEINFO(Ovito::CrystalAnalysis::MicrostructurePhase::CrystalSymmetryClass, Q_PRIMITIVE_TYPE);

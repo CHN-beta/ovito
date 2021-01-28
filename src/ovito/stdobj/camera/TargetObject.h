@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
@@ -44,6 +43,10 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE TargetObject(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 };
 
 /**

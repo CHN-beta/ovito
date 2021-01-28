@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 
 namespace Ovito {

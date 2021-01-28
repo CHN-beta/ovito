@@ -69,8 +69,8 @@ public:
 	virtual bool isTrajectoryFormat() const override { return true; } 
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual std::shared_ptr<FileSourceImporter::FrameLoader> createFrameLoader(const Frame& frame, const FileHandle& file) override {
-		return std::make_shared<FrameLoader>(frame, std::move(file));
+	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
+		return std::make_shared<FrameLoader>(request);
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -81,17 +81,17 @@ public:
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in the background.
-	class FrameLoader : public FileSourceImporter::FrameLoader
+	class FrameLoader : public ParticleImporter::FrameLoader
 	{
 	public:
 
 		/// Inherit constructor from base class.
-		using FileSourceImporter::FrameLoader::FrameLoader;
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() override;
+		virtual void loadFile() override;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

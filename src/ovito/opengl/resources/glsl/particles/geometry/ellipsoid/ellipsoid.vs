@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,11 +20,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#if __VERSION__ >= 130
+// Inputs from calling program:
+uniform bool is_picking_mode;
+uniform int picking_base_id;
+uniform vec4 selection_color;
 
 // The particle data:
 in vec3 position;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in int selection;
 in vec3 shape;
 in vec4 orientation;
 in float particle_radius;
@@ -34,13 +39,18 @@ out vec4 particle_color_gs;
 out vec3 particle_shape_gs;
 out vec4 particle_orientation_gs;
 
-#endif
-
 void main()
 {
-#if __VERSION__ >= 130
+	if(!is_picking_mode) {
+		// Forward color to geometry shader.
+		particle_color_gs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_gs = pickingModeColor(picking_base_id, gl_VertexID);
+	}
+		
 	// Forward information to geometry shader.
-	particle_color_gs = color;
 	if(shape != vec3(0))
 		particle_shape_gs = shape;
 	else
@@ -49,5 +59,4 @@ void main()
 
 	// Pass original particle position to geometry shader.
 	gl_Position = vec4(position, 1);
-#endif
 }

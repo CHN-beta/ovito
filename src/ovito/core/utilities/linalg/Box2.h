@@ -148,6 +148,11 @@ public:
 		return maxc[dimension] - minc[dimension];
 	}
 
+	/// Conversion operator to a Qt rectangle.
+	operator QRectF() const {
+		return QRectF(minc.x(), minc.y(), width(), height());
+	}
+
 	/////////////////////////////// Classification ///////////////////////////////
 
 	/// \brief Checks whether a point is located inside the box.
@@ -303,11 +308,5 @@ using Box2I = Box_2<int>;
 
 Q_DECLARE_METATYPE(Ovito::Box2);
 Q_DECLARE_METATYPE(Ovito::Box2I);
-Q_DECLARE_METATYPE(Ovito::Box2*);
-Q_DECLARE_METATYPE(Ovito::Box2I*);
 Q_DECLARE_TYPEINFO(Ovito::Box2, Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Box2I, Q_MOVABLE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Box2*, Q_MOVABLE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Box2I*, Q_MOVABLE_TYPE);
-
-

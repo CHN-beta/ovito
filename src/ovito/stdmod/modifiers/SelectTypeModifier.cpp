@@ -64,9 +64,9 @@ void SelectTypeModifier::initializeModifier(ModifierApplication* modApp)
 		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
-			for(PropertyObject* property : container->properties()) {
-				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyStorage::Int) {
-					if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive || property->type() == PropertyStorage::GenericTypeProperty) {
+			for(const PropertyObject* property : container->properties()) {
+				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
+					if(Application::instance()->executionContext() == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}
@@ -113,12 +113,12 @@ void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication
 		throwException(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
 	if(typePropertyObject->componentCount() != 1)
 		throwException(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-	if(typePropertyObject->dataType() != PropertyStorage::Int)
+	if(typePropertyObject->dataType() != PropertyObject::Int)
 		throwException(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Create the selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyStorage::GenericSelectionProperty);
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
 
 	// Counts the number of selected elements.
 	size_t nSelected = 0;

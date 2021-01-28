@@ -26,6 +26,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/rendering/PickingSceneRenderer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -200,7 +201,7 @@ void ViewportWindow::mousePressEvent(QMouseEvent* event)
 	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
 
 	// Intercept mouse clicks on the viewport caption.
-	if(_contextMenuArea.contains(event->localPos())) {
+	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event))) {
 		showViewportMenu(event->pos());
 		return;
 	}
@@ -241,11 +242,11 @@ void ViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void ViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-	if(_contextMenuArea.contains(event->localPos()) && !_cursorInContextMenuArea) {
+	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea) {
 		_cursorInContextMenuArea = true;
 		viewport()->updateViewport();
 	}
-	else if(!_contextMenuArea.contains(event->localPos()) && _cursorInContextMenuArea) {
+	else if(!_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
 		_cursorInContextMenuArea = false;
 		viewport()->updateViewport();
 	}
@@ -417,17 +418,16 @@ void ViewportWindow::renderNow()
 
 			QString openGLReport;
 			QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
-			stream << "OpenGL version: " << context()->format().majorVersion() << QStringLiteral(".") << context()->format().minorVersion() << endl;
-			stream << "OpenGL profile: " << (context()->format().profile() == QSurfaceFormat::CoreProfile ? "core" : (context()->format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << endl;
-			stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << endl;
-			stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << endl;
-			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << endl;
-			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << endl;
-			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << endl;
-			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << endl;
-			stream << "Using point sprites: " << OpenGLSceneRenderer::pointSpritesEnabled() << endl;
-			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << endl;
-			stream << "Context sharing: " << OpenGLSceneRenderer::contextSharingEnabled() << endl;
+			stream << "OpenGL version: " << context()->format().majorVersion() << QStringLiteral(".") << context()->format().minorVersion() << "\n";
+			stream << "OpenGL profile: " << (context()->format().profile() == QSurfaceFormat::CoreProfile ? "core" : (context()->format().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+			stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << "\n";
+			stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << "\n";
+			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
+			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
+			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
+			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << "\n";
+			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << "\n";
+			stream << "Context sharing: " << OpenGLSceneRenderer::contextSharingEnabled() << "\n";
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);

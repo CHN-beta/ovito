@@ -67,7 +67,7 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	if(Application::instance()->headlessMode())
 		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
@@ -92,30 +92,31 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	int resolution = (128 << res);
 
 	TimeInterval validityInterval = input.stateValidity();
-	std::vector<FloatType> radii = particles->inputParticleRadii();
+	ConstPropertyPtr radii = particles->inputParticleRadii();
 
 	// Create the AmbientOcclusionRenderer instance.
 	AmbientOcclusionRenderer* renderer = new AmbientOcclusionRenderer(dataset(), QSize(resolution, resolution));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AmbientOcclusionEngine>(validityInterval, particles, resolution, samplingCount(), posProperty->storage(), boundingBox, std::move(radii), renderer);
+	return std::make_shared<AmbientOcclusionEngine>(modApp, executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, renderer);
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, PropertyPtr positions,
-		const Box3& boundingBox, std::vector<FloatType> particleRadii, AmbientOcclusionRenderer* renderer) :
-	Engine(validityInterval),
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+		ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer) :
+	Engine(dataSource, executionContext, validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
-	_positions(positions),
-	_boundingBox(boundingBox),
+	_positions(std::move(positions)),
 	_particleRadii(std::move(particleRadii)),
+	_boundingBox(boundingBox),
 	_renderer(renderer),
-	_brightness(std::make_shared<PropertyStorage>(fingerprint.particleCount(), PropertyStorage::Float, 1, 0, QStringLiteral("Brightness"), true)),
+	_brightness(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Brightness"), true)),
 	_inputFingerprint(std::move(fingerprint))
 {
+	OVITO_ASSERT(_particleRadii->size() == _positions->size());
 }
 
 /******************************************************************************
@@ -127,7 +128,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		if(_boundingBox.isEmpty())
 			throw Exception(tr("Modifier input is degenerate or contains no particles."));
 
-		setProgressText(tr("Computing ambient occlusion"));
+		setProgressText(tr("Ambient occlusion"));
 
 		_renderer->startRender(nullptr, nullptr);
 		try {
@@ -168,13 +169,12 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				try {
 					// Create particle buffer.
-					if(!particleBuffer || !particleBuffer->isValid(_renderer)) {
-						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality, ParticlePrimitive::SphericalShape, false);
-						particleBuffer->setSize(positions()->size());
-						particleBuffer->setParticlePositions(ConstPropertyAccess<Point3>(positions()).cbegin());
-						particleBuffer->setParticleRadii(_particleRadii.data());
+					if(!particleBuffer) {
+						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality, ParticlePrimitive::SphericalShape);
+						particleBuffer->setPositions(positions());
+						particleBuffer->setRadii(particleRadii());
 					}
-					particleBuffer->render(_renderer);
+					_renderer->renderParticles(particleBuffer);
 				}
 				catch(...) {
 					_renderer->endFrame(false);
@@ -212,8 +212,9 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		setProgressValue(_samplingCount);
 
 		// Normalize brightness values by particle area.
-		auto r = _particleRadii.cbegin();
+		ConstPropertyAccess<FloatType> radiusArray(particleRadii());
 		PropertyAccess<FloatType> brightnessValues(brightness());
+		auto r = radiusArray.cbegin();
 		for(FloatType& b : brightnessValues) {
 			if(*r != 0)
 				b /= (*r) * (*r);
@@ -233,7 +234,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 	// Release data that is no longer needed to reduce memory footprint.
 	_positions.reset();
-	decltype(_particleRadii){}.swap(_particleRadii);
+	_particleRadii.reset();
 	_renderer->deleteLater();
 	_renderer = nullptr;
 }
@@ -266,7 +267,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(TimePoint ti
 
 	// Get output property object.
 	ConstPropertyAccess<FloatType> brightnessValues(brightness());
-	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, {particles});
+	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, Application::instance()->executionContext(), {particles});
 	const FloatType* b = brightnessValues.cbegin();
 	for(Color& c : colorProperty) {
 		FloatType factor = FloatType(1) - intensity + (*b);

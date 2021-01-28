@@ -26,9 +26,8 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/VersionedDataObjectRef.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/rendering/ArrowPrimitive.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "BondsVis.h"
 #include "ParticlesVis.h"
@@ -57,7 +56,7 @@ BondsVis::BondsVis(DataSet* dataset) : DataVis(dataset),
 	_bondColor(0.6, 0.6, 0.6),
 	_useParticleColors(true),
 	_shadingMode(NormalShading),
-	_renderingQuality(ArrowPrimitive::HighQuality)
+	_renderingQuality(CylinderPrimitive::HighQuality)
 {
 }
 
@@ -79,11 +78,11 @@ Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>&
 
 	// The key type used for caching the computed bounding box:
 	using CacheKey = std::tuple<
-		VersionedDataObjectRef,		// Bond topology property + revision number
-		VersionedDataObjectRef,		// Bond PBC vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		VersionedDataObjectRef,		// Simulation cell + revision number
-		FloatType					// Bond width
+		ConstDataObjectRef,		// Bond topology property
+		ConstDataObjectRef,		// Bond PBC vector property
+		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Simulation cell
+		FloatType				// Bond width
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -176,25 +175,27 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
-		VersionedDataObjectRef,		// Bond topology property + revision number
-		VersionedDataObjectRef,		// Bond PBC vector property + revision number
-		VersionedDataObjectRef,		// Particle position property + revision number
-		VersionedDataObjectRef,		// Particle color property + revision number
-		VersionedDataObjectRef,		// Particle type property + revision number
-		VersionedDataObjectRef,		// Particle radius property + revision number
-		VersionedDataObjectRef,		// Bond color property + revision number
-		VersionedDataObjectRef,		// Bond type property + revision number
-		VersionedDataObjectRef,		// Bond selection property + revision number
-		VersionedDataObjectRef,		// Bond transparency + revision number
-		VersionedDataObjectRef,		// Simulation cell + revision number
-		FloatType,					// Bond width
-		Color,						// Bond color
-		bool						// Use particle colors
+		CompatibleRendererGroup,// Scene renderer
+		ConstDataObjectRef,		// Bond topology property
+		ConstDataObjectRef,		// Bond PBC vector property
+		ConstDataObjectRef,		// Particle position property
+		ConstDataObjectRef,		// Particle color property
+		ConstDataObjectRef,		// Particle type property
+		ConstDataObjectRef,		// Particle radius property
+		ConstDataObjectRef,		// Bond color property
+		ConstDataObjectRef,		// Bond type property
+		ConstDataObjectRef,		// Bond selection property
+		ConstDataObjectRef,		// Bond transparency
+		ConstDataObjectRef,		// Simulation cell
+		FloatType,				// Bond width
+		Color,					// Bond color
+		bool,					// Use particle colors
+		ShadingMode,			// Bond shading mode
+		CylinderPrimitive::RenderingQuality // Bond rendering quality
 	>;
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& arrowPrimitive = dataset()->visCache().get<std::shared_ptr<ArrowPrimitive>>(CacheKey(
+	auto& cylinders = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
 			renderer,
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
@@ -209,45 +210,47 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			simulationCell,
 			bondWidth(),
 			bondColor(),
-			useParticleColors()));
+			useParticleColors(),
+			shadingMode(),
+			renderingQuality()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrowPrimitive
-			|| !arrowPrimitive->isValid(renderer)
-			|| !arrowPrimitive->setShadingMode(static_cast<ArrowPrimitive::ShadingMode>(shadingMode()))
-			|| !arrowPrimitive->setRenderingQuality(renderingQuality())) {
+	if(!cylinders) {
 
 		FloatType bondRadius = bondWidth() / 2;
 		if(bondTopologyProperty && positionProperty && bondRadius > 0) {
 
-			// Create bond geometry buffer.
-			arrowPrimitive = renderer->createArrowPrimitive(ArrowPrimitive::CylinderShape, static_cast<ArrowPrimitive::ShadingMode>(shadingMode()), renderingQuality(), transparencyProperty != nullptr);
-			arrowPrimitive->startSetElements((int)bondTopologyProperty->size() * 2);
+			// Allocate buffers for the bonds geometry.
+			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
 
 			// Cache some values.
 			ConstPropertyAccess<Point3> positions(positionProperty);
 			size_t particleCount = positions.size();
 			const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
-			// Compute the radii of the particles.
-			std::vector<FloatType> particleRadii;
+			// Obtain the radii of the particles.
+			ConstPropertyAccessAndRef<FloatType> particleRadii;
 			if(particleVis)
 				particleRadii = particleVis->particleRadii(particles);
+			// Make sure the particle radius array has the correct length.
+			if(particleRadii && particleRadii.size() != particleCount) 
+				particleRadii.reset();
 
 			if(!useParticleColors())
 				particleVis = nullptr;
 
 			// Determine half-bond colors.
-			std::vector<ColorA> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
-			OVITO_ASSERT(colors.size() == arrowPrimitive->elementCount());
+			std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
+			OVITO_ASSERT(colors.size() == bondPositions1.size());
 
-			// Make sure the particle radius array has the correct length.
-			if(particleRadii.size() != particleCount) particleRadii.clear();
-
-			int elementIndex = 0;
+			size_t cylinderIndex = 0;
 			auto color = colors.cbegin();
 			ConstPropertyAccess<ParticleIndexPair> bonds(bondTopologyProperty);
 			ConstPropertyAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+			ConstPropertyAccess<FloatType> bondInputTransparency(transparencyProperty);
 			for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
 				size_t particleIndex1 = bonds[bondIndex][0];
 				size_t particleIndex2 = bonds[bondIndex][1];
@@ -259,26 +262,43 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 					}
 					FloatType t = 0.5;
 					FloatType blen = vec.length() * FloatType(2);
-					if(!particleRadii.empty() && blen != 0) {
+					if(particleRadii && blen != 0) {
 						// This calculation determines the point where to split the bond into the two half-bonds
 						// such that the border appears halfway between the two particles, which may have two different sizes.
 						t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
 					}
-					arrowPrimitive->setElement(elementIndex++, positions[particleIndex1], vec * t, *color++, bondRadius);
-					arrowPrimitive->setElement(elementIndex++, positions[particleIndex2], vec * (t-FloatType(1)), *color++, bondRadius);
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+					bondPositions1[cylinderIndex] = positions[particleIndex1];
+					bondPositions2[cylinderIndex++] = positions[particleIndex1] + vec * t;
+
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+					bondPositions1[cylinderIndex] = positions[particleIndex2];
+					bondPositions2[cylinderIndex++] = positions[particleIndex2] - vec * (FloatType(1) - t);
 				}
 				else {
-					arrowPrimitive->setElement(elementIndex++, Point3::Origin(), Vector3::Zero(), *color++, 0);
-					arrowPrimitive->setElement(elementIndex++, Point3::Origin(), Vector3::Zero(), *color++, 0);
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+					bondPositions1[cylinderIndex] = Point3::Origin();
+					bondPositions2[cylinderIndex++] = Point3::Origin();
+
+					bondColors[cylinderIndex] = *color++;
+					if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+					bondPositions1[cylinderIndex] = Point3::Origin();
+					bondPositions2[cylinderIndex++] = Point3::Origin();
 				}
 			}
 
-			arrowPrimitive->endSetElements();
+			cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+			cylinders->setUniformRadius(bondRadius);
+			cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
+			cylinders->setColors(bondColors.take());
+			cylinders->setTransparencies(bondTransparencies.take());
 		}
-		else arrowPrimitive.reset();
 	}
 
-	if(!arrowPrimitive)
+	if(!cylinders)
 		return;
 
 	if(renderer->isPicking()) {
@@ -286,7 +306,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 
-	arrowPrimitive->render(renderer);
+	renderer->renderCylinders(cylinders);
 
 	if(renderer->isPicking()) {
 		renderer->endPickObject();
@@ -298,7 +318,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 * Returns an array with two colors per full bond, because the two half-bonds
 * may have different colors.
 ******************************************************************************/
-std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const
+std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const
 {
 	OVITO_ASSERT(particles != nullptr);
 	particles->verifyIntegrity();
@@ -311,7 +331,6 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 	ConstPropertyAccess<Color> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
 	const PropertyObject* bondTypeProperty = bonds->getProperty(BondsObject::TypeProperty);
 	ConstPropertyAccess<int> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
-	ConstPropertyAccess<FloatType> transparencyProperty = bonds->getProperty(BondsObject::TransparencyProperty);
 
 	// Get particle-related properties and the vis element.
 	const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
@@ -322,8 +341,8 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 		particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
 	}
 
-	std::vector<ColorA> output(bonds->elementCount() * 2);
-	ColorA defaultColor = (ColorA)bondColor();
+	std::vector<Color> output(bonds->elementCount() * 2);
+	Color defaultColor = bondColor();
 	if(bondColorProperty && bondColorProperty.size() * 2 == output.size()) {
 		// Take bond colors directly from the color property.
 		auto bc = output.begin();
@@ -335,7 +354,8 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 	else if(useParticleColors && particleVis) {
 		// Derive bond colors from particle colors.
 		size_t particleCount = particles->elementCount();
-		std::vector<ColorA> particleColors = particleVis->particleColors(particles, false, false);
+		ConstPropertyAccessAndRef<Color> particleColors = particleVis->particleColors(particles, false);
+		OVITO_ASSERT(particleColors.size() == particleCount);
 		auto bc = output.begin();
 		for(const auto& bond : topologyProperty) {
 			if((size_t)bond[0] < particleCount && (size_t)bond[1] < particleCount) {
@@ -353,11 +373,11 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 			// Assign colors based on bond types.
 			// Generate a lookup map for bond type colors.
 			const std::map<int, Color>& colorMap = bondTypeProperty->typeColorMap();
-			std::array<ColorA,16> colorArray;
+			std::array<Color,16> colorArray;
 			// Check if all type IDs are within a small, non-negative range.
 			// If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
 			if(boost::algorithm::all_of(colorMap,
-					[&colorArray](const std::map<int, ColorA>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
+					[&colorArray](const std::map<int, Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
 				colorArray.fill(defaultColor);
 				for(const auto& entry : colorMap)
 					colorArray[entry.first] = entry.second;
@@ -398,19 +418,9 @@ std::vector<ColorA> BondsVis::halfBondColors(const ParticlesObject* particles, b
 		}
 	}
 
-	// Apply transparency values.
-	if(transparencyProperty && transparencyProperty.size() * 2 == output.size()) {
-		auto c = output.begin();
-		for(FloatType t : transparencyProperty) {
-			FloatType alpha = qBound(FloatType(0), FloatType(1)-t, FloatType(1));
-			c->a() = alpha; ++c;
-			c->a() = alpha; ++c;
-		}
-	}
-
 	// Highlight selected bonds.
 	if(bondSelectionProperty && bondSelectionProperty.size() * 2 == output.size()) {
-		const ColorA selColor = selectionBondColor();
+		const Color selColor = selectionBondColor();
 		const int* t = bondSelectionProperty.cbegin();
 		for(auto c = output.begin(); c != output.end(); ++t) {
 			if(*t) {
@@ -462,7 +472,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 					if(!str.isEmpty()) str += QStringLiteral(" | ");
 					str += property->name();
 					str += QStringLiteral(" ");
-					if(property->dataType() == PropertyStorage::Int) {
+					if(property->dataType() == PropertyObject::Int) {
 						ConstPropertyAccess<int, true> data(property);
 						for(size_t component = 0; component < data.componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
@@ -475,14 +485,14 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 							}
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Int64) {
+					else if(property->dataType() == PropertyObject::Int64) {
 						ConstPropertyAccess<qlonglong, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
 							str += QString::number(data.get(bondIndex, component));
 						}
 					}
-					else if(property->dataType() == PropertyStorage::Float) {
+					else if(property->dataType() == PropertyObject::Float) {
 						ConstPropertyAccess<FloatType, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {
 							if(component != 0) str += QStringLiteral(", ");
@@ -490,7 +500,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 						}
 					}
 					else {
-						str += QStringLiteral("<%1>").arg(QMetaType::typeName(property->dataType()) ? QMetaType::typeName(property->dataType()) : "unknown");
+						str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
 					}
 				}
 

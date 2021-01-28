@@ -143,7 +143,6 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 		dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
 		dialog.setAcceptMode(QFileDialog::AcceptSave);
 		dialog.setFileMode(QFileDialog::AnyFile);
-		dialog.setConfirmOverwrite(true);
 		dialog.setDefaultSuffix("ovito");
 
 		QSettings settings;
@@ -214,9 +213,8 @@ bool GuiDataSetContainer::askForSaveChanges()
 bool GuiDataSetContainer::fileNew()
 {
 	OORef<DataSet> newSet = new DataSet();
-	if(Application::instance()->executionContext() == Application::ExecutionContext::Interactive && Application::instance()->guiMode())
-		newSet->loadUserDefaults();
-	setCurrentSet(newSet);
+	newSet->initializeObject(Application::instance()->executionContext());
+	setCurrentSet(std::move(newSet));
 	return true;
 }
 
@@ -284,7 +282,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 		if(!importerType) {
 
 			// Detect file format.
-			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), url);
+			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Interactive, url);
 			if(!taskManager().waitForFuture(importerFuture))
 				return false;
 
@@ -293,13 +291,10 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 				currentSet()->throwException(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
 		}
 		else {
-			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet()));
+			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Interactive));
 			if(!importer)
 				currentSet()->throwException(tr("Failed to import file. Could not initialize import service."));
 		}
-
-		// Load user-defined default settings for the importer.
-		importer->loadUserDefaults();
 
 		urlImporters.push_back(std::make_pair(url, std::move(importer)));
 	}
@@ -320,7 +315,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 		for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
 			OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
 			if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-				OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance(nullptr));
+				OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
 				if(editor) {
 					if(!editor->inspectNewFile(importer, url, mainWindow()))
 						return false;

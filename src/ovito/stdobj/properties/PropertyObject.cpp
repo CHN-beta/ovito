@@ -28,47 +28,46 @@
 namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyObject);
-DEFINE_PROPERTY_FIELD(PropertyObject, storage);
-DEFINE_REFERENCE_FIELD(PropertyObject, elementTypes);
+DEFINE_VECTOR_REFERENCE_FIELD(PropertyObject, elementTypes);
 DEFINE_PROPERTY_FIELD(PropertyObject, title);
 SET_PROPERTY_FIELD_LABEL(PropertyObject, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");
 SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChanged);
 
-/// Holds a shared, empty instance of the PropertyStorage class,
-/// which is used in places where a default storage is needed.
-/// This singleton instance is never modified.
-static const PropertyPtr defaultStorage = std::make_shared<PropertyStorage>();
-
 /******************************************************************************
-* Constructor.
+* Constructor creating an empty property array.
 ******************************************************************************/
-PropertyObject::PropertyObject(DataSet* dataset, PropertyPtr storage) : DataObject(dataset), 
-	_storage(std::move(storage))
+PropertyObject::PropertyObject(DataSet* dataset) : DataBuffer(dataset)
 {
-	if(!_storage.mutableValue())
-		_storage.mutableValue() = defaultStorage;
-	else
-		setIdentifier(name());
 }
 
 /******************************************************************************
-* Returns the data encapsulated by this object after making sure it is not
-* shared with other owners.
+* Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-const PropertyPtr& PropertyObject::modifiableStorage()
+PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type, QStringList componentNames) :
+	DataBuffer(dataset, elementCount, dataType, componentCount, stride, initializeMemory, std::move(componentNames)),
+	_name(name),
+	_type(type)
 {
-	// Copy data buffer if there is more than one active reference to the storage.
-	return PropertyStorage::makeMutable(_storage.mutableValue());
+	setIdentifier(name);
 }
 
 /******************************************************************************
-* Resizes the property storage.
+* Creates a copy of a property object.
 ******************************************************************************/
-void PropertyObject::resize(size_t newSize, bool preserveData)
+OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-	modifiableStorage()->resize(newSize, preserveData);
-	notifyTargetChanged(&PROPERTY_FIELD(storage));
+	// Let the base class create an instance of this class.
+	OORef<PropertyObject> clone = static_object_cast<PropertyObject>(DataBuffer::clone(deepCopy, cloneHelper));
+
+	// Copy internal data.
+	prepareReadAccess();
+	clone->_type = _type;
+	clone->_name = _name;
+	OVITO_ASSERT(clone->identifier() == clone->name());
+	finishReadAccess();
+
+	return clone;
 }
 
 /******************************************************************************
@@ -79,20 +78,9 @@ void PropertyObject::setName(const QString& newName)
 	if(newName == name())
 		return;
 
-	modifiableStorage()->setName(newName);
+	_name = newName;
 	setIdentifier(newName);
 	notifyTargetChanged(&PROPERTY_FIELD(title));
-}
-
-/******************************************************************************
-* Is called when the value of a non-animatable field of this object changes.
-******************************************************************************/
-void PropertyObject::propertyChanged(const PropertyFieldDescriptor& field)
-{
-	if(field == PROPERTY_FIELD(storage)) {
-		setIdentifier(storage() ? storage()->name() : QString());
-	}
-	DataObject::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -125,12 +113,20 @@ QString PropertyObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectP
 ******************************************************************************/
 void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
 {
-	DataObject::saveToStream(stream, excludeRecomputableData);
+	DataBuffer::saveToStream(stream, excludeRecomputableData);
 
-	stream.beginChunk(0x01);
-	OVITO_ASSERT(storage());
-	storage()->saveToStream(stream, excludeRecomputableData);
-	stream.endChunk();
+	prepareReadAccess();
+	try {
+		stream.beginChunk(0x100);
+		stream << _name;
+		stream << _type;
+		stream.endChunk();
+		finishReadAccess();
+	}
+	catch(...) {
+		finishReadAccess();
+		throw;
+	}
 }
 
 /******************************************************************************
@@ -138,36 +134,53 @@ void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomput
 ******************************************************************************/
 void PropertyObject::loadFromStream(ObjectLoadStream& stream)
 {
-	DataObject::loadFromStream(stream);
+	if(stream.formatVersion() >= 30007) {
+		DataBuffer::loadFromStream(stream);
 
-	stream.expectChunk(0x01);
-	PropertyPtr s = std::make_shared<PropertyStorage>();
-	s->loadFromStream(stream);
-	setStorage(std::move(s));
-	setIdentifier(storage()->name());
-	stream.closeChunk();
+		// Current file format:
+		stream.expectChunk(0x100);
+		stream >> _name;
+		stream >> _type;
+		stream.closeChunk();
+	}
+	else {
+		DataObject::loadFromStream(stream);
+
+		// Legacy file format:
+		// For backward compatibility with OVITO 3.3.5.
+		stream.expectChunk(0x01);
+		stream.expectChunk(0x02);
+		stream >> _name;
+		stream >> _type;
+		DataBuffer::loadFromStream(stream);
+		stream.closeChunk();
+	}
+
+	setIdentifier(name());
 }
 
 /******************************************************************************
-* Extends the data array and replicates the old data N times.
+* Checks if this property storage and its contents exactly match those of 
+* another property storage.
 ******************************************************************************/
-void PropertyObject::replicate(size_t n, bool replicateValues)
+bool PropertyObject::equals(const PropertyObject& other) const
 {
-	OVITO_ASSERT(n >= 1);
-	if(n <= 1) return;
-	ConstPropertyPtr oldData = storage();
-	resize(oldData->size() * n, false);
-	if(replicateValues) {
-		// Replicate data values N times.
-		size_t chunkSize = oldData->size();
-		for(size_t i = 0; i < n; i++) {
-			modifiableStorage()->copyRangeFrom(*oldData, 0, i * chunkSize, chunkSize);
-		}
-	}
-	else {
-		// Copy just one replica of the data from the old memory buffer to the new one.
-		modifiableStorage()->copyRangeFrom(*oldData, 0, 0, oldData->size());
-	}
+	prepareReadAccess();
+	other.prepareReadAccess();
+
+	bool result = [&]() {
+		if(this->type() != other.type()) return false;
+		if(this->type() == GenericUserProperty && this->name() != other.name()) return false;
+		return true;
+	}();
+
+	other.finishReadAccess();
+	finishReadAccess();
+
+	if(!result)
+		return false;
+
+	return DataBuffer::equals(other);
 }
 
 /******************************************************************************
@@ -177,9 +190,26 @@ void PropertyObject::replicate(size_t n, bool replicateValues)
 ******************************************************************************/
 void PropertyObject::makeWritableFromPython()
 {
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+
 	if(!isSafeToModify())
-		throwException(tr("Modifying the values of this property is not allowed, because it is currently shared by more than one property container or data collection. Please explicitly request a mutable version of the property by using the '_' notation."));
+		throwException(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
+						"Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
+						"See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
 	_isWritableFromPython++;
+}
+
+/******************************************************************************
+* Puts the property array back into the default read-only state.
+* In the read-only state, the Python binding layer will not permit write 
+* access to the property's internal data.
+******************************************************************************/
+void PropertyObject::makeReadOnlyFromPython()
+{
+	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+
+	OVITO_ASSERT(_isWritableFromPython > 0);
+	_isWritableFromPython--;
 }
 
 /******************************************************************************
@@ -192,7 +222,7 @@ void PropertyObject::makeWritableFromPython()
 ******************************************************************************/
 std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguousTypeIdMapping(int baseId) const
 {
-	OVITO_ASSERT(dataType() == PropertyStorage::Int && componentCount() == 1);
+	OVITO_ASSERT(dataType() == PropertyObject::Int && componentCount() == 1);
 
 	// Generate sorted list of existing type IDs.
 	std::set<int> typeIds;
@@ -200,7 +230,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 		typeIds.insert(t->numericId());
 
 	// Add ID values that occur in the property array but which have not been defined as a type.
-	for(int t : ConstPropertyAccess<int>(storage()))
+	for(int t : ConstPropertyAccess<int>(this))
 		typeIds.insert(t);
 
 	// Build the mappings between old and new IDs.
@@ -214,19 +244,133 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 	}
 
 	// Create a copy of the per-element type array in which old IDs have been replaced with new ones.
-	PropertyPtr remappedArray;
+	ConstPropertyPtr remappedArray;
 	if(remappingRequired) {
-		remappedArray = std::make_shared<PropertyStorage>(*storage());
-		for(int& id : PropertyAccess<int>(remappedArray))
+		// Make a copy of this property, which can be modified.
+		PropertyAccessAndRef<int> array(CloneHelper().cloneObject(this, false));
+		for(int& id : array)
 			id = oldToNewMap[id];
+		remappedArray = array.take();
 	}
 	else {
-		remappedArray = storage();
+		// No data copied needed if ordering hasn't changed.
+		remappedArray = this;
 	}
 
 	return std::make_tuple(std::move(newToOldMap), std::move(remappedArray));
 }
 
+/******************************************************************************
+* Sorts the types w.r.t. their name.
+* This method is used by file parsers that create element types on the
+* go while the read the data. In such a case, the ordering of types
+* depends on the storage order of data elements in the file, which is not desirable.
+******************************************************************************/
+void PropertyObject::sortElementTypesByName()
+{
+	OVITO_ASSERT(dataType() == StandardDataType::Int);
+
+	// Check if type IDs form a consecutive sequence starting at 1.
+	// If not, we leave the type order as it is.
+	int id = 1;
+	for(const ElementType* type : elementTypes()) {
+		if(type->numericId() != id++)
+			return;
+	}
+
+	// Check if types are already in the correct order.
+	if(std::is_sorted(elementTypes().begin(), elementTypes().end(), 
+			[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; }))
+		return;
+
+	// Reorder types by name.
+	DataRefVector<ElementType> types = elementTypes();
+	std::sort(types.begin(), types.end(), 
+		[](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; });
+	setElementTypes(std::move(types));
+
+#if 0
+	// NOTE: No longer reassigning numeric IDs to the types here, because the new requirement is
+	// that the numeric ID of an existing ElementType never changes once the type has been created.
+	// Otherwise, the editable proxy objects would become out of sync.
+
+	// Build map of IDs.
+	std::vector<int> mapping(elementTypes().size() + 1);
+	for(int index = 0; index < elementTypes().size(); index++) {
+		int id = elementTypes()[index]->numericId();
+		mapping[id] = index + 1;
+		if(id != index + 1)
+			makeMutable(elementTypes()[index])->setNumericId(index + 1);
+	}
+
+	// Remap type IDs.
+	for(int& t : PropertyAccess<int>(this)) {
+		OVITO_ASSERT(t >= 1 && t < mapping.size());
+		t = mapping[t];
+	}
+#endif
+}
+
+/******************************************************************************
+* Sorts the element types with respect to the numeric identifier.
+******************************************************************************/
+void PropertyObject::sortElementTypesById()
+{
+	DataRefVector<ElementType> types = elementTypes();
+	std::sort(types.begin(), types.end(), 
+		[](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
+	setElementTypes(std::move(types));
+}
+
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	DataBuffer::updateEditableProxies(state, dataPath);
+
+	// Note: 'this' may no longer exist at this point, because the base method implementation may
+	// have already replaced it with a mutable copy.
+	const PropertyObject* self = static_object_cast<PropertyObject>(dataPath.back());
+
+	if(PropertyObject* proxy = static_object_cast<PropertyObject>(self->editableProxy())) {
+		// Synchronize the actual data object with the editable proxy object.
+		OVITO_ASSERT(proxy->type() == self->type());
+		OVITO_ASSERT(proxy->dataType() == self->dataType());
+		OVITO_ASSERT(proxy->title() == self->title());
+
+		// Add the proxies of newly created element types to the proxy property object.
+		for(const ElementType* type : self->elementTypes()) {
+			ElementType* proxyType = static_object_cast<ElementType>(type->editableProxy());
+			OVITO_ASSERT(proxyType != nullptr);
+			if(!proxy->elementTypes().contains(proxyType))
+				proxy->addElementType(proxyType);
+		}
+
+		// Add element types that are non-existing in the actual property object.
+		// Note: Currently this should never happen, because file parser never
+		// remove element types.
+		for(const ElementType* proxyType : proxy->elementTypes()) {
+			OVITO_ASSERT(std::any_of(self->elementTypes().begin(), self->elementTypes().end(), [proxyType](const ElementType* type) { return type->editableProxy() == proxyType; }));
+		}
+	}
+	else if(!self->elementTypes().empty()) {
+		// Create and initialize a new proxy property object. 
+		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		newProxy->setTitle(self->title());
+
+		// Adopt the proxy objects corresponding to the element types, which have already been created by
+		// the recursive method.
+		for(const ElementType* type : self->elementTypes()) {
+			OVITO_ASSERT(type->editableProxy() != nullptr);
+			newProxy->addElementType(static_object_cast<ElementType>(type->editableProxy()));
+		}
+
+		// Make this data object mutable and attach the proxy object to it.
+		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
+	}
+}
 
 }	// End of namespace
 }	// End of namespace

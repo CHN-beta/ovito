@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,9 +29,6 @@
 
 namespace Ovito {
 
-class SingleReferenceFieldBase;		// defined in PropertyField.h
-class VectorReferenceFieldBase;		// defined in PropertyField.h
-
 /// Bit-flags controlling the behavior of a property field.
 enum PropertyFieldFlag
 {
@@ -41,7 +38,7 @@ enum PropertyFieldFlag
 	PROPERTY_FIELD_VECTOR						= (1<<1),
 	/// Do not create automatic undo records when the value of the property or reference field changes.
 	PROPERTY_FIELD_NO_UNDO						= (1<<2),
-	/// Create a weak reference to the reference target.
+	/// Marks a reference to an object as a weak one that doesn't keep the target object alive.
 	PROPERTY_FIELD_WEAK_REF						= (1<<3),
 	/// Controls whether or not a ReferenceField::TargetChanged event should
 	/// be generated each time the property value changes.
@@ -90,19 +87,25 @@ public:
 
 	/// Constructor	for a property field that stores a non-animatable property.
 	PropertyFieldDescriptor(RefMakerClass* definingClass, const char* identifier, PropertyFieldFlags flags,
-			void (*_propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
-			QVariant (*_propertyStorageReadFunc)(const RefMaker*),
-			void (*_propertyStorageWriteFunc)(RefMaker*, const QVariant&),
-			void (*_propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
-			void (*_propertyStorageLoadFunc)(RefMaker*, LoadStream&));
+			void (*propertyStorageCopyFunc)(RefMaker*, const RefMaker*),
+			QVariant (*propertyStorageReadFunc)(const RefMaker*),
+			void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
+			void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
+			void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&));
 
 	/// Constructor	for a property field that stores a single reference to a RefTarget.
 	PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
-		SingleReferenceFieldBase& (*_storageAccessFunc)(const RefMaker*));
+		RefTarget* (*singleReferenceReadFunc)(const RefMaker*), 
+		void (*singleReferenceWriteFunc)(RefMaker*, const RefTarget*),
+		void (*singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>));
 
 	/// Constructor	for a property field that stores a vector of references to RefTarget objects.
 	PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
-		VectorReferenceFieldBase& (*_storageAccessFunc)(const RefMaker*));
+		int (*vectorReferenceCountFunc)(const RefMaker*),
+		RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int),
+		void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
+		void (*vectorReferenceRemoveFunc)(RefMaker*, int),
+		void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>));
 
 	/// Returns the unique identifier of the reference field.
 	const char* identifier() const { return _identifier; }
@@ -180,25 +183,43 @@ protected:
 	PropertyFieldFlags _flags;
 
 	/// Stores a pointer to the function that copies the property field's value from one RefMaker instance to another.
-	void (*propertyStorageCopyFunc)(RefMaker*, const RefMaker*) = nullptr;
+	void (*_propertyStorageCopyFunc)(RefMaker*, const RefMaker*) = nullptr;
 
 	/// Stores a pointer to the function that reads the property field's value for a RefMaker instance.
-	QVariant (*propertyStorageReadFunc)(const RefMaker*) = nullptr;
+	QVariant (*_propertyStorageReadFunc)(const RefMaker*) = nullptr;
 
 	/// Stores a pointer to the function that sets the property field's value for a RefMaker instance.
-	void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&) = nullptr;
+	void (*_propertyStorageWriteFunc)(RefMaker*, const QVariant&) = nullptr;
 
 	/// Stores a pointer to the function that saves the property field's value to a stream.
-	void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&) = nullptr;
+	void (*_propertyStorageSaveFunc)(const RefMaker*, SaveStream&) = nullptr;
 
 	/// Stores a pointer to the function that loads the property field's value from a stream.
-	void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&) = nullptr;
+	void (*_propertyStorageLoadFunc)(RefMaker*, LoadStream&) = nullptr;
 
-	/// Stores a pointer to the function that returns the single reference field for a RefMaker instance.
-	SingleReferenceFieldBase& (*singleStorageAccessFunc)(const RefMaker*) = nullptr;
+	/// Accessor function returning the referenced target object for a RefMaker instance.
+	RefTarget* (*_singleReferenceReadFunc)(const RefMaker*) = nullptr;
 
-	/// Stores a pointer to the function that return the vector reference field for a RefMaker instance.
-	VectorReferenceFieldBase& (*vectorStorageAccessFunc)(const RefMaker*) = nullptr;
+	/// Accessor function setting the referenced target object for a RefMaker instance.
+	void (*_singleReferenceWriteFunc)(RefMaker*, const RefTarget*) = nullptr;
+
+	/// Accessor function setting the referenced target object for a RefMaker instance.
+	void (*_singleReferenceWriteFuncRef)(RefMaker*, OORef<RefTarget>) = nullptr;
+
+	/// Accessor function returning the number of referenced target objects in a vector reference field.
+	int (*_vectorReferenceCountFunc)(const RefMaker*) = nullptr;
+
+	/// Accessor function returning the i-th referenced target object for a vector reference field.
+	RefTarget* (*_vectorReferenceGetFunc)(const RefMaker*, int) = nullptr;
+
+	/// Accessor function replacing the i-th referenced target object from a vector reference field.
+	void (*_vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*) = nullptr;
+
+	/// Accessor function erasing the i-th referenced target object from a vector reference field.
+	void (*_vectorReferenceRemoveFunc)(RefMaker*, int) = nullptr;
+
+	/// Accessor function insertings a target object into a vector reference field.
+	void (*_vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>) = nullptr;
 
 	/// The human-readable name of this property field. It will be used
 	/// as label text in the user interface.
@@ -215,5 +236,3 @@ protected:
 };
 
 }	// End of namespace
-
-

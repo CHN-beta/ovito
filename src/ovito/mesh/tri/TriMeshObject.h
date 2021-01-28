@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,6 +42,10 @@ public:
 	/// Constructor that creates an object with an empty triangle mesh.
 	Q_INVOKABLE TriMeshObject(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
+	
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Triangle mesh"); }
 

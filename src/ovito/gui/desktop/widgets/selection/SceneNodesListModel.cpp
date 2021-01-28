@@ -132,7 +132,7 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 	}
 
 	// If a node is being removed from the scene, remove it from our internal list.
-	if(event.type() == ReferenceEvent::ReferenceRemoved) {
+	if(event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) {
 		// Don't know how else to do this in a safe manner. Rebuild the entire model from scratch.
 		onDataSetChanged(_datasetContainer.currentSet());
 	}

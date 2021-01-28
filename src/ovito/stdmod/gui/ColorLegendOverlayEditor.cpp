@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,9 +29,11 @@
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/CustomParameterUI.h>
-#include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
+#include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -154,7 +156,7 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	sublayout->addWidget(moveOverlayAction->createPushButton(), subrow++, 0, 1, 2);
+	sublayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow++, 0, 1, 2);
 
 	QGroupBox* sizeBox = new QGroupBox(tr("Size"));
 	layout->addWidget(sizeBox, row++, 0, 1, 2);

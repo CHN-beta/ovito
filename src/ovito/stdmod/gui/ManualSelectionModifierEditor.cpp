@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,9 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
-#include <ovito/gui/desktop/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -120,7 +121,7 @@ public:
 	virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
 		_fence.clear();
 		if(event->button() == Qt::LeftButton) {
-			_fence.push_back(Point2(event->localPos().x(), event->localPos().y())
+			_fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
 					* (FloatType)vpwin->devicePixelRatio());
 			vpwin->viewport()->updateViewport();
 		}
@@ -130,7 +131,7 @@ public:
 	/// Handles the mouse move events for a Viewport.
 	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
 		if(!_fence.isEmpty()) {
-			_fence.push_back(Point2(event->localPos().x(), event->localPos().y())
+			_fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
 					* (FloatType)vpwin->devicePixelRatio());
 			vpwin->viewport()->updateViewport();
 		}
@@ -219,7 +220,7 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// List only property containers that support element selection.
 	pclassUI->setContainerFilter([](const PropertyContainer* container) {
-		return container->getOOMetaClass().isValidStandardPropertyId(PropertyStorage::GenericSelectionProperty)
+		return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)
 			&& container->getOOMetaClass().supportsViewportPicking();
 	});
 
@@ -232,12 +233,12 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 	PickElementMode* pickElementMode = new PickElementMode(this);
 	connect(this, &QObject::destroyed, pickElementMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Pick"), this, pickElementMode);
-	sublayout->addWidget(pickModeAction->createPushButton());
+	sublayout->addWidget(new ViewportModeButton(pickModeAction));
 
 	FenceSelectionMode* fenceMode = new FenceSelectionMode(this);
 	connect(this, &QObject::destroyed, fenceMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* fenceModeAction = new ViewportModeAction(mainWindow(), tr("Fence selection"), this, fenceMode);
-	sublayout->addWidget(fenceModeAction->createPushButton());
+	sublayout->addWidget(new ViewportModeButton(fenceModeAction));
 
 	// Deactivate input modes when editor is reset.
 	connect(this, &PropertiesEditor::contentsReplaced, pickModeAction, &ViewportModeAction::deactivateMode);

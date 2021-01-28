@@ -11,6 +11,7 @@
 #define QWT_PLOT_RENDERER_H
 
 #include "qwt_global.h"
+
 #include <qobject.h>
 #include <qsize.h>
 
@@ -117,9 +118,7 @@ public:
 
 #ifndef QWT_NO_SVG
 #ifdef QT_SVG_LIB
-#if QT_VERSION >= 0x040500
     void renderTo( QwtPlot *, QSvgGenerator & ) const;
-#endif
 #endif
 #endif
 

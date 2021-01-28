@@ -761,8 +761,4 @@ using Matrix3 = Matrix_3<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix3);
-Q_DECLARE_METATYPE(Ovito::Matrix3*);
 Q_DECLARE_TYPEINFO(Ovito::Matrix3, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Matrix3*, Q_PRIMITIVE_TYPE);
-
-

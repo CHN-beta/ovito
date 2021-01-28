@@ -37,7 +37,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow* mainWindow) :
 {
 	// Create data inspection applets.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
-		OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance(nullptr));
+		OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance());
 		_applets.push_back(std::move(applet));
 	}
 	// Give applets a fixed ordering.

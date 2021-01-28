@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -221,6 +221,11 @@ public:
 	    return ((x() <= y()) ? ((x() <= z()) ? 0 : 2) : ((y() <= z()) ? 1 : 2));
 	}
 
+	/// \brief Returns the midpoint that is located halfway between this point and another point.
+	Q_DECL_CONSTEXPR inline Point_3 midpoint(const Point_3& other) const {
+		return Point_3(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()), T(0.5) * (z() + other.z()));
+	}
+
 	/// \brief Generates a string representation of this point of the form (x y z).
 	QString toString() const {
 		return QString("(%1 %2 %3)").arg(x()).arg(y()).arg(z());
@@ -342,13 +347,13 @@ using Point3I = Point_3<int>;
 
 }	// End of namespace
 
+// Specialize STL templates for Point_3.
+namespace std {
+	template<typename T> struct tuple_size<Ovito::Point_3<T>> : std::integral_constant<std::size_t, 3> {};
+	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Point_3<T>> { using type = T; };
+};
+
 Q_DECLARE_METATYPE(Ovito::Point3);
 Q_DECLARE_METATYPE(Ovito::Point3I);
-Q_DECLARE_METATYPE(Ovito::Point3*);
-Q_DECLARE_METATYPE(Ovito::Point3I*);
 Q_DECLARE_TYPEINFO(Ovito::Point3, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Point3I, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Point3*, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Point3I*, Q_PRIMITIVE_TYPE);
-
-

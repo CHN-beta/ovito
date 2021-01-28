@@ -48,7 +48,7 @@ public:
 									///< If there is no selection, use scene bounding box.
 		ORBIT_USER_DEFINED			///< Use the orbit center set by the user.
 	};
-	Q_ENUMS(OrbitCenterMode);
+	Q_ENUM(OrbitCenterMode);
 
 public:
 
@@ -108,16 +108,10 @@ public Q_SLOTS:
 	}
 
 	/// \brief Zooms all viewports to the extents of the currently selected nodes.
-	void zoomToSelectionExtents() {
-		for(Viewport* vp : viewports())
-			vp->zoomToSelectionExtents();
-	}
+	void zoomToSelectionExtents();
 
 	/// \brief Zooms to the extents of the scene.
-	void zoomToSceneExtents() {
-		for(Viewport* vp : viewports())
-			vp->zoomToSceneExtents();
-	}
+	void zoomToSceneExtents();
 
 	/// \brief This will flag all viewports for redrawing.
 	///
@@ -135,7 +129,7 @@ public Q_SLOTS:
 protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
@@ -157,13 +151,13 @@ Q_SIGNALS:
 private:
 
 	/// The list of viewports.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<Viewport>, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE);
 
 	/// The active viewport. May be NULL.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
 	/// The maximized viewport or NULL.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
 	/// Controls around which point the viewport camera should orbit.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OrbitCenterMode, orbitCenterMode, setOrbitCenterMode, PROPERTY_FIELD_NO_UNDO);
@@ -192,14 +186,11 @@ private:
  */
 class OVITO_CORE_EXPORT ViewportSuspender {
 public:
-	ViewportSuspender(ViewportConfiguration* vpconf) : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
-	ViewportSuspender(RefMaker* object);
+	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
+	ViewportSuspender(RefMaker* object) noexcept;
 	~ViewportSuspender() { _vpconf.resumeViewportUpdates(); }
 private:
 	ViewportConfiguration& _vpconf;
 };
 
 }	// End of namespace
-
-Q_DECLARE_METATYPE(Ovito::ViewportConfiguration::OrbitCenterMode);
-Q_DECLARE_TYPEINFO(Ovito::ViewportConfiguration::OrbitCenterMode, Q_PRIMITIVE_TYPE);

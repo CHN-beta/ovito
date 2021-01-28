@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 
@@ -73,8 +74,11 @@ public:
 	/// \brief Constructs a new particle type.
 	Q_INVOKABLE ParticleType(DataSet* dataset);
 
-	/// \brief Initializes the element type from a variable list of attributes delivered by a file importer.
-	virtual bool initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId) override;
+	/// \brief Initializes the element type's attributes to standard values.
+	virtual void initializeType(const PropertyReference& property, ExecutionContext executionContext) override;
+
+	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
+	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
 	//////////////////////////////////// Utility methods ////////////////////////////////
 
@@ -97,7 +101,7 @@ public:
 	}
 
 	/// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
-	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, const FileImporterClass* importerType = nullptr);
+	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType = nullptr);
 
 	//////////////////////////////////// Default settings ////////////////////////////////
 
@@ -107,31 +111,45 @@ public:
 		return std::get<0>(_predefinedParticleTypes[predefType]);
 	}
 
+	/// Returns the hard-coded color of a predefined particle type.
+	static const Color& getPredefinedParticleTypeColor(PredefinedParticleType predefType) {
+		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_PARTICLE_TYPES);
+		return std::get<1>(_predefinedParticleTypes[predefType]);
+	}
+
 	/// Returns the name string of a predefined structure type.
 	static const QString& getPredefinedStructureTypeName(PredefinedStructureType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
 		return std::get<0>(_predefinedStructureTypes[predefType]);
 	}
 
-	/// Returns the default color for a named particle type.
-	static Color getDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults = true);
-
-	/// Changes the default color for a named particle type.
-	static void setDefaultParticleColor(ParticlesObject::Type typeClass, const QString& particleTypeName, const Color& color);
+	/// Returns the hard-coded color of a predefined structure type.
+	static const Color& getPredefinedStructureTypeColor(PredefinedStructureType predefType) {
+		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+		return std::get<1>(_predefinedStructureTypes[predefType]);
+	}
 
 	/// Returns the default radius for a named particle type.
-	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool userDefaults = true);
+	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
 
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius);
 
+protected:
+
+	/// Is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
-	/// The default display radius to be used for particles of this type.
+	/// The display radius to be used for particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 
+	/// The visualization shape for particles of this type.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape, shape, setShape);
+
 	/// An optional user-defined shape used for rendering particles of this type.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(TriMeshObject, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriMeshObject>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);

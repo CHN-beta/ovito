@@ -29,6 +29,7 @@
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -88,65 +89,89 @@ public:
 		}
 	};
 
-	/**
-	 * Base class for data structures holding a single frame's data.
-	 */
-	class OVITO_CORE_EXPORT FrameData
-	{
-	public:
+	struct LoadOperationRequest {
 
-		/// Transfers the loaded data into a data collection.
-		/// This function is called by the system from the main thread after the asynchronous loading task
-		/// has finished. An implementation of this method should try to re-use any existing data objects from the provided data collection.
-		virtual OORef<DataCollection> handOver(const DataCollection* existing, bool isNewFile, CloneHelper& cloneHelper, FileSource* fileSource) = 0;
+		/// The global dataset.
+		DataSet* dataset = nullptr;
 
-		/// Returns the status of the load operation.
-		const PipelineStatus& status() const { return _status; }
+		/// The source file information.
+		Frame frame;
 
-		/// Sets the status of the load operation.
-		void setStatus(const QString& statusText) { _status.setText(statusText); }
+		/// The local handle to the input file.
+		FileHandle fileHandle;
 
-	private:
+		/// The storage container for the loaded file data, which is initialized with the state 
+		/// from a previous load operation. 
+		PipelineFlowState state;
 
-		/// Stores additional status information about the load operation.
-		PipelineStatus _status;
+		/// Pointer to the FileSource that initiated the load operation.
+		QPointer<PipelineObject> dataSource;
+
+		/// If a loaded data collection consists of sub-collections, this string specifies the 
+		/// prefix to be prepended to the identifiers of data objects loaded by the file reader.
+		QString dataBlockPrefix;
+
+		/// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 
+		bool isNewlyImportedFile = true;
+
+		/// Type of execution context (interactive/scripting) in which the load operation runs.
+		ExecutionContext executionContext = ExecutionContext::Scripting;
 	};
-
-	/// A managed pointer to a FrameData instance.
-	using FrameDataPtr = std::shared_ptr<FrameData>;
 
 	/**
 	 * Base class for frame data loader routines.
 	 */
-	class OVITO_CORE_EXPORT FrameLoader : public AsynchronousTask<FrameDataPtr>
+	class OVITO_CORE_EXPORT FrameLoader : public AsynchronousTask<PipelineFlowState>
 	{
 	public:
 
 		/// Constructor.
-		FrameLoader(const Frame& frame, const FileHandle& fileHandle) :
-			_frame(frame), _fileHandle(fileHandle) {}
+		FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
+
+		/// Returns the global dataset this frame loader belongs to.
+		DataSet* dataset() const { return _loadRequest.dataset; }
 
 		/// Returns the source file information.
-		const Frame& frame() const { return _frame; }
+		const Frame& frame() const { return _loadRequest.frame; }
 
 		/// Returns the local handle to the input data file.
-		const FileHandle& fileHandle() const { return _fileHandle; }
+		const FileHandle& fileHandle() const { return _loadRequest.fileHandle; }
 
-		/// Calls loadFile() and sets the returned frame data as result of the asynchronous task.
+		/// Returns a reference to the pipeline state that receives the loaded file data. 
+		PipelineFlowState& state() { return _loadRequest.state; }
+
+		/// Returns the FileSource that owns the file importer.
+		PipelineObject* dataSource() const { return _loadRequest.dataSource; }
+
+		/// Returns type of execution context (interactive/scripting) in which the frame loading was triggered.
+		ExecutionContext executionContext() const { return _loadRequest.executionContext; }
+
+		/// If a loaded data collection consists of sub-collections, the string returned by this method specifies the 
+		/// prefix to be prepended to the identifiers of data objects loaded by the current file reader.
+		const QString& dataBlockPrefix() const { return _loadRequest.dataBlockPrefix; }
+
+		/// File parser implementations call this method to indicate that the input file contains
+		/// additional frames stored back to back with the currently loaded one.
+		void signalAdditionalFrames() { _additionalFramesDetected = true; }
+
+		/// Flag that is set by the parser to indicate that the input file contains more than one animation frame.
+		bool additionalFramesDetected() const { return _additionalFramesDetected; }
+
+		/// Calls loadFile() and sets the loaded data collection as result of the asynchronous task.
 		virtual void perform() override;
 
 	protected:
 
 		/// Reads the frame data from the external file.
-		virtual FrameDataPtr loadFile() = 0;
+		virtual void loadFile() = 0;
 
 	private:
 
-		/// The source file information.
-		Frame _frame;
+		/// Data structure holding information about the load operation.
+		LoadOperationRequest _loadRequest;
 
-		/// The local handle to the input file.
-		FileHandle _fileHandle;
+		/// Flag that is set by the parser to indicate that the input file contains more than one animation frame.
+		bool _additionalFramesDetected = false;
 	};
 
 	/// A managed pointer to a FrameLoader instance.
@@ -232,8 +257,11 @@ public:
 	/// \brief Sends a request to the FileSource owning this importer to refresh the animation frame sequence.
 	void requestFramesUpdate(bool refetchCurrentFile = false);
 
+	/// Loads the data for the given frame from the external file.
+	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request);
+
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-	virtual FrameLoaderPtr createFrameLoader(const Frame& frame, const FileHandle& file) = 0;
+	virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
 
 	/// Creates an asynchronous frame discovery object that scans a file for contained animation frames.
 	virtual FrameFinderPtr createFrameFinder(const FileHandle& file) { return {}; }

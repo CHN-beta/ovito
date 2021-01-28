@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,23 +50,30 @@ CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(DataSet* dataset)
 	_cutoff(3.2), 
 	_mode(AdaptiveCutoffMode)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void CommonNeighborAnalysisModifier::initializeObject(ExecutionContext executionContext)
+{
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
-	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
-	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
-	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
-	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
+	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
+	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
+	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
+	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
+
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
-	if(structureTypes().size() != NUM_STRUCTURE_TYPES)
-		throwException(tr("The number of structure types has changed. Please remove this modifier from the pipeline and insert it again."));
-
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
 	particles->verifyIntegrity();
@@ -76,26 +83,23 @@ Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEn
 		throwException(tr("The CNA modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == AdaptiveCutoffMode) {
-		return std::make_shared<AdaptiveCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+		return std::make_shared<AdaptiveCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == IntervalCutoffMode) {
-		return std::make_shared<IntervalCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty));
+		return std::make_shared<IntervalCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == BondMode) {
 		particles->expectBonds()->verifyIntegrity();
 		const PropertyObject* topologyProperty = particles->expectBonds()->expectProperty(BondsObject::TopologyProperty);
 		const PropertyObject* periodicImagesProperty = particles->expectBonds()->getProperty(BondsObject::PeriodicImageProperty);
-		return std::make_shared<BondCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty),
-			topologyProperty->storage(), periodicImagesProperty ? periodicImagesProperty->storage() : nullptr);
+		return std::make_shared<BondCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
 	}
 	else {
-		return std::make_shared<FixedCNAEngine>(particles, posProperty->storage(), simCell->data(), getTypesToIdentify(NUM_STRUCTURE_TYPES), std::move(selectionProperty), cutoff());
+		return std::make_shared<FixedCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 	}
 }
 
@@ -117,7 +121,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
 	// Perform analysis on each particle.
 	if(!selection()) {
 		parallelFor(positions()->size(), *this, [&](size_t index) {
-			output[index] = determineStructureAdaptive(neighFinder, index, typesToIdentify());
+			output[index] = determineStructureAdaptive(neighFinder, index);
 		});
 	}
 	else {
@@ -125,7 +129,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
 		parallelFor(positions()->size(), *this, [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
-				output[index] = determineStructureAdaptive(neighFinder, index, typesToIdentify());
+				output[index] = determineStructureAdaptive(neighFinder, index);
 			else
 				output[index] = OTHER;
 		});
@@ -153,7 +157,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
 	// Perform analysis on each particle.
 	if(!selection()) {
 		parallelFor(positions()->size(), *this, [&](size_t index) {
-			output[index] = determineStructureInterval(neighFinder, index, typesToIdentify());
+			output[index] = determineStructureInterval(neighFinder, index);
 		});
 	}
 	else {
@@ -161,7 +165,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
 		parallelFor(positions()->size(), *this, [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
-				output[index] = determineStructureInterval(neighFinder, index, typesToIdentify());
+				output[index] = determineStructureInterval(neighFinder, index);
 			else
 				output[index] = OTHER;
 		});
@@ -186,7 +190,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
 	// Perform analysis on each particle.
 	if(!selection()) {
 		parallelFor(positions()->size(), *this, [&](size_t index) {
-			output[index] = determineStructureFixed(neighborListBuilder, index, typesToIdentify());
+			output[index] = determineStructureFixed(neighborListBuilder, index);
 		});
 	}
 	else {
@@ -194,7 +198,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
 		parallelFor(positions()->size(), *this, [&](size_t index) {
 			// Skip particles that are not included in the analysis.
 			if(selectionData[index])
-				output[index] = determineStructureFixed(neighborListBuilder, index, typesToIdentify());
+				output[index] = determineStructureFixed(neighborListBuilder, index);
 			else
 				output[index] = OTHER;
 		});
@@ -311,13 +315,13 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
 			ntotal++;
 		}
 
-		if(n421 == 12 && ntotal == 12 && typesToIdentify()[FCC])
+		if(n421 == 12 && ntotal == 12 && typeIdentificationEnabled(FCC))
 			output[particleIndex] = FCC;
-		else if(n421 == 6 && n422 == 6 && ntotal == 12 && typesToIdentify()[HCP])
+		else if(n421 == 6 && n422 == 6 && ntotal == 12 && typeIdentificationEnabled(HCP))
 			output[particleIndex] = HCP;
-		else if(n444 == 6 && n666 == 8 && ntotal == 14 && typesToIdentify()[BCC])
+		else if(n444 == 6 && n666 == 8 && ntotal == 14 && typeIdentificationEnabled(BCC))
 			output[particleIndex] = BCC;
-		else if(n555 == 12 && ntotal == 12 && typesToIdentify()[ICO])
+		else if(n555 == 12 && ntotal == 12 && typeIdentificationEnabled(ICO))
 			output[particleIndex] = ICO;
 		else
 			output[particleIndex] = OTHER;
@@ -423,7 +427,7 @@ int CommonNeighborAnalysisModifier::calcMaxChainLength(CNAPairBond* neighborBond
 	return maxChainLength;
 }
 
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::analyzeSmallSignature(NeighborBondArray& neighborArray, const QVector<bool>& typesToIdentify)
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::analyzeSmallSignature(NeighborBondArray& neighborArray)
 {
 	int nn = 12;
 	int n421 = 0;
@@ -453,13 +457,13 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::an
 		else if(numCommonNeighbors == 5 && numNeighborBonds == 5 && maxChainLength == 5) n555++;
 		else break;
 	}
-	if(n421 == 12 && typesToIdentify[FCC]) return FCC;
-	else if(n421 == 6 && n422 == 6 && typesToIdentify[HCP]) return HCP;
-	else if(n555 == 12 && typesToIdentify[ICO]) return ICO;
+	if(n421 == 12 && typeIdentificationEnabled(FCC)) return FCC;
+	else if(n421 == 6 && n422 == 6 && typeIdentificationEnabled(HCP)) return HCP;
+	else if(n555 == 12 && typeIdentificationEnabled(ICO)) return ICO;
 	return OTHER;
 }
 
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::analyzeLargeSignature(NeighborBondArray& neighborArray, const QVector<bool>& typesToIdentify)
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::analyzeLargeSignature(NeighborBondArray& neighborArray)
 {
 	int nn = 14;
 	int n444 = 0;
@@ -492,7 +496,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::an
 * Determines the coordination structure of a single particle using the
 * adaptive common neighbor analysis method.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::determineStructureAdaptive(NearestNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify)
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::determineStructureAdaptive(NearestNeighborFinder& neighFinder, size_t particleIndex)
 {
 	// Construct local neighbor list builder.
 	NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery(neighFinder);
@@ -502,7 +506,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 	int numNeighbors = neighQuery.results().size();
 
 	/////////// 12 neighbors ///////////
-	if(typesToIdentify[FCC] || typesToIdentify[HCP] || typesToIdentify[ICO]) {
+	if(typeIdentificationEnabled(FCC) || typeIdentificationEnabled(HCP) || typeIdentificationEnabled(ICO)) {
 
 		// Number of neighbors to analyze.
 		int nn = 12; // For FCC, HCP and Icosahedral atoms
@@ -526,13 +530,13 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 				neighborArray.setNeighborBond(ni1, ni2, (neighQuery.results()[ni1].delta - neighQuery.results()[ni2].delta).squaredLength() <= localCutoffSquared);
 		}
 
-		auto type = analyzeSmallSignature(neighborArray, typesToIdentify);
+		auto type = analyzeSmallSignature(neighborArray);
 		if (type != OTHER)
 			return type;
 	}
 
 	/////////// 14 neighbors ///////////
-	if(typesToIdentify[BCC]) {
+	if(typeIdentificationEnabled(BCC)) {
 
 		// Number of neighbors to analyze.
 		int nn = 14; // For BCC atoms
@@ -558,7 +562,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 				neighborArray.setNeighborBond(ni1, ni2, (neighQuery.results()[ni1].delta - neighQuery.results()[ni2].delta).squaredLength() <= localCutoffSquared);
 		}
 
-		auto type = analyzeLargeSignature(neighborArray, typesToIdentify);
+		auto type = analyzeLargeSignature(neighborArray);
 		if (type != OTHER)
 			return type;
 	}
@@ -660,7 +664,7 @@ public:
 * Determines the coordination structure of a single particle using the
 * interval common neighbor analysis method.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::determineStructureInterval(NearestNeighborFinder& neighFinder, size_t particleIndex, const QVector<bool>& typesToIdentify)
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::determineStructureInterval(NearestNeighborFinder& neighFinder, size_t particleIndex)
 {
 	// Construct local neighbor list builder.
 	NearestNeighborFinder::Query<MAX_NEIGHBORS> neighQuery(neighFinder);
@@ -670,8 +674,8 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 	int numNeighbors = neighQuery.results().size();
 
 	// Determine which structure types to search for.
-	bool analyzeShort = numNeighbors >= 12 && (typesToIdentify[FCC] || typesToIdentify[HCP] || typesToIdentify[ICO]);
-	bool analyzeLong = numNeighbors >= 14 && typesToIdentify[BCC];
+	bool analyzeShort = numNeighbors >= 12 && (typeIdentificationEnabled(FCC) || typeIdentificationEnabled(HCP) || typeIdentificationEnabled(ICO));
+	bool analyzeLong = numNeighbors >= 14 && typeIdentificationEnabled(BCC);
 	if (analyzeLong) numNeighbors = 14;
 	else if (analyzeShort) numNeighbors = 12;
 	else return OTHER;
@@ -741,7 +745,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 
 			if (n4 == nn || n5 == nn) {
 				// Coordination numbers are correct - perform traditional CNA
-				auto type = analyzeSmallSignature(neighborArray, typesToIdentify);
+				auto type = analyzeSmallSignature(neighborArray);
 				if (type != OTHER) {
 					FloatType intervalWidth = next->length - edge->length;
 					if (intervalWidth > bestIntervalWidth) {
@@ -782,7 +786,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 
 			if (n4 == 6 && n6 == 8) {
 				// Coordination numbers are correct - perform traditional CNA
-				auto type = analyzeLargeSignature(neighborArray, typesToIdentify);
+				auto type = analyzeLargeSignature(neighborArray);
 				if (type != OTHER) {
 					FloatType intervalWidth = next->length - edge->length;
 					if (intervalWidth > bestIntervalWidth) {
@@ -804,7 +808,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 * Determines the coordination structure of a single particle using the
 * conventional common neighbor analysis method.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex, const QVector<bool>& typesToIdentify)
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex)
 {
 	// Store neighbor vectors in a local array.
 	int numNeighbors = 0;
@@ -827,12 +831,12 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::de
 	}
 
 	if(numNeighbors == 12) { // Detect FCC and HCP atoms each having 12 NN.
-		auto type = analyzeSmallSignature(neighborArray, typesToIdentify);
+		auto type = analyzeSmallSignature(neighborArray);
 		if (type != OTHER)
 			return type;
 	}
-	else if(numNeighbors == 14 && typesToIdentify[BCC]) { // Detect BCC atoms having 14 NN (in 1st and 2nd shell).
-		auto type = analyzeLargeSignature(neighborArray, typesToIdentify);
+	else if(numNeighbors == 14 && typeIdentificationEnabled(BCC)) { // Detect BCC atoms having 14 NN (in 1st and 2nd shell).
+		auto type = analyzeLargeSignature(neighborArray);
 		if (type != OTHER)
 			return type;
 	}
@@ -861,6 +865,8 @@ void CommonNeighborAnalysisModifier::CNAEngine::applyResults(TimePoint time, Mod
 void CommonNeighborAnalysisModifier::BondCNAEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
 {
 	CNAEngine::applyResults(time, modApp, state);
+
+	// Output the bond property containing the CNA indices.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	particles->makeMutable(particles->expectBonds())->createProperty(cnaIndices());
 }

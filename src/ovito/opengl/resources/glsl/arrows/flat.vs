@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,18 +20,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#if __VERSION__ >= 130
-	in vec3 position;
-	in vec4 color;
-#else
-	#define in attribute
-	#define out varying
-	#define flat
-	#define color gl_Color
-	#define position gl_Vertex
-#endif
+uniform int picking_base_id;
+uniform bool is_picking_mode;
 
-in vec3 cylinder_axis;
+in vec3 position;
+in vec4 color;
+in vec3 cylinder_head;
 in float cylinder_radius;
 
 out vec4 color_gs;
@@ -40,8 +34,16 @@ out float cylinder_radius_gs;
 
 void main()
 {
-	color_gs = color;
-	cylinder_axis_gs = cylinder_axis;
+	if(!is_picking_mode) {
+		// Forward color to geometry shader.
+		color_gs = color;
+	}
+	else {
+		// Compute color from object ID.
+		color_gs = pickingModeColor(picking_base_id, gl_VertexID);
+	}		
+
+	cylinder_axis_gs = cylinder_head - position;
 	cylinder_radius_gs = cylinder_radius;
 	gl_Position = vec4(position, 1);
 }

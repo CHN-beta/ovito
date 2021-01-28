@@ -22,15 +22,16 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/app/GuiApplicationService.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/widgets/animation/AnimationTimeSpinner.h>
 #include <ovito/gui/desktop/widgets/animation/AnimationTimeSlider.h>
 #include <ovito/gui/desktop/widgets/animation/AnimationTrackBar.h>
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
+#include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
@@ -47,7 +48,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : _datasetContainer(this)
+MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #ifdef OVITO_EXPIRATION_DATE
@@ -64,15 +65,15 @@ MainWindow::MainWindow() : _datasetContainer(this)
 	setContextMenuPolicy(Qt::NoContextMenu);
 
 	// Create input manager.
-	setViewportInputManager(new ViewportInputManager(this, this, datasetContainer()));
+	setViewportInputManager(new ViewportInputManager(this, datasetContainer(), this));
 
 	// Create actions.
-	_actionManager = new ActionManager(this);
+	setActionManager(new WidgetActionManager(this, this));
 
 	// Let GUI application services register their actions.
 	for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
 		if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-			gui_service->registerActions(*_actionManager);
+			gui_service->registerActions(*actionManager(), this);
 	}
 
 	// Create the main menu
@@ -344,7 +345,7 @@ void MainWindow::createMainMenu()
 	// Let GUI application services add their actions to the main menu.
 	for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
 		if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-			gui_service->addActionsToMenu(*_actionManager, menuBar);
+			gui_service->addActionsToMenu(*actionManager(), menuBar);
 	}
 
 	setMenuBar(menuBar);
@@ -453,6 +454,14 @@ void MainWindow::openHelpTopic(const QString& page)
 	if(!QDesktopServices::openUrl(QUrl::fromLocalFile(fullPath))) {
 		Exception(tr("Could not launch web browser to display online manual. The requested file path is %1").arg(fullPath)).reportError();
 	}
+}
+
+/******************************************************************************
+* Gives the active viewport the input focus.
+******************************************************************************/
+void MainWindow::setViewportInputFocus() 
+{
+	viewportsPanel()->setFocus(Qt::OtherFocusReason);
 }
 
 /******************************************************************************

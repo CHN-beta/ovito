@@ -8,13 +8,13 @@
  *****************************************************************************/
 
 #ifndef QWT_PICKER_MACHINE
-#define QWT_PICKER_MACHINE 1
+#define QWT_PICKER_MACHINE
 
 #include "qwt_global.h"
-#include <qlist.h>
 
-class QEvent;
 class QwtEventPattern;
+class QEvent;
+template <typename T> class QList;
 
 /*!
   \brief A state machine for QwtPicker selections
@@ -57,7 +57,7 @@ public:
         End
     };
 
-    QwtPickerMachine( SelectionType );
+    explicit QwtPickerMachine( SelectionType );
     virtual ~QwtPickerMachine();
 
     //! Transition
@@ -88,7 +88,7 @@ public:
     QwtPickerTrackerMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -105,7 +105,7 @@ public:
     QwtPickerClickPointMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -121,7 +121,7 @@ public:
     QwtPickerDragPointMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -143,7 +143,7 @@ public:
     QwtPickerClickRectMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -164,7 +164,7 @@ public:
     QwtPickerDragRectMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -188,7 +188,7 @@ public:
     QwtPickerDragLineMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 /*!
@@ -208,7 +208,7 @@ public:
     QwtPickerPolygonMachine();
 
     virtual QList<Command> transition(
-        const QwtEventPattern &, const QEvent * );
+        const QwtEventPattern &, const QEvent * ) QWT_OVERRIDE;
 };
 
 #endif

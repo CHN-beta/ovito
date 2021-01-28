@@ -59,7 +59,7 @@ bool ElasticMapping::generateTessellationEdges(Task& promise)
 				continue;
 			Point3 p1 = tessellation().vertexPosition(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
 			Point3 p2 = tessellation().vertexPosition(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
-			if(structureAnalysis().cell().isWrappedVector(p1 - p2))
+			if(structureAnalysis().cell() && structureAnalysis().cell()->isWrappedVector(p1 - p2))
 				continue;
 			TessellationEdge* edge = findEdge(vertex1, vertex2);
 			if(edge == nullptr) {

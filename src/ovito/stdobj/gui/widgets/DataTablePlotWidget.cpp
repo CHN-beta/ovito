@@ -152,7 +152,7 @@ void DataTablePlotWidget::updateDataPlot()
 	if(showLegend) {
 		if(!_legend) {
 			_legend = new QwtPlotLegendItem();
-			_legend->setAlignment(Qt::AlignRight | Qt::AlignTop);
+			_legend->setAlignmentInCanvas(Qt::AlignRight | Qt::AlignTop);
 			_legend->attach(this);
 		}
 	}
@@ -181,18 +181,17 @@ void DataTablePlotWidget::updateDataPlot()
 
 		// Set legend titles.
 		for(size_t cmpnt = 0; cmpnt < colCount; cmpnt++) {
-			if(cmpnt < y->componentNames().size())
+			if(cmpnt < (size_t)y->componentNames().size())
 				_spectroCurves[cmpnt]->setTitle(y->componentNames()[cmpnt]);
 			else
 				_spectroCurves[cmpnt]->setTitle(tr("Component %1").arg(cmpnt+1));
 		}
 
-		ConstPropertyPtr xstorage = table()->getXStorage();
-		ConstPropertyPtr ystorage = table()->getYStorage();
-		QVector<QwtPoint3D> coords(ystorage->size());
+		ConstPropertyPtr xvalues = table()->getXValues();
+		QVector<QwtPoint3D> coords(y->size());
 		for(size_t cmpnt = 0; cmpnt < colCount; cmpnt++) {
-			xstorage->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].rx() = v; });
-			ystorage->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].ry() = v; });
+			xvalues->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].rx() = v; });
+			y->forEach(cmpnt, [&coords](size_t i, auto v) { coords[i].ry() = v; });
 			_spectroCurves[cmpnt]->setSamples(coords);
 		}
 
@@ -243,14 +242,14 @@ void DataTablePlotWidget::updateDataPlot()
 
 		// Set legend titles.
 		for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
-			if(cmpnt < y->componentNames().size())
+			if(cmpnt < (size_t)y->componentNames().size())
 				_curves[cmpnt]->setTitle(y->componentNames()[cmpnt]);
 			else
 				_curves[cmpnt]->setTitle(tr("Component %1").arg(cmpnt+1));
 		}
 
 		QVector<double> xcoords(y->size());
-		if(!x || x->size() != xcoords.size() || !x->storage()->copyTo(xcoords.begin())) {
+		if(!x || x->size() != xcoords.size() || !x->copyTo(xcoords.begin())) {
 			if(table()->intervalStart() < table()->intervalEnd() && y->size() != 0) {
 				FloatType binSize = (table()->intervalEnd() - table()->intervalStart()) / y->size();
 				double xc = table()->intervalStart() + binSize / 2;
@@ -266,7 +265,7 @@ void DataTablePlotWidget::updateDataPlot()
 
 		QVector<double> ycoords(y->size());
 		for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
-			if(!y->storage()->copyTo(ycoords.begin(), cmpnt)) {
+			if(!y->copyTo(ycoords.begin(), cmpnt)) {
 				std::fill(ycoords.begin(), ycoords.end(), 0.0);
 			}
 			_curves[cmpnt]->setSamples(xcoords, ycoords);
@@ -290,7 +289,7 @@ void DataTablePlotWidget::updateDataPlot()
 		QStringList labels;
 		ConstPropertyAccess<void,true> yarray(y);
 		for(int i = 0; i < y->size(); i++) {
-			ElementType* type = y->elementType(i);
+			const ElementType* type = y->elementType(i);
 			if(!type && x) type = x->elementType(i);
 			if(type) {
 				ycoords.push_back(yarray.get<double>(i, 0));

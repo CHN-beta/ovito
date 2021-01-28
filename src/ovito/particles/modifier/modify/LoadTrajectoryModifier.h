@@ -51,7 +51,7 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 
 	Q_CLASSINFO("DisplayName", "Load trajectory");
 	Q_CLASSINFO("Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Modification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -62,6 +62,10 @@ public:
 	/// Constructor.
 	Q_INVOKABLE LoadTrajectoryModifier(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
 
@@ -89,7 +93,11 @@ public:
 	/// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
 		if(trajectorySource())
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+			inputLabels.insert(trajectorySource()->animationFrameLabels());
+#else
 			inputLabels.unite(trajectorySource()->animationFrameLabels());
+#endif
 		return std::move(inputLabels);
 	}
 
@@ -99,7 +107,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
@@ -107,7 +115,7 @@ private:
 	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
 
 	/// The source for trajectory data.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,9 +39,9 @@ void DefaultPropertiesEditor::createUI(const RolloutInsertionParameters& rollout
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void DefaultPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget)
+void DefaultPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget);
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 	if(field == PROPERTY_FIELD(editObject)) {
 		updateSubEditors();
 	}
@@ -74,7 +74,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 				if(!field->isReferenceField()) continue;
 				if(!field->flags().testFlag(PROPERTY_FIELD_OPEN_SUBEDITOR)) continue;
 				if(!field->isVector()) {
-					if(RefTarget* subobject = editObject()->getReferenceField(*field)) {
+					if(RefTarget* subobject = editObject()->getReferenceFieldTarget(*field)) {
 						// Open editor for this sub-object.
 						if(subEditorIter != _subEditors.end() && (*subEditorIter)->editObject() != nullptr
 								&& (*subEditorIter)->editObject()->getOOClass() == subobject->getOOClass()) {
@@ -96,8 +96,9 @@ void DefaultPropertiesEditor::updateSubEditors()
 					}
 				}
 				else {
-					for(RefTarget* subobject : editObject()->getVectorReferenceField(*field).targets()) {
-						if(subobject) {
+					int count = editObject()->getVectorReferenceFieldSize(*field);
+					for(int i = 0; i < count; i++) {
+						if(RefTarget* subobject = editObject()->getVectorReferenceFieldTarget(*field, i)) {
 							// Open editor for this sub-object.
 							if(subEditorIter != _subEditors.end() && (*subEditorIter)->editObject() != nullptr
 									&& (*subEditorIter)->editObject()->getOOClass() == subobject->getOOClass()) {

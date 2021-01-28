@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
+#include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
@@ -37,12 +37,16 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+	#include <QOperatingSystemVersion>
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
 * Handles the ACTION_QUIT command.
 ******************************************************************************/
-void ActionManager::on_Quit_triggered()
+void WidgetActionManager::on_Quit_triggered()
 {
 	mainWindow()->close();
 }
@@ -50,7 +54,7 @@ void ActionManager::on_Quit_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_ABOUT command.
 ******************************************************************************/
-void ActionManager::on_HelpAbout_triggered()
+void WidgetActionManager::on_HelpAbout_triggered()
 {
 	QMessageBox msgBox(QMessageBox::NoIcon, Application::applicationName(),
 			tr("<h3>%1 (Open Visualization Tool)</h3>"
@@ -74,7 +78,7 @@ void ActionManager::on_HelpAbout_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_SHOW_ONLINE_HELP command.
 ******************************************************************************/
-void ActionManager::on_HelpShowOnlineHelp_triggered()
+void WidgetActionManager::on_HelpShowOnlineHelp_triggered()
 {
 	mainWindow()->openHelpTopic(QString());
 }
@@ -82,7 +86,7 @@ void ActionManager::on_HelpShowOnlineHelp_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_SHOW_SCRIPTING_HELP command.
 ******************************************************************************/
-void ActionManager::on_HelpShowScriptingReference_triggered()
+void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 {
 	mainWindow()->openHelpTopic(QStringLiteral("python/index.html"));
 }
@@ -90,7 +94,7 @@ void ActionManager::on_HelpShowScriptingReference_triggered()
 /******************************************************************************
 * Handles the ACTION_HELP_OPENGL_INFO command.
 ******************************************************************************/
-void ActionManager::on_HelpOpenGLInfo_triggered()
+void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 {
 	QDialog dlg(mainWindow());
 	dlg.setWindowTitle(tr("OpenGL Information"));
@@ -99,51 +103,54 @@ void ActionManager::on_HelpOpenGLInfo_triggered()
 	textEdit->setReadOnly(true);
 	QString text;
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
-	stream << "======= System info =======" << endl;
-	stream << "Date: " << QDateTime::currentDateTime().toString() << endl;
-	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << endl;
-#if defined(Q_OS_MAC)
-	stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << endl;
-#elif defined(Q_OS_WIN)
-	stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << endl;
-#elif defined(Q_OS_LINUX)
-	stream << "OS: Linux" << endl;
+	stream << "======= System info =======\n";
+	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
+	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << "\n";
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+	stream << "OS: " <<  QOperatingSystemVersion::current().name() << "(" << QOperatingSystemVersion::current().majorVersion() << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
+#else
+	#if defined(Q_OS_MAC)
+		stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << "\n";
+	#elif defined(Q_OS_WIN)
+		stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << "\n";
+	#endif
+#endif
+#if defined(Q_OS_LINUX)
 	// Get 'uname' output.
 	QProcess unameProcess;
 	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
 	unameProcess.waitForFinished();
 	QByteArray unameOutput = unameProcess.readAllStandardOutput();
 	unameOutput.replace('\n', ' ');
-	stream << "uname output: " << unameOutput << endl;
+	stream << "uname output: " << unameOutput << "\n";
 	// Get 'lsb_release' output.
 	QProcess lsbProcess;
 	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
 	lsbProcess.waitForFinished();
 	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
 	lsbOutput.replace('\n', ' ');
-	stream << "LSB output: " << lsbOutput << endl;
+	stream << "LSB output: " << lsbOutput << "\n";
 #endif
-	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << endl;
-	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << endl;
-	stream << "Qt version: " << QT_VERSION_STR << endl;
-	stream << "Command line: " << QCoreApplication::arguments().join(' ') << endl;
-	stream << "======= OpenGL info =======" << endl;
+	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << "\n";
+	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << "\n";
+	stream << "Qt version: " << QT_VERSION_STR << "\n";
+	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+	stream << "======= OpenGL info =======" << "\n";
 	const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
-	stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << endl;
-	stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << endl;
-	stream << "Alpha: " << format.hasAlpha() << endl;
-	stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << endl;
-	stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << endl;
-	stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << endl;
-	stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << endl;
-	stream << "Depth buffer size: " << format.depthBufferSize() << endl;
-	stream << "Stencil buffer size: " << format.stencilBufferSize() << endl;
-	stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << endl;
-	stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << endl;
-	stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << endl;
-	stream << "Using point sprites: " << (OpenGLSceneRenderer::pointSpritesEnabled() ? "yes" : "no") << endl;
-	stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << endl;
-	stream << "Context sharing enabled: " << (OpenGLSceneRenderer::contextSharingEnabled() ? "yes" : "no") << endl;
+	stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
+	stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+	stream << "Alpha: " << format.hasAlpha() << "\n";
+	stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
+	stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+	stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+	stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
+	stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
+	stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
+	stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
+	stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << "\n";
+	stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+	stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << "\n";
+	stream << "Context sharing enabled: " << (OpenGLSceneRenderer::contextSharingEnabled() ? "yes" : "no") << "\n";
 	if(!text.isEmpty())
 		textEdit->setPlainText(text);
 	else
@@ -160,7 +167,7 @@ void ActionManager::on_HelpOpenGLInfo_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_NEW_WINDOW command.
 ******************************************************************************/
-void ActionManager::on_FileNewWindow_triggered()
+void WidgetActionManager::on_FileNewWindow_triggered()
 {
 	try {
 		MainWindow* mainWin = new MainWindow();
@@ -176,7 +183,7 @@ void ActionManager::on_FileNewWindow_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_OPEN command.
 ******************************************************************************/
-void ActionManager::on_FileOpen_triggered()
+void WidgetActionManager::on_FileOpen_triggered()
 {
 	try {
 		if(!mainWindow()->datasetContainer().askForSaveChanges())
@@ -211,7 +218,7 @@ void ActionManager::on_FileOpen_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_SAVE command.
 ******************************************************************************/
-void ActionManager::on_FileSave_triggered()
+void WidgetActionManager::on_FileSave_triggered()
 {
 	// Set focus to main window.
 	// This will process any pending user inputs in QLineEdit fields.
@@ -228,7 +235,7 @@ void ActionManager::on_FileSave_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_SAVEAS command.
 ******************************************************************************/
-void ActionManager::on_FileSaveAs_triggered()
+void WidgetActionManager::on_FileSaveAs_triggered()
 {
 	try {
 		mainWindow()->datasetContainer().fileSaveAs();
@@ -241,7 +248,7 @@ void ActionManager::on_FileSaveAs_triggered()
 /******************************************************************************
 * Handles the ACTION_SETTINGS_DIALOG command.
 ******************************************************************************/
-void ActionManager::on_Settings_triggered()
+void WidgetActionManager::on_Settings_triggered()
 {
 	ApplicationSettingsDialog dlg(mainWindow());
 	dlg.exec();
@@ -250,7 +257,7 @@ void ActionManager::on_Settings_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_IMPORT command.
 ******************************************************************************/
-void ActionManager::on_FileImport_triggered()
+void WidgetActionManager::on_FileImport_triggered()
 {
 	try {
 		// Let the user select one or more files.
@@ -269,7 +276,7 @@ void ActionManager::on_FileImport_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_REMOTE_IMPORT command.
 ******************************************************************************/
-void ActionManager::on_FileRemoteImport_triggered()
+void WidgetActionManager::on_FileRemoteImport_triggered()
 {
 	try {
 		// Let the user enter the URL of the remote file.
@@ -288,7 +295,7 @@ void ActionManager::on_FileRemoteImport_triggered()
 /******************************************************************************
 * Handles the ACTION_FILE_EXPORT command.
 ******************************************************************************/
-void ActionManager::on_FileExport_triggered()
+void WidgetActionManager::on_FileExport_triggered()
 {
 	// Build filter string.
 	QStringList filterStrings;
@@ -317,7 +324,6 @@ void ActionManager::on_FileExport_triggered()
 	dialog.setNameFilters(filterStrings);
 	dialog.setAcceptMode(QFileDialog::AcceptSave);
 	dialog.setFileMode(QFileDialog::AnyFile);
-	dialog.setConfirmOverwrite(true);
 
 	// Go to the last directory used.
 	QString lastExportDirectory = settings.value("last_export_dir").toString();
@@ -347,11 +353,8 @@ void ActionManager::on_FileExport_triggered()
 		int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
 		OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
-		// Create exporter.
-		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance(dataset()));
-
-		// Load user-defined default settings.
-		exporter->loadUserDefaults();
+		// Create exporter and initialize it.
+		OORef<FileExporter> exporter = static_object_cast<FileExporter>(exporterTypes[exportFilterIndex]->createInstance(dataset(), ExecutionContext::Interactive));
 
 		// Pass output filename to exporter.
 		exporter->setOutputFilename(exportFile);

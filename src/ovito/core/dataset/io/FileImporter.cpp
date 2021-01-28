@@ -37,21 +37,21 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, const QUrl& url)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const QUrl& url)
 {
 	if(!url.isValid())
 		dataset->throwException(tr("Invalid path or URL."));
 
 	// Resolve filename if it contains a wildcard.
-	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset](std::vector<QUrl>&& urls) {
+	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset, executionContext](std::vector<QUrl>&& urls) {
 		if(urls.empty())
 			dataset->throwException(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
 		return Application::instance()->fileManager()->fetchUrl(dataset->taskManager(), urls.front())
-			.then(dataset->executor(), [dataset, url = urls.front()](const FileHandle& file) {
+			.then(dataset->executor(), [dataset, executionContext, url = urls.front()](const FileHandle& file) {
 				// Detect file format.
-				return autodetectFileFormat(dataset, file);
+				return autodetectFileFormat(dataset, executionContext, file);
 			});
 	});
 }
@@ -59,12 +59,33 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file)
+OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file)
 {
+	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
+
+	// This is a cache for the file formats of files that have been loaded before.
+	static std::map<QString, const FileImporterClass*> formatDetectionCache;
+
+	// Mutex for synchronized access to the format detection cache.
+	static QMutex formatDetectionCacheMutex;
+
+	// Check the format cache if we have already detected the format of the same file before.
+	const QString& fileIdentifier = file.localFilePath();
+	QMutexLocker locker(&formatDetectionCacheMutex);
+	auto entry = formatDetectionCache.find(fileIdentifier);
+	if(entry != formatDetectionCache.end())
+		return static_object_cast<FileImporter>(entry->second->createInstance(dataset, executionContext));
+	locker.unlock();
+
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
 			if(importerClass->checkFileFormat(file)) {
-				return static_object_cast<FileImporter>(importerClass->createInstance(dataset));
+				// Insert detected format into cache to speed up future requests for the same file.
+				locker.relock();
+				formatDetectionCache.emplace(fileIdentifier, importerClass);
+
+				// Instantiate the file importer for this file format.
+				return static_object_cast<FileImporter>(importerClass->createInstance(dataset, executionContext));
 			}
 		}
 		catch(const Exception&) {
@@ -80,7 +101,22 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 ******************************************************************************/
 void FileImporter::activateCLocale()
 {
-	std::setlocale(LC_ALL, "C");
+	// The setlocale() function is not thread-safe and should only be called from the main thread.
+	if(QThread::currentThread() == QCoreApplication::instance()->thread())
+		std::setlocale(LC_ALL, "C");
+}
+
+/******************************************************************************
+* Utility method which splits a string at whitespace separators into tokens.
+******************************************************************************/
+QStringList FileImporter::splitString(const QString& str)
+{
+	static const QRegularExpression ws_re(QStringLiteral("\\s+"));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	return str.split(ws_re, Qt::SkipEmptyParts);
+#else
+	return str.split(ws_re, QString::SkipEmptyParts);
+#endif
 }
 
 }	// End of namespace

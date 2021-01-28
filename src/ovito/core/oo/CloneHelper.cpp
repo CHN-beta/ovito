@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/UndoStack.h>
 #include "CloneHelper.h"
 
 namespace Ovito {
@@ -44,6 +45,9 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 		if(entry.first == obj)
 			return entry.second;
 	}
+
+	// Never generate undo records for a cloning operation.
+	UndoSuspender noUndo(obj);
 
 	OORef<RefTarget> copy = obj->clone(deepCopy, *this);
 	if(!copy)

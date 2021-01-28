@@ -23,7 +23,7 @@
 precision highp float; 
 
 uniform mat4 modelview_projection_matrix;
-uniform int pickingBaseID;
+uniform int picking_base_id;
 
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 	in vec3 position;
@@ -41,7 +41,7 @@ void main()
 #if __VERSION__ >= 300 // OpenGL ES 3.0
 
 	// Compute sub-object ID from vertex ID.
-	int objectID = pickingBaseID + gl_VertexID / 2;
+	int objectID = picking_base_id + gl_VertexID / 2;
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(
@@ -53,7 +53,7 @@ void main()
 #else
 
 	// Compute sub-object ID from vertex ID.
-	float objectID = float(pickingBaseID + int(vertexID) / 2);
+	float objectID = float(picking_base_id + int(vertexID) / 2);
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	vertex_color_fs = vec4(

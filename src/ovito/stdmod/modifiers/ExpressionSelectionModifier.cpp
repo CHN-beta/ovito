@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/app/Application.h>
 #include "ExpressionSelectionModifier.h"
 
 namespace Ovito { namespace StdMod {
@@ -46,7 +47,7 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 ExpressionSelectionModifier::ExpressionSelectionModifier(DataSet* dataset) : DelegatingModifier(dataset)
 {
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"));
+	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), ExecutionContext::Scripting);
 }
 
 /******************************************************************************
@@ -76,14 +77,14 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, Pi
 
 	// Check if expression contains an assignment ('=' operator).
 	// This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
-	if(expressionMod->expression().contains(QRegExp("[^=!><]=(?!=)")))
+	if(expressionMod->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
 		throwException(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
 
 	// The number of selected elements.
 	std::atomic_size_t nselected(0);
 
 	// Generate the output selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyStorage::GenericSelectionProperty);
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
 
 	// Evaluate Boolean expression for every input data element.
 	evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {

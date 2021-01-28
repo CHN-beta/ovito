@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,8 +35,8 @@ class OVITO_CORE_EXPORT TextPrimitive : public PrimitiveBase
 {
 public:
 
-	/// \brief Default constructor.
-	TextPrimitive() : _color(1,1,1,1), _backgroundColor(0,0,0,0) {}
+	/// \brief Constructor.
+	TextPrimitive() = default;
 
 	/// \brief Sets the text to be rendered.
 	virtual void setText(const QString& text) { _text = text; }
@@ -62,14 +62,20 @@ public:
 	/// Returns the text font.
 	const QFont& font() const { return _font; }
 
-	/// \brief Renders the text string at the given 2D window (pixel) coordinates.
-	virtual void renderWindow(SceneRenderer* renderer, const Point2& pos, int alignment = Qt::AlignLeft | Qt::AlignTop) = 0;
+	/// Returns the alignment of the text.
+	int alignment() const { return _alignment; }
 
-	/// \brief Renders the text string at the given 2D normalized viewport coordinates ([-1,+1] range).
-	virtual void renderViewport(SceneRenderer* renderer, const Point2& pos, int alignment = Qt::AlignLeft | Qt::AlignTop) = 0;
+	/// Sets the alignment of the text.
+	void setAlignment(int alignment) { _alignment = alignment; }
 
-	/// \brief Renders the primitive using the given renderer.
-	virtual void render(SceneRenderer* renderer) override {}
+	/// \brief Sets the text position in window coordinates.
+	void setPositionWindow(const Point2& pos) { _position = pos; }
+
+	/// \brief Sets the text position in viewport coordinates.
+	void setPositionViewport(const SceneRenderer* renderer, const Point2& pos);
+
+	/// \brief Returns the text position in window coordinates.
+	const Point2& position() const { return _position; }
 
 private:
 
@@ -77,15 +83,19 @@ private:
 	QString _text;
 
 	/// The text color.
-	ColorA _color;
+	ColorA _color{1,1,1,1};
 
 	/// The text background color.
-	ColorA _backgroundColor;
+	ColorA _backgroundColor{0,0,0,0};
 
 	/// The text font.
 	QFont _font;
+
+	/// The rendering location in window coordinates.
+	Point2 _position = Point2::Origin();
+
+	/// The alignment of the text.
+	int _alignment = Qt::AlignLeft | Qt::AlignTop;
 };
 
 }	// End of namespace
-
-

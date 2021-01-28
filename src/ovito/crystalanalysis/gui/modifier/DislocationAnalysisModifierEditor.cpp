@@ -56,7 +56,6 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	QVBoxLayout* sublayout1 = new QVBoxLayout(structureBox);
 	sublayout1->setContentsMargins(4,4,4,4);
 	VariantComboBoxParameterUI* crystalStructureUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::inputCrystalStructure));
-
 	crystalStructureUI->comboBox()->addItem(tr("Face-centered cubic (FCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_FCC));
 	crystalStructureUI->comboBox()->addItem(tr("Hexagonal close-packed (HCP)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HCP));
 	crystalStructureUI->comboBox()->addItem(tr("Body-centered cubic (BCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_BCC));
@@ -182,12 +181,13 @@ void DislocationTypeListParameterUI::updateDislocationCounts(const PipelineFlowS
 	_dislocationCounts = modApp ? state.getObjectBy<DataTable>(modApp, QStringLiteral("disloc-counts")) : nullptr;
 	_dislocationLengths = modApp ? state.getObjectBy<DataTable>(modApp, QStringLiteral("disloc-lengths")) : nullptr;
 	const DislocationNetworkObject* dislocationsObj = state.getObject<DislocationNetworkObject>();
-	int crystalStructure = 0;
-	if(modApp) {
-		if(DislocationAnalysisModifier* modifier = dynamic_object_cast<DislocationAnalysisModifier>(modApp->modifier()))
-			crystalStructure = modifier->inputCrystalStructure();
+	if(modApp && dislocationsObj) {
+		if(DislocationAnalysisModifier* modifier = dynamic_object_cast<DislocationAnalysisModifier>(modApp->modifier())) {
+			setEditObject(modifier->structureTypeById(modifier->inputCrystalStructure()));
+			return;
+		}
 	}
-	setEditObject(dislocationsObj ? dislocationsObj->structureById(crystalStructure) : nullptr);
+	setEditObject(nullptr);
 }
 
 /******************************************************************************
@@ -203,13 +203,13 @@ QVariant DislocationTypeListParameterUI::getItemData(RefTarget* target, const QM
 			}
 			else if(index.column() == 2 && _dislocationCounts) {
 				if(const PropertyObject* yprop = _dislocationCounts->getY()) {
-					if(yprop->size() > family->numericId() && yprop->dataType() == PropertyStorage::Int)
+					if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::Int)
 						return ConstPropertyAccess<int>(yprop)[family->numericId()];
 				}
 			}
 			else if(index.column() == 3 && _dislocationLengths) {
 				if(const PropertyObject* yprop = _dislocationLengths->getY()) {
-					if(yprop->size() > family->numericId() && yprop->dataType() == PropertyStorage::Float)
+					if(yprop->size() > family->numericId() && yprop->dataType() == PropertyObject::Float)
 						return QString::number(ConstPropertyAccess<FloatType>(yprop)[family->numericId()]);
 				}
 			}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
@@ -79,17 +80,25 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(DataSet* dataset) : Str
 	_lineSmoothingLevel(1),
 	_linePointInterval(2.5)
 {
-	// Create the vis elements.
-	setDislocationVis(new DislocationVis(dataset));
+}
 
-	setDefectMeshVis(new SurfaceMeshVis(dataset));
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void DislocationAnalysisModifier::initializeObject(ExecutionContext executionContext)
+{
+	// Create the vis elements.
+	setDislocationVis(OORef<DislocationVis>::create(dataset(), executionContext));
+
+	setDefectMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
 	defectMeshVis()->setShowCap(true);
 	defectMeshVis()->setSmoothShading(true);
 	defectMeshVis()->setReverseOrientation(true);
 	defectMeshVis()->setCapTransparency(0.5);
 	defectMeshVis()->setObjectTitle(tr("Defect mesh"));
 
-	setInterfaceMeshVis(new SurfaceMeshVis(dataset));
+	setInterfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
 	interfaceMeshVis()->setShowCap(false);
 	interfaceMeshVis()->setSmoothShading(false);
 	interfaceMeshVis()->setReverseOrientation(true);
@@ -107,11 +116,11 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(DataSet* dataset) : Str
 	};
 	OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
 	for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-		OORef<MicrostructurePhase> stype = new MicrostructurePhase(dataset);
+		DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
 		stype->setNumericId(id);
 		stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
 		stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-		stype->setColor(ParticleType::getDefaultParticleColor(ParticlesObject::StructureTypeProperty, stype->name(), id));
+		stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, executionContext));
 		addStructureType(std::move(stype));
 	}
 
@@ -120,54 +129,56 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(DataSet* dataset) : Str
 	MicrostructurePhase* fccPattern = structureById(StructureAnalysis::LATTICE_FCC);
 	fccPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
 	fccPattern->setShortName(QStringLiteral("fcc"));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 4, tr("1/3<100> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
-	fccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 1, tr("1/2<110> (Perfect)"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 2, tr("1/6<112> (Shockley)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 3, tr("1/6<110> (Stair-rod)"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f/6.0f), Color(1,0,1)));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 4, tr("1/3<100> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
+	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
 
 	MicrostructurePhase* bccPattern = structureById(StructureAnalysis::LATTICE_BCC);
 	bccPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
 	bccPattern->setShortName(QStringLiteral("bcc"));
-	bccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	bccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
-	bccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
-	bccPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
+	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 11, tr("1/2<111>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), Color(0,1,0)));
+	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
+	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
 
 	MicrostructurePhase* hcpPattern = structureById(StructureAnalysis::LATTICE_HCP);
 	hcpPattern->setShortName(QStringLiteral("hcp"));
 	hcpPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::HexagonalSymmetry);
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 21, tr("1/3<1-210>"), Vector3(sqrt(0.5f), 0.0f, 0.0f), Color(0,1,0)));
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 22, tr("<0001>"), Vector3(0.0f, 0.0f, sqrt(4.0f/3.0f)), Color(0.2f,0.2f,1)));
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 23, tr("<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f), 0.0f), Color(1,0,1)));
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 24, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
-	hcpPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 25, tr("1/3<1-213>"), Vector3(sqrt(0.5f), 0.0f, sqrt(4.0f/3.0f)), Color(1,1,0)));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 21, tr("1/3<1-210>"), Vector3(sqrt(0.5f), 0.0f, 0.0f), Color(0,1,0)));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 22, tr("<0001>"), Vector3(0.0f, 0.0f, sqrt(4.0f/3.0f)), Color(0.2f,0.2f,1)));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 23, tr("<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f), 0.0f), Color(1,0,1)));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 24, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
+	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 25, tr("1/3<1-213>"), Vector3(sqrt(0.5f), 0.0f, sqrt(4.0f/3.0f)), Color(1,1,0)));
 
 	MicrostructurePhase* cubicDiaPattern = structureById(StructureAnalysis::LATTICE_CUBIC_DIAMOND);
 	cubicDiaPattern->setShortName(QStringLiteral("diamond"));
 	cubicDiaPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
-	cubicDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	cubicDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 31, tr("1/2<110>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
-	cubicDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 32, tr("1/6<112>"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
-	cubicDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 33, tr("1/6<110>"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f), Color(1,0,1)));
-	cubicDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 34, tr("1/3<111>"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
+	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 31, tr("1/2<110>"), Vector3(1.0f/2.0f, 1.0f/2.0f, 0.0f), Color(0.2f,0.2f,1)));
+	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 32, tr("1/6<112>"), Vector3(1.0f/6.0f, 1.0f/6.0f, 2.0f/6.0f), Color(0,1,0)));
+	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 33, tr("1/6<110>"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f), Color(1,0,1)));
+	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 34, tr("1/3<111>"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
 
 	MicrostructurePhase* hexDiaPattern = structureById(StructureAnalysis::LATTICE_HEX_DIAMOND);
 	hexDiaPattern->setShortName(QStringLiteral("hex_diamond"));
 	hexDiaPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::HexagonalSymmetry);
-	hexDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset));
-	hexDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 41, tr("1/3<1-210>"), Vector3(sqrt(0.5f), 0.0f, 0.0f), Color(0,1,0)));
-	hexDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 42, tr("<0001>"), Vector3(0.0f, 0.0f, sqrt(4.0f/3.0f)), Color(0.2f,0.2f,1)));
-	hexDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 43, tr("<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f), 0.0f), Color(1,0,1)));
-	hexDiaPattern->addBurgersVectorFamily(new BurgersVectorFamily(dataset, 44, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
+	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 41, tr("1/3<1-210>"), Vector3(sqrt(0.5f), 0.0f, 0.0f), Color(0,1,0)));
+	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 42, tr("<0001>"), Vector3(0.0f, 0.0f, sqrt(4.0f/3.0f)), Color(0.2f,0.2f,1)));
+	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 43, tr("<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f), 0.0f), Color(1,0,1)));
+	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 44, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
+
+	StructureIdentificationModifier::initializeObject(executionContext);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
 {
 	// Get modifier inputs.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -178,9 +189,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 		throwException(tr("The DXA modifier does not support 2d simulation cells."));
 
 	// Get particle selection.
-	ConstPropertyPtr selectionProperty;
-	if(onlySelectedParticles())
-		selectionProperty = particles->expectProperty(ParticlesObject::SelectionProperty)->storage();
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Build list of preferred crystal orientations.
 	std::vector<Matrix3> preferredCrystalOrientations;
@@ -190,27 +199,49 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 
 	// Get cluster property.
 #if 0
-	ConstPropertyPtr clusterProperty = particles->getPropertyStorage(ParticlesObject::ClusterProperty);
+	const PropertyObject* clusterProperty = particles->getProperty(ParticlesObject::ClusterProperty);
 #else
-	ConstPropertyPtr clusterProperty = nullptr;
+	const PropertyObject* clusterProperty = nullptr;
 #endif
+
+	// Create an empty surface mesh object.
+	DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Defect mesh"));
+	defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
+	defectMesh->setDataSource(modApp);
+	defectMesh->setDomain(simCell);
+	defectMesh->setVisElement(defectMeshVis());
+
+	// Create an empty surface mesh object for the optional interface mesh.
+	DataOORef<SurfaceMesh> interfaceMesh;
+	if(outputInterfaceMesh()) {
+		interfaceMesh = DataOORef<SurfaceMesh>::create(dataset(), executionContext, tr("Interface mesh"));
+		interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
+		interfaceMesh->setDataSource(modApp);
+		interfaceMesh->setDomain(simCell);
+		interfaceMesh->setVisElement(interfaceMeshVis());
+	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DislocationAnalysisEngine>(
+			modApp,
+			executionContext, 
+			dataset(), 
 			particles,
-			posProperty->storage(),
-			simCell->data(),
+			posProperty,
+			simCell,
+			structureTypes(),
 			inputCrystalStructure(),
 			maxTrialCircuitSize(),
 			circuitStretchability(),
-			std::move(selectionProperty),
-			std::move(clusterProperty),
+			selectionProperty,
+			clusterProperty,
 			std::move(preferredCrystalOrientations),
 			onlyPerfectDislocations(),
 			defectMeshSmoothingLevel(),
+			std::move(defectMesh),
+			std::move(interfaceMesh),
 			lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
-			lineCoarseningEnabled() ? linePointInterval() : 0,
-			outputInterfaceMesh());
+			lineCoarseningEnabled() ? linePointInterval() : 0);
 }
 
 }	// End of namespace

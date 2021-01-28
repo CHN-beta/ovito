@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2020 Alexander Stukowski
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -20,13 +20,6 @@
 #
 #######################################################################################
 
-# Compile resources.
-IF(NOT EMSCRIPTEN)
-	QT5_ADD_RESOURCES(ResourceFiles resources/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-ELSE()
-	QT5_ADD_RESOURCES(ResourceFiles resources_gles/opengl.qrc OPTIONS ${OVITO_QT5_RESOURCE_OPTIONS})
-ENDIF()
-
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(OpenGLRenderer
 	SOURCES
@@ -34,16 +27,22 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLParticlePrimitive.cpp
 		OpenGLTextPrimitive.cpp
 		OpenGLImagePrimitive.cpp
-		OpenGLArrowPrimitive.cpp
+		OpenGLCylinderPrimitive.cpp
 		OpenGLMeshPrimitive.cpp
 		OpenGLMarkerPrimitive.cpp
 		OpenGLSharedResource.cpp
 		OpenGLSceneRenderer.cpp
 		StandardSceneRenderer.cpp
-		${ResourceFiles}
+		resources/opengl.qrc
+		resources_gles/opengl_gles.qrc
 )
 
-IF(NOT OVITO_BUILD_WEBGUI AND NOT OVITO_BUILD_CONDA)
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	# QOpenGLFunctions classes have been moved to the OpenGL module in Qt 6.
+	TARGET_LINK_LIBRARIES(OpenGLRenderer PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGL)
+ENDIF()
+
+IF(NOT OVITO_QML_GUI AND NOT OVITO_BUILD_CONDA)
 	# Find OpenGL library.
 	FIND_PACKAGE(OpenGL REQUIRED)
 
@@ -69,7 +68,9 @@ ENDIF()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
-	ADD_SUBDIRECTORY(gui)
+	IF(NOT OVITO_QML_GUI)
+		ADD_SUBDIRECTORY(gui)
+	ENDIF()
 ENDIF()
 
 # Propagate list of plugins to parent scope.

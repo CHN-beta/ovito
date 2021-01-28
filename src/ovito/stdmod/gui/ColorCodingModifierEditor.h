@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
+#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 namespace Ovito { namespace StdMod {
 
@@ -56,16 +57,16 @@ private:
 	/// Returns an icon representing the given color map.
 	QIcon iconFromColorMap(ColorCodingGradient* map);
 
-	/// The list of available color gradients.
-	QComboBox* colorGradientList;
-
-	/// Indicates the combo box already contains an item for a custom color map.
-	bool _gradientListContainCustomItem;
-
-	/// Label that displays the color gradient picture.
-	QLabel* colorLegendLabel;
+	/// Determine the property value corresponding to the given relative position in the range interval.
+	FloatType computeRangeValue(FloatType t) const;
 
 protected Q_SLOTS:
+
+	/// This is called whenever the parameters of the ColoCodingModifier change.
+	void onModifierChanged();
+
+	/// Is called whenever the modifier has been newly evaluated and has auto-adjusted the value range.
+	void autoRangeChanged();
 
 	/// Updates the display for the color gradient.
 	void updateColorGradient();
@@ -92,7 +93,26 @@ protected:
 
 private:
 
+	/// The list of available color gradients.
+	QComboBox* _colorGradientList;
+
+	/// Indicates the combo box already contains an item for a custom color map.
+	bool _gradientListContainCustomItem;
+
+	/// Label that displays the color gradient picture.
+	QLabel* _colorLegendLabel;
+
 	PropertyReferenceParameterUI* _sourcePropertyUI;
+	FloatParameterUI* _startValueUI;
+	FloatParameterUI* _endValueUI;
+	QPushButton* _adjustRangeBtn;
+	QPushButton* _adjustRangeGlobalBtn;
+	QPushButton* _reverseRangeBtn;
+	FloatType _lastAutoRangeMinValue;
+	FloatType _lastAutoRangeMaxValue;
+
+	/// For deferred invocation of the event handler function.
+	DeferredMethodInvocation<ColorCodingModifierEditor, &ColorCodingModifierEditor::autoRangeChanged> updateAutoRangeLater;
 };
 
 }	// End of namespace

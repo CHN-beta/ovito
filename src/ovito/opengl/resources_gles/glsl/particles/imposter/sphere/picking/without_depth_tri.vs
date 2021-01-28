@@ -28,7 +28,7 @@ uniform mat4 projection_matrix;
 uniform vec2 imposter_texcoords[6];
 uniform vec4 imposter_voffsets[6];
 uniform float radius_scalingfactor;
-uniform int pickingBaseID;
+uniform int picking_base_id;
 
 #if __VERSION__ >= 300 // OpenGL ES 3.0:
 
@@ -43,7 +43,7 @@ out vec2 texcoords;
 void main()
 {
 	// Compute sub-object ID from vertex ID.
-	int objectID = pickingBaseID + gl_VertexID / 6;
+	int objectID = picking_base_id + gl_VertexID / 6;
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(
@@ -77,7 +77,7 @@ varying vec2 texcoords;
 void main()
 {
 	// Compute sub-object ID from vertex ID.
-	float objectID = float(pickingBaseID + int(vertexID) / 6);
+	float objectID = float(picking_base_id + int(vertexID) / 6);
 
 	// Encode sub-object ID as an RGBA color in the rendered image.
 	particle_color_fs = vec4(

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,28 +26,31 @@ uniform mat4 projection_matrix;
 uniform vec2 imposter_texcoords[6];
 uniform vec4 imposter_voffsets[6];
 uniform float radius_scalingfactor;
+uniform int picking_base_id;
+uniform bool is_picking_mode;
+uniform vec4 selection_color;
 
-#if __VERSION__ >= 130
-	// The particle data:
-	in vec3 position;
-	in vec4 color;
-	in float particle_radius;
+// The input particle data:
+in vec3 position;
+in vec3 color;
+in float transparency;
+in float particle_radius;
+in int selection;
 
-	// Output passed to fragment shader.
-	flat out vec4 particle_color_fs;
-	out vec2 texcoords;
-
-#else
-	attribute float particle_radius;
-	attribute float vertexID;
-	#define particle_color_fs gl_FrontColor
-#endif
+// Outputs to fragment shader:
+flat out vec4 particle_color_fs;
+out vec2 texcoords;
 
 void main()
 {
-#if __VERSION__ >= 130
-	// Pass color to fragment shader.
-	particle_color_fs = color;
+	if(!is_picking_mode) {
+		// Pass color to fragment shader.
+		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+	}
+	else {
+		// Compute color from object ID.
+		particle_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 6);
+	}
 
 	// Assign texture coordinates.
 	texcoords = imposter_texcoords[gl_VertexID % 6];
@@ -56,19 +59,5 @@ void main()
 	vec4 eye_position = modelview_matrix * vec4(position, 1);
 
 	gl_Position = projection_matrix * (eye_position + (particle_radius * radius_scalingfactor) * imposter_voffsets[gl_VertexID % 6]);
-#else
-	// Pass color to fragment shader.
-	particle_color_fs = gl_Color;
-
-	// Transform and project particle position.
-	vec4 eye_position = modelview_matrix * gl_Vertex;
-
-	int cornerIndex = int(mod(vertexID+0.5, 6.0));
-
-	// Assign texture coordinates.
-	gl_TexCoord[0].xy = imposter_texcoords[cornerIndex];
-
-	gl_Position = projection_matrix * (eye_position + (particle_radius * radius_scalingfactor) * imposter_voffsets[cornerIndex]);
-#endif
 }
 

@@ -148,6 +148,15 @@ public:
 	/// \return \c true if any of the color components are not equal; \c false otherwise.
 	Q_DECL_CONSTEXPR bool operator!=(const ColorT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b()); }
 
+	/// \brief Tests if two color are equal within a given tolerance.
+	/// \param c The color to compare with this color.
+	/// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
+	///        the differences in the three color components are all less than this tolerance value.
+	/// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
+	Q_DECL_CONSTEXPR bool equals(const ColorT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+		return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance;
+	}
+
 	/// Adds another color to this color in a component-wise manner.
 	ColorT& operator+=(const ColorT& c) { r() += c.r(); g() += c.g(); b() += c.b(); return *this; }
 
@@ -439,6 +448,15 @@ public:
 	/// \return \c true if any of the color components are not equal; \c false otherwise.
 	Q_DECL_CONSTEXPR bool operator!=(const ColorAT& c) const { return (r() != c.r() || g() != c.g() || b() != c.b() || a() != c.a()); }
 
+	/// \brief Tests if two color are equal within a given tolerance.
+	/// \param c The color to compare with this color.
+	/// \param tolerance A non-negative threshold for the equality test. The two color are considered equal if
+	///        the differences in the four color components are all less than this tolerance value.
+	/// \return \c true if this color  is equal to \a c within the given tolerance; \c false otherwise.
+	Q_DECL_CONSTEXPR bool equals(const ColorAT& c, T tolerance = T(FLOATTYPE_EPSILON)) const {
+		return std::abs(c.r() - r()) <= tolerance && std::abs(c.g() - g()) <= tolerance && std::abs(c.b() - b()) <= tolerance && std::abs(c.a() - a()) <= tolerance;
+	}
+
 	/// Adds the components of another color to this color.
 	ColorAT& operator+=(const ColorAT& c) { r() += c.r(); g() += c.g(); b() += c.b(); a() += c.a(); return *this; }
 
@@ -586,11 +604,5 @@ using ColorA = ColorAT<FloatType>;
 
 Q_DECLARE_METATYPE(Ovito::Color);
 Q_DECLARE_METATYPE(Ovito::ColorA);
-Q_DECLARE_METATYPE(Ovito::Color*);
-Q_DECLARE_METATYPE(Ovito::ColorA*);
 Q_DECLARE_TYPEINFO(Ovito::Color, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::ColorA, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Color*, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::ColorA*, Q_PRIMITIVE_TYPE);
-
-

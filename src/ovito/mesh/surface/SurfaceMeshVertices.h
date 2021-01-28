@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshVertices : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Create a storage object for standard vertex properties.
-		virtual PropertyPtr createStandardStorage(size_t vertexCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t vertexCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -61,17 +61,18 @@ public:
 
 	/// \brief The list of standard vertex properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyStorage::GenericSelectionProperty,
-		ColorProperty = PropertyStorage::GenericColorProperty,
-		PositionProperty = PropertyStorage::FirstSpecificProperty
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		SelectionProperty = PropertyObject::GenericSelectionProperty,
+		ColorProperty = PropertyObject::GenericColorProperty,
+		PositionProperty = PropertyObject::FirstSpecificProperty
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshVertices(DataSet* dataset) : PropertyContainer(dataset) {
-		// Assign the default data object identifier.
-		setIdentifier(OOClass().pythonName());
-	}
+	Q_INVOKABLE SurfaceMeshVertices(DataSet* dataset) : PropertyContainer(dataset) {}
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 };
 
 }	// End of namespace

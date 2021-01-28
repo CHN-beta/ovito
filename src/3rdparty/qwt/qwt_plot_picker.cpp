@@ -9,10 +9,11 @@
 
 #include "qwt_plot_picker.h"
 #include "qwt_plot.h"
+#include "qwt_text.h"
 #include "qwt_scale_div.h"
-#include "qwt_painter.h"
 #include "qwt_scale_map.h"
 #include "qwt_picker_machine.h"
+#include "moc_qwt_plot_picker.cpp"
 
 /*!
   \brief Create a plot picker
@@ -217,13 +218,14 @@ QwtText QwtPlotPicker::trackerTextF( const QPointF &pos ) const
     switch ( rubberBand() )
     {
         case HLineRubberBand:
-            text.sprintf( "%.4f", pos.y() );
+            text = QString::number( pos.y(), 'f', 4 );
             break;
         case VLineRubberBand:
-            text.sprintf( "%.4f", pos.x() );
+            text = QString::number( pos.x(), 'f', 4 );
             break;
         default:
-            text.sprintf( "%.4f, %.4f", pos.x(), pos.y() );
+            text = QString::number( pos.x(), 'f', 4 )
+                + ", " + QString::number( pos.y(), 'f', 4 );
     }
     return QwtText( text );
 }
@@ -379,3 +381,7 @@ QPoint QwtPlotPicker::transform( const QPointF &pos ) const
 
     return p.toPoint();
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_plot_picker.cpp"
+#endif

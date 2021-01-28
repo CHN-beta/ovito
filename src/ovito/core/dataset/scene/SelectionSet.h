@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ public:
 	///
 	/// All nodes are removed from the selection set.
 	/// \undoable
-	void clear() { setNodes({}); }
+	void clear() { _nodes.clear(this, PROPERTY_FIELD(nodes)); }
 
 	/// \brief Resets the selection set to contain only the given node.
 	/// \param node The node to be selected.
@@ -116,18 +116,19 @@ protected:
 	/// Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) override;
 
+	/// Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
 	/// This method is invoked after the change of the selection set is complete. It emits the selectionChangeComplete() signal.
 	Q_INVOKABLE void onSelectionChangeCompleted();
 
 private:
 
 	/// Holds the references to the selected scene nodes.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET);
 
 	/// Indicates that there is a pending change event in the event queue.
 	bool _selectionChangeInProgress = false;
 };
 
 }	// End of namespace
-
-

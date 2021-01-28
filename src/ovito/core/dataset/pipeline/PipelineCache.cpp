@@ -366,9 +366,10 @@ void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousC
 * Special method used by the FileSource class to replace the contents of the pipeline
 * cache with a data collection modified by the user.
 ******************************************************************************/
-void PipelineCache::overrideCache(DataCollection* dataCollection)
+void PipelineCache::overrideCache(const DataCollection* dataCollection, const TimeInterval& keepInterval)
 {
 	OVITO_ASSERT(dataCollection != nullptr);
+	OVITO_ASSERT(!keepInterval.isEmpty());
 
 	// Interrupt frame precomputation, which might be in progress.
 	_precomputeFramesOperation.reset();
@@ -377,7 +378,6 @@ void PipelineCache::overrideCache(DataCollection* dataCollection)
 	// Reduce the validity of the cached states to the current animation time. 
 	// Throw away states that became completely invalid.
 	// Replace the contents of the cache with the given data collection.
-	TimeInterval keepInterval(dataCollection->dataset()->animationSettings()->time());
 	for(PipelineFlowState& state : _cachedStates) {
 		state.intersectStateValidity(keepInterval);
 		if(state.stateValidity().isEmpty()) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,10 @@ public:
 	/// Destructor.
 	virtual ~StringParameterUI();
 
-	/// This returns the text widget managed by this ParameterUI.
+	/// Returns the text widget managed by this ParameterUI.
+	QLineEdit* lineEdit() const { OVITO_ASSERT(qobject_cast<QLineEdit*>(textBox())); return static_cast<QLineEdit*>(textBox()); }
+
+	/// Returns the widget managed by this ParameterUI.
 	QWidget* textBox() const { return _textBox; }
 
 	/// Replaces the text widget managed by this ParameterUI. The ParameterUI becomes the owner of the new widget.
@@ -74,6 +77,7 @@ public:
 
 public:
 
+	Q_PROPERTY(QLineEdit lineEdit READ lineEdit);
 	Q_PROPERTY(QWidget textBox READ textBox);
 
 public Q_SLOTS:
@@ -89,5 +93,3 @@ protected:
 };
 
 }	// End of namespace
-
-

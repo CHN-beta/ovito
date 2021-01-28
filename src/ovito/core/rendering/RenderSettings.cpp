@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "RenderSettings.h"
 
 namespace Ovito {
@@ -81,8 +82,16 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 	_fileNumberBase(0),
 	_framesPerSecond(0)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void RenderSettings::initializeObject(ExecutionContext executionContext)
+{
 	// Setup default background color.
-	setBackgroundColorController(ControllerManager::createColorController(dataset));
+	setBackgroundColorController(ControllerManager::createColorController(dataset(), executionContext));
 	setBackgroundColor(Color(1,1,1));
 
 	// Create an instance of the default renderer class.
@@ -92,7 +101,9 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 		if(!classList.empty()) rendererClass = classList.front();
 	}
 	if(rendererClass)
-		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset)));
+		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), executionContext)));
+
+	RefTarget::initializeObject(executionContext);
 }
 
 /******************************************************************************

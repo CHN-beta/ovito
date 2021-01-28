@@ -24,6 +24,8 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 namespace Ovito { namespace Particles {
@@ -54,6 +56,73 @@ public:
 	}
 
 protected:
+
+	/// The format-specific task object that is responsible for reading an input file in the background.
+	class OVITO_PARTICLES_EXPORT FrameLoader : public StandardFrameLoader
+	{
+	public:
+
+		/// Constructor.
+		using StandardFrameLoader::StandardFrameLoader;
+
+		/// Returns the particles container object, newly creating it first if necessary.
+		ParticlesObject* particles();
+
+		/// Returns the bonds container object, newly creating it first if necessary.
+		BondsObject* bonds();
+
+		/// Returns the angles container object, newly creating it first if necessary.
+		AnglesObject* angles();
+
+		/// Returns the dihedrals container object, newly creating it first if necessary.
+		DihedralsObject* dihedrals();
+
+		/// Returns the impropers container object, newly creating it first if necessary.
+		ImpropersObject* impropers();
+
+		/// Creates a particles container object (if the particle count is non-zero) and adjusts the number of elements of the property container.
+		void setParticleCount(size_t count);
+
+		/// Creates a bonds container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setBondCount(size_t count);
+
+		/// Creates an angles container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setAngleCount(size_t count);
+
+		/// Creates a dihedrals container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setDihedralCount(size_t count);
+
+		/// Creates an impropers container object (if the bond count is non-zero) and adjusts the number of elements of the property container.
+		void setImproperCount(size_t count);
+
+		/// Determines the PBC shift vectors for bonds based on the minimum image convention.
+		void generateBondPeriodicImageProperty();
+
+		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
+		void computeVelocityMagnitude();
+
+	protected:
+
+		/// Finalizes the particle data loaded by a sub-class.
+		virtual void loadFile() override;
+
+	private:
+
+		/// The particles container object.
+		ParticlesObject* _particles = nullptr;
+
+		/// The bonds container object.
+		BondsObject* _bonds = nullptr;
+
+		/// The angles container object.
+		AnglesObject* _angles = nullptr;
+
+		/// The dihedrals container object.
+		DihedralsObject* _dihedrals = nullptr;
+
+		/// The impropers container object.
+		ImpropersObject* _impropers = nullptr;
+	};
 
 	/// \brief Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;

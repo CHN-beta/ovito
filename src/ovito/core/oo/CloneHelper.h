@@ -82,7 +82,7 @@ public:
 	/// \note If this CloneHelper instance has already been used to create a copy of the
 	///       input object \a obj, then the existing clone of this object is returned.
 	template<class T>
-	OORef<T> cloneObject(const OORef<T>& obj, bool deepCopy) {
+	OORef<std::remove_const_t<T>> cloneObject(const OORef<T>& obj, bool deepCopy) {
 		return cloneObject(obj.get(), deepCopy);
 	}
 

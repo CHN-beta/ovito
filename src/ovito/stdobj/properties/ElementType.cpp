@@ -21,8 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyStorage.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/PropertyContainerClass.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
 namespace Ovito { namespace StdObj {
@@ -32,12 +35,12 @@ DEFINE_PROPERTY_FIELD(ElementType, numericId);
 DEFINE_PROPERTY_FIELD(ElementType, color);
 DEFINE_PROPERTY_FIELD(ElementType, name);
 DEFINE_PROPERTY_FIELD(ElementType, enabled);
+DEFINE_PROPERTY_FIELD(ElementType, ownerProperty);
 SET_PROPERTY_FIELD_LABEL(ElementType, numericId, "Id");
 SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");
 SET_PROPERTY_FIELD_LABEL(ElementType, name, "Name");
 SET_PROPERTY_FIELD_LABEL(ElementType, enabled, "Enabled");
-SET_PROPERTY_FIELD_CHANGE_EVENT(ElementType, name, ReferenceEvent::TitleChanged);
-SET_PROPERTY_FIELD_CHANGE_EVENT(ElementType, enabled, ReferenceEvent::TargetEnabledOrDisabled);
+SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 
 /******************************************************************************
 * Constructs a new ElementType.
@@ -50,91 +53,131 @@ ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
 }
 
 /******************************************************************************
-* Returns the default color for a numeric type ID.
+* Initializes the element type to default parameter values.
 ******************************************************************************/
-const Color& ElementType::getDefaultColorForId(int typeClass, int typeId)
+void ElementType::initializeType(const PropertyReference& property, ExecutionContext executionContext)
 {
-	// Palette of standard colors initially assigned to new element types:
-	static const Color defaultTypeColors[] = {
-		Color(0.97, 0.97, 0.97),// 0
-		Color(1.0,  0.4,  0.4), // 1
-		Color(0.4,  0.4,  1.0), // 2
-		Color(1.0,  1.0,  0.0), // 3
-		Color(1.0,  0.4,  1.0), // 4
-		Color(0.4,  1.0,  0.2), // 5
-		Color(0.8,  1.0,  0.7), // 6
-		Color(0.7,  0.0,  1.0), // 7
-		Color(0.2,  1.0,  1.0), // 8
-	};
-	return defaultTypeColors[std::abs(typeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+	OVITO_ASSERT(!property.isNull());
+
+	// Remember the kind of typed property this type belongs to.
+	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
+
+	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), executionContext));
+}
+
+/******************************************************************************
+* Returns the QSettings path for storing or accessing the user-defined 
+* default values of some ElementType parameter.
+******************************************************************************/
+QString ElementType::getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName)
+{
+	OVITO_ASSERT(!property.isNull());
+	OVITO_ASSERT(!parameterName.isEmpty());
+
+	return QStringLiteral("defaults/%1/%2/%3/%4").arg(
+		property.containerClass()->pythonName(),
+		property.name(),
+		parameterName,
+		elementTypeName);
 }
 
 /******************************************************************************
 * Returns the default color for a element type name.
 ******************************************************************************/
-Color ElementType::getDefaultColor(int typeClass, const QString& typeName, int typeId, bool useUserDefaults)
+Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext)
 {
-	if(useUserDefaults) {
-		QSettings settings;
-		settings.beginGroup("defaults/color");
-		settings.beginGroup(QString::number(typeClass));
-		QVariant v = settings.value(typeName);
-		if(v.isValid() && v.type() == QVariant::Color)
-			return v.value<Color>();
+	OVITO_ASSERT(!typeName.isEmpty());
+
+	if(property.isNull()) {
+		return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 	}
 
-	return getDefaultColorForId(typeClass, typeId);
+	// Interactive execution context means that we are supposed to load the user-defined
+	// settings from the settings store.
+	if(executionContext == ExecutionContext::Interactive) {
+
+		// Use the type's name, property type and container class to look up the 
+		// default color saved by the user.
+		QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
+		if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+			return v.value<Color>();
+
+		// The following is for backward compatibility with OVITO 3.3.5, which used to store the 
+		// default colors in a different branch of the settings registry.
+		if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
+			// Load particle type colors.
+			QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
+		else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
+			// Load bond type colors.
+			QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
+		else {
+			// Load generic element type colors.
+			QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
+			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
+				return v.value<Color>();
+		}
+	}
+
+	// Otherwise fall back to a hard-coded default colors provided by the property container class.
+	return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
 }
 
 /******************************************************************************
 * Changes the default color for an element type name.
 ******************************************************************************/
-void ElementType::setDefaultColor(int typeClass, const QString& typeName, const Color& color)
+void ElementType::setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color)
 {
 	QSettings settings;
-	settings.beginGroup("defaults/color");
-	settings.beginGroup(QString::number(typeClass));
+	QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
 
-	if(getDefaultColor(typeClass, typeName, 0, false) != color)
-		settings.setValue(typeName, QVariant::fromValue((QColor)color));
-	else
-		settings.remove(typeName);
+	if(getDefaultColor(property, typeName, 0, ExecutionContext::Scripting).equals(color, 1.0/256.0) == false) {
+		settings.setValue(settingsKey, QVariant::fromValue(static_cast<QColor>(color)));
+	}
+	else {
+		settings.remove(settingsKey);
+	}
 }
 
 /******************************************************************************
-* Initializes the element type from a variable list of attributes delivered by a file importer.
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-bool ElementType::initialize(bool isNewlyCreated, const QString& name, const QVariantMap& attributes, int typePropertyId)
+void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-	if(isNewlyCreated && Application::instance()->executionContext() == Application::ExecutionContext::Interactive)
-		loadUserDefaults();
+	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+	// have already replaced it with a mutable copy.
+	const ElementType* self = static_object_cast<ElementType>(dataPath.back());
 
-	// Assign name string.
-	if(name != this->name() && (isNewlyCreated || !name.isEmpty())) {
-		if(!isSafeToModify())
-			return false;
-		setName(name);
-	}
+	if(const ElementType* proxy = static_object_cast<ElementType>(self->editableProxy())) {
+		// The numeric ID of a type and some other attributes should never change.
+		OVITO_ASSERT(proxy->numericId() == self->numericId());
 
-	// Initialize color value.
-	if(attributes.contains(QStringLiteral("color"))) {
-		Color c = attributes.value(QStringLiteral("color")).value<Color>();
-		if(isNewlyCreated) {
-			setColor(c);
-		}
-		else if(c != color()) {
-			if(!isSafeToModify())
-				return false;
-			setColor(c);
+		if(proxy->name() != self->name() || proxy->color() != self->color() || proxy->enabled() != self->enabled()) {
+			// Make this data object mutable first.
+			ElementType* mutableSelf = static_object_cast<ElementType>(state.makeMutableInplace(dataPath));
+		
+			mutableSelf->setName(proxy->name());
+			mutableSelf->setColor(proxy->color());
+			mutableSelf->setEnabled(proxy->enabled());
 		}
 	}
-	else if(isNewlyCreated) {
-		setColor(getDefaultColor(PropertyStorage::GenericTypeProperty, nameOrNumericId(), numericId()));
+	else {
+		// Create and initialize a new proxy.
+		OORef<ElementType> newProxy = CloneHelper().cloneObject(self, false);
+		OVITO_ASSERT(newProxy->numericId() == self->numericId());
+		OVITO_ASSERT(newProxy->enabled() == self->enabled());
+
+		// Make this element type mutable and attach the proxy object to it.
+		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
 	}
-	
-	return true;
+
+	DataObject::updateEditableProxies(state, dataPath);
 }
-
 
 }	// End of namespace
 }	// End of namespace

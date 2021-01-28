@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,10 +23,10 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/actions/ActionManager.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/properties/NumericalParameterUI.h>
 #include <ovito/gui/desktop/dialogs/AnimationSettingsDialog.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/animation/controller/KeyframeController.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "AnimationKeyEditorDialog.h"
@@ -258,6 +258,15 @@ public:
 				endInsertRows();
 			}
 		}
+		else if(event.type() == ReferenceEvent::ReferenceChanged) {
+			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+			if(refEvent.field() == &PROPERTY_FIELD(KeyframeController::keys)) {
+				OVITO_ASSERT(keys().size() == ctrl()->keys().size());
+				_keys.set(refEvent.index(), static_object_cast<AnimationKey>(refEvent.newTarget()));
+				Q_EMIT dataChanged(createIndex(refEvent.index(), 0), createIndex(refEvent.index(), columnCount() - 1));
+				Q_EMIT headerDataChanged(Qt::Vertical, refEvent.index(), refEvent.index());
+			}
+		}
 	}
 
 	/// Is called when an animation key generates a notification event.
@@ -356,14 +365,14 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	QToolBar* toolbar = new QToolBar();
 	toolbar->setOrientation(Qt::Vertical);
 	toolbar->setFloatable(false);
-	_addKeyAction = toolbar->addAction(QIcon(":/gui/actions/animation/add_animation_key.bw.svg"), tr("Create animation key"));
+	_addKeyAction = toolbar->addAction(QIcon(":/guibase/actions/animation/add_animation_key.bw.svg"), tr("Create animation key"));
 	connect(_addKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onAddKey);
-	_deleteKeyAction = toolbar->addAction(QIcon(":/gui/actions/animation/delete_animation_key.bw.svg"), tr("Delete animation key"));
+	_deleteKeyAction = toolbar->addAction(QIcon(":/guibase/actions/animation/delete_animation_key.bw.svg"), tr("Delete animation key"));
 	_deleteKeyAction->setEnabled(false);
 	connect(_deleteKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onDeleteKey);
 
 	toolbar->addSeparator();
-	QAction* animSettingsAction = toolbar->addAction(QIcon(":/gui/actions/animation/animation_settings.png"), tr("Animation settings..."));
+	QAction* animSettingsAction = toolbar->addAction(QIcon(":/guibase/actions/animation/animation_settings.bw.svg"), tr("Animation settings..."));
 	connect(animSettingsAction, &QAction::triggered, [this]() {
 		AnimationSettingsDialog(this->ctrl()->dataset()->animationSettings(), this).exec();
 	});

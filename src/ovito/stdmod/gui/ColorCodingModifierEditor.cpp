@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,9 @@
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/oo/OvitoClass.h>
 #include "ColorCodingModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -68,25 +70,30 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 			_sourcePropertyUI->setContainerRef({});
 	});
 
-	colorGradientList = new QComboBox(rollout);
+	_colorGradientList = new QComboBox(rollout);
 	layout1->addWidget(new QLabel(tr("Color gradient:")));
-	layout1->addWidget(colorGradientList);
-	colorGradientList->setIconSize(QSize(48,16));
-	connect(colorGradientList, (void (QComboBox::*)(int))&QComboBox::activated, this, &ColorCodingModifierEditor::onColorGradientSelected);
+	layout1->addWidget(_colorGradientList);
+	_colorGradientList->setIconSize(QSize(48,16));
+	connect(_colorGradientList, (void (QComboBox::*)(int))&QComboBox::activated, this, &ColorCodingModifierEditor::onColorGradientSelected);
 	QVector<OvitoClassPtr> sortedColormapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
 	std::sort(sortedColormapClassList.begin(), sortedColormapClassList.end(),
 		[](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
 	for(OvitoClassPtr clazz : sortedColormapClassList) {
 		if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
 			continue;
-		colorGradientList->addItem(iconFromColorMapClass(clazz), clazz->displayName(), QVariant::fromValue(clazz));
+		_colorGradientList->addItem(iconFromColorMapClass(clazz), clazz->displayName(), QVariant::fromValue(clazz));
+		OVITO_ASSERT(_colorGradientList->findData(QVariant::fromValue(clazz)) >= 0);
 	}
-	colorGradientList->insertSeparator(colorGradientList->count());
-	colorGradientList->addItem(tr("Load custom color map..."));
+	_colorGradientList->insertSeparator(_colorGradientList->count());
+	_colorGradientList->addItem(tr("Load custom color map..."));
 	_gradientListContainCustomItem = false;
 
 	// Update color legend if another modifier has been loaded into the editor.
 	connect(this, &ColorCodingModifierEditor::contentsReplaced, this, &ColorCodingModifierEditor::updateColorGradient);
+	connect(this, &ColorCodingModifierEditor::contentsChanged, this, &ColorCodingModifierEditor::onModifierChanged);
+	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
+		updateAutoRangeLater(this);
+	});
 
 	layout1->addSpacing(10);
 
@@ -96,9 +103,9 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	layout1->addLayout(layout2);
 
 	// End value parameter.
-	FloatParameterUI* endValuePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::endValueController));
-	layout2->addWidget(endValuePUI->label(), 0, 0);
-	layout2->addLayout(endValuePUI->createFieldLayout(), 0, 1);
+	_endValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::endValueController));
+	layout2->addWidget(_endValueUI->label(), 0, 0);
+	layout2->addLayout(_endValueUI->createFieldLayout(), 0, 1);
 
 	// Insert color map display.
 	class ColorMapWidget : public QLabel
@@ -110,27 +117,25 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 		/// Handle mouse move events.
 		virtual void mouseMoveEvent(QMouseEvent* event) override {
 			// Display a tooltip indicating the property value that corresponds to the color under the mouse cursor.
-			if(ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(_editor->editObject())) {
-				QRect cr = contentsRect();
-				FloatType t = FloatType(cr.bottom() - event->y()) / std::max(1, cr.height() - 1);
-				FloatType mappedValue = modifier->startValue() + t * (modifier->endValue() - modifier->startValue());
-				QString text = tr("Value: %1").arg(mappedValue);
-				QToolTip::showText(event->globalPos(), text, this, rect());
-			}
+			QRect cr = contentsRect();
+			FloatType t = FloatType(cr.bottom() - ViewportInputMode::getMousePosition(event).y()) / std::max(1, cr.height() - 1);
+			FloatType mappedValue = _editor->computeRangeValue(t);
+			QString text = std::isfinite(mappedValue) ? tr("Value: %1").arg(mappedValue) : tr("No value range available");
+			QToolTip::showText(ViewportInputMode::getGlobalMousePosition(event).toPoint(), text, this, rect());
 			QLabel::mouseMoveEvent(event);
 		}
 	private:
 		ColorCodingModifierEditor* _editor;
 	};
-	colorLegendLabel = new ColorMapWidget(rollout, this);
-	colorLegendLabel->setScaledContents(true);
-	colorLegendLabel->setMouseTracking(true);
-	layout2->addWidget(colorLegendLabel, 1, 1);
+	_colorLegendLabel = new ColorMapWidget(rollout, this);
+	_colorLegendLabel->setScaledContents(true);
+	_colorLegendLabel->setMouseTracking(true);
+	layout2->addWidget(_colorLegendLabel, 1, 1);
 
 	// Start value parameter.
-	FloatParameterUI* startValuePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::startValueController));
-	layout2->addWidget(startValuePUI->label(), 2, 0);
-	layout2->addLayout(startValuePUI->createFieldLayout(), 2, 1);
+	_startValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::startValueController));
+	layout2->addWidget(_startValueUI->label(), 2, 0);
+	layout2->addLayout(_startValueUI->createFieldLayout(), 2, 1);
 
 	// Export color scale button.
 	QToolButton* exportBtn = new QToolButton(rollout);
@@ -141,18 +146,22 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	connect(exportBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onExportColorScale);
 	layout2->addWidget(exportBtn, 1, 0, Qt::AlignCenter);
 
+	// Auto-adjust range.
+	BooleanParameterUI* autoAdjustRangePUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange));
+	layout2->addWidget(autoAdjustRangePUI->checkBox(), 3, 1);
+
 	layout1->addSpacing(8);
-	QPushButton* adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
-	connect(adjustRangeBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onAdjustRange);
-	layout1->addWidget(adjustRangeBtn);
+	_adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
+	connect(_adjustRangeBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onAdjustRange);
+	layout1->addWidget(_adjustRangeBtn);
 	layout1->addSpacing(4);
-	QPushButton* adjustRangeGlobalBtn = new QPushButton(tr("Adjust range (all frames)"), rollout);
-	connect(adjustRangeGlobalBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onAdjustRangeGlobal);
-	layout1->addWidget(adjustRangeGlobalBtn);
+	_adjustRangeGlobalBtn = new QPushButton(tr("Adjust range (all frames)"), rollout);
+	connect(_adjustRangeGlobalBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onAdjustRangeGlobal);
+	layout1->addWidget(_adjustRangeGlobalBtn);
 	layout1->addSpacing(4);
-	QPushButton* reverseBtn = new QPushButton(tr("Reverse range"), rollout);
-	connect(reverseBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onReverseRange);
-	layout1->addWidget(reverseBtn);
+	_reverseRangeBtn = new QPushButton(tr("Reverse range"), rollout);
+	connect(_reverseRangeBtn, &QPushButton::clicked, this, &ColorCodingModifierEditor::onReverseRange);
+	layout1->addWidget(_reverseRangeBtn);
 
 	layout1->addSpacing(8);
 
@@ -183,34 +192,34 @@ void ColorCodingModifierEditor::updateColorGradient()
 		Color color = mod->colorGradient()->valueToColor(1.0 - t);
 		image.setPixel(0, y, QColor(color).rgb());
 	}
-	colorLegendLabel->setPixmap(QPixmap::fromImage(image));
+	_colorLegendLabel->setPixmap(QPixmap::fromImage(image));
 
 	// Select the right entry in the color gradient selector.
 	bool isCustomMap = false;
 	if(mod->colorGradient()) {
-		int index = colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
+		int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
 		if(index >= 0)
-			colorGradientList->setCurrentIndex(index);
+			_colorGradientList->setCurrentIndex(index);
 		else
 			isCustomMap = true;
 	}
-	else colorGradientList->setCurrentIndex(-1);
+	else _colorGradientList->setCurrentIndex(-1);
 
 	if(isCustomMap) {
 		if(!_gradientListContainCustomItem) {
 			_gradientListContainCustomItem = true;
-			colorGradientList->insertItem(colorGradientList->count() - 2, iconFromColorMap(mod->colorGradient()), tr("Custom color map"));
-			colorGradientList->insertSeparator(colorGradientList->count() - 3);
+			_colorGradientList->insertItem(_colorGradientList->count() - 2, iconFromColorMap(mod->colorGradient()), tr("Custom color map"));
+			_colorGradientList->insertSeparator(_colorGradientList->count() - 3);
 		}
 		else {
-			colorGradientList->setItemIcon(colorGradientList->count() - 3, iconFromColorMap(mod->colorGradient()));
+			_colorGradientList->setItemIcon(_colorGradientList->count() - 3, iconFromColorMap(mod->colorGradient()));
 		}
-		colorGradientList->setCurrentIndex(colorGradientList->count() - 3);
+		_colorGradientList->setCurrentIndex(_colorGradientList->count() - 3);
 	}
 	else if(_gradientListContainCustomItem) {
 		_gradientListContainCustomItem = false;
-		colorGradientList->removeItem(colorGradientList->count() - 3);
-		colorGradientList->removeItem(colorGradientList->count() - 3);
+		_colorGradientList->removeItem(_colorGradientList->count() - 3);
+		_colorGradientList->removeItem(_colorGradientList->count() - 3);
 	}
 }
 
@@ -224,7 +233,103 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
 			updateColorGradient();
 		}
 	}
+	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
+		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) {
+			ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
+			if(mod->autoAdjustRange() == false && dataset()->undoStack().isRecording()) {
+				// When the user turns off the auto-adjust option, adopt the current automatic range
+				// as the new user-defined range.
+				FloatType newMin = _lastAutoRangeMinValue;
+				FloatType newMax = _lastAutoRangeMaxValue;
+				if(std::isfinite(newMin))
+					mod->setStartValue(newMin);
+				if(std::isfinite(newMax))
+					mod->setEndValue(newMax);
+			}
+		}
+	}
 	return ModifierPropertiesEditor::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* This method is called whenever the parameters of the ColoCodingModifier change.
+******************************************************************************/
+void ColorCodingModifierEditor::onModifierChanged()
+{
+	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
+
+	bool enableCustomRangeCtrls = (mod && !mod->autoAdjustRange());
+
+	_startValueUI->setEnabled(enableCustomRangeCtrls);
+	_endValueUI->setEnabled(enableCustomRangeCtrls);
+	_adjustRangeBtn->setEnabled(enableCustomRangeCtrls);
+	_adjustRangeGlobalBtn->setEnabled(enableCustomRangeCtrls);
+	_reverseRangeBtn->setEnabled(enableCustomRangeCtrls);
+	if(enableCustomRangeCtrls) {
+		_startValueUI->spinner()->updateTextBox();
+		_endValueUI->spinner()->updateTextBox();
+		_lastAutoRangeMinValue = std::numeric_limits<FloatType>::quiet_NaN();
+		_lastAutoRangeMaxValue = std::numeric_limits<FloatType>::quiet_NaN();
+	}
+	else {
+		updateAutoRangeLater(this);
+	}
+}
+
+/******************************************************************************
+* Is called whenever the modifier has been newly evaluated and has auto-adjusted the value range.
+******************************************************************************/
+void ColorCodingModifierEditor::autoRangeChanged()
+{
+	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
+	ModifierApplication* modApp = modifierApplication();
+	if(!mod || !modApp || !mod->autoAdjustRange()) return;
+
+	// Request the modifier's pipeline output.
+	const PipelineFlowState& state = modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+
+	QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+	QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+	if(minValue.isValid()) {
+		_lastAutoRangeMinValue = minValue.value<FloatType>();
+		_startValueUI->textBox()->setText(_startValueUI->spinner()->unit()->formatValue(_lastAutoRangeMinValue));
+	}
+	else {
+		_lastAutoRangeMinValue = std::numeric_limits<FloatType>::quiet_NaN();
+		_startValueUI->textBox()->setText(tr("###"));
+	}
+
+	if(maxValue.isValid()) {
+		_lastAutoRangeMaxValue = maxValue.value<FloatType>();
+		_endValueUI->textBox()->setText(_endValueUI->spinner()->unit()->formatValue(_lastAutoRangeMaxValue));
+	}
+	else {
+		_lastAutoRangeMaxValue = std::numeric_limits<FloatType>::quiet_NaN();
+		_endValueUI->textBox()->setText(tr("###"));
+	}
+}
+
+/******************************************************************************
+* Determine the property value corresponding to the given relative position in the range interval.
+******************************************************************************/
+FloatType ColorCodingModifierEditor::computeRangeValue(FloatType t) const
+{
+	if(ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(editObject())) {
+		if(!modifier->autoAdjustRange()) {
+			return modifier->startValue() + t * (modifier->endValue() - modifier->startValue());
+		}
+		else {
+			if(ModifierApplication* modApp = modifierApplication()) {
+				const PipelineFlowState& state = modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+				QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+				QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+				if(minValue.isValid() && maxValue.isValid()) {
+					return minValue.value<FloatType>() + t * (maxValue.value<FloatType>() - minValue.value<FloatType>());
+				}
+			}
+		}
+	}
+	return std::numeric_limits<FloatType>::quiet_NaN();
 }
 
 /******************************************************************************
@@ -236,10 +341,10 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
-	OvitoClassPtr descriptor = colorGradientList->itemData(index).value<OvitoClassPtr>();
+	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
 		undoableTransaction(tr("Change color gradient"), [descriptor, mod]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset()));
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset(), ExecutionContext::Interactive));
 			if(gradient) {
 				mod->setColorGradient(gradient);
 
@@ -251,7 +356,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 			}
 		});
 	}
-	else if(index == colorGradientList->count() - 1) {
+	else if(index == _colorGradientList->count() - 1) {
 		undoableTransaction(tr("Change color gradient"), [this, mod]() {
 			LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
 			if(fileDialog.exec()) {
@@ -315,7 +420,7 @@ void ColorCodingModifierEditor::onExportColorScale()
 	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
 	if(!mod || !mod->colorGradient()) return;
 
-	SaveImageFileDialog fileDialog(colorLegendLabel, tr("Save color map"));
+	SaveImageFileDialog fileDialog(_colorLegendLabel, tr("Save color map"));
 	if(fileDialog.exec()) {
 
 		// Create the color legend image.
@@ -352,7 +457,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(dataset) {
 		try {
 			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset));
+			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ExecutionContext::Interactive));
 			if(map) {
 				QIcon icon = iconFromColorMap(map);
 				iconCache.insert(std::make_pair(clazz, icon));

@@ -42,6 +42,9 @@ public:
 	PromiseBase() noexcept {}
 #endif
 
+	/// Move constructor.
+	PromiseBase(PromiseBase&& p) noexcept = default;
+
 	/// Destructor.
 	~PromiseBase() { reset(); }
 
@@ -167,9 +170,6 @@ public:
 
 protected:
 
-	/// Move constructor.
-	PromiseBase(PromiseBase&& p) noexcept = default;
-
 	/// Constructor.
 	PromiseBase(TaskPtr&& p) noexcept : _task(std::move(p)) {}
 
@@ -195,6 +195,12 @@ public:
 #else
 	Promise() noexcept {}
 #endif
+
+	/// Create a promise that is ready and provides immediate default-constructed results.
+	static Promise createImmediateEmpty() {
+		return Promise(std::make_shared<TaskWithResultStorage<Task, tuple_type>>(
+			tuple_type{}, Task::State(Task::Started | Task::Finished)));
+	}
 
 	/// Create a promise that is ready and provides an immediate result.
 	template<typename... R2>

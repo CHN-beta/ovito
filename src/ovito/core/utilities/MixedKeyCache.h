@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 
 #include <ovito/core/Core.h>
 #include <boost/any.hpp>
+#include <typeinfo>
 
 namespace Ovito {
 
@@ -43,10 +44,10 @@ public:
 	/// Returns a reference to the value for the given key.
 	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
 	template<typename Value, typename Key>
-	Value& get(const Key& key) {
+	Value& get(Key&& key) {
 		// Check if the key exists in the cache.
 		for(auto& entry : _entries) {
-			if(std::get<0>(entry).type() == typeid(Key) && boost::any_cast<const Key&>(std::get<0>(entry)) == key) {
+			if(std::get<0>(entry).type() == typeid(Key) && key == boost::any_cast<const Key&>(std::get<0>(entry))) {
 				// Mark this cache entry as recently accessed.
 				std::get<2>(entry) = true;
 				// Read out the value of the cache entry.
@@ -54,7 +55,7 @@ public:
 			}
 		}
 		// Create a new entry if key doesn't exist yet.
-		_entries.emplace_back(key, Value{}, true);
+		_entries.emplace_back(std::forward<Key>(key), Value{}, true);
 		return boost::any_cast<Value&>(std::get<1>(_entries.back()));
 	}
 

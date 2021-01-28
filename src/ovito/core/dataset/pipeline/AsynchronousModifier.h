@@ -47,8 +47,8 @@ public:
 	public:
 
 		/// Constructor.
-		explicit Engine(const TimeInterval& validityInterval = TimeInterval::infinite()) :
-			_validityInterval(validityInterval) {}
+		explicit Engine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+			_dataSource(dataSource), _executionContext(executionContext), _validityInterval(validityInterval) {}
 
 #ifdef Q_OS_LINUX
 		/// Destructor.
@@ -72,13 +72,30 @@ public:
 		/// Creates another engine that performs the next stage of the computation. 
 		virtual std::shared_ptr<Engine> createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input) { return {}; }
 
+		/// Decides whether the computation is sufficiently short to perform
+		/// it synchronously within the GUI thread. The default implementation returns false,
+		/// which means the computation will be performed asynchronously in a worker thread.
+		virtual bool preferSynchronousExecution() { return false; }
+
 		/// Returns the validity interval of the stored computation results.
 		const TimeInterval& validityInterval() const { return _validityInterval; }
 
 		/// Changes the validity interval of the computation results.
 		void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
+		/// Returns the type of context the engine is running in (interactive or scripting).
+		ExecutionContext executionContext() const { return _executionContext; }
+
+		/// Returns the object to be set as data source of data objects newly created by the engine.
+		const PipelineObject* dataSource() const { OVITO_CHECK_OBJECT_POINTER(_dataSource); return _dataSource; }
+
 	private:
+
+		/// The object to be set as data source of data objects newly created by the engine.
+		const PipelineObject* _dataSource;
+
+		/// The type of context the engine is running in (interactive or scripting).
+		ExecutionContext _executionContext;
 
 		/// The validity time interval of the stored computation results.
 		TimeInterval _validityInterval;
@@ -110,14 +127,16 @@ protected:
 	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) = 0;
+	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) = 0;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.
 	virtual bool applyCachedResultsSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state);
 };
 
+#ifndef Core_EXPORTS
 // Export this class template specialization from the DLL under Windows.
-extern template class OVITO_CORE_EXPORT_TEMPLATE Future<AsynchronousModifier::EnginePtr>;
+extern template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
+#endif
 
 }	// End of namespace

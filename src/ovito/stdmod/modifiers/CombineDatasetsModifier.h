@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 
 	Q_CLASSINFO("DisplayName", "Combine datasets");
 	Q_CLASSINFO("Description", "Merge particles and bonds from two separate input files into one dataset.");
-#ifndef OVITO_BUILD_WEBGUI
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Modification");
 #else
 	Q_CLASSINFO("ModifierCategory", "-");
@@ -78,6 +78,10 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE CombineDatasetsModifier(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
@@ -103,9 +107,16 @@ public:
 	/// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
 		if(secondaryDataSource())
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+			inputLabels.insert(secondaryDataSource()->animationFrameLabels());
+#else
 			inputLabels.unite(secondaryDataSource()->animationFrameLabels());
+#endif
 		return std::move(inputLabels);
 	}
+
+	/// Implementation method, which performs the merging of two pipeline states.
+	void combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState);
 
 protected:
 
@@ -113,12 +124,12 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this object changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 private:
 
 	/// The source for particle data to be merged into the pipeline.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineObject, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }	// End of namespace

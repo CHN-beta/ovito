@@ -30,6 +30,7 @@
 #include "AnglesObject.h"
 #include "DihedralsObject.h"
 #include "ImpropersObject.h"
+#include "BondType.h"
 
 namespace Ovito { namespace Particles {
 
@@ -42,11 +43,12 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 	class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
 	{
 	public:
+	
 		/// Inherit constructor from base class.
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard particle properties.
-		virtual PropertyPtr createStandardStorage(size_t elementCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -68,13 +70,13 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		/// on the mapping of the file data columns to internal properties.
 		virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const override;
 
+		/// Returns a default color for an ElementType given its numeric type ID.
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const override;
+
 	protected:
 
 		/// Is called by the system after construction of the meta-class instance.
 		virtual void initialize() override;
-
-		/// Gives the property class the opportunity to set up a newly created property object.
-		virtual void prepareNewProperty(PropertyObject* property) const override;
 	};
 
 	Q_OBJECT
@@ -85,12 +87,12 @@ public:
 
 	/// \brief The list of standard particle properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyStorage::GenericSelectionProperty,
-		ColorProperty = PropertyStorage::GenericColorProperty,
-		TypeProperty = PropertyStorage::GenericTypeProperty,
-		IdentifierProperty = PropertyStorage::GenericIdentifierProperty,
-		PositionProperty = PropertyStorage::FirstSpecificProperty,
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		SelectionProperty = PropertyObject::GenericSelectionProperty,
+		ColorProperty = PropertyObject::GenericColorProperty,
+		TypeProperty = PropertyObject::GenericTypeProperty,
+		IdentifierProperty = PropertyObject::GenericIdentifierProperty,
+		PositionProperty = PropertyObject::FirstSpecificProperty,
 		DisplacementProperty,
 		DisplacementMagnitudeProperty,
 		PotentialEnergyProperty,
@@ -129,12 +131,17 @@ public:
 		NucleobaseTypeProperty,
 		DNAStrandProperty,
 		NucleotideAxisProperty,
-		NucleotideNormalProperty
+		NucleotideNormalProperty,
+		SuperquadricRoundnessProperty
 	};
 
 	/// \brief Constructor.
 	Q_INVOKABLE ParticlesObject(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Deletes the particles for which bits are set in the given bit-mask.
 	/// Returns the number of deleted particles.
 	virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override;
@@ -159,6 +166,10 @@ public:
 	/// can be safely modified without expected side effects.
 	ImpropersObject* makeImpropersMutable();
 
+	/// Sorts the particles list with respect to particle IDs.
+	/// Does nothing if particles do not have IDs.
+	virtual std::vector<size_t> sortById() override;
+
 	/// Convinience method that makes sure that there is a BondsObject.
 	const BondsObject* expectBonds() const;
 
@@ -166,30 +177,30 @@ public:
 	const PropertyObject* expectBondsTopology() const;
 
 	/// Adds a set of new bonds to the particle system.
-	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties = {}, const BondType* bondType = nullptr);
+	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a vector with the input particle colors.
-	std::vector<ColorA> inputParticleColors() const;
+	ConstPropertyPtr inputParticleColors() const;
 
 	/// Returns a vector with the input particle radii.
-	std::vector<FloatType> inputParticleRadii() const;
+	ConstPropertyPtr inputParticleRadii() const;
 
 	/// Returns a vector with the input bond colors.
-	std::vector<ColorA> inputBondColors(bool ignoreExistingColorProperty = false) const;
+	ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
 private:
 
 	/// The bonds list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(BondsObject, bonds, setBonds);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const BondsObject>, bonds, setBonds);
 
 	/// The angles list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(AnglesObject, angles, setAngles);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const AnglesObject>, angles, setAngles);
 
 	/// The dihedrals list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(DihedralsObject, dihedrals, setDihedrals);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DihedralsObject>, dihedrals, setDihedrals);
 
 	/// The impropers list sub-object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD(ImpropersObject, impropers, setImpropers);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const ImpropersObject>, impropers, setImpropers);
 };
 
 /**

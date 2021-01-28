@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,38 +24,41 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
 /**
- * \brief A smart pointer holding a reference to an OvitoObject.
+ * \brief A smart-pointer to an OvitoObject.
  *
- * This smart pointer class takes care of incrementing and decrementing
+ * This smart-pointer class takes care of incrementing and decrementing
  * the reference counter of the object it is pointing to. As soon as no
- * OORef pointer to an object instance is left, the object is automatically
- * deleted.
+ * OORef pointer to an object instance is left, the referenced object is automatically
+ * destroyed.
  */
 template<class T>
 class OORef
 {
 private:
 
-	typedef OORef this_type;
+	using this_type = OORef;
+
+    T* px = nullptr;
+
+	template<class U> friend class OORef;
+    template<class T2, class U> OORef<T2> friend static_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T2, class U> OORef<T2> friend dynamic_pointer_cast(OORef<U>&& p) noexcept;
+    template<class T2, class U> OORef<T2> friend const_pointer_cast(OORef<U>&& p) noexcept;
 
 public:
 
-    typedef T element_type;
+    using element_type = T;
 
     /// Default constructor.
-    OORef() noexcept : px(nullptr) {}
+    OORef() noexcept = default;
 
     /// Null constructor.
     OORef(std::nullptr_t) noexcept : px(nullptr) {}
-
-    /// Initialization constructor.
-    OORef(T* p) noexcept : px(p) {
-    	if(px) px->incrementReferenceCount();
-    }
 
     /// Initialization constructor.
     OORef(const T* p) noexcept : px(const_cast<T*>(p)) {
@@ -78,6 +81,12 @@ public:
     	rhs.px = nullptr;
     }
 
+    /// Move and conversion constructor.
+    template<class U>
+    OORef(OORef<U>&& rhs) noexcept : px(rhs.px) {
+    	rhs.px = nullptr;
+    }
+
     /// Destructor.
     ~OORef() {
     	if(px) px->decrementReferenceCount();
@@ -95,6 +104,12 @@ public:
     }
 
     OORef& operator=(OORef&& rhs) noexcept {
+    	this_type(std::move(rhs)).swap(*this);
+    	return *this;
+    }
+
+    template<class U>
+    OORef& operator=(OORef<U>&& rhs) noexcept {
     	this_type(std::move(rhs)).swap(*this);
     	return *this;
     }
@@ -134,9 +149,14 @@ public:
     	std::swap(px,rhs.px);
     }
 
-private:
-
-    T* px;
+    /// Factory method instantiating a new object and returning a smart-pointer to it.
+    template<typename... Args>
+	static this_type create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
+        using OType = std::remove_const_t<T>;
+		OORef<OType> obj(new OType(dataset, std::forward<Args>(args)...));
+        obj->initializeObject(executionContext);
+        return obj;
+	}
 };
 
 template<class T, class U> inline bool operator==(const OORef<T>& a, const OORef<U>& b) noexcept
@@ -209,14 +229,39 @@ template<class T, class U> OORef<T> static_pointer_cast(const OORef<U>& p) noexc
     return static_cast<T*>(p.get());
 }
 
+template<class T, class U> OORef<T> static_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = static_cast<T*>(p.get());
+    p.px = nullptr;
+    return result;
+}
+
 template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexcept
 {
     return const_cast<T*>(p.get());
 }
 
+template<class T, class U> OORef<T> const_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = const_cast<T*>(p.get());
+    p.px = nullptr;
+    return result;
+}
+
 template<class T, class U> OORef<T> dynamic_pointer_cast(const OORef<U>& p) noexcept
 {
     return qobject_cast<T*>(p.get());
+}
+
+template<class T, class U> OORef<T> dynamic_pointer_cast(OORef<U>&& p) noexcept
+{
+    OORef<T> result;
+    result.px = qobject_cast<T*>(p.get());
+    if(result.px)
+        p.px = nullptr;
+    return result;
 }
 
 template<class T> QDebug operator<<(QDebug debug, const OORef<T>& p)

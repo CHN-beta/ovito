@@ -124,7 +124,7 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 	for(int i = 0; i < (int)filteredMapping.size(); i++) {
 		const PropertyReference& pref = filteredMapping[i];
 		QString columnName = pref.nameWithComponent();
-		columnName.remove(QRegExp("[^A-Za-z\\d_.]"));
+		columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
 		columnNames.push_back(columnName);
 		colMapping.push_back(pref);
 	}

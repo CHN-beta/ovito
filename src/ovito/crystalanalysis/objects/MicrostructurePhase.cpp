@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@ IMPLEMENT_OVITO_CLASS(MicrostructurePhase);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, shortName);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, dimensionality);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, crystalSymmetryClass);
-DEFINE_REFERENCE_FIELD(MicrostructurePhase, burgersVectorFamilies);
+DEFINE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, burgersVectorFamilies);
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, shortName, "Short name");
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, dimensionality, "Dimensionality");
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, crystalSymmetryClass, "Symmetry class");
@@ -138,6 +138,30 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
 		}
 	}
 	return Color(0.9f, 0.9f, 0.9f);
+}
+
+/******************************************************************************
+* Creates an editable proxy object for this DataObject and synchronizes its parameters.
+******************************************************************************/
+void MicrostructurePhase::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+{
+	ElementType::updateEditableProxies(state, dataPath);
+
+	// Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
+	// have already replaced it with a mutable copy.
+	const MicrostructurePhase* self = static_object_cast<MicrostructurePhase>(dataPath.back());
+
+	if(MicrostructurePhase* proxy = static_object_cast<MicrostructurePhase>(self->editableProxy())) {
+		// Adopt the proxy objects for the Burgers vector families, which have already been created by
+		// the recursive method.
+		OVITO_ASSERT(proxy->burgersVectorFamilies().size() == self->burgersVectorFamilies().size());
+		for(int i = 0; i < self->burgersVectorFamilies().size(); i++) {
+			OVITO_ASSERT(proxy->isSafeToModify());
+			const BurgersVectorFamily* family = self->burgersVectorFamilies()[i];
+			OVITO_ASSERT(family->editableProxy());
+			proxy->_burgersVectorFamilies.set(proxy, PROPERTY_FIELD(burgersVectorFamilies), i, static_object_cast<BurgersVectorFamily>(family->editableProxy()));
+		}
+	}
 }
 
 }	// End of namespace

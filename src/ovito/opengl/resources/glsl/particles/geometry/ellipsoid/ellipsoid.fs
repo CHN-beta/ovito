@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2020 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,22 +26,12 @@ uniform mat4 inverse_projection_matrix;
 uniform bool is_perspective;
 uniform vec2 viewport_origin;		// Specifies the transformation from screen coordinates to viewport coordinates.
 uniform vec2 inverse_viewport_size;	// Specifies the transformation from screen coordinates to viewport coordinates.
+uniform bool is_picking_mode;
 
-#if __VERSION__ >= 130
-	flat in vec4 particle_color_fs;
-	flat in mat3 particle_quadric_fs;
-	flat in vec3 particle_view_pos_fs;
-	out vec4 FragColor;
-#else
-	#define particle_color_fs gl_Color
-	#define particle_view_pos_fs gl_TexCoord[1].xyz
-	#define FragColor gl_FragColor
-#endif
-
-const float ambient = 0.4;
-const float diffuse_strength = 1.0 - ambient;
-const float shininess = 6.0;
-const vec3 specular_lightdir = normalize(vec3(-1.8, 1.5, -0.2));
+flat in vec4 particle_color_fs;
+flat in mat3 particle_quadric_fs;
+flat in vec3 particle_view_pos_fs;
+out vec4 FragColor;
 
 void main()
 {
@@ -62,7 +52,6 @@ void main()
 		ray_dir = vec3(0.0, 0.0, -1.0);
 	}
 
-#if __VERSION__ >= 130
 	float a = particle_quadric_fs[0][0];
 	float b = particle_quadric_fs[1][0];
 	float c = particle_quadric_fs[2][0];
@@ -71,16 +60,6 @@ void main()
 	float f = particle_quadric_fs[2][1];
 	float g = 0.0;
 	float h = particle_quadric_fs[2][2];
-#else
-	float a = gl_TexCoord[2].x;
-	float b = gl_TexCoord[2].y;
-	float c = gl_TexCoord[2].z;
-	float d = 0.0;
-	float e = gl_TexCoord[2].w;
-	float f = gl_TexCoord[3].x;
-	float g = 0.0;
-	float h = gl_TexCoord[3].y;
-#endif
 	float i = 0.0;
 	float j = -1.0;
 
@@ -143,14 +122,17 @@ void main()
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = ((gl_DepthRange.diff * (projected_intersection.z / projected_intersection.w)) + gl_DepthRange.near + gl_DepthRange.far) * 0.5;
 
-	// Calculate surface normal in view space.
-	vec3 r = view_intersection_pnt - particle_view_pos_fs;
-	vec3 surface_normal = normalize(vec3(
-			a*r.x + b*r.y + c*r.z + d,
-			b*r.x + e*r.y + f*r.z + g,
-			c*r.x + f*r.y + h*r.z + i));
+	if(!is_picking_mode) {
+		// Calculate surface normal in view space.
+		vec3 r = view_intersection_pnt - particle_view_pos_fs;
+		vec3 surface_normal = normalize(vec3(
+				a*r.x + b*r.y + c*r.z + d,
+				b*r.x + e*r.y + f*r.z + g,
+				c*r.x + f*r.y + h*r.z + i));
 
-	float diffuse = abs(surface_normal.z) * diffuse_strength;
-	float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
-	FragColor = vec4(particle_color_fs.rgb * (diffuse + ambient) + vec3(specular), particle_color_fs.a);
+		FragColor = shadeSurfaceColor(surface_normal, ray_dir, particle_color_fs.rgb, particle_color_fs.a);
+	}
+	else {
+		FragColor = particle_color_fs;
+	}
 }

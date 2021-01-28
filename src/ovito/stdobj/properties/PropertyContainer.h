@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
 #include "PropertyContainerClass.h"
 
@@ -96,11 +97,12 @@ public:
 		return nullptr;
 	}
 
-	/// Looks up the storage array for the standard property with the given ID.
-	ConstPropertyPtr getPropertyStorage(int typeId) const {
-		if(const PropertyObject* property = getProperty(typeId))
-			return property->storage();
-		return nullptr;
+	/// Looks up the standard property with the given ID and makes it mutable if necessary.
+	PropertyObject* getMutableProperty(int typeId) {
+		if(const PropertyObject* p = getProperty(typeId))
+			return makeMutable(p);
+		else
+			return nullptr;
 	}
 
 	/// Returns the given standard property.
@@ -120,18 +122,18 @@ public:
 	/// Duplicates any property objects that are shared with other containers.
 	/// After this method returns, all property objects are exclusively owned by the container and
 	/// can be safely modified without unwanted side effects.
-	void makePropertiesMutable();
+	QVector<PropertyObject*> makePropertiesMutable();
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(int typeId, bool initializeMemory = false, const ConstDataObjectPath& containerPath = {});
+	PropertyObject* createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {});
 
 	/// Creates a user-defined property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
 	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory = false, QStringList componentNames = QStringList());
 
-	/// Creates a property and adds it to the container.
-	PropertyObject* createProperty(PropertyPtr storage);
+	/// Adds a property object to the container, replacing any preexisting property in the container with the same type. 
+	const PropertyObject* createProperty(const PropertyObject* property);
 
 	/// Sets the current number of data elements stored in the container.
 	/// The lengths of the property arrays will be adjusted accordingly.
@@ -143,14 +145,14 @@ public:
 
 	/// Replaces the property arrays in this property container with a new set of properties.
 	/// Existing element types of typed properties will be preserved by the method. 
-	void setContent(size_t newElementCount, const std::vector<PropertyPtr>& newProperties);
-
-	/// Replaces the property arrays in this property container with a new set of properties.
-	/// Existing element types of typed properties will be preserved by the method. 
-	void setContent(size_t newElementCount, const QVector<PropertyObject*>& newProperties);
+	void setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties);
 
 	/// Duplicates all data elements by extending the property arrays and replicating the existing data N times.
 	void replicate(size_t n, bool replicatePropertyValues = true);
+
+	/// Sorts the data elements in the container with respect to their unique IDs.
+	/// Does nothing if data elements do not have the ID property.
+	virtual std::vector<size_t> sortById();
 
 	/// Makes sure that all property arrays in this container have a consistent length.
 	/// If this is not the case, the method throws an exception.
@@ -164,12 +166,15 @@ protected:
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
+	/// Is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
 	/// Holds the list of properties.
-	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(PropertyObject, properties, setProperties);
+	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const PropertyObject>, properties, setProperties);
 
-	/// Keeps track of the number of elements stored in this property container.
+	/// Keeps track of the number of data elements this property container contains.
 	DECLARE_PROPERTY_FIELD(size_t, elementCount);
 
 	/// The assigned title of the data object, which is displayed in the user interface.

@@ -298,8 +298,4 @@ using Plane3 = Plane_3<FloatType>;
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Plane3);
-Q_DECLARE_METATYPE(Ovito::Plane3*);
 Q_DECLARE_TYPEINFO(Ovito::Plane3, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::Plane3*, Q_PRIMITIVE_TYPE);
-
-

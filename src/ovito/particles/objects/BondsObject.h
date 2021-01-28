@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard bond properties.
-		virtual PropertyPtr createStandardStorage(size_t bondsCount, int type, bool initializeMemory, const ConstDataObjectPath& containerPath = {}) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -62,13 +62,13 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		/// Generates a human-readable string representation of the data object reference.
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
+		/// Returns a default color for an ElementType given its numeric type ID.
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const override;
+
 	protected:
 
 		/// Is called by the system after construction of the meta-class instance.
 		virtual void initialize() override;
-
-		/// Gives the property class the opportunity to set up a newly created property object.
-		virtual void prepareNewProperty(PropertyObject* property) const override;
 	};
 
 	Q_OBJECT
@@ -79,11 +79,11 @@ public:
 
 	/// \brief The list of standard bond properties.
 	enum Type {
-		UserProperty = PropertyStorage::GenericUserProperty,	//< This is reserved for user-defined properties.
-		SelectionProperty = PropertyStorage::GenericSelectionProperty,
-		ColorProperty = PropertyStorage::GenericColorProperty,
-		TypeProperty = PropertyStorage::GenericTypeProperty,
-		LengthProperty = PropertyStorage::FirstSpecificProperty,
+		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
+		SelectionProperty = PropertyObject::GenericSelectionProperty,
+		ColorProperty = PropertyObject::GenericColorProperty,
+		TypeProperty = PropertyObject::GenericTypeProperty,
+		LengthProperty = PropertyObject::FirstSpecificProperty,
 		TopologyProperty,
 		PeriodicImageProperty,
 		TransparencyProperty
@@ -92,6 +92,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE BondsObject(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+	
 	/// Convinience method that returns the bond topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 

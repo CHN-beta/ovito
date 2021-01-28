@@ -28,7 +28,7 @@ namespace Ovito {
 
 void TaskWatcher::watch(const TaskPtr& task, bool pendingAssignment)
 {
-	OVITO_ASSERT_MSG(QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread(), "TaskWatcher::watch", "Function may only be called from the main thread.");
+	OVITO_ASSERT_MSG(QThread::currentThread() == this->thread(), "TaskWatcher::watch", "Function may only be called from the thread the TaskWatcher belongs to.");
 
 	if(task == _task)
 		return;
