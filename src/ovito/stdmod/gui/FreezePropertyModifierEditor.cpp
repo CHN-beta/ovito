@@ -55,13 +55,13 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
 		return DataTable::OOClass().isMember(container) == false;
 	});
 
-	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, false, true);
+	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
 	layout->addWidget(new QLabel(tr("Property to freeze:"), rollout));
 	layout->addWidget(sourcePropertyUI->comboBox());
 	connect(sourcePropertyUI, &PropertyReferenceParameterUI::valueEntered, this, &FreezePropertyModifierEditor::onSourcePropertyChanged);
 	layout->addSpacing(8);
 
-	PropertyReferenceParameterUI* destPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, false, false);
+	PropertyReferenceParameterUI* destPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
 	layout->addWidget(new QLabel(tr("Output property:"), rollout));
 	layout->addWidget(destPropertyUI->comboBox());
 	layout->addSpacing(8);

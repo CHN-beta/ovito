@@ -68,7 +68,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 	propertiesLayout->setSpacing(4);
 
 	// Output property
-	PropertyReferenceParameterUI* outputPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, false, false);
+	PropertyReferenceParameterUI* outputPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
 	propertiesLayout->addWidget(outputPropertyUI->comboBox());
 	connect(this, &PropertiesEditor::contentsChanged, this, [outputPropertyUI](RefTarget* editObject) {
 		ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
