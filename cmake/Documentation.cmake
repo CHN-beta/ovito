@@ -78,13 +78,14 @@ IF(OVITO_BUILD_GUI)
 					# Create the destination directory for the generated HTML files:
 					COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/sphinx"
 					# Run Sphinx command:
-					COMMAND "${Python3_EXECUTABLE}" "${Ovito_SOURCE_DIR}/doc/manual/sphinx-build.py" 
+					COMMAND "${CMAKE_COMMAND}" -E env DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib "${Python3_EXECUTABLE}" "${Ovito_SOURCE_DIR}/doc/manual/sphinx-build.py" 
 								"."                                           # Sphinx source directory 
 								"${OVITO_SHARE_DIRECTORY}/doc/manual/sphinx/" # Destination directory
 								# Additional config settings passed to Sphinx, which are added to the options found in conf.py: 
 								"-D" "version=${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}"
 								"-D" "release=${OVITO_VERSION_STRING}"
 								"-D" "copyright=${current_year} OVITO GmbH, Germany"
+								"-b" "spelling"
 								
 					WORKING_DIRECTORY "${Ovito_SOURCE_DIR}/doc/manual/"
 					COMMENT "Generating user documentation using Sphinx")

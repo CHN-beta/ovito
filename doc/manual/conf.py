@@ -29,6 +29,7 @@ needs_sphinx = '2.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.spelling'
 ]
 
 autodoc_default_options = {
