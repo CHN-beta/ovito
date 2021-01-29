@@ -28,8 +28,7 @@ needs_sphinx = '2.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinxcontrib.spelling'
+    'sphinx.ext.autodoc'
 ]
 
 autodoc_default_options = {
@@ -188,6 +187,32 @@ html_show_sphinx = False
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 html_file_suffix = ".html"
+
+# Configure optional spelling extension if present.
+# See https://sphinxcontrib-spelling.readthedocs.io/en/latest/
+try:
+    import enchant
+    import importlib.util
+    if importlib.util.find_spec("sphinxcontrib.spelling"):
+        extensions.append('sphinxcontrib.spelling')
+
+        # String specifying the language, as understood by PyEnchant and enchant.
+        #spelling_lang='en_US'
+
+        # String specifying a file containing a list of words known to be spelled correctly but that do not appear in the language 
+        # dictionary selected by 'spelling_lang'. The file should contain one word per line. 
+        #spelling_word_list_filename='spelling_wordlist.txt'
+
+        # Boolean controlling whether suggestions for misspelled words are printed.    
+        #spelling_show_suggestions = False
+
+        # Boolean controlling whether the contents of the line containing each misspelled word is printed, for more context about the location of each word.
+        #spelling_show_whole_line = True
+
+        # Boolean controlling whether a misspelling is emitted as a sphinx warning or as an info message.
+        #spelling_warning = False
+except:
+    pass
 
 def process_docstring(app, what, name, obj, options, lines):
     # Filter out lines that contain the keyword "SIGNATURE:"
