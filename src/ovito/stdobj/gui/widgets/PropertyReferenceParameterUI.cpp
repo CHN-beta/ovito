@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,10 +34,10 @@ IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass, bool showComponents, bool inputProperty) :
+PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty) :
 	PropertyParameterUI(parentEditor, propertyName),
 	_comboBox(new PropertySelectionComboBox(containerClass)),
-	_showComponents(showComponents),
+	_componentsMode(componentsMode),
 	_inputProperty(inputProperty),
 	_containerRef(containerClass)
 {
@@ -54,10 +54,10 @@ PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, bool showComponents, bool inputProperty) :
+PropertyReferenceParameterUI::PropertyReferenceParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty) :
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new PropertySelectionComboBox(containerClass)),
-	_showComponents(showComponents),
+	_componentsMode(componentsMode),
 	_inputProperty(inputProperty),
 	_containerRef(containerClass)
 {
@@ -201,14 +201,15 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& s
 			if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
 				continue;
 
-			if(property->componentNames().empty() || !_showComponents) {
-				// Scalar property:
+			if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {
+				// Property without component:
 				_comboBox->addItem(property);
 			}
-			else {
-				// Vector property:
+			if(_componentsMode != ShowNoComponents && property->componentCount() > 1) {
+				// Components of vector property:
+				bool isChildItem = (_componentsMode == ShowComponentsAndVectorProperties);
 				for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
-					_comboBox->addItem(property, vectorComponent);
+					_comboBox->addItem(property, vectorComponent, isChildItem);
 				}
 			}
 		}

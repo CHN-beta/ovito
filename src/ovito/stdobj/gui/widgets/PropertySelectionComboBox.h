@@ -42,18 +42,20 @@ public:
 
 	/// \brief Adds a property to the end of the list.
 	/// \param property The property to add.
-	void addItem(const PropertyReference& property, const QString& label = QString()) {
+	void addItem(const PropertyReference& property, const QString& label = QString(), bool isChildItem = false) {
 		OVITO_ASSERT(property.isNull() || containerClass() == property.containerClass());
-		QComboBox::addItem(label.isEmpty() ? property.name() : label, QVariant::fromValue(property));
+		OVITO_ASSERT(!isChildItem || !isEditable());
+		QComboBox::addItem((isChildItem ? QStringLiteral("  ") : QString()) + (label.isEmpty() ? property.name() : label), QVariant::fromValue(property));
 	}
 
 	/// \brief Adds a property to the end of the list.
 	/// \param property The property to add.
-	void addItem(const PropertyObject* property, int vectorComponent = -1) {
+	void addItem(const PropertyObject* property, int vectorComponent = -1, bool isChildItem = false) {
 		OVITO_ASSERT(property != nullptr);
 		OVITO_ASSERT(containerClass() != nullptr);
-		QString label = property->nameWithComponent(vectorComponent);
-		if(QComboBox::findText(label) == -1) {
+		OVITO_ASSERT(!isChildItem || !isEditable());
+		QString label = (isChildItem ? QStringLiteral("  ") : QString()) + property->nameWithComponent(vectorComponent);
+		if(QComboBox::findText(label) == -1 && (!isChildItem || QComboBox::findText(property->nameWithComponent(vectorComponent)) == -1)) {
 			QComboBox::addItem(label, QVariant::fromValue(PropertyReference(containerClass(), property, vectorComponent)));
 		}
 	}

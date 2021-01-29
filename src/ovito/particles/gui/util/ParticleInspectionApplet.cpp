@@ -305,8 +305,11 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 					}
 				}
 				if(ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
-					if(particleIndex < posProperty.size())
-						*outVertex++ = posProperty[particleIndex];
+					if(particleIndex < posProperty.size()) {
+						TimeInterval iv;
+						const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->dataset()->animationSettings()->time(), iv);
+						*outVertex++ = nodeTM * posProperty[particleIndex];
+					}
 				}
 			}
 			if(outVertex == vertices.end())

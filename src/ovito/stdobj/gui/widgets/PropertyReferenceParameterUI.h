@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,11 +40,18 @@ class OVITO_STDOBJGUI_EXPORT PropertyReferenceParameterUI : public PropertyParam
 
 public:
 
-	/// Constructor.
-	PropertyReferenceParameterUI(QObject* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass, bool showComponents = true, bool inputProperty = true);
+    enum PropertyComponentsMode {
+		ShowOnlyComponents,
+		ShowNoComponents,
+		ShowComponentsAndVectorProperties
+	};
+    Q_ENUM(PropertyComponentsMode);
 
 	/// Constructor.
-	PropertyReferenceParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, bool showComponents = true, bool inputProperty = true);
+	PropertyReferenceParameterUI(QObject* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+
+	/// Constructor.
+	PropertyReferenceParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
 	/// Destructor.
 	virtual ~PropertyReferenceParameterUI();
@@ -116,7 +123,7 @@ protected:
 	QPointer<PropertySelectionComboBox> _comboBox;
 
 	/// Controls whether the combo box should display a separate entry for each component of a property.
-	bool _showComponents;
+	PropertyComponentsMode _componentsMode;
 
 	/// Controls whether the combo box should list input or output properties.
 	bool _inputProperty;
