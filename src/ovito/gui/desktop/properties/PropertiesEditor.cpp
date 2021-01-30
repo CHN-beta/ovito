@@ -100,28 +100,32 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
 	QWidget* panel = new QWidget(params.container());
 	_rollouts.add(panel);
 	if(params.container() == nullptr) {
-
-		// Let the rollout-insertion parameters set the rollout title prefix.
-		QString titlePrefix;
-		if(!params.title().isEmpty())
-			titlePrefix = QString("%1: ").arg(params.title());
-
+		
 		// Create a new rollout in the rollout container.
-		QPointer<Rollout> rollout = container()->addRollout(panel, titlePrefix + title, params, helpPage);
+		Rollout* rollout = container()->addRollout(panel, QString(), params, helpPage);
 
-		// Check if a title for the rollout has been specified. If not,
-		// automatically set the rollout title to the title of the object being edited.
-		if(title.isEmpty()) {
+		// Helper function which updates the title of the rollout.
+		auto updateRolloutTitle = [prefixTitle = params.title(), fixedTitle = title, rollout](RefTarget* target) {
+			if(!rollout) return;
+			QString effectiveTitle = fixedTitle;
 
-			if(editObject())
-				rollout->setTitle(titlePrefix + editObject()->objectTitle());
+			// If no fixed title has been specified, use the title of the current object being edited.
+			if(effectiveTitle.isEmpty() && target) 
+				effectiveTitle = target->objectTitle();
 
-			// Automatically update rollout title each time a new object is loaded into the editor.
-			connect(this, &PropertiesEditor::contentsReplaced, rollout, [rollout, titlePrefix](RefTarget* target) {
-				if(rollout && target)
-					rollout->setTitle(titlePrefix + target->objectTitle());
-			});
-		}
+			// Let the rollout insertion parameters control the rollout title prefix.
+			if(!prefixTitle.isEmpty()) {
+				if(prefixTitle.contains(QStringLiteral("%1")))
+					effectiveTitle = prefixTitle.arg(effectiveTitle);
+				else
+					effectiveTitle = prefixTitle;
+			}
+			rollout->setTitle(std::move(effectiveTitle));
+		};
+		updateRolloutTitle(editObject());
+
+		// Automatically update rollout title each time a new object is loaded into the editor.
+		connect(this, &PropertiesEditor::contentsReplaced, rollout, std::move(updateRolloutTitle));
 	}
 	else if(params.container()->layout()) {
 

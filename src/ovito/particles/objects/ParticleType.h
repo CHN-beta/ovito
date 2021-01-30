@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,6 +69,11 @@ public:
 		NUMBER_OF_PREDEFINED_STRUCTURE_TYPES
 	};
 
+	enum RadiusVariant {
+		DisplayRadius,
+		VanDerWaalsRadius
+	};
+
 public:
 
 	/// \brief Constructs a new particle type.
@@ -103,37 +108,37 @@ public:
 	/// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
 	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType = nullptr);
 
-	//////////////////////////////////// Default settings ////////////////////////////////
+	//////////////////////////////////// Default parameters ////////////////////////////////
 
 	/// Returns the name string of a predefined particle type.
 	static const QString& getPredefinedParticleTypeName(PredefinedParticleType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_PARTICLE_TYPES);
-		return std::get<0>(_predefinedParticleTypes[predefType]);
+		return _predefinedParticleTypes[predefType].name;
 	}
 
 	/// Returns the hard-coded color of a predefined particle type.
 	static const Color& getPredefinedParticleTypeColor(PredefinedParticleType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_PARTICLE_TYPES);
-		return std::get<1>(_predefinedParticleTypes[predefType]);
+		return _predefinedParticleTypes[predefType].color;
 	}
 
 	/// Returns the name string of a predefined structure type.
 	static const QString& getPredefinedStructureTypeName(PredefinedStructureType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-		return std::get<0>(_predefinedStructureTypes[predefType]);
+		return _predefinedStructureTypes[predefType].name;
 	}
 
 	/// Returns the hard-coded color of a predefined structure type.
 	static const Color& getPredefinedStructureTypeColor(PredefinedStructureType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-		return std::get<1>(_predefinedStructureTypes[predefType]);
+		return _predefinedStructureTypes[predefType].color;
 	}
 
 	/// Returns the default radius for a named particle type.
-	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
+	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext, RadiusVariant radiusVariant = DisplayRadius);
 
 	/// Changes the default radius for a named particle type.
-	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius);
+	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
 
 protected:
 
@@ -142,8 +147,11 @@ protected:
 
 private:
 
-	/// The display radius to be used for particles of this type.
+	/// The radius used for rendering particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+
+	/// The van der Waals radius of this particle type, which is used for generating bonds between particles.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwRadius, setVdwRadius);
 
 	/// The visualization shape for particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape, shape, setShape);
@@ -165,14 +173,25 @@ private:
 
 private:
 
-	/// Data structure that holds the name, color, and radius of a particle type.
-	typedef std::tuple<QString,Color,FloatType> PredefinedTypeInfo;
+	/// Data structure that holds the name, color, and radius of a chemical atom type.
+	struct PredefinedChemicalType {
+		QString name;
+		Color color;
+		FloatType displayRadius;
+		FloatType vdwRadius;
+	};
+
+	/// Data structure that holds the name and display color of a structural particle type.
+	struct PredefinedStructuralType {
+		QString name;
+		Color color;
+	};
 
 	/// Contains default names, colors, and radii for some predefined particle types.
-	static std::array<PredefinedTypeInfo, NUMBER_OF_PREDEFINED_PARTICLE_TYPES> _predefinedParticleTypes;
+	static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_PARTICLE_TYPES> _predefinedParticleTypes;
 
 	/// Contains default names, colors, and radii for the predefined structure types.
-	static std::array<PredefinedTypeInfo, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;
+	static const std::array<PredefinedStructuralType, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;
 };
 
 }	// End of namespace

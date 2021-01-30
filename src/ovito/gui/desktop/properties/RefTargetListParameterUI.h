@@ -92,7 +92,7 @@ protected:
 		ListViewModel(RefTargetListParameterUI* owner) : QAbstractTableModel(owner) {}
 
 		/// Returns the parameter UI that owns this table model.
-		RefTargetListParameterUI* owner() const { return reinterpret_cast<RefTargetListParameterUI*>(QObject::parent()); }
+		RefTargetListParameterUI* owner() const { return static_cast<RefTargetListParameterUI*>(QObject::parent()); }
 
 		/// Returns the number of rows in the model.
 		virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override { return owner()->_rowToTarget.size(); }

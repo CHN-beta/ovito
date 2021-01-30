@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -139,9 +139,9 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 		QTreeWidgetItem* childItem = new QTreeWidgetItem();
 		childItem->setText(0, tname);
 		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), tname, 0, ExecutionContext::Interactive);
-		FloatType radius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, ExecutionContext::Interactive);
+		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, ExecutionContext::Interactive, ParticleType::DisplayRadius);
 		childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
-		childItem->setData(2, Qt::DisplayRole, QVariant::fromValue(radius));
+		childItem->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
 		childItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
 		_particleTypesItem->addChild(childItem);
 	}
@@ -225,9 +225,9 @@ bool ParticleSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog,
 	for(int i = 0; i < _particleTypesItem->childCount(); i++) {
 		QTreeWidgetItem* item = _particleTypesItem->child(i);
 		QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
-		FloatType radius = item->data(2, Qt::DisplayRole).value<FloatType>();
+		FloatType displayRadius = item->data(2, Qt::DisplayRole).value<FloatType>();
 		ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), item->text(0), color);
-		ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), radius);
+		ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), displayRadius, ParticleType::DisplayRadius);
 	}
 
 	for(int i = 0; i < _structureTypesItem->childCount(); i++) {
@@ -247,9 +247,9 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 	for(int i = 0; i < ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i++) {
 		QTreeWidgetItem* item = _particleTypesItem->child(i);
 		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), item->text(0), 0, ExecutionContext::Scripting);
-		FloatType radius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, ExecutionContext::Scripting);
+		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, ExecutionContext::Scripting, ParticleType::DisplayRadius);
 		item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
-		item->setData(2, Qt::DisplayRole, QVariant::fromValue(radius));
+		item->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
 	}
 	for(int i = _particleTypesItem->childCount() - 1; i >= ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i--) {
 		delete _particleTypesItem->takeChild(i);
