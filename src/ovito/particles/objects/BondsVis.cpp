@@ -194,8 +194,14 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		CylinderPrimitive::RenderingQuality // Bond rendering quality
 	>;
 
+	// The data structure stored in the vis cache.
+	struct CacheValue {
+		std::shared_ptr<CylinderPrimitive> cylinders;
+		std::shared_ptr<ParticlePrimitive> vertices;
+	};
+
 	// Lookup the rendering primitive in the vis cache.
-	auto& cylinders = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
+	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
 			renderer,
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
@@ -214,8 +220,13 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			shadingMode(),
 			renderingQuality()));
 
+	// Make sure the primitive for the nodal vertices gets created if particles display is turned off.
+	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false) && (shadingMode() == NormalShading);
+	if(renderNodalVertices && !visCache.vertices && visCache.cylinders)
+		visCache.cylinders.reset();
+
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!cylinders) {
+	if(!visCache.cylinders) {
 
 		FloatType bondRadius = bondWidth() / 2;
 		if(bondTopologyProperty && positionProperty && bondRadius > 0) {
@@ -225,6 +236,11 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
 			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
 			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
+
+			// Allocate buffers for the nodal vertices.
+			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, positionProperty->size(), DataBuffer::Float, 3, 0, false) : nullptr;
+			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Int, 1, 0, false) : nullptr;
+			boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
 
 			// Cache some values.
 			ConstPropertyAccess<Point3> positions(positionProperty);
@@ -268,11 +284,21 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 						t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
 					}
 					bondColors[cylinderIndex] = *color++;
+					if(nodalColors && !visitedParticles.test(particleIndex1)) {
+						nodalColors[particleIndex1] = bondColors[cylinderIndex];
+						visitedParticles.set(particleIndex1);
+						nodalIndices.push_back(particleIndex1);
+					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex1];
 					bondPositions2[cylinderIndex++] = positions[particleIndex1] + vec * t;
 
 					bondColors[cylinderIndex] = *color++;
+					if(nodalColors && !visitedParticles.test(particleIndex2)) {
+						nodalColors[particleIndex2] = bondColors[cylinderIndex];
+						visitedParticles.set(particleIndex2);
+						nodalIndices.push_back(particleIndex2);
+					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex2];
 					bondPositions2[cylinderIndex++] = positions[particleIndex2] - vec * (FloatType(1) - t);
@@ -290,26 +316,40 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 				}
 			}
 
-			cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
-			cylinders->setUniformRadius(bondRadius);
-			cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
-			cylinders->setColors(bondColors.take());
-			cylinders->setTransparencies(bondTransparencies.take());
+			visCache.cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+			visCache.cylinders->setUniformRadius(bondRadius);
+			visCache.cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
+			visCache.cylinders->setColors(bondColors.take());
+			visCache.cylinders->setTransparencies(bondTransparencies.take());
+
+			if(renderNodalVertices) {
+				OVITO_ASSERT(positionProperty);
+				visCache.vertices = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+				visCache.vertices->setPositions(positionProperty);
+				visCache.vertices->setUniformRadius(bondRadius);
+				visCache.vertices->setColors(nodalColors.take());
+				visCache.vertices->setIndices(nodalIndices.take());
+			}
 		}
 	}
-
-	if(!cylinders)
+	if(!visCache.cylinders)
 		return;
 
 	if(renderer->isPicking()) {
 		OORef<BondPickInfo> pickInfo(new BondPickInfo(flowState));
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
-
-	renderer->renderCylinders(cylinders);
-
+	renderer->renderCylinders(visCache.cylinders);
 	if(renderer->isPicking()) {
 		renderer->endPickObject();
+	}
+
+	if(visCache.vertices && renderNodalVertices) {
+		if(renderer->isPicking())
+			renderer->beginPickObject(contextNode);
+		renderer->renderParticles(visCache.vertices);
+		if(renderer->isPicking())
+			renderer->endPickObject();
 	}
 }
 
