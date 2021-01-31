@@ -84,7 +84,7 @@ public:
 	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 protected:
 

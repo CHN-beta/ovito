@@ -70,7 +70,9 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	_pairCutoffTable->setEnabled(false);
 	_pairCutoffTableModel = new PairCutoffTableModel(_pairCutoffTable);
 	_pairCutoffTable->setModel(_pairCutoffTableModel);
-	connect(pairCutoffModeBtn,&QRadioButton::toggled, _pairCutoffTable, &QTableView::setEnabled);
+	_pairCutoffTable->verticalHeader()->setDefaultSectionSize(_pairCutoffTable->verticalHeader()->minimumSectionSize());
+	_pairCutoffTable->horizontalHeader()->setStretchLastSection(true);
+	connect(pairCutoffModeBtn, &QRadioButton::toggled, _pairCutoffTable, &QTableView::setEnabled);
 	layout1->addWidget(_pairCutoffTable);
 
 	BooleanParameterUI* onlyIntraMoleculeBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
@@ -121,6 +123,7 @@ void CreateBondsModifierEditor::updatePairCutoffList()
 		}
 	}
 	_pairCutoffTableModel->setContent(mod, std::move(pairCutoffs));
+	_pairCutoffTable->resizeColumnToContents(2);
 }
 
 /******************************************************************************

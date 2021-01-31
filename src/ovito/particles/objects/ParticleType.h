@@ -42,7 +42,17 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 public:
 
 	enum PredefinedParticleType {
-		H,He,Li,C,N,O,Na,Mg,Al,Si,K,Ca,Ti,Cr,Fe,Co,Ni,Cu,Zn,Ga,Ge,Kr,Sr,Y,Zr,Nb,Pd,Pt,W,Au,Pb,Bi,
+		    H , He, Li, Be, B , C , N , O , F , Ne,
+		Na, Mg, Al, Si, P , S , Cl, Ar, K , Ca, Sc,
+		Ti, V , Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge,
+		As, Se, Br, Kr, Rb, Sr, Y , Zr, Nb, Mo, Tc,
+		Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I , Xe,
+		Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb,
+		Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W , Re, Os,
+		Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr,
+//		Ra, Ac, Th, Pa, U , Np, Pu, Am, Cm, Bk, Cf,
+//		Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt,
+//		Ds, Rg,
 
 		NUMBER_OF_PREDEFINED_PARTICLE_TYPES
 	};
@@ -140,6 +150,9 @@ public:
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
 
+	/// Returns the default mass for a named particle type.
+	static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
+
 protected:
 
 	/// Is called once for this object after it has been completely loaded from a stream.
@@ -179,6 +192,7 @@ private:
 		Color color;
 		FloatType displayRadius;
 		FloatType vdwRadius;
+		FloatType mass;
 	};
 
 	/// Data structure that holds the name and display color of a structural particle type.

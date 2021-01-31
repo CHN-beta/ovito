@@ -53,20 +53,20 @@ SelectTypeModifier::SelectTypeModifier(DataSet* dataset) : GenericPropertyModifi
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void SelectTypeModifier::initializeModifier(ModifierApplication* modApp)
+void SelectTypeModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	GenericPropertyModifier::initializeModifier(modApp);
+	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
 
 	if(sourceProperty().isNull() && subject()) {
 
 		// When the modifier is first inserted, automatically select the most recently added
 		// typed property (in GUI mode) or the canonical type property (in script mode).
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
-					if(Application::instance()->executionContext() == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
+					if(executionContext == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}

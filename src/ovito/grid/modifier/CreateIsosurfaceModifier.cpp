@@ -93,21 +93,21 @@ bool CreateIsosurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void CreateIsosurfaceModifier::initializeModifier(ModifierApplication* modApp)
+void CreateIsosurfaceModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	AsynchronousModifier::initializeModifier(modApp);
+	AsynchronousModifier::initializeModifier(time, modApp, executionContext);
 
 	// Use the first available voxel grid from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
 			setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
 		}
 	}
 
 	// Use the first available property from the input grid as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if(sourceProperty().isNull() && subject() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
 			for(const PropertyObject* property : grid->properties()) {
 				setSourceProperty(VoxelPropertyReference(property, (property->componentCount() > 1) ? 0 : -1));

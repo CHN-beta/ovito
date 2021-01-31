@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
@@ -301,7 +302,7 @@ ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(modApp);
+	modifier->initializeModifier(dataset()->animationSettings()->time(), modApp, Application::instance()->executionContext());
 	setDataProvider(modApp);
 	return modApp;
 }

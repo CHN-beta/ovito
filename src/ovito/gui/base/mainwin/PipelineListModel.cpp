@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/Application.h>
 #include "PipelineListModel.h"
 
 namespace Ovito {
@@ -316,7 +317,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 				OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 				modApp->setModifier(modifier);
 				modApp->setInput(pobj);
-				modifier->initializeModifier(modApp);
+				modifier->initializeModifier(modApp->dataset()->animationSettings()->time(), modApp, Application::instance()->executionContext());
 				setNextObjectToSelect(modApp);
 				for(RefMaker* dependent : dependentsList) {
 					if(ModifierApplication* predecessorModApp = dynamic_object_cast<ModifierApplication>(dependent)) {

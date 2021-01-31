@@ -112,7 +112,7 @@ public:
 protected:
 
 	/// This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 	/// \brief Renders the modifier's visual representation and computes its bounding box.
 	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer);

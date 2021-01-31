@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/objects/BondsVis.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -116,7 +117,7 @@ void CreateBondsModifier::setPairwiseCutoff(const QVariant& typeA, const QVarian
 		newList.remove(qMakePair(typeA, typeB));
 		newList.remove(qMakePair(typeB, typeA));
 	}
-	setPairwiseCutoffs(newList);
+	setPairwiseCutoffs(std::move(newList));
 }
 
 /******************************************************************************
@@ -135,15 +136,15 @@ FloatType CreateBondsModifier::getPairwiseCutoff(const QVariant& typeA, const QV
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void CreateBondsModifier::initializeModifier(ModifierApplication* modApp)
+void CreateBondsModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	AsynchronousModifier::initializeModifier(modApp);
+	AsynchronousModifier::initializeModifier(time, modApp, executionContext);
 
-	// Adopt the upstream BondsVis object if there is already is one.
-	// Also initialize the numeric ID of the type ID to not conflict with any existing bond types.
 	int bondTypeId = 1;
-	const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 	if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+		// Adopt the upstream BondsVis object if there already is one.
+		// Also choose a unique numeric bond type ID, which does not conflict with any existing bond type.
 		if(const BondsObject* bonds = particles->bonds()) {
 			if(BondsVis* bondsVis = bonds->visElement<BondsVis>()) {
 				setBondsVis(bondsVis);
@@ -152,10 +153,35 @@ void CreateBondsModifier::initializeModifier(ModifierApplication* modApp)
 				bondTypeId = bondTypeProperty->generateUniqueElementTypeId();
 			}
 		}
+
+		// Initialize the pair-wise cutoffs based on the van der Waals radii of the particle types.
+		if(executionContext == ExecutionContext::Interactive && pairwiseCutoffs().empty()) {
+			if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+				PairwiseCutoffsList cutoffList;
+				for(const ElementType* type1 : typeProperty->elementTypes()) {
+					if(const ParticleType* ptype1 = dynamic_object_cast<ParticleType>(type1)) {
+						if(ptype1->vdwRadius() > 0.0) {
+							QVariant key1 = ptype1->name().isEmpty() ? QVariant::fromValue(ptype1->numericId()) : QVariant::fromValue(ptype1->name());
+							for(const ElementType* type2 : typeProperty->elementTypes()) {
+								if(const ParticleType* ptype2 = dynamic_object_cast<ParticleType>(type2)) {
+									if(ptype2->vdwRadius() > 0.0) {
+										// Note: Prefactor 0.6 has been adopted from VMD source code.
+										FloatType cutoff = 0.6 * (ptype1->vdwRadius() + ptype2->vdwRadius());
+										QVariant key2 = ptype2->name().isEmpty() ? QVariant::fromValue(ptype2->numericId()) : QVariant::fromValue(ptype2->name());
+										cutoffList[qMakePair(key1, key2)] = cutoff;
+									}
+								}
+							}
+						}
+					}
+				}
+				setPairwiseCutoffs(std::move(cutoffList));
+			}
+		}
 	}
 	if(bondType() && bondType()->numericId() == 0) {
 		bondType()->setNumericId(bondTypeId);
-		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty), Application::instance()->executionContext());
+		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty), executionContext);
 	}
 }
 

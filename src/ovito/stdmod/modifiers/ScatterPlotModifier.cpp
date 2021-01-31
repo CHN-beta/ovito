@@ -87,13 +87,13 @@ ScatterPlotModifier::ScatterPlotModifier(DataSet* dataset) : GenericPropertyModi
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void ScatterPlotModifier::initializeModifier(ModifierApplication* modApp)
+void ScatterPlotModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	GenericPropertyModifier::initializeModifier(modApp);
+	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {

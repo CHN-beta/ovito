@@ -62,13 +62,13 @@ FreezePropertyModifier::FreezePropertyModifier(DataSet* dataset) : GenericProper
 * This method is called by the system when the modifier is being inserted
 * into a pipeline.
 ******************************************************************************/
-void FreezePropertyModifier::initializeModifier(ModifierApplication* modApp)
+void FreezePropertyModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	GenericPropertyModifier::initializeModifier(modApp);
+	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if(sourceProperty().isNull() && subject() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			for(const PropertyObject* property : container->properties()) {
 				setSourceProperty(PropertyReference(subject().dataClass(), property));

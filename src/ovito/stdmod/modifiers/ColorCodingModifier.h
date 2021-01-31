@@ -371,7 +371,7 @@ public Q_SLOTS:
 protected:
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 	/// Determines the range of values in the input data for the selected property.
 	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;

@@ -30,15 +30,13 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
-/// The < operator for QVraiant has been removed in Qt 6. Redefining it here is an ugly hack and should be 
+/// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be 
 /// solved in a different way in the future.
-inline bool operator<(const QVariant& a, const QVariant& b) {
-	return a.toString() < b.toString();
+template<> inline bool qMapLessThanKey<QPair<QVariant, QVariant>>(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2) noexcept
+{
+	return key1.first.toString() < key2.first.toString() || (!(key2.first.toString() < key1.first.toString()) && key1.second.toString() < key2.second.toString());
 }
-#endif
 
 namespace Ovito { namespace Particles {
 
@@ -138,7 +136,7 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 	/// Sets the cutoff radius for a pair of particle types.
 	void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);

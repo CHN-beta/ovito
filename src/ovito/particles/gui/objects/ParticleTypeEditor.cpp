@@ -97,6 +97,17 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	vdwRadiusPUI->spinner()->setStandardValue(0.0);
 	vdwRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
+	// VDW radius presets menu.
+	QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
+		// Loads the default parameter value.
+		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); },
+		// Saves the current parameter value as new default preset.
+		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
+		// Determines if the current parameter value differs from the saved default value or not.
+		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); }
+	);
+	gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
+
 	QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"), rollout);
 	gridLayout = new QGridLayout(appearanceBox);
 	gridLayout->setContentsMargins(4,4,4,4);
