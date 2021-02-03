@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -227,7 +227,7 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG)
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
 	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
 	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
 	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
@@ -559,7 +559,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG)
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
 	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
 	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
 	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
