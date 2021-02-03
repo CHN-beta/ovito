@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), _sortParticles(false) {}
+	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), _sortParticles(false), _generateBonds(false) {}
 
 	/// Indicates whether this file importer type loads particle trajectories.
 	virtual bool isTrajectoryFormat() const { return false; } 
@@ -64,6 +64,10 @@ protected:
 
 		/// Constructor.
 		using StandardFrameLoader::StandardFrameLoader;
+
+		/// Changes the particle scaling factor to be set on the ParticlesVis element.
+		/// This must be called before the first call to particles().
+		void setParticleRadiusScalingFactor(FloatType factor) { _particleRadiusScalingFactor = factor; }
 
 		/// Returns the particles container object, newly creating it first if necessary.
 		ParticlesObject* particles();
@@ -98,6 +102,9 @@ protected:
 		/// Determines the PBC shift vectors for bonds based on the minimum image convention.
 		void generateBondPeriodicImageProperty();
 
+		/// Generates ad-hoc bonds between atoms based on their van der Waals radii.
+		void generateBonds();
+
 		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
 		void computeVelocityMagnitude();
 
@@ -122,6 +129,9 @@ protected:
 
 		/// The impropers container object.
 		ImpropersObject* _impropers = nullptr;
+
+		/// The particle scaling factor to be set on the ParticlesVis element.
+		FloatType _particleRadiusScalingFactor = 1.0;
 	};
 
 	/// \brief Is called when the value of a property of this object has changed.
@@ -132,8 +142,11 @@ protected:
 
 private:
 
-	/// Request sorting of the input particle with respect to IDs.
+	/// Controls sorting of the input particle with respect to IDs.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, sortParticles, setSortParticles);
+
+	/// Controls the generation of atomic ad-hoc bonds during data import.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateBonds, setGenerateBonds);
 };
 
 }	// End of namespace

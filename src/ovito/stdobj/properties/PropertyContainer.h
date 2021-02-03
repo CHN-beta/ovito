@@ -51,6 +51,7 @@ public:
 	/// Appends a new property to the list of properties.
 	void addProperty(const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		if(properties().empty())
 			_elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
@@ -61,6 +62,7 @@ public:
 	/// Inserts a new property into the list of properties.
 	void insertProperty(int index, const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		if(properties().empty())
 			_elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
@@ -71,6 +73,7 @@ public:
 	/// Removes a property from this container.
 	void removeProperty(const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		int index = properties().indexOf(const_cast<PropertyObject*>(property));
 		OVITO_ASSERT(index >= 0);
 		_properties.remove(this, PROPERTY_FIELD(properties), index);

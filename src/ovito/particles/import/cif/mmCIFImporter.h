@@ -57,7 +57,9 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE mmCIFImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE mmCIFImporter(DataSet* dataset) : ParticleImporter(dataset) { 
+		setGenerateBonds(true); 
+	}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("PDBx/mmCIF"); }
@@ -65,7 +67,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request);
+		return std::make_shared<FrameLoader>(request, generateBonds());
 	}
 
 private:
@@ -75,13 +77,18 @@ private:
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleImporter::FrameLoader::FrameLoader;
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request), _generateBonds(generateBonds) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
+
+	private:
+
+		/// Controls the generation of ad-hoc bonds during data import.
+		bool _generateBonds;
 	};
 };
 

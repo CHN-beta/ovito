@@ -162,6 +162,9 @@ void PDBImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
+	// Display atoms at a reduced size to make the bonds visible.
+	setParticleRadiusScalingFactor(0.5);
+
 #if 0
 	// Parse metadata records.
 	int numAtoms = 0;
@@ -536,6 +539,12 @@ void PDBImporter::FrameLoader::loadFile()
 	}
 
 #endif
+
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
 
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();

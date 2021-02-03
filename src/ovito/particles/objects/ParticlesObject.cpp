@@ -435,7 +435,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 			*pbc++ = bond.pbcShift;
 		}
 
-		// Insert property objects into the output pipeline state.
+		// Insert bond type.
 		if(bondTypeProperty) {
 			bondTypeProperty->fill<int>(bondType->numericId());
 			bondTypeProperty->addElementType(std::move(bondType));

@@ -166,8 +166,8 @@ protected:
 
 private:
 
-	/// The mode of choosing the bond cutoff.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CutoffMode, cutoffMode, setCutoffMode);
+	/// The mode of determing the bond cutoff.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CutoffMode, cutoffMode, setCutoffMode, PROPERTY_FIELD_MEMORIZE);
 
 	/// The uniform cutoff distance for bond generation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, uniformCutoff, setUniformCutoff, PROPERTY_FIELD_MEMORIZE);

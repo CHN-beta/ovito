@@ -25,6 +25,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -36,7 +37,9 @@ namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleImporter);
 DEFINE_PROPERTY_FIELD(ParticleImporter, sortParticles);
+DEFINE_PROPERTY_FIELD(ParticleImporter, generateBonds);
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, sortParticles, "Sort particles by ID");
+SET_PROPERTY_FIELD_LABEL(ParticleImporter, generateBonds, "Generate bonds");
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -45,9 +48,9 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor& field)
 {
 	FileSourceImporter::propertyChanged(field);
 
-	if(field == PROPERTY_FIELD(sortParticles)) {
-		// Reload input file(s) when this option has been changed.
-		// But no need to refetch the files from the remote location. Reparsing the cached files is sufficient.
+	if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds)) {
+		// Reload input file(s) when these options are changed by the user.
+		// But there is no need to refetch the data file(s) from the remote location. Reparsing the cached files is sufficient.
 		requestReload();
 	}
 }
@@ -59,8 +62,15 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 {
 	if(!_particles) {
 		_particles = state().getMutableObject<ParticlesObject>();
-		if(!_particles)
+		if(!_particles) {
 			_particles = state().createObject<ParticlesObject>(dataSource(), executionContext());
+			if(_particleRadiusScalingFactor != 1.0) {
+				// Set up the vis element for the particles.
+				if(ParticlesVis* particlesVis = dynamic_object_cast<ParticlesVis>(_particles->visElement())) {
+					particlesVis->setRadiusScaleFactor(_particleRadiusScalingFactor);
+				}
+			}
+		}
 	}
 	return _particles;
 }
@@ -254,6 +264,86 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 }
 
 /******************************************************************************
+* Generates ad-hoc bonds between atoms based on their van der Waals radii.
+******************************************************************************/
+void ParticleImporter::FrameLoader::generateBonds()
+{
+	if(isCanceled()) return;
+	if(!_particles) return;
+
+	// Get the type particle property.
+	const PropertyObject* typeProperty = _particles->getProperty(ParticlesObject::TypeProperty);
+	const PropertyObject* positionProperty = _particles->getProperty(ParticlesObject::PositionProperty);
+	if(!typeProperty || !positionProperty) return;
+
+	// Get the list of van der Waals radii.
+	std::vector<FloatType> typeVdWRadiusMap;
+	FloatType maxRadius = 0;
+	for(const ElementType* type : typeProperty->elementTypes()) {
+		if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
+			if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
+				if(ptype->vdwRadius() > maxRadius)
+					maxRadius = ptype->vdwRadius();
+				typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+				typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+			}
+		}
+	}
+
+	// Determine maximum bond distance cutoff.
+	FloatType vdwPrefactor = 0.6; // Note: Value 0.6 has been adopted from VMD source code.
+	FloatType maxCutoff = vdwPrefactor * 2.0 * maxRadius;
+	if(maxCutoff == 0.0)
+		return;
+	FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
+	setProgressText(tr("Generating bonds"));
+	
+	// Prepare the neighbor list.
+	CutoffNeighborFinder neighborFinder;
+	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}, this))
+		return;	
+
+	ConstPropertyAccess<int> particleTypesArray(typeProperty);
+
+	std::vector<Bond> bonds;
+	size_t particleCount = positionProperty->size();
+	setProgressMaximum(particleCount);
+	for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
+		for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
+			int type1 = particleTypesArray[particleIndex];
+			int type2 = particleTypesArray[neighborQuery.current()];
+			if(type1 >= 0 && type2 >= 0 && type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
+				FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
+				if(neighborQuery.distanceSquared() <= cutoff*cutoff && neighborQuery.distanceSquared() >= minCutoffSquared) {
+					Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
+					// Skip every other bond to create only one bond per particle pair.
+					if(!bond.isOdd())
+						bonds.push_back(bond);
+				}
+			}
+		}
+		// Update progress indicator.
+		if(!setProgressValueIntermittent(particleIndex))
+			return;
+	}
+	setProgressValue(particleCount);
+
+	// Create BondsObject.
+	setBondCount(bonds.size());
+	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
+	PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
+
+	// Create bond type.
+	addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), 1, {});
+
+	// Transfer bonds list into BondsObject.
+	boost::transform(bonds, bondTopologyProperty.begin(), [](const Bond& bond) { return ParticleIndexPair{{(qlonglong)bond.index1, (qlonglong)bond.index2}}; });
+	boost::fill(bondTypeProperty, 1);
+	boost::transform(bonds, bondPeriodicImageProperty.begin(), [](const Bond& bond) { return bond.pbcShift; });
+}
+
+/******************************************************************************
 * If the 'Velocity' vector particle property is present, then this method 
 * computes the 'Velocity Magnitude' scalar property.
 ******************************************************************************/
@@ -276,6 +366,9 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::loadFile()
 {
+	if(isCanceled())
+		return;
+
 	StandardFrameLoader::loadFile();
 
 	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property is loaded from the input file.

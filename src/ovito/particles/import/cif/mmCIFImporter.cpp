@@ -135,6 +135,9 @@ void mmCIFImporter::FrameLoader::loadFile()
 			}
 		}
 
+		// Display atoms at a reduced size to make the bonds visible.
+		setParticleRadiusScalingFactor(0.5);
+
 		// Allocate property arrays for atoms.
 		setParticleCount(natoms);
 		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
@@ -227,6 +230,12 @@ void mmCIFImporter::FrameLoader::loadFile()
 	catch(const std::exception& e) {
 		throw Exception(tr("mmCIF file reader error: %1").arg(e.what()));
 	}
+
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
 
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
