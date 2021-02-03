@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,6 +39,7 @@ DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, minimumCutoff);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, vdwPrefactor);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, onlyIntraMoleculeBonds);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, autoDisableBondDisplay);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondType);
@@ -47,12 +48,14 @@ SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, cutoffMode, "Cutoff mode");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, uniformCutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, pairwiseCutoffs, "Pair-wise cutoffs");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, minimumCutoff, "Lower cutoff");
+SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, vdwPrefactor, "VdW prefactor");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, onlyIntraMoleculeBonds, "Suppress inter-molecular bonds");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondType, "Bond type");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondsVis, "Visual element");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, autoDisableBondDisplay, "Auto-disable bond display");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, uniformCutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, minimumCutoff, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, vdwPrefactor, PercentParameterUnit, 0);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -62,7 +65,8 @@ CreateBondsModifier::CreateBondsModifier(DataSet* dataset) : AsynchronousModifie
 	_uniformCutoff(3.2),
 	_onlyIntraMoleculeBonds(false),
 	_minimumCutoff(0),
-	_autoDisableBondDisplay(true)
+	_autoDisableBondDisplay(true),
+	_vdwPrefactor(0.6) // Value 0.6 has been adopted from VMD source code.
 {
 }
 
@@ -216,14 +220,16 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 
 	// The neighbor list cutoff.
 	FloatType maxCutoff = uniformCutoff();
+	// The list of per-type VdW radii.
+	std::vector<FloatType> typeVdWRadiusMap;
 
 	// Build table of pair-wise cutoff radii.
 	const PropertyObject* typeProperty = nullptr;
 	std::vector<std::vector<FloatType>> pairCutoffSquaredTable;
 	if(cutoffMode() == PairCutoff) {
+		maxCutoff = 0;
 		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
 		if(typeProperty) {
-			maxCutoff = 0;
 			for(auto entry = pairwiseCutoffs().begin(); entry != pairwiseCutoffs().end(); ++entry) {
 				FloatType cutoff = entry.value();
 				if(cutoff > 0) {
@@ -245,6 +251,30 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 				throwException(tr("At least one positive bond cutoff must be set for a valid pair of particle types."));
 		}
 	}
+	else if(cutoffMode() == TypeRadiusCutoff) {
+		maxCutoff = 0;
+		if(vdwPrefactor() <= 0.0)
+			throwException(tr("Van der Waal radius scaling factor must be positive."));
+		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
+		if(typeProperty) {
+			for(const ElementType* type : typeProperty->elementTypes()) {
+				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
+					if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
+						if(ptype->vdwRadius() > maxCutoff)
+							maxCutoff = ptype->vdwRadius();
+						typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+						typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+					}
+				}
+			}
+			maxCutoff *= vdwPrefactor() * 2.0;
+			if(maxCutoff == 0.0)
+				throwException(tr("The van der Waals (VdW) radii of all particle types are undefined or zero. Creating bonds based on the VdW radius requires at least one particle type with a positive radius value."));
+		}
+		OVITO_ASSERT(!typeVdWRadiusMap.empty());
+	}
+	if(maxCutoff <= 0.0)
+		throwException(tr("Maximum bond cutoff range is zero. A positive value is required."));
 
 	// Get molecule IDs.
 	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
@@ -252,7 +282,8 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<BondsEngine>(modApp, executionContext, particles, posProperty,
 			typeProperty, simCell, cutoffMode(),
-			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), moleculeProperty);
+			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), 
+			std::move(typeVdWRadiusMap), vdwPrefactor(), moleculeProperty);
 }
 
 /******************************************************************************
@@ -303,12 +334,23 @@ void CreateBondsModifier::BondsEngine::perform()
 					continue;
 				int type1 = particleTypesArray[particleIndex];
 				int type2 = particleTypesArray[neighborQuery.current()];
-				if(type1 >= 0 && type1 < (int)_pairCutoffsSquared.size() && type2 >= 0 && type2 < (int)_pairCutoffsSquared[type1].size()) {
-					if(neighborQuery.distanceSquared() <= _pairCutoffsSquared[type1][type2]) {
-						Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
-						// Skip every other bond to create only one bond per particle pair.
-						if(!bond.isOdd())
-							bonds().push_back(bond);
+				if(type1 >= 0 && type2 >= 0) {
+					if(type1 < (int)_typeVdWRadiusMap.size() && type2 < (int)_typeVdWRadiusMap.size()) {
+						FloatType cutoff = _vdwPrefactor * (_typeVdWRadiusMap[type1] + _typeVdWRadiusMap[type2]);
+						if(neighborQuery.distanceSquared() <= cutoff*cutoff) {
+							Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
+							// Skip every other bond to create only one bond per particle pair.
+							if(!bond.isOdd())
+								bonds().push_back(bond);
+						}
+					}
+					else if(type1 < (int)_pairCutoffsSquared.size() && type2 < (int)_pairCutoffsSquared[type1].size()) {
+						if(neighborQuery.distanceSquared() <= _pairCutoffsSquared[type1][type2]) {
+							Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
+							// Skip every other bond to create only one bond per particle pair.
+							if(!bond.isOdd())
+								bonds().push_back(bond);
+						}
 					}
 				}
 			}

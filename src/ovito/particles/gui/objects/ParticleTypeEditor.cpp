@@ -77,36 +77,15 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	gridLayout->addWidget(new QLabel(tr("Name:")), 1, 0);
 	gridLayout->addWidget(namePUI->textBox(), 1, 1);
 
-	QGroupBox* physicalBox = new QGroupBox(tr("Physical properties"), rollout);
-	gridLayout = new QGridLayout(physicalBox);
-	gridLayout->setContentsMargins(4,4,4,4);
-	gridLayout->setColumnStretch(1, 1);
-	layout1->addWidget(physicalBox);
-
-	// Mass parameter.
-	FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
-	gridLayout->addWidget(massPUI->label(), 0, 0);
-	gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
-	massPUI->spinner()->setStandardValue(0.0);
-	massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
-
-	// VDW radius parameter.
-	FloatParameterUI* vdwRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::vdwRadius));
-	gridLayout->addWidget(vdwRadiusPUI->label(), 1, 0);
-	gridLayout->addLayout(vdwRadiusPUI->createFieldLayout(), 1, 1);
-	vdwRadiusPUI->spinner()->setStandardValue(0.0);
-	vdwRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
-
-	// VDW radius presets menu.
-	QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
-		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); },
-		// Saves the current parameter value as new default preset.
-		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
-		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); }
-	);
-	gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
+	connect(this, &PropertiesEditor::contentsReplaced, [namePUI](RefTarget* newEditObject) {
+		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
+		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
+			if(ElementType* ptype = dynamic_object_cast<ElementType>(newEditObject))
+				lineEdit->setPlaceholderText(QStringLiteral("‹%1›").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
+			else
+				lineEdit->setPlaceholderText({});
+		}
+	});	
 
 	QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"), rollout);
 	gridLayout = new QGridLayout(appearanceBox);
@@ -160,16 +139,6 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		[](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::DisplayRadius)); }
 	);
 	gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
-
-	connect(this, &PropertiesEditor::contentsReplaced, [namePUI](RefTarget* newEditObject) {
-		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
-		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
-			if(ElementType* ptype = dynamic_object_cast<ElementType>(newEditObject))
-				lineEdit->setPlaceholderText(QStringLiteral("‹%1›").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
-			else
-				lineEdit->setPlaceholderText({});
-		}
-	});
 
 	QGroupBox* shapeGroupBox = new QGroupBox(tr("User-defined shape"), rollout);
 	gridLayout = new QGridLayout(shapeGroupBox);
@@ -243,6 +212,38 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 			});
 		}
 	});
+
+	// Physical properties group.
+	QGroupBox* physicalBox = new QGroupBox(tr("Physical properties"), rollout);
+	gridLayout = new QGridLayout(physicalBox);
+	gridLayout->setContentsMargins(4,4,4,4);
+	gridLayout->setColumnStretch(1, 1);
+	layout1->addWidget(physicalBox);
+
+	// Mass parameter.
+	FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
+	gridLayout->addWidget(massPUI->label(), 0, 0);
+	gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
+	massPUI->spinner()->setStandardValue(0.0);
+	massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
+
+	// VDW radius parameter.
+	FloatParameterUI* vdwRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::vdwRadius));
+	gridLayout->addWidget(vdwRadiusPUI->label(), 1, 0);
+	gridLayout->addLayout(vdwRadiusPUI->createFieldLayout(), 1, 1);
+	vdwRadiusPUI->spinner()->setStandardValue(0.0);
+	vdwRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
+
+	// VDW radius presets menu.
+	QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
+		// Loads the default parameter value.
+		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); },
+		// Saves the current parameter value as new default preset.
+		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
+		// Determines if the current parameter value differs from the saved default value or not.
+		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); }
+	);
+	gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
 }
 
 /******************************************************************************

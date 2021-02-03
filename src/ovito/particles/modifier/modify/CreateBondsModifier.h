@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,8 +67,9 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public AsynchronousModifier
 public:
 
 	enum CutoffMode {
-		UniformCutoff,		///< A single cutoff radius for all particles.
-		PairCutoff,			///< Individual cutoff radius for each pair of particle types.
+		UniformCutoff,		///< A uniform distance cutoff for all pairs of particles.
+		PairCutoff,			///< Individual cutoff for each pair-wise combination of particle types.
+		TypeRadiusCutoff,	///< Cutoff based on Van der Waals radii of the two particle types involved.
 	};
 	Q_ENUM(CutoffMode);
 
@@ -85,7 +86,7 @@ private:
 		/// Constructor.
 		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
 				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
-				ConstPropertyPtr moleculeIDs) :
+				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs) :
 					Engine(dataSource, executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
@@ -94,6 +95,8 @@ private:
 					_maxCutoff(maxCutoff),
 					_minCutoff(minCutoff),
 					_pairCutoffsSquared(std::move(pairCutoffsSquared)),
+					_typeVdWRadiusMap(std::move(typeVdWRadiusMap)),
+					_vdwPrefactor(vdwPrefactor),
 					_moleculeIDs(std::move(moleculeIDs)),
 					_inputFingerprint(std::move(fingerprint)) {}
 
@@ -118,6 +121,8 @@ private:
 		const FloatType _maxCutoff;
 		const FloatType _minCutoff;
 		const std::vector<std::vector<FloatType>> _pairCutoffsSquared;
+		const std::vector<FloatType> _typeVdWRadiusMap;		
+		const FloatType _vdwPrefactor;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
@@ -161,14 +166,17 @@ protected:
 
 private:
 
-	/// The mode of choosing the cutoff radius.
+	/// The mode of choosing the bond cutoff.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CutoffMode, cutoffMode, setCutoffMode);
 
-	/// The cutoff radius for bond generation.
+	/// The uniform cutoff distance for bond generation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, uniformCutoff, setUniformCutoff, PROPERTY_FIELD_MEMORIZE);
 
 	/// The minimum bond length.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, minimumCutoff, setMinimumCutoff);
+
+	/// The prefactor to be used for computing the cutoff distance from the Van der Waals radii.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwPrefactor, setVdwPrefactor);
 
 	/// The cutoff radii for pairs of particle types.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PairwiseCutoffsList, pairwiseCutoffs, setPairwiseCutoffs);

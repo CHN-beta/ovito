@@ -590,7 +590,7 @@ ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 	if(ParticlesVis* particleVis = visElement<ParticlesVis>()) {
 
 		// Query particle radii from vis element.
-		return particleVis->particleRadii(this);
+		return particleVis->particleRadii(this, false);
 	}
 
 	// Return uniform default radius for all particles.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,9 +57,14 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	layout->addWidget(particleShapeUI->comboBox(), 1, 1);
 
 	// Default radius.
-	FloatParameterUI* radiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
-	layout->addWidget(radiusUI->label(), 2, 0);
-	layout->addLayout(radiusUI->createFieldLayout(), 2, 1);
+	FloatParameterUI* defaultRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
+	layout->addWidget(defaultRadiusUI->label(), 2, 0);
+	layout->addLayout(defaultRadiusUI->createFieldLayout(), 2, 1);
+
+	// Radius scaling factor.
+	FloatParameterUI* radiusScalingUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::radiusScaleFactor));
+	layout->addWidget(radiusScalingUI->label(), 3, 0);
+	layout->addLayout(radiusScalingUI->createFieldLayout(), 3, 1);
 
 	// Rendering quality.
 	VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticlesVis::renderingQuality));
@@ -67,8 +72,8 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)ParticlePrimitive::MediumQuality));
 	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)ParticlePrimitive::HighQuality));
 	renderingQualityUI->comboBox()->addItem(tr("Automatic"), QVariant::fromValue((int)ParticlePrimitive::AutoQuality));
-	layout->addWidget(new QLabel(tr("Rendering quality:")), 3, 0);
-	layout->addWidget(renderingQualityUI->comboBox(), 3, 1);
+	layout->addWidget(new QLabel(tr("Rendering quality:")), 4, 0);
+	layout->addWidget(renderingQualityUI->comboBox(), 4, 1);
 }
 
 }	// End of namespace

@@ -221,7 +221,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			renderingQuality()));
 
 	// Make sure the primitive for the nodal vertices gets created if particles display is turned off.
-	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false) && (shadingMode() == NormalShading);
+	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false);
 	if(renderNodalVertices && !visCache.vertices && visCache.cylinders)
 		visCache.cylinders.reset();
 
@@ -250,7 +250,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			// Obtain the radii of the particles.
 			ConstPropertyAccessAndRef<FloatType> particleRadii;
 			if(particleVis)
-				particleRadii = particleVis->particleRadii(particles);
+				particleRadii = particleVis->particleRadii(particles, false);
 			// Make sure the particle radius array has the correct length.
 			if(particleRadii && particleRadii.size() != particleCount) 
 				particleRadii.reset();
@@ -324,7 +324,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 			if(renderNodalVertices) {
 				OVITO_ASSERT(positionProperty);
-				visCache.vertices = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+				visCache.vertices = renderer->createParticlePrimitive((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 				visCache.vertices->setPositions(positionProperty);
 				visCache.vertices->setUniformRadius(bondRadius);
 				visCache.vertices->setColors(nodalColors.take());

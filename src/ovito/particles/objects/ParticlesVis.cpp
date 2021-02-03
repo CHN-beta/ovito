@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,18 +37,22 @@ namespace Ovito { namespace Particles {
 IMPLEMENT_OVITO_CLASS(ParticlesVis);
 IMPLEMENT_OVITO_CLASS(ParticlePickInfo);
 DEFINE_PROPERTY_FIELD(ParticlesVis, defaultParticleRadius);
+DEFINE_PROPERTY_FIELD(ParticlesVis, radiusScaleFactor);
 DEFINE_PROPERTY_FIELD(ParticlesVis, renderingQuality);
 DEFINE_PROPERTY_FIELD(ParticlesVis, particleShape);
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, defaultParticleRadius, "Standard radius");
+SET_PROPERTY_FIELD_LABEL(ParticlesVis, radiusScaleFactor, "Radius scaling factor");
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, renderingQuality, "Rendering quality");
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, particleShape, "Standard shape");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, defaultParticleRadius, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, radiusScaleFactor, PercentParameterUnit, 0);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 ParticlesVis::ParticlesVis(DataSet* dataset) : DataVis(dataset),
 	_defaultParticleRadius(1.2),
+	_radiusScaleFactor(1.0),
 	_renderingQuality(ParticlePrimitive::AutoQuality),
 	_particleShape(Sphere)
 {
@@ -193,7 +197,7 @@ Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionPrope
 	}
 
 	// Extend the bounding box by the largest particle radius.
-	return bbox.padBox(std::max(maxAtomRadius * sqrt(FloatType(3)), FloatType(0)));
+	return bbox.padBox(std::max(radiusScaleFactor() * maxAtomRadius * sqrt(FloatType(3)), FloatType(0)));
 }
 
 /******************************************************************************
@@ -282,10 +286,12 @@ const PropertyObject* ParticlesVis::getParticleTypeRadiusProperty(const Particle
 /******************************************************************************
 * Determines the display particle radii.
 ******************************************************************************/
-ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles) const
+ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const
 {
 	particles->verifyIntegrity();
 	FloatType defaultRadius = defaultParticleRadius();
+	if(includeGlobalScaleFactor)
+		defaultRadius *= radiusScaleFactor();
 
 	// Take particle radii directly from the 'Radius' property if available.
 	DataObjectAccess<DataOORef, PropertyObject> output = particles->getProperty(ParticlesObject::RadiusProperty);
@@ -297,6 +303,11 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles) c
 			// Replace zero entries in the per-particle array with the uniform default radius.
 			boost::replace(PropertyAccess<FloatType>(output.makeMutable()), FloatType(0), defaultRadius);
 		}
+		// Apply global scaling factor.
+		if(includeGlobalScaleFactor && radiusScaleFactor() != 1.0) {
+			for(FloatType& r : PropertyAccess<FloatType>(output.makeMutable()))
+				r *= radiusScaleFactor();
+		}
 	}
 	else {
 		// Allocate output array.
@@ -307,9 +318,14 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles) c
 
 			// Assign radii based on particle types.
 			// Build a lookup map for particle type radii.
-			const std::map<int,FloatType> radiusMap = ParticleType::typeRadiusMap(typeProperty);
+			std::map<int,FloatType> radiusMap = ParticleType::typeRadiusMap(typeProperty);
 			// Skip the following loop if all per-type radii are zero. In this case, simply use the default radius for all particles.
 			if(boost::algorithm::any_of(radiusMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
+				// Apply global scaling factor.
+				if(includeGlobalScaleFactor && radiusScaleFactor() != 1.0) {
+					for(auto& p : radiusMap)
+						p.second *= radiusScaleFactor();
+				}
 				// Fill radius array.
 				ConstPropertyAccess<int> typeData(typeProperty);
 				PropertyAccess<FloatType> radiusArray(output.makeMutable());
@@ -499,6 +515,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		QPointer<PipelineSceneNode>,// The pipeline scene node
 		ConstDataObjectRef,			// Particle type property
 		FloatType,					// Default particle radius
+		FloatType,					// Global radius scaling factor
 		ConstDataObjectRef,			// Position property
 		ConstDataObjectRef,			// Orientation property
 		ConstDataObjectRef,			// Color property
@@ -521,6 +538,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		const_cast<PipelineSceneNode*>(contextNode),
 		typeProperty,
 		defaultParticleRadius(),
+		radiusScaleFactor(),
 		positionProperty,
 		orientationProperty,
 		colorProperty,
@@ -567,7 +585,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 
 		// Compile the per-instance particle data (positions, orientations, colors, etc) for each mesh-based particle type.
 		ConstPropertyAccessAndRef<Color> colors = particleColors(particles, renderer->isInteractive());
-		ConstPropertyAccessAndRef<FloatType> radii = particleRadii(particles);
+		ConstPropertyAccessAndRef<FloatType> radii = particleRadii(particles, true);
 		ConstPropertyAccess<int> types(typeProperty);
 		ConstPropertyAccess<Point3> positions(positionProperty);
 		ConstPropertyAccess<Quaternion> orientations(orientationProperty);
@@ -763,18 +781,20 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		using RadiiCacheKey = std::tuple<
 			std::shared_ptr<ParticlePrimitive>,	// The rendering primitive
 			FloatType,							// Default particle radius
+			FloatType,							// Global radius scaling factor
 			ConstDataObjectRef,					// Radius property
 			ConstDataObjectRef					// Type property
 		>;
 		bool& radiiUpToDate = dataset()->visCache().get<bool>(RadiiCacheKey(
 			visCache.primitive,
 			defaultParticleRadius(),
+			radiusScaleFactor(),
 			radiusProperty,
 			typeRadiusProperty));
 		if(!radiiUpToDate) {
 			radiiUpToDate = true;
 			if(!radiusBuffer)
-				radiusBuffer = particleRadii(particles);
+				radiusBuffer = particleRadii(particles, true);
 			visCache.primitive->setRadii(radiusBuffer);
 		}
 
@@ -866,6 +886,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			ConstDataObjectRef,					// Orientation property
 			ConstDataObjectRef,					// Radius property
 			FloatType,							// Default particle radius
+			FloatType,							// Global radius scaling factor
 			ParticlesVis::ParticleShape,		// Global particle shape
 			ParticlesVis::ParticleShape			// Local particle shape
 		>;
@@ -889,6 +910,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			orientationProperty,
 			radiusProperty,
 			defaultParticleRadius(),
+			radiusScaleFactor(),
 			particleShape(),
 			shape));
 
@@ -937,7 +959,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			
 			// Determine cylinder radii (only needed if aspherical shape property is not present).
 			if(!radiusBuffer && !asphericalShapeProperty)
-				radiusBuffer = particleRadii(particles);
+				radiusBuffer = particleRadii(particles, true);
 
 			// Allocate cylinder data buffers.
 			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, effectiveParticleCount, DataBuffer::Float, 3, 0, false);
