@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //

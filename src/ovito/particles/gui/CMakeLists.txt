@@ -70,6 +70,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
 		import/gsd/GSDImporterEditor.cpp
 		import/pdb/PDBImporterEditor.cpp
 		import/cif/mmCIFImporterEditor.cpp
+		import/gromacs/GroImporterEditor.cpp
 		import/xyz/XYZImporterEditor.cpp
 		export/FileColumnParticleExporterEditor.cpp
 		export/lammps/LAMMPSDataExporterEditor.cpp
