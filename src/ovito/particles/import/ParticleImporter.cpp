@@ -284,7 +284,8 @@ void ParticleImporter::FrameLoader::generateBonds()
 			if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
 				if(ptype->vdwRadius() > maxRadius)
 					maxRadius = ptype->vdwRadius();
-				typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+				if(type->numericId() >= typeVdWRadiusMap.size())
+					typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
 				typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
 			}
 		}

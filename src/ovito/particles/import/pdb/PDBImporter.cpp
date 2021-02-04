@@ -207,7 +207,7 @@ void PDBImporter::FrameLoader::loadFile()
 		for(const gemmi::Chain& chain : model.chains) {
 			for(const gemmi::Residue& residue : chain.residues) {
 				if(isCanceled()) return;
-				int residueTypeId = addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residue.name.c_str(), residue.name.size()))->numericId();
+				int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
 				for(const gemmi::Atom& atom : residue.atoms) {
 					// Atomic position.
 					*posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
