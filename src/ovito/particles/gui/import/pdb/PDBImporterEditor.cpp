@@ -48,6 +48,10 @@ void PDBImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->setContentsMargins(4,4,4,4);
 	layout->addWidget(optionsBox);
 
+	// Center simulation cell.
+	BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
+	sublayout->addWidget(recenterCellUI->checkBox());
+	
 	// Generate bonds
 	BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
 	sublayout->addWidget(generateBondsUI->checkBox());

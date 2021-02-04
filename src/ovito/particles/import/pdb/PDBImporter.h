@@ -67,7 +67,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request, generateBonds());
+		return std::make_shared<FrameLoader>(request, generateBonds(), recenterCell());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -84,7 +84,7 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request), _generateBonds(generateBonds) {}
+		FrameLoader(const LoadOperationRequest& request, bool generateBonds, bool recenterCell) : ParticleImporter::FrameLoader::FrameLoader(request), _generateBonds(generateBonds), _recenterCell(recenterCell) {}
 
 	protected:
 
@@ -95,6 +95,9 @@ private:
 
 		/// Controls the generation of ad-hoc bonds during data import.
 		bool _generateBonds;
+
+		/// Controls the dynamic centering of the simulation cell during import.
+		bool _recenterCell;	
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

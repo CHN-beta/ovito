@@ -314,6 +314,10 @@ void PDBImporter::FrameLoader::loadFile()
 	else
 		setBondCount(0);
 
+	// Center the simulation cell on the coordinate origin if requested.
+	if(_recenterCell)
+		recenterSimulationCell();
+		
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
 }

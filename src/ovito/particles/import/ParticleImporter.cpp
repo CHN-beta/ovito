@@ -38,8 +38,10 @@ namespace Ovito { namespace Particles {
 IMPLEMENT_OVITO_CLASS(ParticleImporter);
 DEFINE_PROPERTY_FIELD(ParticleImporter, sortParticles);
 DEFINE_PROPERTY_FIELD(ParticleImporter, generateBonds);
+DEFINE_PROPERTY_FIELD(ParticleImporter, recenterCell);
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, sortParticles, "Sort particles by ID");
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, generateBonds, "Generate bonds");
+SET_PROPERTY_FIELD_LABEL(ParticleImporter, recenterCell, "Center simulation box on coordinate origin");
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -48,7 +50,7 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor& field)
 {
 	FileSourceImporter::propertyChanged(field);
 
-	if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds)) {
+	if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell)) {
 		// Reload input file(s) when these options are changed by the user.
 		// But there is no need to refetch the data file(s) from the remote location. Reparsing the cached files is sufficient.
 		requestReload();
@@ -350,7 +352,8 @@ void ParticleImporter::FrameLoader::generateBonds()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 {
-	if(!_particles) return;
+	if(!_particles || isCanceled()) 
+		return;
 
 	if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
 		auto v = velocityVectors.cbegin();
@@ -358,6 +361,33 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 		for(FloatType& mag : PropertyAccess<FloatType>(magnitudeProperty)) {
 			mag = v->length();
 			++v;
+		}
+	}
+}
+
+/******************************************************************************
+* Translates the simulation cell (and the particles) such that it is centered 
+* at the coordinate origin.
+******************************************************************************/
+void ParticleImporter::FrameLoader::recenterSimulationCell()
+{
+	if(isCanceled()) 
+		return;
+
+	SimulationCellObject* simulationCell = state().getMutableObject<SimulationCellObject>();
+	if(!simulationCell) return;
+
+	AffineTransformation cellMatrix = simulationCell->cellMatrix();
+	Vector3 offset = cellMatrix * Point3(0.5, 0.5, 0.5) - Point3::Origin();
+	if(offset == Vector3::Zero()) return;
+
+	cellMatrix.translation() -= offset;
+	simulationCell->setCellMatrix(cellMatrix);
+
+	if(_particles) {
+		if(PropertyAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
+			for(Point3& p : positions)
+				p -= offset;
 		}
 	}
 }

@@ -422,6 +422,10 @@ void GroImporter::FrameLoader::loadFile()
 	else
 		setBondCount(0);
 
+	// Center the simulation cell on the coordinate origin if requested.
+	if(_recenterCell)
+		recenterSimulationCell();
+
 	if(commentLine.isEmpty())
 		state().setStatus(tr("%1 atoms").arg(numParticles));
 	else

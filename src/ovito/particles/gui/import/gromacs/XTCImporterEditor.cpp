@@ -21,22 +21,22 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/import/gromacs/GroImporter.h>
+#include <ovito/particles/import/gromacs/XTCImporter.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include "GroImporterEditor.h"
+#include "XTCImporterEditor.h"
 
 namespace Ovito { namespace Particles {
 
-IMPLEMENT_OVITO_CLASS(GroImporterEditor);
-SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
+IMPLEMENT_OVITO_CLASS(XTCImporterEditor);
+SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
 ******************************************************************************/
-void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void XTCImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Gromacs reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("XTC reader"), rolloutParams);
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -51,10 +51,6 @@ void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	// Center simulation cell.
 	BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
 	sublayout->addWidget(recenterCellUI->checkBox());
-	
-	// Generate bonds
-	BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
-	sublayout->addWidget(generateBondsUI->checkBox());
 }
 
 }	// End of namespace

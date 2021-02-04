@@ -41,7 +41,8 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), _sortParticles(false), _generateBonds(false) {}
+	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), 
+		_sortParticles(false), _generateBonds(false), _recenterCell(false) {}
 
 	/// Indicates whether this file importer type loads particle trajectories.
 	virtual bool isTrajectoryFormat() const { return false; } 
@@ -108,6 +109,9 @@ protected:
 		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
 		void computeVelocityMagnitude();
 
+		/// Translates the simulation cell (and the particles) such that it is centered at the coordinate origin.
+		void recenterSimulationCell();
+
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.
@@ -147,6 +151,9 @@ private:
 
 	/// Controls the generation of atomic ad-hoc bonds during data import.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateBonds, setGenerateBonds);
+
+	/// Controls the dynamic recentering of simulation cell to the coordinate origin.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, recenterCell, setRecenterCell);
 };
 
 }	// End of namespace
