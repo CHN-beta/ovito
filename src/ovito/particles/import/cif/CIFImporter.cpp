@@ -206,10 +206,6 @@ void CIFImporter::FrameLoader::loadFile()
 		throw Exception(tr("CIF file reader: %1").arg(e.what()));
 	}
 
-	// Center the simulation cell on the coordinate origin if requested.
-	if(_recenterCell)
-		recenterSimulationCell();
-
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
 }

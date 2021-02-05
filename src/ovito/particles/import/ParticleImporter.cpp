@@ -405,6 +405,10 @@ void ParticleImporter::FrameLoader::loadFile()
 	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property is loaded from the input file.
 	computeVelocityMagnitude();
 
+	// Center the simulation cell on the coordinate origin if requested.
+	if(_recenterCell)
+		recenterSimulationCell();
+
 #ifdef OVITO_DEBUG
 	if(_particles) _particles->verifyIntegrity();
 	if(_bonds) _bonds->verifyIntegrity();

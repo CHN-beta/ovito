@@ -66,6 +66,9 @@ protected:
 		/// Constructor.
 		using StandardFrameLoader::StandardFrameLoader;
 
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell) {}
+
 		/// Changes the particle scaling factor to be set on the ParticlesVis element.
 		/// This must be called before the first call to particles().
 		void setParticleRadiusScalingFactor(FloatType factor) { _particleRadiusScalingFactor = factor; }
@@ -136,6 +139,9 @@ protected:
 
 		/// The particle scaling factor to be set on the ParticlesVis element.
 		FloatType _particleRadiusScalingFactor = 1.0;
+
+		/// Controls the dynamic centering of the simulation cell during import.
+		bool _recenterCell = false;
 	};
 
 	/// \brief Is called when the value of a property of this object has changed.

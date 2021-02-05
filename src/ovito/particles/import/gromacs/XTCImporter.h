@@ -60,6 +60,7 @@ public:
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE XTCImporter(DataSet* dataset) : ParticleImporter(dataset) {
 		setMultiTimestepFile(true);
+		setRecenterCell(true);
 	}
 
 	/// Returns the title of this object.
@@ -86,17 +87,12 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, bool recenterCell) : ParticleImporter::FrameLoader::FrameLoader(request), _recenterCell(recenterCell) {}
+		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:
 
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
-
-	private:
-
-		/// Controls the dynamic centering of the simulation cell during import.
-		bool _recenterCell;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

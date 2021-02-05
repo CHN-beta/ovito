@@ -121,7 +121,7 @@ void XTCImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 
 	// Open XTC file for reading.
 	XTCFile file;
-	file.open(fileHandle().localFilePath().toUtf8().constData());
+	file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle().localFilePath())).constData());
 
 	Frame frame(fileHandle());
 	while(!file.eof() && !isCanceled()) {
@@ -149,7 +149,7 @@ void XTCImporter::FrameLoader::loadFile()
 
 	// Open XTC file for reading.
 	XTCFile file;
-	file.open(fileHandle().localFilePath().toUtf8().constData());
+	file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle().localFilePath())).constData());
 
 	// Seek to byte offset of requested trajectory frame.
 	if(frame().byteOffset != 0)
@@ -172,10 +172,6 @@ void XTCImporter::FrameLoader::loadFile()
 
 	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step), dataSource());
 	state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time), dataSource());
-
-	// Center the simulation cell on the coordinate origin if requested.
-	if(_recenterCell)
-		recenterSimulationCell();
 
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();

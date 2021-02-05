@@ -64,7 +64,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request, sortParticles());
+		return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles());
 	}
 
 private:
@@ -75,8 +75,8 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, bool sortParticles)
-			: ParticleImporter::FrameLoader(request), _sortParticles(sortParticles) {}
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles)
+			: ParticleImporter::FrameLoader(request, recenterCell), _sortParticles(sortParticles) {}
 
 	protected:
 
