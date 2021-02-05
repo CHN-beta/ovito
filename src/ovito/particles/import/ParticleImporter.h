@@ -109,16 +109,22 @@ protected:
 		/// Generates ad-hoc bonds between atoms based on their van der Waals radii.
 		void generateBonds();
 
-		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
-		void computeVelocityMagnitude();
-
-		/// Translates the simulation cell (and the particles) such that it is centered at the coordinate origin.
-		void recenterSimulationCell();
+		/// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0), 
+		/// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
+		void correctOffcenterCell();
 
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.
 		virtual void loadFile() override;
+
+	private:
+
+		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
+		void computeVelocityMagnitude();
+
+		/// Translates the simulation cell (and the particles) such that it is centered at the coordinate origin.
+		void recenterSimulationCell();
 
 	private:
 

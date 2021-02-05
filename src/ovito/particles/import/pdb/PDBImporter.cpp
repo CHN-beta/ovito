@@ -314,6 +314,10 @@ void PDBImporter::FrameLoader::loadFile()
 	else
 		setBondCount(0);
 
+	// If the loaded particles are centered on the coordinate origin but the periodi simulation box corner is positioned at (0,0,0), 
+	// then shift the cell to center it on (0,0,0) too, leaving the particle coordinates as is.
+	// correctOffcenterCell();
+
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -189,14 +189,14 @@ void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
 //
 // Van der Waals radii have been adopted from the VMD software, which adopted them from A. Bondi, J. Phys. Chem., 68, 441 - 452, 1964,
 // except the value for H, which was taken from R.S. Rowland & R. Taylor, J. Phys. Chem., 100, 7384 - 7391, 1996. 
-// Radii that are not available in either of these publications use r = 2.0.
+// For radii that are not available in either of these publications use r = 2.0.
 // The radii for ions (Na, K, Cl, Ca, Mg, and Cs) are based on the CHARMM27 Rmin/2 parameters for (SOD, POT, CLA, CAL, MG, CES).
 const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES> ParticleType::_predefinedParticleTypes{{
 	ParticleType::PredefinedChemicalType{ QStringLiteral("H"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 1.00794 },
 	ParticleType::PredefinedChemicalType{ QStringLiteral("He"), Color(217.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.22f, 1.40f, 4.00260 },
 	ParticleType::PredefinedChemicalType{ QStringLiteral("Li"), Color(204.0f/255.0f, 128.0f/255.0f, 255.0f/255.0f), 1.57f, 1.82f, 6.941 },
-	ParticleType::PredefinedChemicalType{ QStringLiteral("Be"), Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.57f, 2.00f, 9.012182 }, //
-	ParticleType::PredefinedChemicalType{ QStringLiteral("B"),  Color(255.0f/255.0f, 181.0f/255.0f, 181.0f/255.0f), 1.57f, 2.00f, 10.811 }, //
+	ParticleType::PredefinedChemicalType{ QStringLiteral("Be"), Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.47f, 2.00f, 9.012182 }, //
+	ParticleType::PredefinedChemicalType{ QStringLiteral("B"),  Color(255.0f/255.0f, 181.0f/255.0f, 181.0f/255.0f), 2.01f, 2.00f, 10.811 }, //
 	ParticleType::PredefinedChemicalType{ QStringLiteral("C"),  Color(144.0f/255.0f, 144.0f/255.0f, 144.0f/255.0f), 0.77f, 1.70f, 12.0107 },
 	ParticleType::PredefinedChemicalType{ QStringLiteral("N"),  Color( 48.0f/255.0f,  80.0f/255.0f, 248.0f/255.0f), 0.74f, 1.55f, 14.0067 },
 	ParticleType::PredefinedChemicalType{ QStringLiteral("O"),  Color(255.0f/255.0f,  13.0f/255.0f,  13.0f/255.0f), 0.74f, 1.52f, 15.9994 },

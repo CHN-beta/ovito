@@ -29,9 +29,12 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "ParticleImporter.h"
+
+#include <boost/range/numeric.hpp>
 
 namespace Ovito { namespace Particles {
 
@@ -308,10 +311,10 @@ void ParticleImporter::FrameLoader::generateBonds()
 
 	ConstPropertyAccess<int> particleTypesArray(typeProperty);
 
-	std::vector<Bond> bonds;
+	// Multi-threaded loop over all particles, each thread producing a partial bonds list.
 	size_t particleCount = positionProperty->size();
-	setProgressMaximum(particleCount);
-	for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
+	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, *this, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+		// Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
 		for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
 			int type1 = particleTypesArray[particleIndex];
 			int type2 = particleTypesArray[neighborQuery.current()];
@@ -321,18 +324,16 @@ void ParticleImporter::FrameLoader::generateBonds()
 					Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
 					// Skip every other bond to create only one bond per particle pair.
 					if(!bond.isOdd())
-						bonds.push_back(bond);
+						bondList.push_back(bond);
 				}
 			}
 		}
-		// Update progress indicator.
-		if(!setProgressValueIntermittent(particleIndex))
-			return;
-	}
-	setProgressValue(particleCount);
+	});
+	if(isCanceled())
+		return;
 
 	// Create BondsObject.
-	setBondCount(bonds.size());
+	setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
 	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
 	PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
 	PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
@@ -340,10 +341,17 @@ void ParticleImporter::FrameLoader::generateBonds()
 	// Create bond type.
 	addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), 1, {});
 
-	// Transfer bonds list into BondsObject.
-	boost::transform(bonds, bondTopologyProperty.begin(), [](const Bond& bond) { return ParticleIndexPair{{(qlonglong)bond.index1, (qlonglong)bond.index2}}; });
+	// Transfer bonds lists to BondsObject.
 	boost::fill(bondTypeProperty, 1);
-	boost::transform(bonds, bondPeriodicImageProperty.begin(), [](const Bond& bond) { return bond.pbcShift; });
+	auto bondTopologyIter = bondTopologyProperty.begin();
+	auto bondPBCImageIter = bondPeriodicImageProperty.begin();
+	for(const std::vector<Bond>& bondsList : partialBondsLists) {
+		for(const Bond& bond : bondsList) {
+			*bondTopologyIter++ = ParticleIndexPair{{(qlonglong)bond.index1, (qlonglong)bond.index2}};
+			*bondPBCImageIter++ = bond.pbcShift;
+		}
+	}
+	OVITO_ASSERT(bondTopologyIter == bondTopologyProperty.end());
 }
 
 /******************************************************************************
@@ -363,6 +371,55 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 			++v;
 		}
 	}
+}
+
+/******************************************************************************
+* If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0), 
+* the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
+******************************************************************************/
+void ParticleImporter::FrameLoader::correctOffcenterCell()
+{
+	if(isCanceled()) 
+		return;
+
+	// Check if a simulation cell has been defined. It must be periodic in all directions.
+	const SimulationCellObject* simulationCell = state().getObject<SimulationCellObject>();
+	if(!simulationCell || !simulationCell->hasPbc(0) || !simulationCell->hasPbc(1) || (!simulationCell->hasPbc(2) && !simulationCell->is2D())) 
+		return;
+
+	// The cell corner must be located at (0,0,0).
+	if(simulationCell->cellOrigin() != Point3::Origin())
+		return;
+
+	// The current implementation is for 3D cells only.
+	if(simulationCell->is2D() || simulationCell->cellMatrix().determinant() == 0.0)
+		return;
+
+	// Get the particle coordinates.
+	ConstPropertyAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+	if(!positions || positions.size() == 0)
+		return;
+
+	// Compute bounding box of particles in reduced coordinates.
+	Box3 boundingBox;
+	const AffineTransformation reciprocalCellMatrix = simulationCell->reciprocalCellMatrix();
+	for(const Point3& p : positions)
+		boundingBox.addPoint(reciprocalCellMatrix * p);
+	OVITO_ASSERT(!boundingBox.isEmpty());
+
+	// Check if reduced coordinates of particles are all in the [-0.5, 0.5] range (with an added margin).
+	if(boundingBox.minc.x() > -0.01 && boundingBox.minc.y() > -0.01 && boundingBox.minc.z() > -0.01)
+		return;
+	if(boundingBox.minc.x() < -0.51 || boundingBox.minc.y() < -0.51 || boundingBox.minc.z() < -0.51)
+		return;
+	if(boundingBox.maxc.x() > 0.51 || boundingBox.maxc.y() > 0.51 || boundingBox.maxc.z() > 0.51)
+		return;
+
+	// Translate the simulation box.
+	SimulationCellObject* newSimulationCell = state().makeMutable(simulationCell);
+	AffineTransformation cellMatrix = newSimulationCell->cellMatrix();
+	cellMatrix.translation() = cellMatrix * Vector3(-0.5, -0.5, -0.5);
+	newSimulationCell->setCellMatrix(cellMatrix);
 }
 
 /******************************************************************************
@@ -402,7 +459,7 @@ void ParticleImporter::FrameLoader::loadFile()
 
 	StandardFrameLoader::loadFile();
 
-	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property is loaded from the input file.
+	// Automatically generate the 'Velocity Magnitude' property if the 'Velocity' vector property was loaded from the input file.
 	computeVelocityMagnitude();
 
 	// Center the simulation cell on the coordinate origin if requested.
