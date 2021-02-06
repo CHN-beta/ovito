@@ -412,127 +412,22 @@ std::vector<size_t> ParticlesObject::sortById()
 ******************************************************************************/
 void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
-	// Check if there are existing bonds.
-	if(!bonds() || !bonds()->getProperty(BondsObject::TopologyProperty)) {
+	OVITO_ASSERT(isSafeToModify());
+
+	// Check if there is an existing bonds object.
+	BondsObject* mutableBonds;
+	if(!bonds()) {
 		// Create the bonds object.
 		DataOORef<BondsObject> bonds = DataOORef<BondsObject>::create(dataset(), executionContext);
-		bonds->setElementCount(newBonds.size());
-
-		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = bonds->createProperty(BondsObject::TopologyProperty, false, executionContext);
-		PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
-		PropertyObject* bondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
-
-		// Copy data into property arrays.
-		auto t = topologyProperty.begin();
-		auto pbc = periodicImageProperty.begin();
-		for(const Bond& bond : newBonds) {
-			OVITO_ASSERT(bond.index1 < elementCount());
-			OVITO_ASSERT(bond.index2 < elementCount());
-			(*t)[0] = bond.index1;
-			(*t)[1] = bond.index2;
-			++t;
-			*pbc++ = bond.pbcShift;
-		}
-
-		// Insert bond type.
-		if(bondTypeProperty) {
-			bondTypeProperty->fill<int>(bondType->numericId());
-			bondTypeProperty->addElementType(std::move(bondType));
-		}
-
-		// Insert other bond properties.
-		for(const auto& bprop : bondProperties) {
-			OVITO_ASSERT(bprop->size() == newBonds.size());
-			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
-			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
-			OVITO_ASSERT(!bondTypeProperty || bprop->type() != BondsObject::TypeProperty);
-			bonds->createProperty(bprop);
-		}
-
-		if(bondsVis)
-			bonds->setVisElement(bondsVis);
-
+		mutableBonds = bonds.get();
 		setBonds(std::move(bonds));
 	}
 	else {
-		BondsObject* bonds = makeBondsMutable();
-
-		// This is needed to determine which bonds already exist.
-		ParticleBondMap bondMap(*bonds);
-
-		// Check which bonds are new and need to be merged.
-		size_t originalBondCount = bonds->elementCount();
-		size_t outputBondCount = originalBondCount;
-		std::vector<size_t> mapping(newBonds.size());
-		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
-			// Check if there is already a bond like this.
-			const Bond& bond = newBonds[bondIndex];
-			auto existingBondIndex = bondMap.findBond(bond);
-			if(existingBondIndex == originalBondCount) {
-				// It's a new bond.
-				mapping[bondIndex] = outputBondCount;
-				outputBondCount++;
-			}
-			else {
-				// It's an already existing bond.
-				mapping[bondIndex] = existingBondIndex;
-			}
-		}
-
-		// Resize the existing property arrays.
-		bonds->setElementCount(outputBondCount);
-
-		PropertyAccess<ParticleIndexPair> newBondsTopology = bonds->expectMutableProperty(BondsObject::TopologyProperty);
-		PropertyAccess<Vector3I> newBondsPeriodicImages = bonds->createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
-		PropertyAccess<int> newBondTypeProperty = bondType ? bonds->createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
-
-		if(newBondTypeProperty && !newBondTypeProperty.buffer()->elementType(bondType->numericId()))
-			newBondTypeProperty.buffer()->addElementType(bondType);
-
-		// Copy bonds information into the extended arrays.
-		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
-			if(mapping[bondIndex] >= originalBondCount) {
-				const Bond& bond = newBonds[bondIndex];
-				OVITO_ASSERT(bond.index1 < elementCount());
-				OVITO_ASSERT(bond.index2 < elementCount());
-				newBondsTopology[mapping[bondIndex]][0] = bond.index1;
-				newBondsTopology[mapping[bondIndex]][1] = bond.index2;
-				newBondsPeriodicImages[mapping[bondIndex]] = bond.pbcShift;
-				if(newBondTypeProperty) 
-					newBondTypeProperty[mapping[bondIndex]] = bondType->numericId();
-			}
-		}
-
-		// Initialize property values of new bonds.
-		for(PropertyObject* bondPropertyObject : bonds->makePropertiesMutable()) {
-			if(bondPropertyObject->type() == BondsObject::ColorProperty) {
-				bondPropertyObject->copyFrom(*inputBondColors(true));
-			}
-		}
-
-		// Merge new bond properties.
-		for(const auto& bprop : bondProperties) {
-			OVITO_ASSERT(bprop->size() == newBonds.size());
-			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
-			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
-			OVITO_ASSERT(!bondType || bprop->type() != BondsObject::TypeProperty);
-
-			PropertyObject* propertyObject;
-			if(bprop->type() != BondsObject::UserProperty) {
-				propertyObject = bonds->createProperty(bprop->type(), true, executionContext);
-			}
-			else {
-				propertyObject = bonds->createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
-			}
-
-			// Copy bond property data.
-			propertyObject->mappedCopyFrom(*bprop, mapping);
-		}
-
-		if(bondsVis)
-			bonds->setVisElement(bondsVis);
+		mutableBonds = makeBondsMutable();
 	}
+
+	// Create new bonds making sure bonds are not created twice.
+	mutableBonds->addBonds(newBonds, bondsVis, this, executionContext, bondProperties, std::move(bondType));
 }
 
 /******************************************************************************
@@ -561,7 +456,7 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
     if(bonds()) {
 		if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
 
-			// Query half-bond colors from vis element.
+			// Request half-bond colors from vis element.
 			std::vector<Color> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->useParticleColors(), ignoreExistingColorProperty);
 			OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
 
@@ -574,6 +469,8 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
 			}
 			return colors.take();
 		}
+
+		// If no vis element is available, create an array filled with the default bond color.
 		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
 		colors->fill(Color(1,1,1));
 		return colors;

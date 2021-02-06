@@ -78,7 +78,31 @@ PropertyReference PropertyReference::convertToContainerClass(PropertyContainerCl
 		PropertyReference newref = *this;
 		if(containerClass != this->containerClass()) {
 			newref._containerClass = containerClass;
-			newref._type = containerClass->standardPropertyTypeId(name());
+
+			// Split string into property name and vector component name. 
+			QStringList parts = this->name().split(QChar('.'));
+			if((parts.length() == 1 || parts.length() == 2) && !parts[0].isEmpty()) {
+				// Determine property type.
+				QString name = parts[0];
+				newref._type = containerClass->standardPropertyIds().value(name, 0);
+				if(newref._type != 0)
+					newref._name = name;
+
+				// Determine vector component.
+				if(parts.length() == 2 && newref._vectorComponent == -1) {
+					// First try to convert component to integer.
+					bool ok;
+					newref._vectorComponent = parts[1].toInt(&ok) - 1;
+					if(!ok) {
+						if(newref._type != 0) {
+							// Perhaps the standard property's component name was used instead of an integer.
+							const QString componentName = parts[1].toUpper();
+							QStringList standardNames = containerClass->standardPropertyComponentNames(newref._type);
+							newref._vectorComponent = standardNames.indexOf(componentName);
+						}
+					}
+				}
+			}
 		}
 		return newref;
 	}

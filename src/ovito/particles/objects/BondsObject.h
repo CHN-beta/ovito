@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,51 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/particles/objects/BondType.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
 namespace Ovito { namespace Particles {
+
+/**
+ * The data type used for the 'Topology' bond property: two indices into the particles list.
+ */
+using ParticleIndexPair = std::array<qlonglong, 2>;
+
+/**
+ * A helper data structure describing a single bond between two particles.
+ */
+struct Bond
+{
+	/// The index of the first particle.
+	size_t index1;
+
+	/// The index of the second particle.
+	size_t index2;
+
+	/// If the bond crosses a periodic boundary, this indicates the direction.
+	Vector3I pbcShift;
+
+	/// Returns the flipped version of this bond, where the two particles are swapped
+	/// and the PBC shift vector is reversed.
+	Bond flipped() const { return Bond{ index2, index1, -pbcShift }; }
+
+	/// For a pair of bonds, A<->B and B<->A, determines whether this bond
+	/// counts as the 'odd' or the 'even' bond of the pair.
+	bool isOdd() const {
+		// Is this bond connecting two different particles?
+		// If yes, it's easy to determine whether it's an even or an odd bond.
+		if(index1 > index2) return true;
+		else if(index1 < index2) return false;
+		// Whether the bond is 'odd' is determined by the PBC shift vector.
+		if(pbcShift[0] != 0) return pbcShift[0] < 0;
+		if(pbcShift[1] != 0) return pbcShift[1] < 0;
+		// A particle shouldn't be bonded to itself unless the bond crosses a periodic cell boundary:
+		OVITO_ASSERT(pbcShift != Vector3I::Zero());
+		return pbcShift[2] < 0;
+	}
+};
 
 /**
  * \brief This data object type is a container for bond properties.
@@ -101,6 +141,9 @@ public:
 
 	/// Determines the PBC shift vectors for bonds using the minimum image convention.
 	void generatePeriodicImageProperty(const ParticlesObject* particles, const SimulationCellObject* simulationCellObject);
+
+	/// Creates new bonds making sure bonds are not created twice.
+	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 };
 
 /**
@@ -112,45 +155,6 @@ using BondPropertyReference = TypedPropertyReference<BondsObject>;
  * Encapsulates a mapping of input file columns to bond properties.
  */
 using BondInputColumnMapping = TypedInputColumnMapping<BondsObject>;
-
-/**
- * The data type used for the 'Topology' bond property: two indices into the particles list.
- */
-using ParticleIndexPair = std::array<qlonglong, 2>;
-
-/**
- * A helper data structure describing a single bond between two particles.
- */
-struct Bond
-{
-	/// The index of the first particle.
-	size_t index1;
-
-	/// The index of the second particle.
-	size_t index2;
-
-	/// If the bond crosses a periodic boundary, this indicates the direction.
-	Vector3I pbcShift;
-
-	/// Returns the flipped version of this bond, where the two particles are swapped
-	/// and the PBC shift vector is reversed.
-	Bond flipped() const { return Bond{ index2, index1, -pbcShift }; }
-
-	/// For a pair of bonds, A<->B and B<->A, determines whether this bond
-	/// counts as the 'odd' or the 'even' bond of the pair.
-	bool isOdd() const {
-		// Is this bond connecting two different particles?
-		// If yes, it's easy to determine whether it's an even or an odd bond.
-		if(index1 > index2) return true;
-		else if(index1 < index2) return false;
-		// Whether the bond is 'odd' is determined by the PBC shift vector.
-		if(pbcShift[0] != 0) return pbcShift[0] < 0;
-		if(pbcShift[1] != 0) return pbcShift[1] < 0;
-		// A particle shouldn't be bonded to itself unless the bond crosses a periodic cell boundary:
-		OVITO_ASSERT(pbcShift != Vector3I::Zero());
-		return pbcShift[2] < 0;
-	}
-};
 
 }	// End of namespace
 }	// End of namespace

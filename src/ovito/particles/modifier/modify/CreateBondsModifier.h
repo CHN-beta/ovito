@@ -85,12 +85,13 @@ private:
 
 		/// Constructor.
 		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
+				const SimulationCellObject* simCell, DataOORef<BondsObject> bondsObject, DataOORef<BondType> bondType, const ParticlesObject* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs) :
 					Engine(dataSource, executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
 					_simCell(simCell),
+					_particles(particles),
 					_cutoffMode(cutoffMode),
 					_maxCutoff(maxCutoff),
 					_minCutoff(minCutoff),
@@ -98,7 +99,9 @@ private:
 					_typeVdWRadiusMap(std::move(typeVdWRadiusMap)),
 					_vdwPrefactor(vdwPrefactor),
 					_moleculeIDs(std::move(moleculeIDs)),
-					_inputFingerprint(std::move(fingerprint)) {}
+					_inputFingerprint(std::move(fingerprint)),
+					_bonds(std::move(bondsObject)),
+					_bondType(std::move(bondType)) {}
 
 		/// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
 		virtual bool preferSynchronousExecution() override { 
@@ -115,8 +118,8 @@ private:
 		/// This method is called by the system whenever the preliminary pipeline input changes.
 		virtual bool pipelineInputChanged() override { return false; }
 
-		/// Returns the list of generated bonds.
-		std::vector<Bond>& bonds() { return _bonds; }
+		/// Returns the generated BondsObject.
+		DataOORef<BondsObject>& bonds() { return _bonds; }
 
 		/// Returns the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
@@ -133,8 +136,11 @@ private:
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
 		DataOORef<const SimulationCellObject> _simCell;
+		DataOORef<const ParticlesObject> _particles;
 		ParticleOrderingFingerprint _inputFingerprint;
-		std::vector<Bond> _bonds;
+		DataOORef<BondsObject> _bonds;
+		DataOORef<BondType> _bondType;
+		size_t _numGeneratedBonds;
 	};
 
 public:
