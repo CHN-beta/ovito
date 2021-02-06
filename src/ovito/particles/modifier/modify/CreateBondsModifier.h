@@ -100,6 +100,12 @@ private:
 					_moleculeIDs(std::move(moleculeIDs)),
 					_inputFingerprint(std::move(fingerprint)) {}
 
+		/// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
+		virtual bool preferSynchronousExecution() override { 
+			// It's okay to perform the modifier operation synchronously for small inputs.
+			return _positions->size() < (_cutoffMode == TypeRadiusCutoff ? 400 : 200);
+		}
+
 		/// Computes the modifier's results.
 		virtual void perform() override;
 

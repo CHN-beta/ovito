@@ -380,7 +380,7 @@ void CreateBondsModifier::BondsEngine::applyResults(TimePoint time, ModifierAppl
 	// Make the parent particle system mutable.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
-	// Bonds have been created for a specific particles ordering. Make sure it's still the same.
+	// Bonds have been created for a specific particle ordering. Make sure it's still the same.
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 

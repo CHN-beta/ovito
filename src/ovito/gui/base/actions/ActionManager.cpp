@@ -53,7 +53,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), ":/guibase/actions/file/file_import_remote.bw.svg", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
 	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), ":/guibase/actions/file/file_export.bw.svg", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
 	createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), ":/guibase/actions/file/new_window.bw.svg", tr("Open another OVITO program window."), QKeySequence::New);
-	createCommandAction(ACTION_HELP_ABOUT, tr("About Ovito"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
+	createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
 	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), ":/guibase/actions/file/user_manual.bw.svg", tr("Open the user manual."), QKeySequence::HelpContents);
 	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), ":/guibase/actions/file/scripting_manual.bw.svg", tr("Open the Python API documentation."));
 	createCommandAction(ACTION_HELP_OPENGL_INFO, tr("OpenGL Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display OpenGL graphics driver information."));

@@ -83,8 +83,6 @@ private:
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
 	};
-
-	static const char* chemical_symbols[];
 };
 
 }	// End of namespace

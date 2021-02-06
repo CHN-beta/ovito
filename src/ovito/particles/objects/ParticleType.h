@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 public:
 
 	enum PredefinedParticleType {
-		    H , He, Li, Be, B , C , N , O , F , Ne,
+		X , H , He, Li, Be, B , C , N , O , F , Ne,
 		Na, Mg, Al, Si, P , S , Cl, Ar, K , Ca, Sc,
 		Ti, V , Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge,
 		As, Se, Br, Kr, Rb, Sr, Y , Zr, Nb, Mo, Tc,
@@ -142,6 +142,15 @@ public:
 	static const Color& getPredefinedStructureTypeColor(PredefinedStructureType predefType) {
 		OVITO_ASSERT(predefType < NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
 		return _predefinedStructureTypes[predefType].color;
+	}
+
+	static PredefinedParticleType getPredefinedParticleTypeFromName(const QString& name) {
+		int index = 0;
+		for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
+			if(predefType.name == name)
+				break;
+		}
+		return static_cast<PredefinedParticleType>(index);
 	}
 
 	/// Returns the default radius for a named particle type.
