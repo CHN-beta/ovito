@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2017 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
