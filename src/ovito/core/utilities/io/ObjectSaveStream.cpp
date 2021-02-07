@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,6 @@
 
 namespace Ovito {
 
-using namespace std;
-
 /******************************************************************************
 * The destructor closes the stream.
 ******************************************************************************/
@@ -46,7 +44,7 @@ ObjectSaveStream::~ObjectSaveStream()
 /******************************************************************************
 * Saves an object with runtime type information to the stream.
 ******************************************************************************/
-void ObjectSaveStream::saveObject(OvitoObject* object, bool excludeRecomputableData)
+void ObjectSaveStream::saveObject(const OvitoObject* object, bool excludeRecomputableData)
 {
 	if(object == nullptr) {
 		*this << (quint32)0;
@@ -63,7 +61,7 @@ void ObjectSaveStream::saveObject(OvitoObject* object, bool excludeRecomputableD
 			id = (quint32)_objects.size();
 
 			if(object->getOOClass() == DataSet::OOClass())
-				_dataset = static_object_cast<DataSet>(object);
+				_dataset = const_cast<DataSet*>(static_object_cast<DataSet>(object));
 
 			OVITO_ASSERT(_dataset == nullptr || !object->getOOClass().isDerivedFrom(RefTarget::OOClass()) || static_object_cast<RefTarget>(object)->dataset() == _dataset);
 		}
@@ -107,7 +105,7 @@ void ObjectSaveStream::close()
 		for(const auto& record : _objects) {
 			OvitoClassPtr clazz = &record.object->getOOClass();
 			if(classes.find(clazz) == classes.end()) {
-				classes.insert(make_pair(clazz, (quint32)classes.size()));
+				classes.insert(std::make_pair(clazz, (quint32)classes.size()));
 				// Write the basic runtime type information (name and plugin ID) of the class to the stream.
 				beginChunk(0x201);
 				OvitoClass::serializeRTTI(*this, clazz);

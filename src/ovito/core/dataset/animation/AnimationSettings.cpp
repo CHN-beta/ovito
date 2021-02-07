@@ -72,7 +72,7 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor& field)
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);

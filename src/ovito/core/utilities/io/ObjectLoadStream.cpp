@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,10 +100,14 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 {
 	quint32 objectId;
 	*this >> objectId;
-	if(objectId == 0) return nullptr;
+	if(objectId == 0) {
+		return {};
+	}
 	else {
 		ObjectRecord& record = _objects[objectId - 1];
-		if(record.object != nullptr) return record.object;
+		if(record.object != nullptr) {
+			return record.object;
+		}
 		else {
 			// When loading a RefTarget-derived class from the stream, we must already have a current DataSet as context.
 			OVITO_ASSERT(_dataset != nullptr || record.classInfo->clazz == &DataSet::OOClass() || !record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()));
@@ -116,8 +120,14 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 
 			// When deserializing a DataSet, use it as the context for all subsequently deserialized objects.
 			if(record.classInfo->clazz == &DataSet::OOClass()) {
-				OVITO_ASSERT(_dataset == nullptr);
-				setDataset(static_object_cast<DataSet>(record.object.get()));
+				if(_dataset == nullptr) {
+					setDataset(static_object_cast<DataSet>(record.object.get()));
+				}
+				else {
+					// If an existing DataSet has been provided, load the objects from the stream into 
+					// that existing Dataset instead of creating a new one.
+					record.object = _dataset;
+				}
 			}
 			else {
 				OVITO_ASSERT(!record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()) || _dataset != nullptr);

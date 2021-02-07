@@ -151,7 +151,7 @@ void DataBuffer::truncate(size_t numElementsToRemove)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 

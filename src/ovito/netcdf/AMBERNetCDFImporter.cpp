@@ -738,7 +738,7 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void AMBERNetCDFImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void AMBERNetCDFImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

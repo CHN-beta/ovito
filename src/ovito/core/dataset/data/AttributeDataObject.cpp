@@ -32,7 +32,7 @@ SET_PROPERTY_FIELD_LABEL(AttributeDataObject, value, "Value");
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void AttributeDataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);

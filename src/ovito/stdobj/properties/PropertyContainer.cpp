@@ -374,7 +374,7 @@ void PropertyContainer::verifyIntegrity() const
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void PropertyContainer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void PropertyContainer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);

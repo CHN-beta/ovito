@@ -180,7 +180,7 @@ protected:
 	/// references and referenced RefTarget object of this RefMaker to the output stream.
 	///
 	/// \sa loadFromStream()
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from an input stream.
 	/// \param stream The source stream.

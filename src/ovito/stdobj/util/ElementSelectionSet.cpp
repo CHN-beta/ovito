@@ -85,7 +85,7 @@ private:
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

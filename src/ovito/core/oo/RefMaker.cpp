@@ -368,7 +368,7 @@ void RefMaker::clearReferenceField(const PropertyFieldDescriptor& field)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	OvitoObject::saveToStream(stream, excludeRecomputableData);
 

@@ -242,7 +242,7 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void PipelineSceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void PipelineSceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	SceneNode::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);

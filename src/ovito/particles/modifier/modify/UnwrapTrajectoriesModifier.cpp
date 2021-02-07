@@ -461,7 +461,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ModifierApplication::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

@@ -553,7 +553,7 @@ Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(c
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void LAMMPSBinaryDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void LAMMPSBinaryDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

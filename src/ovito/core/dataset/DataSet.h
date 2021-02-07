@@ -133,11 +133,17 @@ public:
 	///        have been completely evaluated at the current animation time.
 	SharedFuture<> whenSceneReady();
 
-	/// \brief Saves the dataset to the given file.
+	/// \brief Saves the dataset to a session state file.
 	/// \throw Exception on error.
 	///
 	/// Note that this method does NOT invoke setFilePath().
-	void saveToFile(const QString& filePath);
+	void saveToFile(const QString& filePath) const;
+
+	/// \brief Loads the dataset contents from a session state file.
+	/// \throw Exception on error.
+	///
+	/// Note that this method does NOT invoke setFilePath().
+	void loadFromFile(const QString& filePath);
 
 	/// \brief Appends an object to this dataset's list of global objects.
 	void addGlobalObject(const RefTarget* target) {

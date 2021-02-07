@@ -617,16 +617,16 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 }
 
 /******************************************************************************
-* Saves the dataset to the given file.
+* Saves the dataset to a session state file.
 ******************************************************************************/
-void DataSet::saveToFile(const QString& filePath)
+void DataSet::saveToFile(const QString& filePath) const
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
 
 	QFile fileStream(absolutePath);
     if(!fileStream.open(QIODevice::WriteOnly))
-    	throwException(tr("Failed to open output file '%1' for writing.").arg(absolutePath));
+    	throwException(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
 	ObjectSaveStream stream(dataStream, SynchronousOperation::create(taskManager()));
@@ -634,7 +634,30 @@ void DataSet::saveToFile(const QString& filePath)
 	stream.close();
 
 	if(fileStream.error() != QFile::NoError)
-		throwException(tr("Failed to write output file '%1'.").arg(absolutePath));
+		throwException(tr("Failed to write session state file '%1': %2").arg(absolutePath).arg(fileStream.errorString()));
+	fileStream.close();
+}
+
+/******************************************************************************
+* Loads the dataset's contents from a session state file.
+******************************************************************************/
+void DataSet::loadFromFile(const QString& filePath)
+{
+	// Make path absolute.
+	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+
+	QFile fileStream(absolutePath);
+    if(!fileStream.open(QIODevice::ReadOnly))
+    	throwException(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
+
+	QDataStream dataStream(&fileStream);
+	ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));
+	stream.setDataset(this);
+	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
+	stream.close();
+
+	if(fileStream.error() != QFile::NoError)
+		throwException(tr("Failed to load state file '%1'.").arg(absolutePath));		
 	fileStream.close();
 }
 

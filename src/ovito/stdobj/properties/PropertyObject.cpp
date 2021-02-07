@@ -111,7 +111,7 @@ QString PropertyObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectP
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void PropertyObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataBuffer::saveToStream(stream, excludeRecomputableData);
 

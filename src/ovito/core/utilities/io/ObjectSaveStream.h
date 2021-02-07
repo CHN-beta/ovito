@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,18 +61,18 @@ public:
 	/// \brief Serializes an object and writes its data to the output stream.
 	/// \throw Exception if an I/O error has occurred.
 	/// \sa ObjectLoadStream::loadObject()
-	void saveObject(OvitoObject* object, bool excludeRecomputableData = false);
+	void saveObject(const OvitoObject* object, bool excludeRecomputableData = false);
 
 private:
 
 	/// A data record kept for each object written to the stream.
 	struct ObjectRecord {
-		OvitoObject* object;
+		const OvitoObject* object;
 		bool excludeRecomputableData;
 	};
 
 	/// Contains all objects stored so far and their IDs.
-	std::unordered_map<OvitoObject*, quint32> _objectMap;
+	std::unordered_map<const OvitoObject*, quint32> _objectMap;
 
 	/// Contains all objects ordered by ID.
 	std::vector<ObjectRecord> _objects;

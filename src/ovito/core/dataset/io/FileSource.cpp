@@ -612,7 +612,7 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	CachingPipelineObject::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x03);

@@ -624,7 +624,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

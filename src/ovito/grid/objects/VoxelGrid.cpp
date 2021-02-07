@@ -118,7 +118,7 @@ void VoxelGrid::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	PropertyContainer::saveToStream(stream, excludeRecomputableData);
 
