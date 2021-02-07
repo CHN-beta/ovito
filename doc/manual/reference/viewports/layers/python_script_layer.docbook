@@ -27,7 +27,7 @@
   	This function will be invoked by OVITO each time the viewport is repainted or
     whenever an image or movie frame is being rendered. The <pydoc-link href="modules/ovito_vis" anchor="ovito.vis.PythonViewportOverlay.Arguments" no-pro-tag="1">function parameter <literal>args</literal></pydoc-link> 
     gives access to a 
-    <link xlink:href="https://doc.qt.io/qtforpython/PySide2/QtGui/QPainter.html"><literal>QPainter</literal></link> object,
+    <link xlink:href="https://doc.qt.io/qtforpython-5/PySide2/QtGui/QPainter.html"><literal>QPainter</literal></link> object,
     which allows issueing arbitrary drawing commands to paint over the three-dimensional objects rendered by OVITO.
   </para>
   <para>
