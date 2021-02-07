@@ -121,7 +121,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
 		// Parse the command line parameters again after the plugins have registered their options.
 		if(!_cmdLineParser.parse(arguments)) {
-	        std::cerr << "Error: " << qPrintable(_cmdLineParser.errorText()) << std::endl;
+	        qInfo().noquote() << "Error:" << _cmdLineParser.errorText();
 			_consoleMode = true;
 			shutdown();
 			return false;

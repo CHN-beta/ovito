@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 Alexander Stukowski
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,14 +55,45 @@ Application* Application::_instance = nullptr;
 QtMessageHandler Application::defaultQtMessageHandler = nullptr;
 
 /******************************************************************************
-* Handler method for Qt error messages.
+* Handler method for Qt log messages.
 * This can be used to set a debugger breakpoint for the OVITO_ASSERT macros.
 ******************************************************************************/
 void Application::qtMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
 	// Forward message to default handler.
 	if(defaultQtMessageHandler) defaultQtMessageHandler(type, context, msg);
-	else std::cerr << qPrintable(msg) << std::endl;
+	else std::cerr << qPrintable(qFormatLogMessage(type, context, msg)) << std::endl;
+}
+
+/******************************************************************************
+* Handler method for Qt log messages that should be redirected to a file.
+******************************************************************************/
+static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, const QString& msg) 
+{
+	// Format the message string to be written to the log file.
+	QString formattedMsg = qFormatLogMessage(type, context, msg);
+
+	// The log file object.
+	static QFile logFile(QDir::fromNativeSeparators(qEnvironmentVariable("OVITO_LOG_FILE", QStringLiteral("ovito.log"))));
+	
+	// Synchronize concurrent access to the log file. 
+	static QMutex ioMutex;
+	QMutexLocker mutexLocker(&ioMutex);
+
+	// Open the log file for writing if it is not open yet.
+	if(!logFile.isOpen()) {
+		if(!logFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			std::cerr << "WARNING: Failed to open log file '" << qPrintable(logFile.fileName()) << "' for writing: ";
+			std::cerr << qPrintable(logFile.errorString()) << std::endl;
+			Application::qtMessageOutput(type, context, msg);
+			return;
+		}
+	}
+
+	// Write to the text stream.
+	static QTextStream stream(&logFile);
+	stream << formattedMsg << '\n';
+	stream.flush();
 }
 
 /******************************************************************************
@@ -139,8 +170,18 @@ QString Application::applicationName()
 ******************************************************************************/
 bool Application::initialize()
 {
-	// Install custom Qt error message handler to catch fatal errors in debug mode.
-	defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
+	// Install custom Qt error message handler to catch fatal errors in debug mode
+	// or redirect log output to file instead of the console if requested by the user.
+	if(qEnvironmentVariableIsSet("OVITO_LOG_FILE")) {
+		// Install a message handler that writes log output to a text file. 
+		defaultQtMessageHandler = qInstallMessageHandler(qtMessageLogFile);
+		// QDebugStateSaver saver(qInfo());
+		qInfo().noquote() << "#" << applicationName() << applicationVersionString() << "started on" << QDateTime::currentDateTime().toString();
+	}
+	else {
+		// Install message handler that forwards to the default Qt handler or writes to stderr stream.
+		defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
+	}
 
 	// Activate default "C" locale, which will be used to parse numbers in strings.
 	std::setlocale(LC_ALL, "C");
@@ -256,9 +297,8 @@ FileManager* Application::createFileManager()
 void Application::reportError(const Exception& exception, bool /*blocking*/)
 {
 	for(int i = exception.messages().size() - 1; i >= 0; i--) {
-		std::cerr << "ERROR: " << qPrintable(exception.messages()[i]) << std::endl;
+		qInfo().noquote() << "ERROR:" << exception.messages()[i];
 	}
-	std::cerr << std::flush;
 }
 
 #ifndef Q_OS_WASM

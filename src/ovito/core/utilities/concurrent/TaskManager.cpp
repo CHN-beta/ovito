@@ -137,7 +137,7 @@ void TaskManager::setConsoleLoggingEnabled(bool enabled)
 void TaskManager::taskProgressTextChangedInternal(const QString& msg)
 {
 	if(!msg.isEmpty())
-		std::cerr << "OVITO: " << qPrintable(msg) << std::endl;
+		qInfo().noquote() << "OVITO:" << msg;
 }
 
 /******************************************************************************
