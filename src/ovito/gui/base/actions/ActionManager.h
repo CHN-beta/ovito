@@ -96,12 +96,12 @@ namespace Ovito {
 #define ACTION_MODIFIER_MOVE_UP				"ModifierMoveUp"
 /// This action moves the currently selected modifer down one entry in the modifier stack.
 #define ACTION_MODIFIER_MOVE_DOWN			"ModifierMoveDown"
-/// This action toggles the enabled/disable state of the currently selected modifier.
-#define ACTION_MODIFIER_TOGGLE_STATE		"ModifierToggleEnabledState"
 /// This action opens the dialog box for managing modifier templates.
 #define ACTION_MODIFIER_MANAGE_TEMPLATES	"ModifierManageTemplates"
 /// This action creates a unique copy of the selected pipeline item.
 #define ACTION_PIPELINE_MAKE_INDEPENDENT	"PipelineMakeUnique"
+/// This action creates or dissolves a modifier group in the pipeline editor.
+#define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP	"PipelineToggleModifierGroup"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE			"ViewportLayerDelete"
@@ -109,8 +109,6 @@ namespace Ovito {
 #define ACTION_VIEWPORT_LAYER_MOVE_UP			"ViewportLayerMoveUp"
 /// This action moves the currently selected viewport layer down one entry in the stack.
 #define ACTION_VIEWPORT_LAYER_MOVE_DOWN			"ViewportLayerMoveDown"
-/// This action toggles the enabled/disable state of the currently selected viewport layer.
-#define ACTION_VIEWPORT_LAYER_TOGGLE_STATE		"ViewportLayerToggleEnabledState"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION		"AnimationGotoStart"

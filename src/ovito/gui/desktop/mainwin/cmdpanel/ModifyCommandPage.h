@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,6 +56,12 @@ public:
 	/// Returns the list model that lists the available modifiers.
 	ModifierListModel* modifierListModel() const { return static_cast<ModifierListModel*>(_modifierSelector->model()); }
 
+	/// Loads the layout of the widgets from the settings store.
+	void restoreLayout();
+
+	/// Saves the layout of the widgets to the settings store.
+	void saveLayout();
+
 protected Q_SLOTS:
 
 	/// This is called after all changes to the selection set have been completed.
@@ -65,31 +71,13 @@ protected Q_SLOTS:
 	/// selected item has changed.
 	void onSelectedItemChanged();
 
-	/// Handles the ACTION_MODIFIER_DELETE command, which deleted the selected modifier from the stack.
-	void onDeleteModifier();
-
 	/// This called when the user double clicks on an item in the modifier stack.
 	void onModifierStackDoubleClicked(const QModelIndex& index);
-
-	/// Handles the ACTION_MODIFIER_MOVE_UP command, which moves the selected modifier up one entry in the stack.
-	void onModifierMoveUp();
-
-	/// Handles the ACTION_MODIFIER_MOVE_DOWN command, which moves the selected modifier down one entry in the stack.
-	void onModifierMoveDown();
-
-	/// Handles the ACTION_MODIFIER_TOGGLE_STATE command, which toggles the enabled/disable state of the selected modifier.
-	void onModifierToggleState(bool newState);
-
-	/// Handles the ACTION_PIPELINE_MAKE_INDEPENDENT command, which replaces the selected pipeline item with an independent copy.
-	void onMakeElementIndependent();
 
 	/// Is called by the system when fetching the news web page from the server is completed.
 	void onWebRequestFinished();
 
 private:
-
-	/// Updates the state of the actions that can be invoked on the currently selected item.
-	void updateActions(PipelineListItem* currentItem);
 
 	/// Creates the rollout panel that shows information about the application whenever no object is selected.
 	void createAboutPanel();
@@ -119,6 +107,9 @@ private:
 
 	/// The panel displaying information about the application when no object is selected.
 	Rollout* _aboutRollout;
+
+	/// The splitter widget separating the pipeline editor and the properties panel.
+	QSplitter* _splitter;
 };
 
 }	// End of namespace

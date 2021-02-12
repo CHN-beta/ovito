@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	layout->addWidget(pipelineMenuButton, 0, 1, 1, 1);
 	connect(nodeSelBox, &SceneNodeSelectionBox::enabledChanged, pipelineMenuButton, &QToolButton::setEnabled);
 
-	_pipelineListModel = new PipelineListModel(_datasetContainer, this);
+	_pipelineListModel = new PipelineListModel(_datasetContainer, _actionManager, this);
 	class ModifierListBox : public QComboBox {
 	public:
 		using QComboBox::QComboBox;
@@ -116,6 +116,9 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 		static_cast<ModifierListModel*>(selector->model())->insertModifierByIndex(index);
 		selector->setCurrentIndex(0);
 	});
+	connect(_pipelineListModel, &PipelineListModel::selectedItemChanged, this, [&]() { 
+		_modifierSelector->setEnabled(_pipelineListModel->selectedItem() != nullptr); 
+	});
 
 	class PipelineListView : public QListView {
 	public:
@@ -123,21 +126,35 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 		virtual QSize sizeHint() const override { return QSize(256, 260); }
 	protected:
 		virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
-			// Avoid triggering edit mode when user clicks the check box next to a list item.
 			if(trigger == QAbstractItemView::SelectedClicked && event->type() == QEvent::MouseButtonRelease) {
+				// Avoid triggering edit mode when user clicks the check box next to a list item.
 				QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-				if(mouseEvent->pos().x() < visualRect(index).left() + 50)
+				int origin = visualRect(index).left();
+				if(mouseEvent->pos().x() < origin + 50)
 					trigger = QAbstractItemView::NoEditTriggers;
+			}
+			if((trigger == QAbstractItemView::SelectedClicked || trigger == QAbstractItemView::NoEditTriggers) && event->type() == QEvent::MouseButtonRelease) {
+				// Detect when user clicks on the collapsable part of a group item.
+				if(index.data(PipelineListModel::ItemTypeRole) == PipelineListItem::ModifierGroup) {
+					QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+					int origin = visualRect(index).left();
+					if(mouseEvent->pos().x() >= origin + 25 && mouseEvent->pos().x() < origin + 50) {
+						trigger = QAbstractItemView::NoEditTriggers;
+						// Toggle the collapsed state of the group.
+						bool isCollapsed = index.data(PipelineListModel::IsCollapsedRole).toBool();
+						const_cast<QAbstractItemModel*>(index.model())->setData(index, !isCollapsed, PipelineListModel::IsCollapsedRole);
+					}
+				}
 			}
 			return QListView::edit(index, trigger, event);
 		}
 	};
 
-	QSplitter* splitter = new QSplitter(Qt::Vertical);
-	splitter->setChildrenCollapsible(false);
+	_splitter = new QSplitter(Qt::Vertical);
+	_splitter->setChildrenCollapsible(false);
 
 	QWidget* upperContainer = new QWidget();
-	splitter->addWidget(upperContainer);
+	_splitter->addWidget(upperContainer);
 	QHBoxLayout* subLayout = new QHBoxLayout(upperContainer);
 	subLayout->setContentsMargins(0,0,0,0);
 	subLayout->setSpacing(2);
@@ -151,6 +168,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	_pipelineWidget->setEditTriggers(QAbstractItemView::SelectedClicked);
 	_pipelineWidget->setModel(_pipelineListModel);
 	_pipelineWidget->setSelectionModel(_pipelineListModel->selectionModel());
+	_pipelineWidget->setIconSize(_pipelineListModel->iconSize());
 	subLayout->addWidget(_pipelineWidget);
 
 	// Listen to selection changes in the pipeline editor list widget.
@@ -166,30 +184,14 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 #endif
 	subLayout->addWidget(editToolbar);
 
-	QAction* deleteModifierAction = _actionManager->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), ":/guibase/actions/modify/delete_modifier.bw.svg", tr("Delete the selected modifier from the pipeline."));
-	connect(deleteModifierAction, &QAction::triggered, this, &ModifyCommandPage::onDeleteModifier);
-	editToolbar->addAction(deleteModifierAction);
-
+	// Create pipeline editor toolbar.
+	editToolbar->addAction(_actionManager->getAction(ACTION_MODIFIER_DELETE));
 	editToolbar->addSeparator();
-
-	QAction* moveModifierUpAction = _actionManager->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), ":/guibase/actions/modify/modifier_move_up.bw.svg", tr("Move the selected modifier up in the pipeline."));
-	connect(moveModifierUpAction, &QAction::triggered, this, &ModifyCommandPage::onModifierMoveUp);
-	editToolbar->addAction(moveModifierUpAction);
-	QAction* moveModifierDownAction = mainWindow->actionManager()->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), ":/guibase/actions/modify/modifier_move_down.bw.svg", tr("Move the selected modifier down in the pipeline."));
-	connect(moveModifierDownAction, &QAction::triggered, this, &ModifyCommandPage::onModifierMoveDown);
-	editToolbar->addAction(moveModifierDownAction);
-
-	QAction* toggleModifierStateAction = _actionManager->createCommandAction(ACTION_MODIFIER_TOGGLE_STATE, tr("Enable/Disable Modifier"), {}, tr("Turn the selected modifier in the pipeline on or off."));
-	toggleModifierStateAction->setCheckable(true);
-	QIcon toggleStateActionIcon(QString(":/guibase/actions/modify/modifier_enabled_large.png"));
-	toggleStateActionIcon.addFile(QString(":/guibase/actions/modify/modifier_disabled_large.png"), QSize(), QIcon::Normal, QIcon::On);
-	toggleModifierStateAction->setIcon(toggleStateActionIcon);
-	connect(toggleModifierStateAction, &QAction::triggered, this, &ModifyCommandPage::onModifierToggleState);
-
+	editToolbar->addAction(_actionManager->getAction(ACTION_MODIFIER_MOVE_UP));
+	editToolbar->addAction(_actionManager->getAction(ACTION_MODIFIER_MOVE_DOWN));
 	editToolbar->addSeparator();
-	QAction* makeElementIndependentAction = _actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Replace With Independent Copy"), ":/guibase/actions/modify/make_element_independent.bw.svg", tr("Duplicate an entry that is shared by multiple pipelines."));
-	connect(makeElementIndependentAction, &QAction::triggered, this, &ModifyCommandPage::onMakeElementIndependent);
-	editToolbar->addAction(makeElementIndependentAction);
+	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
 
 	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), ":/guibase/actions/modify/modifier_save_preset.bw.svg", tr("Open the dialog that lets you manage the saved modifier templates."));
 	connect(manageModifierTemplatesAction, &QAction::triggered, [mainWindow]() {
@@ -198,20 +200,41 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	});
 	editToolbar->addAction(manageModifierTemplatesAction);
 
-	layout->addWidget(splitter, 2, 0, 1, 2);
+	layout->addWidget(_splitter, 2, 0, 1, 2);
 	layout->setRowStretch(2, 1);
 
 	// Create the properties panel.
 	_propertiesPanel = new PropertiesPanel(nullptr, mainWindow);
 	_propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-	splitter->addWidget(_propertiesPanel);
-	splitter->setStretchFactor(1,1);
+	_splitter->addWidget(_propertiesPanel);
+	_splitter->setStretchFactor(1,1);
 
 	connect(&_datasetContainer, &DataSetContainer::selectionChangeComplete, this, &ModifyCommandPage::onSelectionChangeComplete);
-	updateActions(nullptr);
 
 	// Create About panel.
 	createAboutPanel();
+}
+
+/******************************************************************************
+* Loads the layout of the widgets from the settings store.
+******************************************************************************/
+void ModifyCommandPage::restoreLayout() 
+{
+	QSettings settings;
+	settings.beginGroup("app/mainwindow/modify");
+	QVariant state = settings.value("splitter");
+	if(state.canConvert<QByteArray>())
+		_splitter->restoreState(state.toByteArray());
+}
+
+/******************************************************************************
+* Saves the layout of the widgets to the settings store.
+******************************************************************************/
+void ModifyCommandPage::saveLayout() 
+{
+	QSettings settings;
+	settings.beginGroup("app/mainwindow/modify");
+	settings.setValue("splitter", _splitter->saveState());
 }
 
 /******************************************************************************
@@ -246,57 +269,10 @@ void ModifyCommandPage::onSelectedItemChanged()
 		if(_datasetContainer.currentSet())
 			_datasetContainer.currentSet()->viewportConfig()->updateViewports();
 	}
-	updateActions(currentItem);
 
 	// Whenever no object is selected, show the About Panel containing information about the program.
 	if(currentItem == nullptr)
 		_aboutRollout->show();
-}
-
-/******************************************************************************
-* Updates the state of the actions that can be invoked on the currently selected item.
-******************************************************************************/
-void ModifyCommandPage::updateActions(PipelineListItem* currentItem)
-{
-	QAction* deleteModifierAction = _actionManager->getAction(ACTION_MODIFIER_DELETE);
-	QAction* moveModifierUpAction = _actionManager->getAction(ACTION_MODIFIER_MOVE_UP);
-	QAction* moveModifierDownAction = _actionManager->getAction(ACTION_MODIFIER_MOVE_DOWN);
-	QAction* toggleModifierStateAction = _actionManager->getAction(ACTION_MODIFIER_TOGGLE_STATE);
-	QAction* makeElementIndependentAction = _actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT);
-
-	_modifierSelector->setEnabled(currentItem != nullptr);
-	RefTarget* currentObject = currentItem ? currentItem->object() : nullptr;
-
-	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
-		deleteModifierAction->setEnabled(true);
-		moveModifierDownAction->setEnabled(
-			dynamic_object_cast<ModifierApplication>(modApp->input()) != nullptr &&
-			modApp->input()->isPipelineBranch(true) == false);
-		int index = std::find(_pipelineListModel->items().begin(), _pipelineListModel->items().end(), currentItem) - _pipelineListModel->items().begin();
-		moveModifierUpAction->setEnabled(
-			index > 0 &&
-			dynamic_object_cast<ModifierApplication>(_pipelineListModel->item(index - 1)->object()) != nullptr &&
-			modApp->isPipelineBranch(true) == false);
-		toggleModifierStateAction->setEnabled(true);
-		toggleModifierStateAction->setChecked(modApp->modifier() && modApp->modifier()->isEnabled() == false);
-	}
-	else {
-		deleteModifierAction->setEnabled(false);
-		moveModifierUpAction->setEnabled(false);
-		moveModifierDownAction->setEnabled(false);
-		toggleModifierStateAction->setChecked(false);
-		toggleModifierStateAction->setEnabled(false);
-	}
-
-	makeElementIndependentAction->setEnabled(PipelineListModel::isSharedObject(currentObject));
-}
-
-/******************************************************************************
-* Handles the ACTION_MODIFIER_DELETE command.
-******************************************************************************/
-void ModifyCommandPage::onDeleteModifier()
-{
-	pipelineListModel()->deleteModifier(pipelineListModel()->selectedIndex());
 }
 
 /******************************************************************************
@@ -318,150 +294,6 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
 		// Toggle enabled state of vis element.
 		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Toggle visual element"), [vis]() {
 			vis->setEnabled(!vis->isEnabled());
-		});
-	}
-}
-
-/******************************************************************************
-* Handles the ACTION_MODIFIER_MOVE_UP command, which moves the selected
-* modifier up one position in the stack.
-******************************************************************************/
-void ModifyCommandPage::onModifierMoveUp()
-{
-	PipelineListItem* selectedItem = pipelineListModel()->selectedItem();
-	if(!selectedItem) return;
-	OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(selectedItem->object());
-	if(!modApp) return;
-
-	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier up"), [modApp]() {
-		OVITO_ASSERT(modApp->isPipelineBranch(true) == false);
-		modApp->visitDependents([&](RefMaker* dependent) {
-			if(OORef<ModifierApplication> predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
-				if(predecessor->pipelines(true).empty()) return;
-				predecessor->visitDependents([&](RefMaker* dependent2) {
-					if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent2)) {
-						predecessor2->setInput(modApp);
-					}
-					else if(PipelineSceneNode* predecessor2 = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
-						predecessor2->setDataProvider(modApp);
-					}
-				});
-				predecessor->setInput(modApp->input());
-				modApp->setInput(predecessor);
-			}
-		});
-	});
-}
-
-/******************************************************************************
-* Handles the ACTION_MODIFIER_MOVE_DOWN command, which moves the selected
-* modifier down one position in the stack.
-******************************************************************************/
-void ModifyCommandPage::onModifierMoveDown()
-{
-	PipelineListItem* selectedItem = pipelineListModel()->selectedItem();
-	if(!selectedItem) return;
-	OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(selectedItem->object());
-	if(!modApp) return;
-
-	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier down"), [modApp]() {
-		if(OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input())) {
-			OVITO_ASSERT(successor->isPipelineBranch(true) == false);
-			modApp->visitDependents([&](RefMaker* dependent) {
-				if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
-					predecessor->setInput(successor);
-				}
-				else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-					predecessor->setDataProvider(successor);
-				}
-			});
-			modApp->setInput(successor->input());
-			successor->setInput(modApp);
-		}
-	});
-}
-
-/******************************************************************************
-* Handles the ACTION_MODIFIER_TOGGLE_STATE command, which toggles the
-* enabled/disable state of the selected modifier.
-******************************************************************************/
-void ModifyCommandPage::onModifierToggleState(bool newState)
-{
-	// Get the selected modifier from the modifier stack box.
-	QModelIndexList selection = _pipelineWidget->selectionModel()->selectedRows();
-	if(selection.empty())
-		return;
-
-	onModifierStackDoubleClicked(selection.front());
-}
-
-/******************************************************************************
-* Handles the ACTION_PIPELINE_MAKE_INDEPENDENT command.
-******************************************************************************/
-void ModifyCommandPage::onMakeElementIndependent()
-{
-	// Get the currently selected item.
-	PipelineListItem* selectedItem = pipelineListModel()->selectedItem();
-	if(!selectedItem) return;
-
-	if(DataVis* visElement = dynamic_object_cast<DataVis>(selectedItem->object())) {
-		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Make visual element independent"), [this,visElement]() {
-			PipelineSceneNode* node = pipelineListModel()->selectedPipeline();
-			DataVis* replacementVisElement = node->makeVisElementIndependent(visElement);
-			pipelineListModel()->setNextObjectToSelect(replacementVisElement);
-		});
-	}
-	else if(PipelineObject* selectedPipelineObj = dynamic_object_cast<PipelineObject>(selectedItem->object())) {
-		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Make pipeline element independent"), [this,selectedPipelineObj]() {
-			CloneHelper cloneHelper;
-			OORef<PipelineObject> currentObj = pipelineListModel()->selectedPipeline()->dataProvider();
-			ModifierApplication* predecessorModApp = nullptr;
-			// Go up the pipeline, starting at the node, until we reach the selected pipeline object.
-			// Duplicate all shared ModifierApplications to remove pipeline branches.
-			// When ariving at the selected modifier application, duplicate the modifier too
-			// in case it is shared by multiple pipelines.
-			while(currentObj) {
-				PipelineObject* nextObj = nullptr;
-				if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObj)) {
-					if(modApp->pipelines(true).size() > 1) {
-						OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(modApp, false);
-						if(predecessorModApp)
-							predecessorModApp->setInput(clonedModApp);
-						else
-							pipelineListModel()->selectedPipeline()->setDataProvider(clonedModApp);
-						predecessorModApp = clonedModApp;
-						pipelineListModel()->setNextObjectToSelect(clonedModApp);
-					}
-					else {
-						predecessorModApp = modApp;
-					}
-					if(currentObj == selectedPipelineObj) {
-						if(predecessorModApp->modifier()) {
-							QSet<PipelineSceneNode*> pipelines;
-							for(ModifierApplication* modApp : predecessorModApp->modifier()->modifierApplications())
-								pipelines.unite(modApp->pipelines(true));
-							if(pipelines.size() > 1)
-								predecessorModApp->setModifier(cloneHelper.cloneObject(predecessorModApp->modifier(), true));
-						}
-						break;
-					}
-					currentObj = predecessorModApp->input();
-				}
-				else if(currentObj == selectedPipelineObj) {
-					if(currentObj->pipelines(true).size() > 1) {
-						OORef<PipelineObject> clonedObject = cloneHelper.cloneObject(currentObj, false);
-						if(predecessorModApp)
-							predecessorModApp->setInput(clonedObject);
-						else
-							pipelineListModel()->selectedPipeline()->setDataProvider(clonedObject);
-					}
-					break;
-				}
-				else {
-					OVITO_ASSERT(false);
-					break;
-				}
-			}
 		});
 	}
 }

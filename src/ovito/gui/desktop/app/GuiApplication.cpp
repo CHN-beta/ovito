@@ -149,12 +149,14 @@ bool GuiApplication::startupApplication()
 		QGuiApplication::setQuitOnLastWindowClosed(true);
 
 		// Show the main window.
+		mainWin->setUpdatesEnabled(false);
 #ifndef OVITO_DEBUG
 		mainWin->showMaximized();
 #else
 		mainWin->show();
 #endif
 		mainWin->restoreLayout();
+		mainWin->setUpdatesEnabled(true);
 
 #ifdef OVITO_EXPIRATION_DATE
 		QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);

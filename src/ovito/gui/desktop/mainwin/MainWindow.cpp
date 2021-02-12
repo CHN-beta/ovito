@@ -278,6 +278,7 @@ void MainWindow::restoreLayout()
 	QVariant state = settings.value("state");
 	if(state.canConvert<QByteArray>())
 		restoreState(state.toByteArray());
+	commandPanel()->restoreLayout();
 }
 
 /******************************************************************************
@@ -288,6 +289,7 @@ void MainWindow::saveLayout()
 	QSettings settings;
 	settings.beginGroup("app/mainwindow");
 	settings.setValue("state", saveState());
+	commandPanel()->saveLayout();
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,8 +60,8 @@ OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) 
 		_overlayListWidget->setFocus();
 	});
 
-	QSplitter* splitter = new QSplitter(Qt::Vertical);
-	splitter->setChildrenCollapsible(false);
+	_splitter = new QSplitter(Qt::Vertical);
+	_splitter->setChildrenCollapsible(false);
 
 	class OverlayListWidget : public QListView {
 	public:
@@ -80,7 +80,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) 
 	};
 
 	QWidget* upperContainer = new QWidget();
-	splitter->addWidget(upperContainer);
+	_splitter->addWidget(upperContainer);
 	QHBoxLayout* subLayout = new QHBoxLayout(upperContainer);
 	subLayout->setContentsMargins(0,0,0,0);
 	subLayout->setSpacing(2);
@@ -113,23 +113,37 @@ OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) 
 	connect(_moveLayerDownAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveDown);
 	editToolbar->addAction(_moveLayerDownAction);
 
-	_toggleLayerStateAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_TOGGLE_STATE, tr("Enable/Disable Viewport Layer"), {}, tr("Turn the selected viewport layer on or off."));
-	_toggleLayerStateAction->setCheckable(true);
-	_toggleLayerStateAction->setEnabled(false);
-	QIcon toggleStateActionIcon(QString(":/guibase/actions/modify/modifier_enabled_large.png"));
-	toggleStateActionIcon.addFile(QString(":/guibase/actions/modify/modifier_disabled_large.png"), QSize(), QIcon::Normal, QIcon::On);
-	_toggleLayerStateAction->setIcon(toggleStateActionIcon);
-	connect(_toggleLayerStateAction, &QAction::triggered, this, &OverlayCommandPage::onLayerToggleState);
-
-	layout->addWidget(splitter, 1);
+	layout->addWidget(_splitter, 1);
 
 	// Create the properties panel.
 	_propertiesPanel = new PropertiesPanel(nullptr, mainWindow);
 	_propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-	splitter->addWidget(_propertiesPanel);
-	splitter->setStretchFactor(1,1);
+	_splitter->addWidget(_propertiesPanel);
+	_splitter->setStretchFactor(1,1);
 
 	connect(&_datasetContainer, &DataSetContainer::viewportConfigReplaced, this, &OverlayCommandPage::onViewportConfigReplaced);
+}
+
+/******************************************************************************
+* Loads the layout of the widgets from the settings store.
+******************************************************************************/
+void OverlayCommandPage::restoreLayout() 
+{
+	QSettings settings;
+	settings.beginGroup("app/mainwindow/viewportlayers");
+	QVariant state = settings.value("splitter");
+	if(state.canConvert<QByteArray>())
+		_splitter->restoreState(state.toByteArray());
+}
+
+/******************************************************************************
+* Saves the layout of the widgets to the settings store.
+******************************************************************************/
+void OverlayCommandPage::saveLayout() 
+{
+	QSettings settings;
+	settings.beginGroup("app/mainwindow/viewportlayers");
+	settings.setValue("splitter", _splitter->saveState());
 }
 
 /******************************************************************************
@@ -178,13 +192,11 @@ void OverlayCommandPage::onItemSelectionChanged()
 		const auto& underlays = overlayListModel()->selectedViewport()->underlays();
 		_moveLayerUpAction->setEnabled(!overlays.contains(layer) || overlays.indexOf(layer) < overlays.size() - 1);
 		_moveLayerDownAction->setEnabled(!underlays.contains(layer) || underlays.indexOf(layer) > 0);
-		_toggleLayerStateAction->setEnabled(true);
 	}
 	else {
 		_deleteLayerAction->setEnabled(false);
 		_moveLayerUpAction->setEnabled(false);
 		_moveLayerDownAction->setEnabled(false);
-		_toggleLayerStateAction->setEnabled(false);
 	}
 }
 
@@ -213,20 +225,6 @@ void OverlayCommandPage::onLayerDoubleClicked(const QModelIndex& index)
 			});
 		}
 	}
-}
-
-/******************************************************************************
-* Handles the ACTION_VIEWPORT_LAYER_TOGGLE_STATE command, which toggles the
-* enabled/disable state of the selected layer.
-******************************************************************************/
-void OverlayCommandPage::onLayerToggleState(bool newState)
-{
-	// Get the selected modifier from the modifier stack box.
-	QModelIndexList selection = _overlayListWidget->selectionModel()->selectedRows();
-	if(selection.empty())
-		return;
-
-	onLayerDoubleClicked(selection.front());
 }
 
 /******************************************************************************

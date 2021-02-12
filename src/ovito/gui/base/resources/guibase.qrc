@@ -76,18 +76,16 @@
 	<file>actions/animation/add_animation_key.bw.svg</file>
 	<file>actions/animation/delete_animation_key.bw.svg</file>
 
-	<file>actions/modify/modifier_enabled.png</file>
-	<file>actions/modify/modifier_disabled.png</file>
-	<file>actions/modify/modifier_enabled_large.png</file>
-	<file>actions/modify/modifier_disabled_large.png</file>
 	<file>actions/modify/delete_modifier.bw.svg</file>
 	<file>actions/modify/modifier_move_up.bw.svg</file>
 	<file>actions/modify/modifier_move_down.bw.svg</file>
 	<file>actions/modify/modifier_save_preset.bw.svg</file>
 	<file>actions/modify/make_element_independent.bw.svg</file>
 	<file>actions/modify/modifier_action_icon.svg</file>
+	<file>actions/modify/modifier_group_create.svg</file>
+	<file>actions/modify/modifier_group_collapsed.svg</file>
+	<file>actions/modify/modifier_group_expanded.svg</file>
 
-	<file>actions/overlays/delete_overlay.png</file>
 	<file>actions/overlays/overlay_move_up.bw.svg</file>
 	<file>actions/overlays/overlay_move_down.bw.svg</file>
 	<file>actions/overlays/layer_action_icon.svg</file>

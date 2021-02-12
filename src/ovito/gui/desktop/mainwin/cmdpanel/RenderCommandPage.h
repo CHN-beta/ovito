@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,6 +40,12 @@ public:
 	/// Initializes the render page.
     RenderCommandPage(MainWindow* mainWindow, QWidget* parent);
 
+	/// Loads the layout of the widgets from the settings store.
+	void restoreLayout() {}
+
+	/// Saves the layout of the widgets to the settings store.
+	void saveLayout() {}
+
 private Q_SLOTS:
 
 	/// This is called when a new dataset has been loaded.
@@ -57,5 +63,3 @@ private:
 };
 
 }	// End of namespace
-
-

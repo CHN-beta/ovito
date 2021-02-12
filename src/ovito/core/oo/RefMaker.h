@@ -300,10 +300,11 @@ public:
 
 	/// \brief Checks whether this object is directly or indirectly referenced by the given RefMaker.
 	/// \param obj The RefMaker that might hold a reference to \c this object.
+	/// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages. 
 	///
 	/// The RefMaker base implementation always returns \a false since this class is not a RefTarget and can therefore
 	/// not be referenced. RefTarget overrides this method with a more meaningful implementation.
-	virtual bool isReferencedBy(const RefMaker* obj) const { return false; }
+	virtual bool isReferencedBy(const RefMaker* obj, bool onlyStrongReferences = true) const { return false; }
 
 	/// \brief Returns a list of all targets this RefMaker depends on (directly as well as indirectly).
 	/// \return A list of all RefTargets that are directly or indirectly referenced by this RefMaker.
@@ -335,6 +336,9 @@ public:
 	void throwException(const QString& msg) const;
 
 private:
+
+	/// \brief Checks whether this RefMaker has any (direct) strong references to a RefTarget.
+	bool hasStrongReferenceTo(const RefTarget* target) const;
 
 	/// \brief Recursive gathering function used by getAllDependencies().
 	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);
