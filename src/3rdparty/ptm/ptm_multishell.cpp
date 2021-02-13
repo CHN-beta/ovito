@@ -65,12 +65,12 @@ static double distance(double* a, double* b) {
 	return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-static bool already_claimed(ptm_atomicenv_t* output, int num_inner, int num_outer, int* counts, size_t nbr_atom_index, double* delta, double threshold)
+static bool already_claimed(ptm_atomicenv_t* output, int num_inner, int num_outer, int* counts, size_t nbr_atom_index, double* delta, double tolerance)
 {
 	for (int i=0;i<num_inner+1;i++) {
 		if (nbr_atom_index == output->atom_indices[i]) {
 			double d = distance(delta, output->points[i]);
-			if (d < threshold)
+			if (d < tolerance)
 				return true;
 		}
 	}
@@ -80,7 +80,7 @@ static bool already_claimed(ptm_atomicenv_t* output, int num_inner, int num_oute
 			size_t index = 1 + num_inner + num_outer * i + j;
 			if (nbr_atom_index == output->atom_indices[index]) {
 				double d = distance(delta, output->points[index]);
-				if (d < threshold)
+				if (d < tolerance)
 					return true;
 			}
 		}
@@ -121,6 +121,9 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 		memcpy(output->points[i], env.points[i], 3 * sizeof(double));
 	}
 
+	double tolerance = 1E-4 * distance(output->points[0], output->points[1]);
+	tolerance = std::max(tolerance, 1E-6);
+
 	int num_inserted = 0;
 	atomorder_t data[MAX_INNER * PTM_MAX_INPUT_POINTS];
 	for (int i=0;i<num_inner;i++)
@@ -132,7 +135,6 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 
 		for (int j=1;j<env.num;j++)
 		{
-			size_t key = env.atom_indices[j];
 			data[num_inserted].inner = i;
 			data[num_inserted].rank = j;
 			data[num_inserted].correspondences = env.correspondences[j];
@@ -157,7 +159,7 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 		if (counts[inner] >= num_outer)
 			continue;
 
-		if (already_claimed(output, num_inner, num_outer, counts, data[i].atom_index, data[i].delta, 1E-10))
+		if (already_claimed(output, num_inner, num_outer, counts, data[i].atom_index, data[i].delta, tolerance))
 			continue;
 
 		size_t index = 1 + num_inner + num_outer * inner + counts[inner];
