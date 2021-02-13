@@ -58,11 +58,42 @@ static void filter_neighbours(ptm_atomicenv_t* env)
 	memcpy(env, &temp, sizeof(ptm_atomicenv_t));
 }
 
+static double distance(double* a, double* b) {
+	double dx = a[0] - b[0];
+	double dy = a[1] - b[1];
+	double dz = a[2] - b[2];
+	return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+static bool already_claimed(ptm_atomicenv_t* output, int num_inner, int num_outer, int* counts, size_t nbr_atom_index, double* delta, double threshold)
+{
+	for (int i=0;i<num_inner+1;i++) {
+		if (nbr_atom_index == output->atom_indices[i]) {
+			double d = distance(delta, output->points[i]);
+			if (d < threshold)
+				return true;
+		}
+	}
+
+	for (int i=0;i<num_inner;i++) {
+		for (int j=0;i<counts[i];i++) {
+			size_t index = 1 + num_inner + num_outer * i + j;
+			if (nbr_atom_index == output->atom_indices[index]) {
+				double d = distance(delta, output->points[index]);
+				if (d < threshold)
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 #define MAX_INNER 4
 
 int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 						size_t atom_index, int (get_neighbours)(void* vdata, size_t _unused_lammps_variable, size_t atom_index, int num, ptm_atomicenv_t* env), void* nbrlist,
-						ptm_atomicenv_t* output)
+						ptm_atomicenv_t* central_env, ptm_atomicenv_t* output)
 {
 	assert(num_inner <= MAX_INNER);
 
@@ -71,51 +102,46 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 		return 0;
 	}
 
-	// TODO: re-use the central neighbour list rather than fetching it again.
-	ptm_atomicenv_t central;
-	get_neighbours(nbrlist, -1, atom_index, PTM_MAX_INPUT_POINTS, &central);
-	filter_neighbours(&central);
-	if (central.num < num_inner + 1)
+	ptm_atomicenv_t env;
+	if (central_env != NULL && central_env->num >= num_inner) {
+		memcpy(&env, central_env, sizeof(ptm_atomicenv_t));
+	}
+	else {
+		get_neighbours(nbrlist, -1, atom_index, PTM_MAX_INPUT_POINTS, &env);
+	}
+	filter_neighbours(&env);
+	if (env.num < num_inner + 1)
 		return -1;
 
-	std::unordered_set<size_t> claimed;
 	for (int i=0;i<num_inner+1;i++)
 	{
-		output->correspondences[i] = central.correspondences[i];
-		output->atom_indices[i] = central.atom_indices[i];
-		output->numbers[i] = central.numbers[i];
-		memcpy(output->points[i], central.points[i], 3 * sizeof(double));
-
-		claimed.insert(central.atom_indices[i]);
+		output->correspondences[i] = env.correspondences[i];
+		output->atom_indices[i] = env.atom_indices[i];
+		output->numbers[i] = env.numbers[i];
+		memcpy(output->points[i], env.points[i], 3 * sizeof(double));
 	}
 
 	int num_inserted = 0;
 	atomorder_t data[MAX_INNER * PTM_MAX_INPUT_POINTS];
 	for (int i=0;i<num_inner;i++)
 	{
-		ptm_atomicenv_t inner;
-		get_neighbours(nbrlist, -1, central.atom_indices[1 + i], PTM_MAX_INPUT_POINTS, &inner);
-		filter_neighbours(&inner);
-		if (inner.num < num_inner + 1)
+		get_neighbours(nbrlist, -1, output->atom_indices[1 + i], PTM_MAX_INPUT_POINTS, &env);
+		filter_neighbours(&env);
+		if (env.num < num_inner + 1)
 			return -1;
 
-		for (int j=0;j<inner.num;j++)
+		for (int j=1;j<env.num;j++)
 		{
-			size_t key = inner.atom_indices[j];
-
-			bool already_claimed = claimed.find(key) != claimed.end();
-			if (already_claimed)
-				continue;
-
+			size_t key = env.atom_indices[j];
 			data[num_inserted].inner = i;
 			data[num_inserted].rank = j;
-			data[num_inserted].correspondences = inner.correspondences[j];
-			data[num_inserted].atom_index = inner.atom_indices[j];
-			data[num_inserted].number = inner.numbers[j];
+			data[num_inserted].correspondences = env.correspondences[j];
+			data[num_inserted].atom_index = env.atom_indices[j];
+			data[num_inserted].number = env.numbers[j];
 
-			memcpy(data[num_inserted].delta, inner.points[j], 3 * sizeof(double));
+			memcpy(data[num_inserted].delta, env.points[j], 3 * sizeof(double));
 			for (int k=0;k<3;k++)
-				data[num_inserted].delta[k] += central.points[1 + i][k];
+				data[num_inserted].delta[k] += output->points[1 + i][k];
 
 			num_inserted++;
 		}
@@ -128,18 +154,17 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 	for (int i=0;i<num_inserted;i++)
 	{
 		int inner = data[i].inner;
-		int nbr_atom_index = (int)data[i].atom_index;
-
-		bool already_claimed = claimed.find(nbr_atom_index) != claimed.end();
-		if (counts[inner] >= num_outer || already_claimed)
+		if (counts[inner] >= num_outer)
 			continue;
 
-		output->correspondences[1 + num_inner + num_outer * inner + counts[inner]] = data[i].correspondences;
+		if (already_claimed(output, num_inner, num_outer, counts, data[i].atom_index, data[i].delta, 1E-10))
+			continue;
 
-		output->atom_indices[1 + num_inner + num_outer * inner + counts[inner]] = nbr_atom_index;
-		output->numbers[1 + num_inner + num_outer * inner + counts[inner]] = data[i].number;
-		memcpy(output->points[1 + num_inner + num_outer * inner + counts[inner]], &data[i].delta, 3 * sizeof(double));
-		claimed.insert(nbr_atom_index);
+		size_t index = 1 + num_inner + num_outer * inner + counts[inner];
+		output->correspondences[index] = data[i].correspondences;
+		output->atom_indices[index] = data[i].atom_index;
+		output->numbers[index] = data[i].number;
+		memcpy(output->points[index], &data[i].delta, 3 * sizeof(double));
 
 		counts[inner]++;
 		num_found++;
