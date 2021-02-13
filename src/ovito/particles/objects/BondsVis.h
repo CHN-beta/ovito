@@ -25,8 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -102,18 +104,24 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	BondPickInfo(const PipelineFlowState& pipelineState) : _pipelineState(pipelineState) {}
+	BondPickInfo(DataOORef<const ParticlesObject> particles, DataOORef<const SimulationCellObject> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
 
-	/// The pipeline flow state containing the bonds.
-	const PipelineFlowState& pipelineState() const { return _pipelineState; }
+	/// Returns the particles object.
+	const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
+
+	/// Returns the simulation cell.
+	const DataOORef<const SimulationCellObject>& simulationCell() const { return _simulationCell; }
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
 	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
 
 private:
 
-	/// The pipeline flow state containing the bonds.
-	PipelineFlowState _pipelineState;
+	/// The particles object.
+	DataOORef<const ParticlesObject> _particles;
+
+	/// The simulation cell object.
+	DataOORef<const SimulationCellObject> _simulationCell;
 };
 
 }	// End of namespace

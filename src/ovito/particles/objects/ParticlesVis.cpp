@@ -509,7 +509,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 	// The data structure created for each mesh-based particle type.
 	struct MeshParticleType {
 		std::shared_ptr<MeshPrimitive> meshPrimitive;
-		OORef<ObjectPickInfo> pickInfo;
+		OORef<ParticlePickInfo> pickInfo;
 		bool useMeshColors; ///< Controls the use of the original face colors from the mesh instead of the per-particle colors.
 	};
 	// The data structure stored in the vis cache for the mesh-based particle shapes.
@@ -611,6 +611,10 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 
 	// Render the instanced mesh primitives, one for each particle type with a mesh-based shape.
 	for(MeshParticleType& t : meshVisCache) {
+
+		// Update the pick info record with the latest particle data.
+		t.pickInfo->setParticles(particles);
+
 		if(renderer->isPicking())
 			renderer->beginPickObject(contextNode, t.pickInfo);
 		renderer->renderMesh(t.meshPrimitive);
@@ -749,6 +753,8 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles);
 		}
+		// Update the pick info record with the latest particle data.
+		visCache.pickInfo->setParticles(particles);
 
 		// Fill rendering primitive with particle properties.
 		visCache.primitive->setPositions(positionProperty);
@@ -999,6 +1005,8 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles, activeParticleIndices.take());
 		}
+		// Update the pick info record with the latest particle data.
+		visCache.pickInfo->setParticles(particles);
 
 		// Render the particle primitive.
 		if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);

@@ -302,7 +302,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		return;
 
 	if(renderer->isPicking()) {
-		OORef<BondPickInfo> pickInfo(new BondPickInfo(flowState));
+		OORef<BondPickInfo> pickInfo(new BondPickInfo(particles, simulationCell));
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
 
@@ -442,77 +442,75 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 {
 	QString str;
 	size_t bondIndex = subobjectId / 2;
-	if(const ParticlesObject* particles = pipelineState().getObject<ParticlesObject>()) {
-		if(particles->bonds()) {
-			ConstPropertyAccess<ParticleIndexPair> topologyProperty = particles->bonds()->getTopology();
-			if(topologyProperty && topologyProperty.size() > bondIndex) {
-				size_t index1 = topologyProperty[bondIndex][0];
-				size_t index2 = topologyProperty[bondIndex][1];
-				str = tr("Bond");
+	if(particles()->bonds()) {
+		ConstPropertyAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
+		if(topologyProperty && topologyProperty.size() > bondIndex) {
+			size_t index1 = topologyProperty[bondIndex][0];
+			size_t index2 = topologyProperty[bondIndex][1];
+			str = tr("Bond");
 
-				// Bond length
-				ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
-				if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
-					const Point3& p1 = posProperty[index1];
-					const Point3& p2 = posProperty[index2];
-					Vector3 delta = p2 - p1;
-					if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
-						if(const SimulationCellObject* simCell = pipelineState().getObject<SimulationCellObject>()) {
-							delta += simCell->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
-						}
+			// Bond length
+			ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+			if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
+				const Point3& p1 = posProperty[index1];
+				const Point3& p2 = posProperty[index2];
+				Vector3 delta = p2 - p1;
+				if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
+					if(simulationCell()) {
+						delta += simulationCell()->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
 					}
-					str += QString(" | Length: %1 | Delta: (%2 %3 %4)").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
 				}
+				str += QString(" | Length: %1 | Delta: (%2 %3 %4)").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
+			}
 
-				// Bond properties
-				for(const PropertyObject* property : particles->bonds()->properties()) {
-					if(property->size() <= bondIndex) continue;
-					if(property->type() == BondsObject::SelectionProperty) continue;
-					if(property->type() == BondsObject::ColorProperty) continue;
-					if(!str.isEmpty()) str += QStringLiteral(" | ");
-					str += property->name();
-					str += QStringLiteral(" ");
-					if(property->dataType() == PropertyObject::Int) {
-						ConstPropertyAccess<int, true> data(property);
-						for(size_t component = 0; component < data.componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-							if(property->elementTypes().empty() == false) {
-								if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
-									if(!ptype->name().isEmpty())
-										str += QString(" (%1)").arg(ptype->name());
-								}
+			// Bond properties
+			for(const PropertyObject* property : particles()->bonds()->properties()) {
+				if(property->size() <= bondIndex) continue;
+				if(property->type() == BondsObject::SelectionProperty) continue;
+				if(property->type() == BondsObject::ColorProperty) continue;
+				if(!str.isEmpty()) str += QStringLiteral(" | ");
+				str += property->name();
+				str += QStringLiteral(" ");
+				if(property->dataType() == PropertyObject::Int) {
+					ConstPropertyAccess<int, true> data(property);
+					for(size_t component = 0; component < data.componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
+						if(property->elementTypes().empty() == false) {
+							if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
+								if(!ptype->name().isEmpty())
+									str += QString(" (%1)").arg(ptype->name());
 							}
 						}
 					}
-					else if(property->dataType() == PropertyObject::Int64) {
-						ConstPropertyAccess<qlonglong, true> data(property);
-						for(size_t component = 0; component < property->componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-						}
-					}
-					else if(property->dataType() == PropertyObject::Float) {
-						ConstPropertyAccess<FloatType, true> data(property);
-						for(size_t component = 0; component < property->componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-						}
-					}
-					else {
-						str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+				}
+				else if(property->dataType() == PropertyObject::Int64) {
+					ConstPropertyAccess<qlonglong, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
 					}
 				}
-
-				// Pair type info.
-				const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-				if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
-					ConstPropertyAccess<int> typeData(typeProperty);
-					const ElementType* type1 = typeProperty->elementType(typeData[index1]);
-					const ElementType* type2 = typeProperty->elementType(typeData[index2]);
-					if(type1 && type2) {
-						str += QString(" | Particles: %1 - %2").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
+				else if(property->dataType() == PropertyObject::Float) {
+					ConstPropertyAccess<FloatType, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
 					}
+				}
+				else {
+					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+				}
+			}
+
+			// Pair type info.
+			const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
+			if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
+				ConstPropertyAccess<int> typeData(typeProperty);
+				const ElementType* type1 = typeProperty->elementType(typeData[index1]);
+				const ElementType* type2 = typeProperty->elementType(typeData[index2]);
+				if(type1 && type2) {
+					str += QString(" | Particles: %1 - %2").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
 				}
 			}
 		}
