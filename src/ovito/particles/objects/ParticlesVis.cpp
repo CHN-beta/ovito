@@ -1265,9 +1265,10 @@ QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, s
 		if(property->size() <= particleIndex) continue;
 		if(property->type() == ParticlesObject::SelectionProperty) continue;
 		if(property->type() == ParticlesObject::ColorProperty) continue;
-		if(!str.isEmpty()) str += QStringLiteral(" | ");
-		str += property->name();
-		str += QStringLiteral(" ");
+		if(!str.isEmpty()) str += QStringLiteral("<sep>");
+		str += QStringLiteral("<key>");
+		str += property->name().toHtmlEscaped();
+		str += QStringLiteral(":</key> <val>");
 		if(property->dataType() == PropertyObject::Int) {
 			ConstPropertyAccess<int, true> data(property);
 			for(size_t component = 0; component < data.componentCount(); component++) {
@@ -1276,7 +1277,7 @@ QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, s
 				if(property->elementTypes().empty() == false) {
 					if(const ElementType* ptype = property->elementType(data.get(particleIndex, component))) {
 						if(!ptype->name().isEmpty())
-							str += QString(" (%1)").arg(ptype->name());
+							str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
 					}
 				}
 			}
@@ -1298,6 +1299,7 @@ QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, s
 		else {
 			str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
 		}
+		str += QStringLiteral("</val>");
 	}
 	return str;
 }

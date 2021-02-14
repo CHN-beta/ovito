@@ -447,7 +447,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 		if(topologyProperty && topologyProperty.size() > bondIndex) {
 			size_t index1 = topologyProperty[bondIndex][0];
 			size_t index2 = topologyProperty[bondIndex][1];
-			str = tr("Bond");
+			str = tr("Bond: ");
 
 			// Bond length
 			ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
@@ -460,7 +460,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 						delta += simulationCell()->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
 					}
 				}
-				str += QString(" | Length: %1 | Delta: (%2 %3 %4)").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
+				str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
 			}
 
 			// Bond properties
@@ -468,9 +468,10 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 				if(property->size() <= bondIndex) continue;
 				if(property->type() == BondsObject::SelectionProperty) continue;
 				if(property->type() == BondsObject::ColorProperty) continue;
-				if(!str.isEmpty()) str += QStringLiteral(" | ");
-				str += property->name();
-				str += QStringLiteral(" ");
+				if(!str.isEmpty()) str += QStringLiteral("<sep>");
+				str += QStringLiteral("<key>");
+				str += property->name().toHtmlEscaped();
+				str += QStringLiteral(":</key> <val>");
 				if(property->dataType() == PropertyObject::Int) {
 					ConstPropertyAccess<int, true> data(property);
 					for(size_t component = 0; component < data.componentCount(); component++) {
@@ -479,7 +480,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 						if(property->elementTypes().empty() == false) {
 							if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
 								if(!ptype->name().isEmpty())
-									str += QString(" (%1)").arg(ptype->name());
+									str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
 							}
 						}
 					}
@@ -501,6 +502,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 				else {
 					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
 				}
+				str += QStringLiteral("</val>");
 			}
 
 			// Pair type info.
@@ -510,7 +512,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 				const ElementType* type1 = typeProperty->elementType(typeData[index1]);
 				const ElementType* type2 = typeProperty->elementType(typeData[index2]);
 				if(type1 && type2) {
-					str += QString(" | Particles: %1 - %2").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
+					str += QString("<sep><key>Particles:</key> <val>%1 - %2</val>").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
 				}
 			}
 		}

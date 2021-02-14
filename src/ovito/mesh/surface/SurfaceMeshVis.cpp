@@ -264,9 +264,10 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 			if(property->type() == SurfaceMeshFaces::SelectionProperty) continue;
 			if(property->type() == SurfaceMeshFaces::ColorProperty) continue;
 			if(property->type() == SurfaceMeshFaces::RegionProperty) continue;
-			if(!str.isEmpty()) str += QStringLiteral(" | ");
+			if(!str.isEmpty()) str += QStringLiteral("<sep>");
+			str += QStringLiteral("<key>");
 			str += property->name();
-			str += QStringLiteral(" ");
+			str += QStringLiteral(":</key> ");
 			if(property->dataType() == PropertyObject::Int) {
 				ConstPropertyAccess<int, true> data(property);
 				for(size_t component = 0; component < data.componentCount(); component++) {
@@ -303,15 +304,15 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 		if(ConstPropertyAccess<int> regionProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
 			if(facetIndex < regionProperty.size() && surfaceMesh()->regions()) {
 				int regionIndex = regionProperty[facetIndex];
-				if(!str.isEmpty()) str += QStringLiteral(" | ");
-				str += QStringLiteral("Region %1").arg(regionIndex);
+				if(!str.isEmpty()) str += QStringLiteral("<sep>");
+				str += QStringLiteral("<key>Region:</key> %1").arg(regionIndex);
 				for(const PropertyObject* property : surfaceMesh()->regions()->properties()) {
 					if(regionIndex < 0 || regionIndex >= property->size()) continue;
 					if(property->type() == SurfaceMeshRegions::SelectionProperty) continue;
 					if(property->type() == SurfaceMeshRegions::ColorProperty) continue;
-					str += QStringLiteral(" | ");
+					str += QStringLiteral("<sep><key>");
 					str += property->name();
-					str += QStringLiteral(" ");
+					str += QStringLiteral(":</key> ");
 					if(property->dataType() == PropertyObject::Int) {
 						ConstPropertyAccess<int, true> data(property);
 						for(size_t component = 0; component < property->componentCount(); component++) {

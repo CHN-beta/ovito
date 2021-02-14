@@ -69,6 +69,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		widgets/general/AutocompleteTextEdit.cpp
 		widgets/general/HtmlListWidget.cpp
 		widgets/general/ViewportModeButton.cpp
+		widgets/general/StatusBar.cpp
 		widgets/animation/AnimationTimeSpinner.cpp
 		widgets/animation/AnimationFramesToolButton.cpp
 		widgets/animation/AnimationTimeSlider.cpp

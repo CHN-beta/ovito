@@ -124,7 +124,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type color"), [&]() {
 				ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
-				mainWindow()->statusBar()->showMessage(tr("Reset color of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
+				mainWindow()->showStatusBarMessage(tr("Reset color of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
 			});
 		}
 	});
@@ -134,7 +134,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color());
 			Q_EMIT contentsChanged(editObject());
-			mainWindow()->statusBar()->showMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
+			mainWindow()->showStatusBarMessage(tr("Stored current color as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
 	colorPresetsMenu->addSeparator();
@@ -163,7 +163,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type radius"), [&]() {
 				ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive));
-				mainWindow()->statusBar()->showMessage(tr("Reset radius of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
+				mainWindow()->showStatusBarMessage(tr("Reset radius of particle type '%1' to default value.").arg(ptype->nameOrNumericId()), 4000);
 			});
 		}
 	});
@@ -173,7 +173,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius());
 			Q_EMIT contentsChanged(editObject());
-			mainWindow()->statusBar()->showMessage(tr("Stored current radius as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
+			mainWindow()->showStatusBarMessage(tr("Stored current radius as default for particle type '%1'.").arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
 	radiusPresetsMenu->addSeparator();

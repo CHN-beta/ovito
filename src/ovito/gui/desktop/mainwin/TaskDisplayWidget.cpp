@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the widget and associates it with the main window.
 ******************************************************************************/
-TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : QWidget(nullptr), _mainWindow(mainWindow)
+TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainWindow)
 {
 	setVisible(false);
 
@@ -44,6 +44,7 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : QWidget(nullptr),
 	_progressTextDisplay->setAutoFillBackground(true);
 	_progressTextDisplay->setMargin(2);
 	_progressTextDisplay->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+	progressWidgetLayout->addWidget(_progressTextDisplay);
 	_progressBar = new QProgressBar(this);
 #if 0
 	_cancelTaskButton = new QToolButton(this);
@@ -125,9 +126,7 @@ void TaskDisplayWidget::showIndicator()
 {
 	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
 	if(isHidden() && taskManager.runningTasks().empty() == false) {
-		_mainWindow->statusBar()->addWidget(_progressTextDisplay, 1);
 		show();
-		_progressTextDisplay->show();
 		updateIndicator();
 	}
 }
@@ -144,7 +143,6 @@ void TaskDisplayWidget::updateIndicator()
 	if(taskManager.runningTasks().empty()) {
 		_delayTimer.stop();
 		hide();
-		_mainWindow->statusBar()->removeWidget(_progressTextDisplay);
 	}
 	else {
 		for(auto iter = taskManager.runningTasks().cbegin(); iter != taskManager.runningTasks().cend(); iter++) {
