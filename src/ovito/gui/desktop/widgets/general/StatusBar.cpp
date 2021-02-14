@@ -111,7 +111,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
             auto result = std::mismatch(plainIter, iterPair.first, inputIter, message.cend());
             if(result.first == iterPair.first)
                 break;
-            currentSpan.append(QStringView(&*plainIter, &*result.first));
+            currentSpan.append(&*plainIter, result.first - plainIter);
             plainIter = result.first;
             inputIter = result.second;
             if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(separatorMarker)) {
@@ -153,7 +153,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
         for(auto plainIter = plainIterLast; plainIter != plainText.cend(); ) {
             OVITO_ASSERT(inputIter < message.cend());
             auto result = std::mismatch(plainIter, plainText.cend(), inputIter, message.cend());
-            secondLine.append(QStringView(&*plainIter, &*result.first));
+            secondLine.append(&*plainIter, result.first - plainIter);
             if(result.first == plainText.cend())
                 break;
             plainIter = result.first;
