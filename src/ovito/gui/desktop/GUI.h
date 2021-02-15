@@ -96,6 +96,7 @@ namespace Ovito {
 	class UtilityCommandPage;
 	class ViewportMenu;
 	class ViewportWindow;
+	class StatusBar;
 }
 
 #endif // __OVITO_GUI_

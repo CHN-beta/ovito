@@ -754,16 +754,16 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 			DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
 			const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
 			QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), structure);
-			str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
+			str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
 			Vector3 transformedVector = segment->burgersVector.toSpatialVector();
-			str += tr(" | Spatial Burgers vector: [%1 %2 %3]")
+			str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
 					.arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
 					.arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
 					.arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
-			str += tr(" | Cluster Id: %1").arg(segment->burgersVector.cluster()->id);
-			str += tr(" | Dislocation Id: %1").arg(segment->id);
+			str += tr("<sep><key>Cluster Id:</key> <val>%1</val>").arg(segment->burgersVector.cluster()->id);
+			str += tr("<sep><key>Dislocation Id:</key> <val>%1</val>").arg(segment->id);
 			if(structure) {
-				str += tr(" | Crystal structure: %1").arg(structure->name());
+				str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(structure->name());
 			}
 		}
 	}
@@ -780,18 +780,18 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 				if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
 					const Vector3& burgersVector = burgersVectorProperty[segmentIndex];
 					QString formattedBurgersVector = DislocationVis::formatBurgersVector(burgersVector, phase);
-					str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
+					str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
 					ConstPropertyAccess<Matrix3> correspondenceProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
 					if(correspondenceProperty) {
 						Vector3 transformedVector = correspondenceProperty[region] * burgersVector;
-						str += tr(" | Spatial Burgers vector: [%1 %2 %3]")
+						str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
 								.arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
 								.arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
 								.arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
 					}
-					str += tr(" | Crystal region: %1").arg(region);
-					str += tr(" | Dislocation segment: %1").arg(segmentIndex);
-					str += tr(" | Crystal structure: %1").arg(phase->name());
+					str += tr("<sep><key>Crystal region:</key> <val>%1</val>").arg(region);
+					str += tr("<sep><key>Dislocation segment:</key> <val>%1</val>").arg(segmentIndex);
+					str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(phase->name());
 				}
 			}
 		}

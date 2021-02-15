@@ -95,6 +95,12 @@ public:
 	/// Returns whether the viewport window is currently visible on screen.
 	virtual bool isVisible() const = 0;
 
+	/// If enabled, shows the given text in a tooltip window.
+	virtual void showToolTip(const QString& message, const QPointF& viewportLocation) {}
+
+	/// Hides the tooltip window previously shown by showToolTip().
+	virtual void hideToolTip() {}
+
 protected:
 
 	/// Render the axis tripod symbol in the corner of the viewport that indicates

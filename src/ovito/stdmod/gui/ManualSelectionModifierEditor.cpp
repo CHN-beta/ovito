@@ -341,7 +341,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 				break;
 			}
 			else {
-				mainWindow()->statusBar()->showMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
+				mainWindow()->showStatusBarMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
 			}
 		}
 	});

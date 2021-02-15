@@ -59,18 +59,11 @@ public:
 	/// Returns the main toolbar of the window.
 	QToolBar* mainToolbar() const { return _mainToolbar; }
 
-	/// Returns the status bar of the main window.
-	QStatusBar* statusBar() const { return _statusBar; }
-
 	/// Displays a message string in the window's status bar.
-	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override {
-		statusBar()->showMessage(message, timeout);
-	}
+	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
 
 	/// Hides any messages currently displayed in the window's status bar.
-	virtual void clearStatusBarMessage() override {
-		statusBar()->clearMessage();
-	}
+	virtual void clearStatusBarMessage() override;
 
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() override;
@@ -162,7 +155,7 @@ private:
 	QToolBar* _mainToolbar;
 
 	/// The internal status bar widget.
-	QStatusBar* _statusBar;
+	StatusBar* _statusBar;
 
 	/// The frame buffer window showing the rendered image.
 	FrameBufferWindow* _frameBufferWindow;
