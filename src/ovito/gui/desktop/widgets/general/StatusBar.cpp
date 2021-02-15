@@ -57,7 +57,8 @@ void StatusBar::showMessage(const QString& message, int timeout)
     }
 
     static const QString separatorMarker = QStringLiteral("<sep>");
-    static const QString separatorText = QStringLiteral(" ⸱ ");
+    static const QString separatorText = QStringLiteral(u" ⁪| ");
+    static const QString separatorTextColored = QStringLiteral(u" <font color=\"gray\">⁪|</font> ");
     static const QString keyBeginMarker = QStringLiteral("<key>");
     static const QString keyBeginText = QStringLiteral("<font color=\"%1\">").arg(palette().color(QPalette::Link).name());
     static const QString keyEndMarker = QStringLiteral("</key>");
@@ -89,7 +90,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
     // If the elided text string and the original match completely, the text fits into a single line.
     if(iterPair.first == plainText.cend()) {
         QString richText = message;
-        richText.replace(separatorMarker, separatorText);
+        richText.replace(separatorMarker, separatorTextColored);
         richText.replace(keyBeginMarker, keyBeginText);
         richText.replace(keyEndMarker, keyEndText);
         richText.replace(valueBeginMarker, valueBeginText);
@@ -140,6 +141,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
             else break;
         }
         if(!firstLine.isEmpty()) {
+            firstLine.replace(separatorText, separatorTextColored);
             _overflowLabel->setText(firstLine);
             _overflowLabel->show();
         }
@@ -180,6 +182,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
             }
             else break;
         }
+        secondLine.replace(separatorText, separatorTextColored);
         setText(secondLine);
     }
 }
