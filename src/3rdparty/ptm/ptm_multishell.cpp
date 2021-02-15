@@ -76,7 +76,7 @@ static bool already_claimed(ptm_atomicenv_t* output, int num_inner, int num_oute
 	}
 
 	for (int i=0;i<num_inner;i++) {
-		for (int j=0;i<counts[i];i++) {
+		for (int j=0;j<counts[i];j++) {
 			size_t index = 1 + num_inner + num_outer * i + j;
 			if (nbr_atom_index == output->atom_indices[index]) {
 				double d = distance(delta, output->points[index]);
@@ -121,8 +121,8 @@ int calculate_two_shell_neighbour_ordering(	int num_inner, int num_outer,
 		memcpy(output->points[i], env.points[i], 3 * sizeof(double));
 	}
 
-	double tolerance = 1E-4 * distance(output->points[0], output->points[1]);
-	tolerance = std::max(tolerance, 1E-6);
+	double tolerance = 1E-5 * distance(output->points[0], output->points[1]);
+	tolerance = std::max(tolerance, 1E-5);
 
 	int num_inserted = 0;
 	atomorder_t data[MAX_INNER * PTM_MAX_INPUT_POINTS];
