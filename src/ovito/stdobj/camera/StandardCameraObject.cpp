@@ -84,7 +84,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.closeChunk();
 			// Need to wait until the animation keys of the controller have been completely loaded.
 			// Only then it is safe to query the controller for its value.
-			connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+			QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
 	            camera->setFov(controller->currentFloatValue());
 			});
         };
@@ -97,7 +97,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.closeChunk();
 			// Need to wait until the animation keys of the controller have been completely loaded.
 			// Only then it is safe to query the controller for its value.
-			connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+			QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
 	            camera->setZoom(controller->currentFloatValue());
 			});
         };
