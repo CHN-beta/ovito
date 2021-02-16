@@ -33,7 +33,7 @@ in vec3 position;
 in vec3 color;
 in float transparency;
 in float particle_radius;
-in int selection;
+in float selection;
 
 // Output to geometry shader.
 out vec4 particle_color_gs;
@@ -43,7 +43,7 @@ out float particle_ze0_gs;
 void main()
 {
 	if(!is_picking_mode) {
-		particle_color_gs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+		particle_color_gs = (selection != 0.0) ? selection_color : vec4(color, 1.0 - transparency);
 	}
 	else {
 		// Compute color from object ID.

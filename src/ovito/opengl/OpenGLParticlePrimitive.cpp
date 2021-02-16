@@ -329,7 +329,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 	if(_selectionBuffer.isCreated())
 		_selectionBuffer.bind(renderer, shader, "selection", GL_INT, 0, 1);
 	else
-		shader->setAttributeValue("selection", (GLint)0);
+		shader->setAttributeValue("selection", 0.0f);
 	if(!renderer->isPicking()) {
 		if(_colorsBuffer.isCreated())
 			_colorsBuffer.bindColors(renderer, shader, 3);
