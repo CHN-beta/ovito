@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -105,15 +105,33 @@ void ClonePipelineDialog::initializeGraphicsScene()
 {
 	// Obtain the list of objects that form the pipeline.
 	PipelineObject* pobj = _originalNode->dataProvider();
+	ModifierGroup* currentModGroup = nullptr;
+	PipelineItemStruct s;
 	while(pobj) {
-		PipelineItemStruct s;
-		s.pipelineObject = pobj;
-		s.modApp = dynamic_object_cast<ModifierApplication>(pobj);
+		s.pipelineObjects.push_back(pobj);
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pobj)) {
+			s.modApps.push_back(modApp);
+			if(modApp->modifierGroup()) {
+				s.title = modApp->modifierGroup()->objectTitle();
+				currentModGroup = modApp->modifierGroup();
+				s.title = currentModGroup ? currentModGroup->objectTitle() : s.modApp->modifier()->objectTitle();
+			}
+			else if(currentModGroup) {
+				pobj = s.modApp->input();
+				continue;
+			}
+			else {
+				s.title = s.modApp->modifier()->objectTitle();
+			}
+			pobj = modApp->input();
+		}
+		else {
+			pobj = nullptr;
+		}
 		_pipelineItems.push_back(s);
-		if(s.modApp)
-			pobj = s.modApp->input();
-		else
-			break;
+		s.pipelineObjects.clear();
+		s.modApps.clear();
+		currentModGroup = nullptr;
 	}
 
 	QPen borderPen(Qt::black);

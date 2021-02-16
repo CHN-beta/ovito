@@ -105,16 +105,8 @@ void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
 	stream << "======= System info =======\n";
 	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
-	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << "\n";
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
-	stream << "OS: " <<  QOperatingSystemVersion::current().name() << "(" << QOperatingSystemVersion::current().majorVersion() << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
-#else
-	#if defined(Q_OS_MAC)
-		stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << "\n";
-	#elif defined(Q_OS_WIN)
-		stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << "\n";
-	#endif
-#endif
+	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+	stream << "OS: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #if defined(Q_OS_LINUX)
 	// Get 'uname' output.
 	QProcess unameProcess;
@@ -132,7 +124,7 @@ void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 	stream << "LSB output: " << lsbOutput << "\n";
 #endif
 	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << "\n";
-	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << "\n";
+	stream << "Floating-point type: " << (sizeof(FloatType)*8) << " bit" << "\n";
 	stream << "Qt version: " << QT_VERSION_STR << "\n";
 	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
 	stream << "======= OpenGL info =======" << "\n";

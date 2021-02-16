@@ -84,21 +84,33 @@ public:
 	/// Returns the associated selection model.
 	QItemSelectionModel* selectionModel() const { return _selectionModel; }
 
-	/// Returns the currently selected item in the modification list.
+	/// Returns the currently selected item in the data pipeline editor.
 	PipelineListItem* selectedItem() const;
 
-	/// Returns the index of the item that is currently selected in the pipeline editor.
+	/// Returns the currently selected list items in the data pipeline editor.
+	QVector<PipelineListItem*> selectedItems() const;
+
+	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
+	RefTarget* selectedObject() const;
+
+	/// Returns the currently selected pipeline objects in the data pipeline editor.
+	QVector<RefTarget*> selectedObjects() const;
+
+	/// Returns the index of the model item that is currently selected in the pipeline editor.
 	int selectedIndex() const;
+
+	/// Returns the list of model indicaes that are currently selected in the pipeline editor.
+	QVector<int> selectedIndices() const;
 
 	/// Sets the index of the item that is currently selected in the pipeline editor.
 	void setSelectedIndex(int index) { 
 		if(selectedIndex() != index) {
-			_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+			if(index >= 0)
+				_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+			else
+				_selectionModel->clear();
 		}
 	}
-
-	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
-	RefTarget* selectedObject() const;
 
 	/// Returns an item from the list model.
 	PipelineListItem* item(int index) const {
@@ -144,8 +156,8 @@ public:
 	/// Sets the item in the modification list that should be selected on the next list update.
 	void setNextSubObjectToSelectByTitle(const QString& title) { _nextSubObjectTitleToSelect = title; }
 
-	/// Deletes the modifier or modifier group at the given list index of the model from the pipeline.
-	void deleteItem(int index);
+	/// Deletes the given model items from the data pipeline.
+	void deleteItems(const QVector<PipelineListItem*>& items);
 
 	/// Deletes a modifier application from the pipeline.
 	void deleteModifierApplication(ModifierApplication* modApp);
@@ -175,10 +187,8 @@ public Q_SLOTS:
 		QMetaObject::invokeMethod(this, "refreshList", Qt::QueuedConnection);
 	}
 
-	/// Deletes the pipeline object that is currently selected in the list.
-	void deleteSelectedItem() {
-		deleteItem(selectedIndex());
-	}
+	/// Deletes the pipeline objects that are currently selected in the list.
+	void deleteSelectedItems() { deleteItems(selectedItems()); }
 
 	/// Moves the selected modifier up one position in the stack.
 	void moveModifierUp();

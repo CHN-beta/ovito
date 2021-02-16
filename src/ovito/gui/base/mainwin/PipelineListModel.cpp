@@ -32,6 +32,8 @@
 #include <ovito/core/app/Application.h>
 #include "PipelineListModel.h"
 
+#include <boost/range/algorithm_ext/is_sorted.hpp>
+
 namespace Ovito {
 
 /******************************************************************************
@@ -71,7 +73,7 @@ PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionM
 
 	// Create list item actions.
 	_deleteItemAction = actionManager->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), ":/guibase/actions/modify/delete_modifier.bw.svg", tr("Delete the selected modifier from the pipeline."));
-	connect(_deleteItemAction, &QAction::triggered, this, &PipelineListModel::deleteSelectedItem);
+	connect(_deleteItemAction, &QAction::triggered, this, &PipelineListModel::deleteSelectedItems);
 	_moveItemUpAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), ":/guibase/actions/modify/modifier_move_up.bw.svg", tr("Move the selected modifier up in the pipeline."));
 	connect(_moveItemUpAction, &QAction::triggered, this, &PipelineListModel::moveModifierUp);
 	_moveItemDownAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), ":/guibase/actions/modify/modifier_move_down.bw.svg", tr("Move the selected modifier down in the pipeline."));
@@ -117,10 +119,21 @@ void PipelineListModel::setItems(std::vector<OORef<PipelineListItem>> newItems)
 PipelineListItem* PipelineListModel::selectedItem() const
 {
 	int index = selectedIndex();
-	if(index == -1)
+	if(index < 0)
 		return nullptr;
 	else
 		return item(index);
+}
+
+/******************************************************************************
+* Returns the currently selected items in the data pipeline.
+******************************************************************************/
+QVector<PipelineListItem*> PipelineListModel::selectedItems() const
+{
+	QVector<int> indices = selectedIndices();
+	QVector<PipelineListItem*> items(indices.size());
+	boost::transform(indices, items.begin(), [&](int index) { return item(index); });
+	return items;
 }
 
 /******************************************************************************
@@ -129,10 +142,24 @@ PipelineListItem* PipelineListModel::selectedItem() const
 int PipelineListModel::selectedIndex() const
 {
 	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.empty())
+	if(selection.size() == 1)
+		return selection.front().row();
+	else if(selection.empty())
 		return -1;
 	else
-		return selection.front().row();
+		return -2;
+}
+
+/******************************************************************************
+* Returns the list of model indicaes that are currently selected in the pipeline editor.
+******************************************************************************/
+QVector<int> PipelineListModel::selectedIndices() const
+{
+	QModelIndexList selection = _selectionModel->selectedRows();
+	QVector<int> indices(selection.size());
+	boost::transform(selection, indices.begin(), [](const QModelIndex& index) { return index.row(); });
+	boost::sort(indices);
+	return indices;
 }
 
 /******************************************************************************
@@ -143,6 +170,19 @@ RefTarget* PipelineListModel::selectedObject() const
 	if(PipelineListItem* item = selectedItem())
 		return item->object();
 	return nullptr;
+}
+
+/******************************************************************************
+* Returns the currently selected pipeline objects in the data pipeline editor.
+******************************************************************************/
+QVector<RefTarget*> PipelineListModel::selectedObjects() const
+{
+	QVector<RefTarget*> objects;
+	for(int index : selectedIndices()) {
+		if(RefTarget* obj = item(index)->object())
+			objects.push_back(obj);
+	}
+	return objects;
 }
 
 /******************************************************************************
@@ -391,23 +431,31 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 }
 
 /******************************************************************************
-* Deletes the modifier or modifier group at the given list index of the model.
+* Deletes the given model items from the data pipeline.
 ******************************************************************************/
-void PipelineListModel::deleteItem(int index)
+void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 {
-	// Get the modifier list item.
-	PipelineListItem* selectedItem = item(index);
-	if(!selectedItem) return;
+	if(items.empty())
+		return;
 
-	if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(selectedItem->object())) {
-		deleteModifierApplication(modApp);
-	}
-	else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(selectedItem->object())) {
-		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete modifier group"), [&]() {
+	// Build list of modapps to delete from the pipeline.
+	std::set<ModifierApplication*> modApps;
+	for(PipelineListItem* item : items) {
+		if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
+			modApps.insert(modApp);
+		}
+		else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
 			for(ModifierApplication* modApp : group->modifierApplications())
-				deleteModifierApplication(modApp);
-		});
+				modApps.insert(modApp);
+		}
 	}
+
+	// Perform the deletion one by one.
+	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete modifier"), [&]() {
+		for(ModifierApplication* modApp : modApps) {
+			deleteModifierApplication(modApp);
+		}
+	});
 }
 
 /******************************************************************************
@@ -670,17 +718,25 @@ QHash<int, QByteArray> PipelineListModel::roleNames() const
 ******************************************************************************/
 void PipelineListModel::updateActions()
 {
-	PipelineListItem* currentItem = selectedItem();
-	RefTarget* currentObject = currentItem ? currentItem->object() : nullptr;
+	// Get all currently selected pipeline objects.
+	QVector<RefTarget*> objects = selectedObjects();
 
+	// Get the single currently selected object.
 	// While the items of the model are out of date, do not enable any actions and wait until the items list is rebuilt.
-	if(_listRefreshPending)
-		currentObject = nullptr;
+	RefTarget* currentObject = (!_listRefreshPending && objects.size() == 1) ? objects.front() : nullptr;
 
+	// Check if all selected objects are deletable.
+	_deleteItemAction->setEnabled(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
+		return dynamic_object_cast<ModifierApplication>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+	}));
+
+	// Check if the selected object is a shared object which can be made independent.
+	_makeElementIndependentAction->setEnabled(
+		isSharedObject(currentObject)
+		&& (dynamic_object_cast<ModifierApplication>(currentObject) == nullptr || static_object_cast<ModifierApplication>(currentObject)->modifierGroup() == nullptr));
+
+	// Update the state of the move up/down actions.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
-		_deleteItemAction->setEnabled(true);
-		int index = std::distance(items().begin(), std::find(items().begin(), items().end(), currentItem));
-
 		_moveItemDownAction->setEnabled(
 			modApp->input()
 			&& (dynamic_object_cast<ModifierApplication>(modApp->input()) != nullptr || modApp->modifierGroup() != nullptr)
@@ -689,21 +745,14 @@ void PipelineListModel::updateActions()
 			&& (modApp->modifierGroup() == nullptr || modApp->modifierGroup()->modifierApplications().size() > 1));
 
 		_moveItemUpAction->setEnabled(
-			index > 0 
-			&& (item(index - 1)->itemType() == PipelineListItem::Modifier || item(index - 1)->itemType() == PipelineListItem::ModifierGroup) 
+			(modApp->getPredecessorModApp() != nullptr || modApp->modifierGroup() != nullptr)
 			&& (modApp->isPipelineBranch(true) == false || modApp->modifierGroup() != nullptr)
 			&& modApp->pipelines(true).empty() == false
 			&& (modApp->modifierGroup() == nullptr || modApp->modifierGroup()->modifierApplications().size() > 1));
-
-		_toggleModifierGroupAction->setEnabled(true);
-		_toggleModifierGroupAction->setChecked(modApp->modifierGroup() != nullptr);
 	}
 	else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(currentObject)) {
-		_deleteItemAction->setEnabled(true);
 		_moveItemUpAction->setEnabled(false);
 		_moveItemDownAction->setEnabled(false);
-		_toggleModifierGroupAction->setEnabled(true);
-		_toggleModifierGroupAction->setChecked(true);
 
 		// Determine whether it would be possible to move the entire modifier group up and/or down.
 		if(group->pipelines(true).empty() == false) {
@@ -716,14 +765,33 @@ void PipelineListModel::updateActions()
 		}
 	}
 	else {
-		_deleteItemAction->setEnabled(false);
 		_moveItemUpAction->setEnabled(false);
 		_moveItemDownAction->setEnabled(false);
-		_toggleModifierGroupAction->setEnabled(false);
-		_toggleModifierGroupAction->setChecked(false);
 	}
 
-	_makeElementIndependentAction->setEnabled(isSharedObject(currentObject));
+	// Update the modifier grouping action.
+	_toggleModifierGroupAction->setChecked(false);
+	_toggleModifierGroupAction->setEnabled(false);
+	// Are all selected objects modifier applications and are they not in a group?
+	if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) { 
+			ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj);
+			return modApp && modApp->modifierGroup() == nullptr; })) 
+	{
+		// Do all selected modifier applications form a contiguous sequence.
+		bool isContinguousSequence = true;
+		for(auto obj = std::next(objects.cbegin()); obj != objects.cend(); ++obj) {
+			if(static_object_cast<ModifierApplication>(*obj) != static_object_cast<ModifierApplication>(*std::prev(obj))->input()) {
+				isContinguousSequence = false;
+				break;
+			}
+		}
+		if(isContinguousSequence)
+			_toggleModifierGroupAction->setEnabled(true);
+	}
+	else if(dynamic_object_cast<ModifierGroup>(currentObject) != nullptr) {
+		_toggleModifierGroupAction->setEnabled(true);
+		_toggleModifierGroupAction->setChecked(true);
+	}
 }
 
 /******************************************************************************
@@ -1151,35 +1219,42 @@ PipelineObject* PipelineListModel::makeElementIndependentImpl(PipelineObject* pi
 ******************************************************************************/
 void PipelineListModel::toggleModifierGroup()
 {
-	PipelineListItem* item = selectedItem();
-	if(!item) return;
-	RefTarget* object = item->object();
-	
-	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(object)) {
-		// If a modifier application is currently selected, put it into a new group.
-		// But first make sure the modifier application isn't already part of an existing group.
-		if(!modApp->modifierGroup()) {
+	QVector<RefTarget*> objects = selectedObjects();
+	if(objects.empty()) return;
+
+	OORef<ModifierGroup> existingGroup;
+
+	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(objects.front())) {
+		// If modifier applications are currently selected, put them into a new group.
+		// But first make sure the modifier application aren't already part of an existing group.
+		existingGroup = modApp->modifierGroup();
+		if(!existingGroup) {
 			// Create a new group.
 			OORef<ModifierGroup> group = OORef<ModifierGroup>::create(modApp->dataset(), Application::instance()->executionContext());
 			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Create modifier group"), [&]() {
-				modApp->setModifierGroup(std::move(group));
+				for(RefTarget* obj : objects) {
+					if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
+						modApp->setModifierGroup(group);
+					}
+				}
 			});
-		}
-		else {
-			// Dissolve the modifier's group below.
-			object = modApp->modifierGroup();
+			setNextObjectToSelect(group);
+			return;
 		}
 	}
 	
-	if(OORef<ModifierGroup> group = dynamic_object_cast<ModifierGroup>(object)) {
-		// If an existing modifier group is currently selected, dissolve the group.
+	// If an existing modifier group is currently selected, dissolve the group.
+	if(!existingGroup)
+		existingGroup = dynamic_object_cast<ModifierGroup>(objects.front());
+	if(existingGroup) {
 		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Dissolve modifier group"), [&]() {
-			QVector<ModifierApplication*> groupModApps = group->modifierApplications();
-			if(selectedItem()->object() == group)
-				setNextObjectToSelect(groupModApps.front());
-			for(ModifierApplication* modApp : groupModApps)
-				modApp->setModifierGroup(nullptr);
-			group->deleteReferenceObject();
+			QVector<ModifierApplication*> groupModApps = existingGroup->modifierApplications();
+			setNextObjectToSelect(groupModApps.front());
+			for(ModifierApplication* modApp : groupModApps) {
+				if(modApp->modifierGroup() == existingGroup)
+					modApp->setModifierGroup(nullptr);
+			}
+			existingGroup->deleteReferenceObject();
 		});
 	}
 }

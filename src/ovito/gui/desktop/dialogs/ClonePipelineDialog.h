@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,8 +61,9 @@ private:
 
 	/// Data structure that is created for every pipeline object.
 	struct PipelineItemStruct {
-		OORef<PipelineObject> pipelineObject;
-		ModifierApplication* modApp;
+		QString title;
+		std::vector<OORef<PipelineObject>> pipelineObjects;
+		std::vector<ModifierApplication*> modApps;
 		QGraphicsItem* connector1;
 		QGraphicsItem* connector2;
 		QGraphicsItem* connector3;
@@ -100,5 +101,3 @@ private:
 };
 
 }	// End of namespace
-
-

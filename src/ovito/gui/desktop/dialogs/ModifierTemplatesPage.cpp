@@ -110,9 +110,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 		modifierListWidget->setRootIsDecorated(false);
 		modifierListWidget->header()->hide();
 		PipelineListModel* pipelineModel = mainWindow->commandPanel()->modifyPage()->pipelineListModel();
-		PipelineListItem* selectedPipelineItem = pipelineModel->selectedItem();
-		ModifierApplication* selectedModApp = selectedPipelineItem ? dynamic_object_cast<ModifierApplication>(selectedPipelineItem->object()) : nullptr;
-		ModifierGroup* selectedModGroup = selectedPipelineItem ? dynamic_object_cast<ModifierGroup>(selectedPipelineItem->object()) : nullptr;
+		QVector<RefTarget*> selectedPipelineObjects = pipelineModel->selectedObjects();
 		QVector<QTreeWidgetItem*> itemList;
 		int rowCount = 0;
 
@@ -137,7 +135,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 						? new QTreeWidgetItem(currentGroupItem, {modApp->modifier()->objectTitle()})
 						: new QTreeWidgetItem(modifierListWidget, {modApp->modifier()->objectTitle()});
 					listItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
-					if(selectedModApp == modApp || (selectedModGroup && modApp->modifierGroup() == selectedModGroup)) {
+					if(selectedPipelineObjects.contains(modApp) || selectedPipelineObjects.contains(modApp->modifierGroup())) {
 						listItem->setCheckState(0, Qt::Checked);
 					}
 					else {
@@ -161,20 +159,24 @@ void ModifierTemplatesPage::onCreateTemplate()
 		QComboBox* nameBox = new QComboBox(&dlg);
 		nameBox->setEditable(true);
 		nameBox->addItems(ModifierTemplates::get()->templateList());
+
+		ModifierApplication* selectedModApp = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierApplication>(selectedPipelineObjects.front()) : nullptr;
 		if(selectedModApp && selectedModApp->modifier()) {
 			if(selectedModApp->modifier()->title().isEmpty())
 				nameBox->setCurrentText(tr("Custom %1").arg(selectedModApp->modifier()->objectTitle()));
 			else
 				nameBox->setCurrentText(selectedModApp->modifier()->title());
 		}
-		else if(selectedModGroup) {
+		else if(ModifierGroup* selectedModGroup = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierGroup>(selectedPipelineObjects.front()) : nullptr) {
 			if(selectedModGroup->title().isEmpty())
 				nameBox->setCurrentText(tr("My %1").arg(selectedModGroup->objectTitle()));
 			else
 				nameBox->setCurrentText(selectedModGroup->title());
 		}
-		else
+		else {
 			nameBox->setCurrentText(tr("Custom modifier template 1"));
+		}
+		
 		mainLayout->addWidget(nameBox);
 
 		mainLayout->addSpacing(12);

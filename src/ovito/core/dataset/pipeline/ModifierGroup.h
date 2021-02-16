@@ -50,10 +50,10 @@ public:
 	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
 	QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
 
-protected:
+private Q_SLOTS:
 
-	/// \brief Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+	/// \brief Is called when one of the group's modapps has generated an event.
+	void modAppEvent(RefTarget* sender, const ReferenceEvent& event);
 
 private:
 
@@ -73,9 +73,6 @@ private:
 
 	/// Indicates whether this group is currently collapsed in the pipeline editor.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isCollapsed, setCollapsed, PROPERTY_FIELD_NO_UNDO);
-
-	/// The list of modifier applications that are currently part of this group.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(ModifierApplication*, modApps, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 };
 
 }	// End of namespace

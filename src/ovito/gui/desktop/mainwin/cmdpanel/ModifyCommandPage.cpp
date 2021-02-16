@@ -168,6 +168,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	_pipelineWidget->setEditTriggers(QAbstractItemView::SelectedClicked);
 	_pipelineWidget->setModel(_pipelineListModel);
 	_pipelineWidget->setSelectionModel(_pipelineListModel->selectionModel());
+	_pipelineWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_pipelineWidget->setIconSize(_pipelineListModel->iconSize());
 	subLayout->addWidget(_pipelineWidget);
 
@@ -255,7 +256,6 @@ void ModifyCommandPage::onSelectedItemChanged()
 	RefTarget* editObject = nullptr;
 
 	if(currentItem != nullptr) {
-		_aboutRollout->hide();
 		editObject = currentItem->object();
 		if(currentItem->isSubObject())
 			pipelineListModel()->setNextSubObjectToSelectByTitle(currentItem->title());
@@ -271,8 +271,10 @@ void ModifyCommandPage::onSelectedItemChanged()
 	}
 
 	// Whenever no object is selected, show the About Panel containing information about the program.
-	if(currentItem == nullptr)
+	if(currentItem == nullptr && pipelineListModel()->selectedIndex() == -1)
 		_aboutRollout->show();
+	else
+		_aboutRollout->hide();
 }
 
 /******************************************************************************
