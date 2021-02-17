@@ -259,7 +259,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
 				resetFunc(ptype);
-				mainWindow()->statusBar()->showMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+				mainWindow()->showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
 			});
 		}
 	});
@@ -269,7 +269,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			setDefaultFunc(ptype);
 			Q_EMIT contentsChanged(editObject());
-			mainWindow()->statusBar()->showMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+			mainWindow()->showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
 	presetsMenu->addSeparator();

@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/widgets/animation/AnimationTrackBar.h>
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
+#include <ovito/gui/desktop/widgets/general/StatusBar.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -112,15 +113,14 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 
 	// Create status bar.
 	_statusBarLayout = new QHBoxLayout();
-	_statusBarLayout->setContentsMargins(0,0,0,0);
-	_statusBarLayout->setSpacing(0);
+	_statusBarLayout->setContentsMargins(2,0,0,0);
+	_statusBarLayout->setSpacing(2);
 	animationPanelLayout->addLayout(_statusBarLayout, 1);
 
-	_statusBar = new QStatusBar(animationPanel);
-	_statusBar->setSizeGripEnabled(false);
+	_statusBar = new StatusBar(animationPanel);
 	_statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-	setStatusBar(_statusBar);
 	_statusBarLayout->addWidget(_statusBar, 1);
+	_statusBar->overflowWidget()->setParent(animationPanel);
 
 	TaskDisplayWidget* taskDisplay = new TaskDisplayWidget(this);
 	_statusBarLayout->insertWidget(1, taskDisplay);
@@ -394,7 +394,7 @@ void MainWindow::createMainToolbar()
 bool MainWindow::event(QEvent* event)
 {
 	if(event->type() == QEvent::StatusTip) {
-		statusBar()->showMessage(static_cast<QStatusTipEvent*>(event)->tip());
+		showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
 		return true;
 	}
 	return QMainWindow::event(event);
@@ -566,6 +566,22 @@ bool MainWindow::openDataInspector(PipelineObject* dataSource, const QString& ob
 		return true;
 	}
 	return false;
+}
+
+/******************************************************************************
+* Displays a message string in the window's status bar.
+******************************************************************************/
+void MainWindow::showStatusBarMessage(const QString& message, int timeout) 
+{
+	_statusBar->showMessage(message, timeout);
+}
+
+/******************************************************************************
+* Hides any messages currently displayed in the window's status bar.
+******************************************************************************/
+void MainWindow::clearStatusBarMessage() 
+{
+	_statusBar->clearMessage();
 }
 
 }	// End of namespace
