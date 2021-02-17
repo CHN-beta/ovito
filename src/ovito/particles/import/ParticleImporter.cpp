@@ -69,12 +69,6 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 		_particles = state().getMutableObject<ParticlesObject>();
 		if(!_particles) {
 			_particles = state().createObject<ParticlesObject>(dataSource(), executionContext());
-			if(_particleRadiusScalingFactor != 1.0) {
-				// Set up the vis element for the particles.
-				if(ParticlesVis* particlesVis = dynamic_object_cast<ParticlesVis>(_particles->visElement())) {
-					particlesVis->setRadiusScaleFactor(_particleRadiusScalingFactor);
-				}
-			}
 		}
 	}
 	return _particles;

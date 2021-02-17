@@ -125,6 +125,10 @@ void mmCIFImporter::FrameLoader::loadFile()
 		structure.merge_chain_parts();
 		if(isCanceled()) return;
 
+		// Import metadata fields as global attributes. 
+		for(const auto& m : structure.info)
+			state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
+
 		const gemmi::Model& model = structure.first_model();
 
 		// Count total number of atoms.
@@ -135,19 +139,15 @@ void mmCIFImporter::FrameLoader::loadFile()
 			}
 		}
 
-		// Display atoms at a reduced size to make the bonds visible.
-		setParticleRadiusScalingFactor(0.5);
-
 		// Allocate property arrays for atoms.
 		setParticleCount(natoms);
 		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Type"), PropertyObject::Int, 1, 0, false);
+		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
 		PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
 
 		// Give these particle properties new titles, which are displayed in the GUI under the file source.
-		typeProperty.buffer()->setTitle(typeProperty.buffer()->title() + tr(" / Chemical elements"));
-		atomNameProperty.buffer()->setTitle(tr("Atom types"));
+		atomNameProperty.buffer()->setTitle(tr("Atom names"));
 		residueTypeProperty.buffer()->setTitle(tr("Residue types"));
 
 		Point3* posIter = posProperty.begin();

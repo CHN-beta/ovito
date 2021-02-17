@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -162,13 +162,14 @@ void PDBImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Display atoms at a reduced size to make the bonds visible.
-	setParticleRadiusScalingFactor(0.5);
-
 	try {
 		// Parse the PDB file's contents.
 		gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_line_input(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
 		if(isCanceled()) return;
+
+		// Import PDB metadata fields as global attributes. 
+		for(const auto& m : structure.info)
+			state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
 
 		structure.merge_chain_parts();
 		if(isCanceled()) return;
@@ -189,12 +190,11 @@ void PDBImporter::FrameLoader::loadFile()
 		setParticleCount(natoms);
 		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Type"), PropertyObject::Int, 1, 0, false);
+		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
 		PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
 
 		// Give these particle properties new titles, which are displayed in the GUI under the file source.
-		typeProperty.buffer()->setTitle(typeProperty.buffer()->title() + tr(" / Chemical elements"));
-		atomNameProperty.buffer()->setTitle(tr("Atom types"));
+		atomNameProperty.buffer()->setTitle(tr("Atom names"));
 		residueTypeProperty.buffer()->setTitle(tr("Residue types"));
 
 		Point3* posIter = posProperty.begin();

@@ -69,10 +69,6 @@ protected:
 		/// Constructor.
 		FrameLoader(const LoadOperationRequest& request, bool recenterCell) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell) {}
 
-		/// Changes the particle scaling factor to be set on the ParticlesVis element.
-		/// This must be called before the first call to particles().
-		void setParticleRadiusScalingFactor(FloatType factor) { _particleRadiusScalingFactor = factor; }
-
 		/// Returns the particles container object, newly creating it first if necessary.
 		ParticlesObject* particles();
 
@@ -142,9 +138,6 @@ protected:
 
 		/// The impropers container object.
 		ImpropersObject* _impropers = nullptr;
-
-		/// The particle scaling factor to be set on the ParticlesVis element.
-		FloatType _particleRadiusScalingFactor = 1.0;
 
 		/// Controls the dynamic centering of the simulation cell during import.
 		bool _recenterCell = false;

@@ -198,15 +198,14 @@ void GroImporter::FrameLoader::loadFile()
 	// Create particle properties.
 	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
 	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-	PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Type"), PropertyObject::Int, 1, 0, false);
+	PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64, 1, 0, false);
 	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, true, executionContext());
 	PropertyAccess<Vector3> velocityProperty;
 
 	// Give these particle properties new titles, which are displayed in the GUI under the file source.
-	typeProperty.buffer()->setTitle(typeProperty.buffer()->title() + tr(" / Chemical elements"));
-	atomNameProperty.buffer()->setTitle(tr("Atom types"));
+	atomNameProperty.buffer()->setTitle(tr("Atom names"));
 	residueTypeProperty.buffer()->setTitle(tr("Residue types"));
 
 	// Parse list of atoms.
