@@ -20,38 +20,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/import/cif/CIFImporter.h>
-#include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include "CIFImporterEditor.h"
+#include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
 namespace Ovito { namespace Particles {
 
-IMPLEMENT_OVITO_CLASS(CIFImporterEditor);
-SET_OVITO_OBJECT_EDITOR(CIFImporter, CIFImporterEditor);
-
-/******************************************************************************
-* Sets up the UI widgets of the editor.
-******************************************************************************/
-void CIFImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+/**
+ * \brief A properties editor for the POSCARImporter class.
+ */
+class POSCARImporterEditor : public FileImporterEditor
 {
-	// Create a rollout.
-	QWidget* rollout = createRollout(tr("CIF reader"), rolloutParams);
+	OVITO_CLASS(POSCARImporterEditor)
+	Q_OBJECT
 
-    // Create the rollout contents.
-	QVBoxLayout* layout = new QVBoxLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+public:
 
-	QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
-	QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	layout->addWidget(optionsBox);
+	/// Constructor.
+	Q_INVOKABLE POSCARImporterEditor() {}
 
-	// Center simulation cell.
-	BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
-	sublayout->addWidget(recenterCellUI->checkBox());
-}
+protected:
+
+	/// Creates the user interface controls for the editor.
+	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+};
 
 }	// End of namespace
 }	// End of namespace
