@@ -829,7 +829,10 @@ QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
 
 	// Encode the item list as a MIME data record.
 	QByteArray encodedData;
-	QDataStream(&encodedData, QIODevice::WriteOnly) << rows;
+	QDataStream stream(&encodedData, QIODevice::WriteOnly);
+	stream << rows.size();
+	for(const auto& row : rows)
+		stream << row;
 	std::unique_ptr<QMimeData> mimeData = std::make_unique<QMimeData>();
 	mimeData->setData(mimeTypes().front(), encodedData);
 	return mimeData.release();
@@ -883,10 +886,14 @@ bool PipelineListModel::performDragAndDropOperation(const QMimeData* data, int r
     QByteArray encodedData = data->data(mimeTypes().front());
 	if(encodedData.isEmpty())
 		return false;
-    QVector<int> indexList;
-    QDataStream(&encodedData, QIODevice::ReadOnly) >> indexList;
-    if(indexList.empty())
+    QDataStream stream(&encodedData, QIODevice::ReadOnly);
+	QVector<int>::size_type count;
+	stream >> count;
+    if(count == 0)
     	return false;
+    QVector<int> indexList(count);
+	for(auto& row : indexList)
+		stream >> row;
 
 	// The modifier group the modapps will be placed into.
 	ModifierGroup* destinationGroup = nullptr;
