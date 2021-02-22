@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -83,7 +83,6 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSetti
 	FloatType fontSize = this->fontSize() * renderSettings->outputImageHeight();
 	if(fontSize <= 0) return;
 
-	QPointF origin(offsetX() * renderSettings->outputImageWidth(), -offsetY() * renderSettings->outputImageHeight());
 	FloatType margin = fontSize;
 
 	QString textString = labelText();
@@ -111,6 +110,8 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSetti
 	}
 
 	QRectF textRect(margin, margin, renderSettings->outputImageWidth() - margin*2, renderSettings->outputImageHeight() - margin*2);
+	QPointF origin(offsetX() * renderSettings->outputImageWidth(), -offsetY() * renderSettings->outputImageHeight());
+	textRect.translate(origin);
 
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.setRenderHint(QPainter::TextAntialiasing);
@@ -118,25 +119,7 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSetti
 	QFont font = this->font();
 	font.setPointSizeF(fontSize);
 	painter.setFont(font);
-
-	QPainterPath textPath = QPainterPath();
-	textPath.addText(origin, font, textString);
-	QRectF textBounds = textPath.boundingRect();
-
-	if(alignment() & Qt::AlignLeft) textPath.translate(textRect.left(), 0);
-	else if(alignment() & Qt::AlignRight) textPath.translate(textRect.right() - textBounds.width(), 0);
-	else if(alignment() & Qt::AlignHCenter) textPath.translate(textRect.left() + textRect.width()/2.0 - textBounds.width()/2.0, 0);
-	if(alignment() & Qt::AlignTop) textPath.translate(0, textRect.top() + textBounds.height());
-	else if(alignment() & Qt::AlignBottom) textPath.translate(0, textRect.bottom());
-	else if(alignment() & Qt::AlignVCenter) textPath.translate(0, textRect.top() + textRect.height()/2.0 + textBounds.height()/2.0);
-
-	if(outlineEnabled()) {
-		// Always render the outline pen 3 pixels wide, irrespective of frame buffer resolution.
-		qreal outlineWidth = 3.0 / painter.combinedTransform().m11();
-		painter.setPen(QPen(QBrush(outlineColor()), outlineWidth));
-		painter.drawPath(textPath);
-	}
-	painter.fillPath(textPath, QBrush(textColor()));
+	drawTextOutlined(painter, textRect, alignment(), textString, textColor(), outlineEnabled(), outlineColor());
 }
 
 }	// End of namespace
