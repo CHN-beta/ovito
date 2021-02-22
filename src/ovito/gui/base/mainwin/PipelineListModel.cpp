@@ -825,7 +825,7 @@ QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
 	// Only allow dragging a contiguous sequence of pipeline items.
 	for(auto i1 = rows.cbegin(), i2 = std::next(i1); i2 != rows.cend(); i1 = i2++)
 		if(*i1 + 1 != *i2)
-			return false;
+			return nullptr;
 
 	// Encode the item list as a MIME data record.
 	QByteArray encodedData;

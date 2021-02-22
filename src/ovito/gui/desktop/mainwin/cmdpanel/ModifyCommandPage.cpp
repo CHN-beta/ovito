@@ -130,7 +130,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 				// Avoid triggering edit mode when user clicks the check box next to a list item.
 				QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 				int origin = visualRect(index).left();
+#ifndef Q_OS_MAC
 				if(mouseEvent->pos().x() < origin + 50)
+#else
+				if(mouseEvent->pos().x() < origin + 60)
+#endif
 					trigger = QAbstractItemView::NoEditTriggers;
 			}
 			if((trigger == QAbstractItemView::SelectedClicked || trigger == QAbstractItemView::NoEditTriggers) && event->type() == QEvent::MouseButtonRelease) {
@@ -138,7 +142,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 				if(index.data(PipelineListModel::ItemTypeRole) == PipelineListItem::ModifierGroup) {
 					QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 					int origin = visualRect(index).left();
+#ifndef Q_OS_MAC
 					if(mouseEvent->pos().x() >= origin + 25 && mouseEvent->pos().x() < origin + 50) {
+#else
+					if(mouseEvent->pos().x() >= origin + 30 && mouseEvent->pos().x() < origin + 60) {
+#endif
 						trigger = QAbstractItemView::NoEditTriggers;
 						// Toggle the collapsed state of the group.
 						bool isCollapsed = index.data(PipelineListModel::IsCollapsedRole).toBool();
