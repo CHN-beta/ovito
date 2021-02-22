@@ -103,7 +103,7 @@ void Viewport::setViewType(ViewType type, bool keepCurrentView)
 			setGridMatrix(cameraTransformation());
 			break;
 		case VIEW_BOTTOM:
-			setCameraTransformation(AffineTransformation(coordSys * Matrix3(1,0,0, 0,-1,0, 0,0,-1)));
+			setCameraTransformation(AffineTransformation(coordSys * Matrix3(-1,0,0, 0,1,0, 0,0,-1)));
 			setGridMatrix(cameraTransformation());
 			break;
 		case VIEW_LEFT:
