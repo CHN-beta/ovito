@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,6 +89,13 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::fontSize));
 	layout->addWidget(fontSizePUI->label(), row, 0);
 	layout->addLayout(fontSizePUI->createFieldLayout(), row++, 1);
+
+	BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::outlineEnabled));
+	layout->addWidget(outlineEnabledPUI->checkBox(), row, 0);
+	outlineEnabledPUI->checkBox()->setText(tr("Outline color:"));
+
+	ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::outlineColor));
+	layout->addWidget(outlineColorPUI->colorPicker(), row++, 1);
 
 	FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::font));
 	layout->addWidget(labelFontPUI->label(), row, 0);

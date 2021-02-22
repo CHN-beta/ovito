@@ -162,7 +162,8 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 		Color color = modifier()->colorGradient()->valueToColor(vertical ? (FloatType(1) - t) : t);
 		image.setPixel(vertical ? 0 : i, vertical ? i : 0, QColor(color).rgb());
 	}
-	painter.drawImage(QRectF(origin, QSizeF(colorBarWidth, colorBarHeight)), image);
+	QRectF colorBarRect(origin, QSizeF(colorBarWidth, colorBarHeight));
+	painter.drawImage(colorBarRect, image);
 
 	qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
 	if(fontSize == 0) return;
@@ -224,69 +225,61 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 
 	qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
 
-	bool drawOutline = outlineEnabled();
-
-	// Create text at QPainterPaths so that we can easily draw an outline around the text
-	QPainterPath titlePath = QPainterPath();
-	titlePath.addText(origin, font, titleLabel);
-
-	// QPainterPath::addText uses the baseline as point where text is drawn. Compensate for this.
-	titlePath.translate(0, -QFontMetrics(font).descent());
-
-	QRectF titleBounds = titlePath.boundingRect();
-
-	// Move the text path to the correct place based on colorbar direction and position
+	// Move the text path to the correct location based on color bar direction and position
+	int titleFlags = Qt::AlignBottom | Qt::TextDontClip;
+	QRectF titleRect = colorBarRect;
+	titleRect.setBottom(titleRect.top() - QFontMetricsF(font).descent());
 	if(!vertical || (alignment() & Qt::AlignHCenter)) {
-		// Q: Why factor 0.5 ?
-		titlePath.translate(0.5 * colorBarWidth - titleBounds.width()/2.0, -0.5 * textMargin);
+		titleFlags |= Qt::AlignHCenter;
+		titleRect.translate(0, -0.5 * textMargin);
 	}
 	else {
-		if(alignment() & Qt::AlignLeft)
-			titlePath.translate(0, -textMargin);
-		else if(alignment() & Qt::AlignRight)
-			titlePath.translate(-titleBounds.width(), -textMargin);
+		if(alignment() & Qt::AlignLeft) {
+			titleFlags |= Qt::AlignLeft;
+			titleRect.translate(0, -textMargin);
+		}
+		else if(alignment() & Qt::AlignRight) {
+			titleFlags |= Qt::AlignRight;
+			titleRect.translate(0, -textMargin);
+		}
+		else {
+			titleFlags |= Qt::AlignHCenter;
+		}
 	}
 
-	if(drawOutline) painter.drawPath(titlePath);
-	painter.fillPath(titlePath, (QColor)textColor());
+	drawTextOutlined(painter, titleRect, titleFlags, titleLabel, textColor(), outlineEnabled(), outlineColor());
 
 	font.setPointSizeF(fontSize * 0.8);
 	painter.setFont(font);
 
-	QPainterPath topPath = QPainterPath();
-	QPainterPath bottomPath = QPainterPath();
-
-	topPath.addText(origin, font, topLabel);
-	bottomPath.addText(origin, font, bottomLabel);
-
-	QRectF bottomBounds = bottomPath.boundingRect();
-	QRectF topBounds = topPath.boundingRect();
+	int topFlags = Qt::TextDontClip;
+	int bottomFlags = Qt::TextDontClip;
+	QRectF topRect = colorBarRect;
+	QRectF bottomRect = colorBarRect;
 
 	if(!vertical) {
-		bottomPath.translate(-textMargin - bottomBounds.width(), 0.5*colorBarHeight + bottomBounds.height()/2.0);
-		topPath.translate(colorBarWidth + textMargin, 0.5*colorBarHeight + topBounds.height()/2.0);
+		bottomFlags |= Qt::AlignRight | Qt::AlignVCenter;
+		topFlags |= Qt::AlignLeft | Qt::AlignVCenter;
+		bottomRect.setRight(bottomRect.left() - textMargin);
+		topRect.setLeft(topRect.right() + textMargin);
 	}
-	else {
-		topPath.translate(0, topBounds.height());
-		if(alignment() & Qt::AlignLeft) {
-			topPath.translate(colorBarWidth + textMargin, 0);
-			bottomPath.translate(colorBarWidth + textMargin, colorBarHeight);
+	else {		
+		if((alignment() & Qt::AlignLeft) || (alignment() & Qt::AlignHCenter)) {
+			bottomFlags |= Qt::AlignLeft | Qt::AlignBottom;
+			topFlags |= Qt::AlignLeft | Qt::AlignTop;
+			topRect.setLeft(topRect.right() + textMargin);
+			bottomRect.setLeft(bottomRect.right() + textMargin);
 		}
 		else if(alignment() & Qt::AlignRight) {
-			topPath.translate(-textMargin -topBounds.width(), 0);
-			bottomPath.translate(-textMargin - bottomBounds.width(), colorBarHeight);
-		}
-		else if(alignment() & Qt::AlignHCenter) { // Q: Same as Qt:AlignLeft case on purpose?
-			topPath.translate(colorBarWidth + textMargin, 0);
-			bottomPath.translate(colorBarWidth + textMargin, colorBarHeight);
+			bottomFlags |= Qt::AlignRight | Qt::AlignBottom;
+			topFlags |= Qt::AlignRight | Qt::AlignTop;
+			topRect.setRight(topRect.left() - textMargin);
+			bottomRect.setRight(bottomRect.left() - textMargin);
 		}
 	}
 
-	if(drawOutline) painter.drawPath(topPath);
-	painter.fillPath(topPath, (QColor)textColor());
-
-	if(drawOutline) painter.drawPath(bottomPath);
-	painter.fillPath(bottomPath, (QColor)textColor());
+	drawTextOutlined(painter, topRect, topFlags, topLabel, textColor(), outlineEnabled(), outlineColor());
+	drawTextOutlined(painter, bottomRect, bottomFlags, bottomLabel, textColor(), outlineEnabled(), outlineColor());
 }
 
 }	// End of namespace

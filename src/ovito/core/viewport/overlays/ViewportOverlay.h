@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,9 @@ public:
 	/// Layer implementations should override this method if they support positioning.
 	/// The default method implementation does nothing.
 	virtual void moveLayerInViewport(const Vector2& delta) {}
+
+	/// Paints a text string with an optional outline.
+	static void drawTextOutlined(QPainter& painter, const QRectF& rect, int flags, const QString& text, const Color& textColor, bool drawOutline, const Color& outlineColor);
 
 private:
 
