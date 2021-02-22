@@ -277,15 +277,19 @@ void ParticleImporter::FrameLoader::generateBonds()
 
 	// Get the list of van der Waals radii.
 	std::vector<FloatType> typeVdWRadiusMap;
+	std::vector<bool> isHydrogenType;
 	FloatType maxRadius = 0;
 	for(const ElementType* type : typeProperty->elementTypes()) {
 		if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
 			if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
 				if(ptype->vdwRadius() > maxRadius)
 					maxRadius = ptype->vdwRadius();
-				if(type->numericId() >= typeVdWRadiusMap.size())
+				if(type->numericId() >= typeVdWRadiusMap.size()) {
 					typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+					isHydrogenType.resize(type->numericId() + 1, false);
+				}
 				typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+				isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
 			}
 		}
 	}
@@ -313,6 +317,8 @@ void ParticleImporter::FrameLoader::generateBonds()
 			int type1 = particleTypesArray[particleIndex];
 			int type2 = particleTypesArray[neighborQuery.current()];
 			if(type1 >= 0 && type2 >= 0 && type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
+				if(isHydrogenType[type1] && isHydrogenType[type2])
+					continue;
 				FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
 				if(neighborQuery.distanceSquared() <= cutoff*cutoff && neighborQuery.distanceSquared() >= minCutoffSquared) {
 					Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
