@@ -125,9 +125,7 @@ public:
 	const std::vector<OORef<PipelineListItem>>& items() const { return _items; }
 
 	/// Returns the type of drag and drop operations supported by the model.
-	Qt::DropActions supportedDropActions() const override {
-	    return Qt::MoveAction;
-	}
+	Qt::DropActions supportedDropActions() const override;
 
 	/// Returns the list of allowed MIME types.
 	QStringList mimeTypes() const override;
@@ -151,7 +149,13 @@ public:
 	void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
 
 	/// Sets the item in the modification list that should be selected on the next list update.
-	void setNextObjectToSelect(RefTarget* obj) { _nextObjectToSelect = obj; }
+	void setNextObjectToSelect(RefTarget* obj) { 
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
+			if(modApp->modifierGroup() && modApp->modifierGroup()->isCollapsed())
+				obj = modApp->modifierGroup();
+		}
+		_nextObjectToSelect = obj; 
+	}
 
 	/// Sets the item in the modification list that should be selected on the next list update.
 	void setNextSubObjectToSelectByTitle(const QString& title) { _nextSubObjectTitleToSelect = title; }
@@ -220,6 +224,12 @@ private:
 
 	/// Replaces the a pipeline item with an independent copy.
 	PipelineObject* makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper);
+
+	/// Executes a drag-and-drop operation within the pipeline editor.
+	bool performDragAndDropOperation(const QMimeData* data, int row, bool dryRun);
+
+	/// Moves a sequence of modifiers to a new position in the pipeline.
+	bool moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter);
 
 	/// List of visible items in the model.
 	std::vector<OORef<PipelineListItem>> _items;

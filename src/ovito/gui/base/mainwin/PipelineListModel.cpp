@@ -215,8 +215,9 @@ void PipelineListModel::refreshList()
 	if(selectedPipeline()) {
 
 		// Create list items for visualization elements.
-		for(DataVis* vis : selectedPipeline()->visElements())
-			newItems.push_back(new PipelineListItem(vis, PipelineListItem::VisualElement));
+		for(DataVis* vis : selectedPipeline()->visElements()) {
+			newItems.push_back(new PipelineListItem(selectedPipeline()->getReplacementVisElement(vis), PipelineListItem::VisualElement));
+		}
 		if(!newItems.empty())
 			newItems.insert(newItems.begin(), new PipelineListItem(nullptr, PipelineListItem::VisualElementsHeader));
 
@@ -467,14 +468,14 @@ void PipelineListModel::deleteModifierApplication(ModifierApplication* modApp)
 		modApp->visitDependents([&](RefMaker* dependent) {
 			if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
 				if(precedingModApp->input() == modApp) {
-					precedingModApp->setInput(modApp->input());
 					setNextObjectToSelect(modApp->input());
+					precedingModApp->setInput(modApp->input());
 				}
 			}
 			else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
 				if(pipeline->dataProvider() == modApp) {
+					setNextObjectToSelect(modApp->input());
 					pipeline->setDataProvider(modApp->input());
-					setNextObjectToSelect(pipeline->dataProvider());
 				}
 			}
 		});
@@ -687,17 +688,20 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
 	if(index.row() >= 0 && index.row() < _items.size()) {
 		switch(this->item(index.row())->itemType()) {
 			case PipelineListItem::VisualElement:
+				return QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable;
 			case PipelineListItem::Modifier:
 			case PipelineListItem::ModifierGroup:
-				return QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable;
+				return QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable | Qt::ItemIsDragEnabled;
 			case PipelineListItem::DataSource:
 			case PipelineListItem::DataObject:
 				return QAbstractListModel::flags(index);
+			case PipelineListItem::PipelineBranch:
+				return Qt::ItemIsDropEnabled;
 			default:
 				return Qt::NoItemFlags;
 		}
 	}
-	return QAbstractListModel::flags(index);
+	return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
 }
 
 /******************************************************************************
@@ -733,7 +737,7 @@ void PipelineListModel::updateActions()
 	// Check if the selected object is a shared object which can be made independent.
 	_makeElementIndependentAction->setEnabled(
 		isSharedObject(currentObject)
-		&& (dynamic_object_cast<ModifierApplication>(currentObject) == nullptr || static_object_cast<ModifierApplication>(currentObject)->modifierGroup() == nullptr));
+		&& (dynamic_object_cast<ModifierApplication>(currentObject) == nullptr || static_object_cast<ModifierApplication>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModifierApplication>(currentObject)->pipelines(true).size() == 1));
 
 	// Update the state of the move up/down actions.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
@@ -799,7 +803,7 @@ void PipelineListModel::updateActions()
 ******************************************************************************/
 QStringList PipelineListModel::mimeTypes() const
 {
-    return QStringList() << QStringLiteral("application/ovito.modifier.list");
+    return QStringList() << QStringLiteral("application/ovito.pipeline.item.list");
 }
 
 /******************************************************************************
@@ -808,16 +812,35 @@ QStringList PipelineListModel::mimeTypes() const
 ******************************************************************************/
 QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
 {
-	QByteArray encodedData;
-	QDataStream stream(&encodedData, QIODevice::WriteOnly);
+	// Collect the list of list model indices to be dragged.
+	QVector<int> rows;
 	for(const QModelIndex& index : indexes) {
-		if(index.isValid()) {
-			stream << index.row();
-		}
+		if(index.isValid())
+			rows.push_back(index.row());
 	}
-	std::unique_ptr<QMimeData> mimeData(new QMimeData());
-	mimeData->setData(QStringLiteral("application/ovito.modifier.list"), encodedData);
+	if(rows.empty())
+		return nullptr;
+	boost::sort(rows);
+
+	// Only allow dragging a contiguous sequence of pipeline items.
+	for(auto i1 = rows.cbegin(), i2 = std::next(i1); i2 != rows.cend(); i1 = i2++)
+		if(*i1 + 1 != *i2)
+			return false;
+
+	// Encode the item list as a MIME data record.
+	QByteArray encodedData;
+	QDataStream(&encodedData, QIODevice::WriteOnly) << rows;
+	std::unique_ptr<QMimeData> mimeData = std::make_unique<QMimeData>();
+	mimeData->setData(mimeTypes().front(), encodedData);
 	return mimeData.release();
+}
+
+/******************************************************************************
+* Returns the type of drag and drop operations supported by the model.
+******************************************************************************/
+Qt::DropActions PipelineListModel::supportedDropActions() const 
+{ 
+	return Qt::MoveAction; 
 }
 
 /******************************************************************************
@@ -825,13 +848,16 @@ QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
 ******************************************************************************/
 bool PipelineListModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
 {
-	if(!data->hasFormat(QStringLiteral("application/ovito.modifier.list")))
+	if(!data->hasFormat(mimeTypes().front()))
 		return false;
 
 	if(column > 0)
 		return false;
 
-	return true;
+	if(action != Qt::MoveAction)
+		return false;
+
+	return const_cast<PipelineListModel*>(this)->performDragAndDropOperation(data, row, true);
 }
 
 /******************************************************************************
@@ -840,49 +866,165 @@ bool PipelineListModel::canDropMimeData(const QMimeData* data, Qt::DropAction ac
 ******************************************************************************/
 bool PipelineListModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
 {
-	if(!canDropMimeData(data, action, row, column, parent))
+	if(action != Qt::MoveAction)
+		return false;
+		
+	return performDragAndDropOperation(data, row, false);
+}
+
+/******************************************************************************
+* Executes a drag-and-drop operation within the pipeline editor.
+******************************************************************************/
+bool PipelineListModel::performDragAndDropOperation(const QMimeData* data, int row, bool dryRun)
+{
+	if(row <= 0 || row >= items().size())
 		return false;
 
-	if(action == Qt::IgnoreAction)
-		return true;
-
-	if(row == -1 && parent.isValid())
-		row = parent.row();
-	if(row == -1)
+    QByteArray encodedData = data->data(mimeTypes().front());
+	if(encodedData.isEmpty())
 		return false;
-
-    QByteArray encodedData = data->data(QStringLiteral("application/ovito.modifier.list"));
-    QDataStream stream(&encodedData, QIODevice::ReadOnly);
     QVector<int> indexList;
-    while(!stream.atEnd()) {
-    	int index;
-    	stream >> index;
-    	indexList.push_back(index);
-    }
-    if(indexList.size() != 1)
+    QDataStream(&encodedData, QIODevice::ReadOnly) >> indexList;
+    if(indexList.empty())
     	return false;
 
-	// The list item being dragged.
-    PipelineListItem* movedItem = item(indexList[0]);
-//	if(!movedItem->modifierApplication())
-//		return false;
+	// The modifier group the modapps will be placed into.
+	ModifierGroup* destinationGroup = nullptr;
+	bool isOptionalDestinationGroup = false;
 
-#if 0
-	// The ModifierApplication being dragged.
-	OORef<ModifierApplication> modApp = movedItem->modifierApplications()[0];
-	int indexDelta = -(row - indexList[0]);
+	// Determine the insertion location in the pipeline.
+	PipelineListItem* insertBeforeItem = item(row);
+	PipelineListItem* insertAfterItem = item(row - 1);
+	PipelineObject* insertBefore = nullptr;
+	ModifierApplication* insertAfter = nullptr;
+	if(insertAfterItem->itemType() == PipelineListItem::ModificationsHeader) {
+		insertBefore = nullptr;
+	}
+	else if(insertAfterItem->itemType() == PipelineListItem::Modifier) {
+		insertAfter = static_object_cast<ModifierApplication>(insertAfterItem->object());
+		destinationGroup = insertAfter->modifierGroup();
+		if(destinationGroup && destinationGroup->modifierApplications().back() == insertAfter)
+			isOptionalDestinationGroup = true;
+	}
+	else if(insertBeforeItem->itemType() == PipelineListItem::Modifier) {
+		insertBefore = static_object_cast<ModifierApplication>(insertBeforeItem->object());
+		destinationGroup = static_object_cast<ModifierApplication>(insertBeforeItem->object())->modifierGroup();
+	}
+	else if(insertBeforeItem->itemType() == PipelineListItem::DataSourceHeader) {
+		insertBefore = selectedPipeline()->pipelineSource();
+	}
+	else if(insertAfterItem->itemType() == PipelineListItem::ModifierGroup && insertBeforeItem->itemType() == PipelineListItem::Modifier) {
+		insertBefore = static_object_cast<ModifierApplication>(insertBeforeItem->object());
+		destinationGroup = static_object_cast<ModifierGroup>(insertAfterItem->object());
+	}
+	else if(insertAfterItem->itemType() == PipelineListItem::ModifierGroup && static_object_cast<ModifierGroup>(insertAfterItem->object())->isCollapsed()) {
+		insertAfter = static_object_cast<ModifierGroup>(insertAfterItem->object())->modifierApplications().back();
+	}
+	else if(insertBeforeItem->itemType() == PipelineListItem::ModifierGroup) {
+		insertBefore = static_object_cast<ModifierGroup>(insertBeforeItem->object())->modifierApplications().first();
+	}
+	else {
+		return false;
+	}
 
-	UndoableTransaction::handleExceptions(modApp->dataset()->undoStack(), tr("Move modifier"), [movedItem, modApp, indexDelta]() {
-		// Determine old position in list.
-		int index = _items.indexOf(movedItem);
-		if(indexDelta == 0 || index + indexDelta < 0 || index+indexDelta >= pipelineObj->modifierApplications().size())
-			return;
-		// Remove ModifierApplication from the PipelineObject.
-		pipelineObj->removeModifierApplication(index);
-		// Re-insert ModifierApplication into the PipelineObject.
-		pipelineObj->insertModifierApplication(index + indexDelta, modApp);
+	// Determine the contiguous sequence of modifiers to be moved. 
+	ModifierApplication* head = nullptr;
+	ModifierApplication* tail = nullptr;
+	std::vector<ModifierApplication*> regroupModApps;
+	for(int row : indexList) {
+		if(row <= 0 || row >= items().size())
+			return false;
+	    PipelineListItem* movedItem = item(row);
+		if(movedItem->itemType() == PipelineListItem::Modifier) {
+			ModifierApplication* modApp = static_object_cast<ModifierApplication>(movedItem->object());
+			if(head == nullptr) head = modApp;
+			if(tail == nullptr || (modApp->isReferencedBy(tail) && modApp != tail)) {
+				tail = modApp;
+				regroupModApps.push_back(modApp);
+			}
+		}
+		else if(movedItem->itemType() == PipelineListItem::ModifierGroup) {
+			ModifierGroup* group = static_object_cast<ModifierGroup>(movedItem->object());
+			const auto& modApps = group->modifierApplications();
+			if(head == nullptr) head = modApps.front();
+			if(tail == nullptr || modApps.back()->isReferencedBy(tail)) tail = modApps.back();
+			if(isOptionalDestinationGroup)
+				destinationGroup = nullptr;
+			if(dryRun && destinationGroup)
+				return false;
+		}
+	}
+	OVITO_ASSERT(head && tail);
+	OVITO_ASSERT(tail->isReferencedBy(head));
+
+	if(!dryRun) {
+		if(destinationGroup && tail == insertAfter)
+			destinationGroup = nullptr;
+
+		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Move modifier"), [&]() {
+			// Make the pipeline rearrangement.
+			moveModifierRange(head, tail, insertBefore, insertAfter);
+
+			// Update group memberships.
+			for(ModifierApplication* modApp : regroupModApps)
+				modApp->setModifierGroup(destinationGroup);
+		});
+	}
+
+	return true;
+}
+
+/******************************************************************************
+* Moves a sequence of modifiers to a new position in the pipeline.
+******************************************************************************/
+bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter)
+{
+	if(insertAfter == head)
+		return false;
+	if(insertAfter == tail)
+		return false;
+	if(insertBefore == tail)
+		return false;
+
+	// Remove modapps from pipeline.
+	head->visitDependents([&](RefMaker* dependent) {
+		if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
+			if(precedingModApp->input() == head) {
+				precedingModApp->setInput(tail->input());
+			}
+		}
+		else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+			if(pipeline->dataProvider() == head) {
+				pipeline->setDataProvider(tail->input());
+			}
+		}
 	});
-#endif
+	tail->setInput(nullptr);
+
+	// Re-insert modapps into pipeline.
+	if(insertBefore) {
+		insertBefore->visitDependents([&](RefMaker* dependent) {
+			if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
+				if(precedingModApp->input() == insertBefore) {
+					precedingModApp->setInput(head);
+				}
+			}
+			else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+				if(pipeline->dataProvider() == insertBefore) {
+					pipeline->setDataProvider(head);
+				}
+			}
+		});
+		tail->setInput(insertBefore);
+	}
+	else if(insertAfter) {
+		tail->setInput(insertAfter->input());
+		insertAfter->setInput(head);
+	}
+	else {
+		tail->setInput(selectedPipeline()->dataProvider());
+		selectedPipeline()->setDataProvider(head);
+	}
 
 	return true;
 }
@@ -901,10 +1043,7 @@ bool PipelineListModel::isSharedObject(RefTarget* obj)
 		}
 	}
 	else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
-		if(!group->pipelines(true).empty()) {
-			auto modApps = group->modifierApplications();
-			return isSharedObject(modApps.front());
-		}
+		return group->pipelines(true).size() > 1;
 	}
 	else if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(obj)) {
 		return pipelineObject->pipelines(true).size() > 1;

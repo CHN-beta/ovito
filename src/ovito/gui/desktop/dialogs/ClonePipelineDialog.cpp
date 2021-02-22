@@ -103,35 +103,32 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 ******************************************************************************/
 void ClonePipelineDialog::initializeGraphicsScene()
 {
-	// Obtain the list of objects that form the pipeline.
+	// Obtain the list of objects that form the current pipeline.
 	PipelineObject* pobj = _originalNode->dataProvider();
-	ModifierGroup* currentModGroup = nullptr;
-	PipelineItemStruct s;
 	while(pobj) {
+		PipelineItemStruct s;
 		s.pipelineObjects.push_back(pobj);
 		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pobj)) {
-			s.modApps.push_back(modApp);
 			if(modApp->modifierGroup()) {
+				if(!_pipelineItems.empty() && _pipelineItems.back().modApps.back()->modifierGroup() == modApp->modifierGroup()) {
+					_pipelineItems.back().pipelineObjects.push_back(pobj);
+					_pipelineItems.back().modApps.push_back(modApp);
+					pobj = modApp->input();
+					continue;
+				}
 				s.title = modApp->modifierGroup()->objectTitle();
-				currentModGroup = modApp->modifierGroup();
-				s.title = currentModGroup ? currentModGroup->objectTitle() : s.modApp->modifier()->objectTitle();
-			}
-			else if(currentModGroup) {
-				pobj = s.modApp->input();
-				continue;
 			}
 			else {
-				s.title = s.modApp->modifier()->objectTitle();
+				s.title = modApp->modifier()->objectTitle();
 			}
+			s.modApps.push_back(modApp);
 			pobj = modApp->input();
 		}
 		else {
+			s.title = tr("Source: ") + pobj->objectTitle();
 			pobj = nullptr;
 		}
 		_pipelineItems.push_back(s);
-		s.pipelineObjects.clear();
-		s.modApps.clear();
-		currentModGroup = nullptr;
 	}
 
 	QPen borderPen(Qt::black);
@@ -198,15 +195,15 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		qreal y = line * lineHeight;
 
 		// Create vertical connector lines.
-		s.connector1 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.modApp ? lineHeight/2 : 0);
+		s.connector1 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
 		s.connector1->moveBy(0, y);
-		s.connector2 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.modApp ? lineHeight/2 : 0);
+		s.connector2 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
 		s.connector2->moveBy(_pipelineSeparation, y);
-		s.connector3 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.modApp ? lineHeight/2 : 0);
+		s.connector3 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
 		s.connector3->moveBy(_pipelineSeparation / 2 - objBoxIndent, y);
 
 		// Create a circle for each modifier application:
-		if(!s.modApp) modAppRadius = 0;
+		if(!s.isModifier()) modAppRadius = 0;
 		s.modAppItem1 = _pipelineScene.addEllipse(-modAppRadius, -modAppRadius, modAppRadius*2, modAppRadius*2, borderPen, modAppBrush);
 		s.modAppItem1->setParentItem(s.connector1);
 		s.modAppItem2 = _pipelineScene.addEllipse(-modAppRadius, -modAppRadius, modAppRadius*2, modAppRadius*2, borderPen, modAppBrush);
@@ -223,21 +220,20 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		horizontalConnector3->setParentItem(s.modAppItem3);
 
 		// Create the boxes for the pipeline objects.
-		QString labelText = s.modApp ? s.modApp->modifier()->objectTitle() : (tr("Source: ") + s.pipelineObject->objectTitle());
-		QString elidedText = fontMetrics.elidedText(labelText, Qt::ElideRight, (int)textBoxWidth);
-		s.objItem1 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.modApp ? modifierBrush : sourceBrush);
+		QString elidedText = fontMetrics.elidedText(s.title, Qt::ElideRight, (int)textBoxWidth);
+		s.objItem1 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.isModifier() ? modifierBrush : sourceBrush);
 		textItem = _pipelineScene.addSimpleText(elidedText);
 		textItem->setParentItem(s.objItem1);
 		textItem->setPos(-textItem->boundingRect().center());
 		s.objItem1->setPos(objBoxIndent, y);
 		addShadowEffect(s.objItem1);
-		s.objItem2 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.modApp ? modifierBrush : sourceBrush);
+		s.objItem2 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.isModifier() ? modifierBrush : sourceBrush);
 		s.objItem2->setPos(_pipelineSeparation - objBoxIndent, y);
 		addShadowEffect(s.objItem2);
 		textItem = _pipelineScene.addSimpleText(elidedText);
 		textItem->setParentItem(s.objItem2);
 		textItem->setPos(-textItem->boundingRect().center());
-		s.objItem3 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.modApp ? modifierBrush : sourceBrush);
+		s.objItem3 = _pipelineScene.addRect(-textBoxWidth/2, -textBoxHeight/2, textBoxWidth, textBoxHeight, borderPen, s.isModifier() ? modifierBrush : sourceBrush);
 		textItem = _pipelineScene.addSimpleText(elidedText);
 		textItem->setParentItem(s.objItem3);
 		textItem->setPos(-textItem->boundingRect().center());
@@ -272,7 +268,7 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		connect(copyAction, &QAction::triggered, nonunifiedMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
 		QAction* shareAction = nullptr;
 		QAction* skipAction = nullptr;
-		if(s.modApp) {
+		if(s.isModifier()) {
 			shareAction = modeSelectorBar->addAction(tr("Share"));
 			skipAction = modeSelectorBar->addAction(tr("Skip"));
 			nonunifiedMapper->setMapping(shareAction, line-1);
@@ -299,7 +295,7 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		QGraphicsProxyWidget* selectorItem = _pipelineScene.addWidget(modeSelectorBar);
 		selectorItem->setPos(0, -selectorItem->boundingRect().center().y());
 		selectorItem->moveBy(_pipelineSeparation + 40, y);
-		if(s.modApp)
+		if(s.isModifier())
 			copyAction->setChecked(true);
 		else
 			joinAction->setChecked(true);
@@ -421,20 +417,25 @@ void ClonePipelineDialog::onAccept()
 		OORef<PipelineObject> precedingObj;
 		for(auto s = _pipelineItems.crbegin(); s != _pipelineItems.crend(); ++s) {
 			if(s->cloneMode() == CloneMode::Join) {
-				precedingObj = s->pipelineObject;
+				precedingObj = s->pipelineObjects.front();
 			}
 			else if(s->cloneMode() == CloneMode::Copy) {
-				OORef<PipelineObject> clonedObject = cloneHelper.cloneObject(s->pipelineObject, false);
-				if(ModifierApplication* clonedModApp = dynamic_object_cast<ModifierApplication>(clonedObject)) {
-					clonedModApp->setInput(precedingObj);
-					clonedModApp->setModifier(cloneHelper.cloneObject(clonedModApp->modifier(), true));
+				for(auto pobj = s->pipelineObjects.crbegin(); pobj != s->pipelineObjects.crend(); ++pobj) {
+					OORef<PipelineObject> clonedObject = cloneHelper.cloneObject(*pobj, false);
+					if(ModifierApplication* clonedModApp = dynamic_object_cast<ModifierApplication>(clonedObject)) {
+						clonedModApp->setInput(precedingObj);
+						clonedModApp->setModifier(cloneHelper.cloneObject(clonedModApp->modifier(), true));
+					}
+					precedingObj = clonedObject;
 				}
-				precedingObj = clonedObject;
 			}
 			else if(s->cloneMode() == CloneMode::Share) {
-				OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(s->modApp, false);
-				clonedModApp->setInput(precedingObj);
-				precedingObj = clonedModApp;
+				OVITO_ASSERT(s->isModifier() && s->modApps.size() == s->pipelineObjects.size());
+				for(auto modApp = s->modApps.crbegin(); modApp != s->modApps.crend(); ++modApp) {
+					OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(*modApp, false);
+					clonedModApp->setInput(precedingObj);
+					precedingObj = clonedModApp;
+				}
 			}
 			else if(s->cloneMode() == CloneMode::Skip) {
 				continue;

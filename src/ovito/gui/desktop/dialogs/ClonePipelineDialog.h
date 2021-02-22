@@ -76,6 +76,7 @@ private:
 		QActionGroup* actionGroup;
 		CloneMode cloneMode() const { return (CloneMode)actionGroup->checkedAction()->data().toInt(); }
 		void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
+		bool isModifier() const { return !modApps.empty(); }
 	};
 
 	/// The graphics scene for the pipeline layout.
