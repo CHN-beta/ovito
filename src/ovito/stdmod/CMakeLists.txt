@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -39,6 +39,7 @@ OVITO_STANDARD_PLUGIN(StdMod
 		modifiers/ManualSelectionModifier.cpp
 		modifiers/ComputePropertyModifier.cpp
 		modifiers/CombineDatasetsModifier.cpp
+		modifiers/ColorByTypeModifier.cpp
 		viewport/ColorLegendOverlay.cpp
 	PLUGIN_DEPENDENCIES
 		StdObj
