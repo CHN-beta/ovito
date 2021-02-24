@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "TaskDisplayWidget.h"
@@ -36,16 +37,17 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
 	setVisible(false);
 
 	QHBoxLayout* progressWidgetLayout = new QHBoxLayout(this);
-	progressWidgetLayout->setContentsMargins(0,0,0,0);
+	progressWidgetLayout->setContentsMargins(10,0,0,0);
 	progressWidgetLayout->setSpacing(0);
-	_progressTextDisplay = new QLabel();
+	_progressTextDisplay = new ElidedTextLabel();
 	_progressTextDisplay->setLineWidth(0);
 	_progressTextDisplay->setAlignment(Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
 	_progressTextDisplay->setAutoFillBackground(true);
 	_progressTextDisplay->setMargin(2);
-	_progressTextDisplay->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+	_progressTextDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Ignored);
 	progressWidgetLayout->addWidget(_progressTextDisplay);
 	_progressBar = new QProgressBar(this);
+	_progressBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 #if 0
 	_cancelTaskButton = new QToolButton(this);
 	_cancelTaskButton->setText(tr("Cancel"));
