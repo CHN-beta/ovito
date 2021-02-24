@@ -57,8 +57,8 @@ void StatusBar::showMessage(const QString& message, int timeout)
     }
 
     static const QString separatorMarker = QStringLiteral("<sep>");
-    static const QString separatorText = QStringLiteral(u" ⁪| ");
-    static const QString separatorTextColored = QStringLiteral(u" <font color=\"gray\">⁪|</font> ");
+    static const QString separatorText = QStringLiteral(" | ");
+    static const QString separatorTextColored = QStringLiteral(" <font color=\"gray\">⁪|</font> ");
     static const QString keyBeginMarker = QStringLiteral("<key>");
     static const QString keyBeginText = QStringLiteral("<font color=\"%1\">").arg(palette().color(QPalette::Link).name());
     static const QString keyEndMarker = QStringLiteral("</key>");
