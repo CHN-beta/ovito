@@ -52,5 +52,5 @@ void main()
 	particle_radius_gs = particle_radius;
 
 	// Transform particle center to eye coordinates.
-	gl_Position = modelview_matrix * vec4(position, 1);
+	gl_Position = modelview_matrix * vec4(position, 1.0);
 }
