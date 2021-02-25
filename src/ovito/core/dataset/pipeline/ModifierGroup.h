@@ -50,6 +50,14 @@ public:
 	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
 	QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
 
+Q_SIGNALS:
+
+	/// Signal is emitted every time a modifier is added to the group.
+	void modifierAdded(ModifierApplication* modApp);
+
+	/// Signal is emitted every time a modifier is removed from the group.
+	void modifierRemoved(ModifierApplication* modApp);
+
 private Q_SLOTS:
 
 	/// \brief Is called when one of the group's modapps has generated an event.

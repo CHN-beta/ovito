@@ -37,6 +37,7 @@ void ModifierGroup::registerModApp(ModifierApplication* modApp)
 {
 	connect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent, Qt::UniqueConnection);
 	updateCombinedStatus();
+	Q_EMIT modifierAdded(modApp);
 }
 
 /******************************************************************************
@@ -46,6 +47,7 @@ void ModifierGroup::unregisterModApp(ModifierApplication* modApp)
 {
 	disconnect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent);
 	updateCombinedStatus();
+	Q_EMIT modifierRemoved(modApp);
 }
 
 /******************************************************************************
@@ -107,23 +109,23 @@ QVector<ModifierApplication*> ModifierGroup::modifierApplications() const
 		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
 			modApps.push_back(modApp);
 	});
-	OVITO_ASSERT(modApps.empty() == false);
-
-	// Order the modapps according to their sequence in the data pipeline.
-	boost::sort(modApps, [](ModifierApplication* a, ModifierApplication* b) {
-		return b->isReferencedBy(a);
-	});
+	if(!modApps.empty()) {
+		// Order the modapps according to their sequence in the data pipeline.
+		boost::sort(modApps, [](ModifierApplication* a, ModifierApplication* b) {
+			return b->isReferencedBy(a);
+		});
 #ifdef OVITO_DEBUG
-	// The input (successor) of the last modapp (the group's tail) should not be part of the modifier group.
-	ModifierApplication* successor = !modApps.empty() ? dynamic_object_cast<ModifierApplication>(modApps.back()->input()) : nullptr;
-	OVITO_ASSERT(!successor || successor->modifierGroup() != this);
-	// All others should be referenced by the group's head modapp. This ensures that the modapps are all from the same pipeline branch.
-	for(ModifierApplication* modApp : modApps) {
-		OVITO_ASSERT(modApp->modifierGroup() == this);
-		OVITO_ASSERT(modApp->isReferencedBy(modApps.front()));
-	}
+		// The input (successor) of the last modapp (the group's tail) should not be part of the modifier group.
+		ModifierApplication* successor = !modApps.empty() ? dynamic_object_cast<ModifierApplication>(modApps.back()->input()) : nullptr;
+		OVITO_ASSERT(!successor || successor->modifierGroup() != this);
+		// All others should be referenced by the group's head modapp. This ensures that the modapps are all from the same pipeline branch.
+		for(ModifierApplication* modApp : modApps) {
+			OVITO_ASSERT(modApp->modifierGroup() == this);
+			OVITO_ASSERT(modApp->isReferencedBy(modApps.front()));
+		}
 #endif
-
+	}
+	
 	return modApps;
 }
 
