@@ -215,7 +215,6 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 				_effectiveColors = DataOORef<DataBuffer>::create(selection()->dataset(), ExecutionContext::Scripting, selection()->size(), DataBuffer::Float, 3, 0, false);
 				_effectiveColors->fill(uniformColor());
 			}
-			_effectiveColors->fill(Color(1,1,1));
 			_effectiveColors->fillSelected(selectionColor(), *selection());
 			_inputUniformParticleColor = uniformColor();
 			_inputColors = colors();
