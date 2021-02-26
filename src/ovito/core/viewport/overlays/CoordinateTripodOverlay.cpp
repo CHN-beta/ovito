@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,6 +53,8 @@ DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis2Color);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis3Color);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Color);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodStyle);
+DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineColor);
+DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineEnabled);
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Size factor");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, lineWidth, "Line width");
@@ -61,6 +63,8 @@ SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, fontSize, "Label size");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, offsetX, "Offset X");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodStyle, "Style");
+SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, outlineColor, "Outline color");
+SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, outlineEnabled, "Enable outline");
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, tripodSize, FloatParameterUnit, 1e-4);
@@ -78,7 +82,9 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(DataSet* dataset) : ViewportOve
 		_axis1Label("x"), _axis2Label("y"), _axis3Label("z"), _axis4Label("w"),
 		_axis1Dir(1,0,0), _axis2Dir(0,1,0), _axis3Dir(0,0,1), _axis4Dir(sqrt(0.5),sqrt(0.5),0),
 		_axis1Color(1,0,0), _axis2Color(0,0.8,0), _axis3Color(0.2,0.2,1), _axis4Color(1,0,1),
-		_tripodStyle(FlatArrows)
+		_tripodStyle(FlatArrows),
+		_outlineColor(1,1,1),
+		_outlineEnabled(false)
 {
 }
 
@@ -167,7 +173,7 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 		Vector3 dir3d = tripodSize * axisDirs[axis];
 		dir3d.y() = -dir3d.y();
 		Vector2 dir2d(dir3d.x(), dir3d.y());
-		FloatType labelMargin = lineWidth;
+		FloatType labelMargin = lineWidth * 1.5;
 
 		// Render axis arrow.
 		if(tripodStyle() == FlatArrows) {
@@ -179,7 +185,10 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 
 		// Render axis label.
 		if(fontSize != 0 && !labels[axis].isEmpty()) {
-			QRectF textRect = painter.boundingRect(QRectF(0,0,0,0), Qt::AlignHCenter | Qt::AlignVCenter | Qt::TextDontClip, labels[axis]);
+			QPainterPath textPath;
+			textPath.addText(0, 0, painter.font(), labels[axis]);
+			QRectF textRect = textPath.boundingRect();
+			textRect.moveTopLeft(QPointF(-textRect.width() / 2, -textRect.height() / 2));
 			textRect.translate(origin + QPointF(dir2d.x(), dir2d.y()));
 			if(dir2d.isZero() && orderedAxes.size() >= 2) {
 				// When looking on the axis head-on, determine the displacement of the label such that it moves away
@@ -199,7 +208,7 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 				dir2d_normalized.resize(labelMargin);
 				textRect.translate(dir2d_normalized.x(), dir2d_normalized.y());
 			}
-			painter.drawText(textRect, Qt::AlignHCenter | Qt::AlignVCenter | Qt::TextDontClip, labels[axis]);
+			drawTextOutlined(painter, textRect, Qt::AlignHCenter | Qt::AlignVCenter | Qt::TextDontClip, labels[axis], axisColors[axis], outlineEnabled(), outlineColor());
 		}
 	}
 

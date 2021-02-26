@@ -35,7 +35,7 @@ in vec3 position;
 in vec3 color;
 in float transparency;
 in float particle_radius;
-in int selection;
+in float selection;
 
 // Outputs to fragment shader
 flat out vec4 particle_color_fs;
@@ -46,7 +46,7 @@ void main()
 {
 	if(!is_picking_mode) {
 		// Forward color to fragment shader.
-		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+		particle_color_fs = (selection != 0.0) ? selection_color : vec4(color, 1.0 - transparency);
 	}
 	else {
 		// Compute color from object ID.
@@ -54,8 +54,8 @@ void main()
 	}
 
 	particle_radius_squared_fs = (particle_radius * particle_radius) * (radius_scalingfactor * radius_scalingfactor);
-	particle_view_pos_fs = vec3(modelview_matrix * vec4(position, 1));
+	particle_view_pos_fs = vec3(modelview_matrix * vec4(position, 1.0));
 
 	// Transform and project vertex.
-	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[gl_VertexID % 14] * particle_radius, 1);
+	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[gl_VertexID % 14] * particle_radius, 1.0);
 }

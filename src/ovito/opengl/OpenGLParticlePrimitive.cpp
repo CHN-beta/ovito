@@ -199,12 +199,48 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 	if(particleCount() <= 0 || !renderer)
 		return;
 
+#ifdef Q_OS_MACOS
+	// This is a workaround for a specific graphics compatibility problem on macOS/MacBook Pro with AMD Radeon Pro 5500M graphics hardware. 
+	// The uploading the 'selection' VBO to the GPU creates artifacts on this system. As a workaround, we compute
+	// an effective color VBO that has the selection colors baked in.
+	// See OVITO forum post: https://www.ovito.org/forum/topic/expression-select-not-working/#postid-1910
+	ConstDataBufferPtr effectiveColors; 
+	ConstDataBufferPtr effectiveSelection; 
+	if(selection() && OpenGLSceneRenderer::openGLRenderer() == "AMD Radeon Pro 5500M OpenGL Engine") {
+		if(colors() != _inputColors || selection() != _inputSelection || _inputUniformParticleColor != uniformColor()) {
+			if(colors()) {
+				_effectiveColors = colors().makeCopy();
+			}
+			else {
+				_effectiveColors = DataOORef<DataBuffer>::create(selection()->dataset(), ExecutionContext::Scripting, selection()->size(), DataBuffer::Float, 3, 0, false);
+				_effectiveColors->fill(uniformColor());
+			}
+			_effectiveColors->fillSelected(selectionColor(), *selection());
+			_inputUniformParticleColor = uniformColor();
+			_inputColors = colors();
+			_inputSelection = selection();
+		}
+		effectiveColors = _effectiveColors;
+	}
+	else {
+		effectiveColors = colors();
+		effectiveSelection = selection();
+		_effectiveColors.reset();
+		_inputColors.reset();
+		_inputSelection.reset();
+	}
+#else
+	// On regular systems, simply upoad the color and selection VBOs to the GPU as is.
+	const ConstDataBufferPtr& effectiveColors = colors(); 
+	const ConstDataBufferPtr& effectiveSelection = selection(); 
+#endif
+
 	// Upload data to OpenGL VBOs.
 	_positionsBuffer.uploadData<Point3>(positions(), _verticesPerParticle);
 	_radiiBuffer.uploadData<FloatType>(radii(), _verticesPerParticle);
-	_colorsBuffer.uploadData<Color>(colors(), _verticesPerParticle);
+	_colorsBuffer.uploadData<Color>(effectiveColors, _verticesPerParticle);
 	_transparenciesBuffer.uploadData<FloatType>(transparencies(), _verticesPerParticle);
-	_selectionBuffer.uploadData<int>(selection(), _verticesPerParticle);
+	_selectionBuffer.uploadData<int>(effectiveSelection, _verticesPerParticle);
 	if(particleShape() == BoxShape || particleShape() == EllipsoidShape || particleShape() == SuperquadricShape) {
 		_shapeBuffer.uploadData<Vector3>(asphericalShapes(), _verticesPerParticle);
 		_orientationBuffer.uploadData<Quaternion>(orientations(), _verticesPerParticle);
@@ -329,7 +365,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 	if(_selectionBuffer.isCreated())
 		_selectionBuffer.bind(renderer, shader, "selection", GL_INT, 0, 1);
 	else
-		shader->setAttributeValue("selection", (GLint)0);
+		shader->setAttributeValue("selection", 0.0f);
 	if(!renderer->isPicking()) {
 		if(_colorsBuffer.isCreated())
 			_colorsBuffer.bindColors(renderer, shader, 3);

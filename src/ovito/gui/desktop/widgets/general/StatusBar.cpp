@@ -57,8 +57,8 @@ void StatusBar::showMessage(const QString& message, int timeout)
     }
 
     static const QString separatorMarker = QStringLiteral("<sep>");
-    static const QString separatorText = QStringLiteral(u" ⁪| ");
-    static const QString separatorTextColored = QStringLiteral(u" <font color=\"gray\">⁪|</font> ");
+    static const QString separatorText = QStringLiteral(" | ");
+    static const QString separatorTextColored = QStringLiteral(" <font color=\"gray\">|</font> ");
     static const QString keyBeginMarker = QStringLiteral("<key>");
     static const QString keyBeginText = QStringLiteral("<font color=\"%1\">").arg(palette().color(QPalette::Link).name());
     static const QString keyEndMarker = QStringLiteral("</key>");
@@ -202,6 +202,16 @@ void StatusBar::clearMessage()
 }
 
 /******************************************************************************
+* Computes the preferred size of the status bar widget.
+******************************************************************************/
+QSize StatusBar::sizeHint() const
+{
+    if(_preferredHeight == 0)
+        _preferredHeight = QLabel::sizeHint().height();
+    return QSize(0, _preferredHeight);
+}
+
+/******************************************************************************
 * Is called when the size of the status bar changes.
 ******************************************************************************/
 void StatusBar::resizeEvent(QResizeEvent* event) 
@@ -209,7 +219,7 @@ void StatusBar::resizeEvent(QResizeEvent* event)
     QWidget* parent = _overflowLabel->parentWidget();
     QPoint p = parent->mapFrom(window(), mapTo(window(), QPoint(0,0)));
     p.ry() += margin() * 2;
-    QRect rect(p, QSize(parent->width(), -_overflowLabel->sizeHint().height()));
+    QRect rect(p, QSize(event->size().width(), -event->size().height()));
     _overflowLabel->setGeometry(rect.normalized());
 
     QLabel::resizeEvent(event);

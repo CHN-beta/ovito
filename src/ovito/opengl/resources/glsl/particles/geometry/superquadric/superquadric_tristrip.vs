@@ -33,7 +33,7 @@ uniform vec4 selection_color;
 in vec3 position;
 in vec3 color;
 in float transparency;
-in int selection;
+in float selection;
 in vec3 shape;
 in vec4 orientation;
 in float particle_radius;
@@ -82,7 +82,7 @@ void main()
 
 	if(!is_picking_mode) {
 		// Forward color to fragment shader.
-		particle_color_fs = (selection != 0) ? selection_color : vec4(color, 1.0 - transparency);
+		particle_color_fs = (selection != 0.0) ? selection_color : vec4(color, 1.0 - transparency);
 	}
 	else {
 		// Compute color from object ID.
