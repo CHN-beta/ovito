@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,32 +38,7 @@ class SceneNodeSelectionBox : public QComboBox
 public:
 
 	/// Constructs the widget.
-	SceneNodeSelectionBox(DataSetContainer& datasetContainer, QWidget* parent = 0);
-
-Q_SIGNALS:
-
-	void enabledChanged(bool isEnabled);
-
-protected:
-
-	/// Is called when the state of the widget changes.
-	void changeEvent(QEvent* event) override;
-
-protected Q_SLOTS:
-
-	/// This is called whenever the node selection has changed.
-	void onSceneSelectionChanged();
-
-	/// Is called when the user selected an item in the list box.
-	void onItemActivated(int index);
-
-	/// This is called whenever the number of nodes changes.
-	void onNodeCountChanged();
-
-private:
-
-	/// The container of the dataset.
-	DataSetContainer& _datasetContainer;
+	SceneNodeSelectionBox(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent = nullptr);
 };
 
 }	// End of namespace

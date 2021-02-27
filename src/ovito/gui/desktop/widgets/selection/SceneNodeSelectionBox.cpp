@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,8 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/scene/SelectionSet.h>
 #include "SceneNodeSelectionBox.h"
 #include "SceneNodesListModel.h"
 
@@ -31,79 +29,21 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the widget.
 ******************************************************************************/
-SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer, QWidget* parent) : QComboBox(parent),
-		_datasetContainer(datasetContainer)
+SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent) : QComboBox(parent)
 {
-	// Set the list model, which tracks the scene nodes.
-	setModel(new SceneNodesListModel(datasetContainer, this));
-
 	setInsertPolicy(QComboBox::NoInsert);
 	setEditable(false);
-	setMinimumContentsLength(25);
+	setMinimumContentsLength(40);
 	setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	setToolTip(tr("Pipeline selector"));
+	setIconSize(QSize(24, 24));
 
-	// Listen for selection changes.
-	connect(&datasetContainer, &DataSetContainer::selectionChangeComplete, this, &SceneNodeSelectionBox::onSceneSelectionChanged);
-	connect(model(), &SceneNodesListModel::modelReset, this, &SceneNodeSelectionBox::onSceneSelectionChanged);
-	connect(model(), &SceneNodesListModel::modelReset, this, &SceneNodeSelectionBox::onNodeCountChanged);
-	connect(model(), &SceneNodesListModel::rowsRemoved, this, &SceneNodeSelectionBox::onNodeCountChanged);
-	connect(model(), &SceneNodesListModel::rowsInserted, this, &SceneNodeSelectionBox::onNodeCountChanged);
+	// Set the list model, which tracks the list of pipelines in the scene.
+	setModel(new SceneNodesListModel(datasetContainer, actionManager, this));
 
-	connect(this, (void (QComboBox::*)(int))&QComboBox::activated, this, &SceneNodeSelectionBox::onItemActivated);
-
-	onNodeCountChanged();
-}
-
-/******************************************************************************
-* This is called whenever the node selection has changed.
-******************************************************************************/
-void SceneNodeSelectionBox::onSceneSelectionChanged()
-{
-	SelectionSet* selection = _datasetContainer.currentSet() ? _datasetContainer.currentSet()->selection() : nullptr;
-	if(!selection || selection->nodes().empty()) {
-		setCurrentText(tr("No selection"));
-	}
-	else if(selection->nodes().size() > 1) {
-		setCurrentText(tr("%i selected pipelines").arg(selection->nodes().size()));
-	}
-	else {
-		int index = findData(QVariant::fromValue(selection->nodes().front().get()));
-		setCurrentIndex(index);
-	}
-}
-
-/******************************************************************************
-* Is called when the user selected an item in the list box.
-******************************************************************************/
-void SceneNodeSelectionBox::onItemActivated(int index)
-{
-	SceneNode* node = qobject_cast<SceneNode*>(itemData(index).value<QObject*>());
-	if(_datasetContainer.currentSet() && node) {
-		SelectionSet* selection = _datasetContainer.currentSet()->selection();
-		UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Select pipeline"), [node, selection]() {
-			selection->setNode(node);
-		});
-	}
-}
-
-/******************************************************************************
-* This is called whenever the number of nodes changes.
-******************************************************************************/
-void SceneNodeSelectionBox::onNodeCountChanged()
-{
-	setEnabled(model()->rowCount() > 1);
-}
-
-/******************************************************************************
-* Is called when the state of the widget changes.
-******************************************************************************/
-void SceneNodeSelectionBox::changeEvent(QEvent* event)
-{
-	if(event->type() == QEvent::EnabledChange)
-		Q_EMIT enabledChanged(isEnabled());
-
-	QComboBox::changeEvent(event);
+	// Wire the combobox selection to the list model.
+	connect(this, QOverload<int>::of(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
+	connect(static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::selectionChangeRequested, this, &QComboBox::setCurrentIndex);
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -151,6 +151,9 @@ namespace Ovito {
 /// This actions lets the user generate script code from the selected data pipeline.
 #define ACTION_SCRIPTING_GENERATE_CODE		"ScriptingGenerateCode"
 
+/// This action adds a new pipeline to the scene with a FileSource.
+#define ACTION_NEW_PIPELINE_FILESOURCE		"NewPipeline.FileSource"
+
 /**
  * \brief Manages all available user interface actions.
  */
@@ -189,6 +192,9 @@ public:
 		OVITO_ASSERT_MSG(action != nullptr, "ActionManager::getAction()", "Action does not exist.");
 		return action;
 	}
+
+	/// Returns the list of registered actions.
+	const QVector<QAction*>& actions() const { return _actions; }
 
 	/// \brief Invokes the command action with the given ID.
 	/// \param actionId The unique identifier string of the action to invoke.

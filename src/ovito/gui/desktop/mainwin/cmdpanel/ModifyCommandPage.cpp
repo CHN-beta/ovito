@@ -36,7 +36,6 @@
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
-#include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include "ModifyCommandPage.h"
 
 #include <QtNetwork>
@@ -53,49 +52,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	layout->setContentsMargins(2,2,2,2);
 	layout->setSpacing(4);
 	layout->setColumnStretch(0,1);
-
-	SceneNodeSelectionBox* nodeSelBox = new SceneNodeSelectionBox(_datasetContainer, this);
-	layout->addWidget(nodeSelBox, 0, 0, 1, 1);
-	QMenu* pipelineMenu = new QMenu(this);
-	pipelineMenu->addAction(_actionManager->getAction(ACTION_EDIT_RENAME_PIPELINE));
-	pipelineMenu->addAction(_actionManager->getAction(ACTION_EDIT_CLONE_PIPELINE));
-	pipelineMenu->addSeparator();
-	pipelineMenu->addAction(_actionManager->getAction(ACTION_EDIT_DELETE));
-	pipelineMenu->addSeparator();
-
-	// Set up the 'Precompute all frames' menu action.
-	QAction* precomputeFramesAction = pipelineMenu->addAction(QIcon(":/guibase/actions/file/cache_pipeline_output.svg"), tr("Precompute all frames"));
-	precomputeFramesAction->setCheckable(true);
-	connect(pipelineMenu, &QMenu::aboutToShow, this, [this,precomputeFramesAction]() {
-		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
-				precomputeFramesAction->setChecked(pipeline->pipelineTrajectoryCachingEnabled());
-				precomputeFramesAction->setEnabled(true);
-				return;
-			}
-		}
-		precomputeFramesAction->setChecked(false);
-		precomputeFramesAction->setEnabled(false);
-	});
-	connect(precomputeFramesAction, &QAction::triggered, this, [this,precomputeFramesAction]() {
-		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
-				pipeline->setPipelineTrajectoryCachingEnabled(precomputeFramesAction->isChecked());
-			}
-		}
-	});
-
-	QToolButton* pipelineMenuButton = new QToolButton(this);
-	pipelineMenuButton->setStyleSheet(
-		"QToolButton { padding: 0px; margin: 0px; border: none; background-color: transparent; } "
-		"QToolButton::menu-indicator { image: none; } ");
-	pipelineMenuButton->setPopupMode(QToolButton::InstantPopup);
-	pipelineMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
-	pipelineMenuButton->setMenu(pipelineMenu);
-	pipelineMenuButton->setEnabled(nodeSelBox->isEnabled());
-	pipelineMenuButton->setToolTip(tr("Pipeline menu"));
-	layout->addWidget(pipelineMenuButton, 0, 1, 1, 1);
-	connect(nodeSelBox, &SceneNodeSelectionBox::enabledChanged, pipelineMenuButton, &QToolButton::setEnabled);
 
 	_pipelineListModel = new PipelineListModel(_datasetContainer, _actionManager, this);
 	class ModifierListBox : public QComboBox {

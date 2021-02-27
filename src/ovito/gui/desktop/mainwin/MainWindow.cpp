@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
+#include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -129,6 +130,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	_statusBarLayout->addWidget(taskDisplay, 1);
 
 	_coordinateDisplay = new CoordinateDisplayWidget(datasetContainer(), animationPanel);
+	_coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(_coordinateDisplay);
 	_statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));
 
@@ -391,6 +393,49 @@ void MainWindow::createMainToolbar()
 	_mainToolbar->addSeparator();
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
+
+	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
+	pipelinesLabel->setIndent(56);
+	_mainToolbar->addWidget(pipelinesLabel);
+	SceneNodeSelectionBox* nodeSelBox = new SceneNodeSelectionBox(_datasetContainer, actionManager());
+	_mainToolbar->addWidget(nodeSelBox);
+
+	QToolButton* pipelineMenuButton = new QToolButton(this);
+	pipelineMenuButton->setStyleSheet("QToolButton::menu-indicator { image: none; } ");
+	pipelineMenuButton->setPopupMode(QToolButton::InstantPopup);
+	pipelineMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
+	QMenu* pipelineMenu = new QMenu(pipelineMenuButton);
+	pipelineMenu->addAction(actionManager()->getAction(ACTION_EDIT_RENAME_PIPELINE));
+	pipelineMenu->addSeparator();
+
+	// Set up the 'Precompute all frames' menu action.
+	QAction* precomputeFramesAction = pipelineMenu->addAction(QIcon(":/guibase/actions/file/cache_pipeline_output.svg"), tr("Precompute All Frames"));
+	precomputeFramesAction->setCheckable(true);
+	connect(pipelineMenu, &QMenu::aboutToShow, this, [this,precomputeFramesAction]() {
+		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
+				precomputeFramesAction->setChecked(pipeline->pipelineTrajectoryCachingEnabled());
+				precomputeFramesAction->setEnabled(true);
+				return;
+			}
+		}
+		precomputeFramesAction->setChecked(false);
+		precomputeFramesAction->setEnabled(false);
+	});
+	connect(precomputeFramesAction, &QAction::triggered, this, [this,precomputeFramesAction]() {
+		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
+			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
+				pipeline->setPipelineTrajectoryCachingEnabled(precomputeFramesAction->isChecked());
+			}
+		}
+	});
+
+	pipelineMenu->addSeparator();
+	pipelineMenu->addAction(actionManager()->getAction(ACTION_EDIT_DELETE));
+	pipelineMenu->addSeparator();
+	pipelineMenuButton->setMenu(pipelineMenu);
+	pipelineMenuButton->setToolTip(tr("Pipeline menu"));
+	_mainToolbar->addWidget(pipelineMenuButton);
 }
 
 /******************************************************************************

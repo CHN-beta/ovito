@@ -103,9 +103,7 @@ void PipelineListModel::setItems(std::vector<OORef<PipelineListItem>> newItems)
 	}
 	for(size_t i = 0; i < newItems.size() && i < oldCount; i++) {
 		swap(_items[i], newItems[i]);
-		if(_items[i]->object() != newItems[i]->object() || _items[i]->itemType() != newItems[i]->itemType()) {
-			Q_EMIT dataChanged(index(i), index(i));
-		}
+		Q_EMIT dataChanged(index(i), index(i));
 	}
 	for(PipelineListItem* item : _items) {
 		connect(item, &PipelineListItem::itemChanged, this, &PipelineListModel::refreshItem);

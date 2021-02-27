@@ -33,6 +33,8 @@
 	<file>actions/edit/clone_displace_mode_z.svg</file>
 	<file>actions/edit/rename_pipeline.bw.svg</file>
 	<file>actions/edit/pipeline_menu.svg</file>
+	<file>actions/edit/pipeline_icon.svg</file>
+	<file>actions/edit/create_pipeline.svg</file>
 
 	<file>actions/file/file_new.bw.svg</file>
 	<file>actions/file/file_open.bw.svg</file>

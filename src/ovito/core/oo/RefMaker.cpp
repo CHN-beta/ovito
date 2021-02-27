@@ -232,19 +232,46 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.shouldPropagate()) {
 		// Check if message is comming from a reference field for which message propagation is explicitly disabled.
+		// Note that a target object may be referenced from multiple reference fields, some of which having
+		// message propagation enabled and some disabled.
+		bool isSupressedField = false;
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(!field->isReferenceField()) continue;
 			if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) continue;
 			if(!field->isVector()) {
-				if(field->_singleReferenceReadFunc(this) == source)
-					return false;
+				if(field->_singleReferenceReadFunc(this) == source) {
+					isSupressedField = true;
+					break;
+				}
 			}
 			else {
-				if(vectorReferenceFieldContains(*field, source))
-					return false;
+				if(vectorReferenceFieldContains(*field, source)) {
+					isSupressedField = true;
+					break;
+				}
 			}
 		}
-		return true;
+		if(!isSupressedField)
+			return true;
+		// Perform counter check and determine if message is comming from a reference field for which message propagation 
+		// is NOT explicitly disabled.
+		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+			if(!field->isReferenceField()) continue;
+			if(!field->isVector()) {
+				if(field->_singleReferenceReadFunc(this) == source) {
+					if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+						return true;
+				}
+			}
+			else {
+				if(vectorReferenceFieldContains(*field, source)) {
+					if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+						return true;
+				}
+			}
+		}
+		// Do not propagate message.
+		return false;
 	}
 	return false;
 }
