@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/scene/SceneNode.h>
 #include "SceneNodeSelectionBox.h"
 #include "SceneNodesListModel.h"
 
@@ -44,6 +46,143 @@ SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer,
 	// Wire the combobox selection to the list model.
 	connect(this, QOverload<int>::of(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
 	connect(static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::selectionChangeRequested, this, &QComboBox::setCurrentIndex);
+
+	// Install a custom item delegate.
+	setItemDelegate(new SceneNodeSelectionItemDelegate(this));
+	connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemDelete, static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::deleteItem);
+	connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemRename, this, &SceneNodeSelectionBox::renameSceneNode);
+
+	// Install an event filter.
+	view()->viewport()->installEventFilter(itemDelegate());
+	view()->setTextElideMode(Qt::ElideRight);
 }
+
+/******************************************************************************
+* Lets the user rename a list item.
+******************************************************************************/
+void SceneNodeSelectionBox::renameSceneNode(int index)
+{
+	if(OORef<SceneNode> sceneNode = static_cast<SceneNodesListModel*>(model())->sceneNodeFromListIndex(index)) {
+		QString oldName = sceneNode->objectTitle();
+		bool ok;
+		QString newName = QInputDialog::getText(window(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
+		if(ok && newName != oldName) {
+			UndoableTransaction::handleExceptions(sceneNode->dataset()->undoStack(), tr("Rename pipeline"), [&]() {
+				sceneNode->setNodeName(newName);
+			});
+		}
+	}
+}
+
+/******************************************************************************
+* Paints an item in the combobox.
+******************************************************************************/
+void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
+{
+	// Paint buttons next to node items when mouse if over the item.
+	if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
+
+		if(option.state & QStyle::State_MouseOver) {
+
+			// Shorten the text of the item to not overlap with the buttons.
+			QStyleOptionViewItem reducedOption = option;
+			initStyleOption(&reducedOption, index);
+			QStyle* style = option.widget->style();
+			QRect textRect = style->proxy()->subElementRect(QStyle::SE_ItemViewItemText, &reducedOption, reducedOption.widget);
+			int textWidth = textRect.width() - 2 * option.rect.height();
+			reducedOption.text = option.fontMetrics.elidedText(reducedOption.text, option.textElideMode, textWidth);
+			reducedOption.textElideMode = Qt::ElideNone;
+			option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &reducedOption, painter, option.widget);
+
+			// Load the icons.
+			if(_deleteIcon.isNull())
+				_deleteIcon = QIcon(":/guibase/actions/edit/delete_pipeline.svg");
+			if(_renameIcon.isNull())
+				_renameIcon = QIcon(":/guibase/actions/edit/rename_pipeline.bw.svg");
+
+			// Paint the icons.
+			_deleteIcon.paint(painter, deleteButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _deleteButtonHover ? QIcon::Normal : QIcon::Disabled);
+			_renameIcon.paint(painter, renameButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _renameButtonHover ? QIcon::Normal : QIcon::Disabled);
+
+			return;
+		}
+	}
+	QStyledItemDelegate::paint(painter, option, index);
+}
+
+/******************************************************************************
+* Returns the rectangular area that is occupied by the delete button of a list item.
+******************************************************************************/
+QRect SceneNodeSelectionItemDelegate::deleteButtonRect(const QRect& itemRect) const
+{
+	QRect rect = itemRect;
+	rect.setLeft(std::max(rect.right() - rect.height(), rect.left()));
+	return rect;
+}
+
+/******************************************************************************
+* Returns the rectangular area that is occupied by the rename button of a list item.
+******************************************************************************/
+QRect SceneNodeSelectionItemDelegate::renameButtonRect(const QRect& itemRect) const
+{
+	QRect rect = itemRect;
+	rect.setRight(std::max(rect.right() - rect.height(), rect.left()));
+	rect.setLeft(std::max(rect.right() - rect.height(), rect.left()));
+	return rect;
+}
+
+/******************************************************************************
+* Handles mouse events for a list item.
+******************************************************************************/
+bool SceneNodeSelectionItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index)
+{
+	if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove) {
+		if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
+			QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
+			QRect itemRect = option.rect;
+			int maxWidth = view->viewport()->size().width();
+			itemRect.setWidth(qMin(maxWidth, itemRect.width()));
+			QRect deleteRect = deleteButtonRect(itemRect);
+			QRect renameRect = renameButtonRect(itemRect);
+			_deleteButtonHover = deleteRect.contains(mouseEvent->pos());
+			_renameButtonHover = renameRect.contains(mouseEvent->pos());
+			if(_deleteButtonHover)
+				QToolTip::showText(view->viewport()->mapToGlobal(deleteRect.bottomRight()), tr("Delete"), view->viewport(), deleteRect);
+			if(_renameButtonHover)
+				QToolTip::showText(view->viewport()->mapToGlobal(renameRect.bottomRight()), tr("Rename"), view->viewport(), renameRect);
+			return true;
+		}
+	}
+	return QStyledItemDelegate::editorEvent(event, model, option, index);
+}
+
+/******************************************************************************
+* Intercepts events of the combox view widget.
+******************************************************************************/
+bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
+{
+	if(event->type() == QEvent::MouseButtonRelease) {
+		QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
+		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+		QModelIndex indexUnderMouse = view->indexAt(mouseEvent->pos());
+		if(SceneNode* node = qobject_cast<SceneNode*>(indexUnderMouse.data(Qt::UserRole).value<QObject*>())) {
+			QRect itemRect = view->visualRect(indexUnderMouse);
+			int maxWidth = view->viewport()->size().width();
+			itemRect.setWidth(qMin(maxWidth, itemRect.width()));
+			if(deleteButtonRect(itemRect).contains(mouseEvent->pos())) {
+				Q_EMIT itemDelete(indexUnderMouse.row());
+				return true;
+			}
+			if(renameButtonRect(itemRect).contains(mouseEvent->pos())) {
+				Q_EMIT itemRename(indexUnderMouse.row());
+				return true;
+			}
+		}
+	}
+
+	return QStyledItemDelegate::eventFilter(obj, event);
+}
+
 
 }	// End of namespace

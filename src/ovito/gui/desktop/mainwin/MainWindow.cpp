@@ -395,47 +395,9 @@ void MainWindow::createMainToolbar()
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
 
 	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
-	pipelinesLabel->setIndent(56);
+	pipelinesLabel->setIndent(36);
 	_mainToolbar->addWidget(pipelinesLabel);
-	SceneNodeSelectionBox* nodeSelBox = new SceneNodeSelectionBox(_datasetContainer, actionManager());
-	_mainToolbar->addWidget(nodeSelBox);
-
-	QToolButton* pipelineMenuButton = new QToolButton(this);
-	pipelineMenuButton->setStyleSheet("QToolButton::menu-indicator { image: none; } ");
-	pipelineMenuButton->setPopupMode(QToolButton::InstantPopup);
-	pipelineMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
-	QMenu* pipelineMenu = new QMenu(pipelineMenuButton);
-	pipelineMenu->addAction(actionManager()->getAction(ACTION_EDIT_RENAME_PIPELINE));
-	pipelineMenu->addSeparator();
-
-	// Set up the 'Precompute all frames' menu action.
-	QAction* precomputeFramesAction = pipelineMenu->addAction(QIcon(":/guibase/actions/file/cache_pipeline_output.svg"), tr("Precompute All Frames"));
-	precomputeFramesAction->setCheckable(true);
-	connect(pipelineMenu, &QMenu::aboutToShow, this, [this,precomputeFramesAction]() {
-		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
-				precomputeFramesAction->setChecked(pipeline->pipelineTrajectoryCachingEnabled());
-				precomputeFramesAction->setEnabled(true);
-				return;
-			}
-		}
-		precomputeFramesAction->setChecked(false);
-		precomputeFramesAction->setEnabled(false);
-	});
-	connect(precomputeFramesAction, &QAction::triggered, this, [this,precomputeFramesAction]() {
-		if(_datasetContainer.currentSet() && _datasetContainer.currentSet()->selection()->nodes().empty() == false) {
-			if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_datasetContainer.currentSet()->selection()->nodes().front())) {
-				pipeline->setPipelineTrajectoryCachingEnabled(precomputeFramesAction->isChecked());
-			}
-		}
-	});
-
-	pipelineMenu->addSeparator();
-	pipelineMenu->addAction(actionManager()->getAction(ACTION_EDIT_DELETE));
-	pipelineMenu->addSeparator();
-	pipelineMenuButton->setMenu(pipelineMenu);
-	pipelineMenuButton->setToolTip(tr("Pipeline menu"));
-	_mainToolbar->addWidget(pipelineMenuButton);
+	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
 }
 
 /******************************************************************************

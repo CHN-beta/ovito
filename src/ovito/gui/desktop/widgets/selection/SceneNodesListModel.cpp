@@ -149,7 +149,7 @@ Qt::ItemFlags SceneNodesListModel::flags(const QModelIndex& index) const
 		if(pipelineIndex >= 0 && pipelineIndex < (sceneNodes().empty() ? 1 : sceneNodes().size()))
 			return QAbstractListModel::flags(index);
 		if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && _pipelineActions[actionIndex])
-			return Qt::ItemIsSelectable | (_pipelineActions[actionIndex]->isEnabled() ? Qt::ItemIsEnabled : Qt::NoItemFlags);
+			return (_pipelineActions[actionIndex]->isEnabled() ? (Qt::ItemIsSelectable | Qt::ItemIsEnabled) : Qt::NoItemFlags);
 		return Qt::NoItemFlags; // Separator item
 	}
 	return QAbstractListModel::flags(index);
@@ -271,6 +271,30 @@ void SceneNodesListModel::activateItem(int index)
 	if(actionIndex >= 0 && actionIndex < _pipelineActions.size()) {
 		if(QAction* action = _pipelineActions[actionIndex])
 			action->trigger();
+	}
+}
+
+/******************************************************************************
+* Performs a deletion action on an item.
+******************************************************************************/
+void SceneNodesListModel::deleteItem(int index)
+{
+	// Change scene node selection when a scene node has been selected in the combobox.
+	int pipelineIndex = index - firstSceneNodeIndex();
+	if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+		SceneNode* node = sceneNodes()[pipelineIndex];
+		if(_datasetContainer.currentSet() && node) {
+			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete pipeline"), [&]() {
+				bool wasSelected = node->isSelected();
+				node->deleteNode();
+
+				// Automatically select one of the remaining nodes.
+				DataSet* dataset = _datasetContainer.currentSet();
+				if(wasSelected && dataset->sceneRoot()->children().isEmpty() == false)
+					dataset->selection()->setNode(dataset->sceneRoot()->children().front());
+
+			});
+		}
 	}
 }
 

@@ -52,10 +52,19 @@ public:
 	/// Returns the current list of scene nodes in the scene.
 	const QVector<SceneNode*>& sceneNodes() const { return _nodeListener.targets(); }
 
+	/// Returns the scene node at the given index of the list model.
+	SceneNode* sceneNodeFromListIndex(int index) const { 
+		int nodeIndex = index - firstSceneNodeIndex();
+		return (nodeIndex >= 0 && nodeIndex < sceneNodes().size()) ? sceneNodes()[nodeIndex] : nullptr;
+	}
+
 public Q_SLOTS:
 
 	/// This slot executes the action associated with the given list item.
 	void activateItem(int index);
+
+	/// Performs a deletion action on an item.
+	void deleteItem(int index);
 
 Q_SIGNALS:
 
