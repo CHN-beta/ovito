@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -173,33 +173,44 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		//connect(saveFileUI->checkBox(), &QCheckBox::toggled, skipExistingImagesUI, &BooleanParameterUI::setEnabled);
 	}
 
-	// Options
+	// Background
 	{
-		QGroupBox* groupBox = new QGroupBox(tr("Options"));
+		QGroupBox* groupBox = new QGroupBox(tr("Background"));
 		layout->addWidget(groupBox);
 		QGridLayout* layout2 = new QGridLayout(groupBox);
 		layout2->setContentsMargins(4,4,4,4);
 		layout2->setSpacing(2);
 
 		// Background color parameter.
-		layout2->addWidget(new QLabel(tr("Background:")), 0, 0, 1, 3);
-
 		ColorParameterUI* backgroundColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(RenderSettings::backgroundColorController));
-		layout2->addWidget(backgroundColorPUI->colorPicker(), 1, 1, 1, 2);
+		layout2->addWidget(backgroundColorPUI->colorPicker(), 0, 1, 1, 2);
 
 		// Alpha channel.
 		BooleanRadioButtonParameterUI* generateAlphaUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(RenderSettings::generateAlphaChannel));
-		layout2->addWidget(generateAlphaUI->buttonFalse(), 1, 0, 1, 1);
-		layout2->addWidget(generateAlphaUI->buttonTrue(), 2, 0, 1, 3);
+		layout2->addWidget(generateAlphaUI->buttonFalse(), 0, 0, 1, 1);
+		layout2->addWidget(generateAlphaUI->buttonTrue(), 1, 0, 1, 3);
 		generateAlphaUI->buttonFalse()->setText(tr("Color:"));
 		generateAlphaUI->buttonTrue()->setText(tr("Transparent"));
-
-		// Create 'Switch renderer' button.
-		QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."), groupBox);
-		connect(switchRendererButton, &QPushButton::clicked, this, &RenderSettingsEditor::onSwitchRenderer);
-		layout2->setRowMinimumHeight(3, 8);
-		layout2->addWidget(switchRendererButton, 4, 0, 1, 3);
 	}
+
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(4,4,4,4);
+	sublayout->setSpacing(4);
+	layout->addLayout(sublayout);
+
+	// Create 'Render active viewport' button.
+	QPushButton* renderViewportButton = new QPushButton();
+	renderViewportButton->setAutoDefault(true);
+	QAction* renderAction = mainWindow()->actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
+	renderViewportButton->setText(tr("Render active viewport"));
+	renderViewportButton->setIcon(renderAction->icon());
+	connect(renderViewportButton, &QPushButton::clicked, renderAction, &QAction::trigger);
+	sublayout->addWidget(renderViewportButton, 3);
+
+	// Create 'Switch renderer' button.
+	QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."));
+	connect(switchRendererButton, &QPushButton::clicked, this, &RenderSettingsEditor::onSwitchRenderer);
+	sublayout->addWidget(switchRendererButton, 1);
 
 	// Open a sub-editor for the renderer.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
