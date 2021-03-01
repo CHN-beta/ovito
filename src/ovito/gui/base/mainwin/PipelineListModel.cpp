@@ -406,7 +406,8 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 						predecessorModApp->setInput(modApp);
 					}
 					else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-						pipeline->setDataProvider(modApp);
+						if(pipeline->dataProvider() == pobj)
+							pipeline->setDataProvider(modApp);
 					}
 				}
 				pobj = modApp;
@@ -1092,7 +1093,8 @@ void PipelineListModel::moveModifierUp()
 									next = predecessor2;
 							}
 							else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
-								pipeline->setDataProvider(modApp);
+								if(pipeline->dataProvider() == current)
+									pipeline->setDataProvider(modApp);
 							}
 						});
 						if(!next) break;
@@ -1109,8 +1111,8 @@ void PipelineListModel::moveModifierUp()
 							predecessor2->setInput(modApp);
 						}
 						else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
-							OVITO_ASSERT(pipeline->dataProvider() == predecessor);
-							pipeline->setDataProvider(modApp);
+							if(pipeline->dataProvider() == predecessor)
+								pipeline->setDataProvider(modApp);
 						}
 					});
 					predecessor->setInput(modApp->input());
@@ -1161,8 +1163,8 @@ void PipelineListModel::moveModifierUp()
 					predecessor->setInput(headModApp);
 				}
 				else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-					OVITO_ASSERT(predecessor->dataProvider() == insertBefore);
-					predecessor->setDataProvider(headModApp);
+					if(predecessor->dataProvider() == insertBefore);
+						predecessor->setDataProvider(headModApp);
 				}
 			});
 			predecessor->setInput(tailModApp->input());
@@ -1210,7 +1212,8 @@ void PipelineListModel::moveModifierDown()
 							predecessor->setInput(successor);
 						}
 						else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-							predecessor->setDataProvider(successor);
+							if(predecessor->dataProvider() == modApp)
+								predecessor->setDataProvider(successor);
 						}
 					});
 					modApp->setInput(insertAfter->input());
@@ -1249,7 +1252,8 @@ void PipelineListModel::moveModifierDown()
 					predecessor->setInput(successor);
 				}
 				else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-					predecessor->setDataProvider(successor);
+					if(predecessor->dataProvider() == headModApp)
+						predecessor->setDataProvider(successor);
 				}
 			});
 			tailModApp->setInput(insertAfter->input());
