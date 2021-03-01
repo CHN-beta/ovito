@@ -153,6 +153,8 @@ namespace Ovito {
 
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE		"NewPipeline.FileSource"
+/// This action adds a new pipeline to the scene with a PythonScriptSource.
+#define ACTION_NEW_PIPELINE_PYTHONSOURCE	"NewPipeline.PythonScriptSource"
 
 /**
  * \brief Manages all available user interface actions.
