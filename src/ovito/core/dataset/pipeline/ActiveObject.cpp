@@ -50,8 +50,9 @@ ActiveObject::ActiveObject(DataSet* dataset) : RefTarget(dataset), _isEnabled(tr
 void ActiveObject::propertyChanged(const PropertyFieldDescriptor& field)
 {
     // If the object is disabled, clear its status.
-	if(field == PROPERTY_FIELD(isEnabled) && !isEnabled())
+	if(field == PROPERTY_FIELD(isEnabled) && !isEnabled()) {
 		setStatus(PipelineStatus::Success);
+	}
 
     // Whenever the object's status changes, update UI with some delay.
 	if(field == PROPERTY_FIELD(status)) {

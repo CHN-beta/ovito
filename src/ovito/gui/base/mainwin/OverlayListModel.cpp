@@ -79,10 +79,10 @@ OverlayListItem* OverlayListModel::selectedItem() const
 int OverlayListModel::selectedIndex() const
 {
 	QModelIndexList selection = _selectionModel->selectedRows();
-	if(selection.empty())
-		return -1;
-	else
+	if(selection.size() == 1)
 		return selection.front().row();
+	else
+		return -1;
 }
 
 /******************************************************************************

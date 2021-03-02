@@ -190,8 +190,8 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 	OVITO_ASSERT(!descriptor.isVector());
 	OVITO_ASSERT((descriptor.isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
+	// Check for cyclic strong references.
+	if(inactiveTarget && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
 		throw CyclicReferenceError();
 
 	// Move the old pointer value into a local temporary.
@@ -450,8 +450,8 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
 	OVITO_ASSERT(descriptor.isVector());
 	OVITO_ASSERT((descriptor.isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
+	// Check for cyclic strong references.
+	if(inactiveTarget && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
 		throw CyclicReferenceError();
 
 	// Move the old pointer value into a local temporary.
@@ -526,8 +526,8 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 	OVITO_CHECK_OBJECT_POINTER(owner);
 	OVITO_ASSERT(descriptor.isVector());
 
-	// Check for cyclic references.
-	if(target && owner->isReferencedBy(target))
+	// Check for cyclic strong references.
+	if(target && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(target, true))
 		throw CyclicReferenceError();
 
 	// Add new reference to list.

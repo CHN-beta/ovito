@@ -40,6 +40,7 @@ class OVITO_CORE_EXPORT FileSource : public CachingPipelineObject
 {
 	Q_OBJECT
 	OVITO_CLASS(FileSource)
+	Q_CLASSINFO("DisplayName", "External file source");
 
 public:
 
@@ -119,7 +120,7 @@ protected:
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// Sets the source frame number that is currently used as a sub-object data collection.
-	void setDataCollectionFrame(int frame) { _dataCollectionFrame = frame; }
+	void setDataCollectionFrame(int frame);
 
 private:
 

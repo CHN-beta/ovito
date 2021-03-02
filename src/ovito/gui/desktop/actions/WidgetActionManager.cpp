@@ -25,7 +25,10 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/desktop/viewport/input/XFormModes.h>
@@ -61,6 +64,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow* mainWindow
 	connect(getAction(ACTION_RENDER_ACTIVE_VIEWPORT), &QAction::triggered, this, &WidgetActionManager::on_RenderActiveViewport_triggered);
 	connect(getAction(ACTION_EDIT_CLONE_PIPELINE), &QAction::triggered, this, &WidgetActionManager::on_ClonePipeline_triggered);
 	connect(getAction(ACTION_EDIT_RENAME_PIPELINE), &QAction::triggered, this, &WidgetActionManager::on_RenamePipeline_triggered);
+	connect(getAction(ACTION_NEW_PIPELINE_FILESOURCE), &QAction::triggered, this, &WidgetActionManager::on_NewPipelineFileSource_triggered);
 
 	setupCommandSearch();
 }
@@ -84,13 +88,41 @@ void WidgetActionManager::on_RenamePipeline_triggered()
 	if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
 		QString oldPipelineName = pipeline->objectTitle();
 		bool ok;
-		QString pipelineName = QInputDialog::getText(mainWindow(), tr("Rename pipeline"), tr("Please enter a new name for the selected pipeline:"), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
+		QString pipelineName = QInputDialog::getText(mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
 		if(ok && pipelineName != oldPipelineName) {
 			UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Rename pipeline"), [&]() {
 				pipeline->setNodeName(pipelineName);
 			});
 		}
 	}
+}
+
+/******************************************************************************
+* Handles ACTION_NEW_PIPELINE_FILESOURCE command
+******************************************************************************/
+void WidgetActionManager::on_NewPipelineFileSource_triggered()
+{
+	if(!dataset()) return;
+
+	UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Create pipeline"), [&]() {
+		// Do not create any animation keys.
+		AnimationSuspender animSuspender(dataset());
+		// Pause viewport updates while updating the scene.
+		ViewportSuspender noUpdates(dataset());
+
+		// Create the FileSource.
+		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), Application::instance()->executionContext());
+
+		// Create pipeline scene node.
+		OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
+		pipeline->setDataProvider(fileSource);
+
+		// Insert pipeline into scene.
+		dataset()->sceneRoot()->addChildNode(pipeline);
+
+		// Select new object in the scene.
+		dataset()->selection()->setNode(pipeline);
+	});	
 }
 
 /******************************************************************************

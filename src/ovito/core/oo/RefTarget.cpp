@@ -135,10 +135,11 @@ bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& ev
 /******************************************************************************
 * Checks if this object is directly or indirectly referenced by the given RefMaker.
 ******************************************************************************/
-bool RefTarget::isReferencedBy(const RefMaker* obj) const
+bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) const
 {
-	if(this == obj) return true;
-	CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj);		
+	if(this == obj) 
+		return true;
+	CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
 	const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
 	return event.isReferenced();
 }

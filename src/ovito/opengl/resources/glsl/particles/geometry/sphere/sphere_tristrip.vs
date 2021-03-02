@@ -54,8 +54,8 @@ void main()
 	}
 
 	particle_radius_squared_fs = (particle_radius * particle_radius) * (radius_scalingfactor * radius_scalingfactor);
-	particle_view_pos_fs = vec3(modelview_matrix * vec4(position, 1));
+	particle_view_pos_fs = vec3(modelview_matrix * vec4(position, 1.0));
 
 	// Transform and project vertex.
-	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[gl_VertexID % 14] * particle_radius, 1);
+	gl_Position = modelviewprojection_matrix * vec4(position + cubeVerts[gl_VertexID % 14] * particle_radius, 1.0);
 }

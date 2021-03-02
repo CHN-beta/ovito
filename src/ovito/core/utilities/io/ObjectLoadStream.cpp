@@ -170,6 +170,11 @@ void ObjectLoadStream::close()
 				_currentObject->object->loadFromStream(*this);
 			}
 			catch(Exception& ex) {
+				// Clear the being-loaded status of all objects.
+				for(const ObjectRecord& record : _objects) {
+					if(record.object)
+						record.object->setParent(nullptr);
+				}
 				throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(_currentObject->object->getOOClass().name()));
 			}
 		}

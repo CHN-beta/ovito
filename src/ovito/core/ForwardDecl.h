@@ -96,6 +96,7 @@ namespace Ovito {
 	class Modifier;
 	class ModifierClass;
 	using ModifierClassPtr = const ModifierClass*;
+	class ModifierGroup;
 	class ModifierApplication;
 	class PipelineSceneNode;
 	class PipelineFlowState;

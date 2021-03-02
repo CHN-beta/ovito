@@ -62,6 +62,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), ":/guibase/actions/edit/edit_redo.bw.svg", tr("Restore the previously reversed action."), QKeySequence::Redo);
 	createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."))->setVisible(false);
 
+	createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), ":/guibase/actions/edit/create_pipeline.svg", tr("Creates a new pipeline with an external file as data source."));
 	createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), ":/guibase/actions/edit/clone_pipeline.bw.svg", tr("Duplicate the current pipeline to show multiple datasets side by side."));
 	createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), ":/guibase/actions/edit/rename_pipeline.bw.svg", tr("Assign a new name to the selected pipeline."));
 	createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), ":/guibase/actions/edit/edit_delete.bw.svg", tr("Delete the selected object from the scene."));

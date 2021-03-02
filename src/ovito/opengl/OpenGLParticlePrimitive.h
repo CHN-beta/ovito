@@ -112,6 +112,14 @@ private:
 
 	/// Number of OpenGL vertices per particle that must be rendered.
 	int _verticesPerParticle;
+
+#ifdef Q_OS_MACOS
+	// Data structures required for a OpenGL issue workaround on macOS.
+	DataBufferPtr _effectiveColors; // Array of Color
+	ConstDataBufferPtr _inputColors;
+	ConstDataBufferPtr _inputSelection;
+	Color _inputUniformParticleColor{1,1,1};
+#endif
 };
 
 }	// End of namespace

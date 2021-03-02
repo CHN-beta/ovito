@@ -202,6 +202,11 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
 	// Handle CheckIsReferencedBy signals.
 	if(event.type() ==  ReferenceEvent::CheckIsReferencedBy) {
 		const CheckIsReferencedByEvent& queryEvent = static_cast<const CheckIsReferencedByEvent&>(event);
+		if(queryEvent.onlyStrongReferences()) {
+			// Determine if this RefMaker has any strong reference(s) to the event source.
+			if(!hasStrongReferenceTo(source))
+				return false;
+		}
 		if(queryEvent.dependent() == this) {
 			queryEvent.setIsReferenced();
 			return false;
@@ -210,7 +215,7 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
 	}
 
 	// Handle VisitDependents signals.
-	if(event.type() ==  ReferenceEvent::VisitDependents) {
+	if(event.type() == ReferenceEvent::VisitDependents) {
 		const VisitDependentsEvent& visitEvent = static_cast<const VisitDependentsEvent&>(event);
 		visitEvent.visitDependent(this);
 		return false;
@@ -227,19 +232,46 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.shouldPropagate()) {
 		// Check if message is comming from a reference field for which message propagation is explicitly disabled.
+		// Note that a target object may be referenced from multiple reference fields, some of which having
+		// message propagation enabled and some disabled.
+		bool isSupressedField = false;
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(!field->isReferenceField()) continue;
 			if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) continue;
 			if(!field->isVector()) {
-				if(field->_singleReferenceReadFunc(this) == source)
-					return false;
+				if(field->_singleReferenceReadFunc(this) == source) {
+					isSupressedField = true;
+					break;
+				}
 			}
 			else {
-				if(vectorReferenceFieldContains(*field, source))
-					return false;
+				if(vectorReferenceFieldContains(*field, source)) {
+					isSupressedField = true;
+					break;
+				}
 			}
 		}
-		return true;
+		if(!isSupressedField)
+			return true;
+		// Perform counter check and determine if message is comming from a reference field for which message propagation 
+		// is NOT explicitly disabled.
+		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+			if(!field->isReferenceField()) continue;
+			if(!field->isVector()) {
+				if(field->_singleReferenceReadFunc(this) == source) {
+					if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+						return true;
+				}
+			}
+			else {
+				if(vectorReferenceFieldContains(*field, source)) {
+					if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) 
+						return true;
+				}
+			}
+		}
+		// Do not propagate message.
+		return false;
 	}
 	return false;
 }
@@ -267,6 +299,30 @@ bool RefMaker::hasReferenceTo(const RefTarget* target) const
 }
 
 /******************************************************************************
+* Checks if this RefMaker has any strong reference to the given RefTarget.
+******************************************************************************/
+bool RefMaker::hasStrongReferenceTo(const RefTarget* target) const
+{
+	if(!target) return false;
+	OVITO_CHECK_OBJECT_POINTER(target);
+
+	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
+		if(!field->isReferenceField()) continue;
+		// Skip weak references for which event propagation is disabled.
+		if(field->isWeakReference() && field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) continue;
+		if(!field->isVector()) {
+			if(field->_singleReferenceReadFunc(this) == target)
+				return true;
+		}
+		else {
+			if(vectorReferenceFieldContains(*field, target))
+				return true;
+		}
+	}
+	return false;
+}
+
+/******************************************************************************
 * Replaces all references of this RefMaker to the old RefTarget with
 * the new RefTarget.
 ******************************************************************************/
@@ -274,10 +330,6 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 {
 	if(!oldTarget) return;
 	OVITO_CHECK_OBJECT_POINTER(oldTarget);
-
-	// Check for cyclic references first.
-	if(newTarget && isReferencedBy(newTarget))
-		throw CyclicReferenceError();
 
 	// Iterate over all reference fields in the class hierarchy.
 	bool hasBeenReplaced = false;
@@ -287,6 +339,9 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 		if(!oldTargetClass.isDerivedFrom(*field->targetClass())) continue;
 		if(!field->isVector()) {
 			if(field->_singleReferenceReadFunc(this) == oldTarget) {
+				// Check for cyclic strong references.
+				if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
+					throw CyclicReferenceError();
 				field->_singleReferenceWriteFunc(this, newTarget);
 				hasBeenReplaced = true;
 			}
@@ -295,6 +350,9 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 			int count = getVectorReferenceFieldSize(*field);
 			for(int i = count; i--;) {
 				if(getVectorReferenceFieldTarget(*field, i) == oldTarget) {
+					// Check for cyclic references.
+					if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
+						throw CyclicReferenceError();
 					setVectorReferenceFieldTarget(*field, i, newTarget);
 					hasBeenReplaced = true;
 				}

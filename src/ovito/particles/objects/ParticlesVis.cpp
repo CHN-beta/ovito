@@ -494,7 +494,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 	const PropertyObject* selectionProperty = renderer->isInteractive() ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr;
 	const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
-	if(!typeProperty)
+	if(!positionProperty || !typeProperty)
 		return;
 
 	// Compile list of particle types that have a mesh geometry assigned.
@@ -686,6 +686,8 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 	const PropertyObject* asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
 	const PropertyObject* roundnessProperty = particles->getProperty(ParticlesObject::SuperquadricRoundnessProperty);
+	if(!positionProperty)
+		return;
 
 	// Pick render quality level adaptively based on current number of particles.
 	ParticlePrimitive::RenderingQuality primitiveRenderQuality = effectiveRenderingQuality(renderer, particles);
@@ -868,6 +870,8 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 	const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
 	const PropertyObject* asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
 	const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+	if(!positionProperty)
+		return;
 
 	ConstPropertyPtr colorBuffer;
 	ConstPropertyPtr radiusBuffer;

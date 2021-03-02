@@ -58,10 +58,6 @@ public:
 	/// \brief Performs an asynchronous evaluation of the data pipeline including the visualization elements.
 	PipelineEvaluationFuture evaluateRenderingPipeline(const PipelineEvaluationRequest& request);
 
-	/// Traverses the node's pipeline until the end and returns the object that generates the
-	/// input data for the pipeline.
-	PipelineObject* pipelineSource() const;
-
 	/// Sets the data source of this node's pipeline, i.e., the object that provides the
 	/// input data entering the pipeline.
 	void setPipelineSource(PipelineObject* sourceObject);
@@ -126,6 +122,9 @@ private:
 	/// Rebuilds the list of visual elements maintained by the scene node.
 	void updateVisElementList(const PipelineFlowState& state);
 
+	/// Determines the current source of the data pipeline and updates the internal weak reference field.
+	void updatePipelineSourceReference();
+
 	/// Helper function that recursively collects all visual elements attached to a
 	/// data object and its children and stores them in an output vector.
 	static void collectVisElements(const DataObject* dataObj, std::vector<DataVis*>& visElements);
@@ -150,6 +149,9 @@ private:
 
 	/// Activates the precomputation of the pipeline results for all animation frames.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+
+	/// Weak reference to the pipeline's data source.
+	DECLARE_REFERENCE_FIELD_FLAGS(PipelineObject*, pipelineSource, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// The cached output of the data pipeline (without the effect of visualization elements).
 	PipelineCache _pipelineCache;

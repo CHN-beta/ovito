@@ -201,10 +201,13 @@ class CheckIsReferencedByEvent : public ReferenceEvent
 public:
 
 	/// Constructor.
-	explicit CheckIsReferencedByEvent(RefTarget* sender, const RefMaker* dependent) : ReferenceEvent(ReferenceEvent::CheckIsReferencedBy, sender), _dependent(dependent) {}
+	explicit CheckIsReferencedByEvent(RefTarget* sender, const RefMaker* dependent, bool onlyStrongReferences) : ReferenceEvent(ReferenceEvent::CheckIsReferencedBy, sender), _dependent(dependent), _onlyStrongReferences(onlyStrongReferences) {}
 
 	/// Returns the potentially dependent, which we are looking for.
 	const RefMaker* dependent() const { return _dependent; }
+
+	/// Returns whether only strong references are considered.
+	bool onlyStrongReferences() const { return _onlyStrongReferences; }
 
 	/// After the query has been performed, this returns whether the dependent references the target object (directly or indicrectly).
 	bool isReferenced() const { return _isReferenced; }
@@ -215,6 +218,7 @@ public:
 private:
 
 	const RefMaker* _dependent;
+	bool _onlyStrongReferences;
 	mutable bool _isReferenced = false;
 };
 

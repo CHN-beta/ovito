@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,53 +20,50 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \file StatusBar.h
- * \brief Contains the definition of the Ovito::StatusBar class.
- */
-
 #pragma once
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
 
 /**
- * \brief A status bar widget.
+ * \brief The properties editor for the ModifierGroup class.
  */
-class StatusBar : public QLabel
+class ModifierGroupEditor : public PropertiesEditor
 {
 	Q_OBJECT
+	OVITO_CLASS(ModifierGroupEditor)
 
 public:
 
-	/// \brief Constructs a status bar widget.
-	/// \param parent The parent widget for the new widget.
-	StatusBar(QWidget* parent = nullptr);
-
-	QLabel* overflowWidget() { return _overflowLabel; }
-
-	virtual QSize sizeHint() const override;
-	virtual QSize minimumSizeHint() const override { return sizeHint(); }
-
-public Q_SLOTS:
-
-	/// Displays the given message for the specified number of milli-seconds
-	void showMessage(const QString& message, int timeout = 0);
-
-	/// Removes any message being shown.
-	void clearMessage();
+	/// Constructor.
+	Q_INVOKABLE ModifierGroupEditor() = default;
 
 protected:
 
-	virtual void resizeEvent(QResizeEvent* event) override;
+	/// Creates the user interface controls for the editor.
+	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+	/// Is called when the value of a reference field of this RefMaker changes.
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+private Q_SLOTS:
+
+	/// Rebuilds the list of sub-editors for the group's modifier applications.
+	void updateSubEditors();
 
 private:
 
-	QTimer* _timer = nullptr;
-	QLabel* _overflowLabel = nullptr;
-	mutable int _preferredHeight = 0;
+	/// The editors for the group's modifier applications.
+	std::vector<OORef<PropertiesEditor>> _subEditors;
+
+	/// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
+	RolloutInsertionParameters _rolloutParams;
+
+	QMetaObject::Connection _modifierAddedConnection;
+	QMetaObject::Connection _modifierRemovedConnection;
 };
 
 }	// End of namespace

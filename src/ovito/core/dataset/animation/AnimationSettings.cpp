@@ -272,7 +272,7 @@ void AnimationSettings::scheduleNextAnimationFrame()
 	int timerSpeed = 1000 / std::abs(_activePlaybackRate);
 	if(playbackSpeed() > 1) timerSpeed /= playbackSpeed();
 	else if(playbackSpeed() < -1) timerSpeed *= -playbackSpeed();
-	QTimer::singleShot(timerSpeed / framesPerSecond(), this, &AnimationSettings::onPlaybackTimer);
+	QTimer::singleShot(timerSpeed * ticksPerFrame() / TICKS_PER_SECOND, this, &AnimationSettings::onPlaybackTimer);
 }
 
 /******************************************************************************

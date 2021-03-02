@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,9 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/pipeline/ActiveObject.h>
 #include "Modifier.h"
+#include "ModifierGroup.h"
 #include "CachingPipelineObject.h"
 
 namespace Ovito {
@@ -101,11 +103,21 @@ public:
 	/// returns the source object that generates the input data for the pipeline.
 	PipelineObject* pipelineSource() const;
 
+	/// \brief Returns the modifier application that precedes this modifier application in the pipeline.
+	/// If this modifier application is referenced by more than one modifier application (=it is preceded by a pipeline branch),
+	/// then nullptr is returned.
+	ModifierApplication* getPredecessorModApp() const;
+
 	/// \brief Returns the title of this modifier application.
 	virtual QString objectTitle() const override {
 		// Inherit title from modifier.
 		if(modifier()) return modifier()->objectTitle();
 		else return CachingPipelineObject::objectTitle();
+	}
+
+	/// Returns whether the modifier AND the modifier group (if this modapp is part of one) are enabled.
+	bool modifierAndGroupEnabled() const { 
+		return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
 	}
 
 protected:
@@ -138,6 +150,9 @@ private:
 
 	/// The modifier that is inserted into the pipeline.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Modifier>, modifier, setModifier, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_OPEN_SUBEDITOR);
+
+	/// The logical group this modifier application belongs to.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierGroup>, modifierGroup, setModifierGroup, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /// This macro registers some ModifierApplication-derived class as the pipeline application type of some Modifier-derived class.

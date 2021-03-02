@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
+#include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -112,20 +113,24 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	animationPanelLayout->addWidget(trackBar);
 
 	// Create status bar.
-	_statusBarLayout = new QHBoxLayout();
+	QWidget* statusBarContainer = new QWidget();
+	statusBarContainer->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+	_statusBarLayout = new QHBoxLayout(statusBarContainer);
 	_statusBarLayout->setContentsMargins(2,0,0,0);
 	_statusBarLayout->setSpacing(2);
-	animationPanelLayout->addLayout(_statusBarLayout, 1);
+	animationPanelLayout->addWidget(statusBarContainer, 1);
 
-	_statusBar = new StatusBar(animationPanel);
+	_statusBar = new StatusBar();
 	_statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-	_statusBarLayout->addWidget(_statusBar, 1);
+	_statusBarLayout->addWidget(_statusBar);
 	_statusBar->overflowWidget()->setParent(animationPanel);
 
 	TaskDisplayWidget* taskDisplay = new TaskDisplayWidget(this);
-	_statusBarLayout->insertWidget(1, taskDisplay);
+	taskDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+	_statusBarLayout->addWidget(taskDisplay, 1);
 
 	_coordinateDisplay = new CoordinateDisplayWidget(datasetContainer(), animationPanel);
+	_coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(_coordinateDisplay);
 	_statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));
 
@@ -278,6 +283,7 @@ void MainWindow::restoreLayout()
 	QVariant state = settings.value("state");
 	if(state.canConvert<QByteArray>())
 		restoreState(state.toByteArray());
+	commandPanel()->restoreLayout();
 }
 
 /******************************************************************************
@@ -288,6 +294,7 @@ void MainWindow::saveLayout()
 	QSettings settings;
 	settings.beginGroup("app/mainwindow");
 	settings.setValue("state", saveState());
+	commandPanel()->saveLayout();
 }
 
 /******************************************************************************
@@ -386,6 +393,11 @@ void MainWindow::createMainToolbar()
 	_mainToolbar->addSeparator();
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
+
+	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
+	pipelinesLabel->setIndent(36);
+	_mainToolbar->addWidget(pipelinesLabel);
+	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
 }
 
 /******************************************************************************

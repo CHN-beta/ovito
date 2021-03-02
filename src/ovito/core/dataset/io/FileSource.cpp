@@ -653,6 +653,19 @@ QString FileSource::objectTitle() const
 }
 
 /******************************************************************************
+* Sets the source frame number that is currently used as a sub-object data collection.
+******************************************************************************/
+void FileSource::setDataCollectionFrame(int frame) 
+{ 
+	if(frame != _dataCollectionFrame) {
+		_dataCollectionFrame = frame; 
+		
+		if(numberOfFiles() > 1)
+			notifyDependents(ReferenceEvent::TitleChanged);
+	}
+}
+
+/******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
 void FileSource::propertyChanged(const PropertyFieldDescriptor& field)

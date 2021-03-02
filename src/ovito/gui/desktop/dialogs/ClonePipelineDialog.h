@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,8 +61,9 @@ private:
 
 	/// Data structure that is created for every pipeline object.
 	struct PipelineItemStruct {
-		OORef<PipelineObject> pipelineObject;
-		ModifierApplication* modApp;
+		QString title;
+		std::vector<OORef<PipelineObject>> pipelineObjects;
+		std::vector<ModifierApplication*> modApps;
 		QGraphicsItem* connector1;
 		QGraphicsItem* connector2;
 		QGraphicsItem* connector3;
@@ -75,6 +76,7 @@ private:
 		QActionGroup* actionGroup;
 		CloneMode cloneMode() const { return (CloneMode)actionGroup->checkedAction()->data().toInt(); }
 		void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
+		bool isModifier() const { return !modApps.empty(); }
 	};
 
 	/// The graphics scene for the pipeline layout.
@@ -100,5 +102,3 @@ private:
 };
 
 }	// End of namespace
-
-

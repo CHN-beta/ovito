@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,11 +46,12 @@ public:
 	enum ItemRoles {
 		TitleRole = Qt::UserRole + 1,
 		ItemTypeRole,
-		CheckedRole
+		CheckedRole,
+		IsCollapsedRole
 	};
 
 	/// Constructor.
-	PipelineListModel(DataSetContainer& datasetContainer, QObject* parent);
+	PipelineListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QObject* parent);
 
 	/// Returns the number of list items.
 	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return _items.size(); }
@@ -67,6 +68,9 @@ public:
 	/// Returns the model's role names.
 	virtual QHash<int, QByteArray> roleNames() const override;
 
+	/// Returns the icon size to be used by the list widget.
+	QSize iconSize() const { return _statusInfoIcon.size(); }
+
 	/// Discards all list items.
 	void clear() {
 		if(_items.empty()) return;
@@ -74,27 +78,39 @@ public:
 		_items.clear();
 		_selectedPipeline.setTarget(nullptr);
 		endRemoveRows();
-		_needListUpdate = false;
+		_listRefreshPending = false;
 	}
 
 	/// Returns the associated selection model.
 	QItemSelectionModel* selectionModel() const { return _selectionModel; }
 
-	/// Returns the currently selected item in the modification list.
+	/// Returns the currently selected item in the data pipeline editor.
 	PipelineListItem* selectedItem() const;
 
-	/// Returns the index of the item that is currently selected in the pipeline editor.
+	/// Returns the currently selected list items in the data pipeline editor.
+	QVector<PipelineListItem*> selectedItems() const;
+
+	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
+	RefTarget* selectedObject() const;
+
+	/// Returns the currently selected pipeline objects in the data pipeline editor.
+	QVector<RefTarget*> selectedObjects() const;
+
+	/// Returns the index of the model item that is currently selected in the pipeline editor.
 	int selectedIndex() const;
+
+	/// Returns the list of model indicaes that are currently selected in the pipeline editor.
+	QVector<int> selectedIndices() const;
 
 	/// Sets the index of the item that is currently selected in the pipeline editor.
 	void setSelectedIndex(int index) { 
 		if(selectedIndex() != index) {
-			_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+			if(index >= 0)
+				_selectionModel->select(this->index(index), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
+			else
+				_selectionModel->clear();
 		}
 	}
-
-	/// Returns the RefTarget object from the pipeline that is currently selected in the pipeline editor.
-	RefTarget* selectedObject() const;
 
 	/// Returns an item from the list model.
 	PipelineListItem* item(int index) const {
@@ -109,9 +125,7 @@ public:
 	const std::vector<OORef<PipelineListItem>>& items() const { return _items; }
 
 	/// Returns the type of drag and drop operations supported by the model.
-	Qt::DropActions supportedDropActions() const override {
-	    return Qt::MoveAction;
-	}
+	Qt::DropActions supportedDropActions() const override;
 
 	/// Returns the list of allowed MIME types.
 	QStringList mimeTypes() const override;
@@ -125,23 +139,32 @@ public:
 	/// Handles the data supplied by a drag and drop operation that ended with the given action.
 	bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
 
-	/// Returns true if the list model is currently in a valid state.
-	bool isUpToDate() const { return !_needListUpdate; }
-
 	/// The list of currently selected PipelineSceneNode.
 	PipelineSceneNode* selectedPipeline() const { return _selectedPipeline.target(); }
 
 	/// Returns the container of the dataset being edited.
 	DataSetContainer& datasetContainer() { return _datasetContainer; }
 
-	/// Inserts the given modifiers into the modification pipeline of the selected scene nodes.
-	void applyModifiers(const QVector<OORef<Modifier>>& modifiers);
+	/// Inserts the given modifier(s) into the currently selected pipeline.
+	void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
 
 	/// Sets the item in the modification list that should be selected on the next list update.
-	void setNextObjectToSelect(RefTarget* obj) { _nextObjectToSelect = obj; }
+	void setNextObjectToSelect(RefTarget* obj) { 
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
+			if(modApp->modifierGroup() && modApp->modifierGroup()->isCollapsed())
+				obj = modApp->modifierGroup();
+		}
+		_nextObjectToSelect = obj; 
+	}
 
 	/// Sets the item in the modification list that should be selected on the next list update.
 	void setNextSubObjectToSelectByTitle(const QString& title) { _nextSubObjectTitleToSelect = title; }
+
+	/// Deletes the given model items from the data pipeline.
+	void deleteItems(const QVector<PipelineListItem*>& items);
+
+	/// Deletes a modifier application from the pipeline.
+	void deleteModifierApplication(ModifierApplication* modApp);
 
 	/// Helper method that determines if the given object is part of more than one pipeline.
 	static bool isSharedObject(RefTarget* obj);
@@ -160,16 +183,28 @@ public Q_SLOTS:
 	/// Updates the appearance of a single list item.
 	void refreshItem(PipelineListItem* item);
 
-	/// Rebuilds the list of modification items as soon as possible.
-	void requestUpdate() {
-		if(_needListUpdate) return;	// Update is already pending.
-		_needListUpdate = true;
-		// Invoke actual refresh function at some later time.
+	/// Rebuilds the model's item list as soon as possible.
+	void refreshListLater() {
+		if(_listRefreshPending) return;	// List refresh is already pending.
+		_listRefreshPending = true;
+		// Invoke actual refresh function at a later time when control returns to the GUI event loop.
 		QMetaObject::invokeMethod(this, "refreshList", Qt::QueuedConnection);
 	}
 
-	/// Deletes the modifier at the given list index from the pipeline.
-	void deleteModifier(int index);
+	/// Deletes the pipeline objects that are currently selected in the list.
+	void deleteSelectedItems() { deleteItems(selectedItems()); }
+
+	/// Moves the selected modifier up one position in the stack.
+	void moveModifierUp();
+
+	/// Moves the selected modifier down one position in the stack.
+	void moveModifierDown();
+
+	/// Replaces the selected pipeline item with an independent copy.
+	void makeElementIndependent();
+
+	/// Creates or dissolves a group of modifiers.
+	void toggleModifierGroup();
 
 private Q_SLOTS:
 
@@ -179,10 +214,22 @@ private Q_SLOTS:
 	/// Handles notification events generated by the selected pipeline node.
 	void onPipelineEvent(const ReferenceEvent& event);
 
+	/// Updates the state of the actions that can be invoked on the currently selected list item.
+	void updateActions();
+
 private:
 
 	/// Create the pipeline editor entries for the subjects of the given object (and their subobjects).
 	static void createListItemsForSubobjects(const DataObject* dataObj, std::vector<OORef<PipelineListItem>>& items, PipelineListItem* parentItem);
+
+	/// Replaces the a pipeline item with an independent copy.
+	PipelineObject* makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper);
+
+	/// Executes a drag-and-drop operation within the pipeline editor.
+	bool performDragAndDropOperation(const QMimeData* data, int row, bool dryRun);
+
+	/// Moves a sequence of modifiers to a new position in the pipeline.
+	bool moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter);
 
 	/// List of visible items in the model.
 	std::vector<OORef<PipelineListItem>> _items;
@@ -200,7 +247,7 @@ private:
 	QItemSelectionModel* _selectionModel;
 
 	/// Indicates that the list of items needs to be updated.
-	bool _needListUpdate = false;
+	bool _listRefreshPending = false;
 
 	// Status icons:
 	QPixmap _statusInfoIcon;
@@ -208,6 +255,8 @@ private:
 	QPixmap _statusErrorIcon;
 	QPixmap _statusNoneIcon;
 	QMovie _statusPendingIcon;
+	QIcon _modifierGroupCollapsed;
+	QIcon _modifierGroupExpanded;
 
 	/// Font used for section headers.
 	QFont _sectionHeaderFont;
@@ -221,8 +270,26 @@ private:
 	/// The foreground brush used for list section headers.
 	QBrush _sectionHeaderForegroundBrush;
 
+	/// The foreground brush used for list items that are disabled.
+	QBrush _disabledForegroundBrush;
+
 	/// Container of the dataset being edited.
 	DataSetContainer& _datasetContainer;
+
+	/// The action that deletes the selected list item.
+	QAction* _deleteItemAction;
+
+	/// Action that moves the selected item up one entry in the list.
+	QAction* _moveItemUpAction;
+
+	/// Action that moves the selected item down one entry in the list.
+	QAction* _moveItemDownAction;
+
+	/// Action that creates or dissolves a modifier group.
+	QAction* _toggleModifierGroupAction;
+
+	/// Action that creates an independent copy of a cloned pipeline object.
+	QAction* _makeElementIndependentAction;
 };
 
 }	// End of namespace
