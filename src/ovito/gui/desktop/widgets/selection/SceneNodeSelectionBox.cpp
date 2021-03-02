@@ -85,7 +85,7 @@ void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOption
 {
 	// Paint buttons next to node items when mouse if over the item.
 	if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
-#ifndef Q_OS_MACOS
+#ifdef Q_OS_WIN
 		if(option.state & QStyle::State_MouseOver) {
 #else
 		if(option.state & QStyle::State_Selected) {
@@ -103,14 +103,14 @@ void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOption
 			// Load the icons.
 			if(_deleteIcon.isNull()) {
 				_deleteIcon = QIcon(":/guibase/actions/edit/delete_pipeline.svg");
-#ifdef Q_OS_MACOS
+#ifndef Q_OS_WIN
 				_deleteIcon.addFile(":/guibase/actions/edit/delete_pipeline.white.svg", QSize(), QIcon::Disabled);
 #endif
 				_deleteIcon.setIsMask(true);
 			}
 			if(_renameIcon.isNull()) {
 				_renameIcon = QIcon(":/guibase/actions/edit/rename_pipeline.bw.svg");
-#ifdef Q_OS_MACOS
+#ifndef Q_OS_WIN
 				_renameIcon.addFile(":/guibase/actions/edit/rename_pipeline.bw.white.svg", QSize(), QIcon::Disabled);
 #endif
 				_renameIcon.setIsMask(true);
@@ -169,6 +169,14 @@ bool SceneNodeSelectionItemDelegate::editorEvent(QEvent* event, QAbstractItemMod
 				QToolTip::showText(view->viewport()->mapToGlobal(renameRect.bottomRight()), tr("Rename"), view->viewport(), renameRect);
 			return true;
 		}
+		else {
+			if(_deleteButtonHover || _renameButtonHover) {
+				_deleteButtonHover = false;
+				_renameButtonHover = false;
+				QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
+				view->viewport()->update();
+			}
+		}
 	}
 	return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
@@ -178,7 +186,7 @@ bool SceneNodeSelectionItemDelegate::editorEvent(QEvent* event, QAbstractItemMod
 ******************************************************************************/
 bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
 {
-	if(event->type() == QEvent::MouseButtonRelease) {
+	if(event->type() == QEvent::MouseButtonPress) {
 		QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
 		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 		QModelIndex indexUnderMouse = view->indexAt(mouseEvent->pos());
@@ -194,6 +202,14 @@ bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
 				Q_EMIT itemRename(indexUnderMouse.row());
 				return true;
 			}
+		}
+	}
+	else if(event->type() == QEvent::Hide || event->type() == QEvent::Leave) {
+		if(_deleteButtonHover || _renameButtonHover) {
+			_deleteButtonHover = false;
+			_renameButtonHover = false;
+			QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
+			view->viewport()->update();
 		}
 	}
 
