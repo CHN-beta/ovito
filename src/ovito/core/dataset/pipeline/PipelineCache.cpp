@@ -112,7 +112,13 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 	}
 	else {
 		preliminaryValidityInterval = pipelineObject->validityInterval(request);
-		future = pipelineObject->evaluateInternal(request);
+		try {
+			future = pipelineObject->evaluateInternal(request);
+		}
+		catch(const Exception& ex) {
+			pipelineObject->setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join('\n')));
+			future = Future<PipelineFlowState>::createImmediateEmplace(nullptr, pipelineObject->status());
+		}
 	}
 
 	// Pre-register the evaluation operation.
