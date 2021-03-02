@@ -40,6 +40,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RenderSettingsEditor);
+DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 
 // Predefined output image dimensions.
@@ -138,13 +139,19 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		layout2->addWidget(imageHeightUI->label(), 1, 0);
 		layout2->addLayout(imageHeightUI->createFieldLayout(), 1, 1);
 
-		sizePresetsBox = new QComboBox(groupBox);
-		sizePresetsBox->addItem(tr("Presets..."));
-		sizePresetsBox->insertSeparator(1);
+		_sizePresetsBox = new QComboBox(groupBox);
+		_sizePresetsBox->addItem(tr("Presets..."));
+		_sizePresetsBox->insertSeparator(1);
 		for(int i = 0; i < sizeof(imageSizePresets)/sizeof(imageSizePresets[0]); i++)
-			sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
-		connect(sizePresetsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &RenderSettingsEditor::onSizePresetActivated);
-		layout2->addWidget(sizePresetsBox, 0, 2);
+			_sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
+		connect(_sizePresetsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &RenderSettingsEditor::onSizePresetActivated);
+		layout2->addWidget(_sizePresetsBox, 0, 2);
+
+		_viewportPreviewModeBox = new QCheckBox(tr("Preview"));
+		layout2->addWidget(_viewportPreviewModeBox, 1, 2, Qt::AlignHCenter | Qt::AlignVCenter);
+		connect(&mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
+		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
+		onViewportConfigReplaced(mainWindow()->datasetContainer().currentSet() ? mainWindow()->datasetContainer().currentSet()->viewportConfig() : nullptr);
 	}
 
 	// Render output
@@ -260,7 +267,7 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 			PROPERTY_FIELD(RenderSettings::outputImageHeight).memorizeDefaultValue(settings);
 		});
 	}
-	sizePresetsBox->setCurrentIndex(0);
+	_sizePresetsBox->setCurrentIndex(0);
 }
 
 /******************************************************************************
@@ -333,6 +340,60 @@ void RenderSettingsEditor::onSwitchRenderer()
 			settings->setRenderer(std::move(renderer));
 		});
 	}
+}
+
+/******************************************************************************
+* This is called whenever the current viewport configuration of current dataset
+* has been replaced by a new one.
+******************************************************************************/
+void RenderSettingsEditor::onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration)
+{
+	disconnect(_activeViewportChangedConnection);
+	if(newViewportConfiguration) {
+		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, &RenderSettingsEditor::onActiveViewportChanged);
+		onActiveViewportChanged(newViewportConfiguration->activeViewport());
+	}
+	else onActiveViewportChanged(nullptr);
+}
+
+/******************************************************************************
+* This is called when another viewport became active.
+******************************************************************************/
+void RenderSettingsEditor::onActiveViewportChanged(Viewport* activeViewport)
+{
+	_activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewport);
+}
+
+/******************************************************************************
+* This method is called when a referenced object has changed.
+******************************************************************************/
+bool RenderSettingsEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(source == activeViewport() && event.type() == ReferenceEvent::TargetChanged) {
+		_viewportPreviewModeBox->setChecked(activeViewport()->renderPreviewMode());
+	}
+	return PropertiesEditor::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Gets called when the data provider of the pipeline has been replaced.
+******************************************************************************/
+void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(activeViewport)) {
+		_viewportPreviewModeBox->setEnabled(activeViewport() != nullptr);
+		_viewportPreviewModeBox->setChecked(activeViewport() && activeViewport()->renderPreviewMode());
+	}
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when the user toggles the preview mode checkbox.
+******************************************************************************/
+void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
+{
+	if(activeViewport())
+		activeViewport()->setRenderPreviewMode(checked);
 }
 
 }	// End of namespace
