@@ -35,7 +35,11 @@ SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer,
 {
 	setInsertPolicy(QComboBox::NoInsert);
 	setEditable(false);
+#ifndef Q_OS_MACOS
 	setMinimumContentsLength(40);
+#else
+	setMinimumContentsLength(32);
+#endif
 	setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	setToolTip(tr("Pipeline selector"));
 	setIconSize(QSize(24, 24));
@@ -81,28 +85,40 @@ void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOption
 {
 	// Paint buttons next to node items when mouse if over the item.
 	if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
-
+#ifndef Q_OS_MACOS
 		if(option.state & QStyle::State_MouseOver) {
-
+#else
+		if(option.state & QStyle::State_Selected) {
+#endif
 			// Shorten the text of the item to not overlap with the buttons.
 			QStyleOptionViewItem reducedOption = option;
 			initStyleOption(&reducedOption, index);
 			QStyle* style = option.widget->style();
 			QRect textRect = style->proxy()->subElementRect(QStyle::SE_ItemViewItemText, &reducedOption, reducedOption.widget);
 			int textWidth = textRect.width() - 2 * option.rect.height();
-			reducedOption.text = option.fontMetrics.elidedText(reducedOption.text, option.textElideMode, textWidth);
+			reducedOption.text = option.fontMetrics.elidedText(reducedOption.text, Qt::ElideRight, textWidth);
 			reducedOption.textElideMode = Qt::ElideNone;
 			option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &reducedOption, painter, option.widget);
 
 			// Load the icons.
-			if(_deleteIcon.isNull())
+			if(_deleteIcon.isNull()) {
 				_deleteIcon = QIcon(":/guibase/actions/edit/delete_pipeline.svg");
-			if(_renameIcon.isNull())
+#ifdef Q_OS_MACOS
+				_deleteIcon.addFile(":/guibase/actions/edit/delete_pipeline.white.svg", QSize(), QIcon::Disabled);
+#endif
+				_deleteIcon.setIsMask(true);
+			}
+			if(_renameIcon.isNull()) {
 				_renameIcon = QIcon(":/guibase/actions/edit/rename_pipeline.bw.svg");
+#ifdef Q_OS_MACOS
+				_renameIcon.addFile(":/guibase/actions/edit/rename_pipeline.bw.white.svg", QSize(), QIcon::Disabled);
+#endif
+				_renameIcon.setIsMask(true);
+			}
 
 			// Paint the icons.
-			_deleteIcon.paint(painter, deleteButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _deleteButtonHover ? QIcon::Normal : QIcon::Disabled);
-			_renameIcon.paint(painter, renameButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _renameButtonHover ? QIcon::Normal : QIcon::Disabled);
+			_deleteIcon.paint(painter, deleteButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _deleteButtonHover ? QIcon::Active : QIcon::Disabled);
+			_renameIcon.paint(painter, renameButtonRect(option.rect), Qt::AlignTrailing | Qt::AlignVCenter, _renameButtonHover ? QIcon::Active : QIcon::Disabled);
 
 			return;
 		}
@@ -183,6 +199,5 @@ bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
 
 	return QStyledItemDelegate::eventFilter(obj, event);
 }
-
 
 }	// End of namespace

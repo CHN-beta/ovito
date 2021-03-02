@@ -193,9 +193,15 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		generateAlphaUI->buttonTrue()->setText(tr("Transparent"));
 	}
 
+#ifndef Q_OS_MACOS
 	QHBoxLayout* sublayout = new QHBoxLayout();
 	sublayout->setContentsMargins(4,4,4,4);
 	sublayout->setSpacing(4);
+#else
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(0,0,0,0);
+	sublayout->setSpacing(4);
+#endif
 	layout->addLayout(sublayout);
 
 	// Create 'Render active viewport' button.
@@ -210,7 +216,14 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	// Create 'Switch renderer' button.
 	QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."));
 	connect(switchRendererButton, &QPushButton::clicked, this, &RenderSettingsEditor::onSwitchRenderer);
+#ifndef Q_OS_MACOS
 	sublayout->addWidget(switchRendererButton, 1);
+#else
+	switchRendererButton->setToolTip(switchRendererButton->text());
+	switchRendererButton->setText({});
+	switchRendererButton->setIcon(QIcon(":/guibase/actions/file/preferences.bw.svg"));
+	sublayout->addWidget(switchRendererButton, 1);
+#endif
 
 	// Open a sub-editor for the renderer.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
@@ -280,7 +293,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	dlg.setWindowTitle(tr("Switch renderer"));
 	QGridLayout* layout = new QGridLayout(&dlg);
 
-	QLabel* label = new QLabel(tr("Select a rendering engine to use for producing output images or movies."));
+	QLabel* label = new QLabel(tr("Select the rendering engine to be used for generating output images and movies."));
 	label->setWordWrap(true);
 	layout->addWidget(label, 0, 0, 1, 2);
 
