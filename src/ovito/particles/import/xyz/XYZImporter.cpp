@@ -600,11 +600,12 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 			for(size_t i = 0; i < 5 && !stream.eof(); i++) {
 				stream.readLine();
 				fileExcerpt += stream.lineString();
+				if(i == 0)
+					detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
 			}
 			if(!stream.eof()) 
 				fileExcerpt += QStringLiteral("...\n");
 
-			detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
 			detectedColumnMapping.setFileExcerpt(fileExcerpt);
 
 			// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume

@@ -551,6 +551,8 @@ void OpenGLCylinderPrimitive::createArrowElement(OpenGLSceneRenderer* renderer, 
 		else {
 			v2 = v1;
 			r = arrowHeadRadius * length / arrowHeadLength;
+			// Hide cylinder:
+			radius = 0;
 		}
 
 		OVITO_ASSERT(_mappedVerticesWithNormals);
