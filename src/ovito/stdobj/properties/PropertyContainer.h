@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
 #include "PropertyContainerClass.h"
+#include "PropertyReference.h"
 
 namespace Ovito { namespace StdObj {
 

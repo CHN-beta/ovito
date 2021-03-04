@@ -231,6 +231,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 
 	// Create the frame buffer window.
 	_frameBufferWindow = new FrameBufferWindow(this);
+	_frameBufferWindow->setWindowTitle(tr("Render output"));
 
 	// Update window title when document path changes.
 	connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });

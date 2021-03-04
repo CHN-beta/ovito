@@ -148,7 +148,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		layout2->addWidget(_sizePresetsBox, 0, 2);
 
 		_viewportPreviewModeBox = new QCheckBox(tr("Preview"));
-		layout2->addWidget(_viewportPreviewModeBox, 1, 2, Qt::AlignHCenter | Qt::AlignVCenter);
+		layout2->addWidget(_viewportPreviewModeBox, 1, 2, Qt::AlignRight | Qt::AlignVCenter);
 		connect(&mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
 		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
 		onViewportConfigReplaced(mainWindow()->datasetContainer().currentSet() ? mainWindow()->datasetContainer().currentSet()->viewportConfig() : nullptr);

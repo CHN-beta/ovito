@@ -23,6 +23,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdobj/gui/widgets/PropertySelectionComboBox.h>
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
@@ -44,7 +45,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
+	layout->setSpacing(2);
 
 	PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
 	layout->addWidget(new QLabel(tr("Operate on:")));
@@ -56,11 +57,25 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	});
 
 	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::sourceProperty), nullptr);
+	layout->addSpacing(4);
 	layout->addWidget(new QLabel(tr("Property:")));
 	layout->addWidget(_sourcePropertyUI->comboBox());
 
 	// Show only typed properties that have some element types attached to them.
 	_sourcePropertyUI->setPropertyFilter(&isValidInputProperty);
+
+	layout->addSpacing(4);
+
+	// Only selected elements.
+	BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::colorOnlySelected));
+	layout->addWidget(onlySelectedPUI->checkBox());
+
+	// Clear selection
+	BooleanParameterUI* clearSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::clearSelection));
+	layout->addWidget(clearSelectionPUI->checkBox());
+	connect(onlySelectedPUI->checkBox(), &QCheckBox::toggled, clearSelectionPUI, &BooleanParameterUI::setEnabled);
+	clearSelectionPUI->setEnabled(false);
+	layout->addSpacing(4);
 
 	class TableWidget : public QTableView {
 	public:

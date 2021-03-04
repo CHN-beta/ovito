@@ -65,7 +65,7 @@ void SelectTypeModifier::initializeModifier(TimePoint time, ModifierApplication*
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
-				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
+				if(property->isTypedProperty()) {
 					if(executionContext == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}

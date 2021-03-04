@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,6 +44,10 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE ColorLegendOverlay(DataSet* dataset);
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;	
+
 	/// This method asks the overlay to paint its contents over the rendered image.
 	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
 		QPainter painter(&frameBuffer->image());
@@ -70,6 +74,12 @@ private:
 
 	/// This method paints the overlay contents onto the given canvas.
 	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation);
+
+	/// Draws the color legend for a Color Coding modifier.
+	void drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, SynchronousOperation operation);
+
+	/// Draws the color legend for a typed property.
+	void drawDiscreteColorMap(QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
 
 	/// The corner of the viewport where the color legend is displayed.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
@@ -117,7 +127,16 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
 
 	/// Controls the outlining of the font.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE)
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
+
+	/// The typed property whose element types are shown by the legend.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyDataObjectReference, sourceProperty, setSourceProperty);
+
+	/// Controls the drawing of a border around the color map.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, borderEnabled, setBorderEnabled, PROPERTY_FIELD_MEMORIZE);
+
+	/// The border color.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, borderColor, setBorderColor, PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,6 +41,12 @@ public:
 
 	/// Returns a string representation of the object path that is suitable for display in the user interface.
 	QString toUIString() const;
+
+	/// Returns a data object path that includes all but the last data object from this path.
+	ConstDataObjectPath parentPath() const {
+		if(empty()) return {};
+		return ConstDataObjectPath(begin(), std::prev(end()));
+	}
 };
 
 /// Utility class that is used to reference a particular data object in a DataCollection
@@ -62,6 +68,12 @@ public:
 
 	/// Returns a string representation of the object path that is suitable for display in the user interface.
 	QString toUIString() const { return static_cast<const ConstDataObjectPath&>(*this).toUIString(); }
+
+	/// Returns a data object path that includes all but the last data object from this path.
+	DataObjectPath parentPath() const {
+		if(empty()) return {};
+		return DataObjectPath(begin(), std::prev(end()));
+	}
 };
 
 /**
@@ -97,6 +109,17 @@ public:
 
 	/// \brief Compares two references for inequality.
 	bool operator!=(const DataObjectReference& other) const { return !(*this == other); }
+
+	/// \brief Strict ordering function.
+	bool operator<(const DataObjectReference& other) const {
+		if(dataClass() == other.dataClass()) {
+			if(dataPath() == other.dataPath() || dataPath().isEmpty() || other.dataPath().isEmpty()) {
+				return false;	
+			}
+			else return dataPath() < other.dataPath();
+		}
+		else return dataClass() < other.dataClass();
+	}
 
 	/// \brief Returns whether this reference points to any data object.
 	explicit operator bool() const {
@@ -184,6 +207,15 @@ public:
 	const typename DataObjectType::OOMetaClass* dataClass() const {
 		return static_cast<const typename DataObjectType::OOMetaClass*>(DataObjectReference::dataClass());
 	}
+
+	/// \brief Compares two references for equality.
+	bool operator==(const TypedDataObjectReference& other) const { return DataObjectReference::operator==(other); }
+
+	/// \brief Compares two references for inequality.
+	bool operator!=(const TypedDataObjectReference& other) const { return DataObjectReference::operator!=(other); }
+
+	/// \brief Strict ordering function.
+	bool operator<(const TypedDataObjectReference& other) const { return DataObjectReference::operator<(other); }
 
 	friend SaveStream& operator<<(SaveStream& stream, const TypedDataObjectReference& r) {
 		return stream << static_cast<const DataObjectReference&>(r);

@@ -25,6 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
+#include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
 namespace Ovito { namespace StdObj {
@@ -34,6 +35,8 @@ namespace Ovito { namespace StdObj {
  */
 class OVITO_STDOBJ_EXPORT PropertyObject : public DataBuffer
 {
+public:
+
 	/// Define a new property metaclass for particle containers.
 	class OVITO_STDOBJ_EXPORT OOMetaClass : public DataBuffer::OOMetaClass
 	{
@@ -107,6 +110,9 @@ public:
 	bool equals(const PropertyObject& other) const;
 	
 	//////////////////////////////// Element types //////////////////////////////
+
+	/// Returns true if this property has some element types attached and the data type is 'int'. 
+	bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int && componentCount() == 1; }
 
 	/// Appends an element type to the list of types.
 	const ElementType* addElementType(const ElementType* type) {
@@ -256,5 +262,10 @@ using PropertyPtr = DataOORef<PropertyObject>;
 /// Smart-pointer to a PropertyObject providing read-only access to the property data.
 using ConstPropertyPtr = DataOORef<const PropertyObject>;
 
+/// Encapsulates a complete data object reference to a PropertyObject in a data collection.
+using PropertyDataObjectReference = TypedDataObjectReference<PropertyObject>;
+
 }	// End of namespace
 }	// End of namespace
+
+Q_DECLARE_METATYPE(Ovito::StdObj::PropertyDataObjectReference);

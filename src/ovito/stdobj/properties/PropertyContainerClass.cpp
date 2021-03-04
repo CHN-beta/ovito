@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,8 +25,22 @@
 #include "PropertyObject.h"
 #include "PropertyReference.h"
 #include "PropertyContainerClass.h"
+#include "PropertyContainer.h"
 
 namespace Ovito { namespace StdObj {
+
+/******************************************************************************
+* Is called by the system after construction of the meta-class instance.
+******************************************************************************/
+void PropertyContainerClass::initialize() 
+{
+	DataObject::OOMetaClass::initialize();
+
+	if(this == &PropertyContainer::OOClass()) {
+		QMetaType::registerComparators<PropertyContainerReference>();
+		QMetaType::registerComparators<PropertyDataObjectReference>();
+	}
+}
 
 /******************************************************************************
 * This helper method returns a standard property (if present) from the

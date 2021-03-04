@@ -148,6 +148,9 @@ public:
 
 protected:
 
+	/// Is called by the system after construction of the meta-class instance.
+	virtual void initialize() override;
+
 	/// Registers a new standard property with this property meta class.
 	void registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, OvitoClassPtr typedPropertyElementClass = {}, QString title = QString());
 

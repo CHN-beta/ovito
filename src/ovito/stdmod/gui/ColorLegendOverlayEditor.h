@@ -45,6 +45,21 @@ protected:
 
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+private Q_SLOTS:
+
+	/// Updates the combobox list showing the available data sources.
+	void updateSourcesList();
+
+	/// Is called when the user selects a new source object for the color legend.
+	void colorSourceSelected();
+
+	/// Updates the values displayed in the editor's widgets.
+	void updateUI();
+
+private:
+
+	PopupUpdateComboBox* _sourcesComboBox;
 };
 
 }	// End of namespace

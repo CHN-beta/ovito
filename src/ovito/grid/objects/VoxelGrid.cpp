@@ -42,6 +42,7 @@ void VoxelGrid::OOMetaClass::initialize()
 	// Enable automatic conversion of a VoxelPropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<VoxelPropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, VoxelPropertyReference>();
+	QMetaType::registerComparators<VoxelPropertyReference>();
 
 	setPropertyClassDisplayName(tr("Voxel grid"));
 	setElementDescriptionName(QStringLiteral("voxels"));

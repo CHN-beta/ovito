@@ -65,6 +65,12 @@ private:
 
 	/// The input type property that is used as data source for the selection.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+
+	/// Controls whether the modifier assigns a color only to selected elements.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorOnlySelected, setColorOnlySelected);
+
+	/// Controls whether the input selection is preserved or not. If true, the current selection is cleared by the modifier to reveal the assigned colors in the interactive viewports of OVITO.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clearSelection, setClearSelection);
 };
 
 }	// End of namespace

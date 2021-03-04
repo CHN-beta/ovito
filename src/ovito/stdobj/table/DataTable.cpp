@@ -43,6 +43,7 @@ void DataTable::OOMetaClass::initialize()
 	// Enable automatic conversion of a DataTablePropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<DataTablePropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, DataTablePropertyReference>();
+	QMetaType::registerComparators<DataTablePropertyReference>();
 
 	setPropertyClassDisplayName(tr("Data table"));
 	setElementDescriptionName(QStringLiteral("points"));

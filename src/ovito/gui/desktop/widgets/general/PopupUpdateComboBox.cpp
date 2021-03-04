@@ -20,49 +20,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
+#include "PopupUpdateComboBox.h"
 
 namespace Ovito {
-
-/**
- * \brief A properties editor for the TextLabelOverlay class.
- */
-class TextLabelOverlayEditor : public PropertiesEditor
-{
-	Q_OBJECT
-	OVITO_CLASS(TextLabelOverlayEditor)
-
-public:
-
-	/// Constructor.
-	Q_INVOKABLE TextLabelOverlayEditor() {}
-
-protected:
-
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-private Q_SLOTS:
-
-	/// Updates the combobox list showing the available data sources.
-	void updateSourcesList();
-
-	/// Updates the UI.
-	void updateEditorFields();
-
-private:
-
-	QLabel* _attributeNamesList;
-	AutocompleteTextEdit* _textEdit;
-	DeferredMethodInvocation<TextLabelOverlayEditor, &TextLabelOverlayEditor::updateEditorFields> updateEditorFieldsLater;
-};
 
 }	// End of namespace

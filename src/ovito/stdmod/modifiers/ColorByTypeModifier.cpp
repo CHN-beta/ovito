@@ -34,12 +34,18 @@ namespace Ovito { namespace StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifier);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
+DEFINE_PROPERTY_FIELD(ColorByTypeModifier, colorOnlySelected);
+DEFINE_PROPERTY_FIELD(ColorByTypeModifier, clearSelection);
 SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, sourceProperty, "Property");
+SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, colorOnlySelected, "Color only selected elements");
+SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection");
 
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorByTypeModifier::ColorByTypeModifier(DataSet* dataset) : GenericPropertyModifier(dataset)
+ColorByTypeModifier::ColorByTypeModifier(DataSet* dataset) : GenericPropertyModifier(dataset),
+	_colorOnlySelected(false),
+	_clearSelection(true)
 {
 	// Operate on particles by default.
 	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
@@ -61,7 +67,7 @@ void ColorByTypeModifier::initializeModifier(TimePoint time, ModifierApplication
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
-				if(property->elementTypes().empty() == false && property->componentCount() == 1 && property->dataType() == PropertyObject::Int) {
+				if(property->isTypedProperty()) {
 					if(executionContext == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
@@ -95,7 +101,7 @@ void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 #else
 	if(!subject())
 		throwException(tr("No input element type selected."));
-	if(sourceProperty().isNull())
+	if(!sourceProperty())
 		throwException(tr("No input property selected."));
 
 	// Check if the source property is the right kind of property.
@@ -103,7 +109,8 @@ void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 		throwException(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
 			.arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-	PropertyContainer* container = state.expectMutableLeafObject(subject());
+	DataObjectPath objectPath = state.expectMutableObject(subject());
+	PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 	container->verifyIntegrity();
 
 	// Get the input property.
@@ -116,20 +123,39 @@ void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 		throwException(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
+	// Get the selection property if enabled by the user.
+	ConstPropertyPtr selectionProperty;
+	if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+		if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+			selectionProperty = selPropertyObj;
+
+			// Clear selection if requested.
+			if(clearSelection())
+				container->removeProperty(selPropertyObj);
+		}
+	}
+
 	// Create the color output property.
-	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, false, Application::instance()->executionContext());
+	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty, Application::instance()->executionContext(), objectPath);
+
+	// Access selection array.
+	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
 
 	// Create color lookup table.
 	const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
 
 	// Fill color property.
-	boost::transform(typeProperty, colorProperty.begin(), [&](int type) {
-		auto c = colorMap.find(type);
+	size_t count = colorProperty.size();
+	for(size_t i = 0; i < count; i++) {
+		if(selection && !selection[i])
+			continue;
+
+		auto c = colorMap.find(typeProperty[i]);
 		if(c == colorMap.end())
-			return Color(1,1,1);
+			colorProperty[i] = Color(1,1,1);
 		else
-			return c->second;
-	});
+			colorProperty[i] = c->second;
+	}
 #endif
 }
 

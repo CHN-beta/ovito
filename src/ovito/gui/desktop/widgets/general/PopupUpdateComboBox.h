@@ -24,45 +24,31 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 namespace Ovito {
 
 /**
- * \brief A properties editor for the TextLabelOverlay class.
+ * \brief A QComboBox widget that emits a signal just before the drop-down popup list is shown.
  */
-class TextLabelOverlayEditor : public PropertiesEditor
+class OVITO_GUI_EXPORT PopupUpdateComboBox : public QComboBox
 {
 	Q_OBJECT
-	OVITO_CLASS(TextLabelOverlayEditor)
 
 public:
 
-	/// Constructor.
-	Q_INVOKABLE TextLabelOverlayEditor() {}
+	/// Initializes the widget.
+	using QComboBox::QComboBox;
 
-protected:
+	/// Is called just before the drop-down box is activated.
+	virtual void showPopup() override {
+		Q_EMIT dropDownActivated();
+		QComboBox::showPopup();
+	}
 
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+Q_SIGNALS:
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-private Q_SLOTS:
-
-	/// Updates the combobox list showing the available data sources.
-	void updateSourcesList();
-
-	/// Updates the UI.
-	void updateEditorFields();
-
-private:
-
-	QLabel* _attributeNamesList;
-	AutocompleteTextEdit* _textEdit;
-	DeferredMethodInvocation<TextLabelOverlayEditor, &TextLabelOverlayEditor::updateEditorFields> updateEditorFieldsLater;
+	/// This signal is emited right before the drop-down list of the combobox is displayed.
+	void dropDownActivated();
 };
 
 }	// End of namespace
