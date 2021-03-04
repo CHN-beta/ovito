@@ -258,6 +258,13 @@ void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painte
 	}
 	painter.drawImage(colorBarRect, image);
 
+	if(borderEnabled()) {
+		qreal borderWidth = 2.0 / painter.combinedTransform().m11();
+		painter.setPen(QPen(QBrush(borderColor()), borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+		painter.setBrush({});
+		painter.drawRect(colorBarRect);
+	}
+
 	qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
 	if(fontSize == 0) return;
 	QFont font = this->font();
@@ -378,32 +385,34 @@ void ColorLegendOverlay:: drawDiscreteColorMap(QPainter& painter, const QRectF& 
 {
 	// Count the number of element types that are enabled.
 	int numTypes = boost::count_if(property->elementTypes(), [](const ElementType* type) { return type && type->enabled(); });
-	
-	if(numTypes != 0) { 
-		// Generate a bitmap with one pixel per element type.
-		QImage image((orientation() == Qt::Vertical) ? 1 : numTypes, (orientation() == Qt::Vertical) ? numTypes : 1, QImage::Format_RGB32);
-		int i = 0;
+
+	qreal borderWidth = 2.0 / painter.combinedTransform().m11();
+	if(borderEnabled())
+		painter.setPen(QPen(QBrush(borderColor()), borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+	else
+		painter.setPen({});
+
+	if(numTypes != 0) {
+		QRectF rect = colorBarRect;
+		if(orientation() == Qt::Vertical)
+			rect.setHeight(rect.height() / numTypes);
+		else
+			rect.setWidth(rect.width() / numTypes);
+
 		for(const ElementType* type : property->elementTypes()) {
 			if(type && type->enabled()) {
-				image.setPixel((orientation() == Qt::Vertical) ? 0 : i, (orientation() == Qt::Vertical) ? i : 0, QColor(type->color()).rgb());
-				i++;
+				painter.setBrush(QBrush(type->color()));
+				painter.drawRect(rect);
+				if(orientation() == Qt::Vertical)
+					rect.moveTop(rect.bottom());
+				else
+					rect.moveLeft(rect.right());
 			}
 		}
-
-		// Scale and paint the bitmap into the destination rectangle.
-		painter.drawImage(colorBarRect, image);
 	}
-
-	if(borderEnabled()) {
-		qreal borderWidth = 2.0 / painter.combinedTransform().m11();
-		painter.setPen(QPen(QBrush(borderColor()), borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+	else {
 		painter.setBrush({});
 		painter.drawRect(colorBarRect);
-		for(int i = 1; i < numTypes; i++) {
-//			if(orientation() == Qt::Vertical) {
-//				qreal y = colorBarRect.top() + i*colorBarRect.height()/numTypes;
-//				painter.drawLine(colorBarRect.left(), y, );
-		}
 	}
 
 	qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
@@ -458,9 +467,6 @@ void ColorLegendOverlay:: drawDiscreteColorMap(QPainter& painter, const QRectF& 
 	// Draw type name labels.
 	if(numTypes == 0)
 		return;
-
-	font.setPointSizeF(fontSize * 0.8);
-	painter.setFont(font);
 
 	int labelFlags = Qt::TextDontClip;
 	QRectF labelRect = colorBarRect;

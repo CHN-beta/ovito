@@ -64,8 +64,8 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	int row = 0;
 
 	_sourcesComboBox = new PopupUpdateComboBox();
-	connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateUI);
-	connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList); 
+	connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateSourcesList);
+	connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList);
 	connect(_sourcesComboBox, QOverload<int>::of(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
 	layout->addWidget(new QLabel(tr("Color source:")), row, 0);
 	layout->addWidget(_sourcesComboBox, row++, 1);
@@ -143,17 +143,17 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	sublayout->addWidget(new QLabel(tr("Custom title:")), subrow, 0);
 	sublayout->addWidget(titlePUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* label1PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label1));
+	_label1PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label1));
 	sublayout->addWidget(new QLabel(tr("Custom label 1:")), subrow, 0);
-	sublayout->addWidget(label1PUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_label1PUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* label2PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label2));
+	_label2PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label2));
 	sublayout->addWidget(new QLabel(tr("Custom label 2:")), subrow, 0);
-	sublayout->addWidget(label2PUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_label2PUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::valueFormatString));
+	_valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::valueFormatString));
 	sublayout->addWidget(new QLabel(tr("Format string:")), subrow, 0);
-	sublayout->addWidget(valueFormatStringPUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_valueFormatStringPUI->textBox(), subrow++, 1, 1, 2);
 
 	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::fontSize));
 	sublayout->addWidget(new QLabel(tr("Text size/color:")), subrow, 0);
@@ -178,6 +178,10 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 ******************************************************************************/
 void ColorLegendOverlayEditor::updateSourcesList()
 {
+	_label1PUI->setEnabled(false);
+	_label2PUI->setEnabled(false);
+	_valueFormatStringPUI->setEnabled(false);
+
 	_sourcesComboBox->clear();
 	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
 
@@ -216,12 +220,34 @@ void ColorLegendOverlayEditor::updateSourcesList()
 		});
 
 		// Select the item in the list that corresponds to the current parameter value.
-		if(overlay->modifier())
-			_sourcesComboBox->setCurrentIndex(_sourcesComboBox->findData(QVariant::fromValue(overlay->modifier())));
-		else if(overlay->sourceProperty())
-			_sourcesComboBox->setCurrentIndex(_sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty())));
+		if(overlay->modifier()) {
+			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->modifier()));
+			if(index >= 0)
+				_sourcesComboBox->setCurrentIndex(index);
+			else {
+				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
+				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+			}
+			_label1PUI->setEnabled(true);
+			_label2PUI->setEnabled(true);
+			_valueFormatStringPUI->setEnabled(true);
+		}
+		else if(overlay->sourceProperty()) {
+			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
+			if(index >= 0)
+				_sourcesComboBox->setCurrentIndex(index);
+			else {
+				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), 
+					overlay->sourceProperty().dataTitle().isEmpty() ? overlay->sourceProperty().dataPath() : overlay->sourceProperty().dataTitle());
+				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+			}
+		}
+		else {
+			_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
+			_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+		}
 	}
-	if(_sourcesComboBox->count() == 0) 
+	if(_sourcesComboBox->count() == 0)
 		_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
 }
 
@@ -244,26 +270,6 @@ void ColorLegendOverlayEditor::colorSourceSelected()
 			}
 		});
 	}
-}
-
-/******************************************************************************
-* Updates the values displayed in the editor's widgets.
-******************************************************************************/
-void ColorLegendOverlayEditor::updateUI()
-{
-	_sourcesComboBox->clear();
-	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-		if(ColorCodingModifier* mod = overlay->modifier()) {
-			_sourcesComboBox->addItem(mod->sourceProperty().nameWithComponent(), QVariant::fromValue(mod));
-		}
-		else if(overlay->sourceProperty()) {
-			_sourcesComboBox->addItem(overlay->sourceProperty().dataTitle(), QVariant::fromValue(overlay->sourceProperty()));
-		}
-		else {
-			_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
-		}
-	}
-	_sourcesComboBox->setCurrentIndex(0);
 }
 
 }	// End of namespace
