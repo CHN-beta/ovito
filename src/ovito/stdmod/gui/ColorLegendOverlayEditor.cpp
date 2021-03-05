@@ -237,8 +237,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 			if(index >= 0)
 				_sourcesComboBox->setCurrentIndex(index);
 			else {
-				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), 
-					overlay->sourceProperty().dataTitle().isEmpty() ? overlay->sourceProperty().dataPath() : overlay->sourceProperty().dataTitle());
+				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrString());
 				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
 			}
 		}

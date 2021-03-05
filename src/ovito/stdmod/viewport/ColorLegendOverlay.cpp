@@ -178,15 +178,23 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 		// Verify that the typed property, which has been selected as the source of the color legend, is available.
 		if(!typedProperty) {
 			// Set warning status to be displayed in the GUI.
-			setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitle())));
+			setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrString())));
 
 			// Escalate to an error state if in batch mode.
-			if(Application::instance()->consoleMode()) {
-				throwException(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitle()));
-			}
-			else {
+			if(Application::instance()->consoleMode())
+				throwException(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
+			else
 				return;
-			}
+		}
+		else if(!typedProperty->isTypedProperty()) {
+			// Set warning status to be displayed in the GUI.
+			setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrString())));
+
+			// Escalate to an error state if in batch mode.
+			if(Application::instance()->consoleMode())
+				throwException(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
+			else
+				return;
 		}
 
 		// Reset status of overlay.

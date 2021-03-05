@@ -102,6 +102,9 @@ public:
 	/// Returns the title of the data object used in the user interface.
 	const QString& dataTitle() const { return _dataTitle; }
 
+	/// Returns the UI title of the referenced data object if available. Otherwise returns the data collection path as a fallback string representation.
+	const QString& dataTitleOrString() const { return _dataTitle.isEmpty() ? _dataPath : _dataTitle; }
+
 	/// \brief Compares two references for equality.
 	bool operator==(const DataObjectReference& other) const {
 		return dataClass() == other.dataClass() && (dataPath() == other.dataPath() || dataPath().isEmpty() || other.dataPath().isEmpty());
