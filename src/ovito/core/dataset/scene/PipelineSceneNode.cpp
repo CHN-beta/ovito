@@ -420,9 +420,25 @@ void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObjec
 ******************************************************************************/
 void PipelineSceneNode::deleteNode()
 {
+	// Temporary reference to the pipeline's stages.
+	OORef<PipelineObject> oldDataProvider = dataProvider();
+
 	// Throw away data source.
 	// This will also clear the caches of the pipeline.
 	setDataProvider(nullptr);
+
+	// Walk along the pipeline and delete the individual modifiers/source objects (unless they are shared with another pipeline).
+	// This is necessary to update any other references the scene may have to the pipeline's modifiers, 
+	// e.g. the ColorLegendOverlay.
+	while(oldDataProvider) {
+		OORef<PipelineObject> next;
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(oldDataProvider.get()))
+			next = modApp->input();
+		// Delete the pipeline stage if it is not part of any other pipeline in the scene.
+		if(oldDataProvider->pipelines(false).isEmpty())
+			oldDataProvider->deleteReferenceObject();
+		oldDataProvider = std::move(next);
+	}
 
 	// Discard transient references to visual elements.
 	_visElements.clear(this, PROPERTY_FIELD(visElements));

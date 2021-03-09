@@ -120,6 +120,9 @@ public:
 		return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
 	}
 
+	/// Asks this object to delete itself.
+	virtual void deleteReferenceObject() override;
+
 protected:
 
 	/// \brief Asks the object for the result of the data pipeline.

@@ -59,6 +59,24 @@ ModifierApplication::ModifierApplication(DataSet* dataset) : CachingPipelineObje
 }
 
 /******************************************************************************
+* Asks this object to delete itself.
+******************************************************************************/
+void ModifierApplication::deleteReferenceObject() 
+{
+	// Detach the modifier application from its input, modifier and group.
+	OORef<Modifier> modifier = this->modifier();
+	setInput(nullptr);
+	setModifier(nullptr);
+	setModifierGroup(nullptr);
+
+	// Delete modifier if there are no more modifier applications left.
+	if(modifier->modifierApplications().empty())
+		modifier->deleteReferenceObject();
+
+	CachingPipelineObject::deleteReferenceObject();
+}
+
+/******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
 TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationRequest& request) const
