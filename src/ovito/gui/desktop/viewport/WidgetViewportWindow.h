@@ -24,46 +24,34 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportWindowInterface.h>
 
 namespace Ovito {
 
 /**
- * \brief The context menu of the viewports.
+ * \brief Abstract interface for QWidget-based viewport window implementations.
  */
-class OVITO_GUI_EXPORT ViewportMenu : public QMenu
+class OVITO_GUI_EXPORT WidgetViewportWindow : public ViewportWindowInterface
 {
-	Q_OBJECT
+public:
+
+	/// Registry for viewport window implementations.
+	using Registry = QVarLengthArray<const QMetaObject*, 2>;
+
+	/// Returns the global registry, which allows enumerating all installed viewport window implementations.
+	static Registry& registry();
 
 public:
 
-	/// Initializes the menu.
-	ViewportMenu(Viewport* viewport, QWidget* viewportWidget);
+	/// Inherit constructor from base class.
+	using ViewportWindowInterface::ViewportWindowInterface;
 
-	/// Displays the menu.
-	void show(const QPoint& pos);
-
-private Q_SLOTS:
-
-	void onRenderPreviewMode(bool checked);
-	void onShowGrid(bool checked);
-	void onConstrainRotation(bool checked);
-	void onShowViewTypeMenu();
-	void onViewType(QAction* action);
-	void onAdjustView();
-	void onViewNode(QAction* action);
-	void onCreateCamera();
-
-private:
-
-	/// The viewport this menu belongs to.
-	Viewport* _viewport;
-
-	/// The viewport widget this menu is shown in.
-	QWidget* _viewportWidget;
-
-	/// The view type sub-menu.
-	QMenu* _viewTypeMenu;
+	/// Returns the QWidget that is associated with this viewport window.
+	virtual QWidget* widget() = 0;
 };
+
+/// This macro registers a widget-based viewport window implementation.
+#define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
+	static const int __registration##WindowClass = (Ovito::WidgetViewportWindow::registry().push_back(&WindowClass::staticMetaObject), 0);
 
 }	// End of namespace

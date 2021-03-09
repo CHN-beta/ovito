@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,10 +27,9 @@
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito { namespace Particles {
-
-class AmbientOcclusionRenderer;		// defined in AmbientOcclusionRenderer.h
 
 /**
  * \brief Calculates ambient occlusion lighting for particles.
@@ -71,11 +70,8 @@ public:
 
 		/// Constructor.
 		AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
-			ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer);
+			ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer);
 
-		/// Destructor.
-		virtual ~AmbientOcclusionEngine();
-		
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
@@ -103,7 +99,7 @@ public:
 
 	private:
 
-		AmbientOcclusionRenderer* _renderer;
+		OORef<SceneRenderer> _renderer;
 		const int _resolution;
 		const int _samplingCount;
 		ConstPropertyPtr _positions;

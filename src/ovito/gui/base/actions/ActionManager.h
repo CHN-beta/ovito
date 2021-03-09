@@ -53,8 +53,8 @@ namespace Ovito {
 #define ACTION_HELP_SHOW_ONLINE_HELP	"HelpShowOnlineHelp"
 /// This action shows the scripting reference manual.
 #define ACTION_HELP_SHOW_SCRIPTING_HELP	"HelpShowScriptingReference"
-/// This action displays OpenGL diagnostics.
-#define ACTION_HELP_OPENGL_INFO			"HelpOpenGLInfo"
+/// This action displays graphics hardware information.
+#define ACTION_HELP_GRAPHICS_SYSINFO 	"HelpSystemInfo"
 
 /// This action undoes the last operation.
 #define ACTION_EDIT_UNDO				"EditUndo"

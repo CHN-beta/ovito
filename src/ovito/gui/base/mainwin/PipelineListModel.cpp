@@ -1163,7 +1163,7 @@ void PipelineListModel::moveModifierUp()
 					predecessor->setInput(headModApp);
 				}
 				else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-					if(predecessor->dataProvider() == insertBefore);
+					if(predecessor->dataProvider() == insertBefore)
 						predecessor->setDataProvider(headModApp);
 				}
 			});

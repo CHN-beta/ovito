@@ -90,17 +90,6 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		return false;
 	}
 
-#if 1
-	// Always use desktop OpenGL (avoid ANGLE on Windows):
-	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-#elif 0
-	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
-	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-#else
-	// Use software rasterizer on Windows:
-	QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
-#endif
-
 	// Create Qt application object.
 	createQtApplication(argc, argv);
 

@@ -24,8 +24,8 @@
 
 
 #include <ovito/gui/qml/GUI.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/rendering/PickingSceneRenderer.h>
+#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 
 namespace Ovito {
@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief The internal render window asosciated with the Viewport class.
  */
-class OVITO_GUI_EXPORT ViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
+class OVITO_GUI_EXPORT OpenGLViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
 {
 	Q_OBJECT
 	Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced);
@@ -41,7 +41,7 @@ class OVITO_GUI_EXPORT ViewportWindow : public QQuickFramebufferObject, public V
 public:
 
 	/// Constructor.
-	ViewportWindow();
+	OpenGLViewportWindow();
 	
 	/// Associates this window with a viewport.
 	void setViewport(Viewport* vp);
@@ -120,7 +120,7 @@ private:
 	public:
 
 		/// Constructor.
-		explicit Renderer(ViewportWindow* vpwin) : _vpwin(vpwin) {}
+		explicit Renderer(OpenGLViewportWindow* vpwin) : _vpwin(vpwin) {}
 
 		virtual QOpenGLFramebufferObject* createFramebufferObject(const QSize& size) override {
 	        QOpenGLFramebufferObjectFormat format;
@@ -135,7 +135,7 @@ private:
 	
 	private:
 		/// Pointer to the viewport window to which this renderer belongs.
-		ViewportWindow* _vpwin;
+		OpenGLViewportWindow* _vpwin;
 	};
 
 	/// Renders the contents of the viewport window.
@@ -167,7 +167,7 @@ private:
 	bool _updateRequested = false;
 
 	/// This is the renderer of the interactive viewport.
-	OORef<ViewportSceneRenderer> _viewportRenderer;
+	OORef<OpenGLSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
 	OORef<PickingSceneRenderer> _pickingRenderer;
@@ -175,5 +175,5 @@ private:
 
 }	// End of namespace
 
-QML_DECLARE_TYPE(Ovito::ViewportWindow);
+QML_DECLARE_TYPE(Ovito::OpenGLViewportWindow);
 QML_DECLARE_TYPE(Ovito::Viewport);

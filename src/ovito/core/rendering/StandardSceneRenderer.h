@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,32 +24,28 @@
 
 
 #include <ovito/core/Core.h>
-#include "OpenGLSceneRenderer.h"
-
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
-#include <QOpenGLFramebufferObject>
+#include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito {
 
 /**
  * \brief This is the default scene renderer used for high-quality image output.
  */
-class OVITO_OPENGLRENDERER_EXPORT StandardSceneRenderer : public OpenGLSceneRenderer
+class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 {
 	Q_OBJECT
 	OVITO_CLASS(StandardSceneRenderer)
 	Q_CLASSINFO("DisplayName", "OpenGL");
 	Q_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
-								"The OpenGL renderer is fast and has the smallest memory footprint.");
+							   "The OpenGL renderer is fast and has the smallest memory footprint.");
 
 public:
 
-	/// Default constructor.
-	Q_INVOKABLE StandardSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset), _antialiasingLevel(3) {}
+	/// Constructor.
+	Q_INVOKABLE StandardSceneRenderer(DataSet* dataset);
 
-	/// Prepares the renderer for rendering and sets the data set that is being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings) override;
+	/// Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
@@ -57,37 +53,19 @@ public:
 	/// Renders the current animation frame.
 	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
 
+	/// This method is called after renderFrame() has been called.
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
+
 	/// Is called after rendering has finished.
 	virtual void endRender() override;
-
-	/// Returns whether this renderer is rendering an interactive viewport.
-	/// \return true if rendering a real-time viewport; false if rendering an output image.
-	virtual bool isInteractive() const override { return false; }
-
-protected:
-
-	/// Returns the supersampling level to use.
-	virtual int antialiasingLevelInternal() override { return antialiasingLevel(); }
-
-	/// Puts the GL context into its default initial state before rendering a frame begins.
-	virtual void initializeGLState() override;
 
 private:
 
 	/// Controls the number of sub-pixels to render.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, antialiasingLevel, setAntialiasingLevel);
 
-	/// The offscreen surface used to render into an image buffer using OpenGL.
-	QScopedPointer<QOffscreenSurface> _offscreenSurface;
-
-	/// The temporary OpenGL rendering context.
-	QScopedPointer<QOpenGLContext> _offscreenContext;
-
-	/// The OpenGL framebuffer.
-	QScopedPointer<QOpenGLFramebufferObject> _framebufferObject;
-
-	/// The resolution of the offscreen framebuffer.
-	QSize _framebufferSize;
+	/// The renderer implementation. 
+	OORef<SceneRenderer> _internalRenderer;
 };
 
 }	// End of namespace

@@ -35,8 +35,6 @@
 #include <QResource>
 #include <QtDebug>
 #include <QtGui>
-#include <QOpenGLFramebufferObject> 
-#include <QOpenGLFramebufferObjectFormat>
 #include <QAction>
 
 /*! \namespace Ovito::Gui
@@ -63,8 +61,6 @@ namespace Ovito {
     class MainWindowInterface;
     class ActionManager;
     class ViewportModeAction;
-    class PickingSceneRenderer;
-    class ViewportSceneRenderer;
     class ViewportInputManager;
     class ViewportInputMode;
     class ViewportGizmo;

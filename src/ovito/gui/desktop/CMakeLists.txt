@@ -111,8 +111,9 @@ OVITO_STANDARD_PLUGIN(Gui
 		properties/OpenDataInspectorButton.cpp
 		properties/ModifierGroupEditor.cpp
 		rendering/RenderSettingsEditor.cpp
-		viewport/ViewportWindow.cpp
+		rendering/StandardSceneRendererEditor.cpp
 		viewport/ViewportMenu.cpp
+		viewport/WidgetViewportWindow.cpp
 		viewport/input/XFormModes.cpp
 		viewport/overlays/CoordinateTripodOverlayEditor.cpp
 		viewport/overlays/TextLabelOverlayEditor.cpp
@@ -123,7 +124,6 @@ OVITO_STANDARD_PLUGIN(Gui
 		utilities/concurrent/ProgressDialog.cpp
 		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
-		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
 		${OVITO_QT_MAJOR_VERSION}::Widgets 

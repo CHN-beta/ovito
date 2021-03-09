@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,18 +23,21 @@
 #pragma once
 
 
-#include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
+#include <ovito/core/Core.h>
+#include <ovito/opengl/OpenGLSceneRenderer.h>
+
+#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
 
 /**
  * \brief A viewport renderer used for object picking.
  */
-class OVITO_GUIBASE_EXPORT PickingSceneRenderer : public ViewportSceneRenderer
+class OVITO_OPENGLRENDERER_EXPORT PickingOpenGLSceneRenderer : public OpenGLSceneRenderer
 {
 	Q_OBJECT
-	OVITO_CLASS(PickingSceneRenderer)
+	OVITO_CLASS(PickingOpenGLSceneRenderer)
 
 public:
 
@@ -47,7 +50,7 @@ public:
 public:
 
 	/// Constructor.
-	explicit PickingSceneRenderer(DataSet* dataset);
+	explicit PickingOpenGLSceneRenderer(DataSet* dataset);
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
@@ -56,7 +59,7 @@ public:
 	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderSuccessful) override;
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
 
 	/// When picking mode is active, this registers an object being rendered.
 	virtual quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr) override;

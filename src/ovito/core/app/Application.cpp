@@ -26,6 +26,9 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "Application.h"
 
+#include <QLoggingCategory>
+#include <QSurfaceFormat>
+
 // Called from Application::initialize() to register the embedded Qt resource files
 // when running a statically linked executable. Following the Qt documentation, this
 // needs to be placed outside of any C++ namespace.
@@ -183,6 +186,9 @@ bool Application::initialize()
 		defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
 	}
 
+	// Activate Qt logging messages related to Vulkan.
+	QLoggingCategory::setFilterRules(QStringLiteral("qt.vulkan=true"));
+
 	// Activate default "C" locale, which will be used to parse numbers in strings.
 	std::setlocale(LC_ALL, "C");
 
@@ -227,6 +233,34 @@ bool Application::initialize()
 	QMetaType::registerConverter<Vector3, Color>();
 	QMetaType::registerConverter<QVector3D, Color>();
 	QMetaType::registerConverter<Color, QVector3D>(&Color::operator QVector3D);
+
+	// Enable OpenGL context sharing globally.
+	QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#if 1
+	// Always use desktop OpenGL (avoid ANGLE on Windows):
+	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#else
+	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
+	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+#endif
+
+	// Specify default OpenGL surface format.
+	QSurfaceFormat format;
+#ifndef Q_OS_WASM
+	format.setDepthBufferSize(24);
+	format.setStencilBufferSize(1);
+#ifdef Q_OS_MACOS
+	// macOS only supports core profile contexts.
+	format.setMajorVersion(3);
+	format.setMinorVersion(2);
+	format.setProfile(QSurfaceFormat::CoreProfile);
+#endif
+#else
+	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
+	format.setMajorVersion(2);
+	format.setMinorVersion(0);
+#endif
+	QSurfaceFormat::setDefaultFormat(format);
 
 	// Register Qt resources.
 	::registerQtResources();

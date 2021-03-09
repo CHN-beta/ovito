@@ -42,7 +42,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 	layout->setHorizontalSpacing(2);
 	layout->setVerticalSpacing(2);
 #endif

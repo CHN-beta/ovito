@@ -421,7 +421,7 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 
 		// Initialize the renderer.
 		operation.setProgressText(tr("Initializing renderer"));
-		if(renderer->startRender(this, settings)) {
+		if(renderer->startRender(this, settings, frameBuffer)) {
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
@@ -551,7 +551,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 	// Request scene bounding box.
 	Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
 	if(operation.isCanceled()) {
-		renderer->endFrame(false);
+		renderer->endFrame(false, nullptr);
 		return false;
 	}
 
@@ -566,7 +566,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 				{
 					layer->render(viewport, renderTime, frameBuffer, projParams, settings, operation.subOperation());
 					if(operation.isCanceled()) {
-						renderer->endFrame(false);
+						renderer->endFrame(false, nullptr);
 						return false;
 					}
 				}
@@ -577,13 +577,13 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 		// Let the scene renderer do its work.
 		renderer->beginFrame(renderTime, projParams, viewport);
 		if(!renderer->renderFrame(frameBuffer, SceneRenderer::NonStereoscopic, operation.subOperation())) {
-			renderer->endFrame(false);
+			renderer->endFrame(false, frameBuffer);
 			return false;
 		}
-		renderer->endFrame(true);
+		renderer->endFrame(true, frameBuffer);
 	}
 	catch(...) {
-		renderer->endFrame(false);
+		renderer->endFrame(false, nullptr);
 		throw;
 	}
 

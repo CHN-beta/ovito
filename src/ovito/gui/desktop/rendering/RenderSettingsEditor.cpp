@@ -279,6 +279,11 @@ void RenderSettingsEditor::onSwitchRenderer()
 	if(!settings) return;
 
 	QVector<OvitoClassPtr> rendererClasses = PluginManager::instance().listClasses(SceneRenderer::OOClass());
+	
+	// Filter out internal renderer implementations, which should not be visible to the user.
+	// Internal renderer implementation have no UI description string assigned.
+	rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(), 
+		[](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); }));
 
 	// Preferred ordering of renderers:
 	const QStringList displayOrdering = {

@@ -25,7 +25,6 @@
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "DislocationInspectionApplet.h"
@@ -71,7 +70,7 @@ QWidget* DislocationInspectionApplet::createWidget(MainWindow* mainWindow)
 	connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
 		if(active) {
 			QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 				tr("Pick a dislocation in the viewports. Hold down the CONTROL key to select multiple dislocations."),
 #else
 				tr("Pick a dislocation in the viewports. Hold down the COMMAND key to select multiple dislocations."),

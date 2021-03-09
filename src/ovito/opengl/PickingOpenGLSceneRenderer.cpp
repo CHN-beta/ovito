@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,20 +20,20 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/Core.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/RenderSettings.h>
-#include "PickingSceneRenderer.h"
+#include "PickingOpenGLSceneRenderer.h"
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PickingSceneRenderer);
+IMPLEMENT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingSceneRenderer::PickingSceneRenderer(DataSet* dataset) : ViewportSceneRenderer(dataset) 
+PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset) 
 {
 	setPicking(true);
 }
@@ -41,7 +41,7 @@ PickingSceneRenderer::PickingSceneRenderer(DataSet* dataset) : ViewportSceneRend
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void PickingSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
 {
 	// Get the viewport's window.
 	ViewportWindowInterface* vpWindow = vp->window();
@@ -76,16 +76,16 @@ void PickingSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParame
 	if(!_framebufferObject->bind())
 		throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-	ViewportSceneRenderer::beginFrame(time, params, vp);
+	OpenGLSceneRenderer::beginFrame(time, params, vp);
 }
 
 /******************************************************************************
 * Puts the GL context into its default initial state before rendering
 * a frame begins.
 ******************************************************************************/
-void PickingSceneRenderer::initializeGLState()
+void PickingOpenGLSceneRenderer::initializeGLState()
 {
-	ViewportSceneRenderer::initializeGLState();
+	OpenGLSceneRenderer::initializeGLState();
 
 	// Set up GL viewport.
 	setRenderingViewport(0, 0, _framebufferObject->width(), _framebufferObject->height());
@@ -96,13 +96,13 @@ void PickingSceneRenderer::initializeGLState()
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// Clear previous object records.
 	reset();
 
 	// Let the base class do the main rendering work.
-	if(!ViewportSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
 		return false;
 
 	// Clear OpenGL error state, so we start fresh for the glReadPixels() call below.
@@ -156,11 +156,11 @@ bool PickingSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRendering
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void PickingSceneRenderer::endFrame(bool renderSuccessful)
+void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
 	endPickObject();
 	_framebufferObject.reset();
-	ViewportSceneRenderer::endFrame(renderSuccessful);
+	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 
 	// Reactivate old GL context.
 	if(_oldSurface && _oldContext) {
@@ -177,7 +177,7 @@ void PickingSceneRenderer::endFrame(bool renderSuccessful)
 /******************************************************************************
 * Resets the internal state of the picking renderer and clears the stored object records.
 ******************************************************************************/
-void PickingSceneRenderer::reset()
+void PickingOpenGLSceneRenderer::reset()
 {
 	_objects.clear();
 	endPickObject();
@@ -193,7 +193,7 @@ void PickingSceneRenderer::reset()
 /******************************************************************************
 * When picking mode is active, this registers an object being rendered.
 ******************************************************************************/
-quint32 PickingSceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
+quint32 PickingOpenGLSceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
 {
 	OVITO_ASSERT(objNode != nullptr);
 	OVITO_ASSERT(isPicking());
@@ -207,9 +207,9 @@ quint32 PickingSceneRenderer::beginPickObject(const PipelineSceneNode* objNode, 
 /******************************************************************************
 * Registers a range of sub-IDs belonging to the current object being rendered.
 ******************************************************************************/
-quint32 PickingSceneRenderer::registerSubObjectIDs(quint32 subObjectCount)
+quint32 PickingOpenGLSceneRenderer::registerSubObjectIDs(quint32 subObjectCount)
 {
-	OVITO_ASSERT_MSG(_currentObject.objectNode, "PickingSceneRenderer::registerSubObjectIDs()", "You forgot to register the current object via beginPickObject().");
+	OVITO_ASSERT_MSG(_currentObject.objectNode, "PickingOpenGLSceneRenderer::registerSubObjectIDs()", "You forgot to register the current object via beginPickObject().");
 
 	quint32 baseObjectID = _currentObject.baseObjectID;
 	_currentObject.baseObjectID += subObjectCount;
@@ -219,7 +219,7 @@ quint32 PickingSceneRenderer::registerSubObjectIDs(quint32 subObjectCount)
 /******************************************************************************
 * Call this when rendering of a pickable object is finished.
 ******************************************************************************/
-void PickingSceneRenderer::endPickObject()
+void PickingOpenGLSceneRenderer::endPickObject()
 {
 	_currentObject.objectNode = nullptr;
 	_currentObject.pickInfo = nullptr;
@@ -228,7 +228,7 @@ void PickingSceneRenderer::endPickObject()
 /******************************************************************************
 * Returns the object record and the sub-object ID for the object at the given pixel coordinates.
 ******************************************************************************/
-std::tuple<const PickingSceneRenderer::ObjectRecord*, quint32> PickingSceneRenderer::objectAtLocation(const QPoint& pos) const
+std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32> PickingOpenGLSceneRenderer::objectAtLocation(const QPoint& pos) const
 {
 	if(!_image.isNull()) {
 		if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
@@ -244,13 +244,13 @@ std::tuple<const PickingSceneRenderer::ObjectRecord*, quint32> PickingSceneRende
 				return std::make_tuple(objRecord, objectID - objRecord->baseObjectID);
 		}
 	}
-	return std::tuple<const PickingSceneRenderer::ObjectRecord*, quint32>(nullptr, 0);
+	return std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32>(nullptr, 0);
 }
 
 /******************************************************************************
 * Given an object ID, looks up the corresponding record.
 ******************************************************************************/
-const PickingSceneRenderer::ObjectRecord* PickingSceneRenderer::lookupObjectRecord(quint32 objectID) const
+const PickingOpenGLSceneRenderer::ObjectRecord* PickingOpenGLSceneRenderer::lookupObjectRecord(quint32 objectID) const
 {
 	if(objectID == 0 || _objects.empty())
 		return nullptr;
@@ -270,7 +270,7 @@ const PickingSceneRenderer::ObjectRecord* PickingSceneRenderer::lookupObjectReco
 /******************************************************************************
 * Returns the Z-value at the given window position.
 ******************************************************************************/
-FloatType PickingSceneRenderer::depthAtPixel(const QPoint& pos) const
+FloatType PickingOpenGLSceneRenderer::depthAtPixel(const QPoint& pos) const
 {
 	if(!_image.isNull() && _depthBuffer) {
 		int w = _image.width();
@@ -302,7 +302,7 @@ FloatType PickingSceneRenderer::depthAtPixel(const QPoint& pos) const
 /******************************************************************************
 * Returns the world space position corresponding to the given screen position.
 ******************************************************************************/
-Point3 PickingSceneRenderer::worldPositionFromLocation(const QPoint& pos) const
+Point3 PickingOpenGLSceneRenderer::worldPositionFromLocation(const QPoint& pos) const
 {
 	FloatType zvalue = depthAtPixel(pos);
 	if(zvalue != 0) {

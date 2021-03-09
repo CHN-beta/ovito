@@ -30,11 +30,8 @@
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
 #include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -344,8 +341,8 @@ void MainWindow::createMainMenu()
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_ONLINE_HELP));
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_SCRIPTING_HELP));
 	helpMenu->addSeparator();
-	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_OPENGL_INFO));
-#ifndef  Q_OS_MACX
+	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_GRAPHICS_SYSINFO));
+#ifndef  Q_OS_MACOS
 	helpMenu->addSeparator();
 #endif
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_ABOUT));
@@ -475,32 +472,6 @@ void MainWindow::openHelpTopic(const QString& page)
 void MainWindow::setViewportInputFocus() 
 {
 	viewportsPanel()->setFocus(Qt::OtherFocusReason);
-}
-
-/******************************************************************************
-* Returns the master OpenGL context managed by this window, which is used to
-* render the viewports. If sharing of OpenGL contexts between viewports is
-* disabled, then this function returns the GL context of the first viewport
-* in this window.
-******************************************************************************/
-QOpenGLContext* MainWindow::getOpenGLContext()
-{
-	if(_glcontext)
-		return _glcontext;
-
-	if(OpenGLSceneRenderer::contextSharingEnabled()) {
-		_glcontext = new QOpenGLContext(this);
-		_glcontext->setFormat(ViewportSceneRenderer::getDefaultSurfaceFormat());
-		if(!_glcontext->create())
-			throw Exception(tr("Failed to create OpenGL context."), &datasetContainer());
-	}
-	else {
-		ViewportWindow* vpWindow = viewportsPanel()->findChild<ViewportWindow*>();
-		if(vpWindow)
-			_glcontext = vpWindow->context();
-	}
-
-	return _glcontext;
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,32 +20,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/oo/RefTarget.h>
+#include "WidgetViewportWindow.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* The editor component for the StandardSceneRenderer class.
+* Returns the global editor registry, which can be used to look up the editor
+* class for editable RefTarget class.
 ******************************************************************************/
-class StandardSceneRendererEditor : public PropertiesEditor
+WidgetViewportWindow::Registry& WidgetViewportWindow::registry()
 {
-	Q_OBJECT
-	OVITO_CLASS(StandardSceneRendererEditor)
-
-public:
-
-	/// Default constructor.
-	Q_INVOKABLE StandardSceneRendererEditor() {}
-
-protected:
-
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-};
+	static Registry singleton;
+	return singleton;
+}
 
 }	// End of namespace

@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/rendering/StandardSceneRenderer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "RenderSettings.h"
@@ -95,13 +95,8 @@ void RenderSettings::initializeObject(ExecutionContext executionContext)
 	setBackgroundColor(Color(1,1,1));
 
 	// Create an instance of the default renderer class.
-	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "StandardSceneRenderer");
-	if(rendererClass == nullptr) {
-		QVector<OvitoClassPtr> classList = PluginManager::instance().listClasses(SceneRenderer::OOClass());
-		if(!classList.empty()) rendererClass = classList.front();
-	}
-	if(rendererClass)
-		setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), executionContext)));
+	if(!renderer())
+		setRenderer(OORef<StandardSceneRenderer>::create(dataset(), executionContext));
 
 	RefTarget::initializeObject(executionContext);
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -71,6 +71,31 @@ QSurfaceFormat OpenGLSceneRenderer::_openglSurfaceFormat;
 bool OpenGLSceneRenderer::_openglSupportsGeomShaders = false;
 
 /******************************************************************************
+* Is called by OVITO to query the class for any information that should be 
+* included in the application's system report.
+******************************************************************************/
+void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream) const
+{
+	if(this == &OpenGLSceneRenderer::OOClass()) {
+		stream << "======= OpenGL info =======" << "\n";
+		const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
+		stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
+		stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+		stream << "Alpha: " << format.hasAlpha() << "\n";
+		stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
+		stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+		stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+		stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
+		stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
+		stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
+		stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
+		stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << "\n";
+		stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+		stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << "\n";
+	}
+}
+
+/******************************************************************************
 * Determines the capabilities of the current OpenGL implementation.
 ******************************************************************************/
 void OpenGLSceneRenderer::determineOpenGLInfo()
@@ -83,7 +108,6 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	QOffscreenSurface offscreenSurface;
 	std::unique_ptr<QWindow> window;
 	if(QOpenGLContext::currentContext() == nullptr) {
-		tempContext.setFormat(getDefaultSurfaceFormat());
 		if(!tempContext.create())
 			throw Exception(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
 								"Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
@@ -117,24 +141,6 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 }
 
 /******************************************************************************
-* Returns whether all viewport windows should share one GL context or not.
-******************************************************************************/
-bool OpenGLSceneRenderer::contextSharingEnabled(bool forceDefaultSetting)
-{
-#if 0
-	if(!forceDefaultSetting) {
-		// The user can override the use of multiple GL contexts.
-		QVariant userSetting = QSettings().value("display/share_opengl_context");
-		if(userSetting.isValid())
-			return userSetting.toBool();
-	}
-#endif
-
-	// By default, all viewports of a main window use the same GL context.
-	return true;
-}
-
-/******************************************************************************
 * Determines whether OpenGL geometry shader programs should be used or not.
 ******************************************************************************/
 bool OpenGLSceneRenderer::geometryShadersEnabled(bool forceDefaultSetting)
@@ -159,32 +165,6 @@ bool OpenGLSceneRenderer::geometryShadersEnabled(bool forceDefaultSetting)
 		return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
 	else
 		return false;
-}
-
-/******************************************************************************
-* Returns the default OpenGL surface format requested by OVITO when creating
-* OpenGL contexts.
-******************************************************************************/
-QSurfaceFormat OpenGLSceneRenderer::getDefaultSurfaceFormat()
-{
-	QSurfaceFormat format;
-#ifndef Q_OS_WASM
-	if(!QCoreApplication::testAttribute(Qt::AA_UseSoftwareOpenGL)) {
-		format.setDepthBufferSize(24);
-		format.setStencilBufferSize(1);
-#ifdef Q_OS_MACOS
-		// macOS only supports core profile contexts.
-		format.setMajorVersion(3);
-		format.setMinorVersion(2);
-		format.setProfile(QSurfaceFormat::CoreProfile);
-#endif
-	}
-#else
-	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
-	format.setMajorVersion(2);
-	format.setMinorVersion(0);
-#endif
-	return format;
 }
 
 /******************************************************************************
@@ -289,10 +269,19 @@ void OpenGLSceneRenderer::initializeGLState()
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 	setClearColor(ColorA(0, 0, 0, 0));
 
-	// Set up default viewport rectangle.
     if(viewport() && viewport()->window()) {
-    	QSize vpSize = viewport()->window()->viewportWindowDeviceSize();
+		
+		// Set up OpenGL render viewport to cover the entire window by default.
+    	QSize vpSize = viewport()->windowSize();
     	setRenderingViewport(0, 0, vpSize.width(), vpSize.height());
+
+		// When rendering an interactive viewport, use viewport background color to clear frame buffer.
+		if(isInteractive()) {
+			if(!viewport()->renderPreviewMode())
+				setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
+			else if(renderSettings())
+				setClearColor(renderSettings()->backgroundColor());
+		}
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
@@ -300,7 +289,7 @@ void OpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OpenGLSceneRenderer::endFrame(bool renderSuccessful)
+void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
 	if(QOpenGLContext::currentContext()) {
 	    initializeOpenGLFunctions();
@@ -309,7 +298,7 @@ void OpenGLSceneRenderer::endFrame(bool renderSuccessful)
 	_vertexArrayObject.reset();
 	_glcontext = nullptr;
 
-	SceneRenderer::endFrame(renderSuccessful);
+	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 }
 
 /******************************************************************************
@@ -704,25 +693,6 @@ void OpenGLSceneRenderer::render2DPolyline(const Point2* points, int count, cons
 	shader->release();
 	if(wasDepthTestEnabled) 
 		OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
-}
-
-/******************************************************************************
-* Returns the line rendering width to use in object picking mode.
-******************************************************************************/
-FloatType OpenGLSceneRenderer::defaultLinePickingWidth()
-{
-	return FloatType(6) * devicePixelRatio();
-}
-
-/******************************************************************************
-* Returns the device pixel ratio of the output device we are rendering to.
-******************************************************************************/
-qreal OpenGLSceneRenderer::devicePixelRatio() const
-{
-	if(glcontext() && glcontext()->screen())
-		return glcontext()->screen()->devicePixelRatio();
-	else
-		return SceneRenderer::devicePixelRatio();
 }
 
 /******************************************************************************

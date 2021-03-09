@@ -51,7 +51,7 @@ private Q_SLOTS:
 
 	void on_Quit_triggered();
 	void on_HelpAbout_triggered();
-	void on_HelpOpenGLInfo_triggered();
+	void on_HelpSystemInfo_triggered();
 	void on_HelpShowOnlineHelp_triggered();
 	void on_HelpShowScriptingReference_triggered();
 	void on_FileOpen_triggered();

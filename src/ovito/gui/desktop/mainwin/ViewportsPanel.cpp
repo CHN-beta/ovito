@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/desktop/viewport/ViewportMenu.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportSettings.h>
@@ -55,7 +56,10 @@ ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
-	return static_cast<ViewportWindow*>(vp->window());
+	if(WidgetViewportWindow* window = static_cast<WidgetViewportWindow*>(vp->window()))
+		return window->widget();
+	OVITO_ASSERT(false);
+	return nullptr;
 }
 
 /******************************************************************************
@@ -73,15 +77,27 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 	_viewportConfig = newViewportConfiguration;
 
 	if(newViewportConfiguration) {
-
 		// Create windows for the new viewports.
 		try {
+			// Select the viewport window implementation to use.
+			const QMetaObject* viewportImplementation = nullptr;
+			for(const QMetaObject* metaType : WidgetViewportWindow::registry()) {
+				viewportImplementation = metaType;
+				if(viewportImplementation->className() == "Ovito::OpenGLViewportWindow")
+					break;
+			}
+			if(!viewportImplementation)
+				throw Exception(tr("There is no viewport window implementation available. This should never happen. Please check your OVITO installation."));
+
 			ViewportInputManager* inputManager = _mainWindow->viewportInputManager();
 			for(Viewport* vp : newViewportConfiguration->viewports()) {
 				OVITO_ASSERT(vp->window() == nullptr);
-				ViewportWindow* viewportWindow = new ViewportWindow(vp, inputManager, _mainWindow, this);
+				WidgetViewportWindow* viewportWindow = dynamic_cast<WidgetViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(ViewportInputManager*, inputManager), Q_ARG(MainWindow*, _mainWindow), Q_ARG(QWidget*, this)));
+				OVITO_ASSERT(viewportWindow);
+				if(!viewportWindow)
+					throw Exception(tr("Failed to create viewport window widget."));
 				if(newViewportConfiguration->activeViewport() == vp)
-					viewportWindow->setFocus();
+					viewportWindow->widget()->setFocus();
 			}
 		}
 		catch(const Exception& ex) {
@@ -136,8 +152,8 @@ void ViewportsPanel::onViewportModeCursorChanged(const QCursor& cursor)
 	if(!_viewportConfig) return;
 
 	for(Viewport* vp : _viewportConfig->viewports()) {
-		if(ViewportWindow* vpWindow = static_cast<ViewportWindow*>(vp->window())) {
-			vpWindow->setCursor(cursor);
+		if(QWidget* widget = viewportWidget(vp)) {
+			widget->setCursor(cursor);
 		}
 	}
 }

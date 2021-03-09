@@ -34,7 +34,7 @@ ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* pare
 	setCheckable(true);
 	setChecked(action->isChecked());
 
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 	if(action->highlightColor().isValid())
 		setStyleSheet("QPushButton:checked { background-color: " + action->highlightColor().name() + " }");
 	else

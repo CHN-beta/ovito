@@ -69,7 +69,7 @@ QWidget* ParticleInspectionApplet::createWidget(MainWindow* mainWindow)
 	connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
 		if(active) {
 			QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 				tr("Pick a particle in the viewports. Hold down the CONTROL key to select multiple particles."),
 #else
 				tr("Pick a particle in the viewports. Hold down the COMMAND key to select multiple particles."),

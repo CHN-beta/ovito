@@ -32,7 +32,8 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLMarkerPrimitive.cpp
 		OpenGLSharedResource.cpp
 		OpenGLSceneRenderer.cpp
-		StandardSceneRenderer.cpp
+		OffscreenOpenGLSceneRenderer.cpp
+		PickingOpenGLSceneRenderer.cpp
 		resources/opengl.qrc
 		resources_gles/opengl_gles.qrc
 )

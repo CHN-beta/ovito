@@ -115,7 +115,7 @@ class OVITO_CORE_EXPORT FrameBuffer : public QObject
 public:
 
 	/// Constructor.
-	FrameBuffer(QObject* parent = nullptr) : QObject(parent) {}
+	explicit FrameBuffer(QObject* parent = nullptr) : QObject(parent) {}
 
 	/// Constructor.
 	FrameBuffer(int width, int height, QObject* parent = nullptr);

@@ -56,7 +56,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
 	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), ":/guibase/actions/file/user_manual.bw.svg", tr("Open the user manual."), QKeySequence::HelpContents);
 	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), ":/guibase/actions/file/scripting_manual.bw.svg", tr("Open the Python API documentation."));
-	createCommandAction(ACTION_HELP_OPENGL_INFO, tr("OpenGL Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display OpenGL graphics driver information."));
+	createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display system and graphics hardware information."));
 
 	createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), ":/guibase/actions/edit/edit_undo.bw.svg", tr("Reverse the last action."), QKeySequence::Undo);
 	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), ":/guibase/actions/edit/edit_redo.bw.svg", tr("Restore the previously reversed action."), QKeySequence::Redo);
@@ -73,7 +73,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 
 	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), ":/guibase/actions/viewport/maximize_viewport.bw.svg", tr("Enlarge/reduce the active viewport."));
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS, tr("Zoom Scene Extents"), ":/guibase/actions/viewport/zoom_scene_extents.bw.svg",
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 		tr("Zoom active viewport to show everything. Use CONTROL key to zoom all viewports at once."));
 #else
 		tr("Zoom active viewport to show everything. Use COMMAND key to zoom all viewports at once."));

@@ -34,15 +34,11 @@ OVITO_STANDARD_PLUGIN(GuiBase
 		mainwin/PipelineListModel.cpp
 		mainwin/PipelineListItem.cpp
 		mainwin/ModifierListModel.cpp
-		rendering/ViewportSceneRenderer.cpp
-		rendering/PickingSceneRenderer.cpp
 		viewport/ViewportInputManager.cpp
 		viewport/ViewportInputMode.cpp
 		viewport/NavigationModes.cpp
 		viewport/SelectionMode.cpp
 		resources/guibase.qrc
-	PLUGIN_DEPENDENCIES
-		OpenGLRenderer
 	PRECOMPILED_HEADERS
 		GUIBase.h
 )

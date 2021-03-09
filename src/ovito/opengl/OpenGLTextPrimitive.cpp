@@ -72,7 +72,7 @@ void OpenGLTextPrimitive::render(OpenGLSceneRenderer* renderer)
 	}
 
 	Point2 alignedPos = position();
-	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)renderer->antialiasingLevelInternal();
+	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)renderer->antialiasingLevel();
 	if(alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
 	else if(alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
 	if(alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();

@@ -120,6 +120,7 @@ SET(SourceFiles
 	rendering/SceneRenderer.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
+	rendering/StandardSceneRenderer.cpp
 	viewport/Viewport.cpp
 	viewport/ViewportWindowInterface.cpp
 	viewport/ViewportConfiguration.cpp

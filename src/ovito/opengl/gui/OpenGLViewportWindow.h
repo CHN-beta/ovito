@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,26 +24,30 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
-#include <ovito/gui/base/rendering/PickingSceneRenderer.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/opengl/PickingOpenGLSceneRenderer.h>
+
+#include <QOpenGLWidget>
 
 namespace Ovito {
 
 /**
  * \brief The internal render window/widget used by the Viewport class.
  */
-class OVITO_GUI_EXPORT ViewportWindow : public QOpenGLWidget, public ViewportWindowInterface
+class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget, public WidgetViewportWindow
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	ViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
+	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
 
 	/// Returns the input manager handling mouse events of the viewport (if any).
 	ViewportInputManager* inputManager() const;
+
+	/// Returns the QWidget that is associated with this viewport window.
+	virtual QWidget* widget() override { return this; }
 
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
@@ -93,7 +97,7 @@ public:
 	void showViewportMenu(const QPoint& pos = QPoint(0,0));
 
 	/// Returns the renderer generating an offscreen image of the scene used for object picking.
-	PickingSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
+	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
 
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
@@ -155,10 +159,10 @@ private:
 	QPointer<ViewportInputManager> _inputManager;
 
 	/// This is the renderer of the interactive viewport.
-	OORef<ViewportSceneRenderer> _viewportRenderer;
+	OORef<OpenGLSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
-	OORef<PickingSceneRenderer> _pickingRenderer;
+	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
 };
 
 }	// End of namespace

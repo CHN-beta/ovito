@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,31 +20,35 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-//
-// Standard precompiled header file included by all source files in this module
-//
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/core/rendering/StandardSceneRenderer.h>
+#include "StandardSceneRendererEditor.h"
 
-#ifndef __OVITO_GUI_WEB_
-#define __OVITO_GUI_WEB_
-
-#include <ovito/gui/base/GUIBase.h>
-
-/******************************************************************************
-* QT Library
-******************************************************************************/
-#include <QResource>
-#include <QQmlProperty>
-#include <QQmlContext>
-#include <QQuickWindow>
-#include <QQuickFramebufferObject>
-
-/******************************************************************************
-* Forward declarations
-******************************************************************************/
 namespace Ovito {
-        class MainWindow;
-        class WasmDataSetContainer;		
-        class OpenGLViewportWindow;
+
+IMPLEMENT_OVITO_CLASS(StandardSceneRendererEditor);
+SET_OVITO_OBJECT_EDITOR(StandardSceneRenderer, StandardSceneRendererEditor);
+
+/******************************************************************************
+* Constructor that creates the UI controls for the editor.
+******************************************************************************/
+void StandardSceneRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+{
+	// Create the rollout.
+	QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "rendering.opengl_renderer.html");
+
+	QGridLayout* layout = new QGridLayout(rollout);
+	layout->setContentsMargins(4,4,4,4);
+#ifndef Q_OS_MACOS
+	layout->setSpacing(2);
+#endif
+	layout->setColumnStretch(1, 1);
+
+	// Antialiasing level
+	IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::antialiasingLevel));
+	layout->addWidget(antialiasingLevelUI->label(), 0, 0);
+	layout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
 }
 
-#endif
+}	// End of namespace

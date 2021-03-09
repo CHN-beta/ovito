@@ -515,7 +515,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		OVITO_ASSERT(renderSettings != nullptr);
 
 		// Set up the renderer.
-		renderer->startRender(dataset(), renderSettings);
+		renderer->startRender(dataset(), renderSettings, nullptr);
 
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpSize.height() / vpSize.width();
@@ -609,7 +609,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		}
 
 		// Finish rendering.
-		renderer->endFrame(true);
+		renderer->endFrame(true, nullptr);
 		renderer->endRender();
 
 		// Discard unused vis element resources.

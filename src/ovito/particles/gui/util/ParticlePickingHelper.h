@@ -29,7 +29,6 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 
 namespace Ovito { namespace Particles {
 

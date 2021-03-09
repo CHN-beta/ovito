@@ -168,6 +168,9 @@ public:
 		return std::make_unique<SerializedClassInfo>();
 	}
 
+	/// \brief Is called by OVITO to query the class for any information that should be included in the application's system report.
+	virtual void querySystemInformation(QTextStream& stream) const {}
+
 protected:
 
 	/// \brief Is called by the system after construction of the meta-class instance.

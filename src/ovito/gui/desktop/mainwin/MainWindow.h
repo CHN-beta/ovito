@@ -98,11 +98,6 @@ public:
 	/// \brief Shows the online manual and opens the given help page.
 	static void openHelpTopic(const QString& page);
 
-	/// Returns the master OpenGL context managed by this window, which is used to render the viewports.
-	/// If sharing of OpenGL contexts between viewports is disabled, then this function returns the GL context
-	/// of the first viewport in this window.
-	QOpenGLContext* getOpenGLContext();
-
 	/// Returns the page of the command panel that is currently visible.
 	CommandPanelPage currentCommandPanelPage() const;
 

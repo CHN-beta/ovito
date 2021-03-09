@@ -80,30 +80,22 @@ public:
 
 public:
 
+	/// This may be called on a renderer before startRender() to control its supersampling level.
+	virtual void setAntialiasingHint(int antialiasingLevel) {}
+
 	/// Prepares the renderer for rendering and sets the data set to be rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings) {
-		OVITO_ASSERT_MSG(_renderDataset == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
-		_renderDataset = dataset;
-		_settings = settings;
-		return true;
-	}
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer);
 
 	/// Returns the dataset being rendered.
 	/// This information is only available between calls to startRender() and endRender().
-	DataSet* renderDataset() const {
-		OVITO_CHECK_POINTER(_renderDataset); // Make sure startRender() has been called to set the data set.
-		return _renderDataset;
-	}
+	DataSet* renderDataset() const { return _renderDataset; }
 
 	/// Returns the general rendering settings.
 	/// This information is only available between calls to startRender() and endRender().
-	RenderSettings* renderSettings() const { OVITO_CHECK_POINTER(_settings); return _settings; }
+	RenderSettings* renderSettings() const { return _renderSettings; }
 
 	/// Is called after rendering has finished.
-	virtual void endRender() {
-		_renderDataset = nullptr;
-		_settings = nullptr;
-	}
+	virtual void endRender();
 
 	/// Returns the view projection parameters.
 	const ViewProjectionParameters& projParams() const { return _projParams; }
@@ -122,7 +114,7 @@ public:
 	virtual QSize outputSize() const;
 
 	/// Returns the device pixel ratio of the output device we are rendering to.
-	virtual qreal devicePixelRatio() const { return 1.0; }
+	virtual qreal devicePixelRatio() const;
 
 	/// \brief Computes the bounding box of the entire scene to be rendered.
 	/// \param time The time at which the bounding box should be computed.
@@ -130,23 +122,16 @@ public:
 	///         everything to be rendered.
 	Box3 computeSceneBoundingBox(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, SynchronousOperation operation);
 
-	/// This method is called just before renderFrame() is called.
 	/// Sets the view projection parameters, the animation frame to render,
-	/// and the viewport who is being rendered.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) {
-		_time = time;
-		_viewport = vp;
-		setProjParams(params);
-		_modelWorldTM.setIdentity();
-		_modelViewTM = projParams().viewMatrix;
-	}
+	/// and the viewport being rendered.
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp);
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
 	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) = 0;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderSuccessful) {}
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) {}
 
 	/// Changes the current local-to-world transformation matrix.
 	void setWorldTransform(const AffineTransformation& tm) {
@@ -228,13 +213,22 @@ public:
 	/// Renders the triangle mesh stored in the given buffer.
 	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) {}
 
+	/// Renders a 2d polyline or polygon into an interactive viewport.
+	/// This method is only implemented by real-time renderers used for the interactive viewports of OVITO.
+	virtual void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed) {}
+
 	/// Returns whether this renderer is rendering an interactive viewport.
 	/// \return true if rendering a real-time viewport; false if rendering a static image.
-	/// The default implementation returns false.
-	virtual bool isInteractive() const { return false; }
+	bool isInteractive() const { return _isInteractive; }
+
+	/// Sets the interactive mode of the scene renderer.
+	void setInteractive(bool isInteractive) { _isInteractive = isInteractive; }
 
 	/// Returns whether object picking mode is active.
 	bool isPicking() const { return _isPicking; }
+
+	/// Sets whether object picking mode is active.
+	void setPicking(bool enable) { _isPicking = enable; }
 
 	/// Returns whether bounding box calculation pass is active.
 	bool isBoundingBoxPass() const { return _isBoundingBoxPass; }
@@ -258,7 +252,7 @@ public:
 	virtual void endPickObject() {}
 
 	/// Returns the line rendering width to use in object picking mode.
-	virtual FloatType defaultLinePickingWidth() { return 1; }
+	virtual FloatType defaultLinePickingWidth();
 
 	/// Temporarily enables/disables the depth test while rendering.
 	/// This method is mainly used with the interactive viewport renderer.
@@ -287,7 +281,7 @@ protected:
 
 	/// \brief This virtual method is responsible for rendering additional content that is only
 	///       visible in the interactive viewports.
-	virtual void renderInteractiveContent() {}
+	virtual void renderInteractiveContent();
 
 	/// Indicates whether the scene renderer is allowed to block execution until long-running
 	/// operations, e.g. data pipeline evaluation, complete. By default, this method returns
@@ -312,19 +306,22 @@ protected:
 	/// \brief Renders the trajectory of motion of a node in the interactive viewports.
 	void renderNodeTrajectory(const SceneNode* node);
 
-	/// Sets whether object picking mode is active.
-	void setPicking(bool enable) { _isPicking = enable; }
+	/// Determines the range of the construction grid to display.
+	std::tuple<FloatType, Box2I> determineGridRange(Viewport* vp);
+
+	/// Renders the construction grid in a viewport.
+	void renderGrid();
 
 private:
 
 	/// Renders a data object and all its sub-objects.
 	void renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, std::vector<const DataObject*>& objectStack);
 
-	/// The data set being rendered.
+	/// The dataset being rendered in the current rendering pass.
 	DataSet* _renderDataset = nullptr;
 
-	/// The current render settings.
-	RenderSettings* _settings = nullptr;
+	/// The render settings for the current rendering pass.
+	RenderSettings* _renderSettings = nullptr;
 
 	/// The viewport whose contents are currently being rendered.
 	Viewport* _viewport = nullptr;
@@ -344,11 +341,17 @@ private:
 	/// Indicates that an object picking pass is active.
 	bool _isPicking = false;
 
+	/// Indicates that this is a real-time renderer for an interactive viewport.
+	bool _isInteractive = false;
+
 	/// Indicates that a bounding box pass is active.
 	bool _isBoundingBoxPass = false;
 
 	/// Working variable used for computing the bounding box of the entire scene.
 	Box3 _sceneBoundingBox;
+
+	/// The geometry buffer for rendering the construction grid in an interactive viewport.
+	std::shared_ptr<LinePrimitive> _constructionGridGeometry;
 };
 
 /**
@@ -376,7 +379,7 @@ private:
 };
 
 /*
- * Data structure returned by the ViewportWindow::pick() method,
+ * Data structure returned by the ViewportWindowInterface::pick() method,
  * holding information about the object that was picked in a viewport at the current cursor location.
  */
 class OVITO_CORE_EXPORT ViewportPickResult

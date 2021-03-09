@@ -23,13 +23,13 @@
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/rendering/PickingSceneRenderer.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
-#include "ViewportWindow.h"
+#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include "OpenGLViewportWindow.h"
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QQuickOpenGLUtils> 
@@ -40,7 +40,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportWindow::ViewportWindow() : ViewportWindowInterface(nullptr, nullptr)
+OpenGLViewportWindow::OpenGLViewportWindow() : ViewportWindowInterface(nullptr, nullptr)
 {
 	// Show the FBO contents upside down.
 	setMirrorVertically(true);
@@ -57,7 +57,7 @@ ViewportWindow::ViewportWindow() : ViewportWindowInterface(nullptr, nullptr)
 /******************************************************************************
 * Associates this window with a viewport.
 ******************************************************************************/
-void ViewportWindow::setViewport(Viewport* vp)
+void OpenGLViewportWindow::setViewport(Viewport* vp)
 {
 	ViewportWindowInterface::setViewport(vp);
 
@@ -65,15 +65,18 @@ void ViewportWindow::setViewport(Viewport* vp)
 	// It is shared by all viewports of a dataset.
 	for(Viewport* vp : vp->dataset()->viewportConfig()->viewports()) {
 		if(vp->window() != nullptr) {
-			_viewportRenderer = static_cast<ViewportWindow*>(vp->window())->_viewportRenderer;
+			_viewportRenderer = static_cast<OpenGLViewportWindow*>(vp->window())->_viewportRenderer;
 			if(_viewportRenderer) break;
 		}
 	}
-	if(!_viewportRenderer)
-		_viewportRenderer = new ViewportSceneRenderer(vp->dataset());
+	if(!_viewportRenderer) {
+		_viewportRenderer = new OpenGLSceneRenderer(vp->dataset());
+		_viewportRenderer->setInteractive(true);
+	}
 
 	// Create the object picking renderer.
 	_pickingRenderer = new PickingSceneRenderer(vp->dataset());
+	_pickingRenderer->setInteractive(true);
 
 	Q_EMIT viewportReplaced(viewport());
 }
@@ -81,7 +84,7 @@ void ViewportWindow::setViewport(Viewport* vp)
 /******************************************************************************
 * Returns the input manager handling mouse events of the viewport (if any).
 ******************************************************************************/
-ViewportInputManager* ViewportWindow::inputManager() const
+ViewportInputManager* OpenGLViewportWindow::inputManager() const
 {
 	return mainWindow() ? mainWindow()->viewportInputManager() : nullptr;
 }
@@ -89,15 +92,15 @@ ViewportInputManager* ViewportWindow::inputManager() const
 /******************************************************************************
 * Create the renderer used to render into the FBO.
 ******************************************************************************/
-QQuickFramebufferObject::Renderer* ViewportWindow::createRenderer() const
+QQuickFramebufferObject::Renderer* OpenGLViewportWindow::createRenderer() const
 {
-	return new Renderer(const_cast<ViewportWindow*>(this));
+	return new Renderer(const_cast<OpenGLViewportWindow*>(this));
 }
 
 /******************************************************************************
 * Puts an update request event for this viewport on the event loop.
 ******************************************************************************/
-void ViewportWindow::renderLater()
+void OpenGLViewportWindow::renderLater()
 {
 	_updateRequested = true;
 	update();
@@ -107,11 +110,11 @@ void ViewportWindow::renderLater()
 * If an update request is pending for this viewport window, immediately
 * processes it and redraw the window contents.
 ******************************************************************************/
-void ViewportWindow::processViewportUpdate()
+void OpenGLViewportWindow::processViewportUpdate()
 {
 	if(_updateRequested) {
-		OVITO_ASSERT_MSG(!viewport()->isRendering(), "ViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "ViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 //		repaint();
 	}
 }
@@ -119,7 +122,7 @@ void ViewportWindow::processViewportUpdate()
 /******************************************************************************
 * Handles double click events.
 ******************************************************************************/
-void ViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
+void OpenGLViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
@@ -137,7 +140,7 @@ void ViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 /******************************************************************************
 * Handles mouse press events.
 ******************************************************************************/
-void ViewportWindow::mousePressEvent(QMouseEvent* event)
+void OpenGLViewportWindow::mousePressEvent(QMouseEvent* event)
 {
 	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
 
@@ -157,7 +160,7 @@ void ViewportWindow::mousePressEvent(QMouseEvent* event)
 /******************************************************************************
 * Handles mouse release events.
 ******************************************************************************/
-void ViewportWindow::mouseReleaseEvent(QMouseEvent* event)
+void OpenGLViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
@@ -175,7 +178,7 @@ void ViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 /******************************************************************************
 * Handles mouse move events.
 ******************************************************************************/
-void ViewportWindow::mouseMoveEvent(QMouseEvent* event)
+void OpenGLViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
@@ -193,7 +196,7 @@ void ViewportWindow::mouseMoveEvent(QMouseEvent* event)
 /******************************************************************************
 * Handles hover move events.
 ******************************************************************************/
-void ViewportWindow::hoverMoveEvent(QHoverEvent* event)
+void OpenGLViewportWindow::hoverMoveEvent(QHoverEvent* event)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	if(event->oldPosF() != event->position()) {
@@ -211,7 +214,7 @@ void ViewportWindow::hoverMoveEvent(QHoverEvent* event)
 /******************************************************************************
 * Handles mouse wheel events.
 ******************************************************************************/
-void ViewportWindow::wheelEvent(QWheelEvent* event)
+void OpenGLViewportWindow::wheelEvent(QWheelEvent* event)
 {
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
@@ -229,7 +232,7 @@ void ViewportWindow::wheelEvent(QWheelEvent* event)
 /******************************************************************************
 * Returns the list of gizmos to render in the viewport.
 ******************************************************************************/
-const std::vector<ViewportGizmo*>& ViewportWindow::viewportGizmos()
+const std::vector<ViewportGizmo*>& OpenGLViewportWindow::viewportGizmos()
 {
 	return inputManager()->viewportGizmos();
 }
@@ -237,7 +240,7 @@ const std::vector<ViewportGizmo*>& ViewportWindow::viewportGizmos()
 /******************************************************************************
 * Determines the object that is visible under the given mouse cursor position.
 ******************************************************************************/
-ViewportPickResult ViewportWindow::pick(const QPointF& pos)
+ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 {
 	ViewportPickResult result;
 
@@ -272,14 +275,14 @@ ViewportPickResult ViewportWindow::pick(const QPointF& pos)
 /******************************************************************************
 * Immediately redraws the contents of this window.
 ******************************************************************************/
-void ViewportWindow::renderNow()
+void OpenGLViewportWindow::renderNow()
 {
 }
 
 /******************************************************************************
 * Makes the OpenGL context used by the viewport window for rendering the current context.
 ******************************************************************************/
-void ViewportWindow::makeOpenGLContextCurrent() 
+void OpenGLViewportWindow::makeOpenGLContextCurrent() 
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	OVITO_ASSERT(window()->rendererInterface()->graphicsApi() == QSGRendererInterface::OpenGL);
@@ -292,7 +295,7 @@ void ViewportWindow::makeOpenGLContextCurrent()
 /******************************************************************************
 * Renders the contents of the viewport window.
 ******************************************************************************/
-void ViewportWindow::renderViewport()
+void OpenGLViewportWindow::renderViewport()
 {
 	_updateRequested = false;
 
@@ -340,7 +343,7 @@ void ViewportWindow::renderViewport()
 /******************************************************************************
 * Renders custom GUI elements in the viewport on top of the scene.
 ******************************************************************************/
-void ViewportWindow::renderGui(SceneRenderer* renderer)
+void OpenGLViewportWindow::renderGui(SceneRenderer* renderer)
 {
 	if(viewport()->renderPreviewMode()) {
 		// Render render frame.

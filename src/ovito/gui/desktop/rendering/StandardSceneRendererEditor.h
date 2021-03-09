@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,35 +20,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/IntegerParameterUI.h>
-#include <ovito/opengl/StandardSceneRenderer.h>
-#include "StandardSceneRendererEditor.h"
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StandardSceneRendererEditor);
-SET_OVITO_OBJECT_EDITOR(StandardSceneRenderer, StandardSceneRendererEditor);
-
 /******************************************************************************
-* Constructor that creates the UI controls for the editor.
+* The editor component for the StandardSceneRenderer class.
 ******************************************************************************/
-void StandardSceneRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+class StandardSceneRendererEditor : public PropertiesEditor
 {
-	// Create the rollout.
-	QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "rendering.opengl_renderer.html");
+	Q_OBJECT
+	OVITO_CLASS(StandardSceneRendererEditor)
 
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-#ifndef Q_OS_MACX
-	layout->setSpacing(2);
-#endif
-	layout->setColumnStretch(1, 1);
+public:
 
-	// Antialiasing level
-	IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::antialiasingLevel));
-	layout->addWidget(antialiasingLevelUI->label(), 0, 0);
-	layout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
-}
+	/// Default constructor.
+	Q_INVOKABLE StandardSceneRendererEditor() {}
+
+protected:
+
+	/// Creates the user interface controls for the editor.
+	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+};
 
 }	// End of namespace

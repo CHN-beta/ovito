@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,12 +25,13 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/core/rendering/FrameBuffer.h>
+#include <ovito/core/rendering/SceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
-#include "AmbientOcclusionRenderer.h"
 
 namespace Ovito { namespace Particles {
 
@@ -94,25 +95,31 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	TimeInterval validityInterval = input.stateValidity();
 	ConstPropertyPtr radii = particles->inputParticleRadii();
 
-	// Create the AmbientOcclusionRenderer instance.
-	AmbientOcclusionRenderer* renderer = new AmbientOcclusionRenderer(dataset(), QSize(resolution, resolution));
+	// Create the offscreen renderer implementation.
+	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
+	if(!rendererClass)
+		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), ExecutionContext::Scripting));
+
+	// Activate picking mode, because we want to render particles using false colors.
+	renderer->setPicking(true);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AmbientOcclusionEngine>(modApp, executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, renderer);
+	return std::make_shared<AmbientOcclusionEngine>(modApp, executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
 AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
-		ConstPropertyPtr particleRadii, const Box3& boundingBox, AmbientOcclusionRenderer* renderer) :
+		ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer) :
 	Engine(dataSource, executionContext, validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
 	_positions(std::move(positions)),
 	_particleRadii(std::move(particleRadii)),
 	_boundingBox(boundingBox),
-	_renderer(renderer),
+	_renderer(std::move(renderer)),
 	_brightness(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Brightness"), true)),
 	_inputFingerprint(std::move(fingerprint))
 {
@@ -130,9 +137,13 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 		setProgressText(tr("Ambient occlusion"));
 
-		_renderer->startRender(nullptr, nullptr);
+		// Create the rendering frame buffer that receives the rendered image of the particles.
+		FrameBuffer frameBuffer(_resolution, _resolution);
+
+		// Initialize the renderer.
+		_renderer->startRender(nullptr, nullptr, &frameBuffer);
 		try {
-			// The buffered particle geometry used to render the particles.
+			// The buffered particle geometry used for rendering the particles.
 			std::shared_ptr<ParticlePrimitive> particleBuffer;
 
 			setProgressMaximum(_samplingCount);
@@ -177,13 +188,19 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 					_renderer->renderParticles(particleBuffer);
 				}
 				catch(...) {
-					_renderer->endFrame(false);
+					_renderer->endFrame(false, nullptr);
 					throw;
 				}
-				_renderer->endFrame(true);
+				// Discard the existing image in the frame buffer so that
+				// OffscreenOpenGLSceneRenderer::endFrame() can just return the unmodified
+				// frame buffer contents.
+				frameBuffer.image() = QImage();
+
+				// Retrieve the frame buffer contents.
+				_renderer->endFrame(true, &frameBuffer);
 
 				// Extract brightness values from rendered image.
-				const QImage image = _renderer->image();
+				const QImage& image = frameBuffer.image();
 				PropertyAccess<FloatType> brightnessValues(brightness());
 				for(int y = 0; y < _resolution; y++) {
 					const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
@@ -195,6 +212,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 						quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
 						if(id == 0)
 							continue;
+						// Subtracting base 1 from ID, because that's how OpenGLSceneRenderer::registerSubObjectIDs() is implemented.
 						quint32 particleIndex = id - 1;
 						OVITO_ASSERT(particleIndex < brightnessValues.size());
 						brightnessValues[particleIndex] += 1;
@@ -235,17 +253,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 	// Release data that is no longer needed to reduce memory footprint.
 	_positions.reset();
 	_particleRadii.reset();
-	_renderer->deleteLater();
-	_renderer = nullptr;
-}
-
-/******************************************************************************
-* Destructor.
-******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::~AmbientOcclusionEngine() 
-{
-	if(_renderer) 
-		_renderer->deleteLater();
+	_renderer.reset();
 }
 
 /******************************************************************************

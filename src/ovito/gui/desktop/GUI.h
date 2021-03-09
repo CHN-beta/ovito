@@ -41,7 +41,6 @@
 #include <QtDebug>
 #include <QtGui>
 #include <QCommandLineParser>
-#include <QOpenGLWidget>
 
 /******************************************************************************
 * Forward declaration of classes.
@@ -95,7 +94,6 @@ namespace Ovito {
 	class OverlayCommandPage;
 	class UtilityCommandPage;
 	class ViewportMenu;
-	class ViewportWindow;
 	class StatusBar;
 	class PopupUpdateComboBox;
 }

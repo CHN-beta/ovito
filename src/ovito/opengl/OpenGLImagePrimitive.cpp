@@ -83,7 +83,7 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 
         // Transform rectangle to normalized device coordinates.
         Box2 b = windowRect();
-        int aaLevel = renderer->antialiasingLevelInternal();
+        int aaLevel = renderer->antialiasingLevel();
         if(aaLevel > 1) {
             b.minc.x() = (int)(b.minc.x() / aaLevel) * aaLevel;
             b.minc.y() = (int)(b.minc.y() / aaLevel) * aaLevel;
