@@ -87,7 +87,7 @@ public:
 	virtual ViewportPickResult pick(const QPointF& pos) = 0;
 
 	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() = 0;
+	virtual void makeOpenGLContextCurrent() {}
 
 	/// Returns the list of gizmos to render in the viewport.
 	virtual const std::vector<ViewportGizmo*>& viewportGizmos() = 0;

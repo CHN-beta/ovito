@@ -43,11 +43,66 @@ public:
 
 public:
 
-	/// Inherit constructor from base class.
-	using ViewportWindowInterface::ViewportWindowInterface;
+	/// Constructor.
+	WidgetViewportWindow(MainWindowInterface* mainWindow, ViewportInputManager* inputManager, Viewport* vp);
 
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() = 0;
+
+	/// Returns the input manager handling mouse events of the viewport (if any).
+	ViewportInputManager* inputManager() const;
+
+	/// Returns the list of gizmos to render in the viewport.
+	virtual const std::vector<ViewportGizmo*>& viewportGizmos() override;
+
+	/// Renders custom GUI elements in the viewport on top of the scene.
+	virtual void renderGui(SceneRenderer* renderer) override;
+
+	/// \brief Displays the context menu for the viewport.
+	/// \param pos The position in where the context menu should be displayed.
+	void showViewportMenu(const QPoint& pos = QPoint(0,0));
+
+	/// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
+	const QRectF& contextMenuArea() const { return _contextMenuArea; }
+
+protected:
+
+	/// Is called when the mouse cursor leaves the widget.
+	void leaveEvent(QEvent* event);
+
+	/// Handles double click events.
+	void mouseDoubleClickEvent(QMouseEvent* event);
+
+	/// Handles mouse press events.
+	void mousePressEvent(QMouseEvent* event);
+
+	/// Handles mouse release events.
+	void mouseReleaseEvent(QMouseEvent* event);
+
+	/// Handles mouse move events.
+	void mouseMoveEvent(QMouseEvent* event);
+
+	/// Handles mouse wheel events.
+	void wheelEvent(QWheelEvent* event);
+
+	/// Is called when the widgets looses the input focus.
+	void focusOutEvent(QFocusEvent* event);
+
+	/// Handles key-press events.
+	void keyPressEvent(QKeyEvent* event);
+
+private:
+
+	/// The input manager handling mouse events of the viewport.
+	QPointer<ViewportInputManager> _inputManager;
+
+	/// The zone in the upper left corner of the viewport where
+	/// the context menu can be activated by the user.
+	QRectF _contextMenuArea;
+
+	/// Indicates that the mouse cursor is currently positioned inside the
+	/// viewport area that activates the viewport context menu.
+	bool _cursorInContextMenuArea = false;	
 };
 
 /// This macro registers a widget-based viewport window implementation.

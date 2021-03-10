@@ -21,14 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/viewport/ViewportInputMode.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/viewport/ViewportMenu.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include "OpenGLViewportWindow.h"
@@ -42,8 +38,7 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(OpenGLViewportWindow);
 ******************************************************************************/
 OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget) : 
 		QOpenGLWidget(parentWidget),
-		WidgetViewportWindow(mainWindow, vp),
-		_inputManager(inputManager)
+		WidgetViewportWindow(mainWindow, inputManager, vp)
 {
 	setMouseTracking(true);
 	setFocusPolicy(Qt::StrongFocus);
@@ -55,8 +50,8 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* i
 	// Create the viewport renderer.
 	// It is shared by all viewports of a dataset.
 	for(Viewport* vp : viewport()->dataset()->viewportConfig()->viewports()) {
-		if(vp->window() != nullptr) {
-			_viewportRenderer = static_cast<OpenGLViewportWindow*>(vp->window())->_viewportRenderer;
+		if(OpenGLViewportWindow* window = dynamic_cast<OpenGLViewportWindow*>(vp->window())) {
+			_viewportRenderer = window->_viewportRenderer;
 			if(_viewportRenderer) break;
 		}
 	}
@@ -68,14 +63,6 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* i
 	// Create the object picking renderer.
 	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
-}
-
-/******************************************************************************
-* Returns the input manager handling mouse events of the viewport (if any).
-******************************************************************************/
-ViewportInputManager* OpenGLViewportWindow::inputManager() const
-{
-	return _inputManager.data();
 }
 
 /******************************************************************************
@@ -98,26 +85,6 @@ void OpenGLViewportWindow::processViewportUpdate()
 		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		repaint();
 	}
-}
-
-/******************************************************************************
-* Displays the context menu for this viewport.
-******************************************************************************/
-void OpenGLViewportWindow::showViewportMenu(const QPoint& pos)
-{
-	// Create the context menu for the viewport.
-	ViewportMenu contextMenu(viewport(), this);
-
-	// Show menu.
-	contextMenu.show(pos);
-}
-
-/******************************************************************************
-* Returns the list of gizmos to render in the viewport.
-******************************************************************************/
-const std::vector<ViewportGizmo*>& OpenGLViewportWindow::viewportGizmos()
-{
-	return inputManager()->viewportGizmos();
 }
 
 /******************************************************************************
@@ -178,182 +145,6 @@ void OpenGLViewportWindow::showEvent(QShowEvent* event)
 {
 	if(!event->spontaneous())
 		update();
-}
-
-/******************************************************************************
-* Handles double click events.
-******************************************************************************/
-void OpenGLViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
-{
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->mouseDoubleClickEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Handles mouse press events.
-******************************************************************************/
-void OpenGLViewportWindow::mousePressEvent(QMouseEvent* event)
-{
-	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
-
-	// Intercept mouse clicks on the viewport caption.
-	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event))) {
-		showViewportMenu(event->pos());
-		return;
-	}
-
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->mousePressEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Handles mouse release events.
-******************************************************************************/
-void OpenGLViewportWindow::mouseReleaseEvent(QMouseEvent* event)
-{
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->mouseReleaseEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Handles mouse move events.
-******************************************************************************/
-void OpenGLViewportWindow::mouseMoveEvent(QMouseEvent* event)
-{
-	if(_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea) {
-		_cursorInContextMenuArea = true;
-		viewport()->updateViewport();
-	}
-	else if(!_contextMenuArea.contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
-		_cursorInContextMenuArea = false;
-		viewport()->updateViewport();
-	}
-
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->mouseMoveEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Handles mouse wheel events.
-******************************************************************************/
-void OpenGLViewportWindow::wheelEvent(QWheelEvent* event)
-{
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->wheelEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport mouse event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Is called when the mouse cursor leaves the widget.
-******************************************************************************/
-void OpenGLViewportWindow::leaveEvent(QEvent* event)
-{
-	if(_cursorInContextMenuArea) {
-		_cursorInContextMenuArea = false;
-		viewport()->updateViewport();
-	}
-	if(mainWindow())
-		mainWindow()->clearStatusBarMessage();
-}
-
-/******************************************************************************
-* Is called when the widgets looses the input focus.
-******************************************************************************/
-void OpenGLViewportWindow::focusOutEvent(QFocusEvent* event)
-{
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				mode->focusOutEvent(this, event);
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport event handler:";
-				ex.logError();
-			}
-		}
-	}
-}
-
-/******************************************************************************
-* Handles key-press events.
-******************************************************************************/
-void OpenGLViewportWindow::keyPressEvent(QKeyEvent* event)
-{
-	if(_inputManager) {
-		if(ViewportInputMode* mode = _inputManager->activeMode()) {
-			try {
-				if(mode->keyPressEvent(this, event))
-					return; // Do not propagate handled key events to base class.
-			}
-			catch(const Exception& ex) {
-				qWarning() << "Uncaught exception in viewport key-press event handler:";
-				ex.logError();
-			}
-		}
-	}
-	QOpenGLWidget::keyPressEvent(event);
-}
-
-/******************************************************************************
-* Renders custom GUI elements in the viewport on top of the scene.
-******************************************************************************/
-void OpenGLViewportWindow::renderGui(SceneRenderer* renderer)
-{
-	if(viewport()->renderPreviewMode()) {
-		// Render render frame.
-		renderRenderFrame(renderer);
-	}
-	else {
-		// Render orientation tripod.
-		renderOrientationIndicator(renderer);
-	}
-
-	// Render viewport caption.
-	_contextMenuArea = renderViewportTitle(renderer, _cursorInContextMenuArea);
 }
 
 /******************************************************************************

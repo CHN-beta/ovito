@@ -21,6 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/viewport/ViewportMenu.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/viewport/ViewportInputManager.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
+#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "WidgetViewportWindow.h"
 
 namespace Ovito {
@@ -34,5 +41,217 @@ WidgetViewportWindow::Registry& WidgetViewportWindow::registry()
 	static Registry singleton;
 	return singleton;
 }
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+WidgetViewportWindow::WidgetViewportWindow(MainWindowInterface* mainWindow, ViewportInputManager* inputManager, Viewport* vp)
+	: ViewportWindowInterface(mainWindow, vp), _inputManager(inputManager)
+{
+}
+
+/******************************************************************************
+* Displays the context menu for this viewport.
+******************************************************************************/
+void WidgetViewportWindow::showViewportMenu(const QPoint& pos)
+{
+	// Create the context menu for the viewport.
+	ViewportMenu contextMenu(viewport(), widget());
+
+	// Show menu.
+	contextMenu.show(pos);
+}
+
+/******************************************************************************
+* Returns the input manager handling mouse events of the viewport (if any).
+******************************************************************************/
+ViewportInputManager* WidgetViewportWindow::inputManager() const
+{
+	return _inputManager.data();
+}
+
+/******************************************************************************
+* Returns the list of gizmos to render in the viewport.
+******************************************************************************/
+const std::vector<ViewportGizmo*>& WidgetViewportWindow::viewportGizmos()
+{
+	return inputManager()->viewportGizmos();
+}
+
+/******************************************************************************
+* Handles double click events.
+******************************************************************************/
+void WidgetViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
+{
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->mouseDoubleClickEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport mouse event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Handles mouse press events.
+******************************************************************************/
+void WidgetViewportWindow::mousePressEvent(QMouseEvent* event)
+{
+	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
+
+	// Intercept mouse clicks on the viewport caption.
+	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
+		showViewportMenu(event->pos());
+		return;
+	}
+
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->mousePressEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport mouse event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Handles mouse release events.
+******************************************************************************/
+void WidgetViewportWindow::mouseReleaseEvent(QMouseEvent* event)
+{
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->mouseReleaseEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport mouse event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Handles mouse move events.
+******************************************************************************/
+void WidgetViewportWindow::mouseMoveEvent(QMouseEvent* event)
+{
+	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea) {
+		_cursorInContextMenuArea = true;
+		viewport()->updateViewport();
+	}
+	else if(!contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
+		_cursorInContextMenuArea = false;
+		viewport()->updateViewport();
+	}
+
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->mouseMoveEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport mouse event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Handles mouse wheel events.
+******************************************************************************/
+void WidgetViewportWindow::wheelEvent(QWheelEvent* event)
+{
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->wheelEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport mouse event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Is called when the mouse cursor leaves the widget.
+******************************************************************************/
+void WidgetViewportWindow::leaveEvent(QEvent* event)
+{
+	if(_cursorInContextMenuArea) {
+		_cursorInContextMenuArea = false;
+		viewport()->updateViewport();
+	}
+	if(mainWindow())
+		mainWindow()->clearStatusBarMessage();
+}
+
+/******************************************************************************
+* Is called when the widgets looses the input focus.
+******************************************************************************/
+void WidgetViewportWindow::focusOutEvent(QFocusEvent* event)
+{
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				mode->focusOutEvent(this, event);
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Handles key-press events.
+******************************************************************************/
+void WidgetViewportWindow::keyPressEvent(QKeyEvent* event)
+{
+	if(inputManager()) {
+		if(ViewportInputMode* mode = inputManager()->activeMode()) {
+			try {
+				if(mode->keyPressEvent(this, event))
+					return; // Do not propagate handled key events to base class.
+			}
+			catch(const Exception& ex) {
+				qWarning() << "Uncaught exception in viewport key-press event handler:";
+				ex.logError();
+			}
+		}
+	}
+}
+
+/******************************************************************************
+* Renders custom GUI elements in the viewport on top of the scene.
+******************************************************************************/
+void WidgetViewportWindow::renderGui(SceneRenderer* renderer)
+{
+	if(viewport()->renderPreviewMode()) {
+		// Render render frame.
+		renderRenderFrame(renderer);
+	}
+	else {
+		// Render orientation tripod.
+		renderOrientationIndicator(renderer);
+	}
+
+	// Render viewport caption.
+	_contextMenuArea = renderViewportTitle(renderer, _cursorInContextMenuArea);
+}
+
 
 }	// End of namespace

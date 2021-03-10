@@ -25,26 +25,26 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
-#include <ovito/opengl/PickingOpenGLSceneRenderer.h>
+#include <ovito/vulkan/VulkanSceneRenderer.h>
 
-#include <QOpenGLWidget>
+#include <QVulkanWindow>
 
 namespace Ovito {
 
 /**
  * \brief The internal render window/widget used by the Viewport class.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget, public WidgetViewportWindow
+class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QObject, public WidgetViewportWindow
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
+	Q_INVOKABLE VulkanViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
 
 	/// Returns the QWidget that is associated with this viewport window.
-	virtual QWidget* widget() override { return this; }
+	virtual QWidget* widget() override { return _widget; }
 
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
@@ -58,45 +58,38 @@ public:
 
 	/// Returns the current size of the viewport window (in device pixels).
 	virtual QSize viewportWindowDeviceSize() override {
-		return size() * devicePixelRatio();
+		return _window->size() * _window->devicePixelRatio();
 	}
 
 	/// Returns the current size of the viewport window (in device-independent pixels).
 	virtual QSize viewportWindowDeviceIndependentSize() override {
-		return size();
+		return _window->size();
 	}
 
 	/// Returns the device pixel ratio of the viewport window's canvas.
 	virtual qreal devicePixelRatio() override {
-		return QOpenGLWidget::devicePixelRatioF();
+		return _window->devicePixelRatio();
 	}
 
 	/// Lets the viewport window delete itself.
 	/// This is called by the Viewport class destructor.
 	virtual void destroyViewportWindow() override {
-		deleteLater();
+		_widget->deleteLater();
+		this->deleteLater();
 	}
 
-	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() override { makeCurrent(); }
-
 	/// Returns whether the viewport window is currently visible on screen.
-	virtual bool isVisible() const override { return QOpenGLWidget::isVisible(); }
+	virtual bool isVisible() const override { return _widget->isVisible(); }
 
 	/// Returns the renderer generating an offscreen image of the scene used for object picking.
-	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
+//	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
 
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
 protected:
 
-	/// Is called whenever the widget needs to be painted.
-	virtual void paintGL() override;
-
-	/// Is called whenever the GL context needs to be initialized.
-	virtual void initializeGL() override;
-
+/*
 	/// Is called when the viewport becomes visible.
 	virtual void showEvent(QShowEvent* event) override;
 
@@ -124,24 +117,25 @@ protected:
 	/// Handles key-press events.
 	virtual void keyPressEvent(QKeyEvent* event) override { 
 		WidgetViewportWindow::keyPressEvent(event); 
-		QOpenGLWidget::keyPressEvent(event);
+//		QOpenGLWidget::keyPressEvent(event);
 	}
-
+*/
 private:
 
-	/// Renders the contents of the viewport window.
-	void renderViewport();
+	/// The embedded window.
+	QVulkanWindow* _window;
 
-private:
+	/// The container widget created for the QWindow.
+	QWidget* _widget;
 
 	/// A flag that indicates that a viewport update has been requested.
 	bool _updateRequested = false;
 
 	/// This is the renderer of the interactive viewport.
-	OORef<OpenGLSceneRenderer> _viewportRenderer;
+	OORef<VulkanSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
-	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+//	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
 };
 
 }	// End of namespace
