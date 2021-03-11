@@ -477,15 +477,6 @@ void Viewport::updateViewport()
 }
 
 /******************************************************************************
-* Immediately redraws the contents of this viewport.
-******************************************************************************/
-void Viewport::redrawViewport()
-{
-	if(_window)
-		_window->renderNow();
-}
-
-/******************************************************************************
 * If an update request is pending for this viewport, immediately processes it
 * and redraw the viewport.
 ******************************************************************************/

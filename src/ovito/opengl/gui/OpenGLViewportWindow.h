@@ -49,9 +49,6 @@ public:
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
 
-	/// \brief Immediately redraws the contents of this window.
-	virtual void renderNow() override;
-
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() override;

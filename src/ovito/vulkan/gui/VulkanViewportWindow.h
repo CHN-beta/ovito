@@ -28,13 +28,16 @@
 #include <ovito/vulkan/VulkanSceneRenderer.h>
 
 #include <QVulkanWindow>
+#include <QVulkanWindowRenderer>
 
 namespace Ovito {
 
+class VulkanWindowRenderer; // Defined below
+
 /**
- * \brief The internal render window/widget used by the Viewport class.
+ * \brief A viewport window implementation that is based on Vulkan.
  */
-class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QObject, public WidgetViewportWindow
+class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QVulkanWindow, public WidgetViewportWindow
 {
 	Q_OBJECT
 
@@ -49,26 +52,23 @@ public:
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
 
-	/// \brief Immediately redraws the contents of this window.
-	virtual void renderNow() override;
-
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() override;
 
 	/// Returns the current size of the viewport window (in device pixels).
 	virtual QSize viewportWindowDeviceSize() override {
-		return _window->size() * _window->devicePixelRatio();
+		return QVulkanWindow::size() * QVulkanWindow::devicePixelRatio();
 	}
 
 	/// Returns the current size of the viewport window (in device-independent pixels).
 	virtual QSize viewportWindowDeviceIndependentSize() override {
-		return _window->size();
+		return QVulkanWindow::size();
 	}
 
 	/// Returns the device pixel ratio of the viewport window's canvas.
 	virtual qreal devicePixelRatio() override {
-		return _window->devicePixelRatio();
+		return QVulkanWindow::devicePixelRatio();
 	}
 
 	/// Lets the viewport window delete itself.
@@ -87,14 +87,13 @@ public:
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
+	/// Creates a new instance of the QVulkanWindowRenderer for this window.
+	virtual QVulkanWindowRenderer* createRenderer() override;
+
+	/// Is called when the draw calls for the next frame are to be added to the command buffer.
+	void startNextFrame(VulkanWindowRenderer* renderer);
+
 protected:
-
-/*
-	/// Is called when the viewport becomes visible.
-	virtual void showEvent(QShowEvent* event) override;
-
-	/// Is called when the mouse cursor leaves the widget.
-	virtual void leaveEvent(QEvent* event) override { WidgetViewportWindow::leaveEvent(event); }
 
 	/// Handles double click events.
 	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseDoubleClickEvent(event); }
@@ -117,15 +116,12 @@ protected:
 	/// Handles key-press events.
 	virtual void keyPressEvent(QKeyEvent* event) override { 
 		WidgetViewportWindow::keyPressEvent(event); 
-//		QOpenGLWidget::keyPressEvent(event);
+		QVulkanWindow::keyPressEvent(event);
 	}
-*/
+
 private:
 
-	/// The embedded window.
-	QVulkanWindow* _window;
-
-	/// The container widget created for the QWindow.
+	/// The container widget created for the QVulkanWindow.
 	QWidget* _widget;
 
 	/// A flag that indicates that a viewport update has been requested.
@@ -136,6 +132,45 @@ private:
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
 //	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+
+    QMatrix4x4 m_proj;
+    float m_rotation = 0.0f;
+};
+
+/**
+ * \brief The QVulkanWindowRenderer associated with the Vulkan viewport window.
+ */
+class VulkanWindowRenderer : public QVulkanWindowRenderer
+{
+public:
+
+	/// Constructor.
+	explicit VulkanWindowRenderer(VulkanViewportWindow* window);
+
+	/// Is called when it is time to create the renderer's graphics resources.
+	virtual void initResources() override;
+
+	virtual void initSwapChainResources() override;
+    virtual void releaseSwapChainResources() override;
+    virtual void releaseResources() override;
+	virtual void startNextFrame() override { _window->startNextFrame(this); }
+
+public:
+
+	VulkanViewportWindow* _window;
+    QVulkanDeviceFunctions* _deviceFuncs;
+
+    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
+    VkBuffer m_buf = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo m_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet m_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
+
+    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
 
 }	// End of namespace

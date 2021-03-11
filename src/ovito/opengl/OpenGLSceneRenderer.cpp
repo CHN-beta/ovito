@@ -77,6 +77,8 @@ bool OpenGLSceneRenderer::_openglSupportsGeomShaders = false;
 void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream) const
 {
 	if(this == &OpenGLSceneRenderer::OOClass()) {
+		OpenGLSceneRenderer::determineOpenGLInfo();
+
 		stream << "======= OpenGL info =======" << "\n";
 		const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
 		stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";

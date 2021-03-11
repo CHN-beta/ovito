@@ -122,6 +122,15 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 }
 
 /******************************************************************************
+* Handles the show events.
+******************************************************************************/
+void OpenGLViewportWindow::showEvent(QShowEvent* event)
+{
+	if(!event->spontaneous())
+		update();
+}
+
+/******************************************************************************
 * Is called whenever the GL context needs to be initialized.
 ******************************************************************************/
 void OpenGLViewportWindow::initializeGL()
@@ -135,23 +144,7 @@ void OpenGLViewportWindow::paintGL()
 {
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 	OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
-	renderNow();
-}
 
-/******************************************************************************
-* Handles the show events.
-******************************************************************************/
-void OpenGLViewportWindow::showEvent(QShowEvent* event)
-{
-	if(!event->spontaneous())
-		update();
-}
-
-/******************************************************************************
-* Immediately redraws the contents of this window.
-******************************************************************************/
-void OpenGLViewportWindow::renderNow()
-{
 	_updateRequested = false;
 
 	// Do not re-enter rendering function of the same viewport.

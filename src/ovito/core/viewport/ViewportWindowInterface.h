@@ -60,9 +60,6 @@ public:
     /// Puts an update request event for this window on the event loop.
 	virtual void renderLater() = 0;
 
-	/// Immediately redraws the contents of this window.
-	virtual void renderNow() = 0;
-
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() = 0;

@@ -88,9 +88,6 @@ public:
 	/// To update all viewports at once you should use ViewportConfiguration::updateViewports().
 	void updateViewport();
 
-	/// \brief Immediately redraws the contents of this viewport.
-	void redrawViewport();
-
 	/// \brief If an update request is pending for this viewport, immediately processes it and redraw the viewport.
 	void processUpdateRequest();
 

@@ -26,6 +26,8 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
+#include <QVulkanInstance>
+
 namespace Ovito {
 
 /**
@@ -54,6 +56,9 @@ public:
 
 	/// Default constructor.
 	explicit VulkanSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) {}
+
+	/// Returns a reference to the global Vulkan instance.
+	static QVulkanInstance& vkInstance();
 
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
@@ -91,6 +96,9 @@ public:
 
 	/// Activates the special highlight rendering mode.
 	virtual void setHighlightMode(int pass) override;
+
+	/// Loads a SPIR-V shader from a file.
+	static VkShaderModule createShader(VkDevice device, const QString& filename);
 
 protected:
 

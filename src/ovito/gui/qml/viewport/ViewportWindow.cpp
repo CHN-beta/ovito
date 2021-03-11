@@ -273,13 +273,6 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 }
 
 /******************************************************************************
-* Immediately redraws the contents of this window.
-******************************************************************************/
-void OpenGLViewportWindow::renderNow()
-{
-}
-
-/******************************************************************************
 * Makes the OpenGL context used by the viewport window for rendering the current context.
 ******************************************************************************/
 void OpenGLViewportWindow::makeOpenGLContextCurrent() 

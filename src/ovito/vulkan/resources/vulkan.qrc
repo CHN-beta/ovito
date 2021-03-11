@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+
+<qresource prefix="/vulkanrenderer">
+	<file>color.frag.spv</file>
+	<file>color.vert.spv</file>
+</qresource>
+
+</RCC>

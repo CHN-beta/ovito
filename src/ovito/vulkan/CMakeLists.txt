@@ -23,13 +23,44 @@
 # Find Vulkan library.
 FIND_PACKAGE(Vulkan REQUIRED)
 
+function(add_vulkan_shader target shaderfile)
+
+	# Locate glslc shader compiler.
+	# CMake 3.19 and newer define the Vulkan::glslc imported target for the shader compiler.
+	IF(TARGET Vulkan::glslc)
+		SET(glslc_executable "$<TARGET_FILE:Vulkan::glslc>")
+	#ELSE()
+	#	find_program(GLSLC glslc)
+	ENDIF()
+
+    SET(current-shader-path ${CMAKE_CURRENT_SOURCE_DIR}/${shaderfile})
+    SET(current-output-path ${CMAKE_CURRENT_SOURCE_DIR}/${shaderfile}.spv)
+
+    # Add a custom command to compile GLSL to SPIR-V.
+    ADD_CUSTOM_COMMAND(
+           OUTPUT "${current-output-path}"
+           COMMAND "${glslc_executable}" -o "${current-output-path}" "${current-shader-path}"
+           DEPENDS "${current-shader-path}"
+           IMPLICIT_DEPENDS CXX "${current-shader-path}"
+           VERBATIM)
+
+    # Make sure our build depends on this output.
+    set_source_files_properties("${current-output-path}" PROPERTIES GENERATED TRUE)
+    target_sources(${target} PRIVATE "${current-output-path}")
+endfunction()
+
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(VulkanRenderer
 	SOURCES
 		VulkanSceneRenderer.cpp
+		resources/vulkan.qrc
 	LIB_DEPENDENCIES 
 		Vulkan::Vulkan
 )
+
+# Compile the Vulkan shader source files.
+add_vulkan_shader(VulkanRenderer resources/color.frag)
+add_vulkan_shader(VulkanRenderer resources/color.vert)
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
