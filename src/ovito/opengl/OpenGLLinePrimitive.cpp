@@ -154,9 +154,9 @@ void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 	_vectorsBuffer.bind(renderer, _thickLineShader, "vector", GL_FLOAT, 0, 3);
 	if(!renderer->isPicking()) {
 		if(_colorsBuffer.isCreated())
-			_colorsBuffer.bindColors(renderer, _thinLineShader, 4);
+			_colorsBuffer.bindColors(renderer, _thickLineShader, 4);
 		else
-			_colorsBuffer.setUniformColor(renderer, _thinLineShader, uniformColor());
+			_colorsBuffer.setUniformColor(renderer, _thickLineShader, uniformColor());
 	}
 	else {
 		GLint pickingBaseID = renderer->registerSubObjectIDs(positions()->size() / 2);
