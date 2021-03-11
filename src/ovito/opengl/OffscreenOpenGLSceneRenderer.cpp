@@ -37,6 +37,10 @@ IMPLEMENT_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
 ******************************************************************************/
 OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset) 
 {
+	// Create the offscreen surface.
+	// This must happen in the main thread.
+	createOffscreenSurface();
+
 	// Initialize OpenGL in main thread if it hasn't already been initialized.
 	// This call is a workaround for an access vialotion that otherwise occurs on Windows
 	// when creating the first OpenGL context from a worker thread when running in headless mode. 
@@ -48,11 +52,16 @@ OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(DataSet* dataset) : O
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::createOffscreenSurface() 
 { 
-	OVITO_ASSERT(_offscreenContext);
-
+	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
+	
 	if(!_offscreenSurface)
 		_offscreenSurface = new QOffscreenSurface(nullptr, this);
-	_offscreenSurface->setFormat(_offscreenContext->format());
+	if(_offscreenContext)
+		_offscreenSurface->setFormat(_offscreenContext->format());
+	else if(QOpenGLContext::globalShareContext())
+		_offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
+	else
+		_offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
 	_offscreenSurface->create(); 
 }
 
@@ -78,13 +87,11 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	if(!_offscreenContext->create())
 		throwException(tr("Failed to create OpenGL context for rendering."));
 
-	// Create offscreen surface (must happen in the main thread).
-	if(QThread::currentThread() == this->thread())
-		createOffscreenSurface();
-	else
-		QMetaObject::invokeMethod(this, "createOffscreenSurface", Qt::BlockingQueuedConnection);
+	// Check offscreen surface (creation must happen in the main thread).
+	OVITO_ASSERT(_offscreenSurface);
 	if(!_offscreenSurface->isValid())
 		throwException(tr("Failed to create offscreen rendering surface."));
+	OVITO_ASSERT(_offscreenSurface->format() == _offscreenContext->format());
 
 	// Make the context current.
 	if(!_offscreenContext->makeCurrent(_offscreenSurface))
@@ -205,22 +212,15 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::endRender()
 {
-	// Make our GL context current, because OpenGLSceneRenderer::endRender() needs an active context.
-	if(_offscreenContext && _offscreenSurface)
-		_offscreenContext->makeCurrent(_offscreenSurface);
-
 	OpenGLSceneRenderer::endRender();
 
 	// Release OpenGL resources.
 	QOpenGLFramebufferObject::bindDefault();
-	if(QOpenGLContext* ctxt = QOpenGLContext::currentContext())
-		ctxt->doneCurrent();
+	if(_offscreenContext && _offscreenContext.data() == QOpenGLContext::currentContext())
+		_offscreenContext->doneCurrent();
 	_framebufferObject.reset();
 	_offscreenContext.reset();
-	if(_offscreenSurface) {
-		_offscreenSurface->deleteLater();
-		_offscreenSurface = nullptr;
-	}
+	// Keep offscreen surface alive an re-use it in subsequent render passes until the renderer is deleted.
 }
 
 }	// End of namespace

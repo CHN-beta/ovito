@@ -577,7 +577,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 		return program.take();
 
 	// The program's source code hasn't been compiled so far. Do it now and cache the shader program.
-	program.reset(new QOpenGLShaderProgram(contextGroup));
+	program.reset(new QOpenGLShaderProgram());
 	program->setObjectName(id);
 
 	// Load and compile vertex shader source.
@@ -591,6 +591,11 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 		OVITO_ASSERT(useGeometryShaders());
 		loadShader(program.data(), QOpenGLShader::Geometry, geometryShaderFile);
 	}
+
+	// Make the shader program a child object of the GL context group.
+	program->moveToThread(contextGroup->thread());
+	program->setParent(contextGroup);
+	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(id));
 
 	// Compile the shader program.
 	if(!program->link()) {

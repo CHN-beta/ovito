@@ -71,7 +71,7 @@ protected:
 private:
 
 	/// Creates the QOffscreenSurface in the main thread.
-	Q_INVOKABLE void createOffscreenSurface();
+	void createOffscreenSurface();
 
 private:
 

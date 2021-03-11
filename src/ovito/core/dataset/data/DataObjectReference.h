@@ -36,6 +36,14 @@ public:
 	/// Inherit constructors from base class.
 	using QVarLengthArray::QVarLengthArray;
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+	/// Constructor taking an interator range to initialize the array.
+	template<typename InputIterator>
+	ConstDataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<const DataObject*, 3>((int)std::distance(first, last)) {
+		std::copy(first, last, begin());
+	}
+#endif
+
 	/// Converts the path to a string representation.
 	QString toString() const;
 
@@ -57,6 +65,14 @@ public:
 
 	/// Inherit constructors from base class.
 	using QVarLengthArray::QVarLengthArray;
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+	/// Constructor taking an interator range to initialize the array.
+	template<typename InputIterator>
+	DataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<DataObject*, 3>((int)std::distance(first, last)) {
+		std::copy(first, last, begin());
+	}
+#endif
 
 	/// A path to a mutable object can be implicitly converted to a path to a constant object.
 	operator const ConstDataObjectPath&() const {
