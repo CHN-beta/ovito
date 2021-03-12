@@ -27,17 +27,14 @@
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/vulkan/VulkanSceneRenderer.h>
 
-#include <QVulkanWindow>
-#include <QVulkanWindowRenderer>
+#include <QWindow>
 
 namespace Ovito {
-
-class VulkanWindowRenderer; // Defined below
 
 /**
  * \brief A viewport window implementation that is based on Vulkan.
  */
-class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QVulkanWindow, public WidgetViewportWindow
+class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QWindow, public WidgetViewportWindow
 {
 	Q_OBJECT
 
@@ -58,17 +55,17 @@ public:
 
 	/// Returns the current size of the viewport window (in device pixels).
 	virtual QSize viewportWindowDeviceSize() override {
-		return QVulkanWindow::size() * QVulkanWindow::devicePixelRatio();
+		return QWindow::size() * QWindow::devicePixelRatio();
 	}
 
 	/// Returns the current size of the viewport window (in device-independent pixels).
 	virtual QSize viewportWindowDeviceIndependentSize() override {
-		return QVulkanWindow::size();
+		return QWindow::size();
 	}
 
 	/// Returns the device pixel ratio of the viewport window's canvas.
 	virtual qreal devicePixelRatio() override {
-		return QVulkanWindow::devicePixelRatio();
+		return QWindow::devicePixelRatio();
 	}
 
 	/// Lets the viewport window delete itself.
@@ -88,12 +85,102 @@ public:
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
 	/// Creates a new instance of the QVulkanWindowRenderer for this window.
-	virtual QVulkanWindowRenderer* createRenderer() override;
+//	virtual QVulkanWindowRenderer* createRenderer() override;
+
+	void preInitResources() {}
+    void initResources();
+    void initSwapChainResources();
+    void releaseSwapChainResources() {}
+    void releaseResources();
+	void physicalDeviceLost() {}
+    void logicalDeviceLost() {}
 
 	/// Is called when the draw calls for the next frame are to be added to the command buffer.
-	void startNextFrame(VulkanWindowRenderer* renderer);
+	void startNextFrame();
+
+	/// Returns the list of properties for the supported physical devices in the system.
+	/// This function can be called before making the window visible.
+	QVector<VkPhysicalDeviceProperties> availablePhysicalDevices();
+
+	/// Requests the usage of the physical device with index \a idx. The index
+	/// corresponds to the list returned from availablePhysicalDevices().
+	void setPhysicalDeviceIndex(int idx);
+
+	/// Returns the list of the extensions that are supported by logical devices
+	/// created from the physical device selected by setPhysicalDeviceIndex().
+	QVulkanInfoVector<QVulkanExtension> supportedDeviceExtensions();
+
+	/// Returns a pointer to the properties for the active physical device.
+	const VkPhysicalDeviceProperties* physicalDeviceProperties() const {
+		if(this->physDevIndex < this->physDevProps.count())
+	        return &this->physDevProps[this->physDevIndex];
+	    qWarning("QVulkanWindow: Physical device properties not available");
+	    return nullptr;
+	}
+
+	/// Sets the list of device \a extensions to be enabled. Unsupported extensions 
+	/// are ignored. The swapchain extension will always be added automatically, 
+	/// no need to include it in this list.
+	void setDeviceExtensions(const QByteArrayList& extensions);
+
+	/// Sets the preferred \a formats of the swapchain.
+	void setPreferredColorFormats(const QVector<VkFormat>& formats);
+
+    /// Returns a host visible memory type index suitable for general use.
+    /// The returned memory type will be both host visible and coherent. In addition, it will also be cached, if possible.
+	uint32_t hostVisibleMemoryIndex() const { return this->hostVisibleMemIndex; }
+
+	/// Returns a typical render pass with one sub-pass.
+	VkRenderPass defaultRenderPass() const { return _defaultRenderPass; }
+
+	/// Returns the color buffer format used by the swapchain.
+	VkFormat colorFormat() const { return _colorFormat; }
+
+    /// Returns the image size of the swapchain.
+    /// This usually matches the size of the window, but may also differ in case vkGetPhysicalDeviceSurfaceCapabilitiesKHR reports a fixed size.
+	QSize swapChainImageSize() const { return _swapChainImageSize; }
+
+	/// Returns the current sample count as a \c VkSampleCountFlagBits value.
+    /// When targeting the default render target, the \c rasterizationSamples field
+    /// of \c VkPipelineMultisampleStateCreateInfo must be set to this value.
+	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
+
+    /// Returns the current frame index in the range [0, concurrentFrameCount() - 1].
+	int currentFrame() const {
+    	if(!this->framePending)
+        	qWarning("QVulkanWindow: Attempted to call currentFrame() without an active frame");
+    	return _currentFrame; 
+	}
+
+    /// Returns the number of frames that can be potentially active at the same time.
+	int concurrentFrameCount() const { return _frameLag; }	
+
+	//// Returns The active command buffer for the current swap chain image.
+	VkCommandBuffer currentCommandBuffer() const {
+		if(!this->framePending) {
+			qWarning("QVulkanWindow: Attempted to call currentCommandBuffer() without an active frame");
+			return VK_NULL_HANDLE;
+		}
+		return this->imageRes[this->currentImage].cmdBuf;
+	}
+
+	/// Returns a VkFramebuffer for the current swapchain image using the default render pass.
+	VkFramebuffer currentFramebuffer() const {
+		if(!this->framePending) {
+			qWarning("QVulkanWindow: Attempted to call currentFramebuffer() without an active frame");
+			return VK_NULL_HANDLE;
+		}
+		return this->imageRes[this->currentImage].fb;
+	}	
 
 protected:
+
+	/// Handles events sent to the window by the system.
+	virtual bool event(QEvent* e) override;
+
+	/// Is called by the window system whenever an area of the window is invalidated, 
+	/// for example due to the exposure in the windowing system changing
+	virtual void exposeEvent(QExposeEvent* event) override;
 
 	/// Handles double click events.
 	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseDoubleClickEvent(event); }
@@ -116,8 +203,48 @@ protected:
 	/// Handles key-press events.
 	virtual void keyPressEvent(QKeyEvent* event) override { 
 		WidgetViewportWindow::keyPressEvent(event); 
-		QVulkanWindow::keyPressEvent(event);
+		QWindow::keyPressEvent(event);
 	}
+
+private Q_SLOTS:
+
+	/// Keeps trying to initialize the Vulkan window surface.
+	void ensureStarted();
+
+private:
+
+	/// Initializes the Vulkan objects of the window after it has been exposed for first time.  
+	void init();
+
+	/// Creates the default Vulkan render pass.  
+	bool createDefaultRenderPass();
+
+	/// Recreates the Vulkan swapchain.  
+	void recreateSwapChain();
+
+	/// Releases the resources of the Vulkan swapchain.  
+	void releaseSwapChain();
+
+	/// Creates a Vulkan image.
+	bool createTransientImage(VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage *images, VkDeviceMemory *mem, VkImageView *views, int count);
+
+	/// Picks the right memory type for a Vulkan image.
+	uint32_t chooseTransientImageMemType(VkImage img, uint32_t startIndex);
+
+	/// Handles a Vulkan device that was recently lost.
+	bool checkDeviceLost(VkResult err);
+
+	/// Starts rendering a frame.
+	void beginFrame();
+
+	/// Finishes rendering a frame.
+	void endFrame();
+
+	/// This function must be called exactly once in response to each invocation of the startNextFrame() implementation. 
+	void frameReady();
+
+	/// Releases all Vulkan resources.
+	void reset();
 
 private:
 
@@ -135,8 +262,107 @@ private:
 
     QMatrix4x4 m_proj;
     float m_rotation = 0.0f;
+
+	enum Status {
+        StatusUninitialized,
+        StatusFail,
+        StatusFailRetry,
+        StatusDeviceReady,
+        StatusReady
+    };
+
+    Status status = StatusUninitialized;
+    QVulkanInstance *inst = nullptr;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    int physDevIndex = 0;
+    QVector<VkPhysicalDevice> physDevs;
+    QVector<VkPhysicalDeviceProperties> physDevProps;
+    QByteArrayList requestedDevExtensions;
+    QHash<VkPhysicalDevice, QVulkanInfoVector<QVulkanExtension> > supportedDevExtensions;
+    QVector<VkFormat> requestedColorFormats;
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
+    VkDevice dev = VK_NULL_HANDLE;
+    QVulkanDeviceFunctions* devFuncs;
+    uint32_t gfxQueueFamilyIdx;
+    uint32_t presQueueFamilyIdx;
+    VkQueue gfxQueue;
+    VkQueue presQueue;
+    VkCommandPool cmdPool = VK_NULL_HANDLE;
+    VkCommandPool presCmdPool = VK_NULL_HANDLE;
+    uint32_t hostVisibleMemIndex;
+    uint32_t deviceLocalMemIndex;
+    VkFormat _colorFormat;
+    VkColorSpaceKHR colorSpace;
+    VkFormat dsFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+    PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
+    PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
+    PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
+    PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
+    PFN_vkQueuePresentKHR vkQueuePresentKHR;
+    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
+    static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
+	static const int MAX_CONCURRENT_FRAME_COUNT = 3;
+    static const int MAX_FRAME_LAG = MAX_CONCURRENT_FRAME_COUNT;
+    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    int swapChainBufferCount = 2;
+    int _frameLag = 2;
+    QSize _swapChainImageSize;
+    VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+    struct ImageResources {
+        VkImage image = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
+        VkFence cmdFence = VK_NULL_HANDLE;
+        bool cmdFenceWaitable = false;
+        VkFramebuffer fb = VK_NULL_HANDLE;
+        VkCommandBuffer presTransCmdBuf = VK_NULL_HANDLE;
+        VkImage msaaImage = VK_NULL_HANDLE;
+        VkImageView msaaImageView = VK_NULL_HANDLE;
+    } imageRes[MAX_SWAPCHAIN_BUFFER_COUNT];
+    VkDeviceMemory msaaImageMem = VK_NULL_HANDLE;
+    uint32_t currentImage;
+    struct FrameResources {
+        VkFence fence = VK_NULL_HANDLE;
+        bool fenceWaitable = false;
+        VkSemaphore imageSem = VK_NULL_HANDLE;
+        VkSemaphore drawSem = VK_NULL_HANDLE;
+        VkSemaphore presTransSem = VK_NULL_HANDLE;
+        bool imageAcquired = false;
+        bool imageSemWaitable = false;
+    } frameRes[MAX_FRAME_LAG];
+    uint32_t _currentFrame;
+    VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
+    VkDeviceMemory dsMem = VK_NULL_HANDLE;
+    VkImage dsImage = VK_NULL_HANDLE;
+    VkImageView dsView = VK_NULL_HANDLE;
+    bool framePending = false;
+
+	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
+	/// By pre-multiplying the projection matrix with this matrix, applications can
+	/// continue to assume that Y is pointing upwards, and can set minDepth and
+	/// maxDepth in the viewport to 0 and 1, respectively, without having to do any
+	/// further corrections to the vertex Z positions. Geometry from OpenGL
+	/// applications can then be used as-is, assuming a rasterization state matching
+	/// OpenGL culling and front face settings.
+    QMatrix4x4 m_clipCorrect{1.0f, 0.0f, 0.0f, 0.0f,
+                            0.0f, -1.0f, 0.0f, 0.0f,
+                            0.0f, 0.0f, 0.5f, 0.5f,
+                            0.0f, 0.0f, 0.0f, 1.0f}; 
+
+    QVulkanDeviceFunctions* _deviceFuncs;
+    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
+    VkBuffer m_buf = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo m_uniformBufInfo[MAX_CONCURRENT_FRAME_COUNT];
+    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet m_descSet[MAX_CONCURRENT_FRAME_COUNT];
+    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
 
+#if 0
 /**
  * \brief The QVulkanWindowRenderer associated with the Vulkan viewport window.
  */
@@ -158,19 +384,7 @@ public:
 public:
 
 	VulkanViewportWindow* _window;
-    QVulkanDeviceFunctions* _deviceFuncs;
-
-    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
-    VkBuffer m_buf = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo m_uniformBufInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet m_descSet[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
-
-    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
+#endif
 
 }	// End of namespace

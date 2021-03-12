@@ -183,8 +183,8 @@ void OpenGLViewportWindow::paintGL()
 					.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
 				);
 			QCoreApplication::removePostedEvents(nullptr, 0);
-			if(QWidget* parentWindow = window())
-				parentWindow->close();
+			if(mainWindow())
+				mainWindow()->closeMainWindow();
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();
@@ -219,8 +219,8 @@ void OpenGLViewportWindow::paintGL()
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);
-			if(QWidget* parentWindow = window())
-				parentWindow->close();
+			if(mainWindow())
+				mainWindow()->closeMainWindow();
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();

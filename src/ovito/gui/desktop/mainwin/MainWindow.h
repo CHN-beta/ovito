@@ -68,6 +68,9 @@ public:
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() override;
 
+	/// Closes the main window (and shuts down application if this is the last open window).
+	virtual void closeMainWindow() override { QMainWindow::close(); }
+
 	/// Returns the frame buffer window showing the rendered image.
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
 

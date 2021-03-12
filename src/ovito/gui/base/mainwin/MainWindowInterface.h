@@ -58,6 +58,9 @@ public:
 	/// Hides any messages currently displayed in the window's status bar.
 	virtual void clearStatusBarMessage() {}
 
+	/// Closes the main window (and shuts down application if this is the last open window).
+	virtual void closeMainWindow() {}
+
 	/// Returns the window's action manager.
 	ActionManager* actionManager() const { return _actionManager; }
 
