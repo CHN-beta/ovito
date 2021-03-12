@@ -43,22 +43,6 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 }
 
 /******************************************************************************
-* Returns a reference to the global Vulkan instance.
-******************************************************************************/
-QVulkanInstance& VulkanSceneRenderer::vkInstance()
-{
-	static QVulkanInstance inst;
-	if(!inst.isValid()) {
-#ifdef OVITO_DEBUG
-		inst.setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
-#endif
-		if(!inst.create())
-			throw Exception(tr("Failed to create Vulkan instance: %1").arg(inst.errorCode()));
-	}
-	return inst;
-}
-
-/******************************************************************************
 * Determines if this renderer can share geometry data and other resources with
 * the given other renderer.
 ******************************************************************************/
@@ -137,34 +121,6 @@ void VulkanSceneRenderer::setDepthTestEnabled(bool enabled)
 ******************************************************************************/
 void VulkanSceneRenderer::setHighlightMode(int pass)
 {
-}
-
-/******************************************************************************
-* Loads a SPIR-V shader from a file.
-******************************************************************************/
-VkShaderModule VulkanSceneRenderer::createShader(VkDevice device, const QString& filename)
-{
-    QFile file(filename);
-    if(!file.open(QIODevice::ReadOnly)) {
-		throw Exception(tr("File to load Vulkan shader file '%1': %2").arg(filename).arg(file.errorString()));
-//        return VK_NULL_HANDLE;
-    }
-    QByteArray blob = file.readAll();
-    file.close();
-
-    VkShaderModuleCreateInfo shaderInfo;
-    memset(&shaderInfo, 0, sizeof(shaderInfo));
-    shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shaderInfo.codeSize = blob.size();
-    shaderInfo.pCode = reinterpret_cast<const uint32_t*>(blob.constData());
-    VkShaderModule shaderModule;
-    VkResult err = vkInstance().deviceFunctions(device)->vkCreateShaderModule(device, &shaderInfo, nullptr, &shaderModule);
-    if(err != VK_SUCCESS) {
-		throw Exception(tr("File to create Vulkan shader module '%1'. Error code: %2").arg(filename).arg(err));
-//        return VK_NULL_HANDLE;
-    }
-
-    return shaderModule;
 }
 
 }	// End of namespace

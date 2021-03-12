@@ -52,6 +52,7 @@ endfunction()
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(VulkanRenderer
 	SOURCES
+		VulkanDevice.cpp
 		VulkanSceneRenderer.cpp
 		resources/vulkan.qrc
 	LIB_DEPENDENCIES 
