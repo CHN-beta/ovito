@@ -57,12 +57,12 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 			maxLines++;
 			continue;
 		}
-		else if(stream.lineStartsWith("data_", false)) {
+		else if(stream.lineStartsWith("data_", true)) {
 			// Make sure the "data_XXX" block header appears.
 			if(foundBlockHeader) return false;
 			foundBlockHeader = true;
 		}
-		else if(stream.lineStartsWith("_", false)) {
+		else if(stream.lineStartsWith("_", true)) {
 			// Make sure at least one "_XXX" item appears.
 			foundItem = true;
 			break;
@@ -76,7 +76,7 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 	// Continue reading the entire file until at least one "_atom_site_XXX" entry is found.
 	// These entries are specific to the CIF format and do not occur in mmCIF files (macromolecular files).
 	for(;;) {
-		if(stream.lineStartsWith("_atom_site_", false))
+		if(stream.lineStartsWith("_atom_site_", true))
 			return true;
 		if(stream.eof())
 			return false;
