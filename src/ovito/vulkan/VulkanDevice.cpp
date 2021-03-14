@@ -143,7 +143,7 @@ QVulkanInfoVector<QVulkanExtension> VulkanDevice::supportedDeviceExtensions()
                 exts.append(ext);
             }
             _supportedDevExtensions.insert(physDev, exts);
-            qDebug(lcGuiVk) << "Supported device extensions:" << exts;
+//            qDebug(lcGuiVk) << "Supported device extensions:" << exts;
             return exts;
         }
     }
@@ -171,8 +171,12 @@ void VulkanDevice::setDeviceExtensions(const QByteArrayList& extensions)
 ******************************************************************************/
 bool VulkanDevice::create(QWindow* window)
 {
-    OVITO_ASSERT(_device == VK_NULL_HANDLE);
     OVITO_ASSERT(vulkanInstance());
+
+    // Is the device already created?
+    if(_device != VK_NULL_HANDLE)
+        return true;
+
     _vulkanFunctions = vulkanInstance()->functions();
 	
     qCDebug(lcGuiVk, "VulkanDevice create");
@@ -264,7 +268,7 @@ bool VulkanDevice::create(QWindow* window)
     VkDeviceCreateInfo devInfo;
     memset(&devInfo, 0, sizeof(devInfo));
     devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    devInfo.queueCreateInfoCount = (_gfxQueueFamilyIdx == _presQueueFamilyIdx) ? 1 : 2;
+    devInfo.queueCreateInfoCount = !separatePresentQueue() ? 1 : 2;
     devInfo.pQueueCreateInfos = queueInfo;
     devInfo.enabledExtensionCount = devExts.count();
     devInfo.ppEnabledExtensionNames = devExts.constData();
@@ -334,6 +338,55 @@ bool VulkanDevice::create(QWindow* window)
 	        throw Exception(tr("Failed to create Vulkan command pool for present queue (error code %1).").arg(err));
     }
 
+    _hostVisibleMemIndex = 0;
+    VkPhysicalDeviceMemoryProperties physDevMemProps;
+    bool hostVisibleMemIndexSet = false;
+    vulkanFunctions()->vkGetPhysicalDeviceMemoryProperties(physicalDevice(), &physDevMemProps);
+    for(uint32_t i = 0; i < physDevMemProps.memoryTypeCount; ++i) {
+        const VkMemoryType* memType = physDevMemProps.memoryTypes;
+        qCDebug(lcGuiVk, "memtype %d: flags=0x%x", i, memType[i].propertyFlags);
+        // Find a host visible, host coherent memtype. If there is one that is
+        // cached as well (in addition to being coherent), prefer that.
+        const int hostVisibleAndCoherent = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        if((memType[i].propertyFlags & hostVisibleAndCoherent) == hostVisibleAndCoherent) {
+            if(!hostVisibleMemIndexSet || (memType[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)) {
+                hostVisibleMemIndexSet = true;
+                _hostVisibleMemIndex = i;
+            }
+        }
+    }
+    qCDebug(lcGuiVk, "Picked memtype %d for host visible memory", _hostVisibleMemIndex);
+
+    _deviceLocalMemIndex = 0;
+    for(uint32_t i = 0; i < physDevMemProps.memoryTypeCount; ++i) {
+        const VkMemoryType* memType = physDevMemProps.memoryTypes;
+        // Just pick the first device local memtype.
+        if(memType[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            _deviceLocalMemIndex = i;
+            break;
+        }
+    }
+    qCDebug(lcGuiVk, "Picked memtype %d for device local memory", _deviceLocalMemIndex);
+
+    const VkFormat dsFormatCandidates[] = {
+        VK_FORMAT_D24_UNORM_S8_UINT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D16_UNORM_S8_UINT
+    };
+    const int dsFormatCandidateCount = sizeof(dsFormatCandidates) / sizeof(VkFormat);
+    int dsFormatIdx = 0;
+    while(dsFormatIdx < dsFormatCandidateCount) {
+        _dsFormat = dsFormatCandidates[dsFormatIdx];
+        VkFormatProperties fmtProp;
+        vulkanFunctions()->vkGetPhysicalDeviceFormatProperties(physicalDevice(), _dsFormat, &fmtProp);
+        if(fmtProp.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            break;
+        ++dsFormatIdx;
+    }
+    if(dsFormatIdx == dsFormatCandidateCount)
+        qWarning("VulkanDevice: Failed to find an optimal depth-stencil format");
+    qCDebug(lcGuiVk, "Depth-stencil format: %d", _dsFormat);
+
 	return true;
 }
 
@@ -376,6 +429,7 @@ void VulkanDevice::reset()
 {
     if(logicalDevice() == VK_NULL_HANDLE)
         return;
+    Q_EMIT releaseResourcesRequested();
     qCDebug(lcGuiVk, "VulkanDevice reset");
     if(graphicsCommandPool() != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyCommandPool(logicalDevice(), graphicsCommandPool(), nullptr);
@@ -389,6 +443,175 @@ void VulkanDevice::reset()
 	vulkanInstance()->resetDeviceFunctions(logicalDevice());
 	_device = VK_NULL_HANDLE;
 	_deviceFunctions = nullptr;
+}
+
+/******************************************************************************
+* Handles the situation when the Vulkan device was lost after a recent function call.
+******************************************************************************/
+bool VulkanDevice::checkDeviceLost(VkResult err)
+{
+    if(err == VK_ERROR_DEVICE_LOST) {
+        qWarning("VulkanDevice: Device lost");
+        qCDebug(lcGuiVk, "Releasing all resources due to device lost");
+        reset();
+        qCDebug(lcGuiVk, "Restarting after device lost");
+        Q_EMIT logicalDeviceLost(); // This calls VulkanViewportWindow::ensureStarted()
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+* Helper routine for creating a Vulkan image.
+******************************************************************************/
+bool VulkanDevice::createTransientImage(const QSize size,
+                                        VkFormat format,
+                                        VkImageUsageFlags usage,
+                                        VkImageAspectFlags aspectMask,
+                                        VkImage* images,
+                                        VkDeviceMemory* mem,
+                                        VkImageView* views,
+                                        int count)
+{
+    VkMemoryRequirements memReq;
+    VkResult err;
+    for(int i = 0; i < count; ++i) {
+        VkImageCreateInfo imgInfo;
+        memset(&imgInfo, 0, sizeof(imgInfo));
+        imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imgInfo.imageType = VK_IMAGE_TYPE_2D;
+        imgInfo.format = format;
+        imgInfo.extent.width = size.width();
+        imgInfo.extent.height = size.height();
+        imgInfo.extent.depth = 1;
+        imgInfo.mipLevels = 1;
+        imgInfo.arrayLayers = 1;
+        imgInfo.samples = sampleCountFlagBits();
+        imgInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imgInfo.usage = usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+        err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgInfo, nullptr, images + i);
+        if(err != VK_SUCCESS) {
+            qWarning("VulkanDevice: Failed to create image: %d", err);
+            return false;
+        }
+        // Assume the reqs are the same since the images are same in every way.
+        // Still, call GetImageMemReq for every image, in order to prevent the
+        // validation layer from complaining.
+        deviceFunctions()->vkGetImageMemoryRequirements(logicalDevice(), images[i], &memReq);
+    }
+    VkMemoryAllocateInfo memInfo;
+    memset(&memInfo, 0, sizeof(memInfo));
+    memInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memInfo.allocationSize = VulkanDevice::aligned(memReq.size, memReq.alignment) * count;
+    uint32_t startIndex = 0;
+    do {
+        memInfo.memoryTypeIndex = chooseTransientImageMemType(images[0], startIndex);
+        if(memInfo.memoryTypeIndex == uint32_t(-1)) {
+            qWarning("VulkanDevice: No suitable memory type found");
+            return false;
+        }
+        startIndex = memInfo.memoryTypeIndex + 1;
+        qCDebug(lcGuiVk, "Allocating %u bytes for transient image (memtype %u)", uint32_t(memInfo.allocationSize), memInfo.memoryTypeIndex);
+        err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memInfo, nullptr, mem);
+        if(err != VK_SUCCESS && err != VK_ERROR_OUT_OF_DEVICE_MEMORY) {
+            qWarning("VulkanDevice: Failed to allocate image memory: %d", err);
+            return false;
+        }
+    } 
+    while(err != VK_SUCCESS);
+    VkDeviceSize ofs = 0;
+    for(int i = 0; i < count; ++i) {
+        err = deviceFunctions()->vkBindImageMemory(logicalDevice(), images[i], *mem, ofs);
+        if(err != VK_SUCCESS) {
+            qWarning("VulkanDevice: Failed to bind image memory: %d", err);
+            return false;
+        }
+        ofs += VulkanDevice::aligned(memReq.size, memReq.alignment);
+        VkImageViewCreateInfo imgViewInfo;
+        memset(&imgViewInfo, 0, sizeof(imgViewInfo));
+        imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imgViewInfo.image = images[i];
+        imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        imgViewInfo.format = format;
+        imgViewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+        imgViewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+        imgViewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+        imgViewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+        imgViewInfo.subresourceRange.aspectMask = aspectMask;
+        imgViewInfo.subresourceRange.levelCount = imgViewInfo.subresourceRange.layerCount = 1;
+        err = deviceFunctions()->vkCreateImageView(logicalDevice(), &imgViewInfo, nullptr, views + i);
+        if(err != VK_SUCCESS) {
+            qWarning("VulkanDevice: Failed to create image view: %d", err);
+            return false;
+        }
+    }
+    return true;
+}
+
+/******************************************************************************
+* Creates a default Vulkan render pass.
+******************************************************************************/
+VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat)
+{
+    VkAttachmentDescription attDesc[3];
+    memset(attDesc, 0, sizeof(attDesc));
+    const bool msaa = sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT;
+    // This is either the non-msaa render target or the resolve target.
+    attDesc[0].format = colorFormat;
+    attDesc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attDesc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // ignored when msaa
+    attDesc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attDesc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attDesc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attDesc[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attDesc[1].format = depthStencilFormat();
+    attDesc[1].samples = sampleCountFlagBits();
+    attDesc[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attDesc[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attDesc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attDesc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attDesc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attDesc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    if(msaa) {
+        // msaa render target
+        attDesc[2].format = colorFormat;
+        attDesc[2].samples = sampleCountFlagBits();
+        attDesc[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attDesc[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attDesc[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attDesc[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attDesc[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attDesc[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    VkAttachmentReference colorRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    VkAttachmentReference resolveRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    VkAttachmentReference dsRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+    VkSubpassDescription subPassDesc;
+    memset(&subPassDesc, 0, sizeof(subPassDesc));
+    subPassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subPassDesc.colorAttachmentCount = 1;
+    subPassDesc.pColorAttachments = &colorRef;
+    subPassDesc.pDepthStencilAttachment = &dsRef;
+    VkRenderPassCreateInfo rpInfo;
+    memset(&rpInfo, 0, sizeof(rpInfo));
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rpInfo.attachmentCount = 2;
+    rpInfo.pAttachments = attDesc;
+    rpInfo.subpassCount = 1;
+    rpInfo.pSubpasses = &subPassDesc;
+    if(msaa) {
+        colorRef.attachment = 2;
+        subPassDesc.pResolveAttachments = &resolveRef;
+        rpInfo.attachmentCount = 3;
+    }
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkResult err = deviceFunctions()->vkCreateRenderPass(logicalDevice(), &rpInfo, nullptr, &renderPass);
+    if(err != VK_SUCCESS) {
+        qWarning("VulkanDevice: Failed to create renderpass: %d", err);
+        return VK_NULL_HANDLE;
+    }
+    return renderPass;
 }
 
 /******************************************************************************

@@ -52,7 +52,9 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 
 	// Create the internal renderer implementation.
 	if(!_internalRenderer) {
-		OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
+		OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+		if(!rendererClass)
+			rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 		if(!rendererClass)
 			throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
 		_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset(), Application::instance()->executionContext()));

@@ -76,8 +76,22 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskManager& taskManager, const 
 		createUIForTask(watcher);
 	}
 
-	// Set to preferred size.
-	resize(450, height());
+	// Expand dialog window to minimum width.
+	QRect g = geometry();
+	if(g.width() < 450) {
+		g.setWidth(450);
+		setGeometry(g);
+	}
+	// Center dialog in parent window.
+	if(parent) {
+		QSize s = frameGeometry().size();
+		QPoint position = parent->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
+		// Make sure the window's title bar doesn't move outside the screen area:
+		if(position.x() < 0) position.setX(0);
+		if(position.y() < 0) position.setY(0);
+		move(position);
+	}
+
 
 	// Create a separate progress bar for every new active task.
 	connect(&_taskManager, &TaskManager::taskStarted, this, std::move(createUIForTask));

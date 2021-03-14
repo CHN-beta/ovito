@@ -41,6 +41,12 @@ public:
 	/// Returns a shared pointer to the global Vulkan instance.
 	static std::shared_ptr<QVulkanInstance> vkInstance();
 
+	/// Maximum number of rendering frames that can be potentially active at the same time.
+	static const int MAX_CONCURRENT_FRAME_COUNT = 3;
+
+	/// Destructor.
+	~VulkanDevice() { reset(); }
+
 	/// Returns the Vulkan instance associated with the device.
     QVulkanInstance* vulkanInstance() const { return _vulkanInstance.get(); }
 
@@ -73,7 +79,7 @@ public:
 	VkPhysicalDevice physicalDevice() const { return _physDevIndex < _physDevs.size() ? _physDevs[_physDevIndex] : VK_NULL_HANDLE; }
 
 	/// Creates the logical Vulkan device.
-	bool create(QWindow* window);
+	bool create(QWindow* window = nullptr);
 
 	/// Releases all Vulkan resources.
 	void reset();
@@ -108,16 +114,53 @@ public:
 	/// Returns the command pool for creating commands for the present queue.
     VkCommandPool presentCommandPool() const { return _presCmdPool; };
 
+    /// Returns a host visible memory type index suitable for general use.
+    /// The returned memory type will be both host visible and coherent. In addition, it will also be cached, if possible.
+	uint32_t hostVisibleMemoryIndex() const { return _hostVisibleMemIndex; }
+
+    /// Returns a device local memory type index suitable for general use.
+	/// Note: It is not guaranteed that this memory type is always suitable. 
+	/// The correct, cross-implementation solution - especially for device local images - is to manually 
+	/// pick a memory type after checking the mask returned from vkGetImageMemoryRequirements.
+	uint32_t deviceLocalMemoryIndex() const { return _deviceLocalMemIndex; }
+
+	/// Returns the current sample count as a \c VkSampleCountFlagBits value.
+    /// When targeting the default render target, the \c rasterizationSamples field
+    /// of \c VkPipelineMultisampleStateCreateInfo must be set to this value.
+	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
+
 	/// Picks the right memory type for a Vulkan image.
 	uint32_t chooseTransientImageMemType(VkImage img, uint32_t startIndex);
+
+	/// Handles the situation when the Vulkan device was lost after a recent function call.
+	bool checkDeviceLost(VkResult err);
+
+	/// Returns the format to use for the standard depth-stencil buffer.
+    VkFormat depthStencilFormat() const { return _dsFormat; }
+
+	/// Helper routine for creating a Vulkan image.
+	bool createTransientImage(const QSize size, VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage* images, VkDeviceMemory* mem, VkImageView* views, int count);
+
+	/// Creates a default Vulkan render pass.
+	VkRenderPass createDefaultRenderPass(VkFormat colorFormat);
 
 	/// Loads a SPIR-V shader from a file.
 	VkShaderModule createShader(const QString& filename);
 
+	static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign) {
+	    return (v + byteAlign - 1) & ~(byteAlign - 1);
+	}
+
 Q_SIGNALS:
+
+	/// Is emitted when the logical device is lost, meaning that a Vulkan failed with VK_ERROR_DEVICE_LOST.
+	void logicalDeviceLost();
 
 	/// Is emitted when the physical device is lost, meaning the creation of the logical device fails with VK_ERROR_DEVICE_LOST.
 	void physicalDeviceLost();
+
+	/// Is emitted right before the logical device is going to be destroyed (or was lost) and clients should release their Vulkan resources too.
+	void releaseResourcesRequested();
 
 private:
 
@@ -165,6 +208,13 @@ private:
 
 	/// The command pool for creating commands for the presentation queue.
     VkCommandPool _presCmdPool = VK_NULL_HANDLE;
+
+	/// The format to use for the depth-stencil buffer.
+    VkFormat _dsFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+
+    uint32_t _hostVisibleMemIndex;
+    uint32_t _deviceLocalMemIndex;
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 };
 
 }	// End of namespace

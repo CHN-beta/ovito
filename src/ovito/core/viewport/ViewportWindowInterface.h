@@ -77,6 +77,9 @@ public:
 	/// This method is automatically called by the Viewport class destructor.
 	virtual void destroyViewportWindow() = 0;
 
+	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
+	virtual SceneRenderer* sceneRenderer() const { return nullptr; }
+
 	/// Renders custom GUI elements in the viewport on top of the scene.
 	virtual void renderGui(SceneRenderer* renderer) = 0;
 

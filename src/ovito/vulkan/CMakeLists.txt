@@ -54,6 +54,8 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 	SOURCES
 		VulkanDevice.cpp
 		VulkanSceneRenderer.cpp
+		ViewportVulkanSceneRenderer.cpp
+		OffscreenVulkanSceneRenderer.cpp
 		resources/vulkan.qrc
 	LIB_DEPENDENCIES 
 		Vulkan::Vulkan

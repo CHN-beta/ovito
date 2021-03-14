@@ -53,8 +53,17 @@ public:
 
 public:
 
-	/// Default constructor.
-	explicit VulkanSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) {}
+	/// Constructor.
+	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, int concurrentFrameCount = 2);
+
+	/// Returns the logical Vulkan device used by the renderer.
+	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
+
+	/// Returns the Vulkan logical device handle.
+	VkDevice logicalDevice() const { return _device->logicalDevice(); }
+
+	/// Returns the device-specific Vulkan function table. 
+	QVulkanDeviceFunctions* deviceFunctions() const { return _device->deviceFunctions(); }
 
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
@@ -93,15 +102,57 @@ public:
 	/// Activates the special highlight rendering mode.
 	virtual void setHighlightMode(int pass) override;
 
+    /// Returns the number of frames that can be potentially active at the same time.
+	int concurrentFrameCount() const { return _concurrentFrameCount; }
+
+    /// Returns the current Vulkan swap chain frame index in the range [0, concurrentFrameCount() - 1].
+	int currentSwapChainFrame() const { return _currentSwapChainFrame; }
+
+	/// Returns the active Vulkan command buffer.
+	VkCommandBuffer currentCommandBuffer() const { return _currentCommandBuffer; }
+
+    /// Sets the current Vulkan swap chain frame index.
+	void setCurrentSwapChainFrame(int frame) { _currentSwapChainFrame = frame; }
+
+	/// Sets the default Vulkan render pass to be used by the renderer.
+    void setDefaultRenderPass(VkRenderPass renderpass) { _defaultRenderPass = renderpass; }
+
+	/// Sets the active Vulkan command buffer.
+	void setCurrentCommandBuffer(VkCommandBuffer cmdBuf) { _currentCommandBuffer = cmdBuf; }
+
 protected:
 
 	/// Returns the supersampling level.
 	int antialiasingLevel() const { return _antialiasingLevel; }
 
+	void initResources();
+
+private Q_SLOTS:
+
+    void releaseResources();
+
 private:
+
+	/// The logical Vulkan device used by the renderer.
+	std::shared_ptr<VulkanDevice> _device;
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
+
+	/// The number of frames that can be potentially active at the same time.
+    int _concurrentFrameCount = 2;
+
+    /// The current Vulkan swap chain frame index.
+    uint32_t _currentSwapChainFrame = 0;
+
+	/// The default Vulkan render pass to be used by the renderer.
+    VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
+
+	/// The active command buffer for the current swap chain image.
+	VkCommandBuffer _currentCommandBuffer = VK_NULL_HANDLE;
+
+	/// The size of the frame buffer we are rendering into.
+	QSize _frameBufferSize;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
@@ -111,6 +162,31 @@ private:
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
+
+    QMatrix4x4 m_proj;
+    float m_rotation = 0.0f;
+
+    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
+    VkBuffer m_buf = VK_NULL_HANDLE;
+    VkDescriptorBufferInfo m_uniformBufInfo[VulkanDevice::MAX_CONCURRENT_FRAME_COUNT];
+    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSet m_descSet[VulkanDevice::MAX_CONCURRENT_FRAME_COUNT];
+    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline m_pipeline = VK_NULL_HANDLE;
+
+	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
+	/// By pre-multiplying the projection matrix with this matrix, applications can
+	/// continue to assume that Y is pointing upwards, and can set minDepth and
+	/// maxDepth in the viewport to 0 and 1, respectively, without having to do any
+	/// further corrections to the vertex Z positions. Geometry from OpenGL
+	/// applications can then be used as-is, assuming a rasterization state matching
+	/// OpenGL culling and front face settings.
+    QMatrix4x4 m_clipCorrect{1.0f, 0.0f, 0.0f, 0.0f,
+                            0.0f, -1.0f, 0.0f, 0.0f,
+                            0.0f, 0.0f, 0.5f, 0.5f,
+                            0.0f, 0.0f, 0.0f, 1.0f}; 
 };
 
 }	// End of namespace

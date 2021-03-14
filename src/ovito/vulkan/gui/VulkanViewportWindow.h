@@ -25,7 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
-#include <ovito/vulkan/VulkanSceneRenderer.h>
+#include <ovito/vulkan/ViewportVulkanSceneRenderer.h>
 
 #include <QWindow>
 
@@ -45,6 +45,9 @@ public:
 
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() override { return _widget; }
+
+	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
+	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
@@ -84,25 +87,16 @@ public:
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
-	/// Creates a new instance of the QVulkanWindowRenderer for this window.
-//	virtual QVulkanWindowRenderer* createRenderer() override;
-
-    void initResources();
-    void initSwapChainResources();
+    void initResources() {}
+    void initSwapChainResources() {}
     void releaseSwapChainResources() {}
-    void releaseResources();
-	void physicalDeviceLost() {}
-    void logicalDeviceLost() {}
+    void releaseResources() {}
 
 	/// Is called when the draw calls for the next frame are to be added to the command buffer.
 	void startNextFrame();
 
 	/// Sets the preferred \a formats of the swapchain.
 	void setPreferredColorFormats(const QVector<VkFormat>& formats);
-
-    /// Returns a host visible memory type index suitable for general use.
-    /// The returned memory type will be both host visible and coherent. In addition, it will also be cached, if possible.
-	uint32_t hostVisibleMemoryIndex() const { return _hostVisibleMemIndex; }
 
 	/// Returns a typical render pass with one sub-pass.
 	VkRenderPass defaultRenderPass() const { return _defaultRenderPass; }
@@ -114,11 +108,6 @@ public:
     /// This usually matches the size of the window, but may also differ in case vkGetPhysicalDeviceSurfaceCapabilitiesKHR reports a fixed size.
 	QSize swapChainImageSize() const { return _swapChainImageSize; }
 
-	/// Returns the current sample count as a \c VkSampleCountFlagBits value.
-    /// When targeting the default render target, the \c rasterizationSamples field
-    /// of \c VkPipelineMultisampleStateCreateInfo must be set to this value.
-	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
-
     /// Returns the current frame index in the range [0, concurrentFrameCount() - 1].
 	int currentFrame() const {
     	if(!_framePending)
@@ -126,10 +115,7 @@ public:
     	return _currentFrame; 
 	}
 
-    /// Returns the number of frames that can be potentially active at the same time.
-	int concurrentFrameCount() const { return _frameLag; }	
-
-	//// Returns The active command buffer for the current swap chain image.
+	/// Returns the active command buffer for the current swap chain image.
 	VkCommandBuffer currentCommandBuffer() const {
 		if(!_framePending) {
 			qWarning("VulkanViewportWindow: Attempted to call currentCommandBuffer() without an active frame");
@@ -152,6 +138,12 @@ public:
 
 	/// Returns the device-specific Vulkan function table. 
 	QVulkanDeviceFunctions* deviceFunctions() const { return _device->deviceFunctions(); }
+
+	/// Returns the logical Vulkan device used by the window.
+	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
+
+	/// Returns the renderer of the interactive viewport window.
+	ViewportVulkanSceneRenderer* renderer() const { return _viewportRenderer; }
 
 protected:
 
@@ -191,25 +183,19 @@ private Q_SLOTS:
 	/// Keeps trying to initialize the Vulkan window surface.
 	void ensureStarted();
 
+	/// Releases all Vulkan resources held by the window.
+	void reset();
+
 private:
 
 	/// Initializes the Vulkan objects of the window after it has been exposed for first time.  
 	void init();
-
-	/// Creates the default Vulkan render pass.  
-	bool createDefaultRenderPass();
 
 	/// Recreates the Vulkan swapchain.  
 	void recreateSwapChain();
 
 	/// Releases the resources of the Vulkan swapchain.  
 	void releaseSwapChain();
-
-	/// Creates a Vulkan image.
-	bool createTransientImage(VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage *images, VkDeviceMemory *mem, VkImageView *views, int count);
-
-	/// Handles a Vulkan device that was recently lost.
-	bool checkDeviceLost(VkResult err);
 
 	/// Starts rendering a frame.
 	void beginFrame();
@@ -220,9 +206,6 @@ private:
 	/// This function must be called exactly once in response to each invocation of the startNextFrame() implementation. 
 	void frameReady();
 
-	/// Releases all Vulkan resources.
-	void reset();
-
 private:
 
 	/// The container widget created for the QVulkanWindow.
@@ -232,13 +215,13 @@ private:
 	bool _updateRequested = false;
 
 	/// This is the renderer of the interactive viewport.
-	OORef<VulkanSceneRenderer> _viewportRenderer;
+	OORef<ViewportVulkanSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
 //	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
 
-    QMatrix4x4 m_proj;
-    float m_rotation = 0.0f;
+	/// The logical Vulkan device used by the window.
+	std::shared_ptr<VulkanDevice> _device;
 
 	enum Status {
         StatusUninitialized,
@@ -251,13 +234,8 @@ private:
     Status _status = StatusUninitialized;
     VkSurfaceKHR _surface = VK_NULL_HANDLE;
     QVector<VkFormat> _requestedColorFormats;
-    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
-	std::shared_ptr<VulkanDevice> _device;
-    uint32_t _hostVisibleMemIndex;
-    uint32_t _deviceLocalMemIndex;
     VkFormat _colorFormat;
     VkColorSpaceKHR _colorSpace;
-    VkFormat _dsFormat = VK_FORMAT_D24_UNORM_S8_UINT;
     PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
     PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
@@ -266,11 +244,10 @@ private:
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
     static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
-	static const int MAX_CONCURRENT_FRAME_COUNT = 3;
+	static const int MAX_CONCURRENT_FRAME_COUNT = VulkanDevice::MAX_CONCURRENT_FRAME_COUNT;
     static const int MAX_FRAME_LAG = MAX_CONCURRENT_FRAME_COUNT;
     VkPresentModeKHR _presentMode = VK_PRESENT_MODE_FIFO_KHR;
     int _swapChainBufferCount = 2;
-    int _frameLag = 2;
     QSize _swapChainImageSize;
     VkSwapchainKHR _swapChain = VK_NULL_HANDLE;
     struct ImageResources {
@@ -301,53 +278,6 @@ private:
     VkImage _dsImage = VK_NULL_HANDLE;
     VkImageView _dsView = VK_NULL_HANDLE;
     bool _framePending = false;
-
-	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
-	/// By pre-multiplying the projection matrix with this matrix, applications can
-	/// continue to assume that Y is pointing upwards, and can set minDepth and
-	/// maxDepth in the viewport to 0 and 1, respectively, without having to do any
-	/// further corrections to the vertex Z positions. Geometry from OpenGL
-	/// applications can then be used as-is, assuming a rasterization state matching
-	/// OpenGL culling and front face settings.
-    QMatrix4x4 m_clipCorrect{1.0f, 0.0f, 0.0f, 0.0f,
-                            0.0f, -1.0f, 0.0f, 0.0f,
-                            0.0f, 0.0f, 0.5f, 0.5f,
-                            0.0f, 0.0f, 0.0f, 1.0f}; 
-
-    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
-    VkBuffer m_buf = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo m_uniformBufInfo[MAX_CONCURRENT_FRAME_COUNT];
-    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet m_descSet[MAX_CONCURRENT_FRAME_COUNT];
-    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
-
-#if 0
-/**
- * \brief The QVulkanWindowRenderer associated with the Vulkan viewport window.
- */
-class VulkanWindowRenderer : public QVulkanWindowRenderer
-{
-public:
-
-	/// Constructor.
-	explicit VulkanWindowRenderer(VulkanViewportWindow* window);
-
-	/// Is called when it is time to create the renderer's graphics resources.
-	virtual void initResources() override;
-
-	virtual void initSwapChainResources() override;
-    virtual void releaseSwapChainResources() override;
-    virtual void releaseResources() override;
-	virtual void startNextFrame() override { _window->startNextFrame(this); }
-
-public:
-
-	VulkanViewportWindow* _window;
-};
-#endif
 
 }	// End of namespace

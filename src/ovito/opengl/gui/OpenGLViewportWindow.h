@@ -46,6 +46,9 @@ public:
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() override { return this; }
 
+	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
+	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
+
     /// \brief Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
 
