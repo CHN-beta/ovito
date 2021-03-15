@@ -86,7 +86,7 @@ private:
 		/// Constructor.
 		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
 				const SimulationCellObject* simCell, DataOORef<BondsObject> bondsObject, DataOORef<BondType> bondType, const ParticlesObject* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
-				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs) :
+				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
 					Engine(dataSource, executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
@@ -101,7 +101,8 @@ private:
 					_moleculeIDs(std::move(moleculeIDs)),
 					_inputFingerprint(std::move(fingerprint)),
 					_bonds(std::move(bondsObject)),
-					_bondType(std::move(bondType)) {}
+					_bondType(std::move(bondType)),
+					_isHydrogenType(std::move(isHydrogenType)) {}
 
 		/// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
 		virtual bool preferSynchronousExecution() override { 
@@ -129,9 +130,10 @@ private:
 		const CutoffMode _cutoffMode;
 		const FloatType _maxCutoff;
 		const FloatType _minCutoff;
-		const std::vector<std::vector<FloatType>> _pairCutoffsSquared;
-		const std::vector<FloatType> _typeVdWRadiusMap;		
 		const FloatType _vdwPrefactor;
+		std::vector<std::vector<FloatType>> _pairCutoffsSquared;
+		std::vector<FloatType> _typeVdWRadiusMap;		
+		std::vector<bool> _isHydrogenType;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
@@ -195,6 +197,10 @@ private:
 
 	/// If true, bonds will only be created between atoms from the same molecule.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
+
+	/// If true, no bonds will be created between two particles of type "H".
+	/// This option is only applied in mode TypeRadiusCutoff,
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
 
 	/// The bond type object that will be assigned to the newly created bonds.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondType>, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

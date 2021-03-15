@@ -64,6 +64,13 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	// Van der Waals mode.
 	QRadioButton* typeRadiusModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::TypeRadiusCutoff, tr("Van der Waals radii:"));
 	layout1->addWidget(typeRadiusModeBtn);
+	QVBoxLayout* sublayout = new QVBoxLayout();
+	sublayout->setContentsMargins(26,0,0,0);
+	BooleanParameterUI* skipHydrogenHydrogenBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
+	sublayout->addWidget(skipHydrogenHydrogenBondsUI->checkBox());
+	skipHydrogenHydrogenBondsUI->setEnabled(false);
+	connect(typeRadiusModeBtn, &QRadioButton::toggled, skipHydrogenHydrogenBondsUI, &ParameterUI::setEnabled);
+
 	_vdwTable = new QTableWidget();
 	_vdwTable->verticalHeader()->setVisible(false);
 	_vdwTable->setEnabled(false);
@@ -73,11 +80,14 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	_vdwTable->verticalHeader()->setDefaultSectionSize(_vdwTable->verticalHeader()->minimumSectionSize());
 	_vdwTable->horizontalHeader()->setStretchLastSection(true);
 	connect(typeRadiusModeBtn, &QRadioButton::toggled, _vdwTable, &QTableView::setEnabled);
-	layout1->addWidget(_vdwTable);
+	sublayout->addWidget(_vdwTable);
+	layout1->addLayout(sublayout);
 
 	// Pair-wise cutoff mode.
 	QRadioButton* pairCutoffModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::PairCutoff, tr("Pair-wise cutoffs:"));
 	layout1->addWidget(pairCutoffModeBtn);
+	sublayout = new QVBoxLayout();
+	sublayout->setContentsMargins(26,0,0,0);
 
 	_pairCutoffTable = new QTableView();
 	_pairCutoffTable->verticalHeader()->setVisible(false);
@@ -87,7 +97,8 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	_pairCutoffTable->verticalHeader()->setDefaultSectionSize(_pairCutoffTable->verticalHeader()->minimumSectionSize());
 	_pairCutoffTable->horizontalHeader()->setStretchLastSection(true);
 	connect(pairCutoffModeBtn, &QRadioButton::toggled, _pairCutoffTable, &QTableView::setEnabled);
-	layout1->addWidget(_pairCutoffTable);
+	sublayout->addWidget(_pairCutoffTable);
+	layout1->addLayout(sublayout);
 
 	BooleanParameterUI* onlyIntraMoleculeBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
 	layout1->addWidget(onlyIntraMoleculeBondsUI->checkBox());
