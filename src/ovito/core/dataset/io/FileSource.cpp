@@ -229,8 +229,14 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	_framesListFuture.reset();
 
 	// If there are too many frames, time tick values may overflow. Warn the user in this case.
-	if(restrictToFrame() < 0 && frames.size() >= animationTimeToSourceFrame(TimePositiveInfinity())) {
-		qWarning() << "Warning: Number of frames in loaded trajectory exceeds the maximum supported by OVITO (" << (animationTimeToSourceFrame(TimePositiveInfinity())-1) << " frames). "
+	int frameLimit = TimePositiveInfinity() - std::max(0, dataset()->animationSettings()->frameToTime(playbackStartTime()));
+	if(playbackSpeedDenominator() > playbackSpeedNumerator()) {
+		frameLimit /= std::max(1, playbackSpeedDenominator()); 
+		frameLimit *= std::max(1, playbackSpeedNumerator());
+	}
+	frameLimit /= dataset()->animationSettings()->ticksPerFrame(); 
+	if(restrictToFrame() < 0 && frames.size() >= frameLimit) {
+		qWarning() << "Warning: Number of frames in loaded trajectory exceeds the maximum supported by OVITO (" << (frameLimit-1) << " frames). "
 			"Note: You can increase the limit by setting the animation frames-per-second parameter to a higher value.";
 	}
 
