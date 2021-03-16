@@ -11,30 +11,29 @@
 
   <para>
     <informalfigure><screenshot><mediaobject><imageobject>
-       <imagedata fileref="images/clone_pipeline/clone_pipeline_menu_item.png" format="PNG" scale="50" />
+       <imagedata fileref="images/clone_pipeline/clone_pipeline_menu_item.png" format="PNG" scale="60" />
     </imageobject></mediaobject></screenshot></informalfigure>
 
-    The <emphasis>Clone Pipeline</emphasis> function of OVITO lets you duplicate the currently selected <link linkend="usage.modification_pipeline">data pipeline</link>
-    in order to visualize multiple datasets side by side or visualize the same dataset in several different ways. The function can be invoked by selecting 
-    <menuchoice><guimenuitem>Clone Pipeline</guimenuitem></menuchoice> from the pipeline menu depicted on the right.
+    The <emphasis>Clone Pipeline</emphasis> function of OVITO lets you duplicate the current <link linkend="usage.modification_pipeline">data pipeline</link>
+    in order to visualize multiple datasets side by side or to visualize the same dataset in several different ways in one picture. 
+    The function can be invoked from the <link linkend="usage.import.multiple_datasets">pipeline selector</link> widget depicted on the right, 
+    which is located in OVITO's main toolbar.
   </para>
 
   <para>
     The <emphasis>Clone Pipeline</emphasis> dialog will be displayed, letting you configure the cloning operation.
     Once you close the dialog by pressing <guibutton>Ok</guibutton>, the cloning operation is executed according
-    to your settings as discussed below.
+    to the settings you have made in the dialog.
   </para>
 
   <para>
     After the pipeline has been cloned, both the new copy and the existing data pipeline will be part of the
     current visualization scene and you will now see two objects in the viewports.
-    The <link linkend="usage.import.multiple_datasets">drop-down listbox</link> at the top of the command panel's
-    modification page indicates which of the pipelines is the currently selected one, allowing you to switch
-    between the pipelines in the current scene. The modifiers of the currently selected pipeline are shown in the
+    The <link linkend="usage.import.multiple_datasets">pipeline selector</link> widget in the main toolbar 
+    indicates which pipeline is the currently selected one and allows you to switch
+    between the different pipelines of the scene. The currently selected pipeline is the one shown in the
     <link linkend="usage.modification_pipeline.pipeline_listbox">pipeline editor</link>.
-    You can also click on an object in the interactive viewports
-    in order to select the pipeline associated with that object. The currently
-    selected pipeline object is typically indicated by a white box color.
+    You can also click on an object in the interactive viewports in order to select the pipeline associated with that object. 
   </para>
 
   <simplesect>
@@ -44,12 +43,11 @@
         <imagedata fileref="images/clone_pipeline/clone_pipeline_dialog.png" format="PNG" scale="85" />
       </imageobject></mediaobject></screenshot></informalfigure>
 
-      A <link linkend="usage.modification_pipeline">pipeline</link> in OVITO consists of a <link linkend="data_sources">data source</link> (typically an external data file feeding the pipeline)
-      and a linear sequence of <link linkend="">modifiers</link> that have been inserted into the pipeline. In the user interface of OVITO
-      the modifiers are typically laid out in a bottom-up fashion, with the data source at the bottom and the last modifier at the top.
+      A <link linkend="usage.modification_pipeline">pipeline</link> in OVITO consists of a <link linkend="data_sources">data source</link> (typically an external data file to feed the pipeline with input)
+      and a linear sequence of <link linkend="particles.modifiers">modifiers</link> that have been inserted into the pipeline. In the user interface of OVITO
+      the modifiers are typically laid out in a bottom-up fashion, with the data source at the bottom and the last modifier of the sequence at the top.
       The data source delivers an <emphasis>input dataset</emphasis> (e.g. particles or other kinds of <link linkend="scene_objects">data objects</link>), which is then processed by the modifiers one after the other.
-      The end result leaving the pipeline is what gets displayed in the 3d viewports, i.e., a graphical rendering of the data object(s) appearing in the three-dimensional
-      scene.
+      The final result data leaving the pipeline is what gets displayed in the 3d viewports of OVITO.
     </para>
     <para>
       When cloning a pipeline, the data source and/or the modifiers of the original pipeline typically get copied over to the new pipeline.
@@ -127,7 +125,7 @@
     </para>
     <para>
       Note that you can change the positioning of a pipeline object at any time using the <emphasis>Move</emphasis> and
-      <emphasis>Rotate</emphasis> tools found in OVITO's toolbar. Using these tools you can
+      <emphasis>Rotate</emphasis> tools found in OVITO's main toolbar. Using these tools you can
       still adjust the exact positioning of either the original or the cloned pipeline later on
       (see <link linkend="usage.import.positioning_objects">here</link> for more information).
     </para>

@@ -19,18 +19,21 @@
   </para>
 
   <simplesect>
-    <title>Default particle colors and sizes</title>
+    <title>Default particle colors and radii</title>
     <para>
-      When importing a new simulation file, OVITO automatically assigns colors and radii to particle types based on their name,
-      in particular chemical atom types such as "He", "Fe" or "Si". The table shows the predefined mapping of particle types 
-      to default colors and display radii. You can edit the colors and radius values if desired and OVITO will remember these
-      default presets across program sessions.
+      When importing a simulation file, OVITO automatically assigns standard colors and radii to particle types based on their name.
+      This happens, in particular, for known chemical elements such as "He", "Fe" or "Si". The table shows the predefined association of named particle types 
+      with corresponding default colors, display radii and van der Waals radii. You can edit the values if needed. OVITO will remember these
+      default values across program sessions and apply them to newly imported datasets.
     </para>
     <para>
-      Changing these presets is also possible from the <link linkend="scene_objects.particle_types">particle types panel</link>, where you 
-      can change the appearance of individual particle types after importing a file. The <guibutton>Set as default</guibutton> from that panel
-      updates the color and radius presets in this table and also allows to define new presets for particle types other than
-      the chemical elements already listed here.
+      Note that you can also set a new default values for invidual particle types from the <link linkend="scene_objects.particle_types">Particle types</link> panel, where you 
+      typically configure the appearance of particle types after importing a simulation file. 
+      Here, you can even define user-defined color and radius presets for particle types other than the standard chemical elements.
+    </para>
+    <para>
+      Press the <guibutton>Restore built-in defaults</guibutton> button to reset all colors and radii back to the hard-coded factory default 
+      values of OVITO and discard any user-defined presets made by you.
     </para>
   </simplesect>
 

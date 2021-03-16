@@ -14,39 +14,67 @@
     <informalfigure><screenshot><mediaobject><imageobject>
        <imagedata fileref="images/viewport_layers/color_legend_overlay_panel.png" format="PNG" scale="50" />
     </imageobject></mediaobject></screenshot></informalfigure>
-    This <link linkend="viewport_layers">viewport layer</link> renders the color scale associated with a 
-    <link linkend="particles.modifiers.color_coding">Color coding</link> modifier into the
-    picture. The color legend allows a viewer to translate the colors in the picture into corresponding numeric values. 
+    This <link linkend="viewport_layers">viewport layer</link> renders the color scale for a 
+    <link linkend="particles.modifiers.color_coding">Color coding</link> modifier in the current pipeline 
+    or the list of discrete element types and corresponding colors into the output picture. 
+    The color legend helps observers to associate object colors in the picture with corresponding numeric values or element types. 
+    The following figure shows two typical examples for color legends: A color map for a continuous particle property 
+    and a discrete color legend for the <literal>Particle Type</literal> property:
     <screenshot><mediaobject><imageobject>
-       <imagedata fileref="images/viewport_layers/color_legend_example.jpg" format="JPG" scale="50" />
+       <imagedata fileref="images/viewport_layers/color_legend_example.jpg" format="JPG" scale="95" />
     </imageobject></mediaobject></screenshot>
   </para>
-  
-  <para>
-    The color legend layer will render the color map only if is linked to a <emphasis>source modifier</emphasis>, which is the <link linkend="particles.modifiers.color_coding">Color coding</link> 
-    modifier in the current data pipeline from which the color legend layer adopts the color map and numeric range of values.
-    When you first insert the color legend layer into a viewport, it gets automatically linked to the first <link linkend="particles.modifiers.color_coding">Color coding</link> modifier
-    in the current data pipeline. You may have to pick the right color coding modifier manually in case there are multiple 
-    such modifiers in your pipeline or if you insert the modifier <emphasis>after</emphasis> you've already created the color legend layer. 
-  </para>
 
-  <para>
-    The parameters of the color legend layer allow you control the size and the positioning of the color map in the rendered picture.
-    By default, the legend will be labeled with the name of the selected input property that was used to produce the coloring and the 
-    minimum and maximum value of the numeric range set in the <link linkend="particles.modifiers.color_coding">Color coding</link> modifier.
-    You can override these defaults by entering text into the <emphasis>Custom title</emphasis> and <emphasis>Custom label</emphasis> fields.
-  </para>
+  <simplesect>
+    <title>Color source</title>
 
-  <para>
-    The text presentation of the numeric interval range is controlled by the format specification string. You have the choice between decimal notation 
-    (<literal>%f</literal>), exponential notation (<literal>%e</literal>) and an automatic mode (<literal>%g</literal>), which chooses the best representation 
-    depending on the value. 
-    Furthermore, the format string allows you to control the output precision, i.e. the number of digits that
-    appear after the decimal point. Use <literal>"%.2f"</literal>, for example, to always show two digits after the decimal point. 
-    The format string must follow the standard convention of the 
-    <link xlink:href="https://en.cppreference.com/w/cpp/io/c/fprintf">printf()</link> C function.
-    Futhermore, it is possible to include a physical unit in the format string, e.g. <literal>"%g eV"</literal>. 
-  </para>
+    <para>
+      The <emphasis>Color source</emphasis> selection box at the top of the panel lets you choose where the legend should take 
+      its colors from. In the current program version, two types of sources are supported:
+      <variablelist>
+        <varlistentry>
+          <term>Color coding modifier</term>
+          <listitem>
+            <para>The legend can display the color gradient and the interval range of a <link linkend="particles.modifiers.color_coding">Color coding</link> modifier 
+            that is part of the current data pipeline.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Typed properties</term>
+          <listitem>
+            <para>Alternatively, the legend can display the set of discrete element types defined for a property in the output of the 
+            current data pipeline. Typical examples are the particle properties <literal>Particle Type</literal>, <literal>Structure Type</literal> or <literal>Residue Type</literal>. 
+            The legend displays the name and the associated color of each type defined by the selected source property. 
+            Note that the color legend layer itself is not responsible for coloring the particles or bonds. It may be necessary to insert a <link linkend="particles.modifiers.color_by_type">Color by type</link> 
+            modifier into the pipeline. </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+
+  </simplesect>
+
+  <simplesect>
+    <title>Parameters</title>
+
+    <para>
+      The other parameters of the color legend layer let you control the size, positioning and appareance of the color legend in the rendered picture.
+      By default, the legend will be labeled with the name of the source property and, if based on a <link linkend="particles.modifiers.color_coding">Color coding</link> modifier, the 
+      numeric interval range set for that modifier. You can override the text of these labels by entering something into the input fields <emphasis>Custom title</emphasis> and <emphasis>Custom label</emphasis>.
+    </para>
+
+    <para>
+      If the legend is for a <link linkend="particles.modifiers.color_coding">Color coding</link> modifier,
+      the number formatting of the min/max values is controlled by a format specification string. 
+      You have the choice between decimal notation (<literal>%f</literal>), exponential notation (<literal>%e</literal>) and an automatic mode (<literal>%g</literal>), which picks the best representation depending on the value. 
+      Furthermore, the format string gives you explicit control over the output precision, i.e. the number of digits that
+      appear after the decimal point. Use <literal>"%.2f"</literal>, for example, to always show two digits after the decimal point. 
+      The format string must follow the rules of the standard  
+      <link xlink:href="https://en.cppreference.com/w/cpp/io/c/fprintf">printf()</link> C function.
+      Additionally, it is possible to append a physical unit to the format string, e.g. <literal>"%g eV"</literal>, if desired. 
+    </para>
+
+  </simplesect>
 
   <simplesect>
     <title>See also</title>

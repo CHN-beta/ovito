@@ -110,8 +110,12 @@
               <entry>Assigns a color to all selected elements.</entry>
             </row>
             <row>
+              <entry><link linkend="particles.modifiers.color_by_type">Color&#xA0;by&#xA0;type</link><ovito-pro/></entry>
+              <entry>Colors particles or bonds according to a typed (discrete) property.</entry>
+            </row>
+            <row>
               <entry><link linkend="particles.modifiers.color_coding">Color&#xA0;coding</link></entry>
-              <entry>Colors particles or bonds based on the value of a property.</entry>
+              <entry>Colors particles or bonds based on the value of a scalar (continuous) property.</entry>
             </row>
 
 		<!-- MODIFICATION -->
@@ -282,6 +286,8 @@
   <xi:include href="particles/clear_selection.docbook"/>
 
   <xi:include href="particles/cluster_analysis.docbook"/>
+
+  <xi:include href="particles/color_by_type.docbook"/>
 
   <xi:include href="particles/color_coding.docbook"/>
 

@@ -172,27 +172,28 @@
         </imageobject></mediaobject></screenshot>
       </informalfigure>
       OVITO has the capability to manage several objects in the same three-dimensional scene.
-      This enables you to import and visualize several datasets together in a single picture as shown on the right.
+      This enables you to import and visualize several datasets together in a single picture as shown in the example on the right.
       You can also visualize a dataset in several different ways, either side by side or superimposed on each other,
-      using <link linkend="clone_pipeline">branched data pipelines</link>, which dynamically duplicate the imported data and process the copies in different ways.
+      using <link linkend="clone_pipeline">branched data pipelines</link>, which dynamically duplicate the imported data and process each copy in a 
+      slightly different way.
     </para>
     <para>
-      The simplest way to visualize multiple datasets in one picture or animation is to invoke the
+      The simplest way to visualize multiple datasets in one picture is to invoke the
       <menuchoice><guimenu>File</guimenu><guimenuitem>Load File</guimenuitem></menuchoice> function from the menu
-      several times to load all datasets into the same scene.
+      several times to import all datasets into the same scene.
       When importing the second dataset, OVITO will ask you whether to replace the already loaded dataset or not.
-      Select the "<emphasis>Add to scene</emphasis>" option here in order to insert it as an additional object into the existing scene.
+      Pick the "<emphasis>Add to scene</emphasis>" option here in order to insert it as an additional object into the existing scene.
     </para>
     <para>
       <informalfigure>
         <screenshot><mediaobject><imageobject>
-          <imagedata fileref="images/usage/importexport/pipeline_selector.png" format="PNG" scale="50" />
+          <imagedata fileref="images/usage/importexport/pipeline_selector.png" format="PNG" scale="80" />
         </imageobject></mediaobject></screenshot>
       </informalfigure>
-      The <emphasis>pipeline selector</emphasis> box shown in the screenshot lists all objects in the current scene
-      and lets you switch between them. Each imported dataset has its own data pipeline associated with it. Thus, you can apply different modifiers
-      to the individual datasets. The data pipeline of the currently selected dataset is displayed in the
-      <link linkend="usage.modification_pipeline.pipeline_listbox">pipeline editor</link> beneath the pipeline selector box.
+      The <emphasis>pipeline selector</emphasis> widget, located in the toolbar of the window (see screenshot), lists all datasets and other objects 
+      that are part of the current scene. Each imported dataset is associated with its own data pipeline. Thus, you can apply different modifiers
+      to each dataset. The data pipeline of the currently selected dataset is the one being displayed and edited in the
+      <link linkend="usage.modification_pipeline.pipeline_listbox">pipeline editor</link> in the panel on the right.
     </para>
 
     <simplesect xml:id="usage.import.positioning_objects">
@@ -234,8 +235,8 @@
     <simplesect>
       <title>Cloning pipelines</title>
       <para>
-        Instead of importing several data files into OVITO, you can also duplicate a dataset right in OVITO in order
-        to visualize the data in various different ways, for example by applying different sets of modifiers to the replica
+        Instead of importing several data files into OVITO, you can also duplicate a dataset within OVITO in order
+        to visualize the same data in different ways, for example by applying different sets of modifiers to each replica
         of the dataset. See the <link linkend="clone_pipeline">Clone Pipeline</link> function for more information.
       </para>
     </simplesect>
