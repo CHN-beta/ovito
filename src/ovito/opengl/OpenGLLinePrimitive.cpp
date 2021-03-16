@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "OpenGLLinePrimitive.h"
 #include "OpenGLSceneRenderer.h"
 
@@ -46,6 +47,17 @@ void OpenGLLinePrimitive::render(OpenGLSceneRenderer* renderer)
 {
 	if(!positions() || positions()->size() == 0)
 		return;
+
+#ifdef Q_OS_WIN
+	// This is a workaround for a specific graphics compatibility problem on Windows with AMD Radeon(TM) Vega 8 Graphics. 
+	// Rendering lines with uniform color doesn't work for some reason (see issue #203). As a workaround, we create 
+	// a VBO with explicit colors. 
+	if(!colors() && OpenGLSceneRenderer::openGLRenderer() == "AMD Radeon(TM) Vega 8 Graphics") {
+		DataBufferPtr explicitColors = DataOORef<DataBuffer>::create(positions()->dataset(), ExecutionContext::Scripting, positions()->size(), DataBuffer::Float, 4, 0, false);
+		explicitColors->fill(uniformColor());
+		setColors(std::move(explicitColors));
+	}
+#endif
 
 	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
 		renderThinLines(renderer);
@@ -154,9 +166,9 @@ void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 	_vectorsBuffer.bind(renderer, _thickLineShader, "vector", GL_FLOAT, 0, 3);
 	if(!renderer->isPicking()) {
 		if(_colorsBuffer.isCreated())
-			_colorsBuffer.bindColors(renderer, _thinLineShader, 4);
+			_colorsBuffer.bindColors(renderer, _thickLineShader, 4);
 		else
-			_colorsBuffer.setUniformColor(renderer, _thinLineShader, uniformColor());
+			_colorsBuffer.setUniformColor(renderer, _thickLineShader, uniformColor());
 	}
 	else {
 		GLint pickingBaseID = renderer->registerSubObjectIDs(positions()->size() / 2);

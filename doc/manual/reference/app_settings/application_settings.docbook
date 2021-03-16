@@ -12,7 +12,7 @@
 
   <para>
     <informalfigure><screenshot><mediaobject><imageobject>
-      <imagedata fileref="images/app_settings/general_settings.png" format="PNG" scale="75" />
+      <imagedata fileref="images/app_settings/general_settings.png" format="PNG" scale="60" />
     </imageobject></mediaobject></screenshot></informalfigure>
     To open the application settings dialog, select <menuchoice><guimenu>Edit</guimenu><guimenuitem>Application settings</guimenuitem></menuchoice> from the main menu on Windows/Linux.
     On macOS, select <menuchoice><guimenu>Ovito</guimenu><guimenuitem>Preferences</guimenuitem></menuchoice> instead.

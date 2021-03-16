@@ -478,14 +478,7 @@ void PipelineListModel::deleteModifierApplication(ModifierApplication* modApp)
 				}
 			}
 		});
-		OORef<Modifier> modifier = modApp->modifier();
-		modApp->setInput(nullptr);
-		modApp->setModifier(nullptr);
-		modApp->setModifierGroup(nullptr);
-
-		// Delete modifier if there are no more applications left.
-		if(modifier->modifierApplications().empty())
-			modifier->deleteReferenceObject();
+		modApp->deleteReferenceObject();
 	});
 
 	// Invalidate the items list of the model.

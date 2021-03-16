@@ -11,11 +11,19 @@
   <title>Particles</title>
 
   <para>
-    A particle system is (implicitly) defined in OVITO by a set of <link linkend="usage.particle_properties">particle properties</link>,
-    one of them being the particle coordinates (<literal>Position</literal> property). This particle property is always
-    present whereas other properties such as <literal>Particle Type</literal>, <literal>Particle Identifier</literal> or <literal>Radius</literal> 
-    are optional properties, which may or may not be present depending on the contents of the simulation file. Furthermore,  
-    modifiers in the <link linkend="usage.modification_pipeline">data pipeline</link> may dynamically add additional properties to the particles.
+    A system of <emphasis>N</emphasis> particles is represented in OVITO as a set of <link linkend="usage.particle_properties">particle properties</link>,
+    each being a uniform data array of length <emphasis>N</emphasis>:
+    <screenshot><mediaobject><imageobject>
+      <imagedata fileref="images/scene_objects/particles_data_model.png" format="png" scale="110" />
+    </imageobject></mediaobject></screenshot>
+    The property array with the name <literal>"Position"</literal> is always part of the particle dataset and contains the Cartesian coordinates of the particles.
+    All other properties are optional. Whether they are present or not depends on the kind of simulation file you import
+    and the <link linkend="usage.modification_pipeline">modifiers</link> you apply to the dataset within OVITO. That's because modifiers may add 
+    new particle properties to the set, for example to store the results of a computation they perform.
+  </para>
+  <para>
+    You can open the <link linkend="data_inspector">data inspector</link> panel of OVITO to view all particle properties that currently 
+    exist in the output of the data pipeline. 
   </para>
   
   <simplesect xml:id="scene_objects.particle_types">
@@ -25,31 +33,33 @@
       <informalfigure><screenshot><mediaobject><imageobject>
         <imagedata fileref="images/scene_objects/particle_types_panel.png" format="PNG" scale="50" />
       </imageobject></mediaobject></screenshot></informalfigure>
-
-      Molecular dynamics simulation codes use atom types to encode the chemical identity of atoms.
-      (Note that OVITO typically uses the more general term "particles" in place of "atoms"). During data import into OVITO, this chemical information gets mapped to the
-      particle property named <literal>Particle Type</literal>, which stores the per-particle type information encoded as an integer number.
-      Additionally, OVITO maintains a list of particle types, each having a unique numeric ID, a human-readable name, and other attributes.
-      Depending on the information found in the imported simulation file, particle types get either assigned chemical element names such as "Cu" or a generic name such as "Type 1", "Type 2", etc.
+      A <emphasis>typed</emphasis> particle property is a property array containing discrete numeric 
+      values and a supplementary mapping of these numeric values to corresponding type definitions. 
+      The <literal>"Particle Type"</literal> is a typical example for such a typed property. 
+      It stores each particle's chemical type encoded as a unique integer value (1, 2, 3, ...), the so-called numeric type identifier.
+      Additionally, the <literal>"Particle Type"</literal> property stores a list of type definition records, 
+      which establishes the mapping between the numeric type ID of each particle and the auxiliary information 
+      associated with that type, e.g. name and display color:
+      
+      <screenshot><mediaobject><imageobject>
+        <imagedata fileref="images/scene_objects/typed_property.png" format="png" scale="70" />
+      </imageobject></mediaobject></screenshot>
+      
+      Note that a dataset may not just contain a single typed property like the <literal>Particle Type</literal> property. 
+      In fact, several typed properties can exist simultaneously, establishing several orthogonal classifications.
+      Examples are the particle properties <literal>Residue Type</literal>, <literal>Structure Type</literal>, <literal>Molecue Type</literal>.
     </para>
     <para>
-      The same scheme is used by OVITO to encode <emphasis>bond types</emphasis> and <emphasis>molecule types</emphasis> if they are defined in the simulation file.
-      For each typed property, OVITO maintains a list of type definitions, which can be edited in the user interface
-      shown in the screenshot. In case of particle types, each type definition also has a color and a radius attribute. These values are used
-      to render the particles of that type in the viewports. This is unless particles have been assigned individual colors or radii in the form of the <literal>Color</literal> or <literal>Radius</literal> property.
-      These particle properties take precedence over the corresponding per-type attributes.
+      All typed properties read from an imported simulation file are accessible in the pipeline editor
+      as shown in the screenshot on the right. Here you can edit each type's attributes. In case of the <literal>Particle Type</literal>
+      property, these settings directly affect how OVITO renders the particles belonging to the type.
     </para>
     <para>
-      For particle types named after chemical elements, OVITO automatically assigns a default color and a default display radius
-      according to an internal presets table. These presets can be edited in the <link linkend="application_settings.particles">application settings dialog</link>.
-      Additionally, you can use the <guibutton>Save as defaults</guibutton> button to update the stored preset for the
-      selected particle type to the current color and radius values. This even works for the generic particle types
-      named "Type 1", "Type 2", etc., which are used by OVITO if no chemical names are available in the imported simulation file.
-    </para>
-    <para>
-      Note that the "Particle types" list entry in the <link linkend="usage.modification_pipeline.pipeline_listbox">pipeline editor</link> will not show up if the imported simulation file 
-      contains no particle type information at all. In this case OVITO does not create the <literal>Particle type</literal> property.
-      The same applies to the "Bond types" and "Molecule types" entries, which will only appear if the simulation file contains corresponding type information.
+      Particle types named after one of the standard chemical elements get automatically initialized with appropriate default values for
+      the display color, display radius, van der Waals radius, and mass. If necessary, you can change the default values permanently 
+      for each type using the corresponding presets menus indicated in the screenshot. You can even specify default parameters for particle
+      types having generic names such as "Type 1", "Type 2", etc., which may be necessary if the imported simulation file contains numeric type
+      information but no type names.
     </para>
   </simplesect>
 
@@ -57,6 +67,8 @@
     <title>See also</title>
     <para>
       <simplelist>
+      <member><pydoc-link href="modules/ovito_data" anchor="ovito.data.Particles"><classname>Particles</classname> (Python API)</pydoc-link></member>
+      <member><pydoc-link href="modules/ovito_data" anchor="ovito.data.Property"><classname>Property</classname> (Python API)</pydoc-link></member>
       <member><pydoc-link href="modules/ovito_data" anchor="ovito.data.Property.types"><classname>Property.types</classname> (Python API)</pydoc-link></member>
       </simplelist>
     </para>

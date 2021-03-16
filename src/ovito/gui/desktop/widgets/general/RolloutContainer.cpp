@@ -51,10 +51,12 @@ Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, co
 	OVITO_CHECK_POINTER(content);
 	Rollout* rollout = new Rollout(widget(), content, title, params, helpPageUrl.isEmpty() ? params.helpUrl() : helpPageUrl);
 	RolloutContainerLayout* layout = static_cast<RolloutContainerLayout*>(widget()->layout());
+	bool wasInserted = false;
 	if(params._afterThisRollout) {
 		Rollout* otherRollout = qobject_cast<Rollout*>(params._afterThisRollout->parent());
 		for(int i = 0; i < layout->count(); i++) {
 			if(layout->itemAt(i)->widget() == otherRollout) {
+				wasInserted = true;
 				layout->insertWidget(i + 1, rollout);
 				break;
 			}
@@ -64,12 +66,14 @@ Rollout* RolloutContainer::addRollout(QWidget* content, const QString& title, co
 		Rollout* otherRollout = qobject_cast<Rollout*>(params._beforeThisRollout->parent());
 		for(int i = 0; i < layout->count(); i++) {
 			if(layout->itemAt(i)->widget() == otherRollout) {
+				wasInserted = true;
 				layout->insertWidget(i, rollout);
 				break;
 			}
 		}
 	}
-	else layout->addWidget(rollout);
+	if(!wasInserted)
+		layout->addWidget(rollout);
 	return rollout;
 }
 

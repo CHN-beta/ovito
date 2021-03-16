@@ -43,6 +43,7 @@ DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, minimumCutoff);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, vdwPrefactor);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, onlyIntraMoleculeBonds);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, skipHydrogenHydrogenBonds);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, autoDisableBondDisplay);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondType);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondsVis);
@@ -54,6 +55,7 @@ SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, vdwPrefactor, "VdW prefactor");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, onlyIntraMoleculeBonds, "Suppress inter-molecular bonds");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondType, "Bond type");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondsVis, "Visual element");
+SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, skipHydrogenHydrogenBonds, "Don't generate H-H bonds");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, autoDisableBondDisplay, "Auto-disable bond display");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, uniformCutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, minimumCutoff, WorldParameterUnit, 0);
@@ -68,6 +70,7 @@ CreateBondsModifier::CreateBondsModifier(DataSet* dataset) : AsynchronousModifie
 	_onlyIntraMoleculeBonds(false),
 	_minimumCutoff(0),
 	_autoDisableBondDisplay(true),
+	_skipHydrogenHydrogenBonds(true),
 	_vdwPrefactor(0.6) // Value 0.6 has been adopted from VMD source code.
 {
 }
@@ -170,7 +173,7 @@ void CreateBondsModifier::initializeModifier(TimePoint time, ModifierApplication
 							QVariant key1 = ptype1->name().isEmpty() ? QVariant::fromValue(ptype1->numericId()) : QVariant::fromValue(ptype1->name());
 							for(const ElementType* type2 : typeProperty->elementTypes()) {
 								if(const ParticleType* ptype2 = dynamic_object_cast<ParticleType>(type2)) {
-									if(ptype2->vdwRadius() > 0.0) {
+									if(ptype2->vdwRadius() > 0.0 && (ptype1->name() != QStringLiteral("H") || ptype2->name() != QStringLiteral("H"))) {
 										// Note: Prefactor 0.6 has been adopted from VMD source code.
 										FloatType cutoff = 0.6 * (ptype1->vdwRadius() + ptype2->vdwRadius());
 										QVariant key2 = ptype2->name().isEmpty() ? QVariant::fromValue(ptype2->numericId()) : QVariant::fromValue(ptype2->name());
@@ -224,6 +227,8 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	FloatType maxCutoff = uniformCutoff();
 	// The list of per-type VdW radii.
 	std::vector<FloatType> typeVdWRadiusMap;
+	// Flags indicating which type(s) are hydrogens.
+	std::vector<bool> isHydrogenType;
 
 	// Build table of pair-wise cutoff radii.
 	const PropertyObject* typeProperty = nullptr;
@@ -267,6 +272,11 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 						if(type->numericId() >= typeVdWRadiusMap.size())
 							typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
 						typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+						if(skipHydrogenHydrogenBonds()) {
+							if(type->numericId() >= isHydrogenType.size())
+								isHydrogenType.resize(type->numericId() + 1, false);
+							isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
+						}
 					}
 				}
 			}
@@ -302,7 +312,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 	return std::make_shared<BondsEngine>(modApp, executionContext, particles, posProperty,
 			typeProperty, simCell, std::move(bondsObject), std::move(clonedBondType), particles, cutoffMode(),
 			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), 
-			std::move(typeVdWRadiusMap), vdwPrefactor(), moleculeProperty);
+			std::move(typeVdWRadiusMap), vdwPrefactor(), moleculeProperty, std::move(isHydrogenType));
 }
 
 /******************************************************************************
@@ -330,9 +340,12 @@ void CreateBondsModifier::BondsEngine::perform()
 
 		// Get the type of the central particles.
 		int type1;
+		bool isHydrogenType1 = false;
 		if(particleTypesArray) {
 			type1 = particleTypesArray[particleIndex];
 			if(type1 < 0) return;
+			if(type1 < _isHydrogenType.size())
+				isHydrogenType1 = _isHydrogenType[type1];
 		}
 
 		// Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
@@ -346,6 +359,11 @@ void CreateBondsModifier::BondsEngine::perform()
 				int type2 = particleTypesArray[neighborQuery.current()];
 				if(type2 < 0) continue;
 				if(type1 < (int)_typeVdWRadiusMap.size() && type2 < (int)_typeVdWRadiusMap.size()) {
+					// Avoid generating H-H bonds.
+					if(isHydrogenType1 && type2 < _isHydrogenType.size()) {
+						if(_isHydrogenType[type2]) 
+							continue;
+					}
 					FloatType cutoff = _vdwPrefactor * (_typeVdWRadiusMap[type1] + _typeVdWRadiusMap[type2]);
 					if(neighborQuery.distanceSquared() > cutoff*cutoff) 
 						continue;
@@ -384,6 +402,9 @@ void CreateBondsModifier::BondsEngine::perform()
 	_moleculeIDs.reset();
 	_simCell.reset();
 	_particles.reset();
+	decltype(_typeVdWRadiusMap){}.swap(_typeVdWRadiusMap);
+	decltype(_pairCutoffsSquared){}.swap(_pairCutoffsSquared);
+	decltype(_isHydrogenType){}.swap(_isHydrogenType);
 }
 
 /******************************************************************************
