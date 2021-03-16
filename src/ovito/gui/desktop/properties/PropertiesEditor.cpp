@@ -97,10 +97,11 @@ void PropertiesEditor::setEditObject(RefTarget* newObject)
 QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInsertionParameters& params, const char* helpPage)
 {
 	OVITO_ASSERT_MSG(container(), "PropertiesEditor::createRollout()", "Editor has not been properly initialized.");
-	QWidget* panel = new QWidget(params.container());
-	_rollouts.add(panel);
-	if(params.container() == nullptr) {
-		
+	QWidget* panel;
+	if(params.container() == nullptr || !params.container()->layout() || params.container()->layout()->count() != 0) {
+		panel = new QWidget();
+		_rollouts.add(panel);
+
 		// Create a new rollout in the rollout container.
 		Rollout* rollout = container()->addRollout(panel, QString(), params, helpPage);
 
@@ -127,7 +128,9 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
 		// Automatically update rollout title each time a new object is loaded into the editor.
 		connect(this, &PropertiesEditor::contentsReplaced, rollout, std::move(updateRolloutTitle));
 	}
-	else if(params.container()->layout()) {
+	else {
+		panel = new QWidget(params.container());
+		_rollouts.add(panel);
 
 		// Instead of creating a new rollout for the widget, insert widget into a prescribed parent widget.
 		params.container()->layout()->addWidget(panel);
