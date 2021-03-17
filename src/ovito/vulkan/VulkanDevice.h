@@ -124,11 +124,6 @@ public:
 	/// pick a memory type after checking the mask returned from vkGetImageMemoryRequirements.
 	uint32_t deviceLocalMemoryIndex() const { return _deviceLocalMemIndex; }
 
-	/// Returns the current sample count as a \c VkSampleCountFlagBits value.
-    /// When targeting the default render target, the \c rasterizationSamples field
-    /// of \c VkPipelineMultisampleStateCreateInfo must be set to this value.
-	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
-
 	/// Picks the right memory type for a Vulkan image.
 	uint32_t chooseTransientImageMemType(VkImage img, uint32_t startIndex);
 
@@ -139,10 +134,10 @@ public:
     VkFormat depthStencilFormat() const { return _dsFormat; }
 
 	/// Helper routine for creating a Vulkan image.
-	bool createTransientImage(const QSize size, VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage* images, VkDeviceMemory* mem, VkImageView* views, int count);
+	bool createVulkanImage(const QSize size, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage* images, VkDeviceMemory* mem, VkImageView* views, int count);
 
 	/// Creates a default Vulkan render pass.
-	VkRenderPass createDefaultRenderPass(VkFormat colorFormat);
+	VkRenderPass createDefaultRenderPass(VkFormat colorFormat, VkSampleCountFlagBits sampleCount);
 
 	/// Loads a SPIR-V shader from a file.
 	VkShaderModule createShader(const QString& filename);
@@ -212,9 +207,11 @@ private:
 	/// The format to use for the depth-stencil buffer.
     VkFormat _dsFormat = VK_FORMAT_D24_UNORM_S8_UINT;
 
+	/// A host visible memory type index suitable for general use.
     uint32_t _hostVisibleMemIndex;
+
+	/// A device local memory type index suitable for general use.
     uint32_t _deviceLocalMemIndex;
-    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 };
 
 }	// End of namespace

@@ -66,6 +66,9 @@ OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(DataSet* dataset)
 ******************************************************************************/
 bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer)
 {
+	// This method may only be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
 	if(!VulkanSceneRenderer::startRender(dataset, settings, frameBuffer))
 		return false;
 
@@ -82,20 +85,20 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 
 	// Determine offscreen framebuffer size.
 	_outputSize = frameBuffer->size();
-	_framebufferSize = QSize(_outputSize.width() * antialiasingLevel(), _outputSize.height() * antialiasingLevel());
+	setFrameBufferSize(QSize(_outputSize.width() * antialiasingLevel(), _outputSize.height() * antialiasingLevel()));
 
 	// Create Vulkan color buffer image.
 	VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	if(!device()->createTransientImage(_framebufferSize, colorFormat, usage, aspectFlags, &_colorImage, &_colorMem, &_colorView, 1))
+	if(!device()->createVulkanImage(frameBufferSize(), colorFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_colorImage, &_colorMem, &_colorView, 1))
 		throwException(tr("Could not create Vulkan offscreen image buffer."));
 
 	// Create Vulkan depth-stencil buffer image.
 	VkFormat dsFormat = device()->depthStencilFormat();
 	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	if(!device()->createTransientImage(_framebufferSize, dsFormat, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
+	if(!device()->createVulkanImage(frameBufferSize(), dsFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
 		throwException(tr("Could not create Vulkan offscreen depth-buffer image."));
 
 	// Create renderpass.
@@ -161,6 +164,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
         qWarning("OffscreenVulkanSceneRenderer: Failed to create renderpass: %d", err);
 		throwException(tr("Failed to create Vulkan renderpass for offscreen rendering."));
     }
+    setDefaultRenderPass(_renderPass);
 
 	// Create Vulkan framebuffer.
 	VkImageView attachments[2];
@@ -172,13 +176,56 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	framebufferCreateInfo.renderPass = _renderPass;
 	framebufferCreateInfo.attachmentCount = 2;
 	framebufferCreateInfo.pAttachments = attachments;
-	framebufferCreateInfo.width = _framebufferSize.width();
-	framebufferCreateInfo.height = _framebufferSize.height();
+	framebufferCreateInfo.width = frameBufferSize().width();
+	framebufferCreateInfo.height = frameBufferSize().height();
 	framebufferCreateInfo.layers = 1;
 	err = deviceFunctions()->vkCreateFramebuffer(logicalDevice(), &framebufferCreateInfo, nullptr, &_framebuffer);
     if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to create framebuffer: %d", err);
 		throwException(tr("Failed to create Vulkan framebuffer for offscreen rendering."));
+    }
+
+	// Create the linear tiled destination image to copy to and to read the memory from.
+	VkImageCreateInfo imgCreateInfo;
+    memset(&imgCreateInfo, 0, sizeof(imgCreateInfo));
+    imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imgCreateInfo.extent.width = frameBufferSize().width();
+	imgCreateInfo.extent.height = frameBufferSize().height();
+	imgCreateInfo.extent.depth = 1;
+	imgCreateInfo.arrayLayers = 1;
+	imgCreateInfo.mipLevels = 1;
+	imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imgCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	imgCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+	// Create the Vulkan image for reading back the framebuffer to host memory.
+	err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgCreateInfo, nullptr, &_frameGrabImage);
+	if(err != VK_SUCCESS) {
+        qWarning("OffscreenVulkanSceneRenderer: Failed to create image for readback: %d", err);
+        throwException(tr("Failed to create Vulkan image for framebuffer readback."));
+    }
+
+	// Create memory to back up the image.
+	VkMemoryRequirements memRequirements;
+	deviceFunctions()->vkGetImageMemoryRequirements(logicalDevice(), _frameGrabImage, &memRequirements);
+	VkMemoryAllocateInfo memAllocInfo = {
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        nullptr,
+        memRequirements.size,
+        device()->hostVisibleMemoryIndex()
+    };
+	err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &_frameGrabImageMem);
+	if(err != VK_SUCCESS) {
+        qWarning("OffscreenVulkanSceneRenderer: Failed to allocate image memory for readback: %d", err);
+        throwException(tr("Failed to allocate Vulkan image memory for framebuffer readback."));
+    }
+	deviceFunctions()->vkBindImageMemory(logicalDevice(), _frameGrabImage, _frameGrabImageMem, 0);
+	if(err != VK_SUCCESS) {
+        qWarning("OffscreenVulkanSceneRenderer: Failed to bind readback image memory: %d", err);
+        throwException(tr("Failed to bind Vulkan image memory for framebuffer readback."));
     }
 
 	return true;
@@ -189,6 +236,9 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 ******************************************************************************/
 void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
 {
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
 	// Allocate a Vulkan command buffer.
     VkCommandBufferAllocateInfo cmdBufInfo = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
@@ -198,30 +248,33 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 		throwException(tr("Failed to allocate Vulkan frame command buffer."));
     }
 
+	// Pass command buffer to renderer class.
     setCurrentCommandBuffer(_cmdBuf);
 
-    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr };
+	// Begin recording to the Vulkan command buffer.
+    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT , nullptr };
     err = deviceFunctions()->vkBeginCommandBuffer(_cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to begin frame command buffer: %d", err);
 		throwException(tr("Failed to begin Vulkan frame command buffer."));
     }
 
-    VkClearColorValue clearColor = {{ 0, 0, 0, 1 }};
+    VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
     VkClearDepthStencilValue clearDS = { 1, 0 };
-    VkClearValue clearValues[3];
+    VkClearValue clearValues[2];
     memset(clearValues, 0, sizeof(clearValues));
-    clearValues[0].color = clearValues[2].color = clearColor;
+    clearValues[0].color = clearColor;
     clearValues[1].depthStencil = clearDS;
 
+	// Begin a render pass.
     VkRenderPassBeginInfo rpBeginInfo;
     memset(&rpBeginInfo, 0, sizeof(rpBeginInfo));
     rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rpBeginInfo.renderPass = _renderPass;
     rpBeginInfo.framebuffer = _framebuffer;
-    rpBeginInfo.renderArea.extent.width = _framebufferSize.width();
-    rpBeginInfo.renderArea.extent.height = _framebufferSize.height();
-    rpBeginInfo.clearValueCount = (device()->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
+    rpBeginInfo.renderArea.extent.width = frameBufferSize().width();
+    rpBeginInfo.renderArea.extent.height = frameBufferSize().height();
+    rpBeginInfo.clearValueCount = 2;
     rpBeginInfo.pClearValues = clearValues;
     deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -233,124 +286,58 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 ******************************************************************************/
 bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
 	// Let the base class do the main rendering work.
 	if(!VulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
 		return false;
 
-    VkViewport viewport;
-    viewport.x = viewport.y = 0;
-    viewport.width = _framebufferSize.width();
-    viewport.height = _framebufferSize.height();
-    viewport.minDepth = 0;
-    viewport.maxDepth = 1;
-    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
-
-    VkRect2D scissor;
-    scissor.offset.x = scissor.offset.y = 0;
-    scissor.extent.width = viewport.width;
-    scissor.extent.height = viewport.height;
-    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
-
-    deviceFunctions()->vkCmdDraw(currentCommandBuffer(), 3, 1, 0, 0);
-
     deviceFunctions()->vkCmdEndRenderPass(currentCommandBuffer());
 
-	// QVulkanWindowPrivate::addReadback():
-
 	// Copy framebuffer image to host visible image.
-	const char* imagedata;
-	// Create the linear tiled destination image to copy to and to read the memory from
-	VkImageCreateInfo imgCreateInfo;
-    memset(&imgCreateInfo, 0, sizeof(imgCreateInfo));
-    imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-	imgCreateInfo.extent.width = _framebufferSize.width();
-	imgCreateInfo.extent.height = _framebufferSize.height();
-	imgCreateInfo.extent.depth = 1;
-	imgCreateInfo.arrayLayers = 1;
-	imgCreateInfo.mipLevels = 1;
-	imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imgCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
-	imgCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-	// Create the Vulkan image.
-	VkImage frameGrabImage;
-	VkResult err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgCreateInfo, nullptr, &frameGrabImage);
-	if(err != VK_SUCCESS) {
-        qWarning("OffscreenVulkanSceneRenderer: Failed to create image for readback: %d", err);
-        throwException(tr("Failed to create Vulkan image for framebuffer readback."));
-    }
-
-	// Create memory to back up the image.
-	VkMemoryRequirements memRequirements;
-	deviceFunctions()->vkGetImageMemoryRequirements(logicalDevice(), frameGrabImage, &memRequirements);
-	VkMemoryAllocateInfo memAllocInfo = {
-        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        nullptr,
-        memRequirements.size,
-        device()->hostVisibleMemoryIndex()
-    };
-	VkDeviceMemory frameGrabImageMem;
-	err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &frameGrabImageMem);
-	if(err != VK_SUCCESS) {
-        qWarning("OffscreenVulkanSceneRenderer: Failed to allocate image memory for readback: %d", err);
-        throwException(tr("Failed to allocate Vulkan image memory for framebuffer readback."));
-    }
-	deviceFunctions()->vkBindImageMemory(logicalDevice(), frameGrabImage, frameGrabImageMem, 0);
-	if(err != VK_SUCCESS) {
-        qWarning("OffscreenVulkanSceneRenderer: Failed to bind readback image memory: %d", err);
-        throwException(tr("Failed to bind Vulkan image memory for framebuffer readback."));
-    }
-
-	// Do the actual blit from the offscreen image to our host visible destination image
+	// Transition destination image to transfer destination layout.
 	VkImageMemoryBarrier barrier;
     memset(&barrier, 0, sizeof(barrier));
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.levelCount = barrier.subresourceRange.layerCount = 1;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    barrier.image = _colorImage;
-    deviceFunctions()->vkCmdPipelineBarrier(currentCommandBuffer(),
-                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                   0, 0, nullptr, 0, nullptr,
-                                   1, &barrier);
-    barrier.oldLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier.image = frameGrabImage;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount = barrier.subresourceRange.layerCount = 1;
+    barrier.image = _frameGrabImage;
     deviceFunctions()->vkCmdPipelineBarrier(currentCommandBuffer(),
-                                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
                                    0, 0, nullptr, 0, nullptr,
                                    1, &barrier);
+
+	// Do the actual blit from the offscreen image to our host visible destination image.
     VkImageCopy copyInfo;
     memset(&copyInfo, 0, sizeof(copyInfo));
     copyInfo.srcSubresource.aspectMask = copyInfo.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyInfo.srcSubresource.layerCount = copyInfo.dstSubresource.layerCount = 1;
-    copyInfo.extent.width = _framebufferSize.width();
-    copyInfo.extent.height = _framebufferSize.height();
+    copyInfo.extent.width = frameBufferSize().width();
+    copyInfo.extent.height = frameBufferSize().height();
     copyInfo.extent.depth = 1;
     deviceFunctions()->vkCmdCopyImage(currentCommandBuffer(), _colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             frameGrabImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyInfo);
+                             _frameGrabImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyInfo);
+
+	// Transition destination image to general layout, which is the required layout for mapping the image memory later on.
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    barrier.image = frameGrabImage;
+    barrier.image = _frameGrabImage;
     deviceFunctions()->vkCmdPipelineBarrier(currentCommandBuffer(),
                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
                                    VK_PIPELINE_STAGE_HOST_BIT,
                                    0, 0, nullptr, 0, nullptr,
                                    1, &barrier);	
 
-    err = deviceFunctions()->vkEndCommandBuffer(currentCommandBuffer());
+    VkResult err = deviceFunctions()->vkEndCommandBuffer(currentCommandBuffer());
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to end frame command buffer: %d", err);
 		throwException(tr("Failed to end Vulkan frame command buffer."));
@@ -379,30 +366,31 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 		throwException(tr("Failed to submit commands to Vulkan queue."));
     }
 
-	// QVulkanWindow::finishBlockingReadback():
-
 	// Block until the current frame is done.
 	deviceFunctions()->vkWaitForFences(logicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
 	// Release the fence object.
 	deviceFunctions()->vkDestroyFence(logicalDevice(), fence, nullptr);
 
+	// Get layout of the image (including row pitch).
 	VkImageSubresource subres = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
     VkSubresourceLayout layout;
-    deviceFunctions()->vkGetImageSubresourceLayout(logicalDevice(), frameGrabImage, &subres, &layout);
+    deviceFunctions()->vkGetImageSubresourceLayout(logicalDevice(), _frameGrabImage, &subres, &layout);
+
+	// Map image memory so we can start copying from it.
     uchar *p;
-    err = deviceFunctions()->vkMapMemory(logicalDevice(), frameGrabImageMem, layout.offset, layout.size, 0, reinterpret_cast<void**>(&p));
+    err = deviceFunctions()->vkMapMemory(logicalDevice(), _frameGrabImageMem, layout.offset, layout.size, 0, reinterpret_cast<void**>(&p));
     if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to map readback image memory after transfer: %d", err);
 		throwException(tr("Failed to map readback Vulkan image memory after transfer."));
     }
-	QImage frameGrabTargetImage(_framebufferSize, QImage::Format_RGBA8888);
+
+	// Copy pixel data over to a QImage.
+	QImage frameGrabTargetImage(frameBufferSize(), QImage::Format_RGBA8888);
     for(int y = 0; y < frameGrabTargetImage.height(); ++y) {
         memcpy(frameGrabTargetImage.scanLine(y), p, frameGrabTargetImage.width() * 4);
         p += layout.rowPitch;
     }
-    deviceFunctions()->vkUnmapMemory(logicalDevice(), frameGrabImageMem);
-    deviceFunctions()->vkDestroyImage(logicalDevice(), frameGrabImage, nullptr);
-    deviceFunctions()->vkFreeMemory(logicalDevice(), frameGrabImageMem, nullptr);
+    deviceFunctions()->vkUnmapMemory(logicalDevice(), _frameGrabImageMem);
     
 	// Rescale supersampled image to final size.
 	QImage scaledImage = frameGrabTargetImage.scaled(_outputSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -425,13 +413,16 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 ******************************************************************************/
 void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
-	VulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
 
-	// Destroy Vulkan command buffer.
+	// Release command buffer.
 	if(_cmdBuf) {
 		deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->graphicsCommandPool(), 1, &_cmdBuf);
 		_cmdBuf = VK_NULL_HANDLE;
 	}
+
+	VulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 }
 
 /******************************************************************************
@@ -439,8 +430,21 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 ******************************************************************************/
 void OffscreenVulkanSceneRenderer::endRender()
 {
-	// Release Vulkan resources.
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
+	// Wait for device to finish all work.
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
+
+	// Release Vulkan resources.
+	if(_frameGrabImage != VK_NULL_HANDLE) {
+	    deviceFunctions()->vkDestroyImage(logicalDevice(), _frameGrabImage, nullptr);
+		_frameGrabImage = VK_NULL_HANDLE;
+	}
+	if(_frameGrabImageMem != VK_NULL_HANDLE) {
+	    deviceFunctions()->vkFreeMemory(logicalDevice(), _frameGrabImageMem, nullptr);
+		_frameGrabImageMem = VK_NULL_HANDLE;
+	}
 	if(_framebuffer != VK_NULL_HANDLE) {
 		deviceFunctions()->vkDestroyFramebuffer(logicalDevice(), _framebuffer, nullptr);
 		_framebuffer = VK_NULL_HANDLE;
@@ -448,6 +452,7 @@ void OffscreenVulkanSceneRenderer::endRender()
     if(_renderPass != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyRenderPass(logicalDevice(), _renderPass, nullptr);
         _renderPass = VK_NULL_HANDLE;
+	    setDefaultRenderPass(VK_NULL_HANDLE);
     }
     if(_dsView != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyImageView(logicalDevice(), _dsView, nullptr);

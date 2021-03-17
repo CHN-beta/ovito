@@ -56,6 +56,9 @@ public:
 	/// Constructor.
 	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, int concurrentFrameCount = 2);
 
+	/// Destructor.
+	virtual ~VulkanSceneRenderer() { releaseResources(); }
+
 	/// Returns the logical Vulkan device used by the renderer.
 	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
 
@@ -120,6 +123,12 @@ public:
 	/// Sets the active Vulkan command buffer.
 	void setCurrentCommandBuffer(VkCommandBuffer cmdBuf) { _currentCommandBuffer = cmdBuf; }
 
+	/// Returns the size in pixels of the Vulkan frame buffer we are rendering into.
+	const QSize& frameBufferSize() const { return _frameBufferSize; }
+
+	/// Sets the size in pixels of the Vulkan frame buffer we are rendering into.
+	void setFrameBufferSize(const QSize& size) { _frameBufferSize = size; }
+
 protected:
 
 	/// Returns the supersampling level.
@@ -151,6 +160,9 @@ private:
 	/// The active command buffer for the current swap chain image.
 	VkCommandBuffer _currentCommandBuffer = VK_NULL_HANDLE;
 
+	/// The sample count used by the current Vulkan target rendering buffer.
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
 	/// The size of the frame buffer we are rendering into.
 	QSize _frameBufferSize;
 
@@ -162,9 +174,6 @@ private:
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
-
-    QMatrix4x4 m_proj;
-    float m_rotation = 0.0f;
 
     VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
     VkBuffer m_buf = VK_NULL_HANDLE;
@@ -183,10 +192,10 @@ private:
 	/// further corrections to the vertex Z positions. Geometry from OpenGL
 	/// applications can then be used as-is, assuming a rasterization state matching
 	/// OpenGL culling and front face settings.
-    QMatrix4x4 m_clipCorrect{1.0f, 0.0f, 0.0f, 0.0f,
-                            0.0f, -1.0f, 0.0f, 0.0f,
-                            0.0f, 0.0f, 0.5f, 0.5f,
-                            0.0f, 0.0f, 0.0f, 1.0f}; 
+    const Matrix4 _clipCorrection{1.0, 0.0, 0.0, 0.0,
+									0.0, -1.0, 0.0, 0.0,
+									0.0, 0.0, 0.5, 0.5,
+									0.0, 0.0, 0.0, 1.0}; 
 };
 
 }	// End of namespace

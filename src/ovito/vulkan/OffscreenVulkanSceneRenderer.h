@@ -57,9 +57,6 @@ public:
 	virtual void endRender() override;
 
 private:
-
-	/// The size of the Vulkan framebuffer in pixels.
-	QSize _framebufferSize;
 	
 	/// The resolution of the rendered output image.
 	QSize _outputSize;
@@ -75,6 +72,9 @@ private:
 	VkRenderPass _renderPass = VK_NULL_HANDLE;
 	VkFramebuffer _framebuffer = VK_NULL_HANDLE;
 	VkCommandBuffer _cmdBuf = VK_NULL_HANDLE;
+
+	VkDeviceMemory _frameGrabImageMem = VK_NULL_HANDLE;
+	VkImage _frameGrabImage = VK_NULL_HANDLE;
 };
 
 }	// End of namespace

@@ -60,7 +60,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
 
     // Make this a Vulkan compatible window.
     setSurfaceType(QSurface::VulkanSurface);
-	setVulkanInstance(_device->vulkanInstance());
+	setVulkanInstance(device()->vulkanInstance());
 
 	// Embed the QWindow in a QWidget container.
 	_widget = QWidget::createWindowContainer(this, parentWidget);
@@ -81,7 +81,6 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
 ******************************************************************************/
 void VulkanViewportWindow::renderLater()
 {
-	_updateRequested = true;
     // Request a deferred refresh of the QWindow.
 	QWindow::requestUpdate();
 }
@@ -92,14 +91,12 @@ void VulkanViewportWindow::renderLater()
 ******************************************************************************/
 void VulkanViewportWindow::processViewportUpdate()
 {
-	if(_updateRequested) {
-		OVITO_ASSERT_MSG(!viewport()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+    OVITO_ASSERT_MSG(!viewport()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+    OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 
-        // Note: All we can do is request a deferred window update. 
-        // A QWindow has no way of forcing an immediate repaint.
-		QWindow::requestUpdate();
-	}
+    // Note: All we can do is request a deferred window update. 
+    // A QWindow has no way of forcing an immediate repaint.
+    QWindow::requestUpdate();
 }
 
 /******************************************************************************
@@ -230,12 +227,16 @@ void VulkanViewportWindow::init()
     }
 
     try {
-        if(!_device->create(this)) {
+        if(!device()->create(this)) {
             _status = StatusUninitialized;
             qCDebug(lcGuiVk, "Attempting to restart in 2 seconds");
             QTimer::singleShot(2000, this, &VulkanViewportWindow::ensureStarted);
             return;
         }
+
+        // Make an extra call to vkGetPhysicalDeviceSurfaceSupportKHR() specifically for this window's surface to make the Vulkan validation layer happy.
+        if(!vulkanInstance()->supportsPresent(device()->physicalDevice(), device()->presentQueueFamilyIndex(), this))
+            throw Exception(tr("The selected Vulkan queue family does not support presenting to this viewport window."));
     }
     catch(const Exception& ex) {
         ex.reportError();
@@ -256,10 +257,10 @@ void VulkanViewportWindow::init()
     // because the renderpass should be available already from initResources (so that apps do not have to defer pipeline creation to initSwapChainResources), 
     // but the renderpass needs the final color format.
     uint32_t formatCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(_device->physicalDevice(), _surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device()->physicalDevice(), _surface, &formatCount, nullptr);
     QVector<VkSurfaceFormatKHR> formats(formatCount);
     if(formatCount)
-        vkGetPhysicalDeviceSurfaceFormatsKHR(_device->physicalDevice(), _surface, &formatCount, formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device()->physicalDevice(), _surface, &formatCount, formats.data());
     _colorFormat = VK_FORMAT_B8G8R8A8_UNORM; // our documented default if all else fails
     _colorSpace = VkColorSpaceKHR(0); // this is in fact VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
     // Pick the preferred format, if there is one.
@@ -280,11 +281,10 @@ void VulkanViewportWindow::init()
     }
     qCDebug(lcGuiVk, "Color format: %d", _colorFormat);
 
-    _defaultRenderPass = device()->createDefaultRenderPass(_colorFormat);
+    _defaultRenderPass = device()->createDefaultRenderPass(_colorFormat, _sampleCount);
     if(_defaultRenderPass == VK_NULL_HANDLE)
         return;
 
-    initResources();
     _status = StatusDeviceReady;
 }
 
@@ -307,7 +307,7 @@ void VulkanViewportWindow::recreateSwapChain()
         vkAcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(f->vkGetDeviceProcAddr(logicalDevice(), "vkAcquireNextImageKHR"));
         vkQueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(f->vkGetDeviceProcAddr(logicalDevice(), "vkQueuePresentKHR"));
     }
-    VkPhysicalDevice physDev = _device->physicalDevice();
+    VkPhysicalDevice physDev = device()->physicalDevice();
     VkSurfaceCapabilitiesKHR surfaceCaps;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDev, _surface, &surfaceCaps);
     uint32_t reqBufferCount = _swapChainBufferCount;
@@ -382,9 +382,10 @@ void VulkanViewportWindow::recreateSwapChain()
         qWarning("VulkanViewportWindow: Failed to get swapchain images: %d", err);
         return;
     }
-    if(!device()->createTransientImage(_swapChainImageSize, 
+    if(!device()->createVulkanImage(_swapChainImageSize, 
                               device()->depthStencilFormat(),
-                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                              sampleCountFlagBits(),
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
                               VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                               &_dsImage,
                               &_dsMem,
@@ -393,13 +394,14 @@ void VulkanViewportWindow::recreateSwapChain()
     {
         return;
     }
-    const bool msaa = device()->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT;
+    const bool msaa = sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT;
     VkImage msaaImages[MAX_SWAPCHAIN_BUFFER_COUNT];
     VkImageView msaaViews[MAX_SWAPCHAIN_BUFFER_COUNT];
     if(msaa) {
-        if(!device()->createTransientImage(_swapChainImageSize,
+        if(!device()->createVulkanImage(_swapChainImageSize,
                                   _colorFormat,
-                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                  sampleCountFlagBits(),
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
                                   VK_IMAGE_ASPECT_COLOR_BIT,
                                   msaaImages,
                                   &_msaaImageMem,
@@ -457,10 +459,10 @@ void VulkanViewportWindow::recreateSwapChain()
             qWarning("VulkanViewportWindow: Failed to create framebuffer: %d", err);
             return;
         }
-        if(_device->separatePresentQueue()) {
+        if(device()->separatePresentQueue()) {
             // Pre-build the static image-acquire-on-present-queue command buffer.
             VkCommandBufferAllocateInfo cmdBufInfo = {
-                VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, _device->presentCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
+                VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->presentCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
             err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &image.presTransCmdBuf);
             if(err != VK_SUCCESS) {
                 qWarning("VulkanViewportWindow: Failed to allocate acquire-on-present-queue command buffer: %d", err);
@@ -479,8 +481,8 @@ void VulkanViewportWindow::recreateSwapChain()
             presTrans.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             presTrans.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             presTrans.oldLayout = presTrans.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            presTrans.srcQueueFamilyIndex = _device->graphicsQueueFamilyIndex();
-            presTrans.dstQueueFamilyIndex = _device->presentQueueFamilyIndex();
+            presTrans.srcQueueFamilyIndex = device()->graphicsQueueFamilyIndex();
+            presTrans.dstQueueFamilyIndex = device()->presentQueueFamilyIndex();
             presTrans.image = image.image;
             presTrans.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             presTrans.subresourceRange.levelCount = presTrans.subresourceRange.layerCount = 1;
@@ -506,12 +508,11 @@ void VulkanViewportWindow::recreateSwapChain()
         frame.fenceWaitable = true; // fence was created in signaled state
         deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.imageSem);
         deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.drawSem);
-        if(_device->separatePresentQueue())
+        if(device()->separatePresentQueue())
             deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.presTransSem);
     }
     _currentFrame = 0;
     renderer()->setCurrentSwapChainFrame(0);
-    initSwapChainResources();
     _status = StatusReady;
 }
 
@@ -523,8 +524,6 @@ void VulkanViewportWindow::releaseSwapChain()
     if(!logicalDevice() || !_swapChain) // do not rely on 'status', a half done init must be cleaned properly too
         return;
     qCDebug(lcGuiVk, "Releasing swapchain");
-    deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
-    releaseSwapChainResources();
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
     for(int i = 0; i < renderer()->concurrentFrameCount(); ++i) {
         FrameResources& frame = _frameRes[i];
@@ -566,11 +565,11 @@ void VulkanViewportWindow::releaseSwapChain()
             image.imageView = VK_NULL_HANDLE;
         }
         if(image.cmdBuf) {
-            deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), _device->graphicsCommandPool(), 1, &image.cmdBuf);
+            deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->graphicsCommandPool(), 1, &image.cmdBuf);
             image.cmdBuf = VK_NULL_HANDLE;
         }
         if(image.presTransCmdBuf) {
-            deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), _device->presentCommandPool(), 1, &image.presTransCmdBuf);
+            deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->presentCommandPool(), 1, &image.presTransCmdBuf);
             image.presTransCmdBuf = VK_NULL_HANDLE;
         }
         if(image.msaaImageView) {
@@ -611,7 +610,7 @@ void VulkanViewportWindow::releaseSwapChain()
 ******************************************************************************/
 void VulkanViewportWindow::beginFrame()
 {
-    if(!_swapChain || _framePending)
+    if(!_swapChain)
         return;
 
     // Handle window being resized.
@@ -644,189 +643,74 @@ void VulkanViewportWindow::beginFrame()
             return;
         } 
         else {
-            if(!_device->checkDeviceLost(err))
+            if(!device()->checkDeviceLost(err))
                 qWarning("VulkanViewportWindow: Failed to acquire next swapchain image: %d", err);
             requestUpdate();
             return;
         }
     }
-    // Make sure the previous draw for the same image has finished
+    // Make sure the previous draw for the same image has finished.
     ImageResources& image = _imageRes[_currentImage];
     if(image.cmdFenceWaitable) {
         deviceFunctions()->vkWaitForFences(logicalDevice(), 1, &image.cmdFence, VK_TRUE, UINT64_MAX);
         deviceFunctions()->vkResetFences(logicalDevice(), 1, &image.cmdFence);
         image.cmdFenceWaitable = false;
     }
-    // Build new draw command buffer
+#if 0
+    // Build new draw command buffer.
     if(image.cmdBuf) {
-        deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), _device->graphicsCommandPool(), 1, &image.cmdBuf);
-        image.cmdBuf = 0;
+        deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->graphicsCommandPool(), 1, &image.cmdBuf);
+        image.cmdBuf = VK_NULL_HANDLE;
     }
-    VkCommandBufferAllocateInfo cmdBufInfo = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, _device->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
+    VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
     VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &image.cmdBuf);
     if(err != VK_SUCCESS) {
-        if(!_device->checkDeviceLost(err))
+        if(!device()->checkDeviceLost(err))
             qWarning("VulkanViewportWindow: Failed to allocate frame command buffer: %d", err);
         return;
     }
-    VkCommandBufferBeginInfo cmdBufBeginInfo = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr };
-    err = deviceFunctions()->vkBeginCommandBuffer(image.cmdBuf, &cmdBufBeginInfo);
+#else
+    // Instead of releasing/recreating the draw command buffer, create it only once and reuse it.
+    if(image.cmdBuf == VK_NULL_HANDLE) {
+        VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
+        VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &image.cmdBuf);
+        if(err != VK_SUCCESS) {
+            if(!device()->checkDeviceLost(err))
+                qWarning("VulkanViewportWindow: Failed to allocate frame command buffer: %d", err);
+            return;
+        }
+    }
+    else {
+        // Reset entire command pool.
+        VkResult err = deviceFunctions()->vkResetCommandBuffer(image.cmdBuf, 0);
+        if(err != VK_SUCCESS) {
+            if(!device()->checkDeviceLost(err))
+                qWarning("VulkanViewportWindow: Failed to reset frame command buffer: %d", err);
+            return;
+        }
+    }
+#endif
+    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr };
+    VkResult err = err = deviceFunctions()->vkBeginCommandBuffer(image.cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
-        if(!_device->checkDeviceLost(err))
+        if(!device()->checkDeviceLost(err))
             qWarning("VulkanViewportWindow: Failed to begin frame command buffer: %d", err);
         return;
     }
-    _framePending = true;
-    startNextFrame();
-    // Done for now - endFrame() will get invoked when frameReady() is called back.
-}
 
-/******************************************************************************
-* Finishes rendering a frame.
-******************************************************************************/
-void VulkanViewportWindow::endFrame()
-{
-    FrameResources& frame = _frameRes[_currentFrame];
-    ImageResources& image = _imageRes[_currentImage];
-    if(_device->separatePresentQueue()) {
-        // Add the swapchain image release to the command buffer that will be
-        // submitted to the graphics queue.
-        VkImageMemoryBarrier presTrans;
-        memset(&presTrans, 0, sizeof(presTrans));
-        presTrans.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        presTrans.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        presTrans.oldLayout = presTrans.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        presTrans.srcQueueFamilyIndex = _device->graphicsQueueFamilyIndex();
-        presTrans.dstQueueFamilyIndex = _device->presentQueueFamilyIndex();
-        presTrans.image = image.image;
-        presTrans.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        presTrans.subresourceRange.levelCount = presTrans.subresourceRange.layerCount = 1;
-        deviceFunctions()->vkCmdPipelineBarrier(image.cmdBuf,
-                                       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                       0, 0, nullptr, 0, nullptr,
-                                       1, &presTrans);
-    }
-    VkResult err = deviceFunctions()->vkEndCommandBuffer(image.cmdBuf);
-    if(err != VK_SUCCESS) {
-        if(!_device->checkDeviceLost(err))
-            qWarning("VulkanViewportWindow: Failed to end frame command buffer: %d", err);
-        return;
-    }
-    // Submit draw calls
-    VkSubmitInfo submitInfo;
-    memset(&submitInfo, 0, sizeof(submitInfo));
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &image.cmdBuf;
-    if(frame.imageSemWaitable) {
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &frame.imageSem;
-    }
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &frame.drawSem;
-    VkPipelineStageFlags psf = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    submitInfo.pWaitDstStageMask = &psf;
-    Q_ASSERT(!image.cmdFenceWaitable);
-    err = deviceFunctions()->vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, image.cmdFence);
-    if(err == VK_SUCCESS) {
-        frame.imageSemWaitable = false;
-        image.cmdFenceWaitable = true;
-    } 
-    else {
-        if(!_device->checkDeviceLost(err))
-            qWarning("VulkanViewportWindow: Failed to submit to graphics queue: %d", err);
-        return;
-    }
-    if(_device->separatePresentQueue()) {
-        // Submit the swapchain image acquire to the present queue.
-        submitInfo.pWaitSemaphores = &frame.drawSem;
-        submitInfo.pSignalSemaphores = &frame.presTransSem;
-        submitInfo.pCommandBuffers = &image.presTransCmdBuf; // must be USAGE_SIMULTANEOUS
-        err = deviceFunctions()->vkQueueSubmit(_device->presentQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        if(err != VK_SUCCESS) {
-            if(!_device->checkDeviceLost(err))
-                qWarning("VulkanViewportWindow: Failed to submit to present queue: %d", err);
-            return;
-        }
-    }
-    // Queue present
-    VkPresentInfoKHR presInfo;
-    memset(&presInfo, 0, sizeof(presInfo));
-    presInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presInfo.swapchainCount = 1;
-    presInfo.pSwapchains = &_swapChain;
-    presInfo.pImageIndices = &_currentImage;
-    presInfo.waitSemaphoreCount = 1;
-    presInfo.pWaitSemaphores = !_device->separatePresentQueue() ? &frame.drawSem : &frame.presTransSem;
-    err = vkQueuePresentKHR(_device->graphicsQueue(), &presInfo);
-    if(err != VK_SUCCESS) {
-        if(err == VK_ERROR_OUT_OF_DATE_KHR) {
-            recreateSwapChain();
-            requestUpdate();
-            return;
-        } 
-        else if(err != VK_SUBOPTIMAL_KHR) {
-            if(!_device->checkDeviceLost(err))
-                qWarning("VulkanViewportWindow: Failed to present: %d", err);
-            return;
-        }
-    }
-    frame.imageAcquired = false;
-    vulkanInstance()->presentQueued(this);
-    _currentFrame = (_currentFrame + 1) % renderer()->concurrentFrameCount();
-    renderer()->setCurrentSwapChainFrame(_currentFrame);
-}
-
-/******************************************************************************
-* Releases all Vulkan resources.
-******************************************************************************/
-void VulkanViewportWindow::reset()
-{
-    if(!logicalDevice()) // Do not rely on 'status', a half done init must be cleaned properly too
-        return;
-    releaseSwapChain();
-    qCDebug(lcGuiVk, "VulkanViewportWindow reset");
-    deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
-    releaseResources();
-    deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
-    if(_defaultRenderPass) {
-        deviceFunctions()->vkDestroyRenderPass(logicalDevice(), _defaultRenderPass, nullptr);
-        _defaultRenderPass = VK_NULL_HANDLE;
-        renderer()->setDefaultRenderPass(VK_NULL_HANDLE);
-    }
-    _surface = VK_NULL_HANDLE;
-    _status = StatusUninitialized;
-}
-
-/******************************************************************************
-* This function must be called exactly once in response to each invocation of
-* the startNextFrame() implementation. At the time of
-* this call, the main command buffer, exposed via currentCommandBuffer(),
-* must have all necessary rendering commands added to it since this function
-* will trigger submitting the commands and queuing the present command.
-* This function must only be called from the gui/main thread.
-******************************************************************************/
-void VulkanViewportWindow::frameReady()
-{
-    Q_ASSERT_X(QThread::currentThread() == QCoreApplication::instance()->thread(), "VulkanViewportWindow", "frameReady() can only be called from the GUI (main) thread");
-    if(!_framePending) {
-        qWarning("VulkanViewportWindow: frameReady() called without a corresponding startNextFrame()");
-        return;
-    }
-    _framePending = false;
-    endFrame();
-}
-
-void VulkanViewportWindow::startNextFrame()
-{
-    VkCommandBuffer cb = currentCommandBuffer();
-    renderer()->setCurrentCommandBuffer(cb);
+    renderer()->setCurrentCommandBuffer(currentCommandBuffer());
+    renderer()->setDefaultRenderPass(defaultRenderPass());
     const QSize sz = swapChainImageSize();
+    renderer()->setFrameBufferSize(sz);
 
-    VkClearColorValue clearColor = {{ 0, 0, 0, 1 }};
+    // Use the viewport's background color to clear frame buffer.
+    ColorA backgroundColor{0,0,0,1};
+    if(!viewport()->renderPreviewMode())
+        backgroundColor = Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG);
+    else if(viewport()->dataset()->renderSettings())
+        backgroundColor = viewport()->dataset()->renderSettings()->backgroundColor();
+
+    VkClearColorValue clearColor = {{ (float)backgroundColor.r(), (float)backgroundColor.g(), (float)backgroundColor.b(), (float)backgroundColor.a() }};
     VkClearDepthStencilValue clearDS = { 1, 0 };
     VkClearValue clearValues[3];
     memset(clearValues, 0, sizeof(clearValues));
@@ -840,12 +724,9 @@ void VulkanViewportWindow::startNextFrame()
     rpBeginInfo.framebuffer = currentFramebuffer();
     rpBeginInfo.renderArea.extent.width = sz.width();
     rpBeginInfo.renderArea.extent.height = sz.height();
-    rpBeginInfo.clearValueCount = (device()->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
+    rpBeginInfo.clearValueCount = (sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
     rpBeginInfo.pClearValues = clearValues;
-    VkCommandBuffer cmdBuf = currentCommandBuffer();
-    deviceFunctions()->vkCmdBeginRenderPass(cmdBuf, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	_updateRequested = false;
+    deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport() && !viewport()->isRendering()) {
@@ -873,25 +754,125 @@ void VulkanViewportWindow::startNextFrame()
         }
     }
 
-    VkViewport viewport;
-    viewport.x = viewport.y = 0;
-    viewport.width = sz.width();
-    viewport.height = sz.height();
-    viewport.minDepth = 0;
-    viewport.maxDepth = 1;
-    deviceFunctions()->vkCmdSetViewport(cb, 0, 1, &viewport);
+    deviceFunctions()->vkCmdEndRenderPass(currentCommandBuffer());
 
-    VkRect2D scissor;
-    scissor.offset.x = scissor.offset.y = 0;
-    scissor.extent.width = viewport.width;
-    scissor.extent.height = viewport.height;
-    deviceFunctions()->vkCmdSetScissor(cb, 0, 1, &scissor);
+    endFrame();
+}
 
-    deviceFunctions()->vkCmdDraw(cb, 3, 1, 0, 0);
+/******************************************************************************
+* Finishes rendering a frame.
+******************************************************************************/
+void VulkanViewportWindow::endFrame()
+{
+    FrameResources& frame = _frameRes[_currentFrame];
+    ImageResources& image = _imageRes[_currentImage];
+    if(device()->separatePresentQueue()) {
+        // Add the swapchain image release to the command buffer that will be
+        // submitted to the graphics queue.
+        VkImageMemoryBarrier presTrans;
+        memset(&presTrans, 0, sizeof(presTrans));
+        presTrans.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        presTrans.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        presTrans.oldLayout = presTrans.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        presTrans.srcQueueFamilyIndex = device()->graphicsQueueFamilyIndex();
+        presTrans.dstQueueFamilyIndex = device()->presentQueueFamilyIndex();
+        presTrans.image = image.image;
+        presTrans.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        presTrans.subresourceRange.levelCount = presTrans.subresourceRange.layerCount = 1;
+        deviceFunctions()->vkCmdPipelineBarrier(image.cmdBuf,
+                                       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                       0, 0, nullptr, 0, nullptr,
+                                       1, &presTrans);
+    }
+    VkResult err = deviceFunctions()->vkEndCommandBuffer(image.cmdBuf);
+    if(err != VK_SUCCESS) {
+        if(!device()->checkDeviceLost(err))
+            qWarning("VulkanViewportWindow: Failed to end frame command buffer: %d", err);
+        return;
+    }
+    // Submit draw calls
+    VkSubmitInfo submitInfo;
+    memset(&submitInfo, 0, sizeof(submitInfo));
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &image.cmdBuf;
+    if(frame.imageSemWaitable) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &frame.imageSem;
+    }
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &frame.drawSem;
+    VkPipelineStageFlags psf = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submitInfo.pWaitDstStageMask = &psf;
+    Q_ASSERT(!image.cmdFenceWaitable);
+    err = deviceFunctions()->vkQueueSubmit(device()->graphicsQueue(), 1, &submitInfo, image.cmdFence);
+    if(err == VK_SUCCESS) {
+        frame.imageSemWaitable = false;
+        image.cmdFenceWaitable = true;
+    } 
+    else {
+        if(!device()->checkDeviceLost(err))
+            qWarning("VulkanViewportWindow: Failed to submit to graphics queue: %d", err);
+        return;
+    }
+    if(device()->separatePresentQueue()) {
+        // Submit the swapchain image acquire to the present queue.
+        submitInfo.pWaitSemaphores = &frame.drawSem;
+        submitInfo.pSignalSemaphores = &frame.presTransSem;
+        submitInfo.pCommandBuffers = &image.presTransCmdBuf; // must be USAGE_SIMULTANEOUS
+        err = deviceFunctions()->vkQueueSubmit(device()->presentQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        if(err != VK_SUCCESS) {
+            if(!device()->checkDeviceLost(err))
+                qWarning("VulkanViewportWindow: Failed to submit to present queue: %d", err);
+            return;
+        }
+    }
+    // Queue present
+    VkPresentInfoKHR presInfo;
+    memset(&presInfo, 0, sizeof(presInfo));
+    presInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presInfo.swapchainCount = 1;
+    presInfo.pSwapchains = &_swapChain;
+    presInfo.pImageIndices = &_currentImage;
+    presInfo.waitSemaphoreCount = 1;
+    presInfo.pWaitSemaphores = !device()->separatePresentQueue() ? &frame.drawSem : &frame.presTransSem;
+    err = vkQueuePresentKHR(device()->graphicsQueue(), &presInfo);
+    if(err != VK_SUCCESS) {
+        if(err == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapChain();
+            requestUpdate();
+            return;
+        } 
+        else if(err != VK_SUBOPTIMAL_KHR) {
+            if(!device()->checkDeviceLost(err))
+                qWarning("VulkanViewportWindow: Failed to present: %d", err);
+            return;
+        }
+    }
+    frame.imageAcquired = false;
+    vulkanInstance()->presentQueued(this);
+    _currentFrame = (_currentFrame + 1) % renderer()->concurrentFrameCount();
+    renderer()->setCurrentSwapChainFrame(_currentFrame);
+}
 
-    deviceFunctions()->vkCmdEndRenderPass(cmdBuf);
-
-    frameReady();
+/******************************************************************************
+* Releases all Vulkan resources.
+******************************************************************************/
+void VulkanViewportWindow::reset()
+{
+    if(!logicalDevice()) // Do not rely on 'status', a half done init must be cleaned properly too
+        return;
+    releaseSwapChain();
+    qCDebug(lcGuiVk, "VulkanViewportWindow reset");
+    deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
+    if(_defaultRenderPass) {
+        deviceFunctions()->vkDestroyRenderPass(logicalDevice(), _defaultRenderPass, nullptr);
+        _defaultRenderPass = VK_NULL_HANDLE;
+        renderer()->setDefaultRenderPass(VK_NULL_HANDLE);
+    }
+    _surface = VK_NULL_HANDLE;
+    _status = StatusUninitialized;
 }
 
 }	// End of namespace

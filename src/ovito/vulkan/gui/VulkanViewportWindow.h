@@ -87,14 +87,6 @@ public:
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
-    void initResources() {}
-    void initSwapChainResources() {}
-    void releaseSwapChainResources() {}
-    void releaseResources() {}
-
-	/// Is called when the draw calls for the next frame are to be added to the command buffer.
-	void startNextFrame();
-
 	/// Sets the preferred \a formats of the swapchain.
 	void setPreferredColorFormats(const QVector<VkFormat>& formats);
 
@@ -109,29 +101,18 @@ public:
 	QSize swapChainImageSize() const { return _swapChainImageSize; }
 
     /// Returns the current frame index in the range [0, concurrentFrameCount() - 1].
-	int currentFrame() const {
-    	if(!_framePending)
-        	qWarning("VulkanViewportWindow: Attempted to call currentFrame() without an active frame");
-    	return _currentFrame; 
-	}
+	int currentFrame() const { return _currentFrame; }
 
 	/// Returns the active command buffer for the current swap chain image.
-	VkCommandBuffer currentCommandBuffer() const {
-		if(!_framePending) {
-			qWarning("VulkanViewportWindow: Attempted to call currentCommandBuffer() without an active frame");
-			return VK_NULL_HANDLE;
-		}
-		return _imageRes[_currentImage].cmdBuf;
-	}
+	VkCommandBuffer currentCommandBuffer() const { return _imageRes[_currentImage].cmdBuf; }
 
 	/// Returns a VkFramebuffer for the current swapchain image using the default render pass.
-	VkFramebuffer currentFramebuffer() const {
-		if(!_framePending) {
-			qWarning("VulkanViewportWindow: Attempted to call currentFramebuffer() without an active frame");
-			return VK_NULL_HANDLE;
-		}
-		return _imageRes[_currentImage].fb;
-	}	
+	VkFramebuffer currentFramebuffer() const { return _imageRes[_currentImage].fb; }	
+
+	/// Returns the current sample count as a \c VkSampleCountFlagBits value.
+    /// When targeting the default render target, the \c rasterizationSamples field
+    /// of \c VkPipelineMultisampleStateCreateInfo must be set to this value.
+	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
 
 	/// Returns the Vulkan logical device handle.
 	VkDevice logicalDevice() const { return _device->logicalDevice(); }
@@ -203,16 +184,10 @@ private:
 	/// Finishes rendering a frame.
 	void endFrame();
 
-	/// This function must be called exactly once in response to each invocation of the startNextFrame() implementation. 
-	void frameReady();
-
 private:
 
 	/// The container widget created for the QVulkanWindow.
 	QWidget* _widget;
-
-	/// A flag that indicates that a viewport update has been requested.
-	bool _updateRequested = false;
 
 	/// This is the renderer of the interactive viewport.
 	OORef<ViewportVulkanSceneRenderer> _viewportRenderer;
@@ -236,21 +211,26 @@ private:
     QVector<VkFormat> _requestedColorFormats;
     VkFormat _colorFormat;
     VkColorSpaceKHR _colorSpace;
-    PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
+    
+	PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
     PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
     PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
     PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
     PFN_vkQueuePresentKHR vkQueuePresentKHR;
     PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
-    static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
+    
+	static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
 	static const int MAX_CONCURRENT_FRAME_COUNT = VulkanDevice::MAX_CONCURRENT_FRAME_COUNT;
     static const int MAX_FRAME_LAG = MAX_CONCURRENT_FRAME_COUNT;
-    VkPresentModeKHR _presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    int _swapChainBufferCount = 2;
+    
+	VkPresentModeKHR _presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    
+	int _swapChainBufferCount = 2;
     QSize _swapChainImageSize;
     VkSwapchainKHR _swapChain = VK_NULL_HANDLE;
-    struct ImageResources {
+    
+	struct ImageResources {
         VkImage image = VK_NULL_HANDLE;
         VkImageView imageView = VK_NULL_HANDLE;
         VkCommandBuffer cmdBuf = VK_NULL_HANDLE;
@@ -261,9 +241,12 @@ private:
         VkImage msaaImage = VK_NULL_HANDLE;
         VkImageView msaaImageView = VK_NULL_HANDLE;
     } _imageRes[MAX_SWAPCHAIN_BUFFER_COUNT];
-    VkDeviceMemory _msaaImageMem = VK_NULL_HANDLE;
-    uint32_t _currentImage;
-    struct FrameResources {
+    
+	VkDeviceMemory _msaaImageMem = VK_NULL_HANDLE;
+    
+	uint32_t _currentImage;
+    
+	struct FrameResources {
         VkFence fence = VK_NULL_HANDLE;
         bool fenceWaitable = false;
         VkSemaphore imageSem = VK_NULL_HANDLE;
@@ -272,12 +255,17 @@ private:
         bool imageAcquired = false;
         bool imageSemWaitable = false;
     } _frameRes[MAX_FRAME_LAG];
-    uint32_t _currentFrame;
-    VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
-    VkDeviceMemory _dsMem = VK_NULL_HANDLE;
+    
+	uint32_t _currentFrame;
+    
+	VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
+    
+	VkDeviceMemory _dsMem = VK_NULL_HANDLE;
     VkImage _dsImage = VK_NULL_HANDLE;
     VkImageView _dsView = VK_NULL_HANDLE;
-    bool _framePending = false;
+
+	/// The sample count used by the Vulkan framebuffer.
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 };
 
 }	// End of namespace

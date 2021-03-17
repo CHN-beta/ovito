@@ -31,6 +31,15 @@ namespace Ovito {
 Q_LOGGING_CATEGORY(lcGuiVk, "qt.vulkan");
 
 /******************************************************************************
+* Callback function for Vulkan debug layers.
+******************************************************************************/
+static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage)
+{
+    qDebug() << "vulkanDebugFilter:" << QString::fromUtf8(pLayerPrefix) << QString::fromUtf8(pMessage);
+    return false;
+}
+
+/******************************************************************************
 * Returns a reference to the global Vulkan instance.
 ******************************************************************************/
 std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
@@ -43,6 +52,7 @@ std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
 		inst = std::make_shared<QVulkanInstance>();
 #ifdef OVITO_DEBUG
 		inst->setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
+        inst->installDebugOutputFilter(&vulkanDebugFilter);
 #endif
 		if(!inst->create())
 			throw Exception(tr("Failed to create Vulkan instance: %1").arg(inst->errorCode()));
@@ -328,11 +338,13 @@ bool VulkanDevice::create(QWindow* window)
     memset(&poolInfo, 0, sizeof(poolInfo));
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.queueFamilyIndex = _gfxQueueFamilyIdx;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_cmdPool);
     if(err != VK_SUCCESS)
         throw Exception(tr("Failed to create Vulkan command pool (error code %1).").arg(err));
     if(separatePresentQueue()) {
         poolInfo.queueFamilyIndex = _presQueueFamilyIdx;
+        poolInfo.flags = 0;
         err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_presCmdPool);
         if(err != VK_SUCCESS)
 	        throw Exception(tr("Failed to create Vulkan command pool for present queue (error code %1).").arg(err));
@@ -429,18 +441,29 @@ void VulkanDevice::reset()
 {
     if(logicalDevice() == VK_NULL_HANDLE)
         return;
+
+    // Tell clients of the class to also release their Vulkan resources.
     Q_EMIT releaseResourcesRequested();
     qCDebug(lcGuiVk, "VulkanDevice reset");
+
+    // Release command buffer pool used for graphics rendering.
     if(graphicsCommandPool() != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyCommandPool(logicalDevice(), graphicsCommandPool(), nullptr);
         _cmdPool = VK_NULL_HANDLE;
     }
+
+    // Release command buffer pool used for presentation.
     if(presentCommandPool() != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyCommandPool(logicalDevice(), presentCommandPool(), nullptr);
         _presCmdPool = VK_NULL_HANDLE;
     }
+
+    // Release the logical device.
 	deviceFunctions()->vkDestroyDevice(logicalDevice(), nullptr);
+    // Discard cached device function pointers held by Qt.
 	vulkanInstance()->resetDeviceFunctions(logicalDevice());
+
+    // Reset internal handles.
 	_device = VK_NULL_HANDLE;
 	_deviceFunctions = nullptr;
 }
@@ -464,8 +487,9 @@ bool VulkanDevice::checkDeviceLost(VkResult err)
 /******************************************************************************
 * Helper routine for creating a Vulkan image.
 ******************************************************************************/
-bool VulkanDevice::createTransientImage(const QSize size,
+bool VulkanDevice::createVulkanImage(const QSize size,
                                         VkFormat format,
+                                        VkSampleCountFlagBits sampleCount,
                                         VkImageUsageFlags usage,
                                         VkImageAspectFlags aspectMask,
                                         VkImage* images,
@@ -486,9 +510,9 @@ bool VulkanDevice::createTransientImage(const QSize size,
         imgInfo.extent.depth = 1;
         imgInfo.mipLevels = 1;
         imgInfo.arrayLayers = 1;
-        imgInfo.samples = sampleCountFlagBits();
+        imgInfo.samples = sampleCount;
         imgInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imgInfo.usage = usage | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+        imgInfo.usage = usage;
         err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgInfo, nullptr, images + i);
         if(err != VK_SUCCESS) {
             qWarning("VulkanDevice: Failed to create image: %d", err);
@@ -551,11 +575,11 @@ bool VulkanDevice::createTransientImage(const QSize size,
 /******************************************************************************
 * Creates a default Vulkan render pass.
 ******************************************************************************/
-VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat)
+VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat, VkSampleCountFlagBits sampleCount)
 {
     VkAttachmentDescription attDesc[3];
     memset(attDesc, 0, sizeof(attDesc));
-    const bool msaa = sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT;
+    const bool msaa = sampleCount > VK_SAMPLE_COUNT_1_BIT;
     // This is either the non-msaa render target or the resolve target.
     attDesc[0].format = colorFormat;
     attDesc[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -566,7 +590,7 @@ VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat)
     attDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attDesc[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     attDesc[1].format = depthStencilFormat();
-    attDesc[1].samples = sampleCountFlagBits();
+    attDesc[1].samples = sampleCount;
     attDesc[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attDesc[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attDesc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -576,7 +600,7 @@ VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat)
     if(msaa) {
         // msaa render target
         attDesc[2].format = colorFormat;
-        attDesc[2].samples = sampleCountFlagBits();
+        attDesc[2].samples = sampleCount;
         attDesc[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attDesc[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attDesc[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

@@ -90,32 +90,43 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 {
 	SceneRenderer::beginFrame(time, params, vp);
 
+	// This method may only be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
     // Make sure our Vulkan objects have been created.
     initResources();
 
-    // Projection matrix
-    const QSize sz(10, 10);
-    m_proj = m_clipCorrect; // adjust for Vulkan-OpenGL clip space differences
-    m_proj.perspective(45.0f, sz.width() / (float) sz.height(), 0.01f, 100.0f);
-    m_proj.translate(0, 0, -4);
+    // Specify Vulkan viewport area.
+    VkViewport viewport;
+    viewport.x = viewport.y = 0;
+    viewport.width = frameBufferSize().width();
+    viewport.height = frameBufferSize().height();
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
 
-    quint8 *p;
+    // Specify Vulkan scissor rectangle.
+    VkRect2D scissor;
+    scissor.offset.x = scissor.offset.y = 0;
+    scissor.extent.width = viewport.width;
+    scissor.extent.height = viewport.height;
+    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
+
+    // Full view-projection matrix including OpenGL -> Vulkan convention correction.
+    QMatrix4x4 proj = _clipCorrection * projParams().projectionMatrix * projParams().viewMatrix;
+
+    quint8* p;
     VkResult err = deviceFunctions()->vkMapMemory(logicalDevice(), m_bufMem, m_uniformBufInfo[currentSwapChainFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void **>(&p));
     if(err != VK_SUCCESS)
         qFatal("Failed to map memory: %d", err);
-    QMatrix4x4 m = m_proj;
-    m.rotate(m_rotation, 0, 1, 0);
-    memcpy(p, m.constData(), 16 * sizeof(float));
+    memcpy(p, proj.constData(), 16 * sizeof(float));
     deviceFunctions()->vkUnmapMemory(logicalDevice(), m_bufMem);
 
-    // Not exactly a real animation system, just advance on every frame for now.
-    m_rotation += 10.0f;
-
     deviceFunctions()->vkCmdBindPipeline(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-    deviceFunctions()->vkCmdBindDescriptorSets(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-                            &m_descSet[currentSwapChainFrame()], 0, nullptr);
+    deviceFunctions()->vkCmdBindDescriptorSets(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descSet[currentSwapChainFrame()], 0, nullptr);
     VkDeviceSize vbOffset = 0;
-    deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 0, 1, &m_buf, &vbOffset);    
+    deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 0, 1, &m_buf, &vbOffset);
+    deviceFunctions()->vkCmdDraw(currentCommandBuffer(), 3, 1, 0, 0);
 }
 
 /******************************************************************************
@@ -123,6 +134,10 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 ******************************************************************************/
 void VulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
+    if(!isInteractive()) {
+        releaseResources();
+    }
+
 	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 }
 
@@ -410,8 +425,8 @@ void VulkanSceneRenderer::initResources()
     VkPipelineMultisampleStateCreateInfo ms;
     memset(&ms, 0, sizeof(ms));
     ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    // Enable multisampling.
-    ms.rasterizationSamples = device()->sampleCountFlagBits();
+    // Enable multisampling if requested.
+    ms.rasterizationSamples = _sampleCount;
     pipelineInfo.pMultisampleState = &ms;
 
     VkPipelineDepthStencilStateCreateInfo ds;
@@ -456,6 +471,9 @@ void VulkanSceneRenderer::initResources()
 
 void VulkanSceneRenderer::releaseResources()
 {
+	// This method may only be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+
 	if(!deviceFunctions())
 		return;
 
