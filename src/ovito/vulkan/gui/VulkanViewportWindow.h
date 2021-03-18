@@ -254,6 +254,7 @@ private:
         VkSemaphore presTransSem = VK_NULL_HANDLE;
         bool imageAcquired = false;
         bool imageSemWaitable = false;
+		VulkanDevice::ResourceFrameHandle resourceFrame = 0;
     } _frameRes[MAX_FRAME_LAG];
     
 	uint32_t _currentFrame;

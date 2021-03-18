@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 
 #include <QVulkanInstance>
 
@@ -44,6 +45,9 @@ public:
 	/// Maximum number of rendering frames that can be potentially active at the same time.
 	static const int MAX_CONCURRENT_FRAME_COUNT = 3;
 
+	/// Data type used by the Vulkan resource manager when referring to an active frame being rendered on the CPU and/or the GPU.
+	using ResourceFrameHandle = int;
+
 	/// Destructor.
 	~VulkanDevice() { reset(); }
 
@@ -57,6 +61,9 @@ public:
 	/// Requests the usage of the physical device with index \a idx. The index
 	/// corresponds to the list returned from availablePhysicalDevices().
 	void setPhysicalDeviceIndex(int idx);
+
+	/// Returns the index of the physical device to be used.
+	int physicalDeviceIndex() const { return _physDevIndex; }
 
 	/// Returns the list of the extensions that are supported by logical devices
 	/// created from the physical device selected by setPhysicalDeviceIndex().
@@ -133,6 +140,9 @@ public:
 	/// Returns the format to use for the standard depth-stencil buffer.
     VkFormat depthStencilFormat() const { return _dsFormat; }
 
+	/// Returns the global Vulkan pipeline cache.
+	VkPipelineCache pipelineCache() const { return _pipelineCache; }
+
 	/// Helper routine for creating a Vulkan image.
 	bool createVulkanImage(const QSize size, VkFormat format, VkSampleCountFlagBits sampleCount, VkImageUsageFlags usage, VkImageAspectFlags aspectMask, VkImage* images, VkDeviceMemory* mem, VkImageView* views, int count);
 
@@ -145,6 +155,15 @@ public:
 	static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign) {
 	    return (v + byteAlign - 1) & ~(byteAlign - 1);
 	}
+
+	/// Informs the resource manager that a new frame starts being rendered.
+	ResourceFrameHandle acquireResourceFrame();
+
+	/// Informs the resource manager that a frame has completely finished rendering and all related Vulkan resources can be released.
+	void releaseResourceFrame(ResourceFrameHandle frame);
+
+	/// Uploads an OVITO DataBuffer to the Vulkan device.
+	VkBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame);
 
 Q_SIGNALS:
 
@@ -212,6 +231,21 @@ private:
 
 	/// A device local memory type index suitable for general use.
     uint32_t _deviceLocalMemIndex;
+
+	/// The Vulkan pipeline cache.
+	VkPipelineCache _pipelineCache = VK_NULL_HANDLE;
+
+	struct DataBufferInfo {
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VkDeviceMemory bufferMem = VK_NULL_HANDLE;
+		ResourceFrameHandle resourceFrame;
+	};
+
+	/// Keeps track of the data buffers that have been uploaded to the Vulkan device.
+	std::map<ConstDataBufferPtr, DataBufferInfo> _dataBuffers;
+
+	/// List of frames that are currently being rendered (by the CPU and/or the GPU).
+	std::vector<ResourceFrameHandle> _activeResourceFrames;
 };
 
 }	// End of namespace

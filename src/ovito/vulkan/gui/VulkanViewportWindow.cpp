@@ -53,6 +53,9 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
     if(!_device)
         _device = std::make_shared<VulkanDevice>();
 
+    // Use the 2nd physical device in the system.
+//    _device->setPhysicalDeviceIndex(1);
+
     // Release our own Vulkan resources right before the logical device is destroyed.
     connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanViewportWindow::reset);
     // Automatically recreate everything in case the logical device is lost.
@@ -510,9 +513,9 @@ void VulkanViewportWindow::recreateSwapChain()
         deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.drawSem);
         if(device()->separatePresentQueue())
             deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.presTransSem);
+        OVITO_ASSERT(frame.resourceFrame == 0);
     }
     _currentFrame = 0;
-    renderer()->setCurrentSwapChainFrame(0);
     _status = StatusReady;
 }
 
@@ -521,7 +524,7 @@ void VulkanViewportWindow::recreateSwapChain()
 ******************************************************************************/
 void VulkanViewportWindow::releaseSwapChain()
 {
-    if(!logicalDevice() || !_swapChain) // do not rely on 'status', a half done init must be cleaned properly too
+    if(!logicalDevice() || !_swapChain) // Do not rely on 'status', a half done init must be cleaned properly too
         return;
     qCDebug(lcGuiVk, "Releasing swapchain");
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
@@ -545,6 +548,10 @@ void VulkanViewportWindow::releaseSwapChain()
         if(frame.presTransSem) {
             deviceFunctions()->vkDestroySemaphore(logicalDevice(), frame.presTransSem, nullptr);
             frame.presTransSem = VK_NULL_HANDLE;
+        }
+        if(frame.resourceFrame) {
+            device()->releaseResourceFrame(frame.resourceFrame);
+            frame.resourceFrame = 0;
         }
     }
     for(int i = 0; i < _swapChainBufferCount; ++i) {
@@ -629,7 +636,7 @@ void VulkanViewportWindow::beginFrame()
             deviceFunctions()->vkResetFences(logicalDevice(), 1, &frame.fence);
             frame.fenceWaitable = false;
         }
-        // move on to next swapchain image
+        // Move on to next swapchain image
         VkResult err = vkAcquireNextImageKHR(logicalDevice(), _swapChain, UINT64_MAX,
                                              frame.imageSem, frame.fence, &_currentImage);
         if(err == VK_SUCCESS || err == VK_SUBOPTIMAL_KHR) {
@@ -698,8 +705,17 @@ void VulkanViewportWindow::beginFrame()
         return;
     }
 
+    // Tell resource manager about the new frame being rendered.
+    // Also release resources from previous rendering passes that ar eno longer needed.
+    if(frame.resourceFrame != 0)
+        device()->releaseResourceFrame(frame.resourceFrame);
+    frame.resourceFrame = device()->acquireResourceFrame();
+
+    renderer()->setCurrentSwapChainFrame(currentFrame());
     renderer()->setCurrentCommandBuffer(currentCommandBuffer());
     renderer()->setDefaultRenderPass(defaultRenderPass());
+    renderer()->setCurrentResourceFrame(frame.resourceFrame);
+
     const QSize sz = swapChainImageSize();
     renderer()->setFrameBufferSize(sz);
 
@@ -852,8 +868,9 @@ void VulkanViewportWindow::endFrame()
     }
     frame.imageAcquired = false;
     vulkanInstance()->presentQueued(this);
+    renderer()->setCurrentSwapChainFrame(-1);
+    renderer()->setCurrentResourceFrame(0);
     _currentFrame = (_currentFrame + 1) % renderer()->concurrentFrameCount();
-    renderer()->setCurrentSwapChainFrame(_currentFrame);
 }
 
 /******************************************************************************

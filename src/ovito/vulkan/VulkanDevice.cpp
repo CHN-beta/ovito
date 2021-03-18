@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "VulkanDevice.h"
 
 #include <QVulkanDeviceFunctions>
@@ -35,7 +36,6 @@ Q_LOGGING_CATEGORY(lcGuiVk, "qt.vulkan");
 ******************************************************************************/
 static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage)
 {
-    qDebug() << "vulkanDebugFilter:" << QString::fromUtf8(pLayerPrefix) << QString::fromUtf8(pMessage);
     return false;
 }
 
@@ -89,7 +89,7 @@ QVector<VkPhysicalDeviceProperties> VulkanDevice::availablePhysicalDevices()
     _physDevs = devs;
     _physDevProps.resize(count);
     for(uint32_t i = 0; i < count; ++i) {
-        VkPhysicalDeviceProperties *p = &_physDevProps[i];
+        VkPhysicalDeviceProperties* p = &_physDevProps[i];
         f->vkGetPhysicalDeviceProperties(_physDevs.at(i), p);
         qCDebug(lcGuiVk, "Physical device [%d]: name '%s' version %d.%d.%d", i, p->deviceName,
                 VK_VERSION_MAJOR(p->driverVersion), VK_VERSION_MINOR(p->driverVersion),
@@ -399,6 +399,14 @@ bool VulkanDevice::create(QWindow* window)
         qWarning("VulkanDevice: Failed to find an optimal depth-stencil format");
     qCDebug(lcGuiVk, "Depth-stencil format: %d", _dsFormat);
 
+    // Create pipeline cache.
+    VkPipelineCacheCreateInfo pipelineCacheInfo;
+    memset(&pipelineCacheInfo, 0, sizeof(pipelineCacheInfo));
+    pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    err = deviceFunctions()->vkCreatePipelineCache(logicalDevice(), &pipelineCacheInfo, nullptr, &_pipelineCache);
+    if(err != VK_SUCCESS)
+        throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
+
 	return true;
 }
 
@@ -444,6 +452,11 @@ void VulkanDevice::reset()
 
     // Tell clients of the class to also release their Vulkan resources.
     Q_EMIT releaseResourcesRequested();
+
+    // Make sure our clients have release their resources properly.
+    OVITO_ASSERT(_activeResourceFrames.empty());
+    OVITO_ASSERT(_dataBuffers.empty());
+
     qCDebug(lcGuiVk, "VulkanDevice reset");
 
     // Release command buffer pool used for graphics rendering.
@@ -456,6 +469,12 @@ void VulkanDevice::reset()
     if(presentCommandPool() != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyCommandPool(logicalDevice(), presentCommandPool(), nullptr);
         _presCmdPool = VK_NULL_HANDLE;
+    }
+
+    // Release pipeline cache.
+    if(pipelineCache() != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyPipelineCache(logicalDevice(), pipelineCache(), nullptr);
+        _pipelineCache = VK_NULL_HANDLE;
     }
 
     // Release the logical device.
@@ -660,6 +679,133 @@ VkShaderModule VulkanDevice::createShader(const QString& filename)
 		throw Exception(tr("File to create Vulkan shader module '%1'. Error code: %2").arg(filename).arg(err));
 
     return shaderModule;
+}
+
+/******************************************************************************
+* Informs the resource manager that a new frame starts being rendered.
+******************************************************************************/
+VulkanDevice::ResourceFrameHandle VulkanDevice::acquireResourceFrame()
+{    
+    if(_activeResourceFrames.empty()) {
+        OVITO_ASSERT(_dataBuffers.empty());
+        _activeResourceFrames.push_back(1);
+    }
+    else {
+        _activeResourceFrames.push_back(_activeResourceFrames.back() + 1);
+    }
+
+    return _activeResourceFrames.back();
+}
+
+/******************************************************************************
+* Informs the resource manager that a frame has completely finished rendering 
+* and all related Vulkan resources can be released.
+******************************************************************************/
+void VulkanDevice::releaseResourceFrame(ResourceFrameHandle frame)
+{
+    OVITO_ASSERT(frame > 0);
+    OVITO_ASSERT(std::is_sorted(_activeResourceFrames.begin(), _activeResourceFrames.end()));
+
+    auto iter = std::lower_bound(_activeResourceFrames.begin(), _activeResourceFrames.end(), frame);
+    OVITO_ASSERT(iter != _activeResourceFrames.end() && *iter == frame);
+    _activeResourceFrames.erase(iter);
+
+    // The oldest frame that is still active. We can release all resource from earlier frames.
+    ResourceFrameHandle oldestFrame = _activeResourceFrames.empty() ? std::numeric_limits<ResourceFrameHandle>::max() : _activeResourceFrames.front();
+
+    // Release all Vulkan resources that are no longer in use.
+    for(auto iter =_dataBuffers.begin(); iter != _dataBuffers.end(); ) {
+        if(iter->second.resourceFrame < oldestFrame) {
+            OVITO_ASSERT(iter->second.buffer);
+            OVITO_ASSERT(iter->second.bufferMem);
+            deviceFunctions()->vkDestroyBuffer(logicalDevice(), iter->second.buffer, nullptr);
+            deviceFunctions()->vkFreeMemory(logicalDevice(), iter->second.bufferMem, nullptr);
+            iter = _dataBuffers.erase(iter);
+        }
+        else {
+            ++iter;
+        }
+    }
+}
+
+/******************************************************************************
+* Uploads an OVITO DataBuffer to the Vulkan device.
+******************************************************************************/
+VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame)
+{
+    OVITO_ASSERT(dataBuffer);
+    OVITO_ASSERT(logicalDevice());
+    OVITO_ASSERT(std::binary_search(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame));
+
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+    // Check if data buffer has already been uploaded.
+    auto iter = _dataBuffers.find(dataBuffer);
+    if(iter != _dataBuffers.end()) {
+        // Update frame in which the resource was actively used.
+        OVITO_ASSERT(resourceFrame >= iter->second.resourceFrame);
+        iter->second.resourceFrame = resourceFrame;
+        return iter->second.buffer;
+    }
+
+    DataBufferInfo bufferInfo;
+    bufferInfo.resourceFrame = resourceFrame;
+
+    // Create a vertex buffer.
+    VkBufferCreateInfo bufferCreateInfo;
+    memset(&bufferCreateInfo, 0, sizeof(bufferCreateInfo));
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    if(dataBuffer->dataType() == DataBuffer::Float) {
+        bufferCreateInfo.size = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float);
+    }
+    else {
+        OVITO_ASSERT(false);
+        dataBuffer->throwException(tr("Cannot create Vulkan vertex buffer for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
+    }
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // The buffer will only be used from the graphics queue, so we can stick to exclusive access.
+    VkResult err = deviceFunctions()->vkCreateBuffer(logicalDevice(), &bufferCreateInfo, nullptr, &bufferInfo.buffer);
+    if(err != VK_SUCCESS)
+        dataBuffer->throwException(tr("Failed to create Vulkan vertex buffer (error code %1).").arg(err));
+
+    // Allocate memory for the vertex buffer.
+    VkMemoryRequirements memReq;
+    deviceFunctions()->vkGetBufferMemoryRequirements(logicalDevice(), bufferInfo.buffer, &memReq);
+    VkMemoryAllocateInfo memAllocInfo = {
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        nullptr,
+        memReq.size,
+        hostVisibleMemoryIndex()
+    };
+    err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &bufferInfo.bufferMem);
+    if(err != VK_SUCCESS)
+        dataBuffer->throwException(tr("Failed to allocate Vulkan vertex buffer memory (error code %1).").arg(err));
+
+    // Bind the memory to the vertex buffer.
+    err = deviceFunctions()->vkBindBufferMemory(logicalDevice(), bufferInfo.buffer, bufferInfo.bufferMem, 0);
+    if(err != VK_SUCCESS)
+        dataBuffer->throwException(tr("Failed to bind Vulkan vertex buffer memory (error code %1).").arg(err));
+
+    // Fill the vertex buffer with data.
+    void* p;
+    err = deviceFunctions()->vkMapMemory(logicalDevice(), bufferInfo.bufferMem, 0, memReq.size, 0, &p);
+    if(err != VK_SUCCESS)
+        dataBuffer->throwException(tr("Failed to map memory of Vulkan vertex buffer (error code %1).").arg(err));
+    if(dataBuffer->dataType() == DataBuffer::Float) {
+        // Convert from FloatType to float data type.
+        OVITO_ASSERT(dataBuffer->stride() == sizeof(FloatType) * dataBuffer->componentCount());
+        float* dst = static_cast<float*>(p);
+        ConstDataBufferAccess<FloatType, true> arrayAccess(dataBuffer);
+        for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
+            *dst = static_cast<float>(*src);
+    }
+    deviceFunctions()->vkUnmapMemory(logicalDevice(), bufferInfo.bufferMem);
+
+    // Insert buffer record into cache.
+    _dataBuffers.insert(std::make_pair(dataBuffer, bufferInfo));
+
+    return bufferInfo.buffer;
 }
 
 }	// End of namespace

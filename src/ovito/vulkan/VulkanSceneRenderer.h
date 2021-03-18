@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanDevice.h"
+#include "VulkanLinePrimitive.h"
 
 namespace Ovito {
 
@@ -45,7 +46,7 @@ public:
 		using SceneRenderer::OOMetaClass::OOMetaClass;
 
 		/// Is called by OVITO to query the class for any information that should be included in the application's system report.
-		virtual void querySystemInformation(QTextStream& stream) const override;
+		virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const override;
 	};
 
 	Q_OBJECT
@@ -57,7 +58,7 @@ public:
 	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, int concurrentFrameCount = 2);
 
 	/// Destructor.
-	virtual ~VulkanSceneRenderer() { releaseResources(); }
+	virtual ~VulkanSceneRenderer();
 
 	/// Returns the logical Vulkan device used by the renderer.
 	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
@@ -80,6 +81,9 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
 
+	/// Is called after rendering has finished.
+	virtual void endRender() override;
+
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
 
@@ -89,15 +93,6 @@ public:
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingVulkanSceneRenderer class to implement the picking mechanism.
 	virtual quint32 registerSubObjectIDs(quint32 subObjectCount) { return 1; }
-
-	/// Sets the frame buffer background color.
-	void setClearColor(const ColorA& color);
-
-	/// Sets the rendering region in the frame buffer.
-	void setRenderingViewport(int x, int y, int width, int height);
-
-	/// Clears the frame buffer contents.
-	void clearFrameBuffer(bool clearDepthBuffer = true, bool clearStencilBuffer = true);
 
 	/// Temporarily enables/disables the depth test while rendering.
 	virtual void setDepthTestEnabled(bool enabled) override;
@@ -111,17 +106,26 @@ public:
     /// Returns the current Vulkan swap chain frame index in the range [0, concurrentFrameCount() - 1].
 	int currentSwapChainFrame() const { return _currentSwapChainFrame; }
 
+	/// Returns the monotonically increasing identifier of the current Vulkan frame being rendered.
+	VulkanDevice::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
+
+	/// Sets monotonically increasing identifier of the current Vulkan frame being rendered.
+	void setCurrentResourceFrame(VulkanDevice::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
+
 	/// Returns the active Vulkan command buffer.
 	VkCommandBuffer currentCommandBuffer() const { return _currentCommandBuffer; }
+
+	/// Sets the active Vulkan command buffer.
+	void setCurrentCommandBuffer(VkCommandBuffer cmdBuf) { _currentCommandBuffer = cmdBuf; }
 
     /// Sets the current Vulkan swap chain frame index.
 	void setCurrentSwapChainFrame(int frame) { _currentSwapChainFrame = frame; }
 
+	/// Returns the default Vulkan render pass used by the renderer.
+    VkRenderPass defaultRenderPass() const { return _defaultRenderPass; }
+
 	/// Sets the default Vulkan render pass to be used by the renderer.
     void setDefaultRenderPass(VkRenderPass renderpass) { _defaultRenderPass = renderpass; }
-
-	/// Sets the active Vulkan command buffer.
-	void setCurrentCommandBuffer(VkCommandBuffer cmdBuf) { _currentCommandBuffer = cmdBuf; }
 
 	/// Returns the size in pixels of the Vulkan frame buffer we are rendering into.
 	const QSize& frameBufferSize() const { return _frameBufferSize; }
@@ -129,15 +133,29 @@ public:
 	/// Sets the size in pixels of the Vulkan frame buffer we are rendering into.
 	void setFrameBufferSize(const QSize& size) { _frameBufferSize = size; }
 
+	/// Returns the sample count used by the current Vulkan target rendering buffer.
+    VkSampleCountFlagBits sampleCount() const { return _sampleCount; }
+
+	/// Requests a new line geometry buffer from the renderer.
+	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
+
+	/// Renders the line geometry stored in the given buffer.
+	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
+
+	/// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
+    const Matrix4& clipCorrection() const { return _clipCorrection; } 
+
 protected:
 
 	/// Returns the supersampling level.
 	int antialiasingLevel() const { return _antialiasingLevel; }
 
+	/// Creates the Vulkan resources needed by this renderer.
 	void initResources();
 
 private Q_SLOTS:
 
+	/// Releases all Vulkan resources held by the renderer class.
     void releaseResources();
 
 private:
@@ -166,6 +184,9 @@ private:
 	/// The size of the frame buffer we are rendering into.
 	QSize _frameBufferSize;
 
+	/// The monotonically increasing identifier of the current Vulkan frame being rendered.
+	VulkanDevice::ResourceFrameHandle _currentResourceFrame = 0;
+
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
 
@@ -175,15 +196,11 @@ private:
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
 
-    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
-    VkBuffer m_buf = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo m_uniformBufInfo[VulkanDevice::MAX_CONCURRENT_FRAME_COUNT];
-    VkDescriptorPool m_descPool = VK_NULL_HANDLE;
-    VkDescriptorSetLayout m_descSetLayout = VK_NULL_HANDLE;
-    VkDescriptorSet m_descSet[VulkanDevice::MAX_CONCURRENT_FRAME_COUNT];
-    VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
-    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline m_pipeline = VK_NULL_HANDLE;
+	/// Indicates that the Vulkan resources needed by this renderer have been created.
+	bool _resourcesInitialized = false;
+
+	/// Data structure holding the Vulkan pipelines used by the line drawing primitive.
+	VulkanLinePrimitive::Pipelines _linePrimitivePipelines;
 
 	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
 	/// By pre-multiplying the projection matrix with this matrix, applications can

@@ -74,7 +74,7 @@ bool OpenGLSceneRenderer::_openglSupportsGeomShaders = false;
 * Is called by OVITO to query the class for any information that should be 
 * included in the application's system report.
 ******************************************************************************/
-void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream) const
+void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, DataSetContainer& container) const
 {
 	if(this == &OpenGLSceneRenderer::OOClass()) {
 		OpenGLSceneRenderer::determineOpenGLInfo();
@@ -323,7 +323,7 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 	if(renderScene(operation.subOperation())) {
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
-		// Call subclass to render additional content that is only visible in the interactive viewports.
+		// Render additional content that is only visible in the interactive viewports.
 		renderInteractiveContent();
 		OVITO_REPORT_OPENGL_ERRORS(this);
 

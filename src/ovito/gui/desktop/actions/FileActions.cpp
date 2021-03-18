@@ -127,7 +127,7 @@ void WidgetActionManager::on_HelpSystemInfo_triggered()
 	// Let the plugin class add their information to their system report.
 	for(Plugin* plugin : PluginManager::instance().plugins()) {
 		for(OvitoClassPtr clazz : plugin->classes()) {
-			clazz->querySystemInformation(stream);
+			clazz->querySystemInformation(stream, mainWindow()->datasetContainer());
 		}
 	}
 	textEdit->setPlainText(text);

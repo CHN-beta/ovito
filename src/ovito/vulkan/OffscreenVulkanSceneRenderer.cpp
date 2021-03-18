@@ -248,8 +248,12 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 		throwException(tr("Failed to allocate Vulkan frame command buffer."));
     }
 
-	// Pass command buffer to renderer class.
+	// Pass command buffer to base class implementation.
     setCurrentCommandBuffer(_cmdBuf);
+
+	// Tell the Vulkan resource manager that we are beginning a new frame.
+	OVITO_ASSERT(currentResourceFrame() == 0);
+	setCurrentResourceFrame(device()->acquireResourceFrame());
 
 	// Begin recording to the Vulkan command buffer.
     VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT , nullptr };
@@ -259,6 +263,8 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 		throwException(tr("Failed to begin Vulkan frame command buffer."));
     }
 
+	// Always render with a fully transparent background. 
+	// Compositing with the viewport layer content will be performed in an OVITO FrameBuffer. 
     VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
     VkClearDepthStencilValue clearDS = { 1, 0 };
     VkClearValue clearValues[2];
@@ -292,6 +298,17 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 	// Let the base class do the main rendering work.
 	if(!VulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
 		return false;
+
+	return true;
+}
+
+/******************************************************************************
+* This method is called after renderFrame() has been called.
+******************************************************************************/
+void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+{
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == device()->thread());
 
     deviceFunctions()->vkCmdEndRenderPass(currentCommandBuffer());
 
@@ -343,78 +360,75 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 		throwException(tr("Failed to end Vulkan frame command buffer."));
     }
 
-    // Submit draw calls
-	VkCommandBuffer cmdBuf = currentCommandBuffer();
-    VkSubmitInfo submitInfo;
-    memset(&submitInfo, 0, sizeof(submitInfo));
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmdBuf;
-	VkPipelineStageFlags psf = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    submitInfo.pWaitDstStageMask = &psf;
+	// Unless rendering has been interrupted, submit draw calls and prepare for reading back the Vulkan framebuffer contents.
+	if(renderingSuccessful) {
 
- 	VkFenceCreateInfo fenceInfo;
-    memset(&fenceInfo, 0, sizeof(fenceInfo));
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	VkFence fence;
-	deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &fence);
+		// Submit draw calls
+		VkCommandBuffer cmdBuf = currentCommandBuffer();
+		VkSubmitInfo submitInfo;
+		memset(&submitInfo, 0, sizeof(submitInfo));
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmdBuf;
+		VkPipelineStageFlags psf = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		submitInfo.pWaitDstStageMask = &psf;
 
-	// Submit command buffer to a queue and wait for fence until queue operations have been finished
-    err = deviceFunctions()->vkQueueSubmit(device()->graphicsQueue(), 1, &submitInfo, fence);
-    if(err != VK_SUCCESS) {
-		qWarning("OffscreenVulkanSceneRenderer: Failed to submit commands to Vulkan queue: %d", err);
-		throwException(tr("Failed to submit commands to Vulkan queue."));
-    }
+		VkFenceCreateInfo fenceInfo;
+		memset(&fenceInfo, 0, sizeof(fenceInfo));
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		VkFence fence;
+		deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &fence);
 
-	// Block until the current frame is done.
-	deviceFunctions()->vkWaitForFences(logicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
-	// Release the fence object.
-	deviceFunctions()->vkDestroyFence(logicalDevice(), fence, nullptr);
+		// Submit command buffer to a queue and wait for fence until queue operations have been finished
+		err = deviceFunctions()->vkQueueSubmit(device()->graphicsQueue(), 1, &submitInfo, fence);
+		if(err != VK_SUCCESS) {
+			qWarning("OffscreenVulkanSceneRenderer: Failed to submit commands to Vulkan queue: %d", err);
+			throwException(tr("Failed to submit commands to Vulkan queue."));
+		}
 
-	// Get layout of the image (including row pitch).
-	VkImageSubresource subres = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-    VkSubresourceLayout layout;
-    deviceFunctions()->vkGetImageSubresourceLayout(logicalDevice(), _frameGrabImage, &subres, &layout);
+		// Block until the current frame is done.
+		deviceFunctions()->vkWaitForFences(logicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+		// Release the fence object.
+		deviceFunctions()->vkDestroyFence(logicalDevice(), fence, nullptr);
 
-	// Map image memory so we can start copying from it.
-    uchar *p;
-    err = deviceFunctions()->vkMapMemory(logicalDevice(), _frameGrabImageMem, layout.offset, layout.size, 0, reinterpret_cast<void**>(&p));
-    if(err != VK_SUCCESS) {
-        qWarning("OffscreenVulkanSceneRenderer: Failed to map readback image memory after transfer: %d", err);
-		throwException(tr("Failed to map readback Vulkan image memory after transfer."));
-    }
+		// Tell the Vulkan resource manager that we are done rendering the frame.
+		device()->releaseResourceFrame(currentResourceFrame());
+		setCurrentResourceFrame(0);
 
-	// Copy pixel data over to a QImage.
-	QImage frameGrabTargetImage(frameBufferSize(), QImage::Format_RGBA8888);
-    for(int y = 0; y < frameGrabTargetImage.height(); ++y) {
-        memcpy(frameGrabTargetImage.scanLine(y), p, frameGrabTargetImage.width() * 4);
-        p += layout.rowPitch;
-    }
-    deviceFunctions()->vkUnmapMemory(logicalDevice(), _frameGrabImageMem);
-    
-	// Rescale supersampled image to final size.
-	QImage scaledImage = frameGrabTargetImage.scaled(_outputSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		// Get layout of the image (including row pitch).
+		VkImageSubresource subres = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+		VkSubresourceLayout layout;
+		deviceFunctions()->vkGetImageSubresourceLayout(logicalDevice(), _frameGrabImage, &subres, &layout);
 
-	// Transfer acquired image to the output frame buffer.
-	if(!frameBuffer->image().isNull()) {
-		QPainter painter(&frameBuffer->image());
-		painter.drawImage(painter.window(), scaledImage);
+		// Map image memory so we can start copying from it.
+		uchar *p;
+		err = deviceFunctions()->vkMapMemory(logicalDevice(), _frameGrabImageMem, layout.offset, layout.size, 0, reinterpret_cast<void**>(&p));
+		if(err != VK_SUCCESS) {
+			qWarning("OffscreenVulkanSceneRenderer: Failed to map readback image memory after transfer: %d", err);
+			throwException(tr("Failed to map readback Vulkan image memory after transfer."));
+		}
+
+		// Copy pixel data over to a QImage.
+		QImage frameGrabTargetImage(frameBufferSize(), QImage::Format_RGBA8888);
+		for(int y = 0; y < frameGrabTargetImage.height(); ++y) {
+			memcpy(frameGrabTargetImage.scanLine(y), p, frameGrabTargetImage.width() * 4);
+			p += layout.rowPitch;
+		}
+		deviceFunctions()->vkUnmapMemory(logicalDevice(), _frameGrabImageMem);
+		
+		// Rescale supersampled image to final size.
+		QImage scaledImage = frameGrabTargetImage.scaled(_outputSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+		// Transfer acquired image to the output frame buffer.
+		if(!frameBuffer->image().isNull()) {
+			QPainter painter(&frameBuffer->image());
+			painter.drawImage(painter.window(), scaledImage);
+		}
+		else {
+			frameBuffer->image() = scaledImage;
+		}
+		frameBuffer->update();
 	}
-	else {
-		frameBuffer->image() = scaledImage;
-	}
-	frameBuffer->update();
-
-	return true;
-}
-
-/******************************************************************************
-* This method is called after renderFrame() has been called.
-******************************************************************************/
-void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
-{
-	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
 
 	// Release command buffer.
 	if(_cmdBuf) {
@@ -433,8 +447,9 @@ void OffscreenVulkanSceneRenderer::endRender()
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == device()->thread());
 
-	// Wait for device to finish all work.
-    deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
+	// Let the base class release its Vulkan resources first.
+	// This implicitly waits for the Vulkan device to finish all work.
+	VulkanSceneRenderer::endRender();
 
 	// Release Vulkan resources.
 	if(_frameGrabImage != VK_NULL_HANDLE) {
@@ -481,7 +496,6 @@ void OffscreenVulkanSceneRenderer::endRender()
 
 	// Note: To speed up subsequent rendering passes, the logical Vulkan device is kept alive until the VulkanDevice instance 
 	// gets automatically destroyed together with this VulkanSceneRenderer.
-	VulkanSceneRenderer::endRender();
 }
 
 }	// End of namespace

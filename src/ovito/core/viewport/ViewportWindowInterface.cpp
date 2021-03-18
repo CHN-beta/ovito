@@ -98,7 +98,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
     static const ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
 	static const QString labels[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
 
-	// Create line buffer.
+	// Create line primitive for the coordinate axis arrows.
 	if(!_orientationTripodGeometry) {
 		_orientationTripodGeometry = renderer->createLinePrimitive();
 		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 18, DataBuffer::Float, 4, 0, false);
@@ -108,7 +108,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 		_orientationTripodGeometry->setColors(vertexColors.take());
 	}
 
-	// Render arrows.
+	// Update geometry of coordinate axis arrows.
 	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, 18, DataBuffer::Float, 3, 0, false);
 	for(size_t axis = 0, index = 0; axis < 3; axis++) {
 		Vector3 dir = viewport()->projectionParams().viewMatrix.column(axis).normalized();
@@ -120,6 +120,8 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 		vertices[index++] = Point3::Origin() + (dir + tripodArrowSize * Vector3(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z()));
 	}
 	_orientationTripodGeometry->setPositions(vertices.take());
+
+	// Render coordinate axis arrows.
 	renderer->renderLines(_orientationTripodGeometry);
 
 	// Render x,y,z labels.

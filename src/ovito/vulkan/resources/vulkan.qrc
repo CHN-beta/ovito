@@ -1,8 +1,10 @@
 <!DOCTYPE RCC><RCC version="1.0">
 
 <qresource prefix="/vulkanrenderer">
-	<file>color.frag.spv</file>
-	<file>color.vert.spv</file>
+	<file>lines/lines_thin_with_colors.frag.spv</file>
+	<file>lines/lines_thin_with_colors.vert.spv</file>
+	<file>lines/lines_thin_uniform_color.frag.spv</file>
+	<file>lines/lines_thin_uniform_color.vert.spv</file>
 </qresource>
 
 </RCC>

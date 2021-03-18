@@ -550,10 +550,8 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 
 	// Request scene bounding box.
 	Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
-	if(operation.isCanceled()) {
-		renderer->endFrame(false, nullptr);
+	if(operation.isCanceled())
 		return false;
-	}
 
 	// Determine final view projection.
 	projParams = viewport->computeProjectionParameters(renderTime, settings->outputImageAspectRatio(), boundingBox);
