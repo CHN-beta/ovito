@@ -7,4 +7,3 @@ doc/python/example_snippets/output/
 CMakeFiles
 __pycache__
 tests/opengl/
-*.spv

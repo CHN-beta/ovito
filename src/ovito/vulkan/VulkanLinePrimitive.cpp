@@ -363,10 +363,10 @@ void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines&
 	if(!positions() || positions()->size() == 0)
 		return;
 
-	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
+//	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
 		renderThinLines(renderer, pipelines);
-	else
-		renderThickLines(renderer, pipelines);
+//	else
+//		renderThickLines(renderer, pipelines);
 }
 
 /******************************************************************************

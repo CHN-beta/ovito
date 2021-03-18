@@ -58,15 +58,19 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 		OffscreenVulkanSceneRenderer.cpp
 		VulkanLinePrimitive.cpp
 		resources/vulkan.qrc
-	LIB_DEPENDENCIES 
-		Vulkan::Vulkan
 )
 
-# Compile the Vulkan shader source files.
-add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.frag)
-add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.vert)
-add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.frag)
-add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.vert)
+# Make sure the Vulkan headers are available.
+# Note that linking to the Vulkan library is not necessary, because Qt will load it at runtime.
+TARGET_INCLUDE_DIRECTORIES(VulkanRenderer PUBLIC "${Vulkan_INCLUDE_DIRS}")
+
+# Recompile the Vulkan shader source files if the shader compiler is available.
+IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.vert)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.vert)
+ENDIF()
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_GUI)
