@@ -28,11 +28,7 @@
 #include <ovito/vulkan/VulkanSceneRenderer.h>
 #include "VulkanViewportWindow.h"
 
-#include <QVulkanFunctions>
-
 namespace Ovito {
-
-Q_LOGGING_CATEGORY(lcGuiVk, "qt.vulkan");
 
 OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 
@@ -110,8 +106,6 @@ ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 	ViewportPickResult result;
 	return result;
 }
-
-Q_DECLARE_LOGGING_CATEGORY(lcGuiVk);
 
 /******************************************************************************
 * Is called by the window system whenever an area of the window is invalidated, 
@@ -220,7 +214,7 @@ static struct {
 void VulkanViewportWindow::init()
 {
     OVITO_ASSERT(_status == StatusUninitialized);
-    qCDebug(lcGuiVk, "VulkanViewportWindow init");
+    qCDebug(lcVulkan, "VulkanViewportWindow init");
 
     _surface = QVulkanInstance::surfaceForWindow(this);
     if(_surface == VK_NULL_HANDLE) {
@@ -232,7 +226,7 @@ void VulkanViewportWindow::init()
     try {
         if(!device()->create(this)) {
             _status = StatusUninitialized;
-            qCDebug(lcGuiVk, "Attempting to restart in 2 seconds");
+            qCDebug(lcVulkan, "Attempting to restart in 2 seconds");
             QTimer::singleShot(2000, this, &VulkanViewportWindow::ensureStarted);
             return;
         }
@@ -282,7 +276,7 @@ void VulkanViewportWindow::init()
             }
         }
     }
-    qCDebug(lcGuiVk, "Color format: %d", _colorFormat);
+    qCDebug(lcVulkan, "Color format: %d", _colorFormat);
 
     _defaultRenderPass = device()->createDefaultRenderPass(_colorFormat, _sampleCount);
     if(_defaultRenderPass == VK_NULL_HANDLE)
@@ -357,7 +351,7 @@ void VulkanViewportWindow::recreateSwapChain()
     swapChainInfo.presentMode = _presentMode;
     swapChainInfo.clipped = true;
     swapChainInfo.oldSwapchain = oldSwapChain;
-    qCDebug(lcGuiVk, "Creating new swap chain of %d buffers, size %dx%d", reqBufferCount, bufferSize.width, bufferSize.height);
+    qCDebug(lcVulkan, "Creating new swap chain of %d buffers, size %dx%d", reqBufferCount, bufferSize.width, bufferSize.height);
     VkSwapchainKHR newSwapChain;
     VkResult err = vkCreateSwapchainKHR(logicalDevice(), &swapChainInfo, nullptr, &newSwapChain);
     if(err != VK_SUCCESS) {
@@ -373,7 +367,7 @@ void VulkanViewportWindow::recreateSwapChain()
         qWarning("VulkanViewportWindow: Failed to get swapchain images: %d (count=%d)", err, actualSwapChainBufferCount);
         return;
     }
-    qCDebug(lcGuiVk, "Actual swap chain buffer count: %d", actualSwapChainBufferCount);
+    qCDebug(lcVulkan, "Actual swap chain buffer count: %d", actualSwapChainBufferCount);
     if(actualSwapChainBufferCount > MAX_SWAPCHAIN_BUFFER_COUNT) {
         qWarning("VulkanViewportWindow: Too many swapchain buffers (%d)", actualSwapChainBufferCount);
         return;
@@ -526,7 +520,7 @@ void VulkanViewportWindow::releaseSwapChain()
 {
     if(!logicalDevice() || !_swapChain) // Do not rely on 'status', a half done init must be cleaned properly too
         return;
-    qCDebug(lcGuiVk, "Releasing swapchain");
+    qCDebug(lcVulkan, "Releasing swapchain");
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
     for(int i = 0; i < renderer()->concurrentFrameCount(); ++i) {
         FrameResources& frame = _frameRes[i];
@@ -881,7 +875,7 @@ void VulkanViewportWindow::reset()
     if(!logicalDevice()) // Do not rely on 'status', a half done init must be cleaned properly too
         return;
     releaseSwapChain();
-    qCDebug(lcGuiVk, "VulkanViewportWindow reset");
+    qCDebug(lcVulkan, "VulkanViewportWindow reset");
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
     if(_defaultRenderPass) {
         deviceFunctions()->vkDestroyRenderPass(logicalDevice(), _defaultRenderPass, nullptr);

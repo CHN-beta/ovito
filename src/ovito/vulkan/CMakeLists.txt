@@ -42,11 +42,12 @@ function(add_vulkan_shader target shaderfile)
            COMMAND "${glslc_executable}" -o "${current-output-path}" "${current-shader-path}"
            DEPENDS "${current-shader-path}"
            IMPLICIT_DEPENDS CXX "${current-shader-path}"
+		   COMMENT "Compiling Vulkan shader ${shaderfile}"
            VERBATIM)
 
     # Make sure our build depends on this output.
-    set_source_files_properties("${current-output-path}" PROPERTIES GENERATED TRUE)
-    target_sources(${target} PRIVATE "${current-output-path}")
+    SET_SOURCE_FILES_PROPERTIES("${current-output-path}" PROPERTIES GENERATED TRUE)
+    TARGET_SOURCES(${target} PRIVATE "${current-output-path}")
 endfunction()
 
 # Define plugin module.
@@ -65,7 +66,7 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 TARGET_INCLUDE_DIRECTORIES(VulkanRenderer PUBLIC "${Vulkan_INCLUDE_DIRS}")
 
 # Recompile the Vulkan shader source files if the shader compiler is available.
-IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS)
+IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.frag)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.vert)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.frag)

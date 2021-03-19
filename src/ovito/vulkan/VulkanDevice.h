@@ -26,9 +26,13 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 
+#include <QLoggingCategory>
 #include <QVulkanInstance>
+#include <QVulkanDeviceFunctions>
 
 namespace Ovito {
+
+OVITO_VULKANRENDERER_EXPORT Q_DECLARE_LOGGING_CATEGORY(lcVulkan);
 
 /**
  * \brief Encapsulates a Vulkan logical device.

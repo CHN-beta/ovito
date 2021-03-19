@@ -29,8 +29,6 @@
 #include "VulkanSceneRenderer.h"
 #include "VulkanLinePrimitive.h"
 
-#include <QVulkanDeviceFunctions>
-
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VulkanSceneRenderer);
