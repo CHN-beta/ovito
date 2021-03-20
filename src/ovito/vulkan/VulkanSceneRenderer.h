@@ -78,12 +78,6 @@ public:
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
 
-	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
-
-	/// Is called after rendering has finished.
-	virtual void endRender() override;
-
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
 
@@ -147,18 +141,22 @@ public:
 
 protected:
 
+	/// This method is called after the reference counter of this object has reached zero
+	/// and before the object is being finally deleted. 
+	virtual void aboutToBeDeleted() override;
+
 	/// Returns the supersampling level.
 	int antialiasingLevel() const { return _antialiasingLevel; }
 
-	/// Creates the Vulkan resources needed by this renderer.
-	void initResources();
-
-private Q_SLOTS:
+protected Q_SLOTS:
 
 	/// Releases all Vulkan resources held by the renderer class.
-    void releaseResources();
+    virtual void releaseVulkanDeviceResources();
 
 private:
+
+	/// Creates the Vulkan resources needed by this renderer.
+	void initResources();
 
 	/// The logical Vulkan device used by the renderer.
 	std::shared_ptr<VulkanDevice> _device;

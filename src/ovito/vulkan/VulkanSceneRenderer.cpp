@@ -73,6 +73,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
             stream << "features.wideLines: " << device->features().wideLines << "\n";
             stream << "limits.maxUniformBufferRange: " << device->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
             stream << "limits.maxStorageBufferRange: " << device->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
+            stream << "limits.maxPushConstantsSize: " << device->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
             stream << "limits.lineWidthRange: " << device->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << device->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
             stream << "limits.lineWidthGranularity: " << device->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
         }
@@ -91,8 +92,8 @@ VulkanSceneRenderer::VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<Vulka
 	OVITO_ASSERT(_device);
     OVITO_ASSERT(_concurrentFrameCount >= 1);
 
-    // Release our own Vulkan resources right before the logical device is destroyed.
-    connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanSceneRenderer::releaseResources);
+    // Release our own Vulkan resources before the logical device gets destroyed.
+    connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanSceneRenderer::releaseVulkanDeviceResources);
 }
 
 /******************************************************************************
@@ -100,7 +101,20 @@ VulkanSceneRenderer::VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<Vulka
 ******************************************************************************/
 VulkanSceneRenderer::~VulkanSceneRenderer()
 {
-	releaseResources();
+    // Verify that all Vulkan resources have already been released thanks to a call to aboutToBeDeleted().
+    OVITO_ASSERT(_resourcesInitialized == false);
+}
+
+/******************************************************************************
+* This method is called after the reference counter of this object has reached zero
+* and before the object is being finally deleted. 
+******************************************************************************/
+void VulkanSceneRenderer::aboutToBeDeleted()
+{
+    // Release any Vulkan resources managed by the renderer.
+	releaseVulkanDeviceResources();
+
+    SceneRenderer::aboutToBeDeleted();
 }
 
 /******************************************************************************
@@ -165,45 +179,13 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
 
-		// Call subclass to render additional content that is only visible in the interactive viewports.
-        if(viewport()) {
+		// Call virtual method to render additional content that is only visible in the interactive viewports.
+        if(viewport() && isInteractive()) {
     		renderInteractiveContent();
         }
     }
 
 	return !operation.isCanceled();
-}
-
-/******************************************************************************
-* This method is called after renderFrame() has been called.
-******************************************************************************/
-void VulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
-{
-	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
-}
-
-/******************************************************************************
-* Is called after rendering has finished.
-******************************************************************************/
-void VulkanSceneRenderer::endRender()
-{
-	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
-
-    // Let the base class release its resources.
-	SceneRenderer::endRender();
-
-    // Unless this is a rendered for the interactive viewports, release the resources after rendering is done.
-    if(!isInteractive()) {
-        // Wait for device to finish all work.
-        deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
-
-        // Release the Vulkan resources managed by this class.
-        releaseResources();
-    }
-
-	// Note: To speed up subsequent rendering passes, the logical Vulkan device is kept alive until the VulkanDevice instance 
-	// gets automatically destroyed together with this VulkanSceneRenderer.
 }
 
 /******************************************************************************
@@ -214,6 +196,7 @@ void VulkanSceneRenderer::render2DPolyline(const Point2* points, int count, cons
 	if(isBoundingBoxPass())
 		return;
 }
+
 /******************************************************************************
 * Temporarily enables/disables the depth test while rendering.
 ******************************************************************************/
@@ -231,19 +214,19 @@ void VulkanSceneRenderer::setHighlightMode(int pass)
 /******************************************************************************
 * Releases all Vulkan resources held by the renderer class.
 ******************************************************************************/
-void VulkanSceneRenderer::releaseResources()
+void VulkanSceneRenderer::releaseVulkanDeviceResources()
 {
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == device()->thread());
 
-	if(!deviceFunctions())
-		return;
     if(!_resourcesInitialized)
         return;
 
+	OVITO_ASSERT(deviceFunctions());
+
     // Destroy the resources of the rendering primitives.
-    _resourcesInitialized = false;
     _linePrimitivePipelines.release(this);
+    _resourcesInitialized = false;
 }
 
 /******************************************************************************

@@ -67,7 +67,7 @@ bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRen
 	frameBuffer = &_frameBuffer;
 
 	// Clear previous object records.
-	reset();
+	resetPickingBuffer();
 
 	// Let the base class do the main rendering work.
 	if(!OffscreenVulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
@@ -99,7 +99,7 @@ void PickingVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer*
 /******************************************************************************
 * Resets the internal state of the picking renderer and clears the stored object records.
 ******************************************************************************/
-void PickingVulkanSceneRenderer::reset()
+void PickingVulkanSceneRenderer::resetPickingBuffer()
 {
 	_objects.clear();
 	endPickObject();
@@ -186,37 +186,6 @@ const PickingVulkanSceneRenderer::ObjectRecord* PickingVulkanSceneRenderer::look
 
 	OVITO_ASSERT(objectID >= _objects.back().baseObjectID);
 	return &_objects.back();
-}
-
-/******************************************************************************
-* Returns the Z-value at the given window position.
-******************************************************************************/
-FloatType PickingVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
-{
-	if(!_frameBuffer.image().isNull() && depthBufferData()) {
-		int w = _frameBuffer.width();
-		int h = _frameBuffer.height();
-		if(pos.x() >= 0 && pos.x() < w && pos.y() >= 0 && pos.y() < h) {
-			if(_frameBuffer.image().pixel(pos) != 0) {
-				if(depthBufferBits() == 16) {
-					uint16_t bval = reinterpret_cast<const uint16_t*>(depthBufferData())[pos.y() * w + pos.x()];
-					return (FloatType)bval / FloatType(65535.0);
-				}
-				else if(depthBufferBits() == 24) {
-					uint32_t bval = reinterpret_cast<const uint32_t*>(depthBufferData())[pos.y() * w + pos.x()];
-					return (FloatType)(bval & 0x00FFFFFF) / FloatType(16777215.0);
-				}
-				else if(depthBufferBits() == 32) {
-					uint32_t bval = reinterpret_cast<const uint32_t*>(depthBufferData())[pos.y() * w + pos.x()];
-					return (FloatType)bval / FloatType(4294967295.0);
-				}
-				else if(depthBufferBits() == 0) {
-					return reinterpret_cast<const float*>(depthBufferData())[pos.y() * w + pos.x()];
-				}
-			}
-		}
-	}
-	return 0;
 }
 
 /******************************************************************************

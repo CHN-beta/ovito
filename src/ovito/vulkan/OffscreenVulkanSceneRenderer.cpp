@@ -26,8 +26,6 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "OffscreenVulkanSceneRenderer.h"
 
-#include <QVulkanDeviceFunctions>
-
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OffscreenVulkanSceneRenderer);
@@ -72,6 +70,15 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	if(!VulkanSceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
 
+	// Do not create Vulkan frame buffers twice.
+	if(_colorImage != VK_NULL_HANDLE) {
+		// Check if the requested frame buffer size is still the same.
+		if(frameBufferSize == this->frameBufferSize())
+			return true;
+		// Otherwise, release old frame buffers and recreate them.
+		releaseVulkanFramebuffers();
+	}
+
 	OVITO_ASSERT(_colorImage == VK_NULL_HANDLE);
 	OVITO_ASSERT(_colorMem == VK_NULL_HANDLE);
 	OVITO_ASSERT(_colorView == VK_NULL_HANDLE);
@@ -97,6 +104,10 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	// Create Vulkan depth-stencil buffer image.
 	VkFormat dsFormat = _grabDepthBuffer ? VK_FORMAT_D24_UNORM_S8_UINT : device()->depthStencilFormat();
 	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+	// When grabbing the depth-contents is requested by the caller, make sure that Vulkan knows we are going
+	// to read the depth buffer image. Furthermore, determine how wide the depth values are per depth-buffer pixel.
 	if(_grabDepthBuffer) {
 		usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		if(dsFormat == VK_FORMAT_D24_UNORM_S8_UINT || dsFormat == VK_FORMAT_X8_D24_UNORM_PACK32) _depthBufferBits = 24;
@@ -107,7 +118,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 			_depthBufferBits = 24;
 		}
 	}
-	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
 	if(!device()->createVulkanImage(this->frameBufferSize(), dsFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
 		throwException(tr("Could not create Vulkan offscreen depth-buffer image."));
 
@@ -238,43 +249,20 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
         throwException(tr("Failed to bind Vulkan image memory for framebuffer readback."));
     }
 
-	// Create staging buffer for grabbing the depth buffer contents.
+	// Create a host-visible staging buffer for grabbing the depth buffer contents after rendering is complete.
 	if(_grabDepthBuffer) {
-		VkDeviceSize bufferSize = this->frameBufferSize().width() * this->frameBufferSize().height() * (_depthBufferBits != 16 ? 4 : 2);
-		VkBufferCreateInfo bufferInfo;
-	    memset(&bufferInfo, 0, sizeof(bufferInfo));
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = bufferSize;
+		VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		bufferInfo.size = this->frameBufferSize().width() * this->frameBufferSize().height() * (_depthBufferBits != 16 ? 4 : 2);
 		bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		err = deviceFunctions()->vkCreateBuffer(logicalDevice(), &bufferInfo, nullptr, &_depthGrabBuffer);
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+		err = vmaCreateBuffer(device()->allocator(), &bufferInfo, &allocInfo, &_depthGrabBuffer, &_depthGrabBufferAllocation, nullptr);
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to create staging buffer for reading back depth-buffer: %d", err);
 			throwException(tr("Failed to create staging buffer for reading back depth-buffer."));
 		}
-
-
-		VkMemoryRequirements memRequirements;
-		deviceFunctions()->vkGetBufferMemoryRequirements(logicalDevice(), _depthGrabBuffer, &memRequirements);
-
-		VkMemoryAllocateInfo memAllocInfo = {
-			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-			nullptr,
-			memRequirements.size,
-			device()->hostVisibleMemoryIndex()
-		};
-		err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &_depthGrabBufferMem);
-		if(err != VK_SUCCESS) {
-			qWarning("OffscreenVulkanSceneRenderer: Failed to allocate staging buffer memory for depth-buffer readback: %d", err);
-			throwException(tr("Failed to allocate Vulkan staging buffer memory for depth-buffer readback."));
-		}
-		deviceFunctions()->vkBindBufferMemory(logicalDevice(), _depthGrabBuffer, _depthGrabBufferMem, 0);
-		if(err != VK_SUCCESS) {
-			qWarning("OffscreenVulkanSceneRenderer: Failed to bind depth-buffer readback memory: %d", err);
-			throwException(tr("Failed to bind Vulkan buffer memory for depth-buffer readback."));
-		}
 	}
-	else _depthBufferData.reset();
 
 	return true;
 }
@@ -402,6 +390,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
                                    1, &barrier);	
 
 	if(_grabDepthBuffer) {
+		// After rendering is complete, copy contents of depth buffer image to our host-visible staging buffer.
 		VkBufferImageCopy region;
     	memset(&region, 0, sizeof(region));
 		region.bufferOffset = 0;
@@ -492,15 +481,6 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 			frameBuffer->image() = scaledImage;
 		}
 		frameBuffer->update();
-
-		if(_grabDepthBuffer) {
-			VkDeviceSize bufferSize = frameBufferSize().width() * frameBufferSize().height() * (_depthBufferBits != 16 ? 4 : 2);
-			_depthBufferData = std::make_unique<quint8[]>(bufferSize);
-			quint8* p;
-            deviceFunctions()->vkMapMemory(logicalDevice(), _depthGrabBufferMem, 0, bufferSize, 0, reinterpret_cast<void**>(&p));
-			memcpy(_depthBufferData.get(), p, (size_t)bufferSize);
-            deviceFunctions()->vkUnmapMemory(logicalDevice(), _depthGrabBufferMem);
-		}
 	}
 
 	// Release command buffer.
@@ -513,25 +493,57 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 }
 
 /******************************************************************************
-* Is called after rendering has finished.
+* Returns the Z-value at the given position in the depth buffer.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::endRender()
+FloatType OffscreenVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
 {
-	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	// Grabbing of the depth buffer must have been enabled before.
+	OVITO_ASSERT(_grabDepthBuffer);
+	OVITO_ASSERT(device());
 
-	// Let the base class release its Vulkan resources first.
-	// This implicitly waits for the Vulkan device to finish all work.
-	VulkanSceneRenderer::endRender();
+	FloatType z = 0;
+	if(_depthGrabBuffer != VK_NULL_HANDLE) {
+		int w = frameBufferSize().width();
+		int h = frameBufferSize().height();
+		if(pos.x() >= 0 && pos.x() < w && pos.y() >= 0 && pos.y() < h) {
+			// Map the memory of the staging buffer which contains the depth buffer data.
+			void* p;
+			vmaMapMemory(device()->allocator(), _depthGrabBufferAllocation, &p);
+			if(_depthBufferBits == 16) {
+				uint16_t bval = reinterpret_cast<const uint16_t*>(p)[pos.y() * w + pos.x()];
+				z = (FloatType)bval / FloatType(65535.0);
+			}
+			else if(_depthBufferBits == 24) {
+				uint32_t bval = reinterpret_cast<const uint32_t*>(p)[pos.y() * w + pos.x()];
+				z = (FloatType)(bval & 0x00FFFFFF) / FloatType(16777215.0);
+			}
+			else if(_depthBufferBits == 32) {
+				uint32_t bval = reinterpret_cast<const uint32_t*>(p)[pos.y() * w + pos.x()];
+				z = (FloatType)bval / FloatType(4294967295.0);
+			}
+			else if(_depthBufferBits == 0) {
+				z = reinterpret_cast<const float*>(p)[pos.y() * w + pos.x()];
+			}
+			vmaUnmapMemory(device()->allocator(), _depthGrabBufferAllocation);
+		}
+	}
+	return z;
+}
+
+/******************************************************************************
+* Release the Vulkan offscreen framebuffers managed by this renderer.
+******************************************************************************/
+void OffscreenVulkanSceneRenderer::releaseVulkanFramebuffers()
+{
+	// Releasing resources requires a valid Vulkan device. 
+	if(!deviceFunctions())
+		return;
 
 	// Release Vulkan resources.
 	if(_depthGrabBuffer != VK_NULL_HANDLE) {
-	    deviceFunctions()->vkDestroyBuffer(logicalDevice(), _depthGrabBuffer, nullptr);
+		vmaDestroyBuffer(device()->allocator(), _depthGrabBuffer, _depthGrabBufferAllocation);
 		_depthGrabBuffer = VK_NULL_HANDLE;
-	}
-	if(_depthGrabBufferMem != VK_NULL_HANDLE) {
-	    deviceFunctions()->vkFreeMemory(logicalDevice(), _depthGrabBufferMem, nullptr);
-		_depthGrabBufferMem = VK_NULL_HANDLE;
+		_depthGrabBufferAllocation = VK_NULL_HANDLE;
 	}
 	if(_frameGrabImage != VK_NULL_HANDLE) {
 	    deviceFunctions()->vkDestroyImage(logicalDevice(), _frameGrabImage, nullptr);
@@ -574,9 +586,7 @@ void OffscreenVulkanSceneRenderer::endRender()
         deviceFunctions()->vkFreeMemory(logicalDevice(), _colorMem, nullptr);
         _colorMem = VK_NULL_HANDLE;
     }
-
-	// Note: To speed up subsequent rendering passes, the logical Vulkan device is kept alive until the VulkanDevice instance 
-	// gets automatically destroyed together with this VulkanSceneRenderer.
+	setFrameBufferSize(QSize());
 }
 
 }	// End of namespace

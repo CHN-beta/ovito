@@ -84,10 +84,7 @@ public:
 	bool isRefreshRequired() const { return _frameBuffer.image().isNull(); }
 
 	/// Resets the picking buffer and clears the stored object records.
-	void reset();
-
-	/// Returns the Z-value at the given window position.
-	FloatType depthAtPixel(const QPoint& pos) const;
+	void resetPickingBuffer();
 
 private:
 

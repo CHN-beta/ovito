@@ -53,16 +53,22 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
 
-	/// Is called after rendering has finished.
-	virtual void endRender() override;
-
 protected:
 
-	/// Returns a pointer to the grabbed depth buffer contents.
-	quint8* depthBufferData() const { return _depthBufferData.get(); }
+	/// Releases all Vulkan resources held by the renderer class.
+    virtual void releaseVulkanDeviceResources() override {
+		VulkanSceneRenderer::releaseVulkanDeviceResources();
+		releaseVulkanFramebuffers();
+	}
 
-	/// Returns the number of bits per pixel of the grabbed depth buffer.
-	int depthBufferBits() const { return _depthBufferBits; }
+	/// Returns the Z-value at the given position in the depth buffer.
+	/// This method is only used by the PickingVulkanSceneRenderer subclass.
+	FloatType depthAtPixel(const QPoint& pos) const;
+
+private:
+
+	/// Release the Vulkan offscreen framebuffers managed by this renderer.
+	void releaseVulkanFramebuffers();
 
 private:
 	
@@ -88,9 +94,8 @@ private:
 	VkDeviceMemory _frameGrabImageMem = VK_NULL_HANDLE;
 	VkImage _frameGrabImage = VK_NULL_HANDLE;
 
-	VkDeviceMemory _depthGrabBufferMem = VK_NULL_HANDLE;
 	VkBuffer _depthGrabBuffer = VK_NULL_HANDLE;
-	std::unique_ptr<quint8[]> _depthBufferData;
+	VmaAllocation _depthGrabBufferAllocation = VK_NULL_HANDLE;
 	int _depthBufferBits = 0;
 };
 

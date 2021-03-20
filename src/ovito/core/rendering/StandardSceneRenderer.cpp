@@ -51,14 +51,14 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 		return false;
 
 	// Create the internal renderer implementation.
-	if(!_internalRenderer) {
-		OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
-		if(!rendererClass)
-			rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
-		if(!rendererClass)
-			throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-		_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset(), Application::instance()->executionContext()));
-	}
+	// Choose between OpenGL and Vulkan option.
+	OVITO_ASSERT(!_internalRenderer);
+	OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+	if(!rendererClass)
+		rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
+	if(!rendererClass)
+		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset(), Application::instance()->executionContext()));
 
 	// Pass supersampling level requested by the user to the renderer implementation.
 	_internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
@@ -75,8 +75,9 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
 {
 	SceneRenderer::beginFrame(time, params, vp);
-	if(_internalRenderer)
-		_internalRenderer->beginFrame(time, params, vp);
+
+	// Call implementation class.
+	_internalRenderer->beginFrame(time, params, vp);
 }
 
 /******************************************************************************
@@ -84,8 +85,8 @@ void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParam
 ******************************************************************************/
 bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
-	// Delegate rendering work to the renderer implementation.
-	if(_internalRenderer && !_internalRenderer->renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	// Delegate rendering work to implementation class.
+	if(!_internalRenderer->renderFrame(frameBuffer, stereoTask, std::move(operation)))
 		return false;
 
 	return true;
@@ -96,8 +97,8 @@ bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderin
 ******************************************************************************/
 void StandardSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
-	if(_internalRenderer)
-		_internalRenderer->endFrame(renderingSuccessful, frameBuffer);
+	// Call implementation class.
+	_internalRenderer->endFrame(renderingSuccessful, frameBuffer);
 }
 
 /******************************************************************************
@@ -105,8 +106,12 @@ void StandardSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* fram
 ******************************************************************************/
 void StandardSceneRenderer::endRender()
 {
-	if(_internalRenderer)
+	if(_internalRenderer) {
+		// Call implementation class.
 		_internalRenderer->endRender();
+		// Release implementation.
+		_internalRenderer.reset();
+	}
 	SceneRenderer::endRender();
 }
 

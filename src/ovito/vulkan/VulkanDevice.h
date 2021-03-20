@@ -29,6 +29,7 @@
 #include <QLoggingCategory>
 #include <QVulkanInstance>
 #include <QVulkanDeviceFunctions>
+#include "vma/VulkanMemoryAllocator.h"
 
 namespace Ovito {
 
@@ -51,6 +52,9 @@ public:
 
 	/// Data type used by the Vulkan resource manager when referring to an active frame being rendered on the CPU and/or the GPU.
 	using ResourceFrameHandle = int;
+
+	/// Constructor
+	VulkanDevice(QObject* parent = nullptr);
 
 	/// Destructor.
 	~VulkanDevice() { reset(); }
@@ -137,6 +141,9 @@ public:
 	/// The correct, cross-implementation solution - especially for device local images - is to manually 
 	/// pick a memory type after checking the mask returned from vkGetImageMemoryRequirements.
 	uint32_t deviceLocalMemoryIndex() const { return _deviceLocalMemIndex; }
+
+	/// Returns the Vulkan Memory Allocator (VMA) used for this device.
+	VmaAllocator allocator() const { return _allocator; }
 
 	/// Picks the right memory type for a Vulkan image.
 	uint32_t chooseTransientImageMemType(VkImage img, uint32_t startIndex);
@@ -242,12 +249,15 @@ private:
 	/// A device local memory type index suitable for general use.
     uint32_t _deviceLocalMemIndex;
 
+	/// The Vulkan Memory Allocator used for this device.
+	VmaAllocator _allocator = VK_NULL_HANDLE;
+
 	/// The Vulkan pipeline cache.
 	VkPipelineCache _pipelineCache = VK_NULL_HANDLE;
 
 	struct DataBufferInfo {
 		VkBuffer buffer = VK_NULL_HANDLE;
-		VkDeviceMemory bufferMem = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
 		ResourceFrameHandle resourceFrame;
 	};
 

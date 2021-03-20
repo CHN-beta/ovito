@@ -15,6 +15,9 @@ out gl_PerVertex { vec4 gl_Position; };
 
 void main()
 {
+    // Forward vertex color to fragment shader.
     color_fs = color;
+
+	// Apply model-view-projection matrix.
     gl_Position = PushConstants.mvp * position;
 }

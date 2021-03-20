@@ -50,7 +50,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
         _device = std::make_shared<VulkanDevice>();
 
     // Use the 2nd physical device in the system.
-    _device->setPhysicalDeviceIndex(1);
+    // _device->setPhysicalDeviceIndex(1);
 
     // Release our own Vulkan resources right before the logical device is destroyed.
     connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanViewportWindow::reset);
@@ -63,12 +63,6 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
 
 	// Embed the QWindow in a QWidget container.
 	_widget = QWidget::createWindowContainer(this, parentWidget);
-
-	// Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
-    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport->dataset(), ExecutionContext::Scripting, _device);
-
-	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport->dataset(), ExecutionContext::Scripting, _device, this);
 
 	_widget->setMouseTracking(true);
     _widget->setFocusPolicy(Qt::StrongFocus);
@@ -306,6 +300,15 @@ void VulkanViewportWindow::init()
     _defaultRenderPass = device()->createDefaultRenderPass(_colorFormat, _sampleCount);
     if(_defaultRenderPass == VK_NULL_HANDLE)
         return;
+
+    OVITO_ASSERT(!_viewportRenderer);
+    OVITO_ASSERT(!_pickingRenderer);
+
+	// Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
+    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport()->dataset(), ExecutionContext::Scripting, _device);
+
+	// Create the object picking renderer.
+	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport()->dataset(), ExecutionContext::Scripting, _device, this);
 
     _status = StatusDeviceReady;
 }
@@ -682,20 +685,6 @@ void VulkanViewportWindow::beginFrame()
         deviceFunctions()->vkResetFences(logicalDevice(), 1, &image.cmdFence);
         image.cmdFenceWaitable = false;
     }
-#if 0
-    // Build new draw command buffer.
-    if(image.cmdBuf) {
-        deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->graphicsCommandPool(), 1, &image.cmdBuf);
-        image.cmdBuf = VK_NULL_HANDLE;
-    }
-    VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
-    VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &image.cmdBuf);
-    if(err != VK_SUCCESS) {
-        if(!device()->checkDeviceLost(err))
-            qWarning("VulkanViewportWindow: Failed to allocate frame command buffer: %d", err);
-        return;
-    }
-#else
     // Instead of releasing/recreating the draw command buffer, create it only once and reuse it.
     if(image.cmdBuf == VK_NULL_HANDLE) {
         VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
@@ -715,7 +704,6 @@ void VulkanViewportWindow::beginFrame()
             return;
         }
     }
-#endif
     VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr };
     VkResult err = err = deviceFunctions()->vkBeginCommandBuffer(image.cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
@@ -764,7 +752,7 @@ void VulkanViewportWindow::beginFrame()
     deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	// Invalidate picking buffer every time the visible contents of the viewport change.
-	pickingRenderer()->reset();
+	pickingRenderer()->resetPickingBuffer();
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport() && !viewport()->isRendering()) {
@@ -905,10 +893,12 @@ void VulkanViewportWindow::reset()
     releaseSwapChain();
     qCDebug(lcVulkan, "VulkanViewportWindow reset");
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
+    // Release the viewport renderers used by the window.
+    _viewportRenderer.reset();
+    _pickingRenderer.reset();
     if(_defaultRenderPass) {
         deviceFunctions()->vkDestroyRenderPass(logicalDevice(), _defaultRenderPass, nullptr);
         _defaultRenderPass = VK_NULL_HANDLE;
-        renderer()->setDefaultRenderPass(VK_NULL_HANDLE);
     }
     _surface = VK_NULL_HANDLE;
     _status = StatusUninitialized;

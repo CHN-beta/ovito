@@ -38,6 +38,16 @@ static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTy
 }
 
 /******************************************************************************
+* Constructor
+******************************************************************************/
+VulkanDevice::VulkanDevice(QObject* parent) : QObject(parent)
+{
+    setDeviceExtensions(QByteArrayList() 
+        << "VK_KHR_get_memory_requirements2"
+        << "VK_KHR_dedicated_allocation");
+}
+
+/******************************************************************************
 * Returns a reference to the global Vulkan instance.
 ******************************************************************************/
 std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
@@ -52,6 +62,7 @@ std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
 		inst->setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
         inst->installDebugOutputFilter(&vulkanDebugFilter);
 #endif
+        inst->setExtensions(QByteArrayList() << "VK_KHR_get_physical_device_properties2");
 		if(!inst->create())
 			throw Exception(tr("Failed to create Vulkan instance: %1").arg(inst->errorCode()));
 		globalInstance = inst;
@@ -333,6 +344,44 @@ bool VulkanDevice::create(QWindow* window)
     _deviceFunctions = vulkanInstance()->deviceFunctions(_device);
     OVITO_ASSERT(_deviceFunctions);
 
+    // Initialize Vulkan Memory Allocator.
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    //allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+    allocatorInfo.physicalDevice = physicalDevice();
+    allocatorInfo.device = logicalDevice();
+    allocatorInfo.instance = vulkanInstance()->vkInstance();
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT; // OVITO's Vulkan renderer is not thread-safe anyway.
+    VmaVulkanFunctions vulkanFunctionsTable = {};
+    vulkanFunctionsTable.vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)vulkanInstance()->getInstanceProcAddr("vkGetPhysicalDeviceProperties");
+    vulkanFunctionsTable.vkGetPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)vulkanInstance()->getInstanceProcAddr("vkGetPhysicalDeviceMemoryProperties");
+    vulkanFunctionsTable.vkAllocateMemory = (PFN_vkAllocateMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkAllocateMemory");
+    vulkanFunctionsTable.vkFreeMemory = (PFN_vkFreeMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkFreeMemory");
+    vulkanFunctionsTable.vkMapMemory = (PFN_vkMapMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkMapMemory");
+    vulkanFunctionsTable.vkUnmapMemory = (PFN_vkUnmapMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkUnmapMemory");
+    vulkanFunctionsTable.vkFlushMappedMemoryRanges = (PFN_vkFlushMappedMemoryRanges)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkFlushMappedMemoryRanges");
+    vulkanFunctionsTable.vkInvalidateMappedMemoryRanges = (PFN_vkInvalidateMappedMemoryRanges)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkInvalidateMappedMemoryRanges");
+    vulkanFunctionsTable.vkBindBufferMemory = (PFN_vkBindBufferMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkBindBufferMemory");
+    vulkanFunctionsTable.vkBindImageMemory = (PFN_vkBindImageMemory)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkBindImageMemory");
+    vulkanFunctionsTable.vkGetBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetBufferMemoryRequirements");
+    vulkanFunctionsTable.vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetImageMemoryRequirements");
+    vulkanFunctionsTable.vkCreateBuffer = (PFN_vkCreateBuffer)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkCreateBuffer");
+    vulkanFunctionsTable.vkDestroyBuffer = (PFN_vkDestroyBuffer)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkDestroyBuffer");
+    vulkanFunctionsTable.vkCreateImage = (PFN_vkCreateImage)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkCreateImage");
+    vulkanFunctionsTable.vkDestroyImage = (PFN_vkDestroyImage)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkDestroyImage");
+    vulkanFunctionsTable.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkCmdCopyBuffer");
+
+    // VK_KHR_dedicated_allocation is a Vulkan extension which can be used to improve performance on some GPUs. 
+    // It augments Vulkan API with possibility to query driver whether it prefers particular buffer or image to have its own, 
+    // dedicated allocation (separate VkDeviceMemory block) for better efficiency - to be able to do some internal optimizations.
+    if(reqExts.contains("VK_KHR_get_memory_requirements2") && reqExts.contains("VK_KHR_dedicated_allocation")) {
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+        vulkanFunctionsTable.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetBufferMemoryRequirements2KHR");
+        vulkanFunctionsTable.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetImageMemoryRequirements2KHR");
+    }
+    
+    allocatorInfo.pVulkanFunctions = &vulkanFunctionsTable;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+
 	// Retrieve the queue handles from the device.
     deviceFunctions()->vkGetDeviceQueue(logicalDevice(), _gfxQueueFamilyIdx, 0, &_gfxQueue);
     if(!separatePresentQueue())
@@ -483,6 +532,9 @@ void VulkanDevice::reset()
         deviceFunctions()->vkDestroyPipelineCache(logicalDevice(), pipelineCache(), nullptr);
         _pipelineCache = VK_NULL_HANDLE;
     }
+
+    // Destroy the Vulkan Memory Allocator.
+    vmaDestroyAllocator(_allocator);
 
     // Release the logical device.
 	deviceFunctions()->vkDestroyDevice(logicalDevice(), nullptr);
@@ -724,9 +776,8 @@ void VulkanDevice::releaseResourceFrame(ResourceFrameHandle frame)
     for(auto iter =_dataBuffers.begin(); iter != _dataBuffers.end(); ) {
         if(iter->second.resourceFrame < oldestFrame) {
             OVITO_ASSERT(iter->second.buffer);
-            OVITO_ASSERT(iter->second.bufferMem);
-            deviceFunctions()->vkDestroyBuffer(logicalDevice(), iter->second.buffer, nullptr);
-            deviceFunctions()->vkFreeMemory(logicalDevice(), iter->second.bufferMem, nullptr);
+            OVITO_ASSERT(iter->second.allocation);
+            vmaDestroyBuffer(allocator(), iter->second.buffer, iter->second.allocation);
             iter = _dataBuffers.erase(iter);
         }
         else {
@@ -772,31 +823,15 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
     }
     bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // The buffer will only be used from the graphics queue, so we can stick to exclusive access.
-    VkResult err = deviceFunctions()->vkCreateBuffer(logicalDevice(), &bufferCreateInfo, nullptr, &bufferInfo.buffer);
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    VkResult err = vmaCreateBuffer(allocator(), &bufferCreateInfo, &allocInfo, &bufferInfo.buffer, &bufferInfo.allocation, nullptr);
     if(err != VK_SUCCESS)
         dataBuffer->throwException(tr("Failed to create Vulkan vertex buffer (error code %1).").arg(err));
 
-    // Allocate memory for the vertex buffer.
-    VkMemoryRequirements memReq;
-    deviceFunctions()->vkGetBufferMemoryRequirements(logicalDevice(), bufferInfo.buffer, &memReq);
-    VkMemoryAllocateInfo memAllocInfo = {
-        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        nullptr,
-        memReq.size,
-        hostVisibleMemoryIndex()
-    };
-    err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &bufferInfo.bufferMem);
-    if(err != VK_SUCCESS)
-        dataBuffer->throwException(tr("Failed to allocate Vulkan vertex buffer memory (error code %1).").arg(err));
-
-    // Bind the memory to the vertex buffer.
-    err = deviceFunctions()->vkBindBufferMemory(logicalDevice(), bufferInfo.buffer, bufferInfo.bufferMem, 0);
-    if(err != VK_SUCCESS)
-        dataBuffer->throwException(tr("Failed to bind Vulkan vertex buffer memory (error code %1).").arg(err));
-
     // Fill the vertex buffer with data.
     void* p;
-    err = deviceFunctions()->vkMapMemory(logicalDevice(), bufferInfo.bufferMem, 0, memReq.size, 0, &p);
+    err = vmaMapMemory(allocator(), bufferInfo.allocation, &p);
     if(err != VK_SUCCESS)
         dataBuffer->throwException(tr("Failed to map memory of Vulkan vertex buffer (error code %1).").arg(err));
     if(dataBuffer->dataType() == DataBuffer::Float) {
@@ -807,7 +842,8 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
         for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
             *dst = static_cast<float>(*src);
     }
-    deviceFunctions()->vkUnmapMemory(logicalDevice(), bufferInfo.bufferMem);
+    vmaFlushAllocation(allocator(), bufferInfo.allocation, 0, VK_WHOLE_SIZE);
+    vmaUnmapMemory(allocator(), bufferInfo.allocation);
 
     // Insert buffer record into cache.
     _dataBuffers.insert(std::make_pair(dataBuffer, bufferInfo));
