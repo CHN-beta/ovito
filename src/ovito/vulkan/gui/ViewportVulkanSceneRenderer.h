@@ -24,14 +24,14 @@
 
 
 #include <ovito/core/Core.h>
-#include "VulkanSceneRenderer.h"
+#include <ovito/vulkan/VulkanSceneRenderer.h>
 
 namespace Ovito {
 
 /**
  * \brief An Vulkan-based scene renderer for the interactive viewports of OVITO.
  */
-class OVITO_VULKANRENDERER_EXPORT ViewportVulkanSceneRenderer : public VulkanSceneRenderer
+class ViewportVulkanSceneRenderer : public VulkanSceneRenderer
 {
 	Q_OBJECT
 	OVITO_CLASS(ViewportVulkanSceneRenderer)

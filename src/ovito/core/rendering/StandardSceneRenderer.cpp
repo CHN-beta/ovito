@@ -45,9 +45,9 @@ StandardSceneRenderer::StandardSceneRenderer(DataSet* dataset) : SceneRenderer(d
 /******************************************************************************
 * Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
 ******************************************************************************/
-bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer)
+bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
-	if(!SceneRenderer::startRender(dataset, settings, frameBuffer))
+	if(!SceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
 
 	// Create the internal renderer implementation.
@@ -63,7 +63,7 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 	// Pass supersampling level requested by the user to the renderer implementation.
 	_internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
 
-	if(!_internalRenderer->startRender(dataset, settings, frameBuffer))
+	if(!_internalRenderer->startRender(dataset, settings, frameBufferSize))
 		return false;
 
 	return true;

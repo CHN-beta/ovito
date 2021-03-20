@@ -68,10 +68,15 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
                                 .arg(VK_VERSION_PATCH(props.apiVersion))
                                 .arg(deviceIndex++);
         }
-        if(device->logicalDevice())
+        if(device->logicalDevice()) {
             stream << "Active physical device index: [" << device->physicalDeviceIndex() << "]\n"; 
-        else
-            stream << "No active physical device\n"; 
+            stream << "features.wideLines: " << device->features().wideLines << "\n";
+            stream << "limits.maxUniformBufferRange: " << device->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
+            stream << "limits.maxStorageBufferRange: " << device->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
+            stream << "limits.lineWidthRange: " << device->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << device->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
+            stream << "limits.lineWidthGranularity: " << device->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
+        }
+        else stream << "No active physical device\n"; 
 	}
 }
 

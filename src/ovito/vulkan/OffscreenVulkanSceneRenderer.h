@@ -39,10 +39,10 @@ class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSc
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OffscreenVulkanSceneRenderer(DataSet* dataset);
+	Q_INVOKABLE OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice = {}, bool grabDepthBuffer = false);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer) override;
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
@@ -56,10 +56,22 @@ public:
 	/// Is called after rendering has finished.
 	virtual void endRender() override;
 
+protected:
+
+	/// Returns a pointer to the grabbed depth buffer contents.
+	quint8* depthBufferData() const { return _depthBufferData.get(); }
+
+	/// Returns the number of bits per pixel of the grabbed depth buffer.
+	int depthBufferBits() const { return _depthBufferBits; }
+
 private:
 	
 	/// The resolution of the rendered output image.
 	QSize _outputSize;
+
+	/// Flag indicating whether we are interested in reading back the depth buffer contents. 
+	/// This is used by the PickingVulkanSceneRenderer subclass.
+	bool _grabDepthBuffer = false;
 
     VkDeviceMemory _colorMem = VK_NULL_HANDLE;
     VkImage _colorImage = VK_NULL_HANDLE;
@@ -75,6 +87,11 @@ private:
 
 	VkDeviceMemory _frameGrabImageMem = VK_NULL_HANDLE;
 	VkImage _frameGrabImage = VK_NULL_HANDLE;
+
+	VkDeviceMemory _depthGrabBufferMem = VK_NULL_HANDLE;
+	VkBuffer _depthGrabBuffer = VK_NULL_HANDLE;
+	std::unique_ptr<quint8[]> _depthBufferData;
+	int _depthBufferBits = 0;
 };
 
 }	// End of namespace

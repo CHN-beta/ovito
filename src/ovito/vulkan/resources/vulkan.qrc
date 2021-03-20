@@ -5,6 +5,8 @@
 	<file>lines/lines_thin_with_colors.vert.spv</file>
 	<file>lines/lines_thin_uniform_color.frag.spv</file>
 	<file>lines/lines_thin_uniform_color.vert.spv</file>
+	<file>lines/lines_thin_picking.frag.spv</file>
+	<file>lines/lines_thin_picking.vert.spv</file>
 </qresource>
 
 </RCC>

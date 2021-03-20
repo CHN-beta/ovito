@@ -308,6 +308,15 @@ bool VulkanDevice::create(QWindow* window)
         }
     }
 
+    // Query the device's available features.
+    VkPhysicalDeviceFeatures availableFeatures;
+    vulkanFunctions()->vkGetPhysicalDeviceFeatures(physDev, &availableFeatures);
+    // Enable the feature which we can use.
+    memset(&_physicalDeviceFeatures, 0, sizeof(_physicalDeviceFeatures));
+    if(availableFeatures.wideLines)
+        _physicalDeviceFeatures.wideLines = VK_TRUE;
+    devInfo.pEnabledFeatures = &_physicalDeviceFeatures;
+
     VkResult err = vulkanFunctions()->vkCreateDevice(physDev, &devInfo, nullptr, &_device);
     if(err == VK_ERROR_DEVICE_LOST) {
         qWarning("VulkanDevice: Physical device lost");

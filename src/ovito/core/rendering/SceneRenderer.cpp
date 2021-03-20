@@ -132,10 +132,9 @@ Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjection
 /******************************************************************************
 * Prepares the renderer for rendering and sets the data set to be rendered.
 ******************************************************************************/
-bool SceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer) 
+bool SceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) 
 {
 	OVITO_ASSERT_MSG(_renderDataset == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
-	OVITO_ASSERT_MSG(frameBuffer != nullptr || isInteractive(), "SceneRenderer::startRender()", "A framebuffer is required for offscreen rendering.");
 	_renderDataset = dataset;
 	_renderSettings = settings;
 	return true;

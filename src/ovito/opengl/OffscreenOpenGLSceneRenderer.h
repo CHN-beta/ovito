@@ -46,7 +46,7 @@ public:
 	Q_INVOKABLE OffscreenOpenGLSceneRenderer(DataSet* dataset);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer) override;
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;

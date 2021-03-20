@@ -25,7 +25,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
-#include <ovito/vulkan/ViewportVulkanSceneRenderer.h>
+#include <ovito/vulkan/gui/ViewportVulkanSceneRenderer.h>
+#include <ovito/vulkan/gui/PickingVulkanSceneRenderer.h>
 
 #include <QWindow>
 
@@ -56,6 +57,9 @@ public:
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() override;
 
+	/// Sets the mouse cursor shape for the window. 
+	virtual void setCursor(const QCursor& cursor) override { QWindow::setCursor(cursor); }
+
 	/// Returns the current size of the viewport window (in device pixels).
 	virtual QSize viewportWindowDeviceSize() override {
 		return QWindow::size() * QWindow::devicePixelRatio();
@@ -82,7 +86,7 @@ public:
 	virtual bool isVisible() const override { return _widget->isVisible(); }
 
 	/// Returns the renderer generating an offscreen image of the scene used for object picking.
-//	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
+	PickingVulkanSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
 
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
@@ -193,7 +197,7 @@ private:
 	OORef<ViewportVulkanSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
-//	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+	OORef<PickingVulkanSceneRenderer> _pickingRenderer;
 
 	/// The logical Vulkan device used by the window.
 	std::shared_ptr<VulkanDevice> _device;

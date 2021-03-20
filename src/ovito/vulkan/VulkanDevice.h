@@ -104,6 +104,9 @@ public:
 	/// Returns the device-specific Vulkan function table. 
 	QVulkanDeviceFunctions* deviceFunctions() const { return _deviceFunctions; }
 
+	/// Returns data structure indicating which Vulkan features the current physical device supports.
+	const VkPhysicalDeviceFeatures& features() const { return _physicalDeviceFeatures; }
+
 	/// Returns the index of the queue family used for graphics rendering.
     uint32_t graphicsQueueFamilyIndex() const { return _gfxQueueFamilyIdx; }
 
@@ -196,6 +199,9 @@ private:
 
 	/// The selected physical device index from which the logical device is created. 
     int _physDevIndex = 0;
+
+	/// Indicates which Vulkan features the current physical device supports.
+	VkPhysicalDeviceFeatures _physicalDeviceFeatures;
 
 	/// The list of physical Vulkan devices.
     QVector<VkPhysicalDevice> _physDevs;

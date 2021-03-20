@@ -101,6 +101,9 @@ public:
 	/// Hides the tooltip window previously shown by showToolTip().
 	virtual void hideToolTip() {}
 
+	/// Sets the mouse cursor shape for the window. 
+	virtual void setCursor(const QCursor& cursor) {}
+
 protected:
 
 	/// Render the axis tripod symbol in the corner of the viewport that indicates

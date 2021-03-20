@@ -84,7 +84,7 @@ public:
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
 	/// Prepares the renderer for rendering and sets the data set to be rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer);
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize);
 
 	/// Returns the dataset being rendered.
 	/// This information is only available between calls to startRender() and endRender().

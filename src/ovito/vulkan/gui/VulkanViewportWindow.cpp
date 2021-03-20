@@ -50,7 +50,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
         _device = std::make_shared<VulkanDevice>();
 
     // Use the 2nd physical device in the system.
-//    _device->setPhysicalDeviceIndex(1);
+    _device->setPhysicalDeviceIndex(1);
 
     // Release our own Vulkan resources right before the logical device is destroyed.
     connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanViewportWindow::reset);
@@ -68,8 +68,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
     _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport->dataset(), ExecutionContext::Scripting, _device);
 
 	// Create the object picking renderer.
-//	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
-//	_pickingRenderer->setInteractive(true);
+	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport->dataset(), ExecutionContext::Scripting, _device, this);
 
 	_widget->setMouseTracking(true);
     _widget->setFocusPolicy(Qt::StrongFocus);
@@ -104,6 +103,32 @@ void VulkanViewportWindow::processViewportUpdate()
 ViewportPickResult VulkanViewportWindow::pick(const QPointF& pos)
 {
 	ViewportPickResult result;
+
+	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
+	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+		try {
+			if(pickingRenderer()->isRefreshRequired()) {
+				// Let the viewport do the actual rendering work.
+				viewport()->renderInteractive(pickingRenderer());
+			}
+
+			// Query which object is located at the given window position.
+			const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
+			const PickingVulkanSceneRenderer::ObjectRecord* objInfo;
+			quint32 subobjectId;
+			std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
+			if(objInfo) {
+				result.setPipelineNode(objInfo->objectNode);
+				result.setPickInfo(objInfo->pickInfo);
+				result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
+				result.setSubobjectId(subobjectId);
+			}
+		}
+		catch(const Exception& ex) {
+			ex.reportError();
+		}
+	}
+
 	return result;
 }
 
@@ -737,6 +762,9 @@ void VulkanViewportWindow::beginFrame()
     rpBeginInfo.clearValueCount = (sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT) ? 3 : 2;
     rpBeginInfo.pClearValues = clearValues;
     deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	// Invalidate picking buffer every time the visible contents of the viewport change.
+	pickingRenderer()->reset();
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport() && !viewport()->isRendering()) {

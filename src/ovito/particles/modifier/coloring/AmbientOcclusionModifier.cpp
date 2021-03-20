@@ -141,7 +141,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		FrameBuffer frameBuffer(_resolution, _resolution);
 
 		// Initialize the renderer.
-		_renderer->startRender(nullptr, nullptr, &frameBuffer);
+		_renderer->startRender(nullptr, nullptr, frameBuffer.size());
 		try {
 			// The buffered particle geometry used for rendering the particles.
 			std::shared_ptr<ParticlePrimitive> particleBuffer;

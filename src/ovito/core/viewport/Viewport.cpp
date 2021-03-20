@@ -506,7 +506,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		OVITO_ASSERT(renderSettings != nullptr);
 
 		// Set up the renderer.
-		renderer->startRender(dataset(), renderSettings, nullptr);
+		renderer->startRender(dataset(), renderSettings, vpSize);
 
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpSize.height() / vpSize.width();

@@ -55,6 +55,9 @@ public:
 	/// Returns the list of gizmos to render in the viewport.
 	virtual const std::vector<ViewportGizmo*>& viewportGizmos() override;
 
+	/// Sets the mouse cursor shape for the window. 
+	virtual void setCursor(const QCursor& cursor) override { widget()->setCursor(cursor); }
+
 	/// Renders custom GUI elements in the viewport on top of the scene.
 	virtual void renderGui(SceneRenderer* renderer) override;
 

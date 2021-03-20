@@ -46,8 +46,12 @@ public:
 
 		VkPipelineLayout thinWithColorsLayout = VK_NULL_HANDLE;
 		VkPipeline thinWithColors = VK_NULL_HANDLE;
+
 		VkPipelineLayout thinUniformColorLayout = VK_NULL_HANDLE;
 		VkPipeline thinUniformColor = VK_NULL_HANDLE;
+
+		VkPipelineLayout thinPickingLayout = VK_NULL_HANDLE;
+		VkPipeline thinPicking = VK_NULL_HANDLE;
 	};
 
 	/// Constructor.
@@ -61,7 +65,7 @@ protected:
 	/// Renders the lines exactly one pixel wide.
 	void renderThinLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
 
-	/// Renders the lines with arbitrary thickness using polygons.
+	/// Renders the lines of arbitrary width using polygons.
 	void renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
 };
 

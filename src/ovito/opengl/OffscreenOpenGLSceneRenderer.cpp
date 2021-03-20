@@ -68,16 +68,14 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 /******************************************************************************
 * Prepares the renderer for rendering and sets the data set that is being rendered.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer)
+bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
-	OVITO_ASSERT(frameBuffer != nullptr);
-
 	if(Application::instance()->headlessMode())
 		throwException(tr("Cannot use OpenGL renderer when running in headless mode. "
 				"Please use a different rendering engine or run program on a machine where access to "
 				"graphics hardware is possible."));
 
-	if(!OpenGLSceneRenderer::startRender(dataset, settings, frameBuffer))
+	if(!OpenGLSceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
 
 	// Create a OpenGL context for rendering to an offscreen buffer.
@@ -116,8 +114,8 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 				);
 	}
 
-	// Determine framebuffer size.
-	_outputSize = frameBuffer->size();
+	// Determine internal framebuffer size including supersampling.
+	_outputSize = frameBufferSize;
 	_framebufferSize = QSize(_outputSize.width() * antialiasingLevel(), _outputSize.height() * antialiasingLevel());
 
 	// Create OpenGL framebuffer.

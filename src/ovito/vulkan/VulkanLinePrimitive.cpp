@@ -40,6 +40,7 @@ VulkanLinePrimitive::VulkanLinePrimitive(VulkanSceneRenderer* renderer)
 ******************************************************************************/
 void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
+    // Create pipeline for shader "lines_thin_with_colors":
     {
     // Set up push constants used by the shader.
     VkPushConstantRange pushConstantRange;
@@ -173,11 +174,11 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
     cb.pAttachments = &att;
     pipelineInfo.pColorBlendState = &cb;
 
-    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH };
     VkPipelineDynamicStateCreateInfo dyn;
     memset(&dyn, 0, sizeof(dyn));
     dyn.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dyn.dynamicStateCount = sizeof(dynEnable) / sizeof(VkDynamicState);
+    dyn.dynamicStateCount = renderer->device()->features().wideLines ? 3 : 2;
     dyn.pDynamicStates = dynEnable;
     pipelineInfo.pDynamicState = &dyn;
 
@@ -194,6 +195,7 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         renderer->deviceFunctions()->vkDestroyShaderModule(renderer->logicalDevice(), fragShaderModule, nullptr);
     }
 
+    // Create pipeline for shader "lines_thin_uniform_color":
     {
     // Set up push constants used by the shader.
     VkPushConstantRange pushConstantRanges[2];
@@ -321,11 +323,11 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
     cb.pAttachments = &att;
     pipelineInfo.pColorBlendState = &cb;
 
-    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH };
     VkPipelineDynamicStateCreateInfo dyn;
     memset(&dyn, 0, sizeof(dyn));
     dyn.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dyn.dynamicStateCount = sizeof(dynEnable) / sizeof(VkDynamicState);
+    dyn.dynamicStateCount = renderer->device()->features().wideLines ? 3 : 2;
     dyn.pDynamicStates = dynEnable;
     pipelineInfo.pDynamicState = &dyn;
 
@@ -333,6 +335,152 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
     pipelineInfo.renderPass = renderer->defaultRenderPass();
 
     err = renderer->deviceFunctions()->vkCreateGraphicsPipelines(renderer->logicalDevice(), renderer->device()->pipelineCache(), 1, &pipelineInfo, nullptr, &thinUniformColor);
+    if(err != VK_SUCCESS)
+        renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan graphics pipeline (error code %1).").arg(err));
+
+    if(vertShaderModule)
+        renderer->deviceFunctions()->vkDestroyShaderModule(renderer->logicalDevice(), vertShaderModule, nullptr);
+    if(fragShaderModule)
+        renderer->deviceFunctions()->vkDestroyShaderModule(renderer->logicalDevice(), fragShaderModule, nullptr);
+    }
+
+    // Create pipeline for shader "lines_thin_picking":
+    {
+    // Set up push constants used by the shader.
+    VkPushConstantRange pushConstantRange;
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(Matrix_4<float>) + sizeof(uint32_t);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    // Create the pipeline layout.
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo;
+    memset(&pipelineLayoutInfo, 0, sizeof(pipelineLayoutInfo));
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+    VkResult err = renderer->deviceFunctions()->vkCreatePipelineLayout(renderer->logicalDevice(), &pipelineLayoutInfo, nullptr, &thinPickingLayout);
+    if(err != VK_SUCCESS)
+        renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan pipeline layout (error code %1).").arg(err));
+
+    // Shaders
+    VkShaderModule vertShaderModule = renderer->device()->createShader(QStringLiteral(":/vulkanrenderer/lines/lines_thin_picking.vert.spv"));
+    VkShaderModule fragShaderModule = renderer->device()->createShader(QStringLiteral(":/vulkanrenderer/lines/lines_thin_picking.frag.spv"));
+
+    // Graphics pipeline
+    VkGraphicsPipelineCreateInfo pipelineInfo;
+    memset(&pipelineInfo, 0, sizeof(pipelineInfo));
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            nullptr,
+            0,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            vertShaderModule,
+            "main",
+            nullptr
+        },
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            nullptr,
+            0,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            fragShaderModule,
+            "main",
+            nullptr
+        }
+    };
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+
+    VkVertexInputBindingDescription vertexBindingDesc[1];
+    memset(vertexBindingDesc, 0, sizeof(vertexBindingDesc));
+    vertexBindingDesc[0].binding = 0;
+    vertexBindingDesc[0].stride = sizeof(Point_3<float>);
+    vertexBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertexAttrDesc[] = {
+        { // position:
+            0, // location
+            0, // binding
+            VK_FORMAT_R32G32B32_SFLOAT,
+            0 // offset
+        }
+    };
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.pNext = nullptr;
+    vertexInputInfo.flags = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = vertexBindingDesc;
+    vertexInputInfo.vertexAttributeDescriptionCount = 1;
+    vertexInputInfo.pVertexAttributeDescriptions = vertexAttrDesc;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+
+    VkPipelineInputAssemblyStateCreateInfo ia;
+    memset(&ia, 0, sizeof(ia));
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipelineInfo.pInputAssemblyState = &ia;
+
+    // The viewport and scissor will be set dynamically via vkCmdSetViewport/Scissor.
+    // This way the pipeline does not need to be touched when resizing the window.
+    VkPipelineViewportStateCreateInfo vp;
+    memset(&vp, 0, sizeof(vp));
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = 1;
+    vp.scissorCount = 1;
+    pipelineInfo.pViewportState = &vp;
+
+    VkPipelineRasterizationStateCreateInfo rs;
+    memset(&rs, 0, sizeof(rs));
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.cullMode = VK_CULL_MODE_NONE; // we want the back face as well
+    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rs.lineWidth = 1.0f;
+    pipelineInfo.pRasterizationState = &rs;
+
+    VkPipelineMultisampleStateCreateInfo ms;
+    memset(&ms, 0, sizeof(ms));
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    // Enable multisampling if requested.
+    ms.rasterizationSamples = renderer->sampleCount();
+    pipelineInfo.pMultisampleState = &ms;
+
+    VkPipelineDepthStencilStateCreateInfo ds;
+    memset(&ds, 0, sizeof(ds));
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.depthTestEnable = VK_TRUE;
+    ds.depthWriteEnable = VK_TRUE;
+    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    pipelineInfo.pDepthStencilState = &ds;
+
+    VkPipelineColorBlendStateCreateInfo cb;
+    memset(&cb, 0, sizeof(cb));
+    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    // No blend, write out all of RGBA.
+    VkPipelineColorBlendAttachmentState att;
+    memset(&att, 0, sizeof(att));
+    att.colorWriteMask = 0xF;
+    cb.attachmentCount = 1;
+    cb.pAttachments = &att;
+    pipelineInfo.pColorBlendState = &cb;
+
+    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH };
+    VkPipelineDynamicStateCreateInfo dyn;
+    memset(&dyn, 0, sizeof(dyn));
+    dyn.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn.dynamicStateCount = renderer->device()->features().wideLines ? 3 : 2;
+    dyn.pDynamicStates = dynEnable;
+    pipelineInfo.pDynamicState = &dyn;
+
+    pipelineInfo.layout = thinPickingLayout;
+    pipelineInfo.renderPass = renderer->defaultRenderPass();
+
+    err = renderer->deviceFunctions()->vkCreateGraphicsPipelines(renderer->logicalDevice(), renderer->device()->pipelineCache(), 1, &pipelineInfo, nullptr, &thinPicking);
     if(err != VK_SUCCESS)
         renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan graphics pipeline (error code %1).").arg(err));
 
@@ -352,6 +500,8 @@ void VulkanLinePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	renderer->deviceFunctions()->vkDestroyPipelineLayout(renderer->logicalDevice(), thinWithColorsLayout, nullptr);
 	renderer->deviceFunctions()->vkDestroyPipeline(renderer->logicalDevice(), thinUniformColor, nullptr);
 	renderer->deviceFunctions()->vkDestroyPipelineLayout(renderer->logicalDevice(), thinUniformColorLayout, nullptr);
+	renderer->deviceFunctions()->vkDestroyPipeline(renderer->logicalDevice(), thinPicking, nullptr);
+	renderer->deviceFunctions()->vkDestroyPipelineLayout(renderer->logicalDevice(), thinPickingLayout, nullptr);
 }
 
 /******************************************************************************
@@ -363,10 +513,16 @@ void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines&
 	if(!positions() || positions()->size() == 0)
 		return;
 
-//	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
+#if 1
+    // For now always rely on the line drawing capabilities of the Vulkan implementation,
+    // even for lines wides than 1 pixel.
+    renderThinLines(renderer, pipelines);
+#else
+	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
 		renderThinLines(renderer, pipelines);
-//	else
-//		renderThickLines(renderer, pipelines);
+	else
+		renderThickLines(renderer, pipelines);
+#endif
 }
 
 /******************************************************************************
@@ -377,9 +533,15 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = renderer->clipCorrection() * renderer->projParams().projectionMatrix * renderer->modelViewTM();
 
-	if(colors()) {
+	if(colors() && !renderer->isPicking()) {
 		// Bind the pipeline.
 		renderer->deviceFunctions()->vkCmdBindPipeline(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.thinWithColors);
+
+        // Specify line width if the Vulkan implementation supports it. 
+        if(renderer->device()->features().wideLines) {
+        	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
+            renderer->deviceFunctions()->vkCmdSetLineWidth(renderer->currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
+        }
 
 		// Pass transformation matrix to vertex shader as a push constant.
 	    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinWithColorsLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
@@ -393,13 +555,29 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
 		renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 2, buffers, vbOffsets);
 	}
 	else {
-		// Bind the pipeline.
-	    renderer->deviceFunctions()->vkCmdBindPipeline(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.thinUniformColor);	
+        if(!renderer->isPicking()) {
+            // Bind the pipeline.
+            renderer->deviceFunctions()->vkCmdBindPipeline(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.thinUniformColor);
+            // Pass transformation matrix to vertex shader as a push constant.
+            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColorLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+            // Pass uniform line color to fragment shader as a push constant.
+            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColorLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>), sizeof(ColorAT<float>), ColorAT<float>(uniformColor()).data());
+        }
+        else {
+            // Bind the pipeline.
+            renderer->deviceFunctions()->vkCmdBindPipeline(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.thinPicking);
+            // Pass transformation matrix to vertex shader as a push constant.
+            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinPickingLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+            // Pass picking base ID to vertex shader as a push constant.
+    		uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size() / 2);
+            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinPickingLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(pickingBaseId), &pickingBaseId);
+        }
 
-		// Pass transformation matrix to vertex shader as a push constant.
-	    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColorLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
-		// Pass uniform line color to fragment shader as a push constant.
-	    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColorLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>), sizeof(ColorAT<float>), ColorAT<float>(uniformColor()).data());
+        // Specify line width if the Vulkan implementation supports it. 
+        if(renderer->device()->features().wideLines) {
+        	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
+            renderer->deviceFunctions()->vkCmdSetLineWidth(renderer->currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
+        }
 
 		// Bind vertex buffer for vertex positions.
 		VkBuffer buffers[1] = { renderer->device()->uploadDataBuffer(positions(), renderer->currentResourceFrame()) };
@@ -412,12 +590,11 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
 }
 
 /******************************************************************************
-* Renders the lines using polygons.
+* Renders the lines of arbitrary width using polygons.
 ******************************************************************************/
 void VulkanLinePrimitive::renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
 {
-	// Effective line width.
-	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
+    // Not implemented yet.
 }
 
 }	// End of namespace

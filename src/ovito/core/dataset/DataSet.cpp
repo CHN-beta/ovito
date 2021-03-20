@@ -421,7 +421,7 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 
 		// Initialize the renderer.
 		operation.setProgressText(tr("Initializing renderer"));
-		if(renderer->startRender(this, settings, frameBuffer)) {
+		if(renderer->startRender(this, settings, frameBuffer->size())) {
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT

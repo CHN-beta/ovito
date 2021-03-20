@@ -55,7 +55,6 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 	SOURCES
 		VulkanDevice.cpp
 		VulkanSceneRenderer.cpp
-		ViewportVulkanSceneRenderer.cpp
 		OffscreenVulkanSceneRenderer.cpp
 		VulkanLinePrimitive.cpp
 		resources/vulkan.qrc
@@ -71,6 +70,8 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.vert)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.frag)
 	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.vert)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_picking.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

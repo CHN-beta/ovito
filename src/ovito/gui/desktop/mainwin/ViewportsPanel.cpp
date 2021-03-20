@@ -152,8 +152,8 @@ void ViewportsPanel::onViewportModeCursorChanged(const QCursor& cursor)
 	if(!_viewportConfig) return;
 
 	for(Viewport* vp : _viewportConfig->viewports()) {
-		if(QWidget* widget = viewportWidget(vp)) {
-			widget->setCursor(cursor);
+		if(ViewportWindowInterface* window = vp->window()) {
+			window->setCursor(cursor);
 		}
 	}
 }

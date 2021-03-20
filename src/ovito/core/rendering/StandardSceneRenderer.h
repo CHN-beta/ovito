@@ -45,7 +45,7 @@ public:
 	Q_INVOKABLE StandardSceneRenderer(DataSet* dataset);
 
 	/// Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, FrameBuffer* frameBuffer) override;
+	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;

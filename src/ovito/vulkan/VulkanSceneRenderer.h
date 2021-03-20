@@ -39,7 +39,7 @@ class OVITO_VULKANRENDERER_EXPORT VulkanSceneRenderer : public SceneRenderer
 public:
 
 	/// Defines a metaclass specialization for this renderer class.
-	class OOMetaClass : public SceneRenderer::OOMetaClass
+	class OVITO_VULKANRENDERER_EXPORT OOMetaClass : public SceneRenderer::OOMetaClass
 	{
 	public:
 		/// Inherit standard constructor from base meta class.
