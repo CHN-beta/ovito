@@ -179,6 +179,11 @@ public:
 	/// Uploads an OVITO DataBuffer to the Vulkan device.
 	VkBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame);
 
+	/// Returns whether this device uses a unified memory architecture, i.e., 
+	/// the device-local memory heap is also the CPU-local memory heap. 
+	/// On UMA devices, no staging buffers are required.
+	bool isUMA() const { return _isUMA; }
+
 Q_SIGNALS:
 
 	/// Is emitted when the logical device is lost, meaning that a Vulkan failed with VK_ERROR_DEVICE_LOST.
@@ -248,6 +253,11 @@ private:
 
 	/// A device local memory type index suitable for general use.
     uint32_t _deviceLocalMemIndex;
+
+	/// Indicates that this device uses a unified memory architecture, i.e., 
+	/// the device-local memory heap is also the CPU-local memory heap. 
+	/// On UMA devices, no staging buffers are needed.
+	bool _isUMA = false;
 
 	/// The Vulkan Memory Allocator used for this device.
 	VmaAllocator _allocator = VK_NULL_HANDLE;

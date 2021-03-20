@@ -436,6 +436,15 @@ bool VulkanDevice::create(QWindow* window)
     }
     qCDebug(lcVulkan, "Picked memtype %d for device local memory", _deviceLocalMemIndex);
 
+	// Determine if this device uses a unified memory architecture, i.e., 
+	// all device-local memory heaps are also the CPU-local memory heaps. 
+	_isUMA = true;
+    for(uint32_t heapIndex = 0; heapIndex < physDevMemProps.memoryHeapCount; heapIndex++) {
+        if(!(physDevMemProps.memoryHeaps[heapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT))
+            _isUMA = false;
+    }
+    qCDebug(lcVulkan, "Is UMA device: %d", _isUMA);
+
     const VkFormat dsFormatCandidates[] = {
         VK_FORMAT_D24_UNORM_S8_UINT,
         VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -798,7 +807,7 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 
-    // Check if data buffer has already been uploaded.
+    // Check if this OVITO data buffer has already been uploaded to the GPU.
     auto iter = _dataBuffers.find(dataBuffer);
     if(iter != _dataBuffers.end()) {
         // Update frame in which the resource was actively used.
@@ -807,20 +816,25 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
         return iter->second.buffer;
     }
 
-    DataBufferInfo bufferInfo;
-    bufferInfo.resourceFrame = resourceFrame;
-
-    // Create a vertex buffer.
-    VkBufferCreateInfo bufferCreateInfo;
-    memset(&bufferCreateInfo, 0, sizeof(bufferCreateInfo));
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    // Determine the required buffer size.
+    VkDeviceSize bufferSize;
     if(dataBuffer->dataType() == DataBuffer::Float) {
-        bufferCreateInfo.size = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float);
+        bufferSize = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float);
     }
     else {
         OVITO_ASSERT(false);
         dataBuffer->throwException(tr("Cannot create Vulkan vertex buffer for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
     }
+
+    // Prepare the data structure that represents the OVITO data buffer uploaded to the GPU.
+    DataBufferInfo bufferInfo;
+    bufferInfo.resourceFrame = resourceFrame;
+
+    // Create a Vulkan vertex buffer.
+    VkBufferCreateInfo bufferCreateInfo;
+    memset(&bufferCreateInfo, 0, sizeof(bufferCreateInfo));
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = bufferSize;
     bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // The buffer will only be used from the graphics queue, so we can stick to exclusive access.
     VmaAllocationCreateInfo allocInfo = {};

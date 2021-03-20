@@ -197,6 +197,11 @@
               <entry><link linkend="appendix.license.xdrfile">license</link></entry>
               <entry></entry>
             </row>
+            <row>
+              <entry><link xlink:href="https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator">Vulkan Memory Allocator</link></entry>
+              <entry><link linkend="appendix.license.vma">license</link></entry>
+              <entry></entry>
+            </row>
           </tbody>
         </tgroup>
       </informaltable>
@@ -418,5 +423,7 @@
   <xi:include href="licenses/PySide2.instructions.docbook"/>
 
   <xi:include href="licenses/xdrfile.docbook"/>
+
+  <xi:include href="licenses/vma.docbook"/>
 
 </chapter>

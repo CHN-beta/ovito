@@ -70,6 +70,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
         }
         if(device->logicalDevice()) {
             stream << "Active physical device index: [" << device->physicalDeviceIndex() << "]\n"; 
+            stream << "Unified memory architecture: " << device->isUMA() << "\n";
             stream << "features.wideLines: " << device->features().wideLines << "\n";
             stream << "limits.maxUniformBufferRange: " << device->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
             stream << "limits.maxStorageBufferRange: " << device->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
