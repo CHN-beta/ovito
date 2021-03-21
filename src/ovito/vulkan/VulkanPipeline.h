@@ -24,45 +24,46 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
 #include "VulkanDevice.h"
-#include "VulkanPipeline.h"
 
 namespace Ovito {
 
 class VulkanSceneRenderer;
 
 /**
- * \brief This class is responsible for rendering line primitives using Vulkan.
+ * \brief Thin wrapper for Vulkan pipeline objects.
  */
-class VulkanLinePrimitive : public LinePrimitive
+class VulkanPipeline
 {
 public:
 
-	struct Pipelines {
-		/// Creates the Vulkan pipelines for this rendering primitive.
-		void init(VulkanSceneRenderer* renderer);
-		/// Destroys the Vulkan pipelines for this rendering primitive.
-		void release(VulkanSceneRenderer* renderer);
+	/// Creates the Vulkan pipeline.
+	void create(VulkanSceneRenderer* renderer,
+	    const QString& shaderName, 
+		uint32_t vertexPushConstantSize,
+		uint32_t fragmentPushConstantSize,
+		uint32_t vertexBindingDescriptionCount,
+		const VkVertexInputBindingDescription* pVertexBindingDescriptions,
+		uint32_t vertexAttributeDescriptionCount,
+		const VkVertexInputAttributeDescription* pVertexAttributeDescriptions,
+		VkPrimitiveTopology topology,
+		uint32_t extraDynamicStateCount = 0,
+		const VkDynamicState* pExtraDynamicStates = nullptr,
+		bool enableAlphaBlending = false);
 
-		VulkanPipeline thinWithColors;
-		VulkanPipeline thinUniformColor;
-		VulkanPipeline thinPicking;
-	};
+	/// Destroys the Vulkan pipeline.
+	void release(VulkanSceneRenderer* renderer);
 
-	/// Constructor.
-	VulkanLinePrimitive(VulkanSceneRenderer* renderer);
+	/// Binds the pipeline.
+	void bind(VulkanSceneRenderer* renderer) const;
 
-	/// Renders the geometry.
-	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	/// Returns the pipeline's layout.
+	VkPipelineLayout layout() const { return _layout; }
 
-protected:
+private:
 
-	/// Renders the lines exactly one pixel wide.
-	void renderThinLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
-
-	/// Renders the lines of arbitrary width using polygons.
-	void renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	VkPipelineLayout _layout = VK_NULL_HANDLE;
+	VkPipeline _pipeline = VK_NULL_HANDLE;
 };
 
 }	// End of namespace

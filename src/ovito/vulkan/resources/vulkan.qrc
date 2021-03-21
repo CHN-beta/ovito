@@ -7,6 +7,9 @@
 	<file>lines/lines_thin_uniform_color.vert.spv</file>
 	<file>lines/lines_thin_picking.frag.spv</file>
 	<file>lines/lines_thin_picking.vert.spv</file>
+
+	<file>image/image.frag.spv</file>
+	<file>image/image.vert.spv</file>
 </qresource>
 
 </RCC>

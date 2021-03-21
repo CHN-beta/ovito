@@ -172,8 +172,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	// Create the actual renderpass
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	VkRenderPassCreateInfo renderPassInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attchmentDescriptions.size());
 	renderPassInfo.pAttachments = attchmentDescriptions.data();
 	renderPassInfo.subpassCount = 1;
@@ -191,9 +190,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	VkImageView attachments[2];
 	attachments[0] = _colorView;
 	attachments[1] = _dsView;
-	VkFramebufferCreateInfo framebufferCreateInfo;
-	memset(&framebufferCreateInfo, 0, sizeof(framebufferCreateInfo));
-	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	VkFramebufferCreateInfo framebufferCreateInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
 	framebufferCreateInfo.renderPass = _renderPass;
 	framebufferCreateInfo.attachmentCount = 2;
 	framebufferCreateInfo.pAttachments = attachments;
@@ -207,9 +204,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
     }
 
 	// Create the linear tiled destination image to copy to and to read the memory from.
-	VkImageCreateInfo imgCreateInfo;
-    memset(&imgCreateInfo, 0, sizeof(imgCreateInfo));
-    imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 	imgCreateInfo.extent.width = this->frameBufferSize().width();
@@ -308,9 +303,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
     clearValues[1].depthStencil = clearDS;
 
 	// Begin a render pass.
-    VkRenderPassBeginInfo rpBeginInfo;
-    memset(&rpBeginInfo, 0, sizeof(rpBeginInfo));
-    rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkRenderPassBeginInfo rpBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     rpBeginInfo.renderPass = _renderPass;
     rpBeginInfo.framebuffer = _framebuffer;
     rpBeginInfo.renderArea.extent.width = this->frameBufferSize().width();
@@ -350,9 +343,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 	// Copy framebuffer image to host visible image.
 
 	// Transition destination image to transfer destination layout.
-	VkImageMemoryBarrier barrier;
-    memset(&barrier, 0, sizeof(barrier));
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	VkImageMemoryBarrier barrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;

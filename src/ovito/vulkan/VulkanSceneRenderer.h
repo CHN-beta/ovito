@@ -27,6 +27,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanDevice.h"
 #include "VulkanLinePrimitive.h"
+#include "VulkanImagePrimitive.h"
 
 namespace Ovito {
 
@@ -130,11 +131,17 @@ public:
 	/// Returns the sample count used by the current Vulkan target rendering buffer.
     VkSampleCountFlagBits sampleCount() const { return _sampleCount; }
 
-	/// Requests a new line geometry buffer from the renderer.
+	/// Creates a new line rendering primitive.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
 
-	/// Renders the line geometry stored in the given buffer.
+	/// Creates a new image rendering primitive.
+	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
+
+	/// Renders a line primitive.
 	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
+
+	/// Renders an image primitive.
+	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
 
 	/// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
     const Matrix4& clipCorrection() const { return _clipCorrection; } 
@@ -199,6 +206,9 @@ private:
 
 	/// Data structure holding the Vulkan pipelines used by the line drawing primitive.
 	VulkanLinePrimitive::Pipelines _linePrimitivePipelines;
+
+	/// Data structure holding the Vulkan pipelines used by the image drawing primitive.
+	VulkanImagePrimitive::Pipelines _imagePrimitivePipelines;
 
 	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
 	/// By pre-multiplying the projection matrix with this matrix, applications can

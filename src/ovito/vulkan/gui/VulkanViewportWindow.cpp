@@ -704,7 +704,8 @@ void VulkanViewportWindow::beginFrame()
             return;
         }
     }
-    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr };
+    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    cmdBufBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     VkResult err = err = deviceFunctions()->vkBeginCommandBuffer(image.cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
         if(!device()->checkDeviceLost(err))
@@ -795,9 +796,7 @@ void VulkanViewportWindow::endFrame()
     if(device()->separatePresentQueue()) {
         // Add the swapchain image release to the command buffer that will be
         // submitted to the graphics queue.
-        VkImageMemoryBarrier presTrans;
-        memset(&presTrans, 0, sizeof(presTrans));
-        presTrans.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        VkImageMemoryBarrier presTrans = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
         presTrans.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         presTrans.oldLayout = presTrans.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         presTrans.srcQueueFamilyIndex = device()->graphicsQueueFamilyIndex();
@@ -818,9 +817,7 @@ void VulkanViewportWindow::endFrame()
         return;
     }
     // Submit draw calls
-    VkSubmitInfo submitInfo;
-    memset(&submitInfo, 0, sizeof(submitInfo));
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &image.cmdBuf;
     if(frame.imageSemWaitable) {
@@ -855,9 +852,7 @@ void VulkanViewportWindow::endFrame()
         }
     }
     // Queue present
-    VkPresentInfoKHR presInfo;
-    memset(&presInfo, 0, sizeof(presInfo));
-    presInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkPresentInfoKHR presInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     presInfo.swapchainCount = 1;
     presInfo.pSwapchains = &_swapChain;
     presInfo.pImageIndices = &_currentImage;

@@ -284,9 +284,7 @@ bool VulkanDevice::create(QWindow* window)
         queueInfo[1].pQueuePriorities = prio;
     }
 
-    VkDeviceCreateInfo devInfo;
-    memset(&devInfo, 0, sizeof(devInfo));
-    devInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo devInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
     devInfo.queueCreateInfoCount = !separatePresentQueue() ? 1 : 2;
     devInfo.pQueueCreateInfos = queueInfo;
     devInfo.enabledExtensionCount = devExts.count();
@@ -390,9 +388,7 @@ bool VulkanDevice::create(QWindow* window)
         deviceFunctions()->vkGetDeviceQueue(logicalDevice(), _presQueueFamilyIdx, 0, &_presQueue);
 
 	// Create command pools.
-    VkCommandPoolCreateInfo poolInfo;
-    memset(&poolInfo, 0, sizeof(poolInfo));
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     poolInfo.queueFamilyIndex = _gfxQueueFamilyIdx;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_cmdPool);
@@ -465,9 +461,7 @@ bool VulkanDevice::create(QWindow* window)
     qCDebug(lcVulkan, "Depth-stencil format: %d", _dsFormat);
 
     // Create pipeline cache.
-    VkPipelineCacheCreateInfo pipelineCacheInfo;
-    memset(&pipelineCacheInfo, 0, sizeof(pipelineCacheInfo));
-    pipelineCacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    VkPipelineCacheCreateInfo pipelineCacheInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
     err = deviceFunctions()->vkCreatePipelineCache(logicalDevice(), &pipelineCacheInfo, nullptr, &_pipelineCache);
     if(err != VK_SUCCESS)
         throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
@@ -587,9 +581,7 @@ bool VulkanDevice::createVulkanImage(const QSize size,
     VkMemoryRequirements memReq;
     VkResult err;
     for(int i = 0; i < count; ++i) {
-        VkImageCreateInfo imgInfo;
-        memset(&imgInfo, 0, sizeof(imgInfo));
-        imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        VkImageCreateInfo imgInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         imgInfo.imageType = VK_IMAGE_TYPE_2D;
         imgInfo.format = format;
         imgInfo.extent.width = size.width();
@@ -638,9 +630,7 @@ bool VulkanDevice::createVulkanImage(const QSize size,
             return false;
         }
         ofs += VulkanDevice::aligned(memReq.size, memReq.alignment);
-        VkImageViewCreateInfo imgViewInfo;
-        memset(&imgViewInfo, 0, sizeof(imgViewInfo));
-        imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        VkImageViewCreateInfo imgViewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         imgViewInfo.image = images[i];
         imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         imgViewInfo.format = format;
@@ -698,15 +688,12 @@ VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat, VkSampl
     VkAttachmentReference colorRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
     VkAttachmentReference resolveRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
     VkAttachmentReference dsRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-    VkSubpassDescription subPassDesc;
-    memset(&subPassDesc, 0, sizeof(subPassDesc));
+    VkSubpassDescription subPassDesc = {};
     subPassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subPassDesc.colorAttachmentCount = 1;
     subPassDesc.pColorAttachments = &colorRef;
     subPassDesc.pDepthStencilAttachment = &dsRef;
-    VkRenderPassCreateInfo rpInfo;
-    memset(&rpInfo, 0, sizeof(rpInfo));
-    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rpInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
     rpInfo.attachmentCount = 2;
     rpInfo.pAttachments = attDesc;
     rpInfo.subpassCount = 1;
@@ -831,9 +818,7 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
     bufferInfo.resourceFrame = resourceFrame;
 
     // Create a Vulkan vertex buffer.
-    VkBufferCreateInfo bufferCreateInfo;
-    memset(&bufferCreateInfo, 0, sizeof(bufferCreateInfo));
-    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo bufferCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     bufferCreateInfo.size = bufferSize;
     bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // The buffer will only be used from the graphics queue, so we can stick to exclusive access.

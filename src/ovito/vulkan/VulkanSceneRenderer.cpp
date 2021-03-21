@@ -138,6 +138,7 @@ void VulkanSceneRenderer::initResources()
     // Create the resources of the rendering primitives.
     if(!_resourcesInitialized) {
         _linePrimitivePipelines.init(this);
+        _imagePrimitivePipelines.init(this);
         _resourcesInitialized = true;
     }
 }
@@ -227,11 +228,12 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 
     // Destroy the resources of the rendering primitives.
     _linePrimitivePipelines.release(this);
+    _imagePrimitivePipelines.release(this);
     _resourcesInitialized = false;
 }
 
 /******************************************************************************
-* Requests a new line geometry buffer from the renderer.
+* Creates a new line rendering primitive.
 ******************************************************************************/
 std::shared_ptr<LinePrimitive> VulkanSceneRenderer::createLinePrimitive()
 {
@@ -240,13 +242,32 @@ std::shared_ptr<LinePrimitive> VulkanSceneRenderer::createLinePrimitive()
 }
 
 /******************************************************************************
-* Renders the line geometry stored in the given buffer.
+* Creates a new image rendering primitive.
+******************************************************************************/
+std::shared_ptr<ImagePrimitive> VulkanSceneRenderer::createImagePrimitive()
+{
+	OVITO_ASSERT(!isBoundingBoxPass());
+	return std::make_shared<VulkanImagePrimitive>(this);
+}
+
+/******************************************************************************
+* Renders a line primitive.
 ******************************************************************************/
 void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
 {
     std::shared_ptr<VulkanLinePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanLinePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this, _linePrimitivePipelines);
+}
+
+/******************************************************************************
+* Renders an image primitive.
+******************************************************************************/
+void VulkanSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& primitive)
+{
+    std::shared_ptr<VulkanImagePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanImagePrimitive>(primitive);
+    OVITO_ASSERT(vulkanPrimitive);
+	vulkanPrimitive->render(this, _imagePrimitivePipelines);
 }
 
 }	// End of namespace

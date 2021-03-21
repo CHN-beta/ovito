@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
+#include <ovito/core/rendering/ImagePrimitive.h>
 #include "VulkanDevice.h"
 #include "VulkanPipeline.h"
 
@@ -33,9 +33,9 @@ namespace Ovito {
 class VulkanSceneRenderer;
 
 /**
- * \brief This class is responsible for rendering line primitives using Vulkan.
+ * \brief This class is responsible for rendering imag primitives using Vulkan.
  */
-class VulkanLinePrimitive : public LinePrimitive
+class VulkanImagePrimitive : public ImagePrimitive
 {
 public:
 
@@ -45,24 +45,14 @@ public:
 		/// Destroys the Vulkan pipelines for this rendering primitive.
 		void release(VulkanSceneRenderer* renderer);
 
-		VulkanPipeline thinWithColors;
-		VulkanPipeline thinUniformColor;
-		VulkanPipeline thinPicking;
+		VulkanPipeline imageQuad;
 	};
 
 	/// Constructor.
-	VulkanLinePrimitive(VulkanSceneRenderer* renderer);
+	VulkanImagePrimitive(VulkanSceneRenderer* renderer);
 
 	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
-
-protected:
-
-	/// Renders the lines exactly one pixel wide.
-	void renderThinLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
-
-	/// Renders the lines of arbitrary width using polygons.
-	void renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
 };
 
 }	// End of namespace
