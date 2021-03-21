@@ -363,9 +363,7 @@ void VulkanViewportWindow::recreateSwapChain()
     }
     VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSwapchainKHR oldSwapChain = _swapChain;
-    VkSwapchainCreateInfoKHR swapChainInfo;
-    memset(&swapChainInfo, 0, sizeof(swapChainInfo));
-    swapChainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    VkSwapchainCreateInfoKHR swapChainInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
     swapChainInfo.surface = _surface;
     swapChainInfo.minImageCount = reqBufferCount;
     swapChainInfo.imageFormat = _colorFormat;
@@ -444,9 +442,7 @@ void VulkanViewportWindow::recreateSwapChain()
             image.msaaImage = msaaImages[i];
             image.msaaImageView = msaaViews[i];
         }
-        VkImageViewCreateInfo imgViewInfo;
-        memset(&imgViewInfo, 0, sizeof(imgViewInfo));
-        imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        VkImageViewCreateInfo imgViewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         imgViewInfo.image = swapChainImages[i];
         imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         imgViewInfo.format = _colorFormat;

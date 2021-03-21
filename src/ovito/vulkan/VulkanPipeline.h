@@ -49,7 +49,9 @@ public:
 		VkPrimitiveTopology topology,
 		uint32_t extraDynamicStateCount = 0,
 		const VkDynamicState* pExtraDynamicStates = nullptr,
-		bool enableAlphaBlending = false);
+		bool enableAlphaBlending = false,
+		uint32_t setLayoutCount = 0,
+		const VkDescriptorSetLayout* pSetLayouts = nullptr);
 
 	/// Destroys the Vulkan pipeline.
 	void release(VulkanSceneRenderer* renderer);

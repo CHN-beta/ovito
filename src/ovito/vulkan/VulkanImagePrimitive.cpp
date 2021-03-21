@@ -38,6 +38,24 @@ VulkanImagePrimitive::VulkanImagePrimitive(VulkanSceneRenderer* renderer)
 ******************************************************************************/
 void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
+    // Specify the descriptor layout binding for the sampler.
+    VkSampler sampler = renderer->device()->samplerNearest();
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 0;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = &sampler;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Create descriptor set layout.
+    VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &samplerLayoutBinding;
+    VkResult err = renderer->deviceFunctions()->vkCreateDescriptorSetLayout(renderer->logicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout);
+    if(err != VK_SUCCESS)
+        renderer->throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+
+    // Create pipeline.
     imageQuad.create(renderer,
         QStringLiteral("image/image"),
         2 * sizeof(Point_2<float>), // vertexPushConstantSize
@@ -49,7 +67,9 @@ void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
 		0, // extraDynamicStateCount
 		nullptr, // pExtraDynamicStates
-		true // enableAlphaBlending
+		true, // enableAlphaBlending
+        1, // setLayoutCount
+		&descriptorSetLayout
     );
 }
 
@@ -59,6 +79,10 @@ void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 void VulkanImagePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 {
 	imageQuad.release(renderer);
+    if(descriptorSetLayout != VK_NULL_HANDLE) {
+        renderer->deviceFunctions()->vkDestroyDescriptorSetLayout(renderer->logicalDevice(), descriptorSetLayout, nullptr);
+        descriptorSetLayout = VK_NULL_HANDLE;
+    }
 }
 
 /******************************************************************************
@@ -69,8 +93,35 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
 	if(image().isNull() || renderer->isPicking() || windowRect().isEmpty())
 		return;
 
+    // Upload the image to the GPU as a texture.
+    VkImageView imageView = renderer->device()->uploadImage(image(), renderer->currentResourceFrame());
+
     // Bind the pipeline.
     pipelines.imageQuad.bind(renderer);
+
+    // Use the QImage cache key to look up descriptor set.
+    struct { qint64 v; } cacheKey = { image().cacheKey() };
+
+    // Create or look up the descriptor set.
+    std::pair<VkDescriptorSet, bool> descriptorSet = renderer->device()->createDescriptorSet(pipelines.descriptorSetLayout, cacheKey, renderer->currentResourceFrame());
+
+    // Initialize the newly created descriptor set.
+    if(descriptorSet.second) {
+        VkDescriptorImageInfo imageInfo = {};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = imageView;
+        imageInfo.sampler = renderer->device()->samplerNearest();
+        VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptorWrite.dstSet = descriptorSet.first;
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfo;
+        renderer->deviceFunctions()->vkUpdateDescriptorSets(renderer->logicalDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
+
+    // Bind the descriptor set to the pipeline.
+    renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.imageQuad.layout(), 0, 1, &descriptorSet.first, 0, nullptr);
 
     // Pass quad rectangle to vertex shader as a push constant.
     Point_2<float> quad[2];

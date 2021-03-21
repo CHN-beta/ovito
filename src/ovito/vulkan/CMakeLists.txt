@@ -59,6 +59,7 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 		OffscreenVulkanSceneRenderer.cpp
 		VulkanLinePrimitive.cpp
 		VulkanImagePrimitive.cpp
+		VulkanTextPrimitive.cpp
 		vma/vk_mem_alloc.cpp
 		resources/vulkan.qrc
 )

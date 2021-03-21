@@ -402,6 +402,16 @@ bool VulkanDevice::create(QWindow* window)
 	        throw Exception(tr("Failed to create Vulkan command pool for present queue (error code %1).").arg(err));
     }
 
+    // Create command pool used for data transfers.
+    poolInfo.queueFamilyIndex = _gfxQueueFamilyIdx;
+    poolInfo.flags = 0;
+    err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_transferCmdPool);
+    if(err != VK_SUCCESS)
+        throw Exception(tr("Failed to create Vulkan transfer command pool (error code %1).").arg(err));
+    // Create fence for synchronizing data transfers.
+    VkFenceCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+    deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &_transferFence);
+
     _hostVisibleMemIndex = 0;
     VkPhysicalDeviceMemoryProperties physDevMemProps;
     bool hostVisibleMemIndexSet = false;
@@ -466,6 +476,34 @@ bool VulkanDevice::create(QWindow* window)
     if(err != VK_SUCCESS)
         throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
 
+    // Create a texture sampler
+	VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+	samplerInfo.magFilter = VK_FILTER_NEAREST;
+	samplerInfo.minFilter = VK_FILTER_NEAREST;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
+	samplerInfo.minLod = samplerInfo.maxLod = 0.0f;
+	err = deviceFunctions()->vkCreateSampler(logicalDevice(), &samplerInfo, nullptr, &_samplerNearest);
+    if(err != VK_SUCCESS)
+        throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
+
+    // Create the descriptor pool.
+    VkDescriptorPoolSize poolSize;
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = 100;
+    VkDescriptorPoolCreateInfo descriptorPoolInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    descriptorPoolInfo.poolSizeCount = 1;
+    descriptorPoolInfo.pPoolSizes = &poolSize;
+    descriptorPoolInfo.maxSets = 100;
+	err = deviceFunctions()->vkCreateDescriptorPool(logicalDevice(), &descriptorPoolInfo, nullptr, &_descriptorPool);
+    if(err != VK_SUCCESS)
+        throw Exception(tr("Failed to create Vulkan descriptor pool (error code %1).").arg(err));
+
 	return true;
 }
 
@@ -515,6 +553,7 @@ void VulkanDevice::reset()
     // Make sure our clients have release their resources properly.
     OVITO_ASSERT(_activeResourceFrames.empty());
     OVITO_ASSERT(_dataBuffers.empty());
+    OVITO_ASSERT(_textureImages.empty());
 
     qCDebug(lcVulkan, "VulkanDevice reset");
 
@@ -528,6 +567,30 @@ void VulkanDevice::reset()
     if(presentCommandPool() != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyCommandPool(logicalDevice(), presentCommandPool(), nullptr);
         _presCmdPool = VK_NULL_HANDLE;
+    }
+
+    // Release command buffer pool used for data uploads.
+    if(_transferCmdPool != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyCommandPool(logicalDevice(), _transferCmdPool, nullptr);
+        _transferCmdPool = VK_NULL_HANDLE;
+    }
+
+    // Release the fence object.
+    if(_transferFence != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyFence(logicalDevice(), _transferFence, nullptr);
+        _transferFence = VK_NULL_HANDLE;
+    }
+
+    // Release the texture sampler.
+    if(_samplerNearest != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroySampler(logicalDevice(), _samplerNearest, nullptr);
+        _samplerNearest = VK_NULL_HANDLE;
+    }
+
+    // Release the descriptor sets.
+    if(_descriptorPool != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyDescriptorPool(logicalDevice(), _descriptorPool, nullptr);
+        _descriptorPool = VK_NULL_HANDLE;
     }
 
     // Release pipeline cache.
@@ -737,12 +800,68 @@ VkShaderModule VulkanDevice::createShader(const QString& filename)
 }
 
 /******************************************************************************
+* Synchronously executes some memory transfer commands.
+******************************************************************************/
+void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&& function)
+{
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+	// Allocate the default command buffer that we will use for the instant commands.
+    VkCommandBufferAllocateInfo cmdAllocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, _transferCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
+    VkCommandBuffer cmdBuf;
+    VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdAllocInfo, &cmdBuf);
+    if(err != VK_SUCCESS) {
+		qWarning("VulkanDevice: Failed to allocate transfer command buffer: %d", err);
+		throw Exception(QStringLiteral("Failed to allocate Vulkan transfer command buffer."));
+    }
+
+	// Begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that.
+    VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT , nullptr };
+    err = deviceFunctions()->vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
+    if(err != VK_SUCCESS) {
+		qWarning("VulkanDevice: Failed to begin transfer command buffer: %d", err);
+		throw Exception(QStringLiteral("Failed to begin Vulkan transfer command buffer."));
+    }
+
+    // Execute the function supplied by the caller.
+	function(cmdBuf);
+
+    // End recording commands.
+    err = deviceFunctions()->vkEndCommandBuffer(cmdBuf);
+    if(err != VK_SUCCESS) {
+		qWarning("VulkanDevice: Failed to end transfer command buffer: %d", err);
+		throw Exception(QStringLiteral("Failed to end Vulkan transfer command buffer."));
+    }
+
+	// Submit command buffer to the queue and execute it.
+    VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdBuf;
+	err = deviceFunctions()->vkQueueSubmit(graphicsQueue(), 1, &submitInfo, _transferFence);
+    if(err != VK_SUCCESS) {
+        qWarning("VulkanDevice: Failed to submit transfer commands to Vulkan queue: %d", err);
+        throw Exception(QStringLiteral("Failed to submit transfer commands to Vulkan queue."));
+    }
+
+    // Block until the transfer operation completes.
+    deviceFunctions()->vkWaitForFences(logicalDevice(), 1, &_transferFence, VK_TRUE, UINT64_MAX);
+    // Reset the fence object.
+	deviceFunctions()->vkResetFences(logicalDevice(), 1, &_transferFence);
+
+    // Clear the command pool. This will free the command buffer too.
+	deviceFunctions()->vkResetCommandPool(logicalDevice(), _transferCmdPool, 0);
+}
+
+/******************************************************************************
 * Informs the resource manager that a new frame starts being rendered.
 ******************************************************************************/
 VulkanDevice::ResourceFrameHandle VulkanDevice::acquireResourceFrame()
 {    
     if(_activeResourceFrames.empty()) {
         OVITO_ASSERT(_dataBuffers.empty());
+        OVITO_ASSERT(_textureImages.empty());
+        OVITO_ASSERT(_descriptorSets.empty());
         _activeResourceFrames.push_back(1);
     }
     else {
@@ -768,13 +887,39 @@ void VulkanDevice::releaseResourceFrame(ResourceFrameHandle frame)
     // The oldest frame that is still active. We can release all resource from earlier frames.
     ResourceFrameHandle oldestFrame = _activeResourceFrames.empty() ? std::numeric_limits<ResourceFrameHandle>::max() : _activeResourceFrames.front();
 
-    // Release all Vulkan resources that are no longer in use.
-    for(auto iter =_dataBuffers.begin(); iter != _dataBuffers.end(); ) {
+    // Release all Vulkan memory buffers that are no longer in use.
+    for(auto iter = _dataBuffers.begin(); iter != _dataBuffers.end(); ) {
         if(iter->second.resourceFrame < oldestFrame) {
             OVITO_ASSERT(iter->second.buffer);
             OVITO_ASSERT(iter->second.allocation);
             vmaDestroyBuffer(allocator(), iter->second.buffer, iter->second.allocation);
             iter = _dataBuffers.erase(iter);
+        }
+        else {
+            ++iter;
+        }
+    }
+
+    // Release all Vulkan images that are no longer in use.
+    for(auto iter = _textureImages.begin(); iter != _textureImages.end(); ) {
+        if(iter->second.resourceFrame < oldestFrame) {
+            OVITO_ASSERT(iter->second.image);
+            OVITO_ASSERT(iter->second.allocation);
+            deviceFunctions()->vkDestroyImageView(logicalDevice(), iter->second.imageView, nullptr);
+            vmaDestroyImage(allocator(), iter->second.image, iter->second.allocation);
+            iter = _textureImages.erase(iter);
+        }
+        else {
+            ++iter;
+        }
+    }
+
+    // Release all descriptor sets are no longer in use.
+    for(auto iter = _descriptorSets.begin(); iter != _descriptorSets.end(); ) {
+        if(iter->second.resourceFrame < oldestFrame) {
+            OVITO_ASSERT(iter->second.descriptorSet);
+            deviceFunctions()->vkFreeDescriptorSets(logicalDevice(), _descriptorPool, 1, &iter->second.descriptorSet);
+            iter = _descriptorSets.erase(iter);
         }
         else {
             ++iter;
@@ -849,5 +994,178 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
 
     return bufferInfo.buffer;
 }
+
+/******************************************************************************
+* Uploads an image to the Vulkan device as a texture image.
+******************************************************************************/
+VkImageView VulkanDevice::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame)
+{
+    OVITO_ASSERT(!image.isNull());
+    OVITO_ASSERT(image.format() == QImage::Format_ARGB32 || image.format() == QImage::Format_ARGB32_Premultiplied || image.format() == QImage::Format_RGB32);
+    OVITO_ASSERT(logicalDevice());
+    OVITO_ASSERT(std::binary_search(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame));
+
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+    // Check if this image has already been uploaded to the GPU.
+    qint64 imageKey = image.cacheKey();
+    auto iter = _textureImages.find(imageKey);
+    if(iter != _textureImages.end()) {
+        // Update frame in which the resource was actively used.
+        OVITO_ASSERT(resourceFrame >= iter->second.resourceFrame);
+        iter->second.resourceFrame = resourceFrame;
+        return iter->second.imageView;
+    }
+
+    // Prepare the internal data structure that represents the image uploaded to the GPU.
+    TextureInfo textureInfo;
+    textureInfo.resourceFrame = resourceFrame;
+
+    // Determine the required staging buffer size.
+    VkDeviceSize bufferSize = image.bytesPerLine() * image.height();
+    // Allocate the staging buffer.
+    VkBufferCreateInfo bufferCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    bufferCreateInfo.size = bufferSize;
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // The buffer will only be used from the graphics queue, so we can stick to exclusive access.
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingAllocation;
+    VkResult err = vmaCreateBuffer(allocator(), &bufferCreateInfo, &allocInfo, &stagingBuffer, &stagingAllocation, nullptr);
+    if(err != VK_SUCCESS)
+        throw Exception(QStringLiteral("Failed to create Vulkan image staging buffer (error code %1).").arg(err));
+
+    // Fill the staging buffer with the image data.
+    void* p;
+    err = vmaMapMemory(allocator(), stagingAllocation, &p);
+    if(err != VK_SUCCESS)
+        throw Exception(QStringLiteral("Failed to map memory of Vulkan image staging buffer (error code %1).").arg(err));
+    memcpy(p, image.constBits(), bufferSize);
+    vmaFlushAllocation(allocator(), stagingAllocation, 0, VK_WHOLE_SIZE);
+    vmaUnmapMemory(allocator(), stagingAllocation);
+
+    // Create the Vulkan image.
+	VkImageCreateInfo imgCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+	imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imgCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imgCreateInfo.extent.width = static_cast<uint32_t>(image.width());
+	imgCreateInfo.extent.height = static_cast<uint32_t>(image.height());
+	imgCreateInfo.extent.depth = 1;
+	imgCreateInfo.arrayLayers = 1;
+	imgCreateInfo.mipLevels = 1;
+	imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imgCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	imgCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	VmaAllocationCreateInfo imgAllocInfo = {};
+	imgAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	err = vmaCreateImage(allocator(), &imgCreateInfo, &imgAllocInfo, &textureInfo.image, &textureInfo.allocation, nullptr);
+    if(err != VK_SUCCESS)
+        throw Exception(QStringLiteral("Failed to allocate and create Vulkan texture image (error code %1).").arg(err));
+
+    // Perform upload transfer from staging buffer to destination image.
+    immediateTransferSubmit([&](VkCommandBuffer cmdBuf) {
+        VkImageSubresourceRange range;
+		range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		range.baseMipLevel = 0;
+		range.levelCount = 1;
+		range.baseArrayLayer = 0;
+		range.layerCount = 1;
+        // Perform image layout transition from undefined to destination optimal layout.
+		VkImageMemoryBarrier imageTransferBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+		imageTransferBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageTransferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imageTransferBarrier.image = textureInfo.image;
+		imageTransferBarrier.subresourceRange = range;
+		imageTransferBarrier.srcAccessMask = 0;
+		imageTransferBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		deviceFunctions()->vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageTransferBarrier);
+        // Copy the staging buffer into the image.
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset = 0;
+        copyRegion.bufferRowLength = 0;
+        copyRegion.bufferImageHeight = 0;
+        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel = 0;
+        copyRegion.imageSubresource.baseArrayLayer = 0;
+        copyRegion.imageSubresource.layerCount = 1;
+        copyRegion.imageExtent = imgCreateInfo.extent;
+        deviceFunctions()->vkCmdCopyBufferToImage(cmdBuf, stagingBuffer, textureInfo.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    	// Perform image layout transition from destination optimal to shader readable layout.
+        VkImageMemoryBarrier imageTransitionBarrier = imageTransferBarrier;
+        imageTransitionBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageTransitionBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageTransitionBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageTransitionBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    	deviceFunctions()->vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageTransitionBarrier);
+    });
+
+    // Destroy the staging buffer.
+    vmaDestroyBuffer(allocator(), stagingBuffer, stagingAllocation);
+
+    // Create the image view.
+    VkImageViewCreateInfo imgViewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+    imgViewInfo.image = textureInfo.image;
+    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imgViewInfo.format = imgCreateInfo.format;
+    imgViewInfo.components.r = VK_COMPONENT_SWIZZLE_B;
+    imgViewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+    imgViewInfo.components.b = VK_COMPONENT_SWIZZLE_R;
+    imgViewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+    imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imgViewInfo.subresourceRange.levelCount = imgViewInfo.subresourceRange.layerCount = 1;
+    err = deviceFunctions()->vkCreateImageView(logicalDevice(), &imgViewInfo, nullptr, &textureInfo.imageView);
+    if(err != VK_SUCCESS)
+        throw Exception(QStringLiteral("Failed to create Vulkan texture image view (error code %1).").arg(err));
+
+    // Insert record into texture image cache.
+    _textureImages.insert(std::make_pair(imageKey, textureInfo));
+
+    return textureInfo.imageView;
+}
+
+/******************************************************************************
+* Creates a new descriptor set from the pool and caches it, or returns an 
+* existing one for the given cache key.
+******************************************************************************/
+std::pair<VkDescriptorSet, bool> VulkanDevice::createDescriptorSet(VkDescriptorSetLayout layout, const DescriptorSetCacheKey& cacheKey, VulkanDevice::ResourceFrameHandle resourceFrame)
+{
+    OVITO_ASSERT(logicalDevice());
+    OVITO_ASSERT(std::binary_search(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame));
+
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+    // Check if this descriptor set with for the cache key has already been created.
+    auto iter = _descriptorSets.find(cacheKey);
+    if(iter != _descriptorSets.end()) {
+        // Update frame in which the resource was actively used.
+        OVITO_ASSERT(resourceFrame >= iter->second.resourceFrame);
+        iter->second.resourceFrame = resourceFrame;
+        return { iter->second.descriptorSet, false };
+    }
+
+    // Prepare the internal data structure that represents the descriptor set.
+    DescriptorSetInfo descriptorSetInfo;
+    descriptorSetInfo.resourceFrame = resourceFrame;
+
+    // Create a descriptor set.
+    VkDescriptorSetAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    allocInfo.descriptorPool = _descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout;
+    VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+    VkResult err = deviceFunctions()->vkAllocateDescriptorSets(logicalDevice(), &allocInfo, &descriptorSetInfo.descriptorSet);
+    if(err != VK_SUCCESS)
+        throw Exception(tr("Failed to create Vulkan descriptor set (error code %1).").arg(err));
+
+    // Insert record into descriptor set cache.
+    _descriptorSets.insert(std::make_pair(cacheKey, descriptorSetInfo));
+
+    return { descriptorSetInfo.descriptorSet, true };
+}
+
 
 }	// End of namespace

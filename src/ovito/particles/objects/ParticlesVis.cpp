@@ -523,6 +523,8 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		ConstDataObjectRef,			// Transparency property
 		ConstDataObjectRef			// Radius property
 	>;
+	// Define a strong C++ type for the keys.
+	struct ShapeMeshCacheKeyType : ShapeMeshCacheKey { using ShapeMeshCacheKey::ShapeMeshCacheKey; };
 	// The data structure created for each mesh-based particle type.
 	struct MeshParticleType {
 		std::shared_ptr<MeshPrimitive> meshPrimitive;
@@ -533,7 +535,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 	using ShapeMeshCacheValue = std::vector<MeshParticleType>;
 
 	// Look up the rendering primitives for mesh-based particle types in the vis cache.
-	ShapeMeshCacheValue& meshVisCache = dataset()->visCache().get<ShapeMeshCacheValue>(ShapeMeshCacheKey(
+	ShapeMeshCacheValue& meshVisCache = dataset()->visCache().get<ShapeMeshCacheValue>(ShapeMeshCacheKeyType{
 		renderer,
 		const_cast<PipelineSceneNode*>(contextNode),
 		typeProperty,
@@ -544,7 +546,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		colorProperty,
 		selectionProperty,
 		transparencyProperty,
-		radiusProperty));
+		radiusProperty});
 
 	// Check if we already have valid rendering primitives that are up to date.
 	if(meshVisCache.empty()) {

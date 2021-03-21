@@ -51,7 +51,7 @@ public:
 	};
 
 	/// Constructor.
-	VulkanLinePrimitive(VulkanSceneRenderer* renderer);
+	explicit VulkanLinePrimitive(VulkanSceneRenderer* renderer);
 
 	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);

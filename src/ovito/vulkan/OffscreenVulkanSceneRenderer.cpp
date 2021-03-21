@@ -407,18 +407,14 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 
 		// Submit draw calls
 		VkCommandBuffer cmdBuf = currentCommandBuffer();
-		VkSubmitInfo submitInfo;
-		memset(&submitInfo, 0, sizeof(submitInfo));
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &cmdBuf;
 		VkPipelineStageFlags psf = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		submitInfo.pWaitDstStageMask = &psf;
 
-		VkFenceCreateInfo fenceInfo;
-		memset(&fenceInfo, 0, sizeof(fenceInfo));
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		VkFence fence;
+		VkFenceCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 		deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &fence);
 
 		// Submit command buffer to a queue and wait for fence until queue operations have been finished

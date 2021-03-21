@@ -251,6 +251,15 @@ std::shared_ptr<ImagePrimitive> VulkanSceneRenderer::createImagePrimitive()
 }
 
 /******************************************************************************
+* Creates a new text rendering primitive.
+******************************************************************************/
+std::shared_ptr<TextPrimitive> VulkanSceneRenderer::createTextPrimitive()
+{
+	OVITO_ASSERT(!isBoundingBoxPass());
+	return std::make_shared<VulkanTextPrimitive>(this);
+}
+
+/******************************************************************************
 * Renders a line primitive.
 ******************************************************************************/
 void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
@@ -268,6 +277,16 @@ void VulkanSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& pri
     std::shared_ptr<VulkanImagePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanImagePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this, _imagePrimitivePipelines);
+}
+
+/******************************************************************************
+* Renders a text primitive.
+******************************************************************************/
+void VulkanSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primitive)
+{
+    std::shared_ptr<VulkanTextPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanTextPrimitive>(primitive);
+    OVITO_ASSERT(vulkanPrimitive);
+	vulkanPrimitive->render(this);
 }
 
 }	// End of namespace

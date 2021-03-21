@@ -40,7 +40,9 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     VkPrimitiveTopology topology,
     uint32_t extraDynamicStateCount,
     const VkDynamicState* pExtraDynamicStates,
-    bool enableAlphaBlending)
+    bool enableAlphaBlending,
+    uint32_t setLayoutCount,
+    const VkDescriptorSetLayout* pSetLayouts)
 {
     OVITO_ASSERT(_layout == VK_NULL_HANDLE);
     OVITO_ASSERT(_pipeline == VK_NULL_HANDLE);
@@ -58,6 +60,8 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.pushConstantRangeCount = (vertexPushConstantSize != 0 ? 1 : 0) + (fragmentPushConstantSize != 0 ? 1 : 0);
     pipelineLayoutInfo.pPushConstantRanges = (vertexPushConstantSize != 0) ? &pushConstantRanges[0] : &pushConstantRanges[1];
+    pipelineLayoutInfo.setLayoutCount = setLayoutCount;
+    pipelineLayoutInfo.pSetLayouts = pSetLayouts;
     VkResult err = renderer->deviceFunctions()->vkCreatePipelineLayout(renderer->logicalDevice(), &pipelineLayoutInfo, nullptr, &_layout);
     if(err != VK_SUCCESS)
         renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));

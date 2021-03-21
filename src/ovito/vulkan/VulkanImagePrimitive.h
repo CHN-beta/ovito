@@ -46,10 +46,11 @@ public:
 		void release(VulkanSceneRenderer* renderer);
 
 		VulkanPipeline imageQuad;
+		VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 	};
 
 	/// Constructor.
-	VulkanImagePrimitive(VulkanSceneRenderer* renderer);
+	explicit VulkanImagePrimitive(VulkanSceneRenderer* renderer);
 
 	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);

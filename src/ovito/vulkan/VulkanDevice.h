@@ -170,6 +170,12 @@ public:
 	    return (v + byteAlign - 1) & ~(byteAlign - 1);
 	}
 
+	/// Synchronously executes some memory transfer commands.
+	void immediateTransferSubmit(std::function<void(VkCommandBuffer)>&& function);
+
+	/// Returns the standard texture sampler, which uses nearest interpolation.
+	VkSampler samplerNearest() const { return _samplerNearest; }
+
 	/// Informs the resource manager that a new frame starts being rendered.
 	ResourceFrameHandle acquireResourceFrame();
 
@@ -178,6 +184,23 @@ public:
 
 	/// Uploads an OVITO DataBuffer to the Vulkan device.
 	VkBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame);
+
+	/// Uploads an image to the Vulkan device as a texture image.
+	VkImageView uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
+
+	/// Utility data structure that encodes an arbitrary c++ type and the bit representation of a value of that type.
+	struct DescriptorSetCacheKey : public std::tuple<std::type_index, QVarLengthArray<quint8, 16>> {
+		template<typename T>
+		DescriptorSetCacheKey(const T& value) : std::tuple<std::type_index, QVarLengthArray<quint8, 16>>{ typeid(T),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+			{ reinterpret_cast<const quint8*>(&value), reinterpret_cast<const quint8*>(&value) + sizeof(T) }} {}
+#else
+			{ (int)sizeof(T) }} { std::copy(reinterpret_cast<const quint8*>(&value), reinterpret_cast<const quint8*>(&value) + sizeof(T), std::get<1>(*this).begin()); }
+#endif
+	};
+
+	/// Creates a new descriptor set from the pool and caches it, or returns an existing one for the given cache key.
+	std::pair<VkDescriptorSet, bool> createDescriptorSet(VkDescriptorSetLayout layout, const DescriptorSetCacheKey& cacheKey, ResourceFrameHandle resourceFrame);
 
 	/// Returns whether this device uses a unified memory architecture, i.e., 
 	/// the device-local memory heap is also the CPU-local memory heap. 
@@ -245,6 +268,15 @@ private:
 	/// The command pool for creating commands for the presentation queue.
     VkCommandPool _presCmdPool = VK_NULL_HANDLE;
 
+	/// The command pool used for transferring data buffers and images to GPU memory.
+    VkCommandPool _transferCmdPool = VK_NULL_HANDLE;
+
+	/// Fence object used for synchronized data transfers to the GPU.
+	VkFence _transferFence = VK_NULL_HANDLE;
+
+	/// The standard texture sampler, which uses nearest interpolation.
+	VkSampler _samplerNearest = VK_NULL_HANDLE;
+
 	/// The format to use for the depth-stencil buffer.
     VkFormat _dsFormat = VK_FORMAT_D24_UNORM_S8_UINT;
 
@@ -265,6 +297,9 @@ private:
 	/// The Vulkan pipeline cache.
 	VkPipelineCache _pipelineCache = VK_NULL_HANDLE;
 
+	/// The pool for creating descriptor sets.
+	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
+
 	struct DataBufferInfo {
 		VkBuffer buffer = VK_NULL_HANDLE;
 		VmaAllocation allocation = VK_NULL_HANDLE;
@@ -273,6 +308,24 @@ private:
 
 	/// Keeps track of the data buffers that have been uploaded to the Vulkan device.
 	std::map<ConstDataBufferPtr, DataBufferInfo> _dataBuffers;
+
+	struct TextureInfo {
+		VkImage image = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VkImageView imageView = VK_NULL_HANDLE;
+		ResourceFrameHandle resourceFrame;
+	};
+
+	/// Keeps track of the texture images that have been uploaded to the Vulkan device.
+	std::map<qint64, TextureInfo> _textureImages;
+
+	struct DescriptorSetInfo {
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+		ResourceFrameHandle resourceFrame;
+	};
+
+	/// Keeps track of the descriptor sets that have been allocated.
+	std::map<DescriptorSetCacheKey, DescriptorSetInfo> _descriptorSets;
 
 	/// List of frames that are currently being rendered (by the CPU and/or the GPU).
 	std::vector<ResourceFrameHandle> _activeResourceFrames;
