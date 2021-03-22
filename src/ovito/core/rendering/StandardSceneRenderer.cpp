@@ -47,15 +47,24 @@ StandardSceneRenderer::StandardSceneRenderer(DataSet* dataset) : SceneRenderer(d
 ******************************************************************************/
 bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
+	OVITO_ASSERT(!_internalRenderer);
+
 	if(!SceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
 
-	// Create the internal renderer implementation.
-	// Choose between OpenGL and Vulkan option.
-	OVITO_ASSERT(!_internalRenderer);
-	OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+	// Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
+	OvitoClassPtr rendererClass = {};
+
+	// Did user select Vulkan as the standard graphics interface?
+	QSettings applicationSettings;
+	if(applicationSettings.value("rendering/graphics_interface").toString() == "Vulkan")
+		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+
+	// Fall back to OpenGL renderer as the default implementation.
 	if(!rendererClass)
 		rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
+
+	// Instantiate the renderer implementation.
 	if(!rendererClass)
 		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
 	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset(), Application::instance()->executionContext()));

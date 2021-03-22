@@ -43,6 +43,31 @@ WidgetViewportWindow::Registry& WidgetViewportWindow::registry()
 }
 
 /******************************************************************************
+* Factory method which creates a new viewport window widget. Depending on the 
+* user's settings this can be either a OpenGL or a Vulkan window.
+******************************************************************************/
+WidgetViewportWindow* WidgetViewportWindow::createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent)
+{
+	// Select the viewport window implementation to use.
+	QSettings settings;
+	const QMetaObject* viewportImplementation = nullptr;
+	for(const QMetaObject* metaType : WidgetViewportWindow::registry()) {
+		if(qstrcmp(metaType->className(), "Ovito::OpenGLViewportWindow") == 0) {
+			viewportImplementation = metaType;
+		}
+		else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/graphics_interface").toString() == "Vulkan") {
+			viewportImplementation = metaType;
+			break;
+		}
+	}
+
+	if(viewportImplementation)
+		return dynamic_cast<WidgetViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(ViewportInputManager*, inputManager), Q_ARG(MainWindow*, mainWindow), Q_ARG(QWidget*, parent)));
+
+	return nullptr;
+}
+
+/******************************************************************************
 * Constructor.
 ******************************************************************************/
 WidgetViewportWindow::WidgetViewportWindow(MainWindowInterface* mainWindow, ViewportInputManager* inputManager, Viewport* vp)

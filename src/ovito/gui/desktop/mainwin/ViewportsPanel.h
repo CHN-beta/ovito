@@ -52,6 +52,9 @@ public Q_SLOTS:
 	/// \brief Performs the layout of the viewports in the panel.
 	void layoutViewports();
 
+	/// Destroys all viewport windows in the panel and recreates them.
+	void recreateViewportWindows();
+
 protected:
 
 	/// \brief Renders the borders around the viewports.

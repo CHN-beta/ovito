@@ -93,7 +93,7 @@ public:
 	CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
 
 	/// Returns the container widget for viewports.
-	QWidget* viewportsPanel() const { return _viewportsPanel; }
+	ViewportsPanel* viewportsPanel() const { return _viewportsPanel; }
 
 	/// Returns the layout manager for the status bar area of the main window.
 	QHBoxLayout* statusBarLayout() const { return _statusBarLayout; }
@@ -165,7 +165,7 @@ private:
 	GuiDataSetContainer _datasetContainer;
 
 	/// The container widget for viewports.
-	QWidget* _viewportsPanel;
+	ViewportsPanel* _viewportsPanel;
 
 	/// The widget that numerically displays the object transformation.
 	CoordinateDisplayWidget* _coordinateDisplay;

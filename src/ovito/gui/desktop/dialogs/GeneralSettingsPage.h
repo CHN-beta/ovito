@@ -55,6 +55,7 @@ private:
 
 	QCheckBox* _useQtFileDialog;
 	QCheckBox* _sortModifiersByCategory;
+	QButtonGroup* _graphicsSystem;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 	QCheckBox* _enableUsageStatistics;

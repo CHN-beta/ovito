@@ -41,6 +41,9 @@ public:
 	/// Returns the global registry, which allows enumerating all installed viewport window implementations.
 	static Registry& registry();
 
+	/// Factory method which creates a new viewport window widget. Depending on the user's settings this can be either a OpenGL or a Vulkan window.
+	static WidgetViewportWindow* createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent);
+
 public:
 
 	/// Constructor.

@@ -58,7 +58,6 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
 	if(WidgetViewportWindow* window = static_cast<WidgetViewportWindow*>(vp->window()))
 		return window->widget();
-	OVITO_ASSERT(false);
 	return nullptr;
 }
 
@@ -69,34 +68,35 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 {
 	disconnect(_activeViewportChangedConnection);
 	disconnect(_maximizedViewportChangedConnection);
+	_viewportConfig = newViewportConfiguration;
+	recreateViewportWindows();
+	if(_viewportConfig) {
+		// Repaint the viewport borders when another viewport has been activated.
+		_activeViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::activeViewportChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
+		// Update layout when a viewport has been maximized.
+		_maximizedViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
+	}
+}
 
+/******************************************************************************
+* Destroys all viewport windows in the panel and recreates them.
+******************************************************************************/
+void ViewportsPanel::recreateViewportWindows()
+{
 	// Delete all existing viewport widgets first.
 	for(QWidget* widget : findChildren<QWidget*>())
 		delete widget;
 
-	_viewportConfig = newViewportConfiguration;
-
-	if(newViewportConfiguration) {
+	if(_viewportConfig) {
 		// Create windows for the new viewports.
 		try {
-			// Select the viewport window implementation to use.
-			const QMetaObject* viewportImplementation = nullptr;
-			for(const QMetaObject* metaType : WidgetViewportWindow::registry()) {
-				viewportImplementation = metaType;
-				if(viewportImplementation->className() == "Ovito::OpenGLViewportWindow")
-					break;
-			}
-			if(!viewportImplementation)
-				throw Exception(tr("There is no viewport window implementation available. This should never happen. Please check your OVITO installation."));
-
 			ViewportInputManager* inputManager = _mainWindow->viewportInputManager();
-			for(Viewport* vp : newViewportConfiguration->viewports()) {
+			for(Viewport* vp : _viewportConfig->viewports()) {
 				OVITO_ASSERT(vp->window() == nullptr);
-				WidgetViewportWindow* viewportWindow = dynamic_cast<WidgetViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(ViewportInputManager*, inputManager), Q_ARG(MainWindow*, _mainWindow), Q_ARG(QWidget*, this)));
-				OVITO_ASSERT(viewportWindow);
+				WidgetViewportWindow* viewportWindow = WidgetViewportWindow::createViewportWindow(vp, inputManager, _mainWindow, this);
 				if(!viewportWindow)
-					throw Exception(tr("Failed to create viewport window widget."));
-				if(newViewportConfiguration->activeViewport() == vp)
+					vp->throwException(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
+				if(_viewportConfig->activeViewport() == vp)
 					viewportWindow->widget()->setFocus();
 			}
 		}
@@ -104,12 +104,6 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 		}
-
-		// Repaint the viewport borders when another viewport has been activated.
-		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
-
-		// Update layout when a viewport has been maximized.
-		_maximizedViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
 
 		// Layout viewport widgets.
 		layoutViewports();
