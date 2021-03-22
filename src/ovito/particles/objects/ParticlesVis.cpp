@@ -300,8 +300,29 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
 		ConstPropertyAccess<FloatType> radiusArray(output);
 		if(boost::find(radiusArray, FloatType(0)) != radiusArray.end()) {	
 			radiusArray.reset();
-			// Replace zero entries in the per-particle array with the uniform default radius.
-			boost::replace(PropertyAccess<FloatType>(output.makeMutable()), FloatType(0), defaultRadius);
+
+			// Copy per-type radii to those particles whose "Radius" property value is zero.
+			if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
+				// Build a lookup map for particle type radii.
+				std::map<int,FloatType> radiusMap = ParticleType::typeRadiusMap(typeProperty);
+				// Skip the following loop if all per-type radii are zero. 
+				if(boost::algorithm::any_of(radiusMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
+					// Fill radius array.
+					ConstPropertyAccess<int> typeArray(typeProperty);
+					const int* type = typeArray.cbegin();
+					for(FloatType& radius : PropertyAccess<FloatType>(output.makeMutable())) {
+						if(radius <= 0) {
+							auto it = radiusMap.find(*type);
+							if(it != radiusMap.end())
+								radius = it->second;
+						}
+						++type;
+					}
+				}
+			}
+
+			// Replace remaining zero entries in the "Radius" array with the uniform default radius.
+			boost::replace(PropertyAccess<FloatType>(output.makeMutable()), FloatType(0), defaultParticleRadius());
 		}
 		// Apply global scaling factor.
 		if(includeGlobalScaleFactor && radiusScaleFactor() != 1.0) {
