@@ -90,24 +90,40 @@
       </para>
     </simplesect>
 
-    <simplesect>
+    <simplesect xml:id="installation.troubleshooting">
       <title>Troubleshooting</title>
       <para>
         If you run into any problems during the installation of OVITO, please contact us 
         via the <link xlink:href="https://www.ovito.org/forum/">online support forum</link>. The OVITO team will be happy to assist you.
-        You may run into the following typical installation problems:
+        You may encounter the following common installation problems:
       </para>
+      <bridgehead renderas="sect3">Linux:</bridgehead>
       <para>
         <variablelist>
           <varlistentry>
-            <term>Linux:</term>
+            <term>Error when running <command>ovito</command> or the script interpreter <command>ovitos</command> from the terminal:</term>
             <listitem>
               <para>
-                Error message shown in the terminal when running the <command>ovito</command> executable or the script interpreter <command>ovitos</command>:
-                <screen>   ./ovitos: error while loading shared libraries: libQt5DBus.so.5: cannot open shared object file: No such file or directory</screen>
-                This error is typically a result of broken symbolic links in the <filename>lib/ovito/</filename> subdirectory after 
+                <screen>./ovito: error while loading shared libraries: libQt5DBus.so.5: cannot open shared object file: No such file or directory</screen>
+                This error typically is a result of broken symbolic links in the <filename>lib/ovito/</filename> subdirectory after 
                 extracting the OVITO installation archive on a computer different from the target machine. Solution: Extract the
                 OVITO installation archive right on the target Linux machine. Do not transfer the extracted program directory between computers.
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>Error when running <command>ovito</command> from the terminal:</term>
+            <listitem>
+              <para>
+                <screen>qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+Available platform plugins are: minimal, offscreen, vnc, xcb.</screen>
+                OVITO cannot find the <filename>libxcb-*.so</filename> system libraries, which might not be preinstalled on some Linux systems.
+                Solution: Install these libraries using the system's package manager. On Ubuntu/Debian systems, for example, run the terminal command:
+                <screen>
+    sudo apt-get install libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+                         libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 \
+                         libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1 libxcb1</screen>
               </para>
             </listitem>
           </varlistentry>
