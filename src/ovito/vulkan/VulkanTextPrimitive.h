@@ -38,9 +38,6 @@ class VulkanTextPrimitive : public TextPrimitive
 {
 public:
 
-	/// Constructor.
-	explicit VulkanTextPrimitive(VulkanSceneRenderer* renderer);
-
 	/// \brief Sets the text to be rendered.
 	virtual void setText(const QString& text) override {
 		if(text != this->text())

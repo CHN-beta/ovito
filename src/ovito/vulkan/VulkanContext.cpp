@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
-#include "VulkanDevice.h"
+#include "VulkanContext.h"
 
 namespace Ovito {
 
@@ -40,7 +40,7 @@ static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTy
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-VulkanDevice::VulkanDevice(QObject* parent) : QObject(parent)
+VulkanContext::VulkanContext(QObject* parent) : QObject(parent)
 {
     setDeviceExtensions(QByteArrayList() 
         << "VK_KHR_get_memory_requirements2"
@@ -50,7 +50,7 @@ VulkanDevice::VulkanDevice(QObject* parent) : QObject(parent)
 /******************************************************************************
 * Returns a reference to the global Vulkan instance.
 ******************************************************************************/
-std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
+std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
 {
 	static std::weak_ptr<QVulkanInstance> globalInstance;
 	if(std::shared_ptr<QVulkanInstance> inst = globalInstance.lock()) {
@@ -74,7 +74,7 @@ std::shared_ptr<QVulkanInstance> VulkanDevice::vkInstance()
 * Returns the list of properties for the supported physical devices in the system.
 * This function can be called before creating the logical device.
 ******************************************************************************/
-QVector<VkPhysicalDeviceProperties> VulkanDevice::availablePhysicalDevices()
+QVector<VkPhysicalDeviceProperties> VulkanContext::availablePhysicalDevices()
 {
     if(!_physDevs.isEmpty() && !_physDevProps.isEmpty())
         return _physDevProps;
@@ -83,7 +83,7 @@ QVector<VkPhysicalDeviceProperties> VulkanDevice::availablePhysicalDevices()
     uint32_t count = 1;
     VkResult err = f->vkEnumeratePhysicalDevices(vulkanInstance()->vkInstance(), &count, nullptr);
     if (err != VK_SUCCESS) {
-        qWarning("VulkanDevice: Failed to get physical device count: %d", err);
+        qWarning("VulkanContext: Failed to get physical device count: %d", err);
         return _physDevProps;
     }
     qCDebug(lcVulkan, "%d physical devices", count);
@@ -92,7 +92,7 @@ QVector<VkPhysicalDeviceProperties> VulkanDevice::availablePhysicalDevices()
     QVector<VkPhysicalDevice> devs(count);
     err = f->vkEnumeratePhysicalDevices(vulkanInstance()->vkInstance(), &count, devs.data());
     if(err != VK_SUCCESS) {
-        qWarning("VulkanDevice: Failed to enumerate physical devices: %d", err);
+        qWarning("VulkanContext: Failed to enumerate physical devices: %d", err);
         return _physDevProps;
     }
     _physDevs = devs;
@@ -114,15 +114,15 @@ QVector<VkPhysicalDeviceProperties> VulkanDevice::availablePhysicalDevices()
 * 
 * This function must be called before the logical device is created.
 ******************************************************************************/
-void VulkanDevice::setPhysicalDeviceIndex(int idx)
+void VulkanContext::setPhysicalDeviceIndex(int idx)
 {
     if(_device != VK_NULL_HANDLE) {
-        qWarning("VulkanDevice: Attempted to set physical device when already initialized");
+        qWarning("VulkanContext: Attempted to set physical device when already initialized");
         return;
     }
     const int count = availablePhysicalDevices().count();
     if(idx < 0 || idx >= count) {
-        qWarning("VulkanDevice: Invalid physical device index %d (total physical devices: %d)", idx, count);
+        qWarning("VulkanContext: Invalid physical device index %d (total physical devices: %d)", idx, count);
         return;
     }
     _physDevIndex = idx;
@@ -134,11 +134,11 @@ void VulkanDevice::setPhysicalDeviceIndex(int idx)
 *
 * This function can be called before making creating the logical device.
 ******************************************************************************/
-QVulkanInfoVector<QVulkanExtension> VulkanDevice::supportedDeviceExtensions()
+QVulkanInfoVector<QVulkanExtension> VulkanContext::supportedDeviceExtensions()
 {
     availablePhysicalDevices();
     if(_physDevs.isEmpty()) {
-        qWarning("VulkanDevice: No physical devices found");
+        qWarning("VulkanContext: No physical devices found");
         return QVulkanInfoVector<QVulkanExtension>();
     }
     VkPhysicalDevice physDev = _physDevs.at(_physDevIndex);
@@ -166,7 +166,7 @@ QVulkanInfoVector<QVulkanExtension> VulkanDevice::supportedDeviceExtensions()
             return exts;
         }
     }
-    qWarning("VulkanDevice: Failed to query device extension count: %d", err);
+    qWarning("VulkanContext: Failed to query device extension count: %d", err);
     return {};
 }
 
@@ -176,10 +176,10 @@ QVulkanInfoVector<QVulkanExtension> VulkanDevice::supportedDeviceExtensions()
 *
 * This function must be called before the logical device is created.
 ******************************************************************************/
-void VulkanDevice::setDeviceExtensions(const QByteArrayList& extensions)
+void VulkanContext::setDeviceExtensions(const QByteArrayList& extensions)
 {
     if(_device != VK_NULL_HANDLE) {
-        qWarning("VulkanDevice: Attempted to set device extensions when already initialized");
+        qWarning("VulkanContext: Attempted to set device extensions when already initialized");
         return;
     }
     _requestedDevExtensions = extensions;
@@ -188,7 +188,7 @@ void VulkanDevice::setDeviceExtensions(const QByteArrayList& extensions)
 /******************************************************************************
 * Creates the logical Vulkan device.  
 ******************************************************************************/
-bool VulkanDevice::create(QWindow* window)
+bool VulkanContext::create(QWindow* window)
 {
     OVITO_ASSERT(vulkanInstance());
 
@@ -198,7 +198,7 @@ bool VulkanDevice::create(QWindow* window)
 
     _vulkanFunctions = vulkanInstance()->functions();
 	
-    qCDebug(lcVulkan, "VulkanDevice create");
+    qCDebug(lcVulkan, "VulkanContext create");
 
 	// Get the list of available physical devices.
     availablePhysicalDevices();
@@ -206,7 +206,7 @@ bool VulkanDevice::create(QWindow* window)
 		throw Exception(tr("No Vulkan devices present in the system."));
 
     if(_physDevIndex < 0 || _physDevIndex >= _physDevs.count()) {
-        qWarning("VulkanDevice: Invalid physical device index; defaulting to 0");
+        qWarning("VulkanContext: Invalid physical device index; defaulting to 0");
         _physDevIndex = 0;
     }
 
@@ -328,7 +328,7 @@ bool VulkanDevice::create(QWindow* window)
 
     VkResult err = vulkanFunctions()->vkCreateDevice(physDev, &devInfo, nullptr, &_device);
     if(err == VK_ERROR_DEVICE_LOST) {
-        qWarning("VulkanDevice: Physical device lost");
+        qWarning("VulkanContext: Physical device lost");
         Q_EMIT physicalDeviceLost();
         // Clear the caches so the list of physical devices is re-queried
         _physDevs.clear();
@@ -467,7 +467,7 @@ bool VulkanDevice::create(QWindow* window)
         ++dsFormatIdx;
     }
     if(dsFormatIdx == dsFormatCandidateCount)
-        qWarning("VulkanDevice: Failed to find an optimal depth-stencil format");
+        qWarning("VulkanContext: Failed to find an optimal depth-stencil format");
     qCDebug(lcVulkan, "Depth-stencil format: %d", _dsFormat);
 
     // Create pipeline cache.
@@ -510,7 +510,7 @@ bool VulkanDevice::create(QWindow* window)
 /******************************************************************************
 * Picks the right memory type for a Vulkan image.
 ******************************************************************************/
-uint32_t VulkanDevice::chooseTransientImageMemType(VkImage img, uint32_t startIndex)
+uint32_t VulkanContext::chooseTransientImageMemType(VkImage img, uint32_t startIndex)
 {
     VkPhysicalDeviceMemoryProperties physDevMemProps;
     vulkanFunctions()->vkGetPhysicalDeviceMemoryProperties(_physDevs[_physDevIndex], &physDevMemProps);
@@ -542,7 +542,7 @@ uint32_t VulkanDevice::chooseTransientImageMemType(VkImage img, uint32_t startIn
 /******************************************************************************
 * Releases all Vulkan resources.
 ******************************************************************************/
-void VulkanDevice::reset()
+void VulkanContext::reset()
 {
     if(logicalDevice() == VK_NULL_HANDLE)
         return;
@@ -555,7 +555,7 @@ void VulkanDevice::reset()
     OVITO_ASSERT(_dataBuffers.empty());
     OVITO_ASSERT(_textureImages.empty());
 
-    qCDebug(lcVulkan, "VulkanDevice reset");
+    qCDebug(lcVulkan, "VulkanContext reset");
 
     // Release command buffer pool used for graphics rendering.
     if(graphicsCommandPool() != VK_NULL_HANDLE) {
@@ -615,10 +615,10 @@ void VulkanDevice::reset()
 /******************************************************************************
 * Handles the situation when the Vulkan device was lost after a recent function call.
 ******************************************************************************/
-bool VulkanDevice::checkDeviceLost(VkResult err)
+bool VulkanContext::checkDeviceLost(VkResult err)
 {
     if(err == VK_ERROR_DEVICE_LOST) {
-        qWarning("VulkanDevice: Device lost");
+        qWarning("VulkanContext: Device lost");
         qCDebug(lcVulkan, "Releasing all resources due to device lost");
         reset();
         qCDebug(lcVulkan, "Restarting after device lost");
@@ -631,7 +631,7 @@ bool VulkanDevice::checkDeviceLost(VkResult err)
 /******************************************************************************
 * Helper routine for creating a Vulkan image.
 ******************************************************************************/
-bool VulkanDevice::createVulkanImage(const QSize size,
+bool VulkanContext::createVulkanImage(const QSize size,
                                         VkFormat format,
                                         VkSampleCountFlagBits sampleCount,
                                         VkImageUsageFlags usage,
@@ -657,7 +657,7 @@ bool VulkanDevice::createVulkanImage(const QSize size,
         imgInfo.usage = usage;
         err = deviceFunctions()->vkCreateImage(logicalDevice(), &imgInfo, nullptr, images + i);
         if(err != VK_SUCCESS) {
-            qWarning("VulkanDevice: Failed to create image: %d", err);
+            qWarning("VulkanContext: Failed to create image: %d", err);
             return false;
         }
         // Assume the reqs are the same since the images are same in every way.
@@ -668,19 +668,19 @@ bool VulkanDevice::createVulkanImage(const QSize size,
     VkMemoryAllocateInfo memInfo;
     memset(&memInfo, 0, sizeof(memInfo));
     memInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memInfo.allocationSize = VulkanDevice::aligned(memReq.size, memReq.alignment) * count;
+    memInfo.allocationSize = VulkanContext::aligned(memReq.size, memReq.alignment) * count;
     uint32_t startIndex = 0;
     do {
         memInfo.memoryTypeIndex = chooseTransientImageMemType(images[0], startIndex);
         if(memInfo.memoryTypeIndex == uint32_t(-1)) {
-            qWarning("VulkanDevice: No suitable memory type found");
+            qWarning("VulkanContext: No suitable memory type found");
             return false;
         }
         startIndex = memInfo.memoryTypeIndex + 1;
         qCDebug(lcVulkan, "Allocating %u bytes for transient image (memtype %u)", uint32_t(memInfo.allocationSize), memInfo.memoryTypeIndex);
         err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memInfo, nullptr, mem);
         if(err != VK_SUCCESS && err != VK_ERROR_OUT_OF_DEVICE_MEMORY) {
-            qWarning("VulkanDevice: Failed to allocate image memory: %d", err);
+            qWarning("VulkanContext: Failed to allocate image memory: %d", err);
             return false;
         }
     } 
@@ -689,10 +689,10 @@ bool VulkanDevice::createVulkanImage(const QSize size,
     for(int i = 0; i < count; ++i) {
         err = deviceFunctions()->vkBindImageMemory(logicalDevice(), images[i], *mem, ofs);
         if(err != VK_SUCCESS) {
-            qWarning("VulkanDevice: Failed to bind image memory: %d", err);
+            qWarning("VulkanContext: Failed to bind image memory: %d", err);
             return false;
         }
-        ofs += VulkanDevice::aligned(memReq.size, memReq.alignment);
+        ofs += VulkanContext::aligned(memReq.size, memReq.alignment);
         VkImageViewCreateInfo imgViewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         imgViewInfo.image = images[i];
         imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -705,7 +705,7 @@ bool VulkanDevice::createVulkanImage(const QSize size,
         imgViewInfo.subresourceRange.levelCount = imgViewInfo.subresourceRange.layerCount = 1;
         err = deviceFunctions()->vkCreateImageView(logicalDevice(), &imgViewInfo, nullptr, views + i);
         if(err != VK_SUCCESS) {
-            qWarning("VulkanDevice: Failed to create image view: %d", err);
+            qWarning("VulkanContext: Failed to create image view: %d", err);
             return false;
         }
     }
@@ -715,7 +715,7 @@ bool VulkanDevice::createVulkanImage(const QSize size,
 /******************************************************************************
 * Creates a default Vulkan render pass.
 ******************************************************************************/
-VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat, VkSampleCountFlagBits sampleCount)
+VkRenderPass VulkanContext::createDefaultRenderPass(VkFormat colorFormat, VkSampleCountFlagBits sampleCount)
 {
     VkAttachmentDescription attDesc[3];
     memset(attDesc, 0, sizeof(attDesc));
@@ -769,7 +769,7 @@ VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat, VkSampl
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkResult err = deviceFunctions()->vkCreateRenderPass(logicalDevice(), &rpInfo, nullptr, &renderPass);
     if(err != VK_SUCCESS) {
-        qWarning("VulkanDevice: Failed to create renderpass: %d", err);
+        qWarning("VulkanContext: Failed to create renderpass: %d", err);
         return VK_NULL_HANDLE;
     }
     return renderPass;
@@ -778,7 +778,7 @@ VkRenderPass VulkanDevice::createDefaultRenderPass(VkFormat colorFormat, VkSampl
 /******************************************************************************
 * Loads a SPIR-V shader from a file.
 ******************************************************************************/
-VkShaderModule VulkanDevice::createShader(const QString& filename)
+VkShaderModule VulkanContext::createShader(const QString& filename)
 {
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
@@ -802,7 +802,7 @@ VkShaderModule VulkanDevice::createShader(const QString& filename)
 /******************************************************************************
 * Synchronously executes some memory transfer commands.
 ******************************************************************************/
-void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&& function)
+void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&& function)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
@@ -812,7 +812,7 @@ void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&
     VkCommandBuffer cmdBuf;
     VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdAllocInfo, &cmdBuf);
     if(err != VK_SUCCESS) {
-		qWarning("VulkanDevice: Failed to allocate transfer command buffer: %d", err);
+		qWarning("VulkanContext: Failed to allocate transfer command buffer: %d", err);
 		throw Exception(QStringLiteral("Failed to allocate Vulkan transfer command buffer."));
     }
 
@@ -820,7 +820,7 @@ void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&
     VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT , nullptr };
     err = deviceFunctions()->vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
-		qWarning("VulkanDevice: Failed to begin transfer command buffer: %d", err);
+		qWarning("VulkanContext: Failed to begin transfer command buffer: %d", err);
 		throw Exception(QStringLiteral("Failed to begin Vulkan transfer command buffer."));
     }
 
@@ -830,7 +830,7 @@ void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&
     // End recording commands.
     err = deviceFunctions()->vkEndCommandBuffer(cmdBuf);
     if(err != VK_SUCCESS) {
-		qWarning("VulkanDevice: Failed to end transfer command buffer: %d", err);
+		qWarning("VulkanContext: Failed to end transfer command buffer: %d", err);
 		throw Exception(QStringLiteral("Failed to end Vulkan transfer command buffer."));
     }
 
@@ -840,7 +840,7 @@ void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&
     submitInfo.pCommandBuffers = &cmdBuf;
 	err = deviceFunctions()->vkQueueSubmit(graphicsQueue(), 1, &submitInfo, _transferFence);
     if(err != VK_SUCCESS) {
-        qWarning("VulkanDevice: Failed to submit transfer commands to Vulkan queue: %d", err);
+        qWarning("VulkanContext: Failed to submit transfer commands to Vulkan queue: %d", err);
         throw Exception(QStringLiteral("Failed to submit transfer commands to Vulkan queue."));
     }
 
@@ -856,7 +856,7 @@ void VulkanDevice::immediateTransferSubmit(std::function<void(VkCommandBuffer)>&
 /******************************************************************************
 * Informs the resource manager that a new frame starts being rendered.
 ******************************************************************************/
-VulkanDevice::ResourceFrameHandle VulkanDevice::acquireResourceFrame()
+VulkanContext::ResourceFrameHandle VulkanContext::acquireResourceFrame()
 {    
     if(_activeResourceFrames.empty()) {
         OVITO_ASSERT(_dataBuffers.empty());
@@ -875,7 +875,7 @@ VulkanDevice::ResourceFrameHandle VulkanDevice::acquireResourceFrame()
 * Informs the resource manager that a frame has completely finished rendering 
 * and all related Vulkan resources can be released.
 ******************************************************************************/
-void VulkanDevice::releaseResourceFrame(ResourceFrameHandle frame)
+void VulkanContext::releaseResourceFrame(ResourceFrameHandle frame)
 {
     OVITO_ASSERT(frame > 0);
     OVITO_ASSERT(std::is_sorted(_activeResourceFrames.begin(), _activeResourceFrames.end()));
@@ -930,7 +930,7 @@ void VulkanDevice::releaseResourceFrame(ResourceFrameHandle frame)
 /******************************************************************************
 * Uploads an OVITO DataBuffer to the Vulkan device.
 ******************************************************************************/
-VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame)
+VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame)
 {
     OVITO_ASSERT(dataBuffer);
     OVITO_ASSERT(logicalDevice());
@@ -998,7 +998,7 @@ VkBuffer VulkanDevice::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, Re
 /******************************************************************************
 * Uploads an image to the Vulkan device as a texture image.
 ******************************************************************************/
-VkImageView VulkanDevice::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame)
+VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame)
 {
     OVITO_ASSERT(!image.isNull());
     OVITO_ASSERT(image.format() == QImage::Format_ARGB32 || image.format() == QImage::Format_ARGB32_Premultiplied || image.format() == QImage::Format_RGB32);
@@ -1130,7 +1130,7 @@ VkImageView VulkanDevice::uploadImage(const QImage& image, ResourceFrameHandle r
 * Creates a new descriptor set from the pool and caches it, or returns an 
 * existing one for the given cache key.
 ******************************************************************************/
-std::pair<VkDescriptorSet, bool> VulkanDevice::createDescriptorSet(VkDescriptorSetLayout layout, const DescriptorSetCacheKey& cacheKey, VulkanDevice::ResourceFrameHandle resourceFrame)
+std::pair<VkDescriptorSet, bool> VulkanContext::createDescriptorSet(VkDescriptorSetLayout layout, const DescriptorSetCacheKey& cacheKey, VulkanContext::ResourceFrameHandle resourceFrame)
 {
     OVITO_ASSERT(logicalDevice());
     OVITO_ASSERT(std::binary_search(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame));

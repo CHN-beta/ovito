@@ -48,7 +48,7 @@ public:
 public:
 
 	/// Constructor.
-	explicit PickingVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, ViewportWindowInterface* window);
+	explicit PickingVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;

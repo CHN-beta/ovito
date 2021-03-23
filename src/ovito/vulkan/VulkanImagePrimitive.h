@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ImagePrimitive.h>
-#include "VulkanDevice.h"
+#include "VulkanContext.h"
 #include "VulkanPipeline.h"
 
 namespace Ovito {
@@ -48,9 +48,6 @@ public:
 		VulkanPipeline imageQuad;
 		VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 	};
-
-	/// Constructor.
-	explicit VulkanImagePrimitive(VulkanSceneRenderer* renderer);
 
 	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);

@@ -53,13 +53,14 @@ endfunction()
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(VulkanRenderer
 	SOURCES
-		VulkanDevice.cpp
+		VulkanContext.cpp
 		VulkanPipeline.cpp
 		VulkanSceneRenderer.cpp
 		OffscreenVulkanSceneRenderer.cpp
 		VulkanLinePrimitive.cpp
 		VulkanImagePrimitive.cpp
 		VulkanTextPrimitive.cpp
+		VulkanParticlePrimitive.cpp
 		vma/vk_mem_alloc.cpp
 		resources/vulkan.qrc
 )

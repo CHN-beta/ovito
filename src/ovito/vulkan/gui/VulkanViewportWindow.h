@@ -119,13 +119,13 @@ public:
 	VkSampleCountFlagBits sampleCountFlagBits() const { return _sampleCount; }
 
 	/// Returns the Vulkan logical device handle.
-	VkDevice logicalDevice() const { return _device->logicalDevice(); }
+	VkDevice logicalDevice() const { return context()->logicalDevice(); }
 
 	/// Returns the device-specific Vulkan function table. 
-	QVulkanDeviceFunctions* deviceFunctions() const { return _device->deviceFunctions(); }
+	QVulkanDeviceFunctions* deviceFunctions() const { return context()->deviceFunctions(); }
 
 	/// Returns the logical Vulkan device used by the window.
-	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
+	const std::shared_ptr<VulkanContext>& context() const { return _context; }
 
 	/// Returns the renderer of the interactive viewport window.
 	ViewportVulkanSceneRenderer* renderer() const { return _viewportRenderer; }
@@ -200,7 +200,7 @@ private:
 	OORef<PickingVulkanSceneRenderer> _pickingRenderer;
 
 	/// The logical Vulkan device used by the window.
-	std::shared_ptr<VulkanDevice> _device;
+	std::shared_ptr<VulkanContext> _context;
 
 	enum Status {
         StatusUninitialized,
@@ -225,7 +225,7 @@ private:
     PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR;
     
 	static const int MAX_SWAPCHAIN_BUFFER_COUNT = 3;
-	static const int MAX_CONCURRENT_FRAME_COUNT = VulkanDevice::MAX_CONCURRENT_FRAME_COUNT;
+	static const int MAX_CONCURRENT_FRAME_COUNT = VulkanContext::MAX_CONCURRENT_FRAME_COUNT;
     static const int MAX_FRAME_LAG = MAX_CONCURRENT_FRAME_COUNT;
     
 	VkPresentModeKHR _presentMode = VK_PRESENT_MODE_FIFO_KHR;
@@ -258,7 +258,7 @@ private:
         VkSemaphore presTransSem = VK_NULL_HANDLE;
         bool imageAcquired = false;
         bool imageSemWaitable = false;
-		VulkanDevice::ResourceFrameHandle resourceFrame = 0;
+		VulkanContext::ResourceFrameHandle resourceFrame = 0;
     } _frameRes[MAX_FRAME_LAG];
     
 	uint32_t _currentFrame;

@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/LinePrimitive.h>
-#include "VulkanDevice.h"
+#include "VulkanContext.h"
 #include "VulkanPipeline.h"
 
 namespace Ovito {
@@ -49,9 +49,6 @@ public:
 		VulkanPipeline thinUniformColor;
 		VulkanPipeline thinPicking;
 	};
-
-	/// Constructor.
-	explicit VulkanLinePrimitive(VulkanSceneRenderer* renderer);
 
 	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);

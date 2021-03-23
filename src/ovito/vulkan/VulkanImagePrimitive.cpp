@@ -27,19 +27,12 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-VulkanImagePrimitive::VulkanImagePrimitive(VulkanSceneRenderer* renderer)
-{
-}
-
-/******************************************************************************
 * Creates the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
 void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
     // Specify the descriptor layout binding for the sampler.
-    VkSampler sampler = renderer->device()->samplerNearest();
+    VkSampler sampler = renderer->context()->samplerNearest();
     VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
     samplerLayoutBinding.binding = 0;
     samplerLayoutBinding.descriptorCount = 1;
@@ -94,7 +87,7 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
 		return;
 
     // Upload the image to the GPU as a texture.
-    VkImageView imageView = renderer->device()->uploadImage(image(), renderer->currentResourceFrame());
+    VkImageView imageView = renderer->context()->uploadImage(image(), renderer->currentResourceFrame());
 
     // Bind the pipeline.
     pipelines.imageQuad.bind(renderer);
@@ -103,14 +96,14 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
     struct { qint64 v; } cacheKey = { image().cacheKey() };
 
     // Create or look up the descriptor set.
-    std::pair<VkDescriptorSet, bool> descriptorSet = renderer->device()->createDescriptorSet(pipelines.descriptorSetLayout, cacheKey, renderer->currentResourceFrame());
+    std::pair<VkDescriptorSet, bool> descriptorSet = renderer->context()->createDescriptorSet(pipelines.descriptorSetLayout, cacheKey, renderer->currentResourceFrame());
 
     // Initialize the newly created descriptor set.
     if(descriptorSet.second) {
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = imageView;
-        imageInfo.sampler = renderer->device()->samplerNearest();
+        imageInfo.sampler = renderer->context()->samplerNearest();
         VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
         descriptorWrite.dstSet = descriptorSet.first;
         descriptorWrite.dstBinding = 0;

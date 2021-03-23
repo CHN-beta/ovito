@@ -42,24 +42,25 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 	if(this == &VulkanSceneRenderer::OOClass()) {
 		stream << "======== Vulkan info =======" << "\n";
 
-        // Look up an existing Vulkan device from one of the interactive viewport windows.
-        std::shared_ptr<VulkanDevice> device;
+        // Look up an existing Vulkan context from one of the interactive viewport windows. 
+        // All viewport windows will share the same logical Vulkan device.
+        std::shared_ptr<VulkanContext> context;
         for(Viewport* vp : container.currentSet()->viewportConfig()->viewports()) {
             if(ViewportWindowInterface* window = vp->window()) {
                 if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
-                    device = renderer->device();
+                    context = renderer->context();
                     break;
                 }
             }
         }
 
-        // Create an adhoc instance of VulkanDevice class if needed.
-        if(!device)
-            device = std::make_shared<VulkanDevice>();
+        // Create an adhoc instance of VulkanContext if needed.
+        if(!context)
+            context = std::make_shared<VulkanContext>();
 
-        stream << "Number of physical devices: " << device->availablePhysicalDevices().count() << "\n";
+        stream << "Number of physical devices: " << context->availablePhysicalDevices().count() << "\n";
         uint32_t deviceIndex = 0;
-        for(const VkPhysicalDeviceProperties& props : device->availablePhysicalDevices()) {
+        for(const VkPhysicalDeviceProperties& props : context->availablePhysicalDevices()) {
             stream << tr("[%8] %1 - Version %2.%3.%4 - API Version %5.%6.%7\n")
                                 .arg(props.deviceName)
                                 .arg(VK_VERSION_MAJOR(props.driverVersion)).arg(VK_VERSION_MINOR(props.driverVersion))
@@ -68,15 +69,15 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
                                 .arg(VK_VERSION_PATCH(props.apiVersion))
                                 .arg(deviceIndex++);
         }
-        if(device->logicalDevice()) {
-            stream << "Active physical device index: [" << device->physicalDeviceIndex() << "]\n"; 
-            stream << "Unified memory architecture: " << device->isUMA() << "\n";
-            stream << "features.wideLines: " << device->features().wideLines << "\n";
-            stream << "limits.maxUniformBufferRange: " << device->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
-            stream << "limits.maxStorageBufferRange: " << device->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
-            stream << "limits.maxPushConstantsSize: " << device->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
-            stream << "limits.lineWidthRange: " << device->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << device->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
-            stream << "limits.lineWidthGranularity: " << device->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
+        if(context->logicalDevice()) {
+            stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
+            stream << "Unified memory architecture: " << context->isUMA() << "\n";
+            stream << "features.wideLines: " << context->features().wideLines << "\n";
+            stream << "limits.maxUniformBufferRange: " << context->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
+            stream << "limits.maxStorageBufferRange: " << context->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
+            stream << "limits.maxPushConstantsSize: " << context->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
+            stream << "limits.lineWidthRange: " << context->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << context->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
+            stream << "limits.lineWidthGranularity: " << context->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
         }
         else stream << "No active physical device\n"; 
 	}
@@ -85,16 +86,16 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanSceneRenderer::VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, int concurrentFrameCount) 
+VulkanSceneRenderer::VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount) 
     : SceneRenderer(dataset), 
-    _device(std::move(vulkanDevice)),
+    _context(std::move(vulkanContext)),
     _concurrentFrameCount(concurrentFrameCount)
 {
-	OVITO_ASSERT(_device);
+	OVITO_ASSERT(_context);
     OVITO_ASSERT(_concurrentFrameCount >= 1);
 
     // Release our own Vulkan resources before the logical device gets destroyed.
-    connect(_device.get(), &VulkanDevice::releaseResourcesRequested, this, &VulkanSceneRenderer::releaseVulkanDeviceResources);
+    connect(context().get(), &VulkanContext::releaseResourcesRequested, this, &VulkanSceneRenderer::releaseVulkanDeviceResources);
 }
 
 /******************************************************************************
@@ -126,7 +127,7 @@ bool VulkanSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) cons
 {
 	// Two Vulkan renderers are compatible when they use the same logical Vulkan device.
 	if(VulkanSceneRenderer* otherVulkanRenderer = dynamic_object_cast<VulkanSceneRenderer>(otherRenderer))
-		return device() == otherVulkanRenderer->device();
+		return context() == otherVulkanRenderer->context();
 	return false;
 }
 
@@ -151,7 +152,7 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 	SceneRenderer::beginFrame(time, params, vp);
 
 	// This method may only be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
     // Make sure our Vulkan objects have been created.
     initResources();
@@ -219,7 +220,7 @@ void VulkanSceneRenderer::setHighlightMode(int pass)
 void VulkanSceneRenderer::releaseVulkanDeviceResources()
 {
 	// This method may only be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
     if(!_resourcesInitialized)
         return;
@@ -238,7 +239,16 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 std::shared_ptr<LinePrimitive> VulkanSceneRenderer::createLinePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanLinePrimitive>(this);
+	return std::make_shared<VulkanLinePrimitive>();
+}
+
+/******************************************************************************
+* Creates a new particle rendering primitive.
+******************************************************************************/
+std::shared_ptr<ParticlePrimitive> VulkanSceneRenderer::createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape)
+{
+	OVITO_ASSERT(!isBoundingBoxPass());
+	return std::make_shared<VulkanParticlePrimitive>(shadingMode, renderingQuality, shape);
 }
 
 /******************************************************************************
@@ -247,7 +257,7 @@ std::shared_ptr<LinePrimitive> VulkanSceneRenderer::createLinePrimitive()
 std::shared_ptr<ImagePrimitive> VulkanSceneRenderer::createImagePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanImagePrimitive>(this);
+	return std::make_shared<VulkanImagePrimitive>();
 }
 
 /******************************************************************************
@@ -256,7 +266,7 @@ std::shared_ptr<ImagePrimitive> VulkanSceneRenderer::createImagePrimitive()
 std::shared_ptr<TextPrimitive> VulkanSceneRenderer::createTextPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanTextPrimitive>(this);
+	return std::make_shared<VulkanTextPrimitive>();
 }
 
 /******************************************************************************
@@ -267,6 +277,16 @@ void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& prim
     std::shared_ptr<VulkanLinePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanLinePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this, _linePrimitivePipelines);
+}
+
+/******************************************************************************
+* Renders a particle primitive.
+******************************************************************************/
+void VulkanSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive)
+{
+    std::shared_ptr<VulkanParticlePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanParticlePrimitive>(primitive);
+    OVITO_ASSERT(vulkanPrimitive);
+	vulkanPrimitive->render(this, _particlePrimitivePipelines);
 }
 
 /******************************************************************************

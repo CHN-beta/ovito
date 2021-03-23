@@ -27,20 +27,15 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-VulkanTextPrimitive::VulkanTextPrimitive(VulkanSceneRenderer* renderer) :
-	_imageBuffer(renderer->createImagePrimitive())
-{
-}
-
-/******************************************************************************
 * Renders the text string.
 ******************************************************************************/
 void VulkanTextPrimitive::render(VulkanSceneRenderer* renderer)
 {
 	if(text().isEmpty() || renderer->isPicking())
 		return;
+
+	if(!_imageBuffer)
+		_imageBuffer = renderer->createImagePrimitive();
 	
 	if(_imageUpdateNeeded) {
 		_imageUpdateNeeded = false;

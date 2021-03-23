@@ -31,31 +31,30 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(OffscreenVulkanSceneRenderer);
 
 /******************************************************************************
-* Helper function that looks for an existing logical Vulkan device in the current
+* Helper function that looks for an existing logical Vulkan context in the current
 * scene which can use for offscreen rendering.
 ******************************************************************************/
-static std::shared_ptr<VulkanDevice> selectVulkanDevice(DataSet* dataset)
+static std::shared_ptr<VulkanContext> selectVulkanContext(DataSet* dataset)
 {
 	// Use the Vulkan device used for the interactive viewport windows
 	// also for offscreen rendering if available. 
 	for(Viewport* vp : dataset->viewportConfig()->viewports()) {
 		if(ViewportWindowInterface* window = vp->window()) {
 			if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
-				OVITO_ASSERT(renderer->device());
-				return renderer->device();
+				return renderer->context();
 			}
 		}
 	}
 
-	// Otherwise, create an adhoc Vulkan device just for offscreen rendering.
-	return std::make_shared<VulkanDevice>();
+	// Otherwise, create an adhoc Vulkan context just for offscreen rendering.
+	return std::make_shared<VulkanContext>();
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, bool grabDepthBuffer) 
-	: VulkanSceneRenderer(dataset, vulkanDevice ? std::move(vulkanDevice) : selectVulkanDevice(dataset)), _grabDepthBuffer(grabDepthBuffer) 
+OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer) 
+	: VulkanSceneRenderer(dataset, vulkanContext ? std::move(vulkanContext) : selectVulkanContext(dataset)), _grabDepthBuffer(grabDepthBuffer) 
 {
 }
 
@@ -65,7 +64,7 @@ OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(DataSet* dataset, std
 bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
 	// This method may only be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
 	if(!VulkanSceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
@@ -86,9 +85,9 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	OVITO_ASSERT(_dsMem == VK_NULL_HANDLE);
 	OVITO_ASSERT(_dsView == VK_NULL_HANDLE);
 
-	// Initialize the logical Vulkan device.
-	if(!device()->create(nullptr))
-        throwException(tr("The Vulkan rendering device could not be initialized."));
+	// Initialize the logical Vulkan context.
+	if(!context()->create(nullptr))
+        throwException(tr("The Vulkan rendering context could not be initialized."));
 
 	// Determine internal framebuffer size when using supersampling.
 	_outputSize = frameBufferSize;
@@ -98,11 +97,11 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	if(!device()->createVulkanImage(this->frameBufferSize(), colorFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_colorImage, &_colorMem, &_colorView, 1))
+	if(!context()->createVulkanImage(this->frameBufferSize(), colorFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_colorImage, &_colorMem, &_colorView, 1))
 		throwException(tr("Could not create Vulkan offscreen image buffer."));
 
 	// Create Vulkan depth-stencil buffer image.
-	VkFormat dsFormat = _grabDepthBuffer ? VK_FORMAT_D24_UNORM_S8_UINT : device()->depthStencilFormat();
+	VkFormat dsFormat = _grabDepthBuffer ? VK_FORMAT_D24_UNORM_S8_UINT : context()->depthStencilFormat();
 	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
@@ -119,7 +118,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 		}
 	}
 
-	if(!device()->createVulkanImage(this->frameBufferSize(), dsFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
+	if(!context()->createVulkanImage(this->frameBufferSize(), dsFormat, VK_SAMPLE_COUNT_1_BIT, usage, aspectFlags, &_dsImage, &_dsMem, &_dsView, 1))
 		throwException(tr("Could not create Vulkan offscreen depth-buffer image."));
 
 	// Create renderpass.
@@ -231,7 +230,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
         VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         nullptr,
         memRequirements.size,
-        device()->hostVisibleMemoryIndex()
+        context()->hostVisibleMemoryIndex()
     };
 	err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &_frameGrabImageMem);
 	if(err != VK_SUCCESS) {
@@ -252,7 +251,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-		err = vmaCreateBuffer(device()->allocator(), &bufferInfo, &allocInfo, &_depthGrabBuffer, &_depthGrabBufferAllocation, nullptr);
+		err = vmaCreateBuffer(context()->allocator(), &bufferInfo, &allocInfo, &_depthGrabBuffer, &_depthGrabBufferAllocation, nullptr);
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to create staging buffer for reading back depth-buffer: %d", err);
 			throwException(tr("Failed to create staging buffer for reading back depth-buffer."));
@@ -268,10 +267,10 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
 	// Allocate a Vulkan command buffer.
-    VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, device()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
+    VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, context()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
     VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdBufInfo, &_cmdBuf);
     if(err != VK_SUCCESS) {
 		qWarning("OffscreenVulkanSceneRenderer: Failed to allocate frame command buffer: %d", err);
@@ -283,7 +282,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 
 	// Tell the Vulkan resource manager that we are beginning a new frame.
 	OVITO_ASSERT(currentResourceFrame() == 0);
-	setCurrentResourceFrame(device()->acquireResourceFrame());
+	setCurrentResourceFrame(context()->acquireResourceFrame());
 
 	// Begin recording to the Vulkan command buffer.
     VkCommandBufferBeginInfo cmdBufBeginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT , nullptr };
@@ -321,7 +320,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
 	// Let the base class do the main rendering work.
 	if(!VulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
@@ -336,7 +335,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
-	OVITO_ASSERT(QThread::currentThread() == device()->thread());
+	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
     deviceFunctions()->vkCmdEndRenderPass(currentCommandBuffer());
 
@@ -418,7 +417,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &fence);
 
 		// Submit command buffer to a queue and wait for fence until queue operations have been finished
-		err = deviceFunctions()->vkQueueSubmit(device()->graphicsQueue(), 1, &submitInfo, fence);
+		err = deviceFunctions()->vkQueueSubmit(context()->graphicsQueue(), 1, &submitInfo, fence);
 		if(err != VK_SUCCESS) {
 			qWarning("OffscreenVulkanSceneRenderer: Failed to submit commands to Vulkan queue: %d", err);
 			throwException(tr("Failed to submit commands to Vulkan queue."));
@@ -430,7 +429,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		deviceFunctions()->vkDestroyFence(logicalDevice(), fence, nullptr);
 
 		// Tell the Vulkan resource manager that we are done rendering the frame.
-		device()->releaseResourceFrame(currentResourceFrame());
+		context()->releaseResourceFrame(currentResourceFrame());
 		setCurrentResourceFrame(0);
 
 		// Get layout of the image (including row pitch).
@@ -472,7 +471,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 
 	// Release command buffer.
 	if(_cmdBuf) {
-		deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), device()->graphicsCommandPool(), 1, &_cmdBuf);
+		deviceFunctions()->vkFreeCommandBuffers(logicalDevice(), context()->graphicsCommandPool(), 1, &_cmdBuf);
 		_cmdBuf = VK_NULL_HANDLE;
 	}
 
@@ -486,7 +485,6 @@ FloatType OffscreenVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
 {
 	// Grabbing of the depth buffer must have been enabled before.
 	OVITO_ASSERT(_grabDepthBuffer);
-	OVITO_ASSERT(device());
 
 	FloatType z = 0;
 	if(_depthGrabBuffer != VK_NULL_HANDLE) {
@@ -495,7 +493,7 @@ FloatType OffscreenVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
 		if(pos.x() >= 0 && pos.x() < w && pos.y() >= 0 && pos.y() < h) {
 			// Map the memory of the staging buffer which contains the depth buffer data.
 			void* p;
-			vmaMapMemory(device()->allocator(), _depthGrabBufferAllocation, &p);
+			vmaMapMemory(context()->allocator(), _depthGrabBufferAllocation, &p);
 			if(_depthBufferBits == 16) {
 				uint16_t bval = reinterpret_cast<const uint16_t*>(p)[pos.y() * w + pos.x()];
 				z = (FloatType)bval / FloatType(65535.0);
@@ -511,7 +509,7 @@ FloatType OffscreenVulkanSceneRenderer::depthAtPixel(const QPoint& pos) const
 			else if(_depthBufferBits == 0) {
 				z = reinterpret_cast<const float*>(p)[pos.y() * w + pos.x()];
 			}
-			vmaUnmapMemory(device()->allocator(), _depthGrabBufferAllocation);
+			vmaUnmapMemory(context()->allocator(), _depthGrabBufferAllocation);
 		}
 	}
 	return z;
@@ -528,7 +526,7 @@ void OffscreenVulkanSceneRenderer::releaseVulkanFramebuffers()
 
 	// Release Vulkan resources.
 	if(_depthGrabBuffer != VK_NULL_HANDLE) {
-		vmaDestroyBuffer(device()->allocator(), _depthGrabBuffer, _depthGrabBufferAllocation);
+		vmaDestroyBuffer(context()->allocator(), _depthGrabBuffer, _depthGrabBufferAllocation);
 		_depthGrabBuffer = VK_NULL_HANDLE;
 		_depthGrabBufferAllocation = VK_NULL_HANDLE;
 	}

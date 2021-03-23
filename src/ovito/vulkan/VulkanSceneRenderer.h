@@ -25,8 +25,9 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include "VulkanDevice.h"
+#include "VulkanContext.h"
 #include "VulkanLinePrimitive.h"
+#include "VulkanParticlePrimitive.h"
 #include "VulkanImagePrimitive.h"
 #include "VulkanTextPrimitive.h"
 
@@ -57,19 +58,19 @@ public:
 public:
 
 	/// Constructor.
-	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, int concurrentFrameCount = 2);
+	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount = 2);
 
 	/// Destructor.
 	virtual ~VulkanSceneRenderer();
 
-	/// Returns the logical Vulkan device used by the renderer.
-	const std::shared_ptr<VulkanDevice>& device() const { return _device; }
+	/// Returns the logical Vulkan context used by the renderer.
+	const std::shared_ptr<VulkanContext>& context() const { return _context; }
 
 	/// Returns the Vulkan logical device handle.
-	VkDevice logicalDevice() const { return _device->logicalDevice(); }
+	VkDevice logicalDevice() const { return context()->logicalDevice(); }
 
 	/// Returns the device-specific Vulkan function table. 
-	QVulkanDeviceFunctions* deviceFunctions() const { return _device->deviceFunctions(); }
+	QVulkanDeviceFunctions* deviceFunctions() const { return context()->deviceFunctions(); }
 
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
@@ -103,10 +104,10 @@ public:
 	int currentSwapChainFrame() const { return _currentSwapChainFrame; }
 
 	/// Returns the monotonically increasing identifier of the current Vulkan frame being rendered.
-	VulkanDevice::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
+	VulkanContext::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
 
 	/// Sets monotonically increasing identifier of the current Vulkan frame being rendered.
-	void setCurrentResourceFrame(VulkanDevice::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
+	void setCurrentResourceFrame(VulkanContext::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
 
 	/// Returns the active Vulkan command buffer.
 	VkCommandBuffer currentCommandBuffer() const { return _currentCommandBuffer; }
@@ -135,6 +136,9 @@ public:
 	/// Creates a new line rendering primitive.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
 
+	/// Creates a new particle rendering primitive.
+	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape) override;
+
 	/// Creates a new image rendering primitive.
 	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
 
@@ -143,6 +147,9 @@ public:
 
 	/// Renders a line primitive.
 	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
+
+	/// Renders a particles primitive.
+	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
 
 	/// Renders an image primitive.
 	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
@@ -173,7 +180,7 @@ private:
 	void initResources();
 
 	/// The logical Vulkan device used by the renderer.
-	std::shared_ptr<VulkanDevice> _device;
+	std::shared_ptr<VulkanContext> _context;
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
@@ -197,7 +204,7 @@ private:
 	QSize _frameBufferSize;
 
 	/// The monotonically increasing identifier of the current Vulkan frame being rendered.
-	VulkanDevice::ResourceFrameHandle _currentResourceFrame = 0;
+	VulkanContext::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 //	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
@@ -213,6 +220,9 @@ private:
 
 	/// Data structure holding the Vulkan pipelines used by the line drawing primitive.
 	VulkanLinePrimitive::Pipelines _linePrimitivePipelines;
+
+	/// Data structure holding the Vulkan pipelines used by the particle drawing primitive.
+	VulkanParticlePrimitive::Pipelines _particlePrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the image drawing primitive.
 	VulkanImagePrimitive::Pipelines _imagePrimitivePipelines;

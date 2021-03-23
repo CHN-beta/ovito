@@ -39,7 +39,7 @@ class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSc
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice = {}, bool grabDepthBuffer = false);
+	Q_INVOKABLE OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;

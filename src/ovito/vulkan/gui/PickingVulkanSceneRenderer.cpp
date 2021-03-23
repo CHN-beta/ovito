@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(PickingVulkanSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanDevice> vulkanDevice, ViewportWindowInterface* window) 
+PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window) 
 	: OffscreenVulkanSceneRenderer(dataset, std::move(vulkanDevice), true), _window(window) 
 {
 	setPicking(true);

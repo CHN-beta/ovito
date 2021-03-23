@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include "VulkanDevice.h"
+#include "VulkanContext.h"
 
 namespace Ovito {
 

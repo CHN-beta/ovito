@@ -24,22 +24,45 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/vulkan/VulkanSceneRenderer.h>
+#include <ovito/core/rendering/ParticlePrimitive.h>
+#include "VulkanContext.h"
+#include "VulkanPipeline.h"
 
 namespace Ovito {
 
-/**
- * \brief An Vulkan-based scene renderer for the interactive viewports of OVITO.
- */
-class ViewportVulkanSceneRenderer : public VulkanSceneRenderer
-{
-	Q_OBJECT
-	OVITO_CLASS(ViewportVulkanSceneRenderer)
+class VulkanSceneRenderer;
 
+/**
+ * \brief This class is responsible for rendering particles using Vulkan.
+ */
+class VulkanParticlePrimitive : public ParticlePrimitive
+{
 public:
 
-	/// Constructor.
-	explicit ViewportVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice);
+	struct Pipelines {
+		/// Creates the Vulkan pipelines for this rendering primitive.
+		void init(VulkanSceneRenderer* renderer);
+		/// Destroys the Vulkan pipelines for this rendering primitive.
+		void release(VulkanSceneRenderer* renderer);
+
+		VulkanPipeline thinWithColors;
+		VulkanPipeline thinUniformColor;
+		VulkanPipeline thinPicking;
+	};
+
+	/// Inherit constructor from base class.
+	using ParticlePrimitive::ParticlePrimitive;
+
+	/// Renders the particles.
+	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+
+protected:
+
+	/// Renders the particles using box-shaped geometry.
+	void renderBoxGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+
+	/// Renders the particles using imposter quads.
+	void renderImposterGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
 };
 
 }	// End of namespace

@@ -67,8 +67,8 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
         renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));
 
     // Shaders
-    VkShaderModule vertShaderModule = renderer->device()->createShader(QStringLiteral(":/vulkanrenderer/%1.vert.spv").arg(shaderName));
-    VkShaderModule fragShaderModule = renderer->device()->createShader(QStringLiteral(":/vulkanrenderer/%1.frag.spv").arg(shaderName));
+    VkShaderModule vertShaderModule = renderer->context()->createShader(QStringLiteral(":/vulkanrenderer/%1.vert.spv").arg(shaderName));
+    VkShaderModule fragShaderModule = renderer->context()->createShader(QStringLiteral(":/vulkanrenderer/%1.frag.spv").arg(shaderName));
 
     // Graphics pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
@@ -181,7 +181,7 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     pipelineInfo.layout = _layout;
     pipelineInfo.renderPass = renderer->defaultRenderPass();
 
-    err = renderer->deviceFunctions()->vkCreateGraphicsPipelines(renderer->logicalDevice(), renderer->device()->pipelineCache(), 1, &pipelineInfo, nullptr, &_pipeline);
+    err = renderer->deviceFunctions()->vkCreateGraphicsPipelines(renderer->logicalDevice(), renderer->context()->pipelineCache(), 1, &pipelineInfo, nullptr, &_pipeline);
     if(err != VK_SUCCESS)
         renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan graphics pipeline (error code %1) for shader '%2'").arg(err).arg(shaderName));
 

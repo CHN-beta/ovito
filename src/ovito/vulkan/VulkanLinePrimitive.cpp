@@ -27,19 +27,12 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-VulkanLinePrimitive::VulkanLinePrimitive(VulkanSceneRenderer* renderer)
-{
-}
-
-/******************************************************************************
 * Creates the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
 void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
     // Are wide lines supported by the Vulkan device?
-    uint32_t extraDynamicStateCount = renderer->device()->features().wideLines ? 1 : 0;
+    uint32_t extraDynamicStateCount = renderer->context()->features().wideLines ? 1 : 0;
     VkDynamicState extraDynamicState = VK_DYNAMIC_STATE_LINE_WIDTH;
 
     // Create pipeline for shader "lines_thin_with_colors":
@@ -188,7 +181,7 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
         pipelines.thinWithColors.bind(renderer);
 
         // Specify line width if the Vulkan implementation supports it. 
-        if(renderer->device()->features().wideLines) {
+        if(renderer->context()->features().wideLines) {
         	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
             renderer->deviceFunctions()->vkCmdSetLineWidth(renderer->currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
         }
@@ -198,8 +191,8 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
 
 		// Bind vertex buffers for vertex positions and colors.
 		VkBuffer buffers[2] = {
-			renderer->device()->uploadDataBuffer(positions(), renderer->currentResourceFrame()), 
-			renderer->device()->uploadDataBuffer(colors(), renderer->currentResourceFrame())
+			renderer->context()->uploadDataBuffer(positions(), renderer->currentResourceFrame()), 
+			renderer->context()->uploadDataBuffer(colors(), renderer->currentResourceFrame())
 		};
 		VkDeviceSize vbOffsets[2] = { 0, 0 };
 		renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 2, buffers, vbOffsets);
@@ -224,13 +217,13 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
         }
 
         // Specify line width if the Vulkan implementation supports it. 
-        if(renderer->device()->features().wideLines) {
+        if(renderer->context()->features().wideLines) {
         	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
             renderer->deviceFunctions()->vkCmdSetLineWidth(renderer->currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
         }
 
 		// Bind vertex buffer for vertex positions.
-		VkBuffer buffers[1] = { renderer->device()->uploadDataBuffer(positions(), renderer->currentResourceFrame()) };
+		VkBuffer buffers[1] = { renderer->context()->uploadDataBuffer(positions(), renderer->currentResourceFrame()) };
 		VkDeviceSize vbOffsets[1] = { 0 };
 		renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 1, buffers, vbOffsets);
 	}
