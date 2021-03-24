@@ -119,7 +119,10 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 		vertices[index++] = Point3::Origin() + dir;
 		vertices[index++] = Point3::Origin() + (dir + tripodArrowSize * Vector3(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z()));
 	}
-	_orientationTripodGeometry->setPositions(vertices.take());
+	// To avoid unnecessary GPU traffic, keep old data buffer in place if contents haven't changed.
+	ConstDataBufferPtr newPositions = vertices.take();
+	if(!_orientationTripodGeometry->positions() || !newPositions->equals(*_orientationTripodGeometry->positions()))
+		_orientationTripodGeometry->setPositions(std::move(newPositions));
 
 	// Render coordinate axis arrows.
 	renderer->renderLines(_orientationTripodGeometry);

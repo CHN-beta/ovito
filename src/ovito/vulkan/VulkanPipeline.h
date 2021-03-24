@@ -28,8 +28,6 @@
 
 namespace Ovito {
 
-class VulkanSceneRenderer;
-
 /**
  * \brief Thin wrapper for Vulkan pipeline objects.
  */
@@ -38,8 +36,9 @@ class VulkanPipeline
 public:
 
 	/// Creates the Vulkan pipeline.
-	void create(VulkanSceneRenderer* renderer,
+	void create(VulkanContext& context,
 	    const QString& shaderName, 
+		VkRenderPass renderpass,
 		uint32_t vertexPushConstantSize,
 		uint32_t fragmentPushConstantSize,
 		uint32_t vertexBindingDescriptionCount,
@@ -54,10 +53,10 @@ public:
 		const VkDescriptorSetLayout* pSetLayouts = nullptr);
 
 	/// Destroys the Vulkan pipeline.
-	void release(VulkanSceneRenderer* renderer);
+	void release(VulkanContext& context);
 
 	/// Binds the pipeline.
-	void bind(VulkanSceneRenderer* renderer) const;
+	void bind(VulkanContext& context, VkCommandBuffer cmdBuf) const;
 
 	/// Returns the pipeline's layout.
 	VkPipelineLayout layout() const { return _layout; }

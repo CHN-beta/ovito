@@ -49,8 +49,9 @@ void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         renderer->throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
 
     // Create pipeline.
-    imageQuad.create(renderer,
+    imageQuad.create(*renderer->context(),
         QStringLiteral("image/image"),
+        renderer->defaultRenderPass(),
         2 * sizeof(Point_2<float>), // vertexPushConstantSize
         0, // fragmentPushConstantSize
         0, // vertexBindingDescriptionCount
@@ -71,7 +72,8 @@ void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 ******************************************************************************/
 void VulkanImagePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 {
-	imageQuad.release(renderer);
+	imageQuad.release(*renderer->context());
+
     if(descriptorSetLayout != VK_NULL_HANDLE) {
         renderer->deviceFunctions()->vkDestroyDescriptorSetLayout(renderer->logicalDevice(), descriptorSetLayout, nullptr);
         descriptorSetLayout = VK_NULL_HANDLE;
@@ -90,15 +92,15 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
     VkImageView imageView = renderer->context()->uploadImage(image(), renderer->currentResourceFrame());
 
     // Bind the pipeline.
-    pipelines.imageQuad.bind(renderer);
+    pipelines.imageQuad.bind(*renderer->context(), renderer->currentCommandBuffer());
 
     // Use the QImage cache key to look up descriptor set.
-    struct { qint64 v; } cacheKey = { image().cacheKey() };
+    VulkanResourceKey<VulkanImagePrimitive, qint64> cacheKey{ image().cacheKey() };
 
     // Create or look up the descriptor set.
     std::pair<VkDescriptorSet, bool> descriptorSet = renderer->context()->createDescriptorSet(pipelines.descriptorSetLayout, cacheKey, renderer->currentResourceFrame());
 
-    // Initialize the newly created descriptor set.
+    // Initialize the descriptor set if it was newly created.
     if(descriptorSet.second) {
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

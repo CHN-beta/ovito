@@ -139,6 +139,7 @@ void VulkanSceneRenderer::initResources()
     // Create the resources of the rendering primitives.
     if(!_resourcesInitialized) {
         _linePrimitivePipelines.init(this);
+        _particlePrimitivePipelines.init(this);
         _imagePrimitivePipelines.init(this);
         _resourcesInitialized = true;
     }
@@ -229,6 +230,7 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 
     // Destroy the resources of the rendering primitives.
     _linePrimitivePipelines.release(this);
+    _particlePrimitivePipelines.release(this);
     _imagePrimitivePipelines.release(this);
     _resourcesInitialized = false;
 }

@@ -202,6 +202,9 @@ private:
 	/// The logical Vulkan device used by the window.
 	std::shared_ptr<VulkanContext> _context;
 
+	/// A flag that indicates that a viewport update has been requested.
+	bool _updateRequested = false;
+
 	enum Status {
         StatusUninitialized,
         StatusFail,
@@ -244,6 +247,7 @@ private:
         VkCommandBuffer presTransCmdBuf = VK_NULL_HANDLE;
         VkImage msaaImage = VK_NULL_HANDLE;
         VkImageView msaaImageView = VK_NULL_HANDLE;
+		VulkanContext::ResourceFrameHandle resourceFrame = 0;
     } _imageRes[MAX_SWAPCHAIN_BUFFER_COUNT];
     
 	VkDeviceMemory _msaaImageMem = VK_NULL_HANDLE;
@@ -258,7 +262,6 @@ private:
         VkSemaphore presTransSem = VK_NULL_HANDLE;
         bool imageAcquired = false;
         bool imageSemWaitable = false;
-		VulkanContext::ResourceFrameHandle resourceFrame = 0;
     } _frameRes[MAX_FRAME_LAG];
     
 	uint32_t _currentFrame;

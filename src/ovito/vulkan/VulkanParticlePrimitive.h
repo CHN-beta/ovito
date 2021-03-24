@@ -45,9 +45,7 @@ public:
 		/// Destroys the Vulkan pipelines for this rendering primitive.
 		void release(VulkanSceneRenderer* renderer);
 
-		VulkanPipeline thinWithColors;
-		VulkanPipeline thinUniformColor;
-		VulkanPipeline thinPicking;
+		VulkanPipeline cube;
 	};
 
 	/// Inherit constructor from base class.
@@ -59,10 +57,10 @@ public:
 protected:
 
 	/// Renders the particles using box-shaped geometry.
-	void renderBoxGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void renderBoxGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp);
 
 	/// Renders the particles using imposter quads.
-	void renderImposterGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void renderImposterGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp);
 };
 
 }	// End of namespace

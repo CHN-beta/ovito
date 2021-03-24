@@ -22,15 +22,16 @@
 
 #include <ovito/core/Core.h>
 #include "VulkanPipeline.h"
-#include "VulkanSceneRenderer.h"
+#include "VulkanContext.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Creates the Vulkan pipeline.
 ******************************************************************************/
-void VulkanPipeline::create(VulkanSceneRenderer* renderer, 
+void VulkanPipeline::create(VulkanContext& context, 
     const QString& shaderName, 
+    VkRenderPass renderpass,
     uint32_t vertexPushConstantSize,
     uint32_t fragmentPushConstantSize,
     uint32_t vertexBindingDescriptionCount,
@@ -62,13 +63,13 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     pipelineLayoutInfo.pPushConstantRanges = (vertexPushConstantSize != 0) ? &pushConstantRanges[0] : &pushConstantRanges[1];
     pipelineLayoutInfo.setLayoutCount = setLayoutCount;
     pipelineLayoutInfo.pSetLayouts = pSetLayouts;
-    VkResult err = renderer->deviceFunctions()->vkCreatePipelineLayout(renderer->logicalDevice(), &pipelineLayoutInfo, nullptr, &_layout);
+    VkResult err = context.deviceFunctions()->vkCreatePipelineLayout(context.logicalDevice(), &pipelineLayoutInfo, nullptr, &_layout);
     if(err != VK_SUCCESS)
-        renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));
+        throw Exception(VulkanContext::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));
 
     // Shaders
-    VkShaderModule vertShaderModule = renderer->context()->createShader(QStringLiteral(":/vulkanrenderer/%1.vert.spv").arg(shaderName));
-    VkShaderModule fragShaderModule = renderer->context()->createShader(QStringLiteral(":/vulkanrenderer/%1.frag.spv").arg(shaderName));
+    VkShaderModule vertShaderModule = context.createShader(QStringLiteral(":/vulkanrenderer/%1.vert.spv").arg(shaderName));
+    VkShaderModule fragShaderModule = context.createShader(QStringLiteral(":/vulkanrenderer/%1.frag.spv").arg(shaderName));
 
     // Graphics pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
@@ -122,8 +123,7 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     pipelineInfo.pRasterizationState = &rs;
 
     VkPipelineMultisampleStateCreateInfo ms = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-    // Enable multisampling if requested.
-    ms.rasterizationSamples = renderer->sampleCount();
+    ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipelineInfo.pMultisampleState = &ms;
 
     VkPipelineDepthStencilStateCreateInfo ds = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
@@ -179,33 +179,33 @@ void VulkanPipeline::create(VulkanSceneRenderer* renderer,
     pipelineInfo.pDynamicState = &dyn;
 
     pipelineInfo.layout = _layout;
-    pipelineInfo.renderPass = renderer->defaultRenderPass();
+    pipelineInfo.renderPass = renderpass;
 
-    err = renderer->deviceFunctions()->vkCreateGraphicsPipelines(renderer->logicalDevice(), renderer->context()->pipelineCache(), 1, &pipelineInfo, nullptr, &_pipeline);
+    err = context.deviceFunctions()->vkCreateGraphicsPipelines(context.logicalDevice(), context.pipelineCache(), 1, &pipelineInfo, nullptr, &_pipeline);
     if(err != VK_SUCCESS)
-        renderer->throwException(VulkanSceneRenderer::tr("Failed to create Vulkan graphics pipeline (error code %1) for shader '%2'").arg(err).arg(shaderName));
+        throw Exception(VulkanContext::tr("Failed to create Vulkan graphics pipeline (error code %1) for shader '%2'").arg(err).arg(shaderName));
 
     if(vertShaderModule)
-        renderer->deviceFunctions()->vkDestroyShaderModule(renderer->logicalDevice(), vertShaderModule, nullptr);
+        context.deviceFunctions()->vkDestroyShaderModule(context.logicalDevice(), vertShaderModule, nullptr);
     if(fragShaderModule)
-        renderer->deviceFunctions()->vkDestroyShaderModule(renderer->logicalDevice(), fragShaderModule, nullptr);
+        context.deviceFunctions()->vkDestroyShaderModule(context.logicalDevice(), fragShaderModule, nullptr);
 }
 
 /******************************************************************************
 * Destroys the Vulkan pipeline.
 ******************************************************************************/
-void VulkanPipeline::release(VulkanSceneRenderer* renderer)
+void VulkanPipeline::release(VulkanContext& context)
 {
-	renderer->deviceFunctions()->vkDestroyPipeline(renderer->logicalDevice(), _pipeline, nullptr);
-	renderer->deviceFunctions()->vkDestroyPipelineLayout(renderer->logicalDevice(), _layout, nullptr);
+	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipeline, nullptr);
+	context.deviceFunctions()->vkDestroyPipelineLayout(context.logicalDevice(), _layout, nullptr);
 }
 
 /******************************************************************************
 * Binds the pipeline.
 ******************************************************************************/
-void VulkanPipeline::bind(VulkanSceneRenderer* renderer) const
+void VulkanPipeline::bind(VulkanContext& context, VkCommandBuffer cmdBuf) const
 {
-    renderer->deviceFunctions()->vkCmdBindPipeline(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+    context.deviceFunctions()->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 }
 
 }	// End of namespace

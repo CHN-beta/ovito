@@ -50,7 +50,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
         _context = std::make_shared<VulkanContext>();
 
     // Use the 2nd physical device in the system.
-    // _context->setPhysicalDeviceIndex(1);
+    _context->setPhysicalDeviceIndex(1);
 
     // Release our own Vulkan resources right before the logical device is destroyed.
     connect(_context.get(), &VulkanContext::releaseResourcesRequested, this, &VulkanViewportWindow::reset);
@@ -74,7 +74,10 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
 void VulkanViewportWindow::renderLater()
 {
     // Request a deferred refresh of the QWindow.
-	QWindow::requestUpdate();
+	_updateRequested = true;
+    if(viewport() && !viewport()->dataset()->viewportConfig()->isSuspended()) {
+    	QWindow::requestUpdate();
+    }
 }
 
 /******************************************************************************
@@ -83,12 +86,14 @@ void VulkanViewportWindow::renderLater()
 ******************************************************************************/
 void VulkanViewportWindow::processViewportUpdate()
 {
-    OVITO_ASSERT_MSG(!viewport()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
-    OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+	if(_updateRequested) {
+        OVITO_ASSERT_MSG(!viewport()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
+        OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "VulkanViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 
-    // Note: All we can do is request a deferred window update. 
-    // A QWindow has no way of forcing an immediate repaint.
-    QWindow::requestUpdate();
+        // Note: All we can do is request a deferred window update. 
+        // A QWindow has no way of forcing an immediate repaint.
+        QWindow::requestUpdate();
+    }
 }
 
 /******************************************************************************
@@ -462,7 +467,7 @@ void VulkanViewportWindow::recreateSwapChain()
             qWarning("VulkanViewportWindow: Failed to create command buffer fence: %d", err);
             return;
         }
-        image.cmdFenceWaitable = true; // fence was created in signaled state
+        image.cmdFenceWaitable = true; // Fence was created in signaled state
         VkImageView views[3] = { image.imageView,
                                  _dsView,
                                  msaa ? image.msaaImageView : VK_NULL_HANDLE };
@@ -526,12 +531,11 @@ void VulkanViewportWindow::recreateSwapChain()
         frame.imageAcquired = false;
         frame.imageSemWaitable = false;
         deviceFunctions()->vkCreateFence(logicalDevice(), &fenceInfo, nullptr, &frame.fence);
-        frame.fenceWaitable = true; // fence was created in signaled state
+        frame.fenceWaitable = true; // Fence was created in signaled state
         deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.imageSem);
         deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.drawSem);
         if(context()->separatePresentQueue())
             deviceFunctions()->vkCreateSemaphore(logicalDevice(), &semInfo, nullptr, &frame.presTransSem);
-        OVITO_ASSERT(frame.resourceFrame == 0);
     }
     _currentFrame = 0;
     _status = StatusReady;
@@ -566,10 +570,6 @@ void VulkanViewportWindow::releaseSwapChain()
         if(frame.presTransSem) {
             deviceFunctions()->vkDestroySemaphore(logicalDevice(), frame.presTransSem, nullptr);
             frame.presTransSem = VK_NULL_HANDLE;
-        }
-        if(frame.resourceFrame) {
-            context()->releaseResourceFrame(frame.resourceFrame);
-            frame.resourceFrame = 0;
         }
     }
     for(int i = 0; i < _swapChainBufferCount; ++i) {
@@ -655,8 +655,7 @@ void VulkanViewportWindow::beginFrame()
             frame.fenceWaitable = false;
         }
         // Move on to next swapchain image
-        VkResult err = vkAcquireNextImageKHR(logicalDevice(), _swapChain, UINT64_MAX,
-                                             frame.imageSem, frame.fence, &_currentImage);
+        VkResult err = vkAcquireNextImageKHR(logicalDevice(), _swapChain, UINT64_MAX, frame.imageSem, frame.fence, &_currentImage);
         if(err == VK_SUCCESS || err == VK_SUBOPTIMAL_KHR) {
             frame.imageSemWaitable = true;
             frame.imageAcquired = true;
@@ -674,6 +673,7 @@ void VulkanViewportWindow::beginFrame()
             return;
         }
     }
+    
     // Make sure the previous draw for the same image has finished.
     ImageResources& image = _imageRes[_currentImage];
     if(image.cmdFenceWaitable) {
@@ -681,6 +681,12 @@ void VulkanViewportWindow::beginFrame()
         deviceFunctions()->vkResetFences(logicalDevice(), 1, &image.cmdFence);
         image.cmdFenceWaitable = false;
     }
+    // Release resources of the old rendering pass.
+    if(image.resourceFrame != 0) {
+        context()->releaseResourceFrame(image.resourceFrame);
+        image.resourceFrame = 0;
+    }
+
     // Instead of releasing/recreating the draw command buffer, create it only once and reuse it.
     if(image.cmdBuf == VK_NULL_HANDLE) {
         VkCommandBufferAllocateInfo cmdBufInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, context()->graphicsCommandPool(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 };
@@ -710,15 +716,12 @@ void VulkanViewportWindow::beginFrame()
     }
 
     // Tell resource manager about the new frame being rendered.
-    // Also release resources from previous rendering passes that ar eno longer needed.
-    if(frame.resourceFrame != 0)
-        context()->releaseResourceFrame(frame.resourceFrame);
-    frame.resourceFrame = context()->acquireResourceFrame();
+    image.resourceFrame = context()->acquireResourceFrame();
 
     renderer()->setCurrentSwapChainFrame(currentFrame());
     renderer()->setCurrentCommandBuffer(currentCommandBuffer());
     renderer()->setDefaultRenderPass(defaultRenderPass());
-    renderer()->setCurrentResourceFrame(frame.resourceFrame);
+    renderer()->setCurrentResourceFrame(image.resourceFrame);
 
     const QSize sz = swapChainImageSize();
     renderer()->setFrameBufferSize(sz);
@@ -750,6 +753,9 @@ void VulkanViewportWindow::beginFrame()
 
 	// Invalidate picking buffer every time the visible contents of the viewport change.
 	pickingRenderer()->resetPickingBuffer();
+
+    // Mark the window contents as valid again.
+	_updateRequested = false;
 
 	// Do not re-enter rendering function of the same viewport.
 	if(viewport() && !viewport()->isRendering()) {
@@ -871,6 +877,21 @@ void VulkanViewportWindow::endFrame()
     vulkanInstance()->presentQueued(this);
     renderer()->setCurrentSwapChainFrame(-1);
     renderer()->setCurrentResourceFrame(0);
+
+    // Release command buffer resources from any previously completed frames.
+    OVITO_ASSERT(image.resourceFrame != 0);
+    for(ImageResources& img : _imageRes) {
+        if(img.resourceFrame != 0 && &img != &image) {
+            if(img.cmdFenceWaitable) {
+                if(deviceFunctions()->vkGetFenceStatus(logicalDevice(), img.cmdFence) != VK_SUCCESS) {
+                    continue; // Frame is still in flight.
+                }
+            }
+            context()->releaseResourceFrame(img.resourceFrame);
+            img.resourceFrame = 0;
+        }
+    }
+
     _currentFrame = (_currentFrame + 1) % renderer()->concurrentFrameCount();
 }
 
@@ -882,6 +903,13 @@ void VulkanViewportWindow::reset()
     if(!logicalDevice()) // Do not rely on 'status', a half done init must be cleaned properly too
         return;
     releaseSwapChain();
+    // Release per-swapchain image rendering resources.
+    for(ImageResources& frame : _imageRes) {
+        if(frame.resourceFrame != 0) {
+            context()->releaseResourceFrame(frame.resourceFrame);
+            frame.resourceFrame = 0;
+        }
+    }
     qCDebug(lcVulkan, "VulkanViewportWindow reset");
     deviceFunctions()->vkDeviceWaitIdle(logicalDevice());
     // Release the viewport renderers used by the window.

@@ -1,15 +1,18 @@
 <!DOCTYPE RCC><RCC version="1.0">
 
 <qresource prefix="/vulkanrenderer">
-	<file>lines/lines_thin_with_colors.frag.spv</file>
-	<file>lines/lines_thin_with_colors.vert.spv</file>
-	<file>lines/lines_thin_uniform_color.frag.spv</file>
-	<file>lines/lines_thin_uniform_color.vert.spv</file>
-	<file>lines/lines_thin_picking.frag.spv</file>
-	<file>lines/lines_thin_picking.vert.spv</file>
+	<file>lines/thin_with_colors.frag.spv</file>
+	<file>lines/thin_with_colors.vert.spv</file>
+	<file>lines/thin_uniform_color.frag.spv</file>
+	<file>lines/thin_uniform_color.vert.spv</file>
+	<file>lines/thin_picking.frag.spv</file>
+	<file>lines/thin_picking.vert.spv</file>
 
 	<file>image/image.frag.spv</file>
 	<file>image/image.vert.spv</file>
+
+	<file>particles/cube/cube.frag.spv</file>
+	<file>particles/cube/cube.vert.spv</file>
 </qresource>
 
 </RCC>

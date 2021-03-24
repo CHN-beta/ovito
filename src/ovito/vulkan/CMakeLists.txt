@@ -71,14 +71,16 @@ TARGET_INCLUDE_DIRECTORIES(VulkanRenderer PUBLIC "${Vulkan_INCLUDE_DIRS}")
 
 # Recompile the Vulkan shader source files if the shader compiler is available.
 IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_with_colors.vert)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_uniform_color.vert)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_picking.frag)
-	add_vulkan_shader(VulkanRenderer resources/lines/lines_thin_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_with_colors.vert)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_uniform_color.vert)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/lines/thin_picking.vert)
 	add_vulkan_shader(VulkanRenderer resources/image/image.frag)
 	add_vulkan_shader(VulkanRenderer resources/image/image.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

@@ -31,9 +31,88 @@
 #include <QVulkanDeviceFunctions>
 #include "vma/VulkanMemoryAllocator.h"
 
+#include <boost/any.hpp>
+
 namespace Ovito {
 
 OVITO_VULKANRENDERER_EXPORT Q_DECLARE_LOGGING_CATEGORY(lcVulkan);
+
+/**
+ * \brief A cache data structure that accepts keys with arbitrary type and which handles resource lifetime.
+ */
+template<typename Value>
+class VulkanResourceCache
+{
+public:
+
+	using ResourceFrameHandle = int;
+
+	/// Returns a reference to the value for the given key.
+	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
+	template<typename Key>
+	Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
+		// Check if the key exists in the cache.
+		for(CacheEntry& entry : _entries) {
+			if(entry.key.type() == typeid(Key) && key == boost::any_cast<const Key&>(entry.key)) {
+				// Register the frame in which the resource was actively used.
+				if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
+					entry.frames.push_back(resourceFrame);
+				// Return reference to the value.
+				return entry.value;
+			}
+		}
+		// Create a new entry if key doesn't exist yet.
+		_entries.emplace_back(std::forward<Key>(key), resourceFrame);
+		return _entries.back().value;
+	}
+
+	/// Frees objects in the cache which are no longer needed.
+	template<typename ReleaseFunc>
+	void release(ResourceFrameHandle resourceFrame, ReleaseFunc&& func) {
+		for(auto entry = _entries.begin(); entry != _entries.end(); ) {
+			auto frameIter = std::find(entry->frames.begin(), entry->frames.end(), resourceFrame);
+			if(frameIter != entry->frames.end()) {
+				if(entry->frames.size() != 1) {
+					*frameIter = entry->frames.back();
+					entry->frames.pop_back();
+				}
+				else {
+					func(entry->value);
+					entry = _entries.erase(entry);
+					continue;
+				}
+			}
+			++entry;
+		}
+	}
+
+	/// Indicates whether the cache is currently empty.
+	bool empty() const { return _entries.empty(); }
+
+	/// Returns the current number of cache entries.
+	size_t size() const { return _entries.size(); }
+
+private:
+
+	struct CacheEntry {
+		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) : key(std::forward<Key>(_key)), value{}, frames{{_frame}} {}
+		boost::any key;
+		Value value;
+		QVarLengthArray<ResourceFrameHandle, 6> frames;
+	};
+
+	std::vector<CacheEntry> _entries;
+};
+
+/**
+ * \brief A tagged tuple, which can be used as key for the VulkanResourceCache class.
+ */
+template<typename TagType, typename... TupleFields>
+struct VulkanResourceKey : public std::tuple<TupleFields...>
+{
+	/// Inherit constructors of tuple type.
+	using std::tuple<TupleFields...>::tuple;
+};
 
 /**
  * \brief Encapsulates a Vulkan logical device.
@@ -182,25 +261,41 @@ public:
 	/// Informs the resource manager that a frame has completely finished rendering and all related Vulkan resources can be released.
 	void releaseResourceFrame(ResourceFrameHandle frame);
 
+	/// Creates a new descriptor set from the pool and caches it, or returns an existing one for the given cache key.
+	template<typename KeyType>
+	std::pair<VkDescriptorSet, bool> createDescriptorSet(VkDescriptorSetLayout layout, KeyType&& cacheKey, ResourceFrameHandle resourceFrame) {
+	    OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
+
+		// Check if this descriptor set with for the cache key has already been created.
+		VkDescriptorSet& descriptorSet = _descriptorSets.lookup(std::forward<KeyType>(cacheKey), resourceFrame);
+		if(descriptorSet != VK_NULL_HANDLE)
+			return { descriptorSet, false };
+
+		// Otherwise create new descriptor set and store it in the cache.
+		descriptorSet = createDescriptorSetImpl(layout);
+		return { descriptorSet, true };
+	}
+
 	/// Uploads an OVITO DataBuffer to the Vulkan device.
-	VkBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame);
+	VkBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, ResourceFrameHandle resourceFrame, VkBufferUsageFlagBits usage);
+
+	/// Uploads some data to the Vulkan device as a buffer object and caches it.
+	template<typename KeyType>
+	VkBuffer createCachedBuffer(KeyType&& cacheKey, VkDeviceSize bufferSize, ResourceFrameHandle resourceFrame, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc) {
+	    OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
+
+		// Check if this OVITO data buffer has already been uploaded to the GPU.
+		DataBufferInfo& dataBufferInfo = _dataBuffers.lookup(std::forward<KeyType>(cacheKey), resourceFrame);
+
+		// If not, do it now.
+		if(dataBufferInfo.buffer == VK_NULL_HANDLE)
+			dataBufferInfo = createCachedBufferImpl(bufferSize, usage, std::move(fillMemoryFunc));
+
+		return dataBufferInfo.buffer;
+	}
 
 	/// Uploads an image to the Vulkan device as a texture image.
 	VkImageView uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
-
-	/// Utility data structure that encodes an arbitrary c++ type and the bit representation of a value of that type.
-	struct DescriptorSetCacheKey : public std::tuple<std::type_index, QVarLengthArray<quint8, 16>> {
-		template<typename T>
-		DescriptorSetCacheKey(const T& value) : std::tuple<std::type_index, QVarLengthArray<quint8, 16>>{ typeid(T),
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-			{ reinterpret_cast<const quint8*>(&value), reinterpret_cast<const quint8*>(&value) + sizeof(T) }} {}
-#else
-			{ (int)sizeof(T) }} { std::copy(reinterpret_cast<const quint8*>(&value), reinterpret_cast<const quint8*>(&value) + sizeof(T), std::get<1>(*this).begin()); }
-#endif
-	};
-
-	/// Creates a new descriptor set from the pool and caches it, or returns an existing one for the given cache key.
-	std::pair<VkDescriptorSet, bool> createDescriptorSet(VkDescriptorSetLayout layout, const DescriptorSetCacheKey& cacheKey, ResourceFrameHandle resourceFrame);
 
 	/// Returns whether this device uses a unified memory architecture, i.e., 
 	/// the device-local memory heap is also the CPU-local memory heap. 
@@ -217,6 +312,19 @@ Q_SIGNALS:
 
 	/// Is emitted right before the logical device is going to be destroyed (or was lost) and clients should release their Vulkan resources too.
 	void releaseResourcesRequested();
+
+private:
+
+	struct DataBufferInfo {
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+	};
+
+	/// Creates a new descriptor set from the pool.
+	VkDescriptorSet createDescriptorSetImpl(VkDescriptorSetLayout layout);
+
+	/// Uploads some data to the Vulkan device as a buffer object.
+	DataBufferInfo createCachedBufferImpl(VkDeviceSize bufferSize, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc);
 
 private:
 
@@ -300,35 +408,26 @@ private:
 	/// The pool for creating descriptor sets.
 	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 
-	struct DataBufferInfo {
-		VkBuffer buffer = VK_NULL_HANDLE;
-		VmaAllocation allocation = VK_NULL_HANDLE;
-		ResourceFrameHandle resourceFrame;
-	};
-
 	/// Keeps track of the data buffers that have been uploaded to the Vulkan device.
-	std::map<ConstDataBufferPtr, DataBufferInfo> _dataBuffers;
+	VulkanResourceCache<DataBufferInfo> _dataBuffers;
+
+	/// Keeps track of the descriptor sets that have been allocated.
+	VulkanResourceCache<VkDescriptorSet> _descriptorSets;
 
 	struct TextureInfo {
 		VkImage image = VK_NULL_HANDLE;
 		VmaAllocation allocation = VK_NULL_HANDLE;
 		VkImageView imageView = VK_NULL_HANDLE;
-		ResourceFrameHandle resourceFrame;
 	};
 
 	/// Keeps track of the texture images that have been uploaded to the Vulkan device.
-	std::map<qint64, TextureInfo> _textureImages;
-
-	struct DescriptorSetInfo {
-		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-		ResourceFrameHandle resourceFrame;
-	};
-
-	/// Keeps track of the descriptor sets that have been allocated.
-	std::map<DescriptorSetCacheKey, DescriptorSetInfo> _descriptorSets;
+	VulkanResourceCache<TextureInfo> _textureImages;
 
 	/// List of frames that are currently being rendered (by the CPU and/or the GPU).
 	std::vector<ResourceFrameHandle> _activeResourceFrames;
+
+	/// Counter that keeps track of how many resource frames have been acquired.
+	ResourceFrameHandle _nextResourceFrame = 0;
 };
 
 }	// End of namespace
