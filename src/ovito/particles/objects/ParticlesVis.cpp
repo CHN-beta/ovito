@@ -544,6 +544,8 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		ConstDataObjectRef,			// Transparency property
 		ConstDataObjectRef			// Radius property
 	>;
+	// Define a strong C++ type for the keys.
+	struct ShapeMeshCacheKeyType : ShapeMeshCacheKey { using ShapeMeshCacheKey::ShapeMeshCacheKey; };
 	// The data structure created for each mesh-based particle type.
 	struct MeshParticleType {
 		std::shared_ptr<MeshPrimitive> meshPrimitive;
@@ -554,7 +556,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 	using ShapeMeshCacheValue = std::vector<MeshParticleType>;
 
 	// Look up the rendering primitives for mesh-based particle types in the vis cache.
-	ShapeMeshCacheValue& meshVisCache = dataset()->visCache().get<ShapeMeshCacheValue>(ShapeMeshCacheKey(
+	ShapeMeshCacheValue& meshVisCache = dataset()->visCache().get<ShapeMeshCacheValue>(ShapeMeshCacheKeyType{
 		renderer,
 		const_cast<PipelineSceneNode*>(contextNode),
 		typeProperty,
@@ -565,7 +567,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 		colorProperty,
 		selectionProperty,
 		transparencyProperty,
-		radiusProperty));
+		radiusProperty});
 
 	// Check if we already have valid rendering primitives that are up to date.
 	if(meshVisCache.empty()) {
@@ -738,6 +740,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		struct ParticleCacheValue {
 			std::shared_ptr<ParticlePrimitive> primitive;
 			OORef<ParticlePickInfo> pickInfo;
+			bool isCreated = false;
 		};
 
 		// Determine effective primitive shape and shading mode.
@@ -756,7 +759,8 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			particleShape()));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.primitive) {
+		if(!visCache.isCreated) {
+			visCache.isCreated = true;
 
 			// Determine the set of particles to be rendered using the current primitive shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -794,6 +798,9 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles);
 		}
+		if(!visCache.primitive)
+			continue;
+
 		// Update the pick info record with the latest particle data.
 		visCache.pickInfo->setParticles(particles);
 
@@ -926,6 +933,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			std::shared_ptr<CylinderPrimitive> cylinderPrimitive;
 			std::shared_ptr<ParticlePrimitive> spheresPrimitives[2];
 			OORef<ParticlePickInfo> pickInfo;
+			bool isCreated = false;
 		};
 
 		// Look up the rendering primitive in the vis cache.
@@ -946,7 +954,8 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			shape));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.cylinderPrimitive) {
+		if(!visCache.isCreated) {
+			visCache.isCreated = true;
 
 			// Determine the set of particles to be rendered using the current shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -1052,6 +1061,9 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles, activeParticleIndices.take());
 		}
+		if(!visCache.cylinderPrimitive)
+			continue;
+
 		// Update the pick info record with the latest particle data.
 		visCache.pickInfo->setParticles(particles);
 
