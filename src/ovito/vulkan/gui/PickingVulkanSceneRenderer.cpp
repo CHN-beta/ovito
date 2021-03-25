@@ -104,10 +104,10 @@ void PickingVulkanSceneRenderer::resetPickingBuffer()
 	_objects.clear();
 	endPickObject();
 #if 1
-	_currentObject.baseObjectID = 1;
+	_nextAvailablePickingID = 1;
 #else
 	// This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-	_currentObject.baseObjectID = 0xEF000000;
+	_nextAvailablePickingID = 0xEF000000;
 #endif
 	_frameBuffer.image() = QImage();
 }
@@ -122,19 +122,21 @@ quint32 PickingVulkanSceneRenderer::beginPickObject(const PipelineSceneNode* obj
 
 	_currentObject.objectNode = const_cast<PipelineSceneNode*>(objNode);
 	_currentObject.pickInfo = pickInfo;
-	_objects.push_back(_currentObject);
+	_currentObject.baseObjectID = _nextAvailablePickingID;
 	return _currentObject.baseObjectID;
 }
 
 /******************************************************************************
 * Registers a range of sub-IDs belonging to the current object being rendered.
 ******************************************************************************/
-quint32 PickingVulkanSceneRenderer::registerSubObjectIDs(quint32 subObjectCount)
+quint32 PickingVulkanSceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
 {
 	OVITO_ASSERT_MSG(_currentObject.objectNode, "PickingVulkanSceneRenderer::registerSubObjectIDs()", "You forgot to register the current object via beginPickObject().");
 
-	quint32 baseObjectID = _currentObject.baseObjectID;
-	_currentObject.baseObjectID += subObjectCount;
+	quint32 baseObjectID = _nextAvailablePickingID;
+	if(indices)
+		_currentObject.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObject.baseObjectID));
+	_nextAvailablePickingID += subObjectCount;
 	return baseObjectID;
 }
 
@@ -143,8 +145,13 @@ quint32 PickingVulkanSceneRenderer::registerSubObjectIDs(quint32 subObjectCount)
 ******************************************************************************/
 void PickingVulkanSceneRenderer::endPickObject()
 {
+	if(_currentObject.objectNode) {
+		_objects.push_back(std::move(_currentObject));
+	}
+	_currentObject.baseObjectID = 0;
 	_currentObject.objectNode = nullptr;
 	_currentObject.pickInfo = nullptr;
+	_currentObject.indexedRanges.clear();
 }
 
 /******************************************************************************
@@ -160,9 +167,16 @@ std::tuple<const PickingVulkanSceneRenderer::ObjectRecord*, quint32> PickingVulk
 			quint32 blue = qBlue(pixel);
 			quint32 alpha = qAlpha(pixel);
 			quint32 objectID = red + (green << 8) + (blue << 16) + (alpha << 24);
-			const ObjectRecord* objRecord = lookupObjectRecord(objectID);
-			if(objRecord)
-				return std::make_tuple(objRecord, objectID - objRecord->baseObjectID);
+			if(const ObjectRecord* objRecord = lookupObjectRecord(objectID)) {
+				quint32 subObjectID = objectID - objRecord->baseObjectID;
+				for(const auto& range : objRecord->indexedRanges) {
+					if(subObjectID >= range.second && subObjectID < range.second + range.first->size()) {
+						subObjectID = range.second + ConstDataBufferAccess<int>(range.first).get(subObjectID - range.second);
+						break;
+					}
+				}
+				return std::make_tuple(objRecord, subObjectID);
+			}
 		}
 	}
 	return std::tuple<const PickingVulkanSceneRenderer::ObjectRecord*, quint32>(nullptr, 0);
@@ -180,7 +194,7 @@ const PickingVulkanSceneRenderer::ObjectRecord* PickingVulkanSceneRenderer::look
 		if(iter->baseObjectID > objectID) {
 			OVITO_ASSERT(iter != _objects.begin());
 			OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
-			return &*(iter-1);
+			return &*std::prev(iter);
 		}
 	}
 

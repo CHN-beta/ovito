@@ -31,6 +31,11 @@ namespace Ovito {
 ******************************************************************************/
 void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
+    // Are extended dynamic states supported by the Vulkan device? 
+    // If yes, we can use them to switch depth testing on or off on demand.
+    uint32_t extraDynamicStateCount = renderer->context()->supportsExtendedDynamicState() ? 1 : 0;
+    VkDynamicState extraDynamicState = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
+    
     // Specify the descriptor layout binding for the sampler.
     VkSampler sampler = renderer->context()->samplerNearest();
     VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
@@ -59,8 +64,8 @@ void VulkanImagePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         0, // vertexAttributeDescriptionCount
         nullptr, 
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-		0, // extraDynamicStateCount
-		nullptr, // pExtraDynamicStates
+		extraDynamicStateCount, // extraDynamicStateCount
+		&extraDynamicState, // pExtraDynamicStates
 		true, // enableAlphaBlending
         1, // setLayoutCount
 		&descriptorSetLayout
@@ -93,6 +98,10 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
 
     // Bind the pipeline.
     pipelines.imageQuad.bind(*renderer->context(), renderer->currentCommandBuffer());
+
+    // Specify dynamic depth-test enabled state if Vulkan implementation supports it.
+    if(renderer->context()->supportsExtendedDynamicState())
+        renderer->context()->vkCmdSetDepthTestEnableEXT(renderer->currentCommandBuffer(), renderer->_depthTestEnabled);
 
     // Use the QImage cache key to look up descriptor set.
     VulkanResourceKey<VulkanImagePrimitive, qint64> cacheKey{ image().cacheKey() };

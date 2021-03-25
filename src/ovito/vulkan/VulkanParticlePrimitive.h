@@ -46,6 +46,9 @@ public:
 		void release(VulkanSceneRenderer* renderer);
 
 		VulkanPipeline cube;
+		VulkanPipeline cube_picking;
+		VulkanPipeline sphere;
+		VulkanPipeline sphere_picking;
 	};
 
 	/// Inherit constructor from base class.

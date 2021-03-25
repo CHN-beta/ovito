@@ -43,8 +43,10 @@ static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTy
 VulkanContext::VulkanContext(QObject* parent) : QObject(parent)
 {
     setDeviceExtensions(QByteArrayList() 
-        << "VK_KHR_get_memory_requirements2"
-        << "VK_KHR_dedicated_allocation");
+        << VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
+        << VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME
+        << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+        << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 }
 
 /******************************************************************************
@@ -62,7 +64,9 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
 		inst->setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
         inst->installDebugOutputFilter(&vulkanDebugFilter);
 #endif
-        inst->setExtensions(QByteArrayList() << "VK_KHR_get_physical_device_properties2");
+        inst->setExtensions(QByteArrayList() 
+            << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+            << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 		if(!inst->create())
 			throw Exception(tr("Failed to create Vulkan instance: %1").arg(inst->errorCode()));
 		globalInstance = inst;
@@ -318,13 +322,37 @@ bool VulkanContext::create(QWindow* window)
     }
 
     // Query the device's available features.
-    VkPhysicalDeviceFeatures availableFeatures;
-    vulkanFunctions()->vkGetPhysicalDeviceFeatures(physDev, &availableFeatures);
+    VkPhysicalDeviceFeatures2 availableFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    VkPhysicalDeviceFeatures& availableFeatures = availableFeatures2.features;
+    // Query whether the device supports the 'extendedDynamicState' feature.
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT };
+    availableFeatures2.pNext = &extendedDynamicStateFeatures;
+    VkPhysicalDeviceFeatures2 requestedFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    VkPhysicalDeviceFeatures& requestedFeatures = requestedFeatures2.features;
+    if(vulkanInstance()->extensions().contains(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR = (PFN_vkGetPhysicalDeviceFeatures2KHR)vulkanInstance()->getInstanceProcAddr("vkGetPhysicalDeviceFeatures2KHR");
+        vkGetPhysicalDeviceFeatures2KHR(physDev, &availableFeatures2);
+        devInfo.pNext = &requestedFeatures2;
+    }
+    else {
+        vulkanFunctions()->vkGetPhysicalDeviceFeatures(physDev, &availableFeatures);
+        devInfo.pEnabledFeatures = &requestedFeatures;
+    }
+
     // Enable the feature which we can use.
-    memset(&_physicalDeviceFeatures, 0, sizeof(_physicalDeviceFeatures));
+    memset(&requestedFeatures, 0, sizeof(requestedFeatures));
+
+    // Enable the 'wideLines' feature, which is used by VulkanLinePrimitive to render lines that are more than 1 pixel wide.
+    _supportsWideLines = availableFeatures.wideLines;
     if(availableFeatures.wideLines)
-        _physicalDeviceFeatures.wideLines = VK_TRUE;
-    devInfo.pEnabledFeatures = &_physicalDeviceFeatures;
+        requestedFeatures.wideLines = VK_TRUE;
+
+    // Enable the 'extendedDynamicState' feature, which wllows to temporarily disable depth tests without pipeline duplication.
+    _supportsExtendedDynamicState = extendedDynamicStateFeatures.extendedDynamicState;
+    if(extendedDynamicStateFeatures.extendedDynamicState) {
+        extendedDynamicStateFeatures.pNext = requestedFeatures2.pNext;
+        requestedFeatures2.pNext = &extendedDynamicStateFeatures;
+    }
 
     VkResult err = vulkanFunctions()->vkCreateDevice(physDev, &devInfo, nullptr, &_device);
     if(err == VK_ERROR_DEVICE_LOST) {
@@ -341,6 +369,8 @@ bool VulkanContext::create(QWindow* window)
 	// Get the function pointers for device-specific Vulkan functions.
     _deviceFunctions = vulkanInstance()->deviceFunctions(_device);
     OVITO_ASSERT(_deviceFunctions);
+    // Query function pointers for optional extensions.
+    vkCmdSetDepthTestEnableEXT = (PFN_vkCmdSetDepthTestEnableEXT)vulkanInstance()->getInstanceProcAddr("vkCmdSetDepthTestEnableEXT");
 
     // Initialize Vulkan Memory Allocator.
     VmaAllocatorCreateInfo allocatorInfo = {};
@@ -371,7 +401,7 @@ bool VulkanContext::create(QWindow* window)
     // VK_KHR_dedicated_allocation is a Vulkan extension which can be used to improve performance on some GPUs. 
     // It augments Vulkan API with possibility to query driver whether it prefers particular buffer or image to have its own, 
     // dedicated allocation (separate VkDeviceMemory block) for better efficiency - to be able to do some internal optimizations.
-    if(reqExts.contains("VK_KHR_get_memory_requirements2") && reqExts.contains("VK_KHR_dedicated_allocation")) {
+    if(reqExts.contains(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) && reqExts.contains(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
         vulkanFunctionsTable.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetBufferMemoryRequirements2KHR");
         vulkanFunctionsTable.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetImageMemoryRequirements2KHR");
@@ -495,7 +525,7 @@ bool VulkanContext::create(QWindow* window)
     std::array<VkDescriptorPoolSize, 2> poolSizes;
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[0].descriptorCount = 100;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[1].descriptorCount = 100;
     VkDescriptorPoolCreateInfo descriptorPoolInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;

@@ -13,6 +13,13 @@
 
 	<file>particles/cube/cube.frag.spv</file>
 	<file>particles/cube/cube.vert.spv</file>
+	<file>particles/cube/cube_picking.frag.spv</file>
+	<file>particles/cube/cube_picking.vert.spv</file>
+
+	<file>particles/sphere/sphere.frag.spv</file>
+	<file>particles/sphere/sphere.vert.spv</file>
+	<file>particles/sphere/sphere_picking.frag.spv</file>
+	<file>particles/sphere/sphere_picking.vert.spv</file>
 </qresource>
 
 </RCC>

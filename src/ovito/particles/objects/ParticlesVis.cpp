@@ -719,6 +719,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		struct ParticleCacheValue {
 			std::shared_ptr<ParticlePrimitive> primitive;
 			OORef<ParticlePickInfo> pickInfo;
+			bool isCreated = false;
 		};
 
 		// Determine effective primitive shape and shading mode.
@@ -737,7 +738,8 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			particleShape()));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.primitive) {
+		if(!visCache.isCreated) {
+			visCache.isCreated = true;
 
 			// Determine the set of particles to be rendered using the current primitive shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -775,6 +777,9 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles);
 		}
+		if(!visCache.primitive)
+			continue;
+
 		// Update the pick info record with the latest particle data.
 		visCache.pickInfo->setParticles(particles);
 
@@ -907,6 +912,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			std::shared_ptr<CylinderPrimitive> cylinderPrimitive;
 			std::shared_ptr<ParticlePrimitive> spheresPrimitives[2];
 			OORef<ParticlePickInfo> pickInfo;
+			bool isCreated = false;
 		};
 
 		// Look up the rendering primitive in the vis cache.
@@ -927,7 +933,8 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			shape));
 
 		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.cylinderPrimitive) {
+		if(!visCache.isCreated) {
+			visCache.isCreated = true;
 
 			// Determine the set of particles to be rendered using the current shape.
 			DataBufferAccessAndRef<int> activeParticleIndices;
@@ -1033,6 +1040,9 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			// Also create the corresponding picking record.
 			visCache.pickInfo = new ParticlePickInfo(this, particles, activeParticleIndices.take());
 		}
+		if(!visCache.cylinderPrimitive)
+			continue;
+
 		// Update the pick info record with the latest particle data.
 		visCache.pickInfo->setParticles(particles);
 

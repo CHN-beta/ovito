@@ -89,7 +89,7 @@ public:
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingVulkanSceneRenderer class to implement the picking mechanism.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount) { return 1; }
+	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
 
 	/// Temporarily enables/disables the depth test while rendering.
 	virtual void setDepthTestEnabled(bool enabled) override;
@@ -160,6 +160,12 @@ public:
 	/// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
     const Matrix4& clipCorrection() const { return _clipCorrection; } 
 
+	/// Returns the descriptor set layout for the global uniforms buffer.
+	VkDescriptorSetLayout globalUniformsDescriptorSetLayout();
+
+	/// Returns the Vulkan descriptor set for the global uniforms structure, which can be bound to a pipeline. 
+	VkDescriptorSet getGlobalUniformsDescriptorSet();
+
 protected:
 
 	/// This method is called after the reference counter of this object has reached zero
@@ -190,6 +196,9 @@ private:
 
     /// The current Vulkan swap chain frame index.
     uint32_t _currentSwapChainFrame = 0;
+
+	/// Indicates whether depth testing is currently enabled for drawing commands.
+	bool _depthTestEnabled = true;
 
 	/// The default Vulkan render pass to be used by the renderer.
     VkRenderPass _defaultRenderPass = VK_NULL_HANDLE;
@@ -237,9 +246,28 @@ private:
     const Matrix4 _clipCorrection{1.0, 0.0, 0.0, 0.0,
 									0.0, -1.0, 0.0, 0.0,
 									0.0, 0.0, 0.5, 0.5,
-									0.0, 0.0, 0.0, 1.0}; 
+									0.0, 0.0, 0.0, 1.0};
+
+	/// Data structure with some slowly or not varying data, which is made available to all shaders.
+	struct GlobalUniforms
+	{
+		Matrix_4<float> projectionMatrix;
+		Matrix_4<float> inverseProjectionMatrix;
+		Point_2<float> viewportOrigin; 			// Corner of the current viewport rectangle in window coordinates.
+		Vector_2<float> inverseViewportSize;	// One over the width/height of the viewport rectangle in window space.
+		float znear, zfar;
+
+		bool operator==(const GlobalUniforms& other) const {
+			return projectionMatrix == other.projectionMatrix && viewportOrigin == other.viewportOrigin 
+				&& inverseViewportSize == other.inverseViewportSize && znear == other.znear && zfar == other.zfar;
+		}
+	};
+
+	VkDescriptorSetLayout _globalUniformsDescriptorSetLayout = VK_NULL_HANDLE;
 
 	friend class VulkanTextPrimitive;
+	friend class VulkanImagePrimitive;
+	friend class VulkanLinePrimitive;
 };
 
 }	// End of namespace

@@ -41,6 +41,9 @@ function(add_vulkan_shader target shaderfile)
            OUTPUT "${current-output-path}"
            COMMAND "${glslc_executable}" -o "${current-output-path}" "${current-shader-path}"
            DEPENDS "${current-shader-path}"
+		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/picking.glsl"
+		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/shading.glsl"
+		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/global_uniforms.glsl"
            IMPLICIT_DEPENDS CXX "${current-shader-path}"
 		   COMMENT "Compiling Vulkan shader ${shaderfile}"
            VERBATIM)
@@ -81,6 +84,12 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/image/image.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.frag)
 	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/cube/cube_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/sphere/sphere_picking.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

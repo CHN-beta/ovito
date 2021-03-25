@@ -187,9 +187,6 @@ public:
 	/// Returns the device-specific Vulkan function table. 
 	QVulkanDeviceFunctions* deviceFunctions() const { return _deviceFunctions; }
 
-	/// Returns data structure indicating which Vulkan features the current physical device supports.
-	const VkPhysicalDeviceFeatures& features() const { return _physicalDeviceFeatures; }
-
 	/// Returns the index of the queue family used for graphics rendering.
     uint32_t graphicsQueueFamilyIndex() const { return _gfxQueueFamilyIdx; }
 
@@ -297,10 +294,16 @@ public:
 	/// Uploads an image to the Vulkan device as a texture image.
 	VkImageView uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
 
-	/// Returns whether this device uses a unified memory architecture, i.e., 
+	/// Indicates whether the current Vulkan device uses a unified memory architecture, i.e., 
 	/// the device-local memory heap is also the CPU-local memory heap. 
 	/// On UMA devices, no staging buffers are required.
 	bool isUMA() const { return _isUMA; }
+
+	/// Indicates whether the current Vulkan device supports the 'wideLines' feature.
+	bool supportsWideLines() const { return _supportsWideLines; }
+
+	/// Indicates whether the current Vulkan device supports the 'extendedDynamicState' feature.
+	bool supportsExtendedDynamicState() const { return _supportsExtendedDynamicState; }
 
 Q_SIGNALS:
 
@@ -342,9 +345,6 @@ private:
 
 	/// The selected physical device index from which the logical device is created. 
     int _physDevIndex = 0;
-
-	/// Indicates which Vulkan features the current physical device supports.
-	VkPhysicalDeviceFeatures _physicalDeviceFeatures;
 
 	/// The list of physical Vulkan devices.
     QVector<VkPhysicalDevice> _physDevs;
@@ -399,6 +399,12 @@ private:
 	/// On UMA devices, no staging buffers are needed.
 	bool _isUMA = false;
 
+	/// Indicates that the current Vulkan device supports the 'wideLines' feature.
+	bool _supportsWideLines = false;
+
+	/// Indicates that the current Vulkan device supports the 'extendedDynamicState' feature.
+	bool _supportsExtendedDynamicState = false;
+
 	/// The Vulkan Memory Allocator used for this device.
 	VmaAllocator _allocator = VK_NULL_HANDLE;
 
@@ -428,6 +434,11 @@ private:
 
 	/// Counter that keeps track of how many resource frames have been acquired.
 	ResourceFrameHandle _nextResourceFrame = 0;
+
+public:
+
+	/// Pointer to optional Vulkan extension function. 
+	PFN_vkCmdSetDepthTestEnableEXT vkCmdSetDepthTestEnableEXT = nullptr;
 };
 
 }	// End of namespace

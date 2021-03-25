@@ -72,7 +72,8 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
         if(context->logicalDevice()) {
             stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
             stream << "Unified memory architecture: " << context->isUMA() << "\n";
-            stream << "features.wideLines: " << context->features().wideLines << "\n";
+            stream << "features.wideLines: " << context->supportsWideLines() << "\n";
+            stream << "features.extendedDynamicState: " << context->supportsExtendedDynamicState() << "\n";
             stream << "limits.maxUniformBufferRange: " << context->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
             stream << "limits.maxStorageBufferRange: " << context->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
             stream << "limits.maxPushConstantsSize: " << context->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
@@ -126,8 +127,9 @@ void VulkanSceneRenderer::aboutToBeDeleted()
 bool VulkanSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) const
 {
 	// Two Vulkan renderers are compatible when they use the same logical Vulkan device.
-	if(VulkanSceneRenderer* otherVulkanRenderer = dynamic_object_cast<VulkanSceneRenderer>(otherRenderer))
+	if(VulkanSceneRenderer* otherVulkanRenderer = dynamic_object_cast<VulkanSceneRenderer>(otherRenderer)) {
 		return context() == otherVulkanRenderer->context();
+    }
 	return false;
 }
 
@@ -173,6 +175,9 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     scissor.extent.width = viewport.width;
     scissor.extent.height = viewport.height;
     deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
+
+    // Enable depth tests by default.
+    setDepthTestEnabled(true);
 }
 
 /******************************************************************************
@@ -206,6 +211,7 @@ void VulkanSceneRenderer::render2DPolyline(const Point2* points, int count, cons
 ******************************************************************************/
 void VulkanSceneRenderer::setDepthTestEnabled(bool enabled)
 {
+    _depthTestEnabled = enabled;
 }
 
 /******************************************************************************
@@ -232,6 +238,12 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
     _linePrimitivePipelines.release(this);
     _particlePrimitivePipelines.release(this);
     _imagePrimitivePipelines.release(this);
+
+    if(_globalUniformsDescriptorSetLayout != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyDescriptorSetLayout(logicalDevice(), _globalUniformsDescriptorSetLayout, nullptr);
+        _globalUniformsDescriptorSetLayout = VK_NULL_HANDLE;
+    }
+
     _resourcesInitialized = false;
 }
 
@@ -309,6 +321,76 @@ void VulkanSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primi
     std::shared_ptr<VulkanTextPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanTextPrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this);
+}
+
+/******************************************************************************
+* Returns the descriptor set layout for the global uniforms buffer.
+******************************************************************************/
+VkDescriptorSetLayout VulkanSceneRenderer::globalUniformsDescriptorSetLayout()
+{
+    if(_globalUniformsDescriptorSetLayout == VK_NULL_HANDLE) {
+
+        // Specify the descriptor layout binding.
+        VkDescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        // Create descriptor set layout.
+        VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &layoutBinding;
+        VkResult err = deviceFunctions()->vkCreateDescriptorSetLayout(logicalDevice(), &layoutInfo, nullptr, &_globalUniformsDescriptorSetLayout);
+        if(err != VK_SUCCESS)
+            throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+    }
+
+    return _globalUniformsDescriptorSetLayout;
+}
+
+/******************************************************************************
+* Returns the Vulkan descriptor set for the global uniforms structure, which 
+* can be bound to a pipeline. 
+******************************************************************************/
+VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
+{
+    // Update the information in the uniforms data structure.
+	GlobalUniforms uniforms;
+    uniforms.projectionMatrix = static_cast<Matrix_4<float>>(clipCorrection() * projParams().projectionMatrix);
+    uniforms.inverseProjectionMatrix = static_cast<Matrix_4<float>>(projParams().inverseProjectionMatrix * clipCorrection().inverse());
+    uniforms.viewportOrigin = Point_2<float>(0,0);
+    uniforms.inverseViewportSize = Vector_2<float>(2.0f / (float)frameBufferSize().width(), 2.0f / (float)frameBufferSize().height());
+    uniforms.znear = static_cast<float>(projParams().znear);
+    uniforms.zfar = static_cast<float>(projParams().zfar);
+
+    // Upload uniforms buffer to GPU memory (only if has changed).
+    VkBuffer uniformsBuffer = context()->createCachedBuffer(uniforms, sizeof(uniforms), currentResourceFrame(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, [&](void* buffer) {
+        memcpy(buffer, &uniforms, sizeof(uniforms));
+    });
+
+    // Use the VkBuffer as strongly-typed cache key to look up descriptor set.
+    VulkanResourceKey<GlobalUniforms, VkBuffer> cacheKey{ uniformsBuffer };
+
+    // Create the descriptor set (only if a new Vulkan buffer has been created).
+    std::pair<VkDescriptorSet, bool> descriptorSet = context()->createDescriptorSet(globalUniformsDescriptorSetLayout(), cacheKey, currentResourceFrame());
+
+    // Initialize the descriptor set if it was newly created.
+    if(descriptorSet.second) {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = uniformsBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE ;
+        VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptorWrite.dstSet = descriptorSet.first;
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        deviceFunctions()->vkUpdateDescriptorSets(logicalDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
+
+    return descriptorSet.first;
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 #version 440
 
-#include "../utilities.glsl"
+#include "../picking.glsl"
 
 // Push constants:
 layout(push_constant) uniform constants {

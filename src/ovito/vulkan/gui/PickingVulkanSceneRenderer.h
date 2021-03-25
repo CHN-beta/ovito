@@ -43,6 +43,7 @@ public:
 		quint32 baseObjectID;
 		OORef<PipelineSceneNode> objectNode;
 		OORef<ObjectPickInfo> pickInfo;
+		std::vector<std::pair<ConstDataBufferPtr, quint32>> indexedRanges;
 	};
 
 public:
@@ -66,7 +67,7 @@ public:
 	virtual quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr) override;
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount) override;
+	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices) override;
 
 	/// Call this when rendering of a pickable object is finished.
 	virtual void endPickObject() override;
@@ -92,6 +93,9 @@ private:
 	ViewportWindowInterface* _window;
 
 	/// The next available object ID.
+	quint32 _nextAvailablePickingID;
+
+	/// The current object for which we are recording picking infos.
 	ObjectRecord _currentObject;
 
 	/// The list of registered objects.
