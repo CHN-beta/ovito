@@ -207,7 +207,7 @@ void CFGImporter::FrameLoader::loadFile()
 	setParticleCount(header.numParticles);
 
 	// Prepare the mapping between input file columns and particle properties.
-	InputColumnReader columnParser(cfgMapping, particles(), executionContext());
+	InputColumnReader columnParser(cfgMapping, particles(), executionContext(), false);
 
 	// Create particle mass and type properties.
 	int currentAtomType = 0;

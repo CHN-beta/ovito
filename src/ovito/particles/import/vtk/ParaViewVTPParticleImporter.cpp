@@ -131,16 +131,22 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 					int vectorComponent = -1;
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent)) {
 						ParaViewVTIGridImporter::parseVTKDataArray(property, vectorComponent, xml);
+						if(xml.hasError() || isCanceled())
+							break;
 
 						// Create particle types if this is a typed property.
-						if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
+						OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
+						if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
+						if(elementTypeClass) {
 							for(int t : ConstPropertyAccess<int>(property)) {
 								if(!property->elementType(t)) {
 									DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset(), executionContext()));
 									elementType->setNumericId(t);
 									elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property), executionContext());
-									if(elementTypeClass == &ParticleType::OOClass())
+									if(elementTypeClass == &ParticleType::OOClass()) {
+										// Load mesh-based shape of the particle type as specified in the VTM container file.
 										loadParticleShape(static_object_cast<ParticleType>(elementType.get()));
+									}
 									property->addElementType(std::move(elementType));
 								}
 							}
@@ -193,6 +199,31 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 		}
 	}
 
+	// Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling. 
+	if(const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty)) {
+		std::vector<int> typesWithMeshShape;
+		for(const ElementType* type : typeProperty->elementTypes()) {
+			if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
+				if(particleType->shape() == ParticlesVis::ParticleShape::Mesh)
+					typesWithMeshShape.push_back(particleType->numericId());
+		}
+		if(typesWithMeshShape.size() == typeProperty->elementTypes().size()) {
+			// If all particle shapes are mesh-based, simply remove the "Radius" property, which is not used in this case anyway.
+			if(const PropertyObject* radiusProperty = particles()->getProperty(ParticlesObject::RadiusProperty))
+				particles()->removeProperty(radiusProperty);
+		}
+		else if(!typesWithMeshShape.empty()) {
+			if(PropertyAccess<FloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+				FloatType* radius = radiusArray.begin();
+				for(int t : ConstPropertyAccess<int>(typeProperty)) {
+					if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
+						*radius = 0.0;
+					++radius;
+				}
+			}
+		}
+	}
+
 	// Report number of particles to the user.
 	QString statusString = tr("Number of particles: %1").arg(particles()->elementCount());
 	state().setStatus(std::move(statusString));
@@ -220,7 +251,9 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
 		return particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
 	}
 	else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-		return particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		PropertyObject* property = particles()->createProperty(QStringLiteral("Material Type"), PropertyObject::Int, 1, 0, false);
+		property->setTitle(tr("Material types"));
+		return property;
 	}
 	else if(name.compare(QLatin1String("shapetype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		return particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
