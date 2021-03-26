@@ -24,6 +24,8 @@
 #include "VulkanParticlePrimitive.h"
 #include "VulkanSceneRenderer.h"
 
+#include <boost/range/irange.hpp>
+
 namespace Ovito {
 
 /******************************************************************************
@@ -119,7 +121,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -136,7 +138,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -153,7 +155,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -170,7 +172,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -187,7 +189,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -204,10 +206,44 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
+
+        circle.create(*renderer->context(),
+            QStringLiteral("particles/circle/circle"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        circle_picking.create(*renderer->context(),
+            QStringLiteral("particles/circle/circle_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );        
 
         box.create(*renderer->context(),
             QStringLiteral("particles/box/box"), 
@@ -221,7 +257,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -248,7 +284,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -265,7 +301,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -282,7 +318,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -299,7 +335,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            true, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -327,7 +363,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
-            false, // enableAlphaBlending
+            false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
@@ -345,6 +381,8 @@ void VulkanParticlePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	sphere_picking.release(*renderer->context());
 	square.release(*renderer->context());
 	square_picking.release(*renderer->context());
+	circle.release(*renderer->context());
+	circle_picking.release(*renderer->context());
 	box.release(*renderer->context());
 	box_picking.release(*renderer->context());
 	ellipsoid.release(*renderer->context());
@@ -367,8 +405,12 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = renderer->clipCorrection() * renderer->projParams().projectionMatrix * renderer->modelViewTM();
 
+    // The effective number of particles being rendered:
     uint32_t particleCount = indices() ? indices()->size() : positions()->size();
     uint32_t verticesPerParticle = 0;
+
+    // Are we rendering semi-transparent particles?
+    bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
 
     // Bind the right Vulkan pipeline.
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -377,7 +419,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
                     pipelineLayout = pipelines.cube.layout();
-                    pipelines.cube.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    pipelines.cube.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
                     pipelineLayout = pipelines.cube_picking.layout();
@@ -388,7 +430,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             else {
                 if(!renderer->isPicking()) {
                     pipelineLayout = pipelines.square.layout();
-                    pipelines.square.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    pipelines.square.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
                     pipelineLayout = pipelines.square_picking.layout();
@@ -401,7 +443,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
                     pipelineLayout = pipelines.box.layout();
-                    pipelines.box.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    pipelines.box.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
                     pipelineLayout = pipelines.box_picking.layout();
@@ -412,20 +454,33 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             else return;
             break;
         case SphericalShape:
-            if(!renderer->isPicking()) {
-                pipelineLayout = pipelines.sphere.layout();
-                pipelines.sphere.bind(*renderer->context(), renderer->currentCommandBuffer());
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.sphere.layout();
+                    pipelines.sphere.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                }
+                else {
+                    pipelineLayout = pipelines.sphere_picking.layout();
+                    pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerParticle = 14; // Cube rendered as triangle strip.
             }
             else {
-                pipelineLayout = pipelines.sphere_picking.layout();
-                pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.circle.layout();
+                    pipelines.circle.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                }
+                else {
+                    pipelineLayout = pipelines.circle_picking.layout();
+                    pipelines.circle_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerParticle = 4; // Square rendered as triangle strip.
             }
-            verticesPerParticle = 14; // Cube rendered as triangle strip.
             break;
         case EllipsoidShape:
             if(!renderer->isPicking()) {
                 pipelineLayout = pipelines.ellipsoid.layout();
-                pipelines.ellipsoid.bind(*renderer->context(), renderer->currentCommandBuffer());
+                pipelines.ellipsoid.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
             }
             else {
                 pipelineLayout = pipelines.ellipsoid_picking.layout();
@@ -436,7 +491,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         case SuperquadricShape:
             if(!renderer->isPicking()) {
                 pipelineLayout = pipelines.superquadric.layout();
-                pipelines.superquadric.bind(*renderer->context(), renderer->currentCommandBuffer());
+                pipelines.superquadric.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
             }
             else {
                 pipelineLayout = pipelines.superquadric_picking.layout();
@@ -525,25 +580,49 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         case EllipsoidShape:
         case SuperquadricShape:
 
-            // Pass model-view-projection matrix to vertex shader as a push constant.
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+            if(shadingMode() == NormalShading) {
+                // Pass model-view-projection matrix to vertex shader as a push constant.
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
 
-            // Pass model-view transformation matrix to vertex shader as a push constant.
-            // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
-            // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
-            std::array<float, 3*4> transposed_modelview_matrix;
-            {
-                auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
-                for(size_t row = 0; row < 3; row++)
-                    for(size_t col = 0; col < 4; col++)
-                        *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
+                // Pass model-view transformation matrix to vertex shader as a push constant.
+                // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
+                // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
+                std::array<float, 3*4> transposed_modelview_matrix;
+                {
+                    auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
+                    for(size_t row = 0; row < 3; row++)
+                        for(size_t col = 0; col < 4; col++)
+                            *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
+                }
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
+
+                if(renderer->isPicking()) {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                }
             }
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
+            else {
+                // Pass projection matrix to vertex shader as a push constant.
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), Matrix_4<float>(renderer->clipCorrection() * renderer->projParams().projectionMatrix).data());
 
-            if(renderer->isPicking()) {
-                // Pass picking base ID to vertex shader as a push constant.
-                uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
-                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                // Pass model-view transformation matrix to vertex shader as a push constant.
+                // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
+                // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
+                std::array<float, 3*4> transposed_modelview_matrix;
+                {
+                    auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
+                    for(size_t row = 0; row < 3; row++)
+                        for(size_t col = 0; col < 4; col++)
+                            *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
+                }
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
+
+                if(renderer->isPicking()) {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                }
             }
 
             break;
@@ -820,8 +899,68 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
     // Bind vertex buffers.
     renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffersCount, buffers.data(), offsets.data());
 
-    // Draw triangle strip instances.
-    renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), verticesPerParticle, particleCount, 0, 0);
+    // Check indirect drawing capabilities of Vulkan device, which are needed for depth-sorted rendering.
+    bool indirectDrawingSupported = renderer->context()->supportsMultiDrawIndirect()
+        && renderer->context()->supportsDrawIndirectFirstInstance()
+        && particleCount <= renderer->context()->physicalDeviceProperties()->limits.maxDrawIndirectCount;
+
+    if(!useBlending || !indirectDrawingSupported) {
+        // Draw triangle strip instances in regular storage order (not sorted).
+        renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), verticesPerParticle, particleCount, 0, 0);
+    }
+    else {
+        // Create a buffer for an indirect drawing command to render the particles in back-to-front order. 
+
+        // Viewing direction in object space:
+        const Vector3 direction = renderer->modelViewTM().inverse().column(2);
+
+        // The caching key for the indirect drawing command buffer.
+        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> indirectBufferCacheKey{
+            indices(),
+            positions(),
+            direction,
+            verticesPerParticle
+        };
+
+        // Create indirect drawing buffer.
+        VkBuffer indirectBuffer = renderer->context()->createCachedBuffer(indirectBufferCacheKey, particleCount * sizeof(VkDrawIndirectCommand), renderer->currentResourceFrame(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, [&](void* buffer) {
+
+            // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
+            std::vector<FloatType> distances(particleCount);
+            if(!indices()) {
+                boost::transform(boost::irange<size_t>(0, particleCount), distances.begin(), [direction, positionsArray = ConstDataBufferAccess<Vector3>(positions())](size_t i) {
+                    return direction.dot(positionsArray[i]);
+                });
+            }
+            else {
+                boost::transform(ConstDataBufferAccess<int>(indices()), distances.begin(), [direction, positionsArray = ConstDataBufferAccess<Vector3>(positions())](size_t i) {
+                    return direction.dot(positionsArray[i]);
+                });
+            }
+
+            // Create index array with all particle indices.
+            std::vector<uint32_t> sortedIndices(particleCount);
+            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
+
+            // Sort particle indices with respect to distance (back-to-front order).
+            std::sort(sortedIndices.begin(), sortedIndices.end(), [&](uint32_t a, uint32_t b) {
+                return distances[a] < distances[b];
+            });
+
+            // Fill the buffer with VkDrawIndirectCommand records.
+            VkDrawIndirectCommand* dst = reinterpret_cast<VkDrawIndirectCommand*>(buffer);
+            for(int index : sortedIndices) {
+                dst->vertexCount = verticesPerParticle;
+                dst->instanceCount = 1;
+                dst->firstVertex = 0;
+                dst->firstInstance = index;
+                ++dst;
+            }
+        });
+
+        // Draw triangle strip instances in sorted order.
+        renderer->deviceFunctions()->vkCmdDrawIndirect(renderer->currentCommandBuffer(), indirectBuffer, 0, particleCount, sizeof(VkDrawIndirectCommand));
+    }
 }
 
 }	// End of namespace

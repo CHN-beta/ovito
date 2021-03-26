@@ -26,6 +26,11 @@
 	<file>particles/square/square_picking.frag.spv</file>
 	<file>particles/square/square_picking.vert.spv</file>
 
+	<file>particles/circle/circle.frag.spv</file>
+	<file>particles/circle/circle.vert.spv</file>
+	<file>particles/circle/circle_picking.frag.spv</file>
+	<file>particles/circle/circle_picking.vert.spv</file>
+
 	<file>particles/box/box.frag.spv</file>
 	<file>particles/box/box.vert.spv</file>
 	<file>particles/box/box_picking.frag.spv</file>

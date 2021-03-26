@@ -97,7 +97,7 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
     VkImageView imageView = renderer->context()->uploadImage(image(), renderer->currentResourceFrame());
 
     // Bind the pipeline.
-    pipelines.imageQuad.bind(*renderer->context(), renderer->currentCommandBuffer());
+    pipelines.imageQuad.bind(*renderer->context(), renderer->currentCommandBuffer(), true);
 
     // Specify dynamic depth-test enabled state if Vulkan implementation supports it.
     if(renderer->context()->supportsExtendedDynamicState())

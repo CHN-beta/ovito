@@ -51,6 +51,8 @@ public:
 		VulkanPipeline sphere_picking;
 		VulkanPipeline square;
 		VulkanPipeline square_picking;
+		VulkanPipeline circle;
+		VulkanPipeline circle_picking;
 		VulkanPipeline box;
 		VulkanPipeline box_picking;
 		VulkanPipeline ellipsoid;

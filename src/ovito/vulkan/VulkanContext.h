@@ -302,6 +302,12 @@ public:
 	/// Indicates whether the current Vulkan device supports the 'wideLines' feature.
 	bool supportsWideLines() const { return _supportsWideLines; }
 
+	/// Indicates whether the current Vulkan device supports the 'multiDrawIndirect' feature.
+	bool supportsMultiDrawIndirect() const { return _supportsMultiDrawIndirect; }
+
+	/// Indicates whether the current Vulkan device supports the 'drawIndirectFirstInstance' feature.
+	bool supportsDrawIndirectFirstInstance() const { return _supportsDrawIndirectFirstInstance; }
+
 	/// Indicates whether the current Vulkan device supports the 'extendedDynamicState' feature.
 	bool supportsExtendedDynamicState() const { return _supportsExtendedDynamicState; }
 
@@ -401,6 +407,12 @@ private:
 
 	/// Indicates that the current Vulkan device supports the 'wideLines' feature.
 	bool _supportsWideLines = false;
+
+	/// Indicates that the current Vulkan device supports the 'multiDrawIndirect' feature.
+	bool _supportsMultiDrawIndirect = false;
+
+	/// Indicates that the current Vulkan device supports the 'drawIndirectFirstInstance' feature.
+	bool _supportsDrawIndirectFirstInstance = false;
 
 	/// Indicates that the current Vulkan device supports the 'extendedDynamicState' feature.
 	bool _supportsExtendedDynamicState = false;

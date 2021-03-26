@@ -73,12 +73,15 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
             stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
             stream << "Unified memory architecture: " << context->isUMA() << "\n";
             stream << "features.wideLines: " << context->supportsWideLines() << "\n";
+            stream << "features.multiDrawIndirect: " << context->supportsMultiDrawIndirect() << "\n";
+            stream << "features.drawIndirectFirstInstance: " << context->supportsDrawIndirectFirstInstance() << "\n";
             stream << "features.extendedDynamicState: " << context->supportsExtendedDynamicState() << "\n";
             stream << "limits.maxUniformBufferRange: " << context->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
             stream << "limits.maxStorageBufferRange: " << context->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
             stream << "limits.maxPushConstantsSize: " << context->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
             stream << "limits.lineWidthRange: " << context->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << context->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
             stream << "limits.lineWidthGranularity: " << context->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
+            stream << "limits.maxDrawIndirectCount: " << context->physicalDeviceProperties()->limits.maxDrawIndirectCount << "\n";
         }
         else stream << "No active physical device\n"; 
 	}
@@ -185,6 +188,7 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 ******************************************************************************/
 bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
+    qDebug() << "---- isPicking:" << isPicking() << "bounding box: " << isBoundingBoxPass();
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
 
@@ -192,6 +196,26 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
         if(viewport() && isInteractive()) {
     		renderInteractiveContent();
         }
+
+		// Render translucent objects in a second pass.
+		for(auto& deferredPrimitive : _translucentParticles) {
+			setWorldTransform(deferredPrimitive.first);
+            qDebug() << "Dferred rendering particles";
+			static_cast<VulkanParticlePrimitive&>(*deferredPrimitive.second).render(this, _particlePrimitivePipelines);
+		}
+		_translucentParticles.clear();
+#if 0
+		for(auto& deferredPrimitive : _translucentCylinders) {
+			setWorldTransform(deferredPrimitive.first);
+			static_cast<OpenGLCylinderPrimitive&>(*deferredPrimitive.second).render(this);
+		}
+		_translucentCylinders.clear();
+		for(auto& deferredPrimitive : _translucentMeshes) {
+			setWorldTransform(deferredPrimitive.first);
+			static_cast<OpenGLMeshPrimitive&>(*deferredPrimitive.second).render(this);
+		}
+		_translucentMeshes.clear();
+#endif
     }
 
 	return !operation.isCanceled();
@@ -288,6 +312,7 @@ std::shared_ptr<TextPrimitive> VulkanSceneRenderer::createTextPrimitive()
 ******************************************************************************/
 void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
 {
+    OVITO_ASSERT(!isBoundingBoxPass());
     std::shared_ptr<VulkanLinePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanLinePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this, _linePrimitivePipelines);
@@ -298,9 +323,16 @@ void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& prim
 ******************************************************************************/
 void VulkanSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive)
 {
+    OVITO_ASSERT(!isBoundingBoxPass());
     std::shared_ptr<VulkanParticlePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanParticlePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
-	vulkanPrimitive->render(this, _particlePrimitivePipelines);
+
+	// Render particles now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // draw the semi-transparent objects after everything else has been drawn.
+	if(isPicking() || !primitive->transparencies())
+    	vulkanPrimitive->render(this, _particlePrimitivePipelines);
+	else
+		_translucentParticles.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
@@ -308,6 +340,7 @@ void VulkanSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitiv
 ******************************************************************************/
 void VulkanSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& primitive)
 {
+    OVITO_ASSERT(!isBoundingBoxPass());
     std::shared_ptr<VulkanImagePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanImagePrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this, _imagePrimitivePipelines);
@@ -318,6 +351,7 @@ void VulkanSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& pri
 ******************************************************************************/
 void VulkanSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primitive)
 {
+    OVITO_ASSERT(!isBoundingBoxPass());
     std::shared_ptr<VulkanTextPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanTextPrimitive>(primitive);
     OVITO_ASSERT(vulkanPrimitive);
 	vulkanPrimitive->render(this);

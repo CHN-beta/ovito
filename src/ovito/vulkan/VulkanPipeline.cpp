@@ -41,7 +41,7 @@ void VulkanPipeline::create(VulkanContext& context,
     VkPrimitiveTopology topology,
     uint32_t extraDynamicStateCount,
     const VkDynamicState* pExtraDynamicStates,
-    bool enableAlphaBlending,
+    bool supportAlphaBlending,
     uint32_t setLayoutCount,
     const VkDescriptorSetLayout* pSetLayouts)
 {
@@ -133,32 +133,12 @@ void VulkanPipeline::create(VulkanContext& context,
     pipelineInfo.pDepthStencilState = &ds;
 
     VkPipelineColorBlendStateCreateInfo cb = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
-    if(!enableAlphaBlending) {
-        // No blend, write out all of RGBA.
-        VkPipelineColorBlendAttachmentState att;
-        memset(&att, 0, sizeof(att));
-        att.colorWriteMask = 0xF;
-        cb.attachmentCount = 1;
-        cb.pAttachments = &att;
-    }
-    else {
-        // Enable standard alpha blending.
-        VkPipelineColorBlendAttachmentState att = {
-            VK_TRUE,                              // VkBool32                 blendEnable
-            VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcColorBlendFactor
-            VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstColorBlendFactor
-            VK_BLEND_OP_ADD,                      // VkBlendOp                colorBlendOp
-            VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcAlphaBlendFactor
-            VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstAlphaBlendFactor
-            VK_BLEND_OP_ADD,                      // VkBlendOp                alphaBlendOp
-            VK_COLOR_COMPONENT_R_BIT |            // VkColorComponentFlags    colorWriteMask
-            VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT |
-            VK_COLOR_COMPONENT_A_BIT
-        };
-        cb.attachmentCount = 1;
-        cb.pAttachments = &att;
-    }
+    // No blend, write out all of RGBA.
+    VkPipelineColorBlendAttachmentState att;
+    memset(&att, 0, sizeof(att));
+    att.colorWriteMask = 0xF;
+    cb.attachmentCount = 1;
+    cb.pAttachments = &att;
     pipelineInfo.pColorBlendState = &cb;
 
     VkPipelineDynamicStateCreateInfo dyn = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
@@ -185,6 +165,29 @@ void VulkanPipeline::create(VulkanContext& context,
     if(err != VK_SUCCESS)
         throw Exception(VulkanContext::tr("Failed to create Vulkan graphics pipeline (error code %1) for shader '%2'").arg(err).arg(shaderName));
 
+    // If requested, build another copy of the pipeline with alpha blending enabled.
+    if(supportAlphaBlending) {
+        // Enable standard alpha blending.
+        VkPipelineColorBlendAttachmentState att_blend = {
+            VK_TRUE,                              // VkBool32                 blendEnable
+            VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcColorBlendFactor
+            VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstColorBlendFactor
+            VK_BLEND_OP_ADD,                      // VkBlendOp                colorBlendOp
+            VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcAlphaBlendFactor
+            VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstAlphaBlendFactor
+            VK_BLEND_OP_ADD,                      // VkBlendOp                alphaBlendOp
+            VK_COLOR_COMPONENT_R_BIT |            // VkColorComponentFlags    colorWriteMask
+            VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT
+        };
+        cb.pAttachments = &att_blend;
+
+        err = context.deviceFunctions()->vkCreateGraphicsPipelines(context.logicalDevice(), context.pipelineCache(), 1, &pipelineInfo, nullptr, &_pipelineWithBlending);
+        if(err != VK_SUCCESS)
+            throw Exception(VulkanContext::tr("Failed to create Vulkan graphics pipeline (error code %1) for shader '%2'").arg(err).arg(shaderName));
+    }
+
     if(vertShaderModule)
         context.deviceFunctions()->vkDestroyShaderModule(context.logicalDevice(), vertShaderModule, nullptr);
     if(fragShaderModule)
@@ -197,15 +200,20 @@ void VulkanPipeline::create(VulkanContext& context,
 void VulkanPipeline::release(VulkanContext& context)
 {
 	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipeline, nullptr);
+    if(_pipelineWithBlending)
+    	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipelineWithBlending, nullptr);
 	context.deviceFunctions()->vkDestroyPipelineLayout(context.logicalDevice(), _layout, nullptr);
 }
 
 /******************************************************************************
 * Binds the pipeline.
 ******************************************************************************/
-void VulkanPipeline::bind(VulkanContext& context, VkCommandBuffer cmdBuf) const
+void VulkanPipeline::bind(VulkanContext& context, VkCommandBuffer cmdBuf, bool enableBlending) const
 {
-    context.deviceFunctions()->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+    // Check that blending was enabled at the time the pipeline was created when blending is requested now at draw time.
+    OVITO_ASSERT(!enableBlending || _pipelineWithBlending);
+
+    context.deviceFunctions()->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, enableBlending ? _pipelineWithBlending : _pipeline);
 }
 
 }	// End of namespace

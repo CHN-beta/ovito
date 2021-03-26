@@ -216,13 +216,13 @@ private:
 	VulkanContext::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-//	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
+	std::vector<std::pair<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
 
 	/// List of semi-transparent czlinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-//	std::vector<std::tuple<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
+//	std::vector<std::pair<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-//	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
+//	std::vector<std::pair<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
 
 	/// Indicates that the Vulkan resources needed by this renderer have been created.
 	bool _resourcesInitialized = false;

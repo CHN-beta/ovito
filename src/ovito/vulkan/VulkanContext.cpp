@@ -347,6 +347,16 @@ bool VulkanContext::create(QWindow* window)
     if(availableFeatures.wideLines)
         requestedFeatures.wideLines = VK_TRUE;
 
+    // Enable the 'multiDrawIndirect' feature, which is used for depth-sorted particle drawing.
+    _supportsMultiDrawIndirect = availableFeatures.multiDrawIndirect;
+    if(availableFeatures.multiDrawIndirect)
+        requestedFeatures.multiDrawIndirect = VK_TRUE;
+
+    // Enable the 'drawIndirectFirstInstance' feature, which is used for depth-sorted particle drawing.
+    _supportsDrawIndirectFirstInstance = availableFeatures.drawIndirectFirstInstance;
+    if(availableFeatures.drawIndirectFirstInstance)
+        requestedFeatures.drawIndirectFirstInstance = VK_TRUE;
+
     // Enable the 'extendedDynamicState' feature, which wllows to temporarily disable depth tests without pipeline duplication.
     _supportsExtendedDynamicState = extendedDynamicStateFeatures.extendedDynamicState;
     if(extendedDynamicStateFeatures.extendedDynamicState) {

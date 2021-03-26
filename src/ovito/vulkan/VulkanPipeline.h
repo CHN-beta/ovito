@@ -48,7 +48,7 @@ public:
 		VkPrimitiveTopology topology,
 		uint32_t extraDynamicStateCount = 0,
 		const VkDynamicState* pExtraDynamicStates = nullptr,
-		bool enableAlphaBlending = false,
+		bool supportAlphaBlending = false,
 		uint32_t setLayoutCount = 0,
 		const VkDescriptorSetLayout* pSetLayouts = nullptr);
 
@@ -56,7 +56,7 @@ public:
 	void release(VulkanContext& context);
 
 	/// Binds the pipeline.
-	void bind(VulkanContext& context, VkCommandBuffer cmdBuf) const;
+	void bind(VulkanContext& context, VkCommandBuffer cmdBuf, bool enableBlending = false) const;
 
 	/// Returns the pipeline's layout.
 	VkPipelineLayout layout() const { return _layout; }
@@ -65,6 +65,7 @@ private:
 
 	VkPipelineLayout _layout = VK_NULL_HANDLE;
 	VkPipeline _pipeline = VK_NULL_HANDLE;
+	VkPipeline _pipelineWithBlending = VK_NULL_HANDLE;
 };
 
 }	// End of namespace
