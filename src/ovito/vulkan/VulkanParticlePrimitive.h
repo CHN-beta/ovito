@@ -49,6 +49,12 @@ public:
 		VulkanPipeline cube_picking;
 		VulkanPipeline sphere;
 		VulkanPipeline sphere_picking;
+		VulkanPipeline square;
+		VulkanPipeline square_picking;
+		VulkanPipeline box;
+		VulkanPipeline box_picking;
+		VulkanPipeline ellipsoid;
+		VulkanPipeline ellipsoid_picking;
 	};
 
 	/// Inherit constructor from base class.
@@ -56,14 +62,6 @@ public:
 
 	/// Renders the particles.
 	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
-
-protected:
-
-	/// Renders the particles using box-shaped geometry.
-	void renderBoxGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp);
-
-	/// Renders the particles using imposter quads.
-	void renderImposterGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp);
 };
 
 }	// End of namespace

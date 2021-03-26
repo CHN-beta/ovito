@@ -20,6 +20,21 @@
 	<file>particles/sphere/sphere.vert.spv</file>
 	<file>particles/sphere/sphere_picking.frag.spv</file>
 	<file>particles/sphere/sphere_picking.vert.spv</file>
+
+	<file>particles/square/square.frag.spv</file>
+	<file>particles/square/square.vert.spv</file>
+	<file>particles/square/square_picking.frag.spv</file>
+	<file>particles/square/square_picking.vert.spv</file>
+
+	<file>particles/box/box.frag.spv</file>
+	<file>particles/box/box.vert.spv</file>
+	<file>particles/box/box_picking.frag.spv</file>
+	<file>particles/box/box_picking.vert.spv</file>
+
+	<file>particles/ellipsoid/ellipsoid.frag.spv</file>
+	<file>particles/ellipsoid/ellipsoid.vert.spv</file>
+	<file>particles/ellipsoid/ellipsoid_picking.frag.spv</file>
+	<file>particles/ellipsoid/ellipsoid_picking.vert.spv</file>
 </qresource>
 
 </RCC>

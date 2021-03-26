@@ -31,10 +31,8 @@ namespace Ovito {
 ******************************************************************************/
 void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
-    // Create pipeline for shader "cube":
-    // Create pipeline for shader "sphere":
     {
-        std::array<VkVertexInputBindingDescription, 2> vertexBindingDesc;
+        std::array<VkVertexInputBindingDescription, 3> vertexBindingDesc;
 
         // Position + radius:
         vertexBindingDesc[0].binding = 0;
@@ -46,7 +44,12 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         vertexBindingDesc[1].stride = sizeof(Vector_4<float>);
         vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        std::array<VkVertexInputAttributeDescription, 3> vertexAttrDesc = {
+        // Shape + orientation
+        vertexBindingDesc[2].binding = 2;
+        vertexBindingDesc[2].stride = sizeof(Matrix_4<float>);
+        vertexBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        VkVertexInputAttributeDescription vertexAttrDesc[] = {
             VkVertexInputAttributeDescription{ // position:
                 0, // location
                 0, // binding
@@ -64,6 +67,30 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
                 1, // binding
                 VK_FORMAT_R32G32B32A32_SFLOAT,
                 0 // offset
+            },
+            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 1):
+                3, // location
+                2, // binding
+                VK_FORMAT_R32G32B32A32_SFLOAT,
+                0 * sizeof(Matrix_4<float>::column_type) // offset
+            },
+            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 2):
+                4, // location
+                2, // binding
+                VK_FORMAT_R32G32B32A32_SFLOAT,
+                1 * sizeof(Matrix_4<float>::column_type) // offset
+            },
+            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 3):
+                5, // location
+                2, // binding
+                VK_FORMAT_R32G32B32A32_SFLOAT,
+                2 * sizeof(Matrix_4<float>::column_type) // offset
+            },
+            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 4):
+                6, // location
+                2, // binding
+                VK_FORMAT_R32G32B32A32_SFLOAT,
+                3 * sizeof(Matrix_4<float>::column_type) // offset
             }
         };
 
@@ -74,10 +101,10 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             renderer->defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
-            vertexBindingDesc.size(), // vertexBindingDescriptionCount
+            2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            vertexAttrDesc.size(), // vertexAttributeDescriptionCount
-            vertexAttrDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -94,7 +121,7 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             1, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc.data(), 
+            vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -108,10 +135,10 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             renderer->defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
-            vertexBindingDesc.size(), // vertexBindingDescriptionCount
+            2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            vertexAttrDesc.size(), // vertexAttributeDescriptionCount
-            vertexAttrDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -128,7 +155,119 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             1, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc.data(), 
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        square.create(*renderer->context(),
+            QStringLiteral("particles/square/square"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        square_picking.create(*renderer->context(),
+            QStringLiteral("particles/square/square_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        box.create(*renderer->context(),
+            QStringLiteral("particles/box/box"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        VkVertexInputBindingDescription vertexBindingDescBoxPicking[2] {
+            vertexBindingDesc[0], vertexBindingDesc[2]
+        };
+        vertexBindingDescBoxPicking[1].binding = 1;
+        VkVertexInputAttributeDescription vertexAttrDescBoxPicking[6] = {
+            vertexAttrDesc[0], vertexAttrDesc[1],
+            vertexAttrDesc[3], vertexAttrDesc[4],
+            vertexAttrDesc[5], vertexAttrDesc[6]
+        };
+        vertexAttrDescBoxPicking[2].binding = vertexAttrDescBoxPicking[3].binding = vertexAttrDescBoxPicking[4].binding = vertexAttrDescBoxPicking[5].binding = 1;
+        box_picking.create(*renderer->context(),
+            QStringLiteral("particles/box/box_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            6, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        ellipsoid.create(*renderer->context(),
+            QStringLiteral("particles/ellipsoid/ellipsoid"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        ellipsoid_picking.create(*renderer->context(),
+            QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            6, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
@@ -148,6 +287,12 @@ void VulkanParticlePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	cube_picking.release(*renderer->context());
 	sphere.release(*renderer->context());
 	sphere_picking.release(*renderer->context());
+	square.release(*renderer->context());
+	square_picking.release(*renderer->context());
+	box.release(*renderer->context());
+	box_picking.release(*renderer->context());
+	ellipsoid.release(*renderer->context());
+	ellipsoid_picking.release(*renderer->context());
 }
 
 /******************************************************************************
@@ -164,28 +309,49 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = renderer->clipCorrection() * renderer->projParams().projectionMatrix * renderer->modelViewTM();
 
-    renderBoxGeometries(renderer, pipelines, mvp);
-}
-
-/******************************************************************************
-* Renders the particles using box-shaped geometry.
-******************************************************************************/
-void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp)
-{
     uint32_t particleCount = indices() ? indices()->size() : positions()->size();
+    uint32_t verticesPerParticle = 0;
 
     // Bind the right Vulkan pipeline.
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     switch(particleShape()) {
         case SquareCubicShape:
-            if(!renderer->isPicking()) {
-                pipelineLayout = pipelines.cube.layout();
-                pipelines.cube.bind(*renderer->context(), renderer->currentCommandBuffer());
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.cube.layout();
+                    pipelines.cube.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                else {
+                    pipelineLayout = pipelines.cube_picking.layout();
+                    pipelines.cube_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerParticle = 14; // Cube rendered as triangle strip.
             }
             else {
-                pipelineLayout = pipelines.cube_picking.layout();
-                pipelines.cube_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.square.layout();
+                    pipelines.square.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                else {
+                    pipelineLayout = pipelines.square_picking.layout();
+                    pipelines.square_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerParticle = 4; // Square rendered as triangle strip.
             }
+            break;
+        case BoxShape:
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.box.layout();
+                    pipelines.box.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                else {
+                    pipelineLayout = pipelines.box_picking.layout();
+                    pipelines.box_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerParticle = 14; // Box rendered as triangle strip.
+            }
+            else return;
             break;
         case SphericalShape:
             if(!renderer->isPicking()) {
@@ -196,6 +362,18 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
                 pipelineLayout = pipelines.sphere_picking.layout();
                 pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
             }
+            verticesPerParticle = 14; // Cube rendered as triangle strip.
+            break;
+        case EllipsoidShape:
+            if(!renderer->isPicking()) {
+                pipelineLayout = pipelines.ellipsoid.layout();
+                pipelines.ellipsoid.bind(*renderer->context(), renderer->currentCommandBuffer());
+            }
+            else {
+                pipelineLayout = pipelines.ellipsoid_picking.layout();
+                pipelines.ellipsoid_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+            }
+            verticesPerParticle = 14; // Box rendered as triangle strip.
             break;
         default:
             return;
@@ -204,6 +382,54 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
     // Set up push constants.
     switch(particleShape()) {
         case SquareCubicShape:
+
+            if(shadingMode() == NormalShading) {
+                // Pass model-view-projection matrix to vertex shader as a push constant.
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+
+                if(!renderer->isPicking()) {
+                    // Pass normal transformation matrix to vertex shader as a push constant.
+                    Matrix_3<float> normal_matrix = Matrix_3<float>(renderer->modelViewTM().linear().inverse().transposed());
+                    normal_matrix.column(0).normalize();
+                    normal_matrix.column(1).normalize();
+                    normal_matrix.column(2).normalize();
+                    // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
+                    // Better use a mat4 to be safe:
+                    Matrix_4<float> normal_matrix4(normal_matrix);
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
+                }
+                else {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(pickingBaseId), &pickingBaseId);
+                }
+            }
+            else {
+                // Pass projection matrix to vertex shader as a push constant.
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), Matrix_4<float>(renderer->clipCorrection() * renderer->projParams().projectionMatrix).data());
+
+                // Pass model-view transformation matrix to vertex shader as a push constant.
+                // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
+                // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
+                std::array<float, 3*4> transposed_modelview_matrix;
+                {
+                    auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
+                    for(size_t row = 0; row < 3; row++)
+                        for(size_t col = 0; col < 4; col++)
+                            *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
+                }
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
+
+                if(renderer->isPicking()) {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                }
+            }
+
+            break;
+
+        case BoxShape:
 
             // Pass model-view-projection matrix to vertex shader as a push constant.
             renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
@@ -214,7 +440,7 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
                 normal_matrix.column(0).normalize();
                 normal_matrix.column(1).normalize();
                 normal_matrix.column(2).normalize();
-                // It's almost impossible to pass a mat3 to the shader with the correct memeory layout. 
+                // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
                 // Better use a mat4 to be safe:
                 Matrix_4<float> normal_matrix4(normal_matrix);
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
@@ -224,9 +450,10 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
                 uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size(), indices());
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(pickingBaseId), &pickingBaseId);
             }
-
             break;
+
         case SphericalShape:
+        case EllipsoidShape:
 
             // Pass model-view-projection matrix to vertex shader as a push constant.
             renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
@@ -250,6 +477,7 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
             }
 
             break;
+
         default:
             return;
     }
@@ -291,6 +519,12 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
             }
         }
     });
+
+    // The list of buffers that will be bound to vertex attributes.
+    // We will bind the particle positions and radii for sure. More buffers may be added to the list below.
+    std::array<VkBuffer, 3> buffers = { positionRadiusBuffer };
+    std::array<VkDeviceSize, 3> offsets = { 0, 0, 0 };
+    uint32_t buffersCount = 1;
 
     if(!renderer->isPicking()) {
 
@@ -370,27 +604,115 @@ void VulkanParticlePrimitive::renderBoxGeometries(VulkanSceneRenderer* renderer,
             }
         });
 
-        // Bind vertex buffers.
-        std::array<VkBuffer, 2> buffers = { positionRadiusBuffer, colorSelectionBuffer };
-        std::array<VkDeviceSize, 2> offsets = { 0, 0 };
-        renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffers.size(), buffers.data(), offsets.data());
+        // Bind color vertex buffer.
+        buffers[buffersCount++] = colorSelectionBuffer;
     }
-    else {
-        // Bind vertex buffers. In picking mode, only the positions and radii are needed.
-        std::array<VkBuffer, 1> buffers = { positionRadiusBuffer };
-        std::array<VkDeviceSize, 1> offsets = { 0 };
-        renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffers.size(), buffers.data(), offsets.data());
+
+    // For box-shaped and ellipsoid particles, we need the shape/orientation vertex attribute.
+    if(particleShape() == BoxShape || particleShape() == EllipsoidShape) {
+
+        // Combine aspherical shape property and orientation property into one combined Vulkan buffer containing a 4x4 transformation matrix per particle.
+        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{ 
+            indices(),
+            asphericalShapes(),
+            orientations(),
+            radii(),
+            radii() ? FloatType(0) : uniformRadius()
+        };
+
+        // Upload vertex buffer with the particle transformation matrices.
+        VkBuffer shapeOrientationBuffer = renderer->context()->createCachedBuffer(shapeOrientationCacheKey, particleCount * sizeof(Matrix_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+            ConstDataBufferAccess<Vector3> asphericalShapeArray(asphericalShapes());
+            ConstDataBufferAccess<Quaternion> orientationArray(orientations());
+            ConstDataBufferAccess<FloatType> radiusArray(radii());
+            if(!indices()) {
+                const Vector3* shape = asphericalShapeArray ? asphericalShapeArray.cbegin() : nullptr;
+                const Quaternion* orientation = orientationArray ? orientationArray.cbegin() : nullptr;
+                const FloatType* radius = radiusArray ? radiusArray.cbegin() : nullptr;
+                for(Matrix_4<float>* dst = reinterpret_cast<Matrix_4<float>*>(buffer), *dst_end = dst + positions()->size(); dst != dst_end; ++dst) {
+                    Vector_3<float> axes;
+                    if(shape) {
+                        if(*shape != Vector3::Zero()) {
+                            axes = Vector_3<float>(*shape);
+                        }
+                        else {
+                            axes = Vector_3<float>(static_cast<float>(radius ? (*radius) : uniformRadius()));
+                        }
+                        ++shape;
+                    }
+                    else {
+                        axes = Vector_3<float>(static_cast<float>(radius ? (*radius) : uniformRadius()));
+                    }
+                    if(radius)
+                        ++radius;
+
+                    if(orientation) {
+                        QuaternionT<float> quat = QuaternionT<float>(*orientation++);
+                        float c = sqrt(quat.dot(quat));
+                        if(c <= (float)FLOATTYPE_EPSILON)
+                            quat.setIdentity();
+                        else
+                            quat /= c;
+                        *dst = Matrix_4<float>(
+                                quat * Vector_3<float>(axes.x(), 0.0f, 0.0f),
+                                quat * Vector_3<float>(0.0f, axes.y(), 0.0f),
+                                quat * Vector_3<float>(0.0f, 0.0f, axes.z()),
+                                Vector_3<float>::Zero());
+                    }
+                    else {
+                        *dst = Matrix_4<float>(
+                                axes.x(), 0.0f, 0.0f, 0.0f,
+                                0.0f, axes.y(), 0.0f, 0.0f,
+                                0.0f, 0.0f, axes.z(), 0.0f,
+                                0.0f, 0.0f, 0.0f, 1.0f);
+                    }
+                }
+            }
+            else {
+                Matrix_4<float>* dst = reinterpret_cast<Matrix_4<float>*>(buffer);
+                for(int index : ConstDataBufferAccess<int>(indices())) {
+                    Vector_3<float> axes;
+                    if(asphericalShapeArray && asphericalShapeArray[index] != Vector3::Zero()) {
+                        axes = Vector_3<float>(asphericalShapeArray[index]);
+                    }
+                    else {
+                        axes = Vector_3<float>(static_cast<float>(radiusArray ? radiusArray[index] : uniformRadius()));
+                    }
+
+                    if(orientationArray) {
+                        QuaternionT<float> quat = QuaternionT<float>(orientationArray[index]);
+                        float c = sqrt(quat.dot(quat));
+                        if(c <= (float)FLOATTYPE_EPSILON)
+                            quat.setIdentity();
+                        else
+                            quat /= c;
+                        *dst = Matrix_4<float>(
+                                quat * Vector_3<float>(axes.x(), 0.0f, 0.0f),
+                                quat * Vector_3<float>(0.0f, axes.y(), 0.0f),
+                                quat * Vector_3<float>(0.0f, 0.0f, axes.z()),
+                                Vector_3<float>::Zero());
+                    }
+                    else {
+                        *dst = Matrix_4<float>(
+                                axes.x(), 0.0f, 0.0f, 0.0f,
+                                0.0f, axes.y(), 0.0f, 0.0f,
+                                0.0f, 0.0f, axes.z(), 0.0f,
+                                0.0f, 0.0f, 0.0f, 1.0f);
+                    }
+                    ++dst;
+                }
+            }
+        });
+
+        // Bind shape/orientation vertex buffer.
+        buffers[buffersCount++] = shapeOrientationBuffer;
     }
+
+    // Bind vertex buffers.
+    renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffersCount, buffers.data(), offsets.data());
 
     // Draw triangle strip instances.
-    renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), 14, particleCount, 0, 0);
-}
-
-/******************************************************************************
-* Renders the particles using imposter quads.
-******************************************************************************/
-void VulkanParticlePrimitive::renderImposterGeometries(VulkanSceneRenderer* renderer, const Pipelines& pipelines, const QMatrix4x4& mvp)
-{
+    renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), verticesPerParticle, particleCount, 0, 0);
 }
 
 }	// End of namespace

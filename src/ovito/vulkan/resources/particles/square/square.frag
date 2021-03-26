@@ -8,6 +8,6 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    // Use flat shading in picking mode.
+    // Flat shading:
     fragColor = color_fs;
 }
