@@ -197,7 +197,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 
 				// Create rendering primitive for the corner points.
-				visCache.corners = renderer->createParticlePrimitive(cornerShadingMode, ParticlePrimitive::HighQuality);
+				visCache.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, cornerShadingMode, ParticlePrimitive::HighQuality);
 				visCache.corners->setPositions(cornerPoints.take());
 				visCache.corners->setUniformColor(lineColor());
 				visCache.corners->setUniformRadius(lineRadius);

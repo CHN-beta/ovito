@@ -324,7 +324,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 			if(renderNodalVertices) {
 				OVITO_ASSERT(positionProperty);
-				visCache.vertices = renderer->createParticlePrimitive((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+				visCache.vertices = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, (shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 				visCache.vertices->setPositions(positionProperty);
 				visCache.vertices->setUniformRadius(bondRadius);
 				visCache.vertices->setColors(nodalColors.take());

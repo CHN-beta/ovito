@@ -29,7 +29,6 @@ uniform int picking_base_id;
 uniform int verticesPerElement;
 
 in vec3 position;
-in vec3 normal;
 in vec4 color;
 
 // The cylinder data:

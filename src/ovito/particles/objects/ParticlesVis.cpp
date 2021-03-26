@@ -792,7 +792,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 				}
 			}
 			// Create the rendering primitive.
-			visCache.primitive = renderer->createParticlePrimitive(primitiveShadingMode, primitiveRenderQuality, primitiveParticleShape);
+			visCache.primitive = renderer->createParticlePrimitive(primitiveParticleShape, primitiveShadingMode, primitiveRenderQuality);
 			// Enable/disable indexed rendering of particle primitives.
 			visCache.primitive->setIndices(activeParticleIndices.take());
 			// Also create the corresponding picking record.
@@ -1046,12 +1046,12 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 
 			// Create the rendering primitive for the spheres.
 			if(shape == ParticleShape::Spherocylinder) {
-				visCache.spheresPrimitives[0] = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
+				visCache.spheresPrimitives[0] = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
 				visCache.spheresPrimitives[0]->setPositions(visCache.cylinderPrimitive->basePositions());
 				visCache.spheresPrimitives[0]->setRadii(visCache.cylinderPrimitive->radii());
 				visCache.spheresPrimitives[0]->setColors(visCache.cylinderPrimitive->colors());
 				visCache.spheresPrimitives[0]->setTransparencies(visCache.cylinderPrimitive->transparencies());
-				visCache.spheresPrimitives[1] = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
+				visCache.spheresPrimitives[1] = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
 				visCache.spheresPrimitives[1]->setPositions(visCache.cylinderPrimitive->headPositions());
 				visCache.spheresPrimitives[1]->setRadii(visCache.cylinderPrimitive->radii());
 				visCache.spheresPrimitives[1]->setColors(visCache.cylinderPrimitive->colors());
@@ -1182,7 +1182,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				roundnessBuffer[0] = ConstPropertyAccess<Vector2>(roundnessProperty)[particleIndex];
 			}
 
-			particleBuffer = renderer->createParticlePrimitive(primitiveShadingMode, renderQuality, primitiveParticleShape);
+			particleBuffer = renderer->createParticlePrimitive(primitiveParticleShape, primitiveShadingMode, renderQuality);
 			particleBuffer->setUniformColor(color);
 			particleBuffer->setPositions(positionBuffer.take());
 			particleBuffer->setUniformRadius(radius);
@@ -1191,7 +1191,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			particleBuffer->setRoundness(roundnessBuffer.take());
 
 			// Prepare marker geometry buffer.
-			highlightParticleBuffer = renderer->createParticlePrimitive(primitiveShadingMode, renderQuality, primitiveParticleShape);
+			highlightParticleBuffer = renderer->createParticlePrimitive(primitiveParticleShape, primitiveShadingMode, renderQuality);
 			highlightParticleBuffer->setUniformColor(highlightColor);
 			highlightParticleBuffer->setPositions(particleBuffer->positions());
 			highlightParticleBuffer->setUniformRadius(radius + renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
@@ -1230,8 +1230,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			highlightCylinderBuffer->setUniformRadius(radius + padding);
 			highlightCylinderBuffer->setPositions(cylinderBuffer->basePositions(), cylinderBuffer->headPositions());
 			if(shape == Spherocylinder) {
-				particleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
-				highlightParticleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality, ParticlePrimitive::SphericalShape);
+				particleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+				highlightParticleBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
 				particleBuffer->setPositions(positionBufferSpheres.take());
 				particleBuffer->setUniformRadius(radius);
 				particleBuffer->setUniformColor(color);

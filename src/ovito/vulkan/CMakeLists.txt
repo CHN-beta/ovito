@@ -64,6 +64,7 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 		VulkanImagePrimitive.cpp
 		VulkanTextPrimitive.cpp
 		VulkanParticlePrimitive.cpp
+		VulkanCylinderPrimitive.cpp
 		vma/vk_mem_alloc.cpp
 		resources/vulkan.qrc
 )
@@ -110,6 +111,10 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.frag)
 	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.frag)
+	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder.vert)
+	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/cylinder/cylinder_picking.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

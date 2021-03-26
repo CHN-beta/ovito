@@ -33,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape) :
-	ParticlePrimitive(shadingMode, renderingQuality, shape)
+OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality) :
+	ParticlePrimitive(shape, shadingMode, renderingQuality)
 {
 	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 

@@ -156,11 +156,11 @@ public:
 
 	/// Requests a new particle geometry buffer from the renderer.
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
+			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape,
 			ParticlePrimitive::ShadingMode shadingMode = ParticlePrimitive::NormalShading,
-			ParticlePrimitive::RenderingQuality renderingQuality = ParticlePrimitive::MediumQuality,
-			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape) {
+			ParticlePrimitive::RenderingQuality renderingQuality = ParticlePrimitive::MediumQuality) {
 		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<ParticlePrimitive>(shadingMode, renderingQuality, shape);
+		return std::make_shared<ParticlePrimitive>(shape, shadingMode, renderingQuality);
 	}
 
 	/// Renders the particles stored in the given primitive buffer.
@@ -194,7 +194,8 @@ public:
 	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) {}
 
 	/// Requests a new cylinder geometry buffer from the renderer.
-	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape,
+	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(
+			CylinderPrimitive::Shape shape = CylinderPrimitive::CylinderShape,
 			CylinderPrimitive::ShadingMode shadingMode = CylinderPrimitive::NormalShading,
 			CylinderPrimitive::RenderingQuality renderingQuality = CylinderPrimitive::MediumQuality) {
 		OVITO_ASSERT(!isBoundingBoxPass());

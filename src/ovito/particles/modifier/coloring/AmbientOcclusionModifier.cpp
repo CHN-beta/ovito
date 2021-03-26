@@ -181,7 +181,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				try {
 					// Create particle buffer.
 					if(!particleBuffer) {
-						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality, ParticlePrimitive::SphericalShape);
+						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality);
 						particleBuffer->setPositions(positions());
 						particleBuffer->setRadii(particleRadii());
 					}

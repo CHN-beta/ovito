@@ -264,7 +264,7 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 		visCache.edges->setPositions(basePoints.take(), headPoints.take());
 
 		// Render spheres in the corners of the simulation box.
-		visCache.corners  = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+		visCache.corners  = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
 		visCache.corners->setPositions(corners.take());
 		visCache.corners->setUniformRadius(cellLineWidth());
 		visCache.corners->setUniformColor(cellColor());

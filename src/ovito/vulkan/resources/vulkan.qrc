@@ -45,6 +45,11 @@
 	<file>particles/superquadric/superquadric.vert.spv</file>
 	<file>particles/superquadric/superquadric_picking.frag.spv</file>
 	<file>particles/superquadric/superquadric_picking.vert.spv</file>
+
+	<file>cylinder/cylinder.frag.spv</file>
+	<file>cylinder/cylinder.vert.spv</file>
+	<file>cylinder/cylinder_picking.frag.spv</file>
+	<file>cylinder/cylinder_picking.vert.spv</file>
 </qresource>
 
 </RCC>

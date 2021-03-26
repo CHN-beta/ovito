@@ -251,7 +251,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 	if(!visCache.backbonePrimitive) {
 
 		// Create the rendering primitive for the backbone sites.
-		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality, ParticlePrimitive::SphericalShape);
+		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
 
 		// Fill in the position data.
 		visCache.backbonePrimitive->setPositions(positionProperty);
@@ -270,7 +270,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 		if(nucleotideAxisProperty) {
 			// Create the rendering primitive for the base sites.
-			visCache.basePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality, ParticlePrimitive::EllipsoidShape);
+			visCache.basePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::EllipsoidShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
 
 			// Fill in the position data for the base sites.
 			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);

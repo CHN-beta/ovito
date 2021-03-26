@@ -28,6 +28,7 @@
 #include "VulkanContext.h"
 #include "VulkanLinePrimitive.h"
 #include "VulkanParticlePrimitive.h"
+#include "VulkanCylinderPrimitive.h"
 #include "VulkanImagePrimitive.h"
 #include "VulkanTextPrimitive.h"
 
@@ -137,7 +138,10 @@ public:
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
 
 	/// Creates a new particle rendering primitive.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape) override;
+	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality) override;
+
+	/// Creates a new cylinder rendering primitive.
+	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape, CylinderPrimitive::ShadingMode shadingMode, CylinderPrimitive::RenderingQuality renderingQuality) override;
 
 	/// Creates a new image rendering primitive.
 	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
@@ -150,6 +154,9 @@ public:
 
 	/// Renders a particles primitive.
 	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
+
+	/// Renders the cylinder or arrow primitives.
+	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) override;
 
 	/// Renders an image primitive.
 	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
@@ -218,8 +225,8 @@ private:
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::pair<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
 
-	/// List of semi-transparent czlinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-//	std::vector<std::pair<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
+	/// List of semi-transparent cylinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
+	std::vector<std::pair<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 //	std::vector<std::pair<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
@@ -232,6 +239,9 @@ private:
 
 	/// Data structure holding the Vulkan pipelines used by the particle drawing primitive.
 	VulkanParticlePrimitive::Pipelines _particlePrimitivePipelines;
+
+	/// Data structure holding the Vulkan pipelines used by the cylinder drawing primitive.
+	VulkanCylinderPrimitive::Pipelines _cylinderPrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the image drawing primitive.
 	VulkanImagePrimitive::Pipelines _imagePrimitivePipelines;
@@ -268,6 +278,8 @@ private:
 	friend class VulkanTextPrimitive;
 	friend class VulkanImagePrimitive;
 	friend class VulkanLinePrimitive;
+	friend class VulkanParticlePrimitive;
+	friend class VulkanCylinderPrimitive;
 };
 
 }	// End of namespace

@@ -409,12 +409,12 @@ void OpenGLSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& prim
 * Requests a new particle geometry buffer from the renderer.
 ******************************************************************************/
 std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
-		ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape)
+		ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
 	OVITO_ASSERT(glcontext() != nullptr);
 	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLParticlePrimitive>(this, shadingMode, renderingQuality, shape);
+	return std::make_shared<OpenGLParticlePrimitive>(this, shape, shadingMode, renderingQuality);
 }
 
 /******************************************************************************

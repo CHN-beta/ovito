@@ -33,341 +33,339 @@ namespace Ovito {
 ******************************************************************************/
 void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
-    {
-        std::array<VkVertexInputBindingDescription, 4> vertexBindingDesc;
+    std::array<VkVertexInputBindingDescription, 4> vertexBindingDesc;
 
-        // Position + radius:
-        vertexBindingDesc[0].binding = 0;
-        vertexBindingDesc[0].stride = sizeof(Vector_4<float>);
-        vertexBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    // Position + radius:
+    vertexBindingDesc[0].binding = 0;
+    vertexBindingDesc[0].stride = sizeof(Vector_4<float>);
+    vertexBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        // Color + alpha
-        vertexBindingDesc[1].binding = 1;
-        vertexBindingDesc[1].stride = sizeof(Vector_4<float>);
-        vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    // Color + alpha
+    vertexBindingDesc[1].binding = 1;
+    vertexBindingDesc[1].stride = sizeof(Vector_4<float>);
+    vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        // Shape + orientation
-        vertexBindingDesc[2].binding = 2;
-        vertexBindingDesc[2].stride = sizeof(Matrix_4<float>);
-        vertexBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    // Shape + orientation
+    vertexBindingDesc[2].binding = 2;
+    vertexBindingDesc[2].stride = sizeof(Matrix_4<float>);
+    vertexBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        // Roundness
-        vertexBindingDesc[3].binding = 3;
-        vertexBindingDesc[3].stride = sizeof(Vector_2<float>);
-        vertexBindingDesc[3].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    // Roundness
+    vertexBindingDesc[3].binding = 3;
+    vertexBindingDesc[3].stride = sizeof(Vector_2<float>);
+    vertexBindingDesc[3].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-        VkVertexInputAttributeDescription vertexAttrDesc[] = {
-            VkVertexInputAttributeDescription{ // position:
-                0, // location
-                0, // binding
-                VK_FORMAT_R32G32B32_SFLOAT,
-                0 // offset
-            },
-            VkVertexInputAttributeDescription{ // radius:
-                1, // location
-                0, // binding
-                VK_FORMAT_R32_SFLOAT,
-                3 * sizeof(float) // offset
-            },
-            VkVertexInputAttributeDescription{ // color:
-                2, // location
-                1, // binding
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                0 // offset
-            },
-            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 1):
-                3, // location
-                2, // binding
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                0 * sizeof(Matrix_4<float>::column_type) // offset
-            },
-            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 2):
-                4, // location
-                2, // binding
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                1 * sizeof(Matrix_4<float>::column_type) // offset
-            },
-            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 3):
-                5, // location
-                2, // binding
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                2 * sizeof(Matrix_4<float>::column_type) // offset
-            },
-            VkVertexInputAttributeDescription{ // shape_orientation matrix (column 4):
-                6, // location
-                2, // binding
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                3 * sizeof(Matrix_4<float>::column_type) // offset
-            },
-            VkVertexInputAttributeDescription{ // roundness:
-                7, // location
-                3, // binding
-                VK_FORMAT_R32G32_SFLOAT,
-                0 // offset
-            },
+    VkVertexInputAttributeDescription vertexAttrDesc[] = {
+        VkVertexInputAttributeDescription{ // position:
+            0, // location
+            0, // binding
+            VK_FORMAT_R32G32B32_SFLOAT,
+            0 // offset
+        },
+        VkVertexInputAttributeDescription{ // radius:
+            1, // location
+            0, // binding
+            VK_FORMAT_R32_SFLOAT,
+            3 * sizeof(float) // offset
+        },
+        VkVertexInputAttributeDescription{ // color:
+            2, // location
+            1, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            0 // offset
+        },
+        VkVertexInputAttributeDescription{ // shape_orientation matrix (column 1):
+            3, // location
+            2, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            0 * sizeof(Matrix_4<float>::column_type) // offset
+        },
+        VkVertexInputAttributeDescription{ // shape_orientation matrix (column 2):
+            4, // location
+            2, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            1 * sizeof(Matrix_4<float>::column_type) // offset
+        },
+        VkVertexInputAttributeDescription{ // shape_orientation matrix (column 3):
+            5, // location
+            2, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            2 * sizeof(Matrix_4<float>::column_type) // offset
+        },
+        VkVertexInputAttributeDescription{ // shape_orientation matrix (column 4):
+            6, // location
+            2, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            3 * sizeof(Matrix_4<float>::column_type) // offset
+        },
+        VkVertexInputAttributeDescription{ // roundness:
+            7, // location
+            3, // binding
+            VK_FORMAT_R32G32_SFLOAT,
+            0 // offset
+        },
+    };
+
+    std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
+
+    cube.create(*renderer->context(),
+        QStringLiteral("particles/cube/cube"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        3, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    cube_picking.create(*renderer->context(),
+        QStringLiteral("particles/cube/cube_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        1, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        2, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    sphere.create(*renderer->context(),
+        QStringLiteral("particles/sphere/sphere"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        3, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    sphere_picking.create(*renderer->context(),
+        QStringLiteral("particles/sphere/sphere_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        1, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        2, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    square.create(*renderer->context(),
+        QStringLiteral("particles/square/square"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        3, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    square_picking.create(*renderer->context(),
+        QStringLiteral("particles/square/square_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        1, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        2, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    circle.create(*renderer->context(),
+        QStringLiteral("particles/circle/circle"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        3, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    circle_picking.create(*renderer->context(),
+        QStringLiteral("particles/circle/circle_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        1, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        2, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );        
+
+    box.create(*renderer->context(),
+        QStringLiteral("particles/box/box"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        3, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        7, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    VkVertexInputBindingDescription vertexBindingDescBoxPicking[3] {
+        vertexBindingDesc[0], vertexBindingDesc[2]
+    };
+    vertexBindingDescBoxPicking[1].binding = 1;
+    VkVertexInputAttributeDescription vertexAttrDescBoxPicking[7] = {
+        vertexAttrDesc[0], vertexAttrDesc[1],
+        vertexAttrDesc[3], vertexAttrDesc[4],
+        vertexAttrDesc[5], vertexAttrDesc[6]
+    };
+    vertexAttrDescBoxPicking[2].binding = vertexAttrDescBoxPicking[3].binding = vertexAttrDescBoxPicking[4].binding = vertexAttrDescBoxPicking[5].binding = 1;
+    box_picking.create(*renderer->context(),
+        QStringLiteral("particles/box/box_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDescBoxPicking, 
+        6, // vertexAttributeDescriptionCount
+        vertexAttrDescBoxPicking, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    ellipsoid.create(*renderer->context(),
+        QStringLiteral("particles/ellipsoid/ellipsoid"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        3, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        7, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    ellipsoid_picking.create(*renderer->context(),
+        QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        2, // vertexBindingDescriptionCount
+        vertexBindingDescBoxPicking, 
+        6, // vertexAttributeDescriptionCount
+        vertexAttrDescBoxPicking, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    superquadric.create(*renderer->context(),
+        QStringLiteral("particles/superquadric/superquadric"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        4, // vertexBindingDescriptionCount
+        vertexBindingDesc.data(), 
+        8, // vertexAttributeDescriptionCount
+        vertexAttrDesc, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        true, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
+
+    // Roundness
+    vertexBindingDescBoxPicking[2].binding = 2;
+    vertexBindingDescBoxPicking[2].stride = sizeof(Vector_2<float>);
+    vertexBindingDescBoxPicking[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    vertexAttrDescBoxPicking[6] =
+        VkVertexInputAttributeDescription{ // roundness:
+            7, // location
+            2, // binding
+            VK_FORMAT_R32G32_SFLOAT,
+            0 // offset
         };
-
-        std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
-
-        cube.create(*renderer->context(),
-            QStringLiteral("particles/cube/cube"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        cube_picking.create(*renderer->context(),
-            QStringLiteral("particles/cube/cube_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        sphere.create(*renderer->context(),
-            QStringLiteral("particles/sphere/sphere"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        sphere_picking.create(*renderer->context(),
-            QStringLiteral("particles/sphere/sphere_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        square.create(*renderer->context(),
-            QStringLiteral("particles/square/square"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        square_picking.create(*renderer->context(),
-            QStringLiteral("particles/square/square_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        circle.create(*renderer->context(),
-            QStringLiteral("particles/circle/circle"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            3, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        circle_picking.create(*renderer->context(),
-            QStringLiteral("particles/circle/circle_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            1, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );        
-
-        box.create(*renderer->context(),
-            QStringLiteral("particles/box/box"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            3, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            7, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        VkVertexInputBindingDescription vertexBindingDescBoxPicking[3] {
-            vertexBindingDesc[0], vertexBindingDesc[2]
-        };
-        vertexBindingDescBoxPicking[1].binding = 1;
-        VkVertexInputAttributeDescription vertexAttrDescBoxPicking[7] = {
-            vertexAttrDesc[0], vertexAttrDesc[1],
-            vertexAttrDesc[3], vertexAttrDesc[4],
-            vertexAttrDesc[5], vertexAttrDesc[6]
-        };
-        vertexAttrDescBoxPicking[2].binding = vertexAttrDescBoxPicking[3].binding = vertexAttrDescBoxPicking[4].binding = vertexAttrDescBoxPicking[5].binding = 1;
-        box_picking.create(*renderer->context(),
-            QStringLiteral("particles/box/box_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
-            6, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        ellipsoid.create(*renderer->context(),
-            QStringLiteral("particles/ellipsoid/ellipsoid"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            3, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            7, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        ellipsoid_picking.create(*renderer->context(),
-            QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            2, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
-            6, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        superquadric.create(*renderer->context(),
-            QStringLiteral("particles/superquadric/superquadric"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            4, // vertexBindingDescriptionCount
-            vertexBindingDesc.data(), 
-            8, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-
-        // Roundness
-        vertexBindingDescBoxPicking[2].binding = 2;
-        vertexBindingDescBoxPicking[2].stride = sizeof(Vector_2<float>);
-        vertexBindingDescBoxPicking[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-        vertexAttrDescBoxPicking[6] =
-            VkVertexInputAttributeDescription{ // roundness:
-                7, // location
-                2, // binding
-                VK_FORMAT_R32G32_SFLOAT,
-                0 // offset
-            };
-        superquadric_picking.create(*renderer->context(),
-            QStringLiteral("particles/superquadric/superquadric_picking"), 
-            renderer->defaultRenderPass(),
-            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
-            3, // vertexBindingDescriptionCount
-            vertexBindingDescBoxPicking, 
-            7, // vertexAttributeDescriptionCount
-            vertexAttrDescBoxPicking, 
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-            0, // extraDynamicStateCount
-            nullptr, // pExtraDynamicStates
-            false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
-            descriptorSetLayouts.data()
-        );
-    }    
+    superquadric_picking.create(*renderer->context(),
+        QStringLiteral("particles/superquadric/superquadric_picking"), 
+        renderer->defaultRenderPass(),
+        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+        0, // fragmentPushConstantSize
+        3, // vertexBindingDescriptionCount
+        vertexBindingDescBoxPicking, 
+        7, // vertexAttributeDescriptionCount
+        vertexAttrDescBoxPicking, 
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+        0, // extraDynamicStateCount
+        nullptr, // pExtraDynamicStates
+        false, // supportAlphaBlending
+        descriptorSetLayouts.size(), // setLayoutCount
+        descriptorSetLayouts.data()
+    );
 }
 
 /******************************************************************************

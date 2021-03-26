@@ -37,7 +37,7 @@ class OpenGLParticlePrimitive : public ParticlePrimitive
 public:
 
 	/// Constructor.
-	OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape);
+	OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality);
 
 	/// \brief Renders the geometry.
 	void render(OpenGLSceneRenderer* renderer);

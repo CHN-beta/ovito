@@ -84,9 +84,9 @@ public:
 
 	/// Requests a new particle geometry buffer from the renderer.
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
+			ParticlePrimitive::ParticleShape shape,
 			ParticlePrimitive::ShadingMode shadingMode,
-			ParticlePrimitive::RenderingQuality renderingQuality, 
-			ParticlePrimitive::ParticleShape shape) override;
+			ParticlePrimitive::RenderingQuality renderingQuality) override;
 
 	/// Renders the particles stored in the given primitive buffer.
 	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;

@@ -422,7 +422,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		primitives.segments->setColors(segmentColors.take());
 
 		// Create rendering primitive for the line corner points.
-		primitives.corners = renderer->createParticlePrimitive((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+		primitives.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, (shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 		primitives.corners->setPositions(cornerPoints.take());
 		primitives.corners->setColors(cornerColors.take());
 		primitives.corners->setUniformRadius(lineRadius);
@@ -534,7 +534,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	segmentBuffer->setUniformColor(Color(1,1,1));
 	renderer->renderCylinders(segmentBuffer);
 
-	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 	cornerBuffer->setPositions(cornerVertices.take());
 	cornerBuffer->setUniformColor(Color(1,1,1));
 	cornerBuffer->setUniformRadius(lineRadius);
@@ -543,7 +543,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	if(!segment->line.empty()) {
 		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false); 
 		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
-		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 		headBuffer->setPositions(wrappedHeadPos.take());
 		headBuffer->setUniformColor(Color(1,1,1));
 		headBuffer->setUniformRadius(headRadius);
