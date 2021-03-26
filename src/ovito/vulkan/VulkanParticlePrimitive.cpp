@@ -32,7 +32,7 @@ namespace Ovito {
 void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 {
     {
-        std::array<VkVertexInputBindingDescription, 3> vertexBindingDesc;
+        std::array<VkVertexInputBindingDescription, 4> vertexBindingDesc;
 
         // Position + radius:
         vertexBindingDesc[0].binding = 0;
@@ -48,6 +48,11 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         vertexBindingDesc[2].binding = 2;
         vertexBindingDesc[2].stride = sizeof(Matrix_4<float>);
         vertexBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        // Roundness
+        vertexBindingDesc[3].binding = 3;
+        vertexBindingDesc[3].stride = sizeof(Vector_2<float>);
+        vertexBindingDesc[3].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
         VkVertexInputAttributeDescription vertexAttrDesc[] = {
             VkVertexInputAttributeDescription{ // position:
@@ -91,7 +96,13 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
                 2, // binding
                 VK_FORMAT_R32G32B32A32_SFLOAT,
                 3 * sizeof(Matrix_4<float>::column_type) // offset
-            }
+            },
+            VkVertexInputAttributeDescription{ // roundness:
+                7, // location
+                3, // binding
+                VK_FORMAT_R32G32_SFLOAT,
+                0 // offset
+            },
         };
 
         std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
@@ -215,11 +226,11 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             descriptorSetLayouts.data()
         );
 
-        VkVertexInputBindingDescription vertexBindingDescBoxPicking[2] {
+        VkVertexInputBindingDescription vertexBindingDescBoxPicking[3] {
             vertexBindingDesc[0], vertexBindingDesc[2]
         };
         vertexBindingDescBoxPicking[1].binding = 1;
-        VkVertexInputAttributeDescription vertexAttrDescBoxPicking[6] = {
+        VkVertexInputAttributeDescription vertexAttrDescBoxPicking[7] = {
             vertexAttrDesc[0], vertexAttrDesc[1],
             vertexAttrDesc[3], vertexAttrDesc[4],
             vertexAttrDesc[5], vertexAttrDesc[6]
@@ -275,6 +286,51 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
         );
+
+        superquadric.create(*renderer->context(),
+            QStringLiteral("particles/superquadric/superquadric"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            4, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            8, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+        // Roundness
+        vertexBindingDescBoxPicking[2].binding = 2;
+        vertexBindingDescBoxPicking[2].stride = sizeof(Vector_2<float>);
+        vertexBindingDescBoxPicking[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+        vertexAttrDescBoxPicking[6] =
+            VkVertexInputAttributeDescription{ // roundness:
+                7, // location
+                2, // binding
+                VK_FORMAT_R32G32_SFLOAT,
+                0 // offset
+            };
+        superquadric_picking.create(*renderer->context(),
+            QStringLiteral("particles/superquadric/superquadric_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // enableAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
     }    
 }
 
@@ -293,6 +349,8 @@ void VulkanParticlePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	box_picking.release(*renderer->context());
 	ellipsoid.release(*renderer->context());
 	ellipsoid_picking.release(*renderer->context());
+	superquadric.release(*renderer->context());
+	superquadric_picking.release(*renderer->context());
 }
 
 /******************************************************************************
@@ -375,6 +433,17 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             }
             verticesPerParticle = 14; // Box rendered as triangle strip.
             break;
+        case SuperquadricShape:
+            if(!renderer->isPicking()) {
+                pipelineLayout = pipelines.superquadric.layout();
+                pipelines.superquadric.bind(*renderer->context(), renderer->currentCommandBuffer());
+            }
+            else {
+                pipelineLayout = pipelines.superquadric_picking.layout();
+                pipelines.superquadric_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+            }
+            verticesPerParticle = 14; // Box rendered as triangle strip.
+            break;
         default:
             return;
     }
@@ -454,6 +523,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
         case SphericalShape:
         case EllipsoidShape:
+        case SuperquadricShape:
 
             // Pass model-view-projection matrix to vertex shader as a push constant.
             renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
@@ -497,6 +567,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
     // Upload vertex buffer with the particle positions and radii.
     VkBuffer positionRadiusBuffer = renderer->context()->createCachedBuffer(positionRadiusCacheKey, particleCount * 4 * sizeof(float), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+        OVITO_ASSERT(!radii() || radii()->size() == positions()->size());
         ConstDataBufferAccess<Point3> positionArray(positions());
         ConstDataBufferAccess<FloatType> radiusArray(radii());
         float* dst = reinterpret_cast<float*>(buffer);
@@ -522,8 +593,8 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
     // The list of buffers that will be bound to vertex attributes.
     // We will bind the particle positions and radii for sure. More buffers may be added to the list below.
-    std::array<VkBuffer, 3> buffers = { positionRadiusBuffer };
-    std::array<VkDeviceSize, 3> offsets = { 0, 0, 0 };
+    std::array<VkBuffer, 4> buffers = { positionRadiusBuffer };
+    std::array<VkDeviceSize, 4> offsets = { 0, 0, 0, 0 };
     uint32_t buffersCount = 1;
 
     if(!renderer->isPicking()) {
@@ -539,6 +610,8 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
         // Upload vertex buffer with the particle colors.
         VkBuffer colorSelectionBuffer = renderer->context()->createCachedBuffer(colorSelectionCacheKey, particleCount * 4 * sizeof(float), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+            OVITO_ASSERT(!transparencies() || transparencies()->size() == positions()->size());
+            OVITO_ASSERT(!selection() || selection()->size() == positions()->size());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             ConstDataBufferAccess<int> selectionArray(selection());
             const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
@@ -609,7 +682,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
     }
 
     // For box-shaped and ellipsoid particles, we need the shape/orientation vertex attribute.
-    if(particleShape() == BoxShape || particleShape() == EllipsoidShape) {
+    if(particleShape() == BoxShape || particleShape() == EllipsoidShape || particleShape() == SuperquadricShape) {
 
         // Combine aspherical shape property and orientation property into one combined Vulkan buffer containing a 4x4 transformation matrix per particle.
         VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{ 
@@ -625,6 +698,8 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             ConstDataBufferAccess<Vector3> asphericalShapeArray(asphericalShapes());
             ConstDataBufferAccess<Quaternion> orientationArray(orientations());
             ConstDataBufferAccess<FloatType> radiusArray(radii());
+            OVITO_ASSERT(!asphericalShapes() || asphericalShapes()->size() == positions()->size());
+            OVITO_ASSERT(!orientations() || orientations()->size() == positions()->size());
             if(!indices()) {
                 const Vector3* shape = asphericalShapeArray ? asphericalShapeArray.cbegin() : nullptr;
                 const Quaternion* orientation = orientationArray ? orientationArray.cbegin() : nullptr;
@@ -707,6 +782,40 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         // Bind shape/orientation vertex buffer.
         buffers[buffersCount++] = shapeOrientationBuffer;
     }
+
+    // For superquadric particles, we need to prepare the roundness vertex attribute.
+    if(particleShape() == SuperquadricShape) {
+
+        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr> roundnessCacheKey{ 
+            indices(),
+            roundness()
+        };
+
+        // Upload vertex buffer with the roundness values.
+        VkBuffer roundnessBuffer = renderer->context()->createCachedBuffer(roundnessCacheKey, particleCount * sizeof(Vector_2<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+            Vector_2<float>* dst = reinterpret_cast<Vector_2<float>*>(buffer);
+            if(roundness()) {
+                OVITO_ASSERT(roundness()->size() == positions()->size());
+                if(!indices()) {
+                    for(const Vector2& r : ConstDataBufferAccess<Vector2>(roundness())) {
+                        *dst++ = Vector_2<float>(r);
+                    }
+                }
+                else {
+                    ConstDataBufferAccess<Vector2> roundnessArray(roundness());
+                    for(int index : ConstDataBufferAccess<int>(indices())) {
+                        *dst++ = Vector_2<float>(roundnessArray[index]);
+                    }
+                }
+            }
+            else {
+                std::fill(dst, dst + particleCount, Vector_2<float>(1,1));
+            }
+        });
+
+        // Bind vertex buffer.
+        buffers[buffersCount++] = roundnessBuffer;
+    }    
 
     // Bind vertex buffers.
     renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffersCount, buffers.data(), offsets.data());

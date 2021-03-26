@@ -35,6 +35,11 @@
 	<file>particles/ellipsoid/ellipsoid.vert.spv</file>
 	<file>particles/ellipsoid/ellipsoid_picking.frag.spv</file>
 	<file>particles/ellipsoid/ellipsoid_picking.vert.spv</file>
+
+	<file>particles/superquadric/superquadric.frag.spv</file>
+	<file>particles/superquadric/superquadric.vert.spv</file>
+	<file>particles/superquadric/superquadric_picking.frag.spv</file>
+	<file>particles/superquadric/superquadric_picking.vert.spv</file>
 </qresource>
 
 </RCC>

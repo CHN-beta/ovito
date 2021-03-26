@@ -55,6 +55,8 @@ public:
 		VulkanPipeline box_picking;
 		VulkanPipeline ellipsoid;
 		VulkanPipeline ellipsoid_picking;
+		VulkanPipeline superquadric;
+		VulkanPipeline superquadric_picking;
 	};
 
 	/// Inherit constructor from base class.

@@ -102,6 +102,10 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.frag)
 	add_vulkan_shader(VulkanRenderer resources/particles/ellipsoid/ellipsoid_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/superquadric/superquadric_picking.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.
