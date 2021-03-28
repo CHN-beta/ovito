@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include "GeneralSettingsPage.h"
 
 namespace Ovito {
@@ -62,20 +63,61 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	QGroupBox* graphicsGroupBox = new QGroupBox(tr("3D graphics"), page);
 	layout1->addWidget(graphicsGroupBox);
 	layout2 = new QGridLayout(graphicsGroupBox);
+	layout2->setColumnStretch(2, 1);
 
 	layout2->addWidget(new QLabel(tr("Graphics hardware interface:")), 0, 0);
 	_graphicsSystem = new QButtonGroup(page);
 	QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
-	QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan (experimental)"), graphicsGroupBox);
+	QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan"), graphicsGroupBox);
 	layout2->addWidget(openglOption, 0, 1);
 	layout2->addWidget(vulkanOption, 1, 1);
 	_graphicsSystem->addButton(openglOption, 0);
 	_graphicsSystem->addButton(vulkanOption, 1);
-	if(settings.value("rendering/graphics_interface").toString() == "Vulkan")
-		vulkanOption->setChecked(true);
-	else
+	_vulkanDevices = new QComboBox();
+	layout2->addWidget(_vulkanDevices, 1, 2);
+	if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "VulkanSceneRenderer")) {
+		if(settings.value("rendering/graphics_interface").toString() == "Vulkan")
+			vulkanOption->setChecked(true);
+		else
+			openglOption->setChecked(true);
+
+		// Call the VulkanSceneRenderer::OOMetaClass::querySystemInformation() function to let the Vulkan plugin write the
+		// list of available devices to the application settings store, from where we can read them.
+		QString dummyBuffer;
+		QTextStream dummyStream(&dummyBuffer);
+		rendererClass->querySystemInformation(dummyStream, *Application::instance()->datasetContainer());
+
+		settings.beginGroup("rendering/graphics_interface/vulkan");
+		int numDevices = settings.beginReadArray("available_devices");
+		if(numDevices != 0) {
+			for(int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+				settings.setArrayIndex(deviceIndex);
+				QString title = settings.value("name").toString();
+				switch(settings.value("deviceType").toInt()) {
+				case 1: // VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+					title += tr(" (integrated GPU)");
+					break;
+				case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU 
+					title += tr(" (discrete GPU)");
+					break;
+				case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU  
+					title += tr(" (virtual GPU)");
+					break;
+				}
+				_vulkanDevices->addItem(std::move(title));
+			}
+		}
+		else _vulkanDevices->addItem(tr("<No devices found>"));
+		settings.endArray();
+		_vulkanDevices->setCurrentIndex(settings.value("selected_device", 0).toInt());
+		settings.endGroup();
+	}
+	else {
+		vulkanOption->setEnabled(false);
 		openglOption->setChecked(true);
-	vulkanOption->setEnabled(PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer") != nullptr);
+		_vulkanDevices->setEnabled(false);
+		_vulkanDevices->addItem(tr("Not available on this platform"));
+	}
 
 	// Group "Program updates":
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
@@ -115,6 +157,7 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
 
 	// Check if user has selected a different 3D graphics API than before.
+	bool recreateViewportWindows = false;
 	bool wasVulkanSelected = (settings.value("rendering/graphics_interface").toString() == "Vulkan");
 	bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
 	if(isVulkanSelected != wasVulkanSelected) {
@@ -123,9 +166,18 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 			settings.setValue("rendering/graphics_interface", "Vulkan");
 		else
 			settings.remove("rendering/graphics_interface");
+		recreateViewportWindows = true;
+	}
 
-		// Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
-		// No restart of the software is required.
+	// Check if a different Vulkan device was selected by the user.
+	if(settings.value("rendering/graphics_interface/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
+		settings.setValue("rendering/graphics_interface/vulkan/selected_device", _vulkanDevices->currentIndex());
+		recreateViewportWindows = true;
+	}
+
+	// Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
+	// No restart of the software is required.
+	if(recreateViewportWindows) {
 		for(QWidget* widget : QApplication::topLevelWidgets()) {
 			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
 				mainWindow->viewportsPanel()->recreateViewportWindows();

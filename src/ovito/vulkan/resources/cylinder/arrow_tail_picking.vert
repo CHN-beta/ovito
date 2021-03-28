@@ -1,18 +1,19 @@
 #version 440
 
 #include "../global_uniforms.glsl"
+#include "../picking.glsl"
 
 // Push constants:
 layout(push_constant) uniform constants {
     mat4 mvp;
     layout(row_major) mat4x3 modelview_matrix;
+    int pickingBaseId;
 } PushConstants;
 
 // Inputs:
 layout(location = 0) in vec3 base;
 layout(location = 1) in vec3 head;
 layout(location = 2) in float radius;
-layout(location = 3) in vec4 color;
 
 // Outputs:
 layout(location = 0) out vec4 color_fs;
@@ -47,10 +48,15 @@ void main()
     // The index of the box corner.
     int corner = gl_VertexIndex;
 
+    float arrowHeadRadius = radius * 2.5;
+    float arrowHeadLength = (arrowHeadRadius * 1.8);
+
     // Set up an axis tripod that is aligned with the cylinder.
     mat3 orientation_tm;
     orientation_tm[2] = head - base;
-    if(orientation_tm[2] != vec3(0.0)) {
+    float len = length(orientation_tm[2]);
+    if(len != 0.0 && arrowHeadLength < len) {
+        orientation_tm[2] *= 1.0 - arrowHeadLength / len;
         if(orientation_tm[2].y != 0.0 || orientation_tm[2].x != 0.0)
             orientation_tm[0] = normalize(vec3(orientation_tm[2].y, -orientation_tm[2].x, 0.0)) * radius;
         else
@@ -64,8 +70,8 @@ void main()
 	// Apply model-view-projection matrix to box vertex position.
     gl_Position = PushConstants.mvp * vec4(base + (orientation_tm * box[corner]), 1.0);
 
-    // Forward cylinder color to fragment shader.
-    color_fs = color;
+    // Compute color from object ID.
+    color_fs = pickingModeColor(PushConstants.pickingBaseId, gl_InstanceIndex);
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(PushConstants.modelview_matrix[0]);

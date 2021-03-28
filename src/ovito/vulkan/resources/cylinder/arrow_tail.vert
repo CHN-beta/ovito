@@ -47,10 +47,15 @@ void main()
     // The index of the box corner.
     int corner = gl_VertexIndex;
 
+    float arrowHeadRadius = radius * 2.5;
+    float arrowHeadLength = (arrowHeadRadius * 1.8);
+
     // Set up an axis tripod that is aligned with the cylinder.
     mat3 orientation_tm;
     orientation_tm[2] = head - base;
-    if(orientation_tm[2] != vec3(0.0)) {
+    float len = length(orientation_tm[2]);
+    if(len != 0.0 && arrowHeadLength < len) {
+        orientation_tm[2] *= 1.0 - arrowHeadLength / len;
         if(orientation_tm[2].y != 0.0 || orientation_tm[2].x != 0.0)
             orientation_tm[0] = normalize(vec3(orientation_tm[2].y, -orientation_tm[2].x, 0.0)) * radius;
         else

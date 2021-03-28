@@ -50,6 +50,23 @@
 	<file>cylinder/cylinder.vert.spv</file>
 	<file>cylinder/cylinder_picking.frag.spv</file>
 	<file>cylinder/cylinder_picking.vert.spv</file>
+	<file>cylinder/cylinder_flat.frag.spv</file>
+	<file>cylinder/cylinder_flat.vert.spv</file>
+	<file>cylinder/cylinder_flat_picking.frag.spv</file>
+	<file>cylinder/cylinder_flat_picking.vert.spv</file>
+
+	<file>cylinder/arrow_head.frag.spv</file>
+	<file>cylinder/arrow_head.vert.spv</file>
+	<file>cylinder/arrow_head_picking.frag.spv</file>
+	<file>cylinder/arrow_head_picking.vert.spv</file>
+	<file>cylinder/arrow_tail.frag.spv</file>
+	<file>cylinder/arrow_tail.vert.spv</file>
+	<file>cylinder/arrow_tail_picking.frag.spv</file>
+	<file>cylinder/arrow_tail_picking.vert.spv</file>
+	<file>cylinder/arrow_flat.frag.spv</file>
+	<file>cylinder/arrow_flat.vert.spv</file>
+	<file>cylinder/arrow_flat_picking.frag.spv</file>
+	<file>cylinder/arrow_flat_picking.vert.spv</file>
 </qresource>
 
 </RCC>

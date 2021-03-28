@@ -41,9 +41,11 @@ public:
 
 	struct Pipelines {
 		/// Creates the Vulkan pipelines for this rendering primitive.
-		void init(VulkanSceneRenderer* renderer);
+		void init(VulkanSceneRenderer* renderer) {}
 		/// Destroys the Vulkan pipelines for this rendering primitive.
 		void release(VulkanSceneRenderer* renderer);
+		/// Initializes a specific pipeline on demand.
+		VulkanPipeline& create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline);
 
 		VulkanPipeline cube;
 		VulkanPipeline cube_picking;
@@ -65,7 +67,7 @@ public:
 	using ParticlePrimitive::ParticlePrimitive;
 
 	/// Renders the particles.
-	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void render(VulkanSceneRenderer* renderer, Pipelines& pipelines);
 };
 
 }	// End of namespace

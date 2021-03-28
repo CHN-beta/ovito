@@ -48,6 +48,9 @@ void VulkanPipeline::create(VulkanContext& context,
     OVITO_ASSERT(_layout == VK_NULL_HANDLE);
     OVITO_ASSERT(_pipeline == VK_NULL_HANDLE);
 
+	// This method may only be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == context.thread());
+
     // Set up push constants used by the shader.
     VkPushConstantRange pushConstantRanges[2];
 	pushConstantRanges[0].offset = 0;
@@ -199,10 +202,18 @@ void VulkanPipeline::create(VulkanContext& context,
 ******************************************************************************/
 void VulkanPipeline::release(VulkanContext& context)
 {
-	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipeline, nullptr);
-    if(_pipelineWithBlending)
+    if(_pipeline != VK_NULL_HANDLE) {
+    	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipeline, nullptr);
+        _pipeline = VK_NULL_HANDLE;
+    }
+    if(_pipelineWithBlending != VK_NULL_HANDLE) {
     	context.deviceFunctions()->vkDestroyPipeline(context.logicalDevice(), _pipelineWithBlending, nullptr);
-	context.deviceFunctions()->vkDestroyPipelineLayout(context.logicalDevice(), _layout, nullptr);
+        _pipelineWithBlending = VK_NULL_HANDLE;
+    }
+    if(_layout != VK_NULL_HANDLE) {
+    	context.deviceFunctions()->vkDestroyPipelineLayout(context.logicalDevice(), _layout, nullptr);
+        _layout = VK_NULL_HANDLE;
+    }
 }
 
 /******************************************************************************
@@ -212,6 +223,7 @@ void VulkanPipeline::bind(VulkanContext& context, VkCommandBuffer cmdBuf, bool e
 {
     // Check that blending was enabled at the time the pipeline was created when blending is requested now at draw time.
     OVITO_ASSERT(!enableBlending || _pipelineWithBlending);
+    OVITO_ASSERT(_pipeline != VK_NULL_HANDLE);
 
     context.deviceFunctions()->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, enableBlending ? _pipelineWithBlending : _pipeline);
 }

@@ -46,7 +46,7 @@ void main()
 	);
 
     // The index of the cylinder being rendered.
-    int particle_index = gl_InstanceIndex;
+    int primitive_index = gl_InstanceIndex;
 
     // The index of the box corner.
     int corner = gl_VertexIndex;
@@ -69,7 +69,7 @@ void main()
     gl_Position = PushConstants.mvp * vec4(base + (orientation_tm * box[corner]), 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(PushConstants.pickingBaseId, particle_index);
+    color_fs = pickingModeColor(PushConstants.pickingBaseId, primitive_index);
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(PushConstants.modelview_matrix[0]);

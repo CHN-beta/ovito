@@ -41,49 +41,68 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 {
 	if(this == &VulkanSceneRenderer::OOClass()) {
 		stream << "======== Vulkan info =======" << "\n";
-
-        // Look up an existing Vulkan context from one of the interactive viewport windows. 
-        // All viewport windows will share the same logical Vulkan device.
-        std::shared_ptr<VulkanContext> context;
-        for(Viewport* vp : container.currentSet()->viewportConfig()->viewports()) {
-            if(ViewportWindowInterface* window = vp->window()) {
-                if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
-                    context = renderer->context();
-                    break;
+        try {
+            // Look up an existing Vulkan context from one of the interactive viewport windows. 
+            // All viewport windows will share the same logical Vulkan device.
+            std::shared_ptr<VulkanContext> context;
+            for(Viewport* vp : container.currentSet()->viewportConfig()->viewports()) {
+                if(ViewportWindowInterface* window = vp->window()) {
+                    if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
+                        context = renderer->context();
+                        break;
+                    }
                 }
             }
-        }
 
-        // Create an adhoc instance of VulkanContext if needed.
-        if(!context)
-            context = std::make_shared<VulkanContext>();
+            // Create an adhoc instance of VulkanContext if needed.
+            if(!context)
+                context = std::make_shared<VulkanContext>();
 
-        stream << "Number of physical devices: " << context->availablePhysicalDevices().count() << "\n";
-        uint32_t deviceIndex = 0;
-        for(const VkPhysicalDeviceProperties& props : context->availablePhysicalDevices()) {
-            stream << tr("[%8] %1 - Version %2.%3.%4 - API Version %5.%6.%7\n")
-                                .arg(props.deviceName)
-                                .arg(VK_VERSION_MAJOR(props.driverVersion)).arg(VK_VERSION_MINOR(props.driverVersion))
-                                .arg(VK_VERSION_PATCH(props.driverVersion))
-                                .arg(VK_VERSION_MAJOR(props.apiVersion)).arg(VK_VERSION_MINOR(props.apiVersion))
-                                .arg(VK_VERSION_PATCH(props.apiVersion))
-                                .arg(deviceIndex++);
+            stream << "Number of physical devices: " << context->availablePhysicalDevices().count() << "\n";
+            uint32_t deviceIndex = 0;
+
+            // Write the list of physical devices also to the application settings store, so that
+            // the GeneralSettingsPage class from the GUI module can read it without direct access to the Vulkan plugin.
+            QSettings settings;
+            settings.beginGroup("rendering/graphics_interface/vulkan");
+            settings.beginWriteArray("available_devices");
+            for(const VkPhysicalDeviceProperties& props : context->availablePhysicalDevices()) {
+                stream << tr("[%8] %1 - Version %2.%3.%4 - API Version %5.%6.%7\n")
+                                    .arg(props.deviceName)
+                                    .arg(VK_VERSION_MAJOR(props.driverVersion)).arg(VK_VERSION_MINOR(props.driverVersion))
+                                    .arg(VK_VERSION_PATCH(props.driverVersion))
+                                    .arg(VK_VERSION_MAJOR(props.apiVersion)).arg(VK_VERSION_MINOR(props.apiVersion))
+                                    .arg(VK_VERSION_PATCH(props.apiVersion))
+                                    .arg(deviceIndex);
+                settings.setArrayIndex(deviceIndex);
+                settings.setValue("name", QString::fromUtf8(props.deviceName));
+                settings.setValue("vendorID", props.vendorID);
+                settings.setValue("deviceID", props.deviceID);
+                settings.setValue("deviceType", static_cast<uint32_t>(props.deviceType));
+                deviceIndex++;
+            }
+            settings.endArray();
+            settings.setValue("selected_device", context->physicalDeviceIndex());
+
+            if(context->logicalDevice()) {
+                stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
+                stream << "Unified memory architecture: " << context->isUMA() << "\n";
+                stream << "features.wideLines: " << context->supportsWideLines() << "\n";
+                stream << "features.multiDrawIndirect: " << context->supportsMultiDrawIndirect() << "\n";
+                stream << "features.drawIndirectFirstInstance: " << context->supportsDrawIndirectFirstInstance() << "\n";
+                stream << "features.extendedDynamicState: " << context->supportsExtendedDynamicState() << "\n";
+                stream << "limits.maxUniformBufferRange: " << context->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
+                stream << "limits.maxStorageBufferRange: " << context->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
+                stream << "limits.maxPushConstantsSize: " << context->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
+                stream << "limits.lineWidthRange: " << context->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << context->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
+                stream << "limits.lineWidthGranularity: " << context->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
+                stream << "limits.maxDrawIndirectCount: " << context->physicalDeviceProperties()->limits.maxDrawIndirectCount << "\n";
+            }
+            else stream << "No active physical device\n"; 
         }
-        if(context->logicalDevice()) {
-            stream << "Active physical device index: [" << context->physicalDeviceIndex() << "]\n"; 
-            stream << "Unified memory architecture: " << context->isUMA() << "\n";
-            stream << "features.wideLines: " << context->supportsWideLines() << "\n";
-            stream << "features.multiDrawIndirect: " << context->supportsMultiDrawIndirect() << "\n";
-            stream << "features.drawIndirectFirstInstance: " << context->supportsDrawIndirectFirstInstance() << "\n";
-            stream << "features.extendedDynamicState: " << context->supportsExtendedDynamicState() << "\n";
-            stream << "limits.maxUniformBufferRange: " << context->physicalDeviceProperties()->limits.maxUniformBufferRange << "\n";
-            stream << "limits.maxStorageBufferRange: " << context->physicalDeviceProperties()->limits.maxStorageBufferRange << "\n";
-            stream << "limits.maxPushConstantsSize: " << context->physicalDeviceProperties()->limits.maxPushConstantsSize << "\n";
-            stream << "limits.lineWidthRange: " << context->physicalDeviceProperties()->limits.lineWidthRange[0] << " - " << context->physicalDeviceProperties()->limits.lineWidthRange[1] << "\n";
-            stream << "limits.lineWidthGranularity: " << context->physicalDeviceProperties()->limits.lineWidthGranularity << "\n";
-            stream << "limits.maxDrawIndirectCount: " << context->physicalDeviceProperties()->limits.maxDrawIndirectCount << "\n";
+        catch(const Exception& ex) {
+            stream << tr("Error: %1").arg(ex.message()) << "\n";
         }
-        else stream << "No active physical device\n"; 
 	}
 }
 

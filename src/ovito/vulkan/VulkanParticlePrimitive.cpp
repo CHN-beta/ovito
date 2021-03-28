@@ -31,8 +31,11 @@ namespace Ovito {
 /******************************************************************************
 * Creates the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
-void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
+VulkanPipeline& VulkanParticlePrimitive::Pipelines::create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline)
 {
+    if(pipeline.isCreated())
+        return pipeline;
+
     std::array<VkVertexInputBindingDescription, 4> vertexBindingDesc;
 
     // Position + radius:
@@ -108,158 +111,167 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 
     std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
 
-    cube.create(*renderer->context(),
-        QStringLiteral("particles/cube/cube"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        3, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &cube)
+        cube.create(*renderer->context(),
+            QStringLiteral("particles/cube/cube"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    cube_picking.create(*renderer->context(),
-        QStringLiteral("particles/cube/cube_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        1, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        2, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &cube_picking)
+        cube_picking.create(*renderer->context(),
+            QStringLiteral("particles/cube/cube_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    sphere.create(*renderer->context(),
-        QStringLiteral("particles/sphere/sphere"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        3, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &sphere)
+        sphere.create(*renderer->context(),
+            QStringLiteral("particles/sphere/sphere"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    sphere_picking.create(*renderer->context(),
-        QStringLiteral("particles/sphere/sphere_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        1, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        2, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &sphere_picking)
+        sphere_picking.create(*renderer->context(),
+            QStringLiteral("particles/sphere/sphere_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    square.create(*renderer->context(),
-        QStringLiteral("particles/square/square"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        3, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &square)
+        square.create(*renderer->context(),
+            QStringLiteral("particles/square/square"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    square_picking.create(*renderer->context(),
-        QStringLiteral("particles/square/square_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        1, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        2, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &square_picking)
+        square_picking.create(*renderer->context(),
+            QStringLiteral("particles/square/square_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    circle.create(*renderer->context(),
-        QStringLiteral("particles/circle/circle"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        3, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &circle)
+        circle.create(*renderer->context(),
+            QStringLiteral("particles/circle/circle"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    circle_picking.create(*renderer->context(),
-        QStringLiteral("particles/circle/circle_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        1, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        2, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );        
+    if(&pipeline == &circle_picking)
+        circle_picking.create(*renderer->context(),
+            QStringLiteral("particles/circle/circle_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );        
 
-    box.create(*renderer->context(),
-        QStringLiteral("particles/box/box"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        3, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        7, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &box)
+        box.create(*renderer->context(),
+            QStringLiteral("particles/box/box"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
     VkVertexInputBindingDescription vertexBindingDescBoxPicking[3] {
         vertexBindingDesc[0], vertexBindingDesc[2]
@@ -271,73 +283,78 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         vertexAttrDesc[5], vertexAttrDesc[6]
     };
     vertexAttrDescBoxPicking[2].binding = vertexAttrDescBoxPicking[3].binding = vertexAttrDescBoxPicking[4].binding = vertexAttrDescBoxPicking[5].binding = 1;
-    box_picking.create(*renderer->context(),
-        QStringLiteral("particles/box/box_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDescBoxPicking, 
-        6, // vertexAttributeDescriptionCount
-        vertexAttrDescBoxPicking, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
 
-    ellipsoid.create(*renderer->context(),
-        QStringLiteral("particles/ellipsoid/ellipsoid"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        3, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        7, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &box_picking)
+        box_picking.create(*renderer->context(),
+            QStringLiteral("particles/box/box_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            6, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    ellipsoid_picking.create(*renderer->context(),
-        QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDescBoxPicking, 
-        6, // vertexAttributeDescriptionCount
-        vertexAttrDescBoxPicking, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &ellipsoid)
+        ellipsoid.create(*renderer->context(),
+            QStringLiteral("particles/ellipsoid/ellipsoid"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    superquadric.create(*renderer->context(),
-        QStringLiteral("particles/superquadric/superquadric"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        4, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        8, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &ellipsoid_picking)
+        ellipsoid_picking.create(*renderer->context(),
+            QStringLiteral("particles/ellipsoid/ellipsoid_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            6, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &superquadric)
+        superquadric.create(*renderer->context(),
+            QStringLiteral("particles/superquadric/superquadric"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            4, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            8, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
     // Roundness
     vertexBindingDescBoxPicking[2].binding = 2;
@@ -350,22 +367,26 @@ void VulkanParticlePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             VK_FORMAT_R32G32_SFLOAT,
             0 // offset
         };
-    superquadric_picking.create(*renderer->context(),
-        QStringLiteral("particles/superquadric/superquadric_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        3, // vertexBindingDescriptionCount
-        vertexBindingDescBoxPicking, 
-        7, // vertexAttributeDescriptionCount
-        vertexAttrDescBoxPicking, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+
+    if(&pipeline == &superquadric_picking)
+        superquadric_picking.create(*renderer->context(),
+            QStringLiteral("particles/superquadric/superquadric_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            3, // vertexBindingDescriptionCount
+            vertexBindingDescBoxPicking, 
+            7, // vertexAttributeDescriptionCount
+            vertexAttrDescBoxPicking, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    return pipeline;
 }
 
 /******************************************************************************
@@ -392,7 +413,7 @@ void VulkanParticlePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 /******************************************************************************
 * Renders the particles.
 ******************************************************************************/
-void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
+void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipelines)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
 	if(!positions() || positions()->size() == 0)
@@ -416,22 +437,22 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         case SquareCubicShape:
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.cube.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.cube).layout();
                     pipelines.cube.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.cube_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.cube_picking).layout();
                     pipelines.cube_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerParticle = 14; // Cube rendered as triangle strip.
             }
             else {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.square.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.square).layout();
                     pipelines.square.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.square_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.square_picking).layout();
                     pipelines.square_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerParticle = 4; // Square rendered as triangle strip.
@@ -440,11 +461,11 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         case BoxShape:
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.box.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.box).layout();
                     pipelines.box.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.box_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.box_picking).layout();
                     pipelines.box_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerParticle = 14; // Box rendered as triangle strip.
@@ -454,22 +475,22 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
         case SphericalShape:
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.sphere.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.sphere).layout();
                     pipelines.sphere.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.sphere_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.sphere_picking).layout();
                     pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerParticle = 14; // Cube rendered as triangle strip.
             }
             else {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.circle.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.circle).layout();
                     pipelines.circle.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.circle_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.circle_picking).layout();
                     pipelines.circle_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerParticle = 4; // Square rendered as triangle strip.
@@ -477,22 +498,22 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
             break;
         case EllipsoidShape:
             if(!renderer->isPicking()) {
-                pipelineLayout = pipelines.ellipsoid.layout();
+                pipelineLayout = pipelines.create(renderer, pipelines.ellipsoid).layout();
                 pipelines.ellipsoid.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
             }
             else {
-                pipelineLayout = pipelines.ellipsoid_picking.layout();
+                pipelineLayout = pipelines.create(renderer, pipelines.ellipsoid_picking).layout();
                 pipelines.ellipsoid_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
             }
             verticesPerParticle = 14; // Box rendered as triangle strip.
             break;
         case SuperquadricShape:
             if(!renderer->isPicking()) {
-                pipelineLayout = pipelines.superquadric.layout();
+                pipelineLayout = pipelines.create(renderer, pipelines.superquadric).layout();
                 pipelines.superquadric.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
             }
             else {
-                pipelineLayout = pipelines.superquadric_picking.layout();
+                pipelineLayout = pipelines.create(renderer, pipelines.superquadric_picking).layout();
                 pipelines.superquadric_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
             }
             verticesPerParticle = 14; // Box rendered as triangle strip.

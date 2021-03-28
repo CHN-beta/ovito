@@ -49,9 +49,6 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputMana
     if(!_context)
         _context = std::make_shared<VulkanContext>();
 
-    // Use the 2nd physical device in the system.
-    _context->setPhysicalDeviceIndex(1);
-
     // Release our own Vulkan resources right before the logical device is destroyed.
     connect(_context.get(), &VulkanContext::releaseResourcesRequested, this, &VulkanViewportWindow::reset);
     // Automatically recreate everything in case the logical device is lost.

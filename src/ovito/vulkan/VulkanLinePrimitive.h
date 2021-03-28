@@ -41,9 +41,11 @@ public:
 
 	struct Pipelines {
 		/// Creates the Vulkan pipelines for this rendering primitive.
-		void init(VulkanSceneRenderer* renderer);
+		void init(VulkanSceneRenderer* renderer) {}
 		/// Destroys the Vulkan pipelines for this rendering primitive.
 		void release(VulkanSceneRenderer* renderer);
+		/// Initializes a specific pipeline on demand.
+		VulkanPipeline& create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline);
 
 		VulkanPipeline thinWithColors;
 		VulkanPipeline thinUniformColor;
@@ -51,15 +53,15 @@ public:
 	};
 
 	/// Renders the geometry.
-	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void render(VulkanSceneRenderer* renderer, Pipelines& pipelines);
 
 protected:
 
 	/// Renders the lines exactly one pixel wide.
-	void renderThinLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void renderThinLines(VulkanSceneRenderer* renderer, Pipelines& pipelines);
 
 	/// Renders the lines of arbitrary width using polygons.
-	void renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void renderThickLines(VulkanSceneRenderer* renderer, Pipelines& pipelines);
 };
 
 }	// End of namespace

@@ -29,8 +29,11 @@ namespace Ovito {
 /******************************************************************************
 * Creates the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
-void VulkanCylinderPrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
+VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline)
 {
+    if(pipeline.isCreated())
+        return pipeline;
+
     std::array<VkVertexInputBindingDescription, 2> vertexBindingDesc;
 
     // Base + head + radius:
@@ -72,39 +75,187 @@ void VulkanCylinderPrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
 
     std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
 
-    cylinder.create(*renderer->context(),
-        QStringLiteral("cylinder/cylinder"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        2, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        4, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        true, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &cylinder)
+        cylinder.create(*renderer->context(),
+            QStringLiteral("cylinder/cylinder"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            4, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
 
-    cylinder_picking.create(*renderer->context(),
-        QStringLiteral("cylinder/cylinder_picking"), 
-        renderer->defaultRenderPass(),
-        sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
-        0, // fragmentPushConstantSize
-        1, // vertexBindingDescriptionCount
-        vertexBindingDesc.data(), 
-        3, // vertexAttributeDescriptionCount
-        vertexAttrDesc, 
-        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
-        0, // extraDynamicStateCount
-        nullptr, // pExtraDynamicStates
-        false, // supportAlphaBlending
-        descriptorSetLayouts.size(), // setLayoutCount
-        descriptorSetLayouts.data()
-    );
+    if(&pipeline == &cylinder_picking)
+        cylinder_picking.create(*renderer->context(),
+            QStringLiteral("cylinder/cylinder_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &cylinder_flat)
+        cylinder_flat.create(*renderer->context(),
+            QStringLiteral("cylinder/cylinder_flat"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Vector_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            4, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &cylinder_flat_picking)
+        cylinder_flat_picking.create(*renderer->context(),
+            QStringLiteral("cylinder/cylinder_flat_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Vector_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_head)
+        arrow_head.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_head"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            4, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_head_picking)
+        arrow_head_picking.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_head_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_tail)
+        arrow_tail.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_tail"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            4, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_tail_picking)
+        arrow_tail_picking.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_tail_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_flat)
+        arrow_flat.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_flat"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Vector_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            4, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &arrow_flat_picking)
+        arrow_flat_picking.create(*renderer->context(),
+            QStringLiteral("cylinder/arrow_flat_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Vector_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    return pipeline;
 }
 
 /******************************************************************************
@@ -114,12 +265,20 @@ void VulkanCylinderPrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 {
 	cylinder.release(*renderer->context());
 	cylinder_picking.release(*renderer->context());
+	cylinder_flat.release(*renderer->context());
+	cylinder_flat_picking.release(*renderer->context());
+	arrow_head.release(*renderer->context());
+	arrow_head_picking.release(*renderer->context());
+	arrow_tail.release(*renderer->context());
+	arrow_tail_picking.release(*renderer->context());
+	arrow_flat.release(*renderer->context());
+	arrow_flat_picking.release(*renderer->context());
 }
 
 /******************************************************************************
 * Renders the primitives.
 ******************************************************************************/
-void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
+void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipelines)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
 	if(!basePositions() || !headPositions() || basePositions()->size() == 0)
@@ -143,16 +302,53 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.cylinder.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.cylinder).layout();
                     pipelines.cylinder.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
                 }
                 else {
-                    pipelineLayout = pipelines.cylinder_picking.layout();
+                    pipelineLayout = pipelines.create(renderer, pipelines.cylinder_picking).layout();
                     pipelines.cylinder_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
                 }
                 verticesPerPrimitive = 14; // Box rendered as triangle strip.
             }
-            else return;
+            else {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.create(renderer, pipelines.cylinder_flat).layout();
+                    pipelines.cylinder_flat.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                }
+                else {
+                    pipelineLayout = pipelines.create(renderer, pipelines.cylinder_flat_picking).layout();
+                    pipelines.cylinder_flat_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerPrimitive = 4; // Quad rendered as triangle strip.
+            }
+
+            break;
+
+        case ArrowShape:
+
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.create(renderer, pipelines.arrow_head).layout();
+                    pipelines.arrow_head.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                }
+                else {
+                    pipelineLayout = pipelines.create(renderer, pipelines.arrow_head_picking).layout();
+                    pipelines.arrow_head_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerPrimitive = 14; // Box rendered as triangle strip.
+            }
+            else {
+                if(!renderer->isPicking()) {
+                    pipelineLayout = pipelines.create(renderer, pipelines.arrow_flat).layout();
+                    pipelines.arrow_flat.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                }
+                else {
+                    pipelineLayout = pipelines.create(renderer, pipelines.arrow_flat_picking).layout();
+                    pipelines.arrow_flat_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                }
+                verticesPerPrimitive = 7; // 2D arrow rendered as triangle fan.
+            }
 
             break;
 
@@ -164,26 +360,44 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
     switch(shape()) {
 
         case CylinderShape:
+        case ArrowShape:
 
             // Pass model-view-projection matrix to vertex shader as a push constant.
             renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
 
-            // Pass model-view transformation matrix to vertex shader as a push constant.
-            // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
-            // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
-            std::array<float, 3*4> transposed_modelview_matrix;
-            {
-                auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
-                for(size_t row = 0; row < 3; row++)
-                    for(size_t col = 0; col < 4; col++)
-                        *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
-            }
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
+            if(shadingMode() == NormalShading) {
+                // Pass model-view transformation matrix to vertex shader as a push constant.
+                // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
+                // ordering to row-major ordering, with three rows or 4 floats. The shader uses "layout(row_major) mat4x3" to read the matrix.
+                std::array<float, 3*4> transposed_modelview_matrix;
+                {
+                    auto transposed_modelview_matrix_iter = transposed_modelview_matrix.begin();
+                    for(size_t row = 0; row < 3; row++)
+                        for(size_t col = 0; col < 4; col++)
+                            *transposed_modelview_matrix_iter++ = static_cast<float>(renderer->modelViewTM()(row,col));
+                }
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(transposed_modelview_matrix), transposed_modelview_matrix.data());
 
-            if(renderer->isPicking()) {
-                // Pass picking base ID to vertex shader as a push constant.
-                uint32_t pickingBaseId = renderer->registerSubObjectIDs(basePositions()->size());
-                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                if(renderer->isPicking()) {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(basePositions()->size());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
+                }
+            }
+            else {
+                // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader as a push constant.                
+                Vector_4<float> view_dir_eye_pos;
+                if(renderer->projParams().isPerspective)
+                    view_dir_eye_pos = Vector_4<float>(Vector_3<float>(renderer->modelViewTM().inverse().column(3)), 0.0f); // Camera position in object space
+                else
+                    view_dir_eye_pos = Vector_4<float>(Vector_3<float>(renderer->modelViewTM().inverse().column(2)), 0.0f); // Camera viewing direction in object space.
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(view_dir_eye_pos), view_dir_eye_pos.data());
+
+                if(renderer->isPicking()) {
+                    // Pass picking base ID to vertex shader as a push constant.
+                    uint32_t pickingBaseId = renderer->registerSubObjectIDs(basePositions()->size());
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(view_dir_eye_pos), sizeof(pickingBaseId), &pickingBaseId);
+                }
             }
             
             break;
@@ -276,6 +490,15 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, const Pipeli
 
     // Draw triangle strip instances.
     renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), verticesPerPrimitive, primitiveCount, 0, 0);
+
+    // Draw cylindric part of the arrows.
+    if(shape() == ArrowShape && shadingMode() == NormalShading) {
+        if(!renderer->isPicking())
+            pipelines.create(renderer, pipelines.arrow_tail).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+        else
+            pipelines.create(renderer, pipelines.arrow_tail_picking).bind(*renderer->context(), renderer->currentCommandBuffer());
+        renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), verticesPerPrimitive, primitiveCount, 0, 0);
+    }
 }
 
 }	// End of namespace

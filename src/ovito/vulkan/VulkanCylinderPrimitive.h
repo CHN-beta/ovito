@@ -41,19 +41,29 @@ public:
 
 	struct Pipelines {
 		/// Creates the Vulkan pipelines for this rendering primitive.
-		void init(VulkanSceneRenderer* renderer);
+		void init(VulkanSceneRenderer* renderer) {}
 		/// Destroys the Vulkan pipelines for this rendering primitive.
 		void release(VulkanSceneRenderer* renderer);
+		/// Initializes a specific pipeline on demand.
+		VulkanPipeline& create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline);
 
 		VulkanPipeline cylinder;
 		VulkanPipeline cylinder_picking;
+		VulkanPipeline cylinder_flat;
+		VulkanPipeline cylinder_flat_picking;
+		VulkanPipeline arrow_head;
+		VulkanPipeline arrow_head_picking;
+		VulkanPipeline arrow_tail;
+		VulkanPipeline arrow_tail_picking;
+		VulkanPipeline arrow_flat;
+		VulkanPipeline arrow_flat_picking;
 	};
 
 	/// Inherit constructor from base class.
 	using CylinderPrimitive::CylinderPrimitive;
 
 	/// Renders the primitives.
-	void render(VulkanSceneRenderer* renderer, const Pipelines& pipelines);
+	void render(VulkanSceneRenderer* renderer, Pipelines& pipelines);
 };
 
 }	// End of namespace

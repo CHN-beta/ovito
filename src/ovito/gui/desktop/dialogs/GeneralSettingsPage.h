@@ -56,6 +56,7 @@ private:
 	QCheckBox* _useQtFileDialog;
 	QCheckBox* _sortModifiersByCategory;
 	QButtonGroup* _graphicsSystem;
+	QComboBox* _vulkanDevices;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 	QCheckBox* _enableUsageStatistics;
@@ -63,5 +64,3 @@ private:
 };
 
 }	// End of namespace
-
-

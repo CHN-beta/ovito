@@ -258,9 +258,6 @@ private:
 
 	/// Indicates that the mouse cursor is over an object.
 	bool _showCursor = false;
-
-	/// The geometry buffer used to render the orbit center.
-	std::shared_ptr<CylinderPrimitive> _orbitCenterMarker;
 };
 
 }	// End of namespace

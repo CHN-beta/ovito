@@ -29,8 +29,11 @@ namespace Ovito {
 /******************************************************************************
 * Creates the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
-void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
+VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline)
 {
+    if(pipeline.isCreated())
+        return pipeline;
+
     uint32_t extraDynamicStateCount = 0;
     std::array<VkDynamicState, 2> extraDynamicState;
 
@@ -43,6 +46,7 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
         extraDynamicState[extraDynamicStateCount++] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
 
     // Create pipeline for shader "thin_with_colors":
+    if(&pipeline == &thinWithColors)
     {
         VkVertexInputBindingDescription vertexBindingDesc[2];
         vertexBindingDesc[0].binding = 0;
@@ -83,6 +87,7 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
     }
 
     // Create pipeline for shader "thin_uniform_color":
+    if(&pipeline == &thinUniformColor)
     {
         VkVertexInputBindingDescription vertexBindingDesc[1];
         memset(vertexBindingDesc, 0, sizeof(vertexBindingDesc));
@@ -115,6 +120,7 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
     }
     
     // Create pipeline for shader "thin_picking":
+    if(&pipeline == &thinPicking)
     {
         VkVertexInputBindingDescription vertexBindingDesc[1];
         memset(vertexBindingDesc, 0, sizeof(vertexBindingDesc));
@@ -144,7 +150,9 @@ void VulkanLinePrimitive::Pipelines::init(VulkanSceneRenderer* renderer)
             extraDynamicStateCount,
             extraDynamicState.data()
         );    
-    }    
+    }
+
+    return pipeline; 
 }
 
 /******************************************************************************
@@ -160,7 +168,7 @@ void VulkanLinePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 /******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
-void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
+void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipelines)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
 	if(!positions() || positions()->size() == 0)
@@ -181,18 +189,18 @@ void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines&
 /******************************************************************************
 * Renders the lines exactly one pixel wide.
 ******************************************************************************/
-void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
+void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, Pipelines& pipelines)
 {
     // Bind the right pipeline.
 	if(colors() && !renderer->isPicking()) {
-        pipelines.thinWithColors.bind(*renderer->context(), renderer->currentCommandBuffer());
+        pipelines.create(renderer, pipelines.thinWithColors).bind(*renderer->context(), renderer->currentCommandBuffer());
     }
     else {
         if(!renderer->isPicking()) {
-            pipelines.thinUniformColor.bind(*renderer->context(), renderer->currentCommandBuffer());
+            pipelines.create(renderer, pipelines.thinUniformColor).bind(*renderer->context(), renderer->currentCommandBuffer());
         }
         else {
-            pipelines.thinPicking.bind(*renderer->context(), renderer->currentCommandBuffer());
+            pipelines.create(renderer, pipelines.thinPicking).bind(*renderer->context(), renderer->currentCommandBuffer());
         }
     }
 
@@ -250,7 +258,7 @@ void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, const P
 /******************************************************************************
 * Renders the lines of arbitrary width using polygons.
 ******************************************************************************/
-void VulkanLinePrimitive::renderThickLines(VulkanSceneRenderer* renderer, const Pipelines& pipelines)
+void VulkanLinePrimitive::renderThickLines(VulkanSceneRenderer* renderer, Pipelines& pipelines)
 {
     // Not implemented yet.
 }

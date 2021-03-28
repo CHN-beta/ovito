@@ -47,6 +47,9 @@ VulkanContext::VulkanContext(QObject* parent) : QObject(parent)
         << VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME
         << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
         << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+
+    QSettings settings;
+    setPhysicalDeviceIndex(settings.value("rendering/graphics_interface/vulkan/selected_device", 0).toInt());
 }
 
 /******************************************************************************
@@ -637,6 +640,19 @@ void VulkanContext::reset()
 
     // Release pipeline cache.
     if(pipelineCache() != VK_NULL_HANDLE) {
+
+#if 0
+        // Retrieve pipeline cache data and save it to disk.
+        size_t cacheDataSize;
+        if(deviceFunctions()->vkGetPipelineCacheData(logicalDevice(), pipelineCache(), &cacheDataSize, nullptr) == VK_SUCCESS && cacheDataSize != 0) {
+            std::vector<uint8_t> cacheData(cacheDataSize);
+            if(deviceFunctions()->vkGetPipelineCacheData(logicalDevice(), pipelineCache(), &cacheDataSize, cacheData.data()) == VK_SUCCESS) {
+                qDebug() << "Pipeline cache size:" << cacheDataSize;
+
+            }
+        }
+#endif
+
         deviceFunctions()->vkDestroyPipelineCache(logicalDevice(), pipelineCache(), nullptr);
         _pipelineCache = VK_NULL_HANDLE;
     }

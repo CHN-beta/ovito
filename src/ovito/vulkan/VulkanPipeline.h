@@ -58,6 +58,9 @@ public:
 	/// Binds the pipeline.
 	void bind(VulkanContext& context, VkCommandBuffer cmdBuf, bool enableBlending = false) const;
 
+	/// Returns whether pipeline has been successfully created.
+	bool isCreated() const { return _pipeline != VK_NULL_HANDLE; }
+
 	/// Returns the pipeline's layout.
 	VkPipelineLayout layout() const { return _layout; }
 
