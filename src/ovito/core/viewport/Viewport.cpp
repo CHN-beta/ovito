@@ -604,7 +604,8 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		renderer->endRender();
 
 		// Discard unused vis element resources.
-		dataset()->visCache().discardUnusedObjects();
+		if(!renderer->isPicking())
+			dataset()->visCache().discardUnusedObjects();
 
 		_isRendering = false;
 	}
@@ -619,7 +620,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 ******************************************************************************/
 void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
 {
-	// Let layers paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
+	// Let layers paint into QImage buffer, which will then be painted into the framebuffer.
 	QImage paintBuffer(vpSize, QImage::Format_ARGB32_Premultiplied);
 	paintBuffer.fill(0);
 	Box2 renderFrameBox = renderFrameRect();
@@ -638,10 +639,25 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 			layer->renderInteractive(this, time, painter, renderProjParams, renderSettings, operation.subOperation());
 		}
 	}
-	std::shared_ptr<ImagePrimitive> paintBufferPrim = renderer->createImagePrimitive();
-	paintBufferPrim->setImage(paintBuffer);
-	paintBufferPrim->setRectViewport(renderer, Box2({-1,-1}, {1,1}));
-	renderer->renderImage(paintBufferPrim);
+	renderer->setDepthTestEnabled(false);
+
+	// Look up cached image primitive from a previous rendering pass of this viewport.
+	using CacheKey = std::tuple<CompatibleRendererGroup, Viewport*, OORefVector<ViewportOverlay>>;
+	std::shared_ptr<ImagePrimitive>& primitive = dataset()->visCache().get<std::shared_ptr<ImagePrimitive>>(CacheKey(renderer, this, layers));
+
+	if(!primitive) {
+		primitive = renderer->createImagePrimitive();
+		primitive->setImage(paintBuffer);
+	}
+	else {
+		if(primitive->image() != paintBuffer) {
+			primitive->setImage(paintBuffer);
+		}
+	}
+
+	primitive->setRectViewport(renderer, Box2({-1,-1}, {1,1}));
+	renderer->renderImage(primitive);
+	renderer->setDepthTestEnabled(true);
 }
 
 /******************************************************************************
