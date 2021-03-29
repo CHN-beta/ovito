@@ -65,6 +65,7 @@ OVITO_STANDARD_PLUGIN(VulkanRenderer
 		VulkanTextPrimitive.cpp
 		VulkanParticlePrimitive.cpp
 		VulkanCylinderPrimitive.cpp
+		VulkanMeshPrimitive.cpp
 		vma/vk_mem_alloc.cpp
 		resources/vulkan.qrc
 )
@@ -99,6 +100,10 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.frag)
 	add_vulkan_shader(VulkanRenderer resources/particles/circle/circle_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter.vert)
+	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/particles/imposter/imposter_picking.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/box/box.frag)
 	add_vulkan_shader(VulkanRenderer resources/particles/box/box.vert)
 	add_vulkan_shader(VulkanRenderer resources/particles/box/box_picking.frag)
@@ -131,6 +136,20 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat.vert)
 	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.frag)
 	add_vulkan_shader(VulkanRenderer resources/cylinder/arrow_flat_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_wireframe_instanced.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

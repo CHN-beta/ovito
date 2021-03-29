@@ -122,6 +122,10 @@ public:
 		{ this->x() = T(v.x()); this->y() = T(v.y()); this->z() = T(v.z()); this->w() = T(v.w()); }
 #endif
 
+	/// Casts the vector to another component type \a U.
+	template<typename U>
+	Q_DECL_CONSTEXPR explicit operator Vector_4<U>() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+
     /////////////////////////////// Unary operators //////////////////////////////
 
 	/// Returns the reverse vector (-x(), -y(), -z(), -w()).

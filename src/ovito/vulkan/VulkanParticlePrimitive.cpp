@@ -253,7 +253,43 @@ VulkanPipeline& VulkanParticlePrimitive::Pipelines::create(VulkanSceneRenderer* 
             false, // supportAlphaBlending
             descriptorSetLayouts.size(), // setLayoutCount
             descriptorSetLayouts.data()
-        );        
+        );    
+
+    if(&pipeline == &imposter)
+        imposter.create(*renderer->context(),
+            QStringLiteral("particles/imposter/imposter"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            2, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            true, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );
+
+    if(&pipeline == &imposter_picking)
+        imposter_picking.create(*renderer->context(),
+            QStringLiteral("particles/imposter/imposter_picking"), 
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>) + sizeof(uint32_t), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc.data(), 
+            2, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
+            0, // extraDynamicStateCount
+            nullptr, // pExtraDynamicStates
+            false, // supportAlphaBlending
+            descriptorSetLayouts.size(), // setLayoutCount
+            descriptorSetLayouts.data()
+        );              
 
     if(&pipeline == &box)
         box.create(*renderer->context(),
@@ -402,6 +438,8 @@ void VulkanParticlePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	square_picking.release(*renderer->context());
 	circle.release(*renderer->context());
 	circle_picking.release(*renderer->context());
+	imposter.release(*renderer->context());
+	imposter_picking.release(*renderer->context());
 	box.release(*renderer->context());
 	box_picking.release(*renderer->context());
 	ellipsoid.release(*renderer->context());
@@ -474,15 +512,28 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
             break;
         case SphericalShape:
             if(shadingMode() == NormalShading) {
-                if(!renderer->isPicking()) {
-                    pipelineLayout = pipelines.create(renderer, pipelines.sphere).layout();
-                    pipelines.sphere.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                if(renderingQuality() >= HighQuality) {
+                    if(!renderer->isPicking()) {
+                        pipelineLayout = pipelines.create(renderer, pipelines.sphere).layout();
+                        pipelines.sphere.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                    }
+                    else {
+                        pipelineLayout = pipelines.create(renderer, pipelines.sphere_picking).layout();
+                        pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    }
+                    verticesPerParticle = 14; // Cube rendered as triangle strip.
                 }
                 else {
-                    pipelineLayout = pipelines.create(renderer, pipelines.sphere_picking).layout();
-                    pipelines.sphere_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    if(!renderer->isPicking()) {
+                        pipelineLayout = pipelines.create(renderer, pipelines.imposter).layout();
+                        pipelines.imposter.bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+                    }
+                    else {
+                        pipelineLayout = pipelines.create(renderer, pipelines.imposter_picking).layout();
+                        pipelines.imposter_picking.bind(*renderer->context(), renderer->currentCommandBuffer());
+                    }
+                    verticesPerParticle = 4; // Square rendered as triangle strip.
                 }
-                verticesPerParticle = 14; // Cube rendered as triangle strip.
             }
             else {
                 if(!renderer->isPicking()) {
@@ -599,7 +650,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
         case EllipsoidShape:
         case SuperquadricShape:
 
-            if(shadingMode() == NormalShading) {
+            if(shadingMode() == NormalShading && renderingQuality() >= HighQuality) {
                 // Pass model-view-projection matrix to vertex shader as a push constant.
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
 
@@ -913,7 +964,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
         // Bind vertex buffer.
         buffers[buffersCount++] = roundnessBuffer;
-    }    
+    }
 
     // Bind vertex buffers.
     renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffersCount, buffers.data(), offsets.data());
@@ -968,7 +1019,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
             // Fill the buffer with VkDrawIndirectCommand records.
             VkDrawIndirectCommand* dst = reinterpret_cast<VkDrawIndirectCommand*>(buffer);
-            for(int index : sortedIndices) {
+            for(uint32_t index : sortedIndices) {
                 dst->vertexCount = verticesPerParticle;
                 dst->instanceCount = 1;
                 dst->firstVertex = 0;

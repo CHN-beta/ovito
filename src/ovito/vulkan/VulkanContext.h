@@ -451,6 +451,9 @@ public:
 
 	/// Pointer to optional Vulkan extension function. 
 	PFN_vkCmdSetDepthTestEnableEXT vkCmdSetDepthTestEnableEXT = nullptr;
+
+	/// Pointer to optional Vulkan extension function. 
+	PFN_vkCmdSetCullModeEXT vkCmdSetCullModeEXT = nullptr;
 };
 
 }	// End of namespace

@@ -384,6 +384,7 @@ bool VulkanContext::create(QWindow* window)
     OVITO_ASSERT(_deviceFunctions);
     // Query function pointers for optional extensions.
     vkCmdSetDepthTestEnableEXT = (PFN_vkCmdSetDepthTestEnableEXT)vulkanInstance()->getInstanceProcAddr("vkCmdSetDepthTestEnableEXT");
+    vkCmdSetCullModeEXT = (PFN_vkCmdSetCullModeEXT)vulkanInstance()->getInstanceProcAddr("vkCmdSetCullModeEXT");
 
     // Initialize Vulkan Memory Allocator.
     VmaAllocatorCreateInfo allocatorInfo = {};
@@ -988,7 +989,7 @@ VulkanContext::DataBufferInfo VulkanContext::createCachedBufferImpl(VkDeviceSize
     allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     VkResult err = vmaCreateBuffer(allocator(), &bufferCreateInfo, &allocInfo, &bufferInfo.buffer, &bufferInfo.allocation, nullptr);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to allocate Vulkan buffer object (error code %1).").arg(err));
+        throw Exception(tr("Failed to allocate Vulkan buffer object of size %1 (error code %2).").arg(bufferSize).arg(err));
 
     // Fill the buffer with data.
     void* p;

@@ -50,7 +50,8 @@ public:
 		const VkDynamicState* pExtraDynamicStates = nullptr,
 		bool supportAlphaBlending = false,
 		uint32_t setLayoutCount = 0,
-		const VkDescriptorSetLayout* pSetLayouts = nullptr);
+		const VkDescriptorSetLayout* pSetLayouts = nullptr,
+		bool enableDepthOffset = false);
 
 	/// Destroys the Vulkan pipeline.
 	void release(VulkanContext& context);

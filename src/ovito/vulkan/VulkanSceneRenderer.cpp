@@ -27,7 +27,6 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include "VulkanSceneRenderer.h"
-#include "VulkanLinePrimitive.h"
 
 namespace Ovito {
 
@@ -165,6 +164,7 @@ void VulkanSceneRenderer::initResources()
         _linePrimitivePipelines.init(this);
         _particlePrimitivePipelines.init(this);
         _cylinderPrimitivePipelines.init(this);
+        _meshPrimitivePipelines.init(this);
         _imagePrimitivePipelines.init(this);
         _resourcesInitialized = true;
     }
@@ -219,21 +219,19 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 		// Render translucent objects in a second pass.
 		for(auto& deferredPrimitive : _translucentParticles) {
 			setWorldTransform(deferredPrimitive.first);
-			static_cast<VulkanParticlePrimitive&>(*deferredPrimitive.second).render(this, _particlePrimitivePipelines);
+			deferredPrimitive.second->render(this, _particlePrimitivePipelines);
 		}
 		_translucentParticles.clear();
 		for(auto& deferredPrimitive : _translucentCylinders) {
 			setWorldTransform(deferredPrimitive.first);
-			static_cast<VulkanCylinderPrimitive&>(*deferredPrimitive.second).render(this, _cylinderPrimitivePipelines);
+			deferredPrimitive.second->render(this, _cylinderPrimitivePipelines);
 		}
 		_translucentCylinders.clear();
-#if 0
 		for(auto& deferredPrimitive : _translucentMeshes) {
 			setWorldTransform(deferredPrimitive.first);
-			static_cast<OpenGLMeshPrimitive&>(*deferredPrimitive.second).render(this);
+			deferredPrimitive.second->render(this, _meshPrimitivePipelines);
 		}
 		_translucentMeshes.clear();
-#endif
     }
 
 	return !operation.isCanceled();
@@ -280,6 +278,7 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
     _linePrimitivePipelines.release(this);
     _particlePrimitivePipelines.release(this);
     _cylinderPrimitivePipelines.release(this);
+    _meshPrimitivePipelines.release(this);
     _imagePrimitivePipelines.release(this);
 
     if(_globalUniformsDescriptorSetLayout != VK_NULL_HANDLE) {
@@ -336,6 +335,15 @@ std::shared_ptr<TextPrimitive> VulkanSceneRenderer::createTextPrimitive()
 }
 
 /******************************************************************************
+* Creates a new mesh rendering primitive.
+******************************************************************************/
+std::shared_ptr<MeshPrimitive> VulkanSceneRenderer::createMeshPrimitive()
+{
+	OVITO_ASSERT(!isBoundingBoxPass());
+	return std::make_shared<VulkanMeshPrimitive>();
+}
+
+/******************************************************************************
 * Renders a line primitive.
 ******************************************************************************/
 void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
@@ -357,10 +365,10 @@ void VulkanSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitiv
 
 	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !primitive->transparencies())
+	if(isPicking() || !vulkanPrimitive->transparencies())
     	vulkanPrimitive->render(this, _particlePrimitivePipelines);
 	else
-		_translucentParticles.emplace_back(worldTransform(), std::move(primitive));
+		_translucentParticles.emplace_back(worldTransform(), std::move(vulkanPrimitive));
 }
 
 /******************************************************************************
@@ -374,10 +382,27 @@ void VulkanSceneRenderer::renderCylinders(const std::shared_ptr<CylinderPrimitiv
 
 	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !primitive->transparencies())
+	if(isPicking() || !vulkanPrimitive->transparencies())
     	vulkanPrimitive->render(this, _cylinderPrimitivePipelines);
 	else
-		_translucentCylinders.emplace_back(worldTransform(), std::move(primitive));
+		_translucentCylinders.emplace_back(worldTransform(), std::move(vulkanPrimitive));
+}
+
+/******************************************************************************
+* Renders a mesh primitive.
+******************************************************************************/
+void VulkanSceneRenderer::renderMesh(const std::shared_ptr<MeshPrimitive>& primitive)
+{
+    OVITO_ASSERT(!isBoundingBoxPass());
+    std::shared_ptr<VulkanMeshPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanMeshPrimitive>(primitive);
+    OVITO_ASSERT(vulkanPrimitive);
+
+	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
+    // draw the semi-transparent objects after everything else has been drawn.
+	if(isPicking() || vulkanPrimitive->isFullyOpaque())
+    	vulkanPrimitive->render(this, _meshPrimitivePipelines);
+	else
+		_translucentMeshes.emplace_back(worldTransform(), std::move(vulkanPrimitive));
 }
 
 /******************************************************************************

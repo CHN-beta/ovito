@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/ParticlePrimitive.h>
+#include <ovito/core/rendering/MeshPrimitive.h>
 #include "VulkanContext.h"
 #include "VulkanPipeline.h"
 
@@ -33,9 +33,9 @@ namespace Ovito {
 class VulkanSceneRenderer;
 
 /**
- * \brief This class is responsible for rendering particles using Vulkan.
+ * \brief This class is responsible for rendering mesh primitives using Vulkan.
  */
-class VulkanParticlePrimitive : public ParticlePrimitive
+class VulkanMeshPrimitive : public MeshPrimitive
 {
 public:
 
@@ -47,29 +47,48 @@ public:
 		/// Initializes a specific pipeline on demand.
 		VulkanPipeline& create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline);
 
-		VulkanPipeline cube;
-		VulkanPipeline cube_picking;
-		VulkanPipeline sphere;
-		VulkanPipeline sphere_picking;
-		VulkanPipeline square;
-		VulkanPipeline square_picking;
-		VulkanPipeline circle;
-		VulkanPipeline circle_picking;
-		VulkanPipeline imposter;
-		VulkanPipeline imposter_picking;
-		VulkanPipeline box;
-		VulkanPipeline box_picking;
-		VulkanPipeline ellipsoid;
-		VulkanPipeline ellipsoid_picking;
-		VulkanPipeline superquadric;
-		VulkanPipeline superquadric_picking;
+		VulkanPipeline mesh;
+		VulkanPipeline mesh_picking;
+		VulkanPipeline mesh_wireframe;
+		VulkanPipeline mesh_wireframe_instanced;
+		VulkanPipeline mesh_instanced;
+		VulkanPipeline mesh_instanced_picking;
+		VulkanPipeline mesh_instanced_with_colors;
 	};
 
-	/// Inherit constructor from base class.
-	using ParticlePrimitive::ParticlePrimitive;
+	/// Sets the mesh to be stored in this buffer object.
+	virtual void setMesh(const TriMesh& mesh, DepthSortingMode depthSortingMode) override {
+		MeshPrimitive::setMesh(mesh, depthSortingMode);
+		_depthSortingMode = depthSortingMode;
+		_wireframeLines.reset();
+	}
 
-	/// Renders the particles.
+	/// Renders the geometry.
 	void render(VulkanSceneRenderer* renderer, Pipelines& pipelines);
+
+private:
+
+	/// Renders the mesh wireframe edges.
+	void renderWireframe(VulkanSceneRenderer* renderer, Pipelines& pipelines, const QMatrix4x4& mvp);
+
+	/// Generates the list of wireframe line elements.
+	const ConstDataBufferPtr& wireframeLines(VulkanSceneRenderer* renderer);
+
+	/// Prepares the Vulkan buffer with the per-instance transformation matrices.
+	VkBuffer getInstanceTMBuffer(VulkanSceneRenderer* renderer);
+
+	/// Stores data of a single vertex passed to the shader.
+	struct ColoredVertexWithNormal {
+		Point_3<float> position;
+		Vector_3<float> normal;
+		ColorAT<float> color;
+	};
+
+	/// The list of wireframe line elements.
+	ConstDataBufferPtr _wireframeLines;	// Array of Point3, two per line element.
+
+	/// Controls how the renderer performs depth-correct rendering of semi-transparent meshes.
+	DepthSortingMode _depthSortingMode = AnyShapeMode;
 };
 
 }	// End of namespace

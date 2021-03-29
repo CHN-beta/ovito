@@ -43,7 +43,8 @@ void VulkanPipeline::create(VulkanContext& context,
     const VkDynamicState* pExtraDynamicStates,
     bool supportAlphaBlending,
     uint32_t setLayoutCount,
-    const VkDescriptorSetLayout* pSetLayouts)
+    const VkDescriptorSetLayout* pSetLayouts,
+    bool enableDepthOffset)
 {
     OVITO_ASSERT(_layout == VK_NULL_HANDLE);
     OVITO_ASSERT(_pipeline == VK_NULL_HANDLE);
@@ -123,6 +124,11 @@ void VulkanPipeline::create(VulkanContext& context,
     rs.cullMode = VK_CULL_MODE_BACK_BIT; 
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
+    if(enableDepthOffset) {
+        rs.depthBiasEnable = true;
+        rs.depthBiasConstantFactor = 1.0f;
+        rs.depthBiasSlopeFactor = 1.0f;
+    }
     pipelineInfo.pRasterizationState = &rs;
 
     VkPipelineMultisampleStateCreateInfo ms = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };

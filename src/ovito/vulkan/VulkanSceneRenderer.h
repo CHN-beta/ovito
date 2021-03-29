@@ -29,6 +29,7 @@
 #include "VulkanLinePrimitive.h"
 #include "VulkanParticlePrimitive.h"
 #include "VulkanCylinderPrimitive.h"
+#include "VulkanMeshPrimitive.h"
 #include "VulkanImagePrimitive.h"
 #include "VulkanTextPrimitive.h"
 
@@ -149,6 +150,9 @@ public:
 	/// Creates a new text rendering primitive.
 	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() override;
 
+	/// Creates a new mesh rendering primitive.
+	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() override;
+
 	/// Renders a line primitive.
 	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
 
@@ -163,6 +167,9 @@ public:
 
 	/// Renders a text primitive.
 	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) override;
+
+	/// Renders a mesh primitive.
+	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) override;
 
 	/// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
     const Matrix4& clipCorrection() const { return _clipCorrection; } 
@@ -223,13 +230,13 @@ private:
 	VulkanContext::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::pair<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
+	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanParticlePrimitive>>> _translucentParticles;
 
 	/// List of semi-transparent cylinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::pair<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
+	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanCylinderPrimitive>>> _translucentCylinders;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-//	std::vector<std::pair<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
+	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanMeshPrimitive>>> _translucentMeshes;
 
 	/// Indicates that the Vulkan resources needed by this renderer have been created.
 	bool _resourcesInitialized = false;
@@ -242,6 +249,9 @@ private:
 
 	/// Data structure holding the Vulkan pipelines used by the cylinder drawing primitive.
 	VulkanCylinderPrimitive::Pipelines _cylinderPrimitivePipelines;
+
+	/// Data structure holding the Vulkan pipelines used by the mesh drawing primitive.
+	VulkanMeshPrimitive::Pipelines _meshPrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the image drawing primitive.
 	VulkanImagePrimitive::Pipelines _imagePrimitivePipelines;
@@ -280,6 +290,7 @@ private:
 	friend class VulkanLinePrimitive;
 	friend class VulkanParticlePrimitive;
 	friend class VulkanCylinderPrimitive;
+	friend class VulkanMeshPrimitive;
 };
 
 }	// End of namespace
