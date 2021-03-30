@@ -54,7 +54,7 @@ public:
 	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const { return {}; }
 
 	/// Creates a new property object for a standard property of this container class.
-	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {}) const;
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
 	/// Creates a new property object for a user-defined property.
 	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {

@@ -52,7 +52,7 @@ public:
 
 	/// Returns a data object path that includes all but the last data object from this path.
 	ConstDataObjectPath parentPath() const {
-		if(empty()) return {};
+		if(empty()) return ConstDataObjectPath();
 		return ConstDataObjectPath(begin(), std::prev(end()));
 	}
 };
@@ -87,7 +87,7 @@ public:
 
 	/// Returns a data object path that includes all but the last data object from this path.
 	DataObjectPath parentPath() const {
-		if(empty()) return {};
+		if(empty()) return DataObjectPath();
 		return DataObjectPath(begin(), std::prev(end()));
 	}
 };

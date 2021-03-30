@@ -130,7 +130,7 @@ public:
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {});
+	PropertyObject* createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = ConstDataObjectPath{});
 
 	/// Creates a user-defined property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.

@@ -150,21 +150,15 @@ void VulkanPipeline::create(VulkanContext& context,
     cb.pAttachments = &att;
     pipelineInfo.pColorBlendState = &cb;
 
+    // Compile of dynamic pipeline states.
     VkPipelineDynamicStateCreateInfo dyn = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-    std::vector<VkDynamicState> dynEnableVector;
-    if(extraDynamicStateCount == 0) {
-        VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-        dyn.dynamicStateCount = 2;
-        dyn.pDynamicStates = dynEnable;
-    }
-    else {
-        dynEnableVector.resize(2 + extraDynamicStateCount);
-        dynEnableVector[0] = VK_DYNAMIC_STATE_VIEWPORT;
-        dynEnableVector[1] = VK_DYNAMIC_STATE_SCISSOR;
-        std::copy(pExtraDynamicStates, pExtraDynamicStates + extraDynamicStateCount, dynEnableVector.begin() + 2);
-        dyn.dynamicStateCount = (uint32_t)dynEnableVector.size();
-        dyn.pDynamicStates = dynEnableVector.data();
-    }
+    QVarLengthArray<VkDynamicState, 4> dynEnableVector;
+    dynEnableVector.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    dynEnableVector.push_back(VK_DYNAMIC_STATE_SCISSOR);
+    // Add user-supplied dynamic state types.
+    dynEnableVector.append(pExtraDynamicStates, extraDynamicStateCount);
+    dyn.dynamicStateCount = (uint32_t)dynEnableVector.size();
+    dyn.pDynamicStates = dynEnableVector.data();
     pipelineInfo.pDynamicState = &dyn;
 
     pipelineInfo.layout = _layout;
