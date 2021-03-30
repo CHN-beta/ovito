@@ -55,7 +55,7 @@ WidgetViewportWindow* WidgetViewportWindow::createViewportWindow(Viewport* vp, V
 		if(qstrcmp(metaType->className(), "Ovito::OpenGLViewportWindow") == 0) {
 			viewportImplementation = metaType;
 		}
-		else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/graphics_interface").toString() == "Vulkan") {
+		else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Vulkan") {
 			viewportImplementation = metaType;
 			break;
 		}

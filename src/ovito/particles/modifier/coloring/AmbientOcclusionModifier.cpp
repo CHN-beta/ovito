@@ -101,6 +101,13 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
 	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), ExecutionContext::Scripting));
 
+	// Create a particle rendering primitive to force the OpenGL shader for flat particles to be initialized now (because doing so in a different thread doesn't work).
+	renderer->startRender(nullptr, nullptr, QSize(16,16));
+	renderer->beginFrame(0, ViewProjectionParameters{}, nullptr);
+	renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality);
+	renderer->endFrame(false, nullptr);
+	renderer->endRender();
+
 	// Activate picking mode, because we want to render particles using false colors.
 	renderer->setPicking(true);
 

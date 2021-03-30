@@ -114,6 +114,9 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 				);
 	}
 
+	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
+    initializeOpenGLFunctions();
+
 	// Determine internal framebuffer size including supersampling.
 	_outputSize = frameBufferSize;
 	_framebufferSize = QSize(_outputSize.width() * antialiasingLevel(), _outputSize.height() * antialiasingLevel());

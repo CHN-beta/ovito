@@ -412,8 +412,9 @@ std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
 		ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
+//	OVITO_ASSERT(glcontext() != nullptr);
+//	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
+	OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
 	return std::make_shared<OpenGLParticlePrimitive>(this, shape, shadingMode, renderingQuality);
 }
 
@@ -564,8 +565,8 @@ void OpenGLSceneRenderer::renderMesh(const std::shared_ptr<MeshPrimitive>& primi
 ******************************************************************************/
 QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
 {
-	QOpenGLContextGroup* contextGroup = glcontext()->shareGroup();
-	OVITO_ASSERT(contextGroup == QOpenGLContextGroup::currentContextGroup());
+	QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
+	OVITO_ASSERT(contextGroup);
 
 	OVITO_ASSERT(QOpenGLShaderProgram::hasOpenGLShaderPrograms());
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
@@ -618,7 +619,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
-	if(!glcontext()->isOpenGLES()) {
+	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
 
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.

@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "VulkanContext.h"
 
@@ -49,7 +50,7 @@ VulkanContext::VulkanContext(QObject* parent) : QObject(parent)
         << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 
     QSettings settings;
-    setPhysicalDeviceIndex(settings.value("rendering/graphics_interface/vulkan/selected_device", 0).toInt());
+    setPhysicalDeviceIndex(settings.value("rendering/vulkan/selected_device", 0).toInt());
 }
 
 /******************************************************************************
@@ -62,6 +63,18 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
 		return inst;
 	}
 	else {
+#ifdef Q_OS_LINUX
+        // Workaround for Qt not finding libvulkan.so.1 on Ubuntu systems.
+        // The implementation of QVulkanInstance looks for libvulkan.so only. 
+        // In order to make it find libvulkan.so.1, we preload that library here.
+        if(qEnvironmentVariableIsSet("QT_VULKAN_LIB") == false) {
+            QLibrary vulkanLib("vulkan", 1);
+            if(vulkanLib.resolve("vkGetInstanceProcAddr")) {
+                qCDebug(lcVulkan) << "Preloaded libvulkan shared library: " << vulkanLib.fileName();
+                qputenv("QT_VULKAN_LIB", QFile::encodeName(vulkanLib.fileName()));
+            }
+        }
+#endif
 		inst = std::make_shared<QVulkanInstance>();
 #ifdef OVITO_DEBUG
 		inst->setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
@@ -70,8 +83,11 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
         inst->setExtensions(QByteArrayList() 
             << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
             << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-		if(!inst->create())
-			throw Exception(tr("Failed to create Vulkan instance: %1").arg(inst->errorCode()));
+		
+        if(!inst->create()) {
+            throw Exception(tr("Failed to initialize Vulkan interface (error code %1). Please make sure the Vulkan library is installed on your system and the graphics driver supports at least Vulkan API 1.0. "
+                "If the Vulkan interface doesn't work, you can change the rendering interface back to OpenGL in the application settings dialog of OVITO.").arg(inst->errorCode()));
+        }
 		globalInstance = inst;
 		return inst;
 	}

@@ -69,7 +69,10 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 	disconnect(_activeViewportChangedConnection);
 	disconnect(_maximizedViewportChangedConnection);
 	_viewportConfig = newViewportConfiguration;
+	
+	// Create the interactive viewport windows.
 	recreateViewportWindows();
+
 	if(_viewportConfig) {
 		// Repaint the viewport borders when another viewport has been activated.
 		_activeViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::activeViewportChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
@@ -102,7 +105,7 @@ void ViewportsPanel::recreateViewportWindows()
 		}
 		catch(const Exception& ex) {
 			ex.reportError(true);
-			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
+//			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 		}
 
 		// Layout viewport widgets.

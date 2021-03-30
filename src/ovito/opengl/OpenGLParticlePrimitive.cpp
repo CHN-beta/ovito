@@ -36,7 +36,7 @@ namespace Ovito {
 OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality) :
 	ParticlePrimitive(shape, shadingMode, renderingQuality)
 {
-	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
+	QString prefix = QOpenGLContext::currentContext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
 	// Choose rendering technique for the particles.
 	if(shadingMode == FlatShading) {

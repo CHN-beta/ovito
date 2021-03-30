@@ -57,7 +57,7 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 
 	// Did user select Vulkan as the standard graphics interface?
 	QSettings applicationSettings;
-	if(applicationSettings.value("rendering/graphics_interface").toString() == "Vulkan")
+	if(applicationSettings.value("rendering/selected_graphics_api").toString() == "Vulkan")
 		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
 
 	// Fall back to OpenGL renderer as the default implementation.

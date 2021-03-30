@@ -76,7 +76,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	_vulkanDevices = new QComboBox();
 	layout2->addWidget(_vulkanDevices, 1, 2);
 	if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "VulkanSceneRenderer")) {
-		if(settings.value("rendering/graphics_interface").toString() == "Vulkan")
+		if(settings.value("rendering/selected_graphics_api").toString() == "Vulkan")
 			vulkanOption->setChecked(true);
 		else
 			openglOption->setChecked(true);
@@ -87,7 +87,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 		QTextStream dummyStream(&dummyBuffer);
 		rendererClass->querySystemInformation(dummyStream, *Application::instance()->datasetContainer());
 
-		settings.beginGroup("rendering/graphics_interface/vulkan");
+		settings.beginGroup("rendering/vulkan");
 		int numDevices = settings.beginReadArray("available_devices");
 		if(numDevices != 0) {
 			for(int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
@@ -107,7 +107,12 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 				_vulkanDevices->addItem(std::move(title));
 			}
 		}
-		else _vulkanDevices->addItem(tr("<No devices found>"));
+		else {
+			_vulkanDevices->addItem(tr("<No devices found>"));
+			vulkanOption->setEnabled(false);
+			openglOption->setChecked(true);
+			_vulkanDevices->setEnabled(false);
+		}
 		settings.endArray();
 		_vulkanDevices->setCurrentIndex(settings.value("selected_device", 0).toInt());
 		settings.endGroup();
@@ -158,20 +163,20 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 
 	// Check if user has selected a different 3D graphics API than before.
 	bool recreateViewportWindows = false;
-	bool wasVulkanSelected = (settings.value("rendering/graphics_interface").toString() == "Vulkan");
+	bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
 	bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
 	if(isVulkanSelected != wasVulkanSelected) {
 		// Save new API selection in the application settings store.
 		if(isVulkanSelected)
-			settings.setValue("rendering/graphics_interface", "Vulkan");
+			settings.setValue("rendering/selected_graphics_api", "Vulkan");
 		else
-			settings.remove("rendering/graphics_interface");
+			settings.remove("rendering/selected_graphics_api");
 		recreateViewportWindows = true;
 	}
 
 	// Check if a different Vulkan device was selected by the user.
-	if(settings.value("rendering/graphics_interface/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
-		settings.setValue("rendering/graphics_interface/vulkan/selected_device", _vulkanDevices->currentIndex());
+	if(settings.value("rendering/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
+		settings.setValue("rendering/vulkan/selected_device", _vulkanDevices->currentIndex());
 		recreateViewportWindows = true;
 	}
 

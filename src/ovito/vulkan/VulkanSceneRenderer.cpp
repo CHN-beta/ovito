@@ -63,7 +63,7 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
             // Write the list of physical devices also to the application settings store, so that
             // the GeneralSettingsPage class from the GUI module can read it without direct access to the Vulkan plugin.
             QSettings settings;
-            settings.beginGroup("rendering/graphics_interface/vulkan");
+            settings.beginGroup("rendering/vulkan");
             settings.beginWriteArray("available_devices");
             for(const VkPhysicalDeviceProperties& props : context->availablePhysicalDevices()) {
                 stream << tr("[%8] %1 - Version %2.%3.%4 - API Version %5.%6.%7\n")
