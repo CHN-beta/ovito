@@ -25,6 +25,8 @@
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "VulkanContext.h"
 
+#include <QLibrary>
+
 namespace Ovito {
 
 // The logging category used for Vulkan-related information.

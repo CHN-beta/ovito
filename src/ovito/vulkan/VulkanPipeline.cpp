@@ -156,7 +156,8 @@ void VulkanPipeline::create(VulkanContext& context,
     dynEnableVector.push_back(VK_DYNAMIC_STATE_VIEWPORT);
     dynEnableVector.push_back(VK_DYNAMIC_STATE_SCISSOR);
     // Add user-supplied dynamic state types.
-    dynEnableVector.append(pExtraDynamicStates, extraDynamicStateCount);
+    if(extraDynamicStateCount != 0)
+        dynEnableVector.append(pExtraDynamicStates, extraDynamicStateCount);
     dyn.dynamicStateCount = (uint32_t)dynEnableVector.size();
     dyn.pDynamicStates = dynEnableVector.data();
     pipelineInfo.pDynamicState = &dyn;
