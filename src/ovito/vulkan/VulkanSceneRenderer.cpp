@@ -474,7 +474,7 @@ VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
     });
 
     // Use the VkBuffer as strongly-typed cache key to look up descriptor set.
-    VulkanResourceKey<GlobalUniforms, VkBuffer> cacheKey{ uniformsBuffer };
+    RendererResourceKey<GlobalUniforms, VkBuffer> cacheKey{ uniformsBuffer };
 
     // Create the descriptor set (only if a new Vulkan buffer has been created).
     std::pair<VkDescriptorSet, bool> descriptorSet = context()->createDescriptorSet(globalUniformsDescriptorSetLayout(), cacheKey, currentResourceFrame());

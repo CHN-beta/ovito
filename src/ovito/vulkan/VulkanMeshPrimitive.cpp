@@ -401,7 +401,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
     // The look-up key for the Vulkan buffer cache.
-    VulkanResourceKey<VulkanMeshPrimitive, const TriMesh*, int, std::vector<ColorA>, ColorA> meshCacheKey{
+    RendererResourceKey<VulkanMeshPrimitive, const TriMesh*, int, std::vector<ColorA>, ColorA> meshCacheKey{
         &mesh(),
         faceCount(),
         materialColors(),
@@ -538,7 +538,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
 
         if(perInstanceColors() && !renderer->isPicking()) {
             // The look-up key for storing the per-instance colors in the Vulkan buffer cache.
-            VulkanResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
+            RendererResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
 
             // Upload the per-instance colors to GPU memory.
             VkBuffer instanceColorBuffer = renderer->context()->uploadDataBuffer(perInstanceColors(), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -575,7 +575,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
         const Vector3 direction = renderer->modelViewTM().inverse().column(2);
 
         // The caching key for the index buffer.
-        VulkanResourceKey<VulkanMeshPrimitive, VkBuffer, Vector3> indexBufferCacheKey{
+        RendererResourceKey<VulkanMeshPrimitive, VkBuffer, Vector3> indexBufferCacheKey{
             meshBuffer,
             direction
         };
@@ -636,7 +636,7 @@ VkBuffer VulkanMeshPrimitive::getInstanceTMBuffer(VulkanSceneRenderer* renderer)
     OVITO_ASSERT(useInstancedRendering() && perInstanceTMs());
 
     // The look-up key for storing the per-instance TMs in the Vulkan buffer cache.
-    VulkanResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
+    RendererResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
 
     // Upload the per-instance TMs to GPU memory.
     VkBuffer instanceTMBuffer = renderer->context()->createCachedBuffer(instanceTMsKey, perInstanceTMs()->size() * 3 * sizeof(Vector_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {

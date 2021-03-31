@@ -707,7 +707,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
     // Put positions and radii into one combined Vulkan buffer with 4 floats per particle.
     // Radii are optional and may be substituted with a uniform radius value.
-    VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
+    RendererResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
         indices(),
         positions(),
         radii(),
@@ -749,7 +749,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
     if(!renderer->isPicking()) {
 
         // Put colors, transparencies and selection state into one combined Vulkan buffer with 4 floats per particle.
-        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorSelectionCacheKey{ 
+        RendererResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorSelectionCacheKey{ 
             indices(),
             colors(),
             transparencies(),
@@ -834,7 +834,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
     if(particleShape() == BoxShape || particleShape() == EllipsoidShape || particleShape() == SuperquadricShape) {
 
         // Combine aspherical shape property and orientation property into one combined Vulkan buffer containing a 4x4 transformation matrix per particle.
-        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{ 
+        RendererResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> shapeOrientationCacheKey{ 
             indices(),
             asphericalShapes(),
             orientations(),
@@ -935,7 +935,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
     // For superquadric particles, we need to prepare the roundness vertex attribute.
     if(particleShape() == SuperquadricShape) {
 
-        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr> roundnessCacheKey{ 
+        RendererResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr> roundnessCacheKey{ 
             indices(),
             roundness()
         };
@@ -985,7 +985,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
         const Vector3 direction = renderer->modelViewTM().inverse().column(2);
 
         // The caching key for the indirect drawing command buffer.
-        VulkanResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> indirectBufferCacheKey{
+        RendererResourceKey<VulkanParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> indirectBufferCacheKey{
             indices(),
             positions(),
             direction,

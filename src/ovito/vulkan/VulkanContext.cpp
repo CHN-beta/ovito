@@ -615,9 +615,7 @@ void VulkanContext::reset()
     Q_EMIT releaseResourcesRequested();
 
     // Make sure our clients have release their resources properly.
-    OVITO_ASSERT(_activeResourceFrames.empty());
-    OVITO_ASSERT(_dataBuffers.empty());
-    OVITO_ASSERT(_textureImages.empty());
+    OVITO_ASSERT(RendererResourceCache::empty());
 
     qCDebug(lcVulkan, "VulkanContext reset");
 
@@ -687,7 +685,6 @@ void VulkanContext::reset()
     // Reset internal handles.
 	_device = VK_NULL_HANDLE;
 	_deviceFunctions = nullptr;
-    _nextResourceFrame = 0;
 }
 
 /******************************************************************************
@@ -932,63 +929,9 @@ void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>
 }
 
 /******************************************************************************
-* Informs the resource manager that a new frame starts being rendered.
-******************************************************************************/
-VulkanContext::ResourceFrameHandle VulkanContext::acquireResourceFrame()
-{   
-    if(_activeResourceFrames.empty()) {
-        OVITO_ASSERT(_dataBuffers.empty());
-        OVITO_ASSERT(_textureImages.empty());
-        OVITO_ASSERT(_descriptorSets.empty());
-    }
-
-    // Wrap around counter.
-    if(_nextResourceFrame == std::numeric_limits<ResourceFrameHandle>::max())
-         _nextResourceFrame = 0;
-
-    // Add it to the list of active frames.
-    _nextResourceFrame++;
-    _activeResourceFrames.push_back(_nextResourceFrame);
-
-    return _nextResourceFrame;
-}
-
-/******************************************************************************
-* Informs the resource manager that a frame has completely finished rendering 
-* and all related Vulkan resources can be released.
-******************************************************************************/
-void VulkanContext::releaseResourceFrame(ResourceFrameHandle frame)
-{
-    OVITO_ASSERT(frame > 0);
-
-    // Remove frame from the list of active frames.
-    // There is no need to maintain the origin list order.
-    auto iter = std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), frame);
-    OVITO_ASSERT(iter != _activeResourceFrames.end());
-    *iter = _activeResourceFrames.back();
-    _activeResourceFrames.pop_back();
-
-    // Release all Vulkan buffers that are no longer in use.
-    _dataBuffers.release(frame, [&](const DataBufferInfo& entry) {
-        vmaDestroyBuffer(allocator(), entry.buffer, entry.allocation);
-    });
-
-    // Release all descriptor sets are no longer in use.
-    _descriptorSets.release(frame, [&](VkDescriptorSet descriptorSet) {
-        deviceFunctions()->vkFreeDescriptorSets(logicalDevice(), _descriptorPool, 1, &descriptorSet);
-    });
-
-    // Release all Vulkan images that are no longer in use.
-    _textureImages.release(frame, [&](const TextureInfo& entry) {
-        deviceFunctions()->vkDestroyImageView(logicalDevice(), entry.imageView, nullptr);
-        vmaDestroyImage(allocator(), entry.image, entry.allocation);
-    });
-}
-
-/******************************************************************************
 * Uploads some data to the Vulkan device as a buffer object.
 ******************************************************************************/
-VulkanContext::DataBufferInfo VulkanContext::createCachedBufferImpl(VkDeviceSize bufferSize, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc)
+VulkanContext::VulkanDataBuffer VulkanContext::createCachedBufferImpl(VkDeviceSize bufferSize, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc)
 {
     OVITO_ASSERT(logicalDevice());
 
@@ -996,7 +939,8 @@ VulkanContext::DataBufferInfo VulkanContext::createCachedBufferImpl(VkDeviceSize
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Prepare the data structure that represents the OVITO data buffer uploaded to the GPU.
-    DataBufferInfo bufferInfo;
+    VulkanDataBuffer bufferInfo;
+    bufferInfo.allocator = allocator();
 
     // Create a Vulkan buffer.
     VkBufferCreateInfo bufferCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -1080,15 +1024,17 @@ VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle 
     OVITO_ASSERT(!image.isNull());
     OVITO_ASSERT(image.format() == QImage::Format_ARGB32 || image.format() == QImage::Format_ARGB32_Premultiplied || image.format() == QImage::Format_RGB32);
     OVITO_ASSERT(logicalDevice());
-    OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
 
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Check if this image has already been uploaded to the GPU.
-    TextureInfo& textureInfo = _textureImages.lookup(image.cacheKey(), resourceFrame);
+    VulkanImage& textureInfo = lookup<VulkanImage>(image.cacheKey(), resourceFrame);
     if(textureInfo.imageView != VK_NULL_HANDLE)
         return textureInfo.imageView;
+
+    // Prepare new image structure.
+    textureInfo.context = this;
 
     // Determine the required staging buffer size.
     VkDeviceSize bufferSize = image.bytesPerLine() * image.height();
@@ -1194,7 +1140,7 @@ VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle 
 /******************************************************************************
 * Creates a new descriptor set from the pool.
 ******************************************************************************/
-VkDescriptorSet VulkanContext::createDescriptorSetImpl(VkDescriptorSetLayout layout)
+VulkanContext::VulkanDescriptorSet VulkanContext::createDescriptorSetImpl(VkDescriptorSetLayout layout)
 {
     OVITO_ASSERT(logicalDevice());
 
@@ -1206,8 +1152,8 @@ VkDescriptorSet VulkanContext::createDescriptorSetImpl(VkDescriptorSetLayout lay
     allocInfo.descriptorPool = _descriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
-    VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-    VkResult err = deviceFunctions()->vkAllocateDescriptorSets(logicalDevice(), &allocInfo, &descriptorSet);
+    VulkanDescriptorSet descriptorSet(this);
+    VkResult err = deviceFunctions()->vkAllocateDescriptorSets(logicalDevice(), &allocInfo, &descriptorSet.descriptorSet);
     if(err != VK_SUCCESS)
         throw Exception(tr("Failed to create Vulkan descriptor set (error code %1).").arg(err));
 

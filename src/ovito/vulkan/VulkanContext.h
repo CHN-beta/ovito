@@ -25,101 +25,102 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
+#include <ovito/core/rendering/RendererResourceCache.h>
 
 #include <QLoggingCategory>
 #include <QVulkanInstance>
 #include <QVulkanDeviceFunctions>
 #include "vma/VulkanMemoryAllocator.h"
 
-#include <boost/any.hpp>
-
 namespace Ovito {
 
 OVITO_VULKANRENDERER_EXPORT Q_DECLARE_LOGGING_CATEGORY(lcVulkan);
 
 /**
- * \brief A cache data structure that accepts keys with arbitrary type and which handles resource lifetime.
+ * \brief Encapsulates a Vulkan logical device.
  */
-template<typename Value>
-class VulkanResourceCache
+class OVITO_VULKANRENDERER_EXPORT VulkanContext : public QObject, public RendererResourceCache
 {
-public:
-
-	using ResourceFrameHandle = int;
-
-	/// Returns a reference to the value for the given key.
-	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
-	template<typename Key>
-	Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
-		// Check if the key exists in the cache.
-		for(CacheEntry& entry : _entries) {
-			if(entry.key.type() == typeid(Key) && key == boost::any_cast<const Key&>(entry.key)) {
-				// Register the frame in which the resource was actively used.
-				if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
-					entry.frames.push_back(resourceFrame);
-				// Return reference to the value.
-				return entry.value;
-			}
-		}
-		// Create a new entry if key doesn't exist yet.
-		_entries.emplace_back(std::forward<Key>(key), resourceFrame);
-		return _entries.back().value;
-	}
-
-	/// Frees objects in the cache which are no longer needed.
-	template<typename ReleaseFunc>
-	void release(ResourceFrameHandle resourceFrame, ReleaseFunc&& func) {
-		for(auto entry = _entries.begin(); entry != _entries.end(); ) {
-			auto frameIter = std::find(entry->frames.begin(), entry->frames.end(), resourceFrame);
-			if(frameIter != entry->frames.end()) {
-				if(entry->frames.size() != 1) {
-					*frameIter = entry->frames.back();
-					entry->frames.pop_back();
-				}
-				else {
-					func(entry->value);
-					entry = _entries.erase(entry);
-					continue;
-				}
-			}
-			++entry;
-		}
-	}
-
-	/// Indicates whether the cache is currently empty.
-	bool empty() const { return _entries.empty(); }
-
-	/// Returns the current number of cache entries.
-	size_t size() const { return _entries.size(); }
+	Q_OBJECT
 
 private:
 
-	struct CacheEntry {
-		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) : key(std::forward<Key>(_key)), value{}, frames{{_frame}} {}
-		boost::any key;
-		Value value;
-		QVarLengthArray<ResourceFrameHandle, 6> frames;
+	struct VulkanDataBuffer {
+		VmaAllocator allocator = VK_NULL_HANDLE;
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+
+		/// Default constructor.
+		VulkanDataBuffer() noexcept = default;
+		/// Don't allow copying.
+		VulkanDataBuffer(const VulkanDataBuffer& other) = delete;
+		VulkanDataBuffer& operator=(const VulkanDataBuffer& other) = delete;
+		/// Move only.
+		VulkanDataBuffer(VulkanDataBuffer&& other) noexcept : allocator(other.allocator), buffer{std::exchange(other.buffer, VkBuffer{VK_NULL_HANDLE})}, allocation(other.allocation) {}
+		VulkanDataBuffer& operator=(VulkanDataBuffer&& other) noexcept {
+			allocator = other.allocator;
+			buffer = std::exchange(other.buffer, VkBuffer{VK_NULL_HANDLE});
+			allocation = other.allocation;
+			return *this;
+		}
+		/// Destructor.
+		~VulkanDataBuffer() {
+			if(buffer != VK_NULL_HANDLE) 
+				vmaDestroyBuffer(allocator, buffer, allocation);
+		}
 	};
 
-	std::vector<CacheEntry> _entries;
-};
+	struct VulkanDescriptorSet {
+		VulkanContext* context = nullptr;
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
-/**
- * \brief A tagged tuple, which can be used as key for the VulkanResourceCache class.
- */
-template<typename TagType, typename... TupleFields>
-struct VulkanResourceKey : public std::tuple<TupleFields...>
-{
-	/// Inherit constructors of tuple type.
-	using std::tuple<TupleFields...>::tuple;
-};
+		/// Default constructor.
+		VulkanDescriptorSet(VulkanContext* _context = nullptr) noexcept : context(_context) {}
+		/// Don't allow copying.
+		VulkanDescriptorSet(const VulkanDescriptorSet& other) = delete;
+		VulkanDescriptorSet& operator=(const VulkanDescriptorSet& other) = delete;
+		/// Move only.
+		VulkanDescriptorSet(VulkanDescriptorSet&& other) noexcept : context(other.context), descriptorSet{std::exchange(other.descriptorSet, VkDescriptorSet{VK_NULL_HANDLE})} {}
+		VulkanDescriptorSet& operator=(VulkanDescriptorSet&& other) noexcept {
+			context = other.context;
+			descriptorSet = std::exchange(other.descriptorSet, VkDescriptorSet{VK_NULL_HANDLE});
+			return *this;
+		}
+		/// Destructor.
+		~VulkanDescriptorSet() {
+			if(descriptorSet != VK_NULL_HANDLE) 
+		        context->deviceFunctions()->vkFreeDescriptorSets(context->logicalDevice(), context->_descriptorPool, 1, &descriptorSet);
+		}
+	};
 
-/**
- * \brief Encapsulates a Vulkan logical device.
- */
-class OVITO_VULKANRENDERER_EXPORT VulkanContext : public QObject
-{
-	Q_OBJECT
+	struct VulkanImage {
+		VulkanContext* context = nullptr;
+		VkImage image = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VkImageView imageView = VK_NULL_HANDLE;
+
+		/// Default constructor.
+		VulkanImage() noexcept = default;
+		/// Don't allow copying.
+		VulkanImage(const VulkanImage& other) = delete;
+		VulkanImage& operator=(const VulkanImage& other) = delete;
+		/// Move only.
+		VulkanImage(VulkanImage&& other) noexcept : context(other.context), image{std::exchange(other.image, VkImage{VK_NULL_HANDLE})}, allocation(other.allocation), imageView{std::exchange(other.imageView, VkImageView{VK_NULL_HANDLE})} {}
+		VulkanImage& operator=(VulkanImage&& other) noexcept {
+			context = other.context;
+			image = std::exchange(other.image, VkImage{VK_NULL_HANDLE});
+			allocation = other.allocation;
+			imageView = std::exchange(other.imageView, VkImageView{VK_NULL_HANDLE});
+			return *this;
+		}		
+		/// Destructor.
+		~VulkanImage() {
+			if(imageView != VK_NULL_HANDLE)
+				context->deviceFunctions()->vkDestroyImageView(context->logicalDevice(), imageView, nullptr);
+			if(image != VK_NULL_HANDLE)
+				vmaDestroyImage(context->allocator(), image, allocation);
+		}
+	};
 
 public:
 
@@ -128,9 +129,6 @@ public:
 
 	/// Maximum number of rendering frames that can be potentially active at the same time.
 	static const int MAX_CONCURRENT_FRAME_COUNT = 3;
-
-	/// Data type used by the Vulkan resource manager when referring to an active frame being rendered on the CPU and/or the GPU.
-	using ResourceFrameHandle = int;
 
 	/// Constructor
 	VulkanContext(QObject* parent = nullptr);
@@ -252,25 +250,17 @@ public:
 	/// Returns the standard texture sampler, which uses nearest interpolation.
 	VkSampler samplerNearest() const { return _samplerNearest; }
 
-	/// Informs the resource manager that a new frame starts being rendered.
-	ResourceFrameHandle acquireResourceFrame();
-
-	/// Informs the resource manager that a frame has completely finished rendering and all related Vulkan resources can be released.
-	void releaseResourceFrame(ResourceFrameHandle frame);
-
 	/// Creates a new descriptor set from the pool and caches it, or returns an existing one for the given cache key.
 	template<typename KeyType>
 	std::pair<VkDescriptorSet, bool> createDescriptorSet(VkDescriptorSetLayout layout, KeyType&& cacheKey, ResourceFrameHandle resourceFrame) {
-	    OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
-
 		// Check if this descriptor set with for the cache key has already been created.
-		VkDescriptorSet& descriptorSet = _descriptorSets.lookup(std::forward<KeyType>(cacheKey), resourceFrame);
-		if(descriptorSet != VK_NULL_HANDLE)
-			return { descriptorSet, false };
+		VulkanDescriptorSet& descriptorSet = lookup<VulkanDescriptorSet>(std::forward<KeyType>(cacheKey), resourceFrame);
+		if(descriptorSet.descriptorSet != VK_NULL_HANDLE)
+			return { descriptorSet.descriptorSet, false };
 
 		// Otherwise create new descriptor set and store it in the cache.
 		descriptorSet = createDescriptorSetImpl(layout);
-		return { descriptorSet, true };
+		return { descriptorSet.descriptorSet, true };
 	}
 
 	/// Uploads an OVITO DataBuffer to the Vulkan device.
@@ -279,10 +269,8 @@ public:
 	/// Uploads some data to the Vulkan device as a buffer object and caches it.
 	template<typename KeyType>
 	VkBuffer createCachedBuffer(KeyType&& cacheKey, VkDeviceSize bufferSize, ResourceFrameHandle resourceFrame, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc) {
-	    OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
-
 		// Check if this OVITO data buffer has already been uploaded to the GPU.
-		DataBufferInfo& dataBufferInfo = _dataBuffers.lookup(std::forward<KeyType>(cacheKey), resourceFrame);
+		VulkanDataBuffer& dataBufferInfo = lookup<VulkanDataBuffer>(std::forward<KeyType>(cacheKey), resourceFrame);
 
 		// If not, do it now.
 		if(dataBufferInfo.buffer == VK_NULL_HANDLE)
@@ -324,16 +312,11 @@ Q_SIGNALS:
 
 private:
 
-	struct DataBufferInfo {
-		VkBuffer buffer = VK_NULL_HANDLE;
-		VmaAllocation allocation = VK_NULL_HANDLE;
-	};
-
 	/// Creates a new descriptor set from the pool.
-	VkDescriptorSet createDescriptorSetImpl(VkDescriptorSetLayout layout);
+	VulkanDescriptorSet createDescriptorSetImpl(VkDescriptorSetLayout layout);
 
 	/// Uploads some data to the Vulkan device as a buffer object.
-	DataBufferInfo createCachedBufferImpl(VkDeviceSize bufferSize, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc);
+	VulkanDataBuffer createCachedBufferImpl(VkDeviceSize bufferSize, VkBufferUsageFlagBits usage, std::function<void(void*)>&& fillMemoryFunc);
 
 private:
 
@@ -425,27 +408,6 @@ private:
 
 	/// The pool for creating descriptor sets.
 	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
-
-	/// Keeps track of the data buffers that have been uploaded to the Vulkan device.
-	VulkanResourceCache<DataBufferInfo> _dataBuffers;
-
-	/// Keeps track of the descriptor sets that have been allocated.
-	VulkanResourceCache<VkDescriptorSet> _descriptorSets;
-
-	struct TextureInfo {
-		VkImage image = VK_NULL_HANDLE;
-		VmaAllocation allocation = VK_NULL_HANDLE;
-		VkImageView imageView = VK_NULL_HANDLE;
-	};
-
-	/// Keeps track of the texture images that have been uploaded to the Vulkan device.
-	VulkanResourceCache<TextureInfo> _textureImages;
-
-	/// List of frames that are currently being rendered (by the CPU and/or the GPU).
-	std::vector<ResourceFrameHandle> _activeResourceFrames;
-
-	/// Counter that keeps track of how many resource frames have been acquired.
-	ResourceFrameHandle _nextResourceFrame = 0;
 
 public:
 

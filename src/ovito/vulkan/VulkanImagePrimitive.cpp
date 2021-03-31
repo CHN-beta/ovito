@@ -104,7 +104,7 @@ void VulkanImagePrimitive::render(VulkanSceneRenderer* renderer, const Pipelines
         renderer->context()->vkCmdSetDepthTestEnableEXT(renderer->currentCommandBuffer(), renderer->_depthTestEnabled);
 
     // Use the QImage cache key to look up descriptor set.
-    VulkanResourceKey<VulkanImagePrimitive, qint64> cacheKey{ image().cacheKey() };
+    RendererResourceKey<VulkanImagePrimitive, qint64> cacheKey{ image().cacheKey() };
 
     // Create or look up the descriptor set.
     std::pair<VkDescriptorSet, bool> descriptorSet = renderer->context()->createDescriptorSet(pipelines.descriptorSetLayout, cacheKey, renderer->currentResourceFrame());

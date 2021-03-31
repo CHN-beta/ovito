@@ -412,7 +412,7 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
     // Put base/head positions and radii into one combined Vulkan buffer.
     // Radii are optional and may be substituted with a uniform radius value.
-    VulkanResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
+    RendererResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
         basePositions(),
         headPositions(),
         radii(),
@@ -449,7 +449,7 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
     if(!renderer->isPicking()) {
 
         // Put colors and transparencies into one combined Vulkan buffer with 4 floats per primitive.
-        VulkanResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorCacheKey{ 
+        RendererResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorCacheKey{ 
             colors(),
             transparencies(),
             colors() ? Color(0,0,0) : uniformColor()
