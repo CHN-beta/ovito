@@ -214,8 +214,8 @@ public:
 		{ this->fill(typename Vector_4<T>::Zero()); }
 #endif
 
-		/// \brief Initializes the matrix to the identity matrix.
-		/// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
+	/// \brief Initializes the matrix to the identity matrix.
+	/// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
 	Q_DECL_CONSTEXPR Matrix_4(Identity)
 		: std::array<Vector_4<T>,4>{{

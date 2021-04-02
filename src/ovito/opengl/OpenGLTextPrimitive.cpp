@@ -27,14 +27,6 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-OpenGLTextPrimitive::OpenGLTextPrimitive(OpenGLSceneRenderer* renderer) :
-	_imageBuffer(renderer->createImagePrimitive())
-{
-}
-
-/******************************************************************************
 * Renders the text string.
 ******************************************************************************/
 void OpenGLTextPrimitive::render(OpenGLSceneRenderer* renderer)
@@ -42,6 +34,9 @@ void OpenGLTextPrimitive::render(OpenGLSceneRenderer* renderer)
 	if(text().isEmpty() || renderer->isPicking())
 		return;
 	
+	if(!_imageBuffer)
+		_imageBuffer = renderer->createImagePrimitive();
+
 	if(_imageUpdateNeeded) {
 		_imageUpdateNeeded = false;
 

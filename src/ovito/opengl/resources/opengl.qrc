@@ -3,6 +3,14 @@
 <qresource prefix="/openglrenderer">
 
 	<file>glsl/utilities.glsl</file>
+	<file>glsl/global_uniforms.glsl</file>
+	<file>glsl/picking.glsl</file>
+	<file>glsl/shading.glsl</file>
+
+	<file>glsl/particles/sphere/sphere.vs</file>
+	<file>glsl/particles/sphere/sphere.fs</file>
+	<file>glsl/particles/sphere/sphere_picking.vs</file>
+	<file>glsl/particles/sphere/sphere_picking.fs</file>
 
 	<file>glsl/particles/imposter/square/flat_shading.fs</file>
 	<file>glsl/particles/imposter/sphere/flat_shading.fs</file>
@@ -55,8 +63,13 @@
 
 	<file>glsl/lines/line.vs</file>
 	<file>glsl/lines/line.fs</file>
+	<file>glsl/lines/line_picking.vs</file>
+	<file>glsl/lines/line_uniform_color.vs</file>
+	<file>glsl/lines/line_uniform_color.fs</file>
 	<file>glsl/lines/thick_line.vs</file>
-
+	<file>glsl/lines/thick_line_picking.vs</file>
+	<file>glsl/lines/thick_line_uniform_color.vs</file>
+	
 	<file>glsl/image/image.vs</file>
 	<file>glsl/image/image.fs</file>
 

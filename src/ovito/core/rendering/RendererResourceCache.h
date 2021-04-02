@@ -49,6 +49,15 @@ public:
 	/// Data type used by the resource cache to refer to an frame being rendered (in flight) on the CPU and/or the GPU.
 	using ResourceFrameHandle = int;
 
+#ifdef OVITO_DEBUG
+	/// Destructor.
+	~RendererResourceCache() { 
+		// The cache should be completely empty at the time it is destroyed.
+		OVITO_ASSERT(_activeResourceFrames.empty());
+		OVITO_ASSERT(empty());
+	}
+#endif
+
 	/// Returns a reference to the value for the given key.
 	/// Creates a new cache entry with a default-initialized value if the key doesn't exist.
 	template<typename Value, typename Key>
@@ -69,6 +78,8 @@ public:
 		_entries.emplace_back(std::forward<Key>(key), resourceFrame);
 		any_moveonly& value = _entries.back().value;
 		value.emplace<Value>();
+		OVITO_ASSERT(_entries.back().key.type() == typeid(Key));
+		OVITO_ASSERT(value.type() == typeid(Value));
 		return any_cast<Value&>(value);
 	}
 
@@ -127,10 +138,23 @@ public:
 private:
 
 	struct CacheEntry {
-		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) : key(std::forward<Key>(_key)), frames{{_frame}} {}
+		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)), frames{{_frame}} {}
 		boost::any key;
 		Ovito::any_moveonly value;
 		QVarLengthArray<ResourceFrameHandle, 6> frames;
+
+		// A cache entry cannot be copied.
+		CacheEntry(const CacheEntry& other) = delete;
+		CacheEntry& operator=(const CacheEntry& other) = delete;
+
+		// A cache entry can be moved.
+		CacheEntry(CacheEntry&& other) noexcept : key(std::move(other.key)), value(std::move(other.value)), frames(std::move(other.frames)) {}
+		CacheEntry& operator=(CacheEntry&& other) noexcept {
+			key = std::move(other.key);
+			value = std::move(other.value);
+			frames = std::move(other.frames);
+			return *this;
+		}
 	};
 
 	/// The key-value pairs. 

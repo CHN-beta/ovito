@@ -570,6 +570,15 @@ public:
 				(*this)(2,0), (*this)(2,1), (*this)(2,2), (*this)(2,3),
 				0, 0, 0, 1);
 	}
+
+	/// \brief Converts the matrix to a Qt 4x3 matrix.
+	operator QMatrix4x3() const {
+		QMatrix4x3 m;
+		for(int col = 0; col < 4; col++)
+			for(int row = 0; row < 3; row++)
+				m(row, col) = static_cast<float>((*this)(row, col));
+		return m;
+	}
 };
 
 /// Computes the product of a 3x4 matrix and a Vector3 (which is automatically extended to a 4-vector with the last element being 0).

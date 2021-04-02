@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,43 +21,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "OpenGLLinePrimitive.h"
 #include "OpenGLSceneRenderer.h"
+#include "OpenGLShaderHelper.h"
 
 namespace Ovito {
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-OpenGLLinePrimitive::OpenGLLinePrimitive(OpenGLSceneRenderer* renderer) :
-	_indicesBuffer(QOpenGLBuffer::IndexBuffer)
-{
-	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
-
-	// Initialize OpenGL shaders.
-	_thinLineShader = renderer->loadShaderProgram("line_thin", prefix + "/glsl/lines/line.vs", prefix + "/glsl/lines/line.fs");
-	_thickLineShader = renderer->loadShaderProgram("line_thick", prefix + "/glsl/lines/thick_line.vs", prefix + "/glsl/lines/line.fs");
-}
 
 /******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
 void OpenGLLinePrimitive::render(OpenGLSceneRenderer* renderer)
 {
+	// Step out early if there is nothing to render.
 	if(!positions() || positions()->size() == 0)
 		return;
-
-#ifdef Q_OS_WIN
-	// This is a workaround for a specific graphics compatibility problem on Windows with AMD Radeon(TM) Vega 8 Graphics. 
-	// Rendering lines with uniform color doesn't work for some reason (see issue #203). As a workaround, we create 
-	// a VBO with explicit colors. 
-	if(!colors() && OpenGLSceneRenderer::openGLRenderer() == "AMD Radeon(TM) Vega 8 Graphics") {
-		DataBufferPtr explicitColors = DataOORef<DataBuffer>::create(positions()->dataset(), ExecutionContext::Scripting, positions()->size(), DataBuffer::Float, 4, 0, false);
-		explicitColors->fill(uniformColor());
-		setColors(std::move(explicitColors));
-	}
-#endif
 
 	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
 		renderThinLines(renderer);
@@ -70,125 +47,90 @@ void OpenGLLinePrimitive::render(OpenGLSceneRenderer* renderer)
 ******************************************************************************/
 void OpenGLLinePrimitive::renderThinLines(OpenGLSceneRenderer* renderer)
 {
-	// Activate the OpenGL shader program.
-	if(!_thinLineShader->bind())
-		renderer->throwException(QStringLiteral("Failed to bind OpenGL shader."));
+	OVITO_REPORT_OPENGL_ERRORS(renderer);
 
-	// Set shader uniforms.
-	_thinLineShader->setUniformValue("is_picking_mode", (bool)renderer->isPicking());
-	_thinLineShader->setUniformValue("modelview_projection_matrix", (QMatrix4x4)(renderer->projParams().projectionMatrix * renderer->modelViewTM()));
+	// Activate the right OpenGL shader program.
+	OpenGLShaderHelper shader(renderer);
+	if(renderer->isPicking())
+		shader.load("line_thin_picking", "lines/line_picking.vs", "lines/line.fs");
+	else if(colors())
+		shader.load("line_thin", "lines/line.vs", "lines/line.fs");
+	else
+		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vs", "lines/line_uniform_color.fs");
+	
+	// Upload vertex positions.
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());
+	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>));
 
-	// Fill VBOs.
-	_positionsBuffer.uploadData<Point3>(positions());
-	_colorsBuffer.uploadData<ColorA>(colors());
-
-	// Bind VBOs.
-	_positionsBuffer.bindPositions(renderer, _thinLineShader);
 	if(!renderer->isPicking()) {
-		if(_colorsBuffer.isCreated())
-			_colorsBuffer.bindColors(renderer, _thinLineShader, 4);
-		else
-			_colorsBuffer.setUniformColor(renderer, _thinLineShader, uniformColor());
+		if(colors()) {
+			OVITO_ASSERT(colors()->size() == positions()->size());
+			// Upload vertex colors.
+			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(colors(), renderer->currentResourceFrame());
+			shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>));
+		}
+		else {
+            // Pass uniform line color to fragment shader as a uniform value.
+            shader.setUniformValue("color", uniformColor());
+		}
 	}
 	else {
-		GLint pickingBaseID = renderer->registerSubObjectIDs(positions()->size() / 2);
-		_thinLineShader->setUniformValue("picking_base_id", pickingBaseID);
+		// Pass picking base ID to shader.
+		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size() / 2));
 	}
 
-	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_LINES, 0, _positionsBuffer.elementCount()));
-
-	// Detach VBOs.
-	_positionsBuffer.detachPositions(renderer, _thinLineShader);
-	if(!renderer->isPicking() && _colorsBuffer.isCreated())
-		_colorsBuffer.detachColors(renderer, _thinLineShader);
-
-	// Reset state.
-	_thinLineShader->release();
+	// Issue line drawing command.
+	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_LINES, 0, positions()->size()));
 }
 
 /******************************************************************************
-* Renders the lines using polygons.
+* Renders the lines using triangle strips.
 ******************************************************************************/
 void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 {
 	// Effective line width.
 	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
 
-	// Fill IBO.
-	int vertexCount = positions()->size();
-	if(_indicesBuffer.elementCount() < vertexCount * 6 / 2) {
-		_indicesBuffer.create(QOpenGLBuffer::StaticDraw, vertexCount * 6 / 2);
-		GLuint* indices = _indicesBuffer.map();
-		for(int i = 0; i < vertexCount; i += 2, indices += 6) {
-			indices[0] = i * 2;
-			indices[1] = i * 2 + 1;
-			indices[2] = i * 2 + 2;
-			indices[3] = i * 2;
-			indices[4] = i * 2 + 2;
-			indices[5] = i * 2 + 3;
-		}
-		_indicesBuffer.unmap();
-	}
+	// Activate the right OpenGL shader program.
+	OpenGLShaderHelper shader(renderer);
+	if(renderer->isPicking())
+		shader.load("line_thick_picking", "lines/thick_line_picking.vs", "lines/line.fs");
+	else if(colors())
+		shader.load("line_thick", "lines/thick_line.vs", "lines/line.fs");
+	else
+		shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vs", "lines/line_uniform_color.fs");
 
-	// Fill vector VBO.
-	if(!_vectorsBuffer.isCreated()) {
-		_vectorsBuffer.create(QOpenGLBuffer::StaticDraw, vertexCount, 2);
-		Vector_3<float>* vectors = _vectorsBuffer.map();
-		Vector_3<float>* vectors_end = vectors + _vectorsBuffer.elementCount() * _vectorsBuffer.verticesPerElement();
-		ConstDataBufferAccess<Point3> positionsArray(positions());
-		const Point3* coordinates = positionsArray.cbegin();
-		for(; vectors != vectors_end; vectors += 4, coordinates += 2) {
-			vectors[3] = vectors[0] = (Vector_3<float>)(coordinates[1] - coordinates[0]);
-			vectors[1] = vectors[2] = -vectors[0];
-		}
-		_vectorsBuffer.unmap();
-	}
+    // Put start/end vertex positions into one combined Vulkan buffer.
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());
+	shader.bindBuffer(positionsBuffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+	shader.bindBuffer(positionsBuffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), sizeof(Point_3<float>), OpenGLShaderHelper::PerInstance);
 
-	// Activate the OpenGL shader program.
-	if(!_thickLineShader->bind())
-		renderer->throwException(QStringLiteral("Failed to bind OpenGL shader."));
-
-	// Set shader uniforms.
-	_thickLineShader->setUniformValue("modelview_matrix", (QMatrix4x4)renderer->modelViewTM());
-	_thickLineShader->setUniformValue("projection_matrix", (QMatrix4x4)renderer->projParams().projectionMatrix);
-	GLint viewportCoords[4];
-	renderer->glGetIntegerv(GL_VIEWPORT, viewportCoords);
-	_thickLineShader->setUniformValue("line_width", (GLfloat)(effectiveLineWidth / (renderer->projParams().projectionMatrix(1,1) * viewportCoords[3])));
-	_thickLineShader->setUniformValue("is_perspective", renderer->projParams().isPerspective);
-	_thickLineShader->setUniformValue("is_picking_mode", (bool)renderer->isPicking());
-
-	// Fill VBOs.
-	_positionsBuffer.uploadData<Point3>(positions(), 2);
-	_colorsBuffer.uploadData<ColorA>(colors(), 2);
-
-	// Bind VBOs.
-	_positionsBuffer.bindPositions(renderer, _thickLineShader);
-	_vectorsBuffer.bind(renderer, _thickLineShader, "vector", GL_FLOAT, 0, 3);
 	if(!renderer->isPicking()) {
-		if(_colorsBuffer.isCreated())
-			_colorsBuffer.bindColors(renderer, _thickLineShader, 4);
-		else
-			_colorsBuffer.setUniformColor(renderer, _thickLineShader, uniformColor());
+		if(colors()) {
+			OVITO_ASSERT(colors()->size() == positions()->size());
+			// Upload vertex colors.
+			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(colors(), renderer->currentResourceFrame());
+			shader.bindBuffer(colorsBuffer, "color_from", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
+			shader.bindBuffer(colorsBuffer, "color_to", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
+		}
+		else {
+            // Pass uniform line color to fragment shader as a uniform value.
+            shader.setUniformValue("color", uniformColor());
+		}
 	}
 	else {
-		GLint pickingBaseID = renderer->registerSubObjectIDs(positions()->size() / 2);
-		_thickLineShader->setUniformValue("picking_base_id", pickingBaseID);
+		// Pass picking base ID to shader.
+		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size() / 2));
 	}
+	
+	// Compute line width in viewport space.
+	// Get current viewport rectangle.
+	GLint viewportCoords[4];
+	renderer->glGetIntegerv(GL_VIEWPORT, viewportCoords);
+	shader.setUniformValue("line_thickness", effectiveLineWidth / viewportCoords[3]);
 
-	// Bind IBO.
-	_indicesBuffer.oglBuffer().bind();
-
-	renderer->glDrawElements(GL_TRIANGLES, _indicesBuffer.elementCount(), GL_UNSIGNED_INT, nullptr);
-
-	// Detach VBOs and IBO.
-	_indicesBuffer.oglBuffer().release();
-	_positionsBuffer.detachPositions(renderer, _thickLineShader);
-	if(!renderer->isPicking())
-		_colorsBuffer.detachColors(renderer, _thickLineShader);
-
-	// Reset state.
-	_vectorsBuffer.detach(renderer, _thickLineShader, "vector");
-	_thickLineShader->release();
+	// Issue instance drawing command.
+	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, positions()->size() / 2));
 }
 
 }	// End of namespace

@@ -48,21 +48,38 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* i
 	OpenGLSceneRenderer::determineOpenGLInfo();
 
 	// Create the viewport renderer.
-	// It is shared by all viewports of a dataset.
-	for(Viewport* vp : viewport()->dataset()->viewportConfig()->viewports()) {
-		if(OpenGLViewportWindow* window = dynamic_cast<OpenGLViewportWindow*>(vp->window())) {
-			_viewportRenderer = window->_viewportRenderer;
-			if(_viewportRenderer) break;
-		}
-	}
-	if(!_viewportRenderer) {
-		_viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
-		_viewportRenderer->setInteractive(true);
-	}
+	_viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
+	_viewportRenderer->setInteractive(true);
 
 	// Create the object picking renderer.
 	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
+}
+
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+OpenGLViewportWindow::~OpenGLViewportWindow() 
+{
+	releaseResources();
+}
+
+/******************************************************************************
+* Releases the renderer resources held by the viewport's surface and picking renderers. 
+******************************************************************************/
+void OpenGLViewportWindow::releaseResources()
+{
+	// Release any OpenGL resources held by the viewport renderers.
+	if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
+		OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
+		OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
+		_viewportRenderer->setCurrentResourceFrame(0);
+	}
+	if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
+		OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
+		OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
+		_pickingRenderer->setCurrentResourceFrame(0);
+	}
 }
 
 /******************************************************************************
@@ -96,8 +113,14 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 
 	// Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
 	if(isVisible() && !viewport()->isRendering() && !viewport()->dataset()->viewportConfig()->isSuspended() && pickingRenderer()) {
+		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
+				qDebug() << "---Rendering picking buffer for viewport" << viewport()->viewportTitle();
+				// Request a new frame from the resource manager for this render pass.
+				previousResourceFrame = pickingRenderer()->currentResourceFrame();
+				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+
 				// Let the viewport do the actual rendering work.
 				viewport()->renderInteractive(pickingRenderer());
 			}
@@ -117,24 +140,33 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 		catch(const Exception& ex) {
 			ex.reportError();
 		}
+
+		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+		if(previousResourceFrame)
+			OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
 	}
 	return result;
 }
 
 /******************************************************************************
-* Handles the show events.
+* Handles show events.
 ******************************************************************************/
 void OpenGLViewportWindow::showEvent(QShowEvent* event)
 {
 	if(!event->spontaneous())
 		update();
+	QOpenGLWidget::showEvent(event);
 }
 
 /******************************************************************************
-* Is called whenever the GL context needs to be initialized.
+* Handles hide events.
 ******************************************************************************/
-void OpenGLViewportWindow::initializeGL()
+void OpenGLViewportWindow::hideEvent(QHideEvent* event)
 {
+	// Release all renderer resources when the window becomes hidden.
+	releaseResources();
+
+	QOpenGLWidget::hideEvent(event);
 }
 
 /******************************************************************************
@@ -196,6 +228,11 @@ void OpenGLViewportWindow::paintGL()
 	_pickingRenderer->reset();
 
 	if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
+
+		// Request a new frame from the resource manager for this render pass.
+		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
+		_viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+
 		try {
 			// Let the Viewport class do the actual rendering work.
 			viewport()->renderInteractive(_viewportRenderer);
@@ -224,6 +261,11 @@ void OpenGLViewportWindow::paintGL()
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();
+		}
+
+		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.
+		if(previousResourceFrame) {
+			OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
 		}
 	}
 	else {

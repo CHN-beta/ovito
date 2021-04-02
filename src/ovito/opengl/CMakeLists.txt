@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -30,7 +30,8 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLCylinderPrimitive.cpp
 		OpenGLMeshPrimitive.cpp
 		OpenGLMarkerPrimitive.cpp
-		OpenGLSharedResource.cpp
+		OpenGLResourceManager.cpp
+		OpenGLShaderHelper.cpp
 		OpenGLSceneRenderer.cpp
 		OffscreenOpenGLSceneRenderer.cpp
 		PickingOpenGLSceneRenderer.cpp

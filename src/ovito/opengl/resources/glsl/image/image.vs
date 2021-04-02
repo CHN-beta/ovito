@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,13 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-uniform vec2 uvcoords[4];
+// Uniforms:
+uniform vec4 image_rect;
 
-in vec3 position;
-out vec2 tex_coords;
+// Outputs:
+out vec2 texcoord_fs;
 
 void main()
 {
-	gl_Position = vec4(position.xy, 0, 1);
-	tex_coords = uvcoords[int(position.z)];
+    // Draw a textured quad:
+    if(gl_VertexID == 0) {
+        gl_Position = vec4(image_rect.x, image_rect.y, 0.0, 1.0);
+        texcoord_fs = vec2(0.0, 1.0);
+    }
+    else if(gl_VertexID == 1) {
+        gl_Position = vec4(image_rect.z, image_rect.y, 0.0, 1.0);
+        texcoord_fs = vec2(1.0, 1.0);
+    }
+    else if(gl_VertexID == 2) {
+        gl_Position = vec4(image_rect.x, image_rect.w, 0.0, 1.0);
+        texcoord_fs = vec2(0.0, 0.0);
+    }
+    else if(gl_VertexID == 3) {
+        gl_Position = vec4(image_rect.z, image_rect.w, 0.0, 1.0);
+        texcoord_fs = vec2(1.0, 0.0);
+    }
 }

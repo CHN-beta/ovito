@@ -32,6 +32,7 @@ namespace Ovito {
 OpenGLCylinderPrimitive::OpenGLCylinderPrimitive(OpenGLSceneRenderer* renderer, CylinderPrimitive::Shape shape, ShadingMode shadingMode, RenderingQuality renderingQuality) :
 	CylinderPrimitive(shape, shadingMode, renderingQuality)
 {
+#if 0
 	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
 
 	// Initialize OpenGL shaders.
@@ -75,6 +76,7 @@ OpenGLCylinderPrimitive::OpenGLCylinderPrimitive(OpenGLSceneRenderer* renderer, 
 	}
 
 	OVITO_ASSERT(_shader != nullptr);
+#endif
 }
 
 /******************************************************************************
@@ -82,6 +84,7 @@ OpenGLCylinderPrimitive::OpenGLCylinderPrimitive(OpenGLSceneRenderer* renderer, 
 ******************************************************************************/
 void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 {
+	return;
 	OVITO_ASSERT(basePositions());
 	OVITO_ASSERT(headPositions());
 

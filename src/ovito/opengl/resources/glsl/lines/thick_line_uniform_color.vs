@@ -20,24 +20,37 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "../global_uniforms.glsl"
 
+// Uniforms:
+uniform float line_thickness; // Half line width in viewport space. 
 
-#include <ovito/core/Core.h>
-#include <ovito/core/rendering/ImagePrimitive.h>
-#include "OpenGLSceneRenderer.h"
+// Inputs:
+in vec4 position_from;
+in vec4 position_to;
 
-namespace Ovito {
-
-/**
- * \brief Buffer object that stores an image to be rendered in the viewports.
- */
-class OpenGLImagePrimitive : public ImagePrimitive
+void main()
 {
-public:
+    // The index of the quad corner.
+    int corner = gl_VertexID;
 
-	/// \brief Renders the primitive.
-	void render(OpenGLSceneRenderer* renderer);
-};
+	// Apply model-view-projection matrix to line points.
+	vec4 proj_from = modelview_projection_matrix * position_from;
+	vec4 proj_to   = modelview_projection_matrix * position_to;
 
-}	// End of namespace
+	// Compute line direction vector.
+	vec2 delta = normalize(proj_to.xy - proj_from.xy) * line_thickness;
+
+	// Take into account aspect ratio of viewport:
+	delta.y *= inverse_viewport_size.x / inverse_viewport_size.y;
+
+	// Emit quad vertices.
+	if(corner == 0)
+		gl_Position = proj_from + vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
+	else if(corner == 1)
+		gl_Position = proj_from - vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
+	else if(corner == 2)
+		gl_Position = proj_to + vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
+	else
+		gl_Position = proj_to - vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
+}

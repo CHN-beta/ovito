@@ -43,6 +43,9 @@ public:
 	/// Constructor.
 	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
 
+	/// Destructor.
+	virtual ~OpenGLViewportWindow();
+
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() override { return this; }
 
@@ -94,11 +97,11 @@ protected:
 	/// Is called whenever the widget needs to be painted.
 	virtual void paintGL() override;
 
-	/// Is called whenever the GL context needs to be initialized.
-	virtual void initializeGL() override;
-
 	/// Is called when the viewport becomes visible.
 	virtual void showEvent(QShowEvent* event) override;
+
+	/// Is called when the viewport becomes hidden.
+	virtual void hideEvent(QHideEvent* event) override;
 
 	/// Is called when the mouse cursor leaves the widget.
 	virtual void leaveEvent(QEvent* event) override { WidgetViewportWindow::leaveEvent(event); }
@@ -128,6 +131,9 @@ protected:
 	}
 
 private:
+
+	/// Releases the renderer resources held by the viewport's surface and picking renderers. 
+	void releaseResources();
 
 	/// Renders the contents of the viewport window.
 	void renderViewport();

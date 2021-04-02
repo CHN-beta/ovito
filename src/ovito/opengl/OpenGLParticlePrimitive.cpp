@@ -21,169 +21,239 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "OpenGLParticlePrimitive.h"
 #include "OpenGLSceneRenderer.h"
+#include "OpenGLShaderHelper.h"
 
 #include <boost/range/irange.hpp>
-#include <boost/range/combine.hpp>
 
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
+* Renders the particles.
 ******************************************************************************/
-OpenGLParticlePrimitive::OpenGLParticlePrimitive(OpenGLSceneRenderer* renderer, ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality) :
-	ParticlePrimitive(shape, shadingMode, renderingQuality)
+void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 {
-	QString prefix = QOpenGLContext::currentContext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
+	OVITO_REPORT_OPENGL_ERRORS(renderer);
 
-	// Choose rendering technique for the particles.
-	if(shadingMode == FlatShading) {
-		_renderingTechnique = IMPOSTER_QUADS;
-	}
-	else {
-		if(shape == SphericalShape && renderingQuality < HighQuality) {
-			_renderingTechnique = IMPOSTER_QUADS;
-		}
-		else {
-			_renderingTechnique = BOX_GEOMETRY;
-		}
+    // Make sure there is something to be rendered. Otherwise, step out early.
+	if(!positions() || positions()->size() == 0)
+		return;
+	if(indices() && indices()->size() == 0)
+        return;
+
+    // The effective number of particles being rendered:
+    uint32_t particleCount = indices() ? indices()->size() : positions()->size();
+    uint32_t verticesPerParticle = 0;
+
+    // Are we rendering semi-transparent particles?
+    bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
+
+	// Activate the right OpenGL shader program.
+	OpenGLShaderHelper shader(renderer);
+    switch(particleShape()) {
+        case SquareCubicShape:
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking())
+					shader.load("cube", "particles/cube/cube.vs", "particles/cube/cube.fs");
+                else
+					shader.load("cube_picking", "particles/cube/cube_picking.vs", "particles/cube/cube_picking.fs");
+                verticesPerParticle = 14; // Cube rendered as triangle strip.
+            }
+            else {
+                if(!renderer->isPicking()) 
+					shader.load("square", "particles/square/square.vs", "particles/square/square.fs");
+                else
+					shader.load("square_picking", "particles/square/square_picking.vs", "particles/square/square_picking.fs");
+                verticesPerParticle = 4; // Square rendered as triangle strip.
+            }
+            break;
+        case BoxShape:
+            if(shadingMode() == NormalShading) {
+                if(!renderer->isPicking())
+					shader.load("box", "particles/box/box.vs", "particles/box/box.fs");
+                else
+					shader.load("box_picking", "particles/box/box_picking.vs", "particles/box/box_picking.fs");
+                verticesPerParticle = 14; // Box rendered as triangle strip.
+            }
+            else return;
+            break;
+        case SphericalShape:
+            if(shadingMode() == NormalShading) {
+                if(renderingQuality() >= HighQuality) {
+                    if(!renderer->isPicking())
+						shader.load("sphere", "particles/sphere/sphere.vs", "particles/sphere/sphere.fs");
+                    else
+						shader.load("sphere_picking", "particles/sphere/sphere_picking.vs", "particles/sphere/sphere_picking.fs");
+                    verticesPerParticle = 14; // Cube rendered as triangle strip.
+                }
+                else {
+                    if(!renderer->isPicking())
+						shader.load("imposter", "particles/imposter/imposter.vs", "particles/imposter/imposter.fs");
+                    else
+						shader.load("imposter_picking", "particles/imposter/imposter_picking.vs", "particles/imposter/imposter_picking.fs");
+                    verticesPerParticle = 4; // Square rendered as triangle strip.
+                }
+            }
+            else {
+                if(!renderer->isPicking())
+					shader.load("circle", "particles/circle/circle.vs", "particles/circle/circle.fs");
+                else
+					shader.load("circle_picking", "particles/circle/circle_picking.vs", "particles/circle/circle_picking.fs");
+                verticesPerParticle = 4; // Square rendered as triangle strip.
+            }
+            break;
+        case EllipsoidShape:
+            if(!renderer->isPicking())
+				shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.vs", "particles/ellipsoid/ellipsoid.fs");
+            else
+				shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.vs", "particles/ellipsoid/ellipsoid_picking.fs");
+            verticesPerParticle = 14; // Box rendered as triangle strip.
+            break;
+        case SuperquadricShape:
+            if(!renderer->isPicking())
+				shader.load("superquadric", "particles/superquadric/superquadric.vs", "particles/superquadric/superquadric.fs");
+            else
+				shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.vs", "particles/superquadric/superquadric_picking.fs");
+            verticesPerParticle = 14; // Box rendered as triangle strip.
+            break;
+        default:
+            return;
+    }
+
+	// Pass picking base ID to shader.
+	if(renderer->isPicking()) {
+		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size(), indices()));
 	}
 
-	// Determine the number of OpenGL vertices per particle that must be rendered.
-	if(_renderingTechnique == IMPOSTER_QUADS)
-		_verticesPerParticle = renderer->useGeometryShaders() ? 1 : 6;
-	else if(_renderingTechnique == BOX_GEOMETRY)
-		_verticesPerParticle = renderer->useGeometryShaders() ? 1 : 14;
+    // Put positions and radii into one combined Vulkan buffer with 4 floats per particle.
+    // Radii are optional and may be substituted with a uniform radius value.
+    RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
+        indices(),
+        positions(),
+        radii(),
+        radii() ? FloatType(0) : uniformRadius()
+    };
 
-	// Load the right OpenGL shaders.
-	if(_renderingTechnique == IMPOSTER_QUADS) {
-		if(shadingMode == FlatShading) {
-			if(shape == SphericalShape || shape == EllipsoidShape) {
-				if(renderer->useGeometryShaders()) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_imposter_spherical_flat",
-							prefix + "/glsl/particles/imposter/sphere/without_depth.vs",
-							prefix + "/glsl/particles/imposter/sphere/flat_shading.fs",
-							prefix + "/glsl/particles/imposter/sphere/without_depth.gs");
-				}
-				else {
-					_shader = renderer->loadShaderProgram("particle_imposter_spherical_flat",
-							prefix + "/glsl/particles/imposter/sphere/without_depth_tri.vs",
-							prefix + "/glsl/particles/imposter/sphere/flat_shading.fs");
-				}
-			}
-			else if(shape == SquareCubicShape || shape == BoxShape) {
-				if(renderer->useGeometryShaders()) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_imposter_square_flat",
-							prefix + "/glsl/particles/imposter/sphere/without_depth.vs",
-							prefix + "/glsl/particles/imposter/square/flat_shading.fs",
-							prefix + "/glsl/particles/imposter/sphere/without_depth.gs");
-				}
-				else {
-					_shader = renderer->loadShaderProgram("particle_imposter_square_flat",
-							prefix + "/glsl/particles/imposter/sphere/without_depth_tri.vs",
-							prefix + "/glsl/particles/imposter/square/flat_shading.fs");
-				}
-			}
-		}
-		else if(shadingMode == NormalShading) {
-			if(shape == SphericalShape) {
-				if(renderingQuality == LowQuality) {
-					if(renderer->useGeometryShaders()) {
-						_shader = renderer->loadShaderProgram("particle_geomshader_imposter_spherical_shaded_nodepth",
-								prefix + "/glsl/particles/imposter/sphere/without_depth.vs",
-								prefix + "/glsl/particles/imposter/sphere/without_depth.fs",
-								prefix + "/glsl/particles/imposter/sphere/without_depth.gs");
-					}
-					else {
-						_shader = renderer->loadShaderProgram("particle_imposter_spherical_shaded_nodepth",
-								prefix + "/glsl/particles/imposter/sphere/without_depth_tri.vs",
-								prefix + "/glsl/particles/imposter/sphere/without_depth.fs");
-					}
-				}
-				else if(renderingQuality == MediumQuality) {
-					if(renderer->useGeometryShaders()) {
-						_shader = renderer->loadShaderProgram("particle_geomshader_imposter_spherical_shaded_depth",
-								prefix + "/glsl/particles/imposter/sphere/with_depth.vs",
-								prefix + "/glsl/particles/imposter/sphere/with_depth.fs",
-								prefix + "/glsl/particles/imposter/sphere/with_depth.gs");
-					}
-					else {
-						_shader = renderer->loadShaderProgram("particle_imposter_spherical_shaded_depth",
-								prefix + "/glsl/particles/imposter/sphere/with_depth_tri.vs",
-								prefix + "/glsl/particles/imposter/sphere/with_depth.fs");
-					}
-				}
-			}
-		}
-	}
-	else if(_renderingTechnique == BOX_GEOMETRY) {
-		if(shadingMode == NormalShading) {
-			if(renderer->useGeometryShaders()) {
-				if(shape == SphericalShape && renderingQuality == HighQuality) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_sphere",
-							prefix + "/glsl/particles/geometry/sphere/sphere.vs",
-							prefix + "/glsl/particles/geometry/sphere/sphere.fs",
-							prefix + "/glsl/particles/geometry/sphere/sphere.gs");
-				}
-				else if(shape == SquareCubicShape) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_cube",
-							prefix + "/glsl/particles/geometry/cube/cube.vs",
-							prefix + "/glsl/particles/geometry/cube/cube.fs",
-							prefix + "/glsl/particles/geometry/cube/cube.gs");
-				}
-				else if(shape == BoxShape) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_box",
-							prefix + "/glsl/particles/geometry/box/box.vs",
-							prefix + "/glsl/particles/geometry/cube/cube.fs",
-							prefix + "/glsl/particles/geometry/box/box.gs");
-				}
-				else if(shape == EllipsoidShape) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_ellipsoid",
-							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.vs",
-							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.fs",
-							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.gs");
-				}
-				else if(shape == SuperquadricShape) {
-					_shader = renderer->loadShaderProgram("particle_geomshader_superquadric",
-							prefix + "/glsl/particles/geometry/superquadric/superquadric.vs",
-							prefix + "/glsl/particles/geometry/superquadric/superquadric.fs",
-							prefix + "/glsl/particles/geometry/superquadric/superquadric.gs");
-				}
-			}
-			else {
-				if(shape == SphericalShape && renderingQuality == HighQuality) {
-					_shader = renderer->loadShaderProgram("particle_tristrip_sphere",
-							prefix + "/glsl/particles/geometry/sphere/sphere_tristrip.vs",
-							prefix + "/glsl/particles/geometry/sphere/sphere.fs");
-				}
-				else if(shape == SquareCubicShape) {
-					_shader = renderer->loadShaderProgram("particle_tristrip_cube",
-							prefix + "/glsl/particles/geometry/cube/cube_tristrip.vs",
-							prefix + "/glsl/particles/geometry/cube/cube.fs");
-				}
-				else if(shape == BoxShape) {
-					_shader = renderer->loadShaderProgram("particle_tristrip_box",
-							prefix + "/glsl/particles/geometry/box/box_tristrip.vs",
-							prefix + "/glsl/particles/geometry/cube/cube.fs");
-				}
-				else if(shape == EllipsoidShape) {
-					_shader = renderer->loadShaderProgram("particle_tristrip_ellipsoid",
-							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid_tristrip.vs",
-							prefix + "/glsl/particles/geometry/ellipsoid/ellipsoid.fs");
-				}
-				else if(shape == SuperquadricShape) {
-					_shader = renderer->loadShaderProgram("particle_tristrip_superquadric",
-							prefix + "/glsl/particles/geometry/superquadric/superquadric_tristrip.vs",
-							prefix + "/glsl/particles/geometry/superquadric/superquadric.fs");
-				}
-			}
-		}
-	}
-	OVITO_ASSERT(_shader != nullptr);
+    // Upload vertex buffer with the particle positions and radii.
+    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, particleCount * sizeof(Vector_4<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+        OVITO_ASSERT(!radii() || radii()->size() == positions()->size());
+        ConstDataBufferAccess<Point3> positionArray(positions());
+        ConstDataBufferAccess<FloatType> radiusArray(radii());
+        float* dst = reinterpret_cast<float*>(buffer);
+        if(!indices()) {
+            const FloatType* radius = radiusArray ? radiusArray.cbegin() : nullptr;
+            for(const Point3& pos : positionArray) {
+                *dst++ = static_cast<float>(pos.x());
+                *dst++ = static_cast<float>(pos.y());
+                *dst++ = static_cast<float>(pos.z());
+                *dst++ = static_cast<float>(radius ? *radius++ : uniformRadius());
+            }
+        }
+        else {
+            for(int index : ConstDataBufferAccess<int>(indices())) {
+                const Point3& pos = positionArray[index];
+                *dst++ = static_cast<float>(pos.x());
+                *dst++ = static_cast<float>(pos.y());
+                *dst++ = static_cast<float>(pos.z());
+                *dst++ = static_cast<float>(radiusArray ? radiusArray[index] : uniformRadius());
+            }
+        }
+    });
+
+	// Bind vertex buffer to vertex attributes.
+	shader.bindBuffer(positionRadiusBuffer, "position", GL_FLOAT, 3, sizeof(Vector_4<float>), 0, OpenGLShaderHelper::PerInstance);
+	shader.bindBuffer(positionRadiusBuffer, "radius", GL_FLOAT, 1, sizeof(Vector_4<float>), sizeof(Vector_3<float>), OpenGLShaderHelper::PerInstance);
+
+    if(!renderer->isPicking()) {
+
+        // Put colors, transparencies and selection state into one combined Vulkan buffer with 4 floats per particle.
+        RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorSelectionCacheKey{ 
+            indices(),
+            colors(),
+            transparencies(),
+            selection(),
+            colors() ? Color(0,0,0) : uniformColor()
+        };
+
+        // Upload vertex buffer with the particle colors.
+        QOpenGLBuffer colorSelectionBuffer = shader.createCachedBuffer(colorSelectionCacheKey, particleCount * 4 * sizeof(float), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+            OVITO_ASSERT(!transparencies() || transparencies()->size() == positions()->size());
+            OVITO_ASSERT(!selection() || selection()->size() == positions()->size());
+            ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
+            ConstDataBufferAccess<int> selectionArray(selection());
+            const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
+            const ColorAT<float> selectionColor = (ColorAT<float>)this->selectionColor();
+            if(!indices()) {
+                ConstDataBufferAccess<FloatType,true> colorArray(colors());
+                const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
+                const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
+                const int* selection = selectionArray ? selectionArray.cbegin() : nullptr;
+                for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + positions()->size() * 4; dst != dst_end;) {
+                    if(selection && *selection++) {
+                        *dst++ = selectionColor.r();
+                        *dst++ = selectionColor.g();
+                        *dst++ = selectionColor.b();
+                        *dst++ = selectionColor.a();
+                        if(color) color += 3;
+                        if(transparency) transparency += 1;
+                    }
+                    else {
+                        // RGB:
+                        if(color) {
+                            *dst++ = static_cast<float>(*color++);
+                            *dst++ = static_cast<float>(*color++);
+                            *dst++ = static_cast<float>(*color++);
+                        }
+                        else {
+                            *dst++ = uniformColor.r();
+                            *dst++ = uniformColor.g();
+                            *dst++ = uniformColor.b();
+                        }
+                        // Alpha:
+                        *dst++ = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
+                    }
+                }
+            }
+            else {
+                ConstDataBufferAccess<Color> colorArray(colors());
+                float* dst = reinterpret_cast<float*>(buffer);
+                for(int index : ConstDataBufferAccess<int>(indices())) {
+                    if(selectionArray && selectionArray[index]) {
+                        *dst++ = selectionColor.r();
+                        *dst++ = selectionColor.g();
+                        *dst++ = selectionColor.b();
+                        *dst++ = selectionColor.a();
+                    }
+                    else {
+                        // RGB:
+                        if(colorArray) {
+                            const Color& color = colorArray[index];
+                            *dst++ = static_cast<float>(color.r());
+                            *dst++ = static_cast<float>(color.g());
+                            *dst++ = static_cast<float>(color.b());
+                        }
+                        else {
+                            *dst++ = uniformColor.r();
+                            *dst++ = uniformColor.g();
+                            *dst++ = uniformColor.b();
+                        }
+                        // Alpha:
+                        *dst++ = transparencyArray ? qBound(0.0f, 1.0f - static_cast<float>(transparencyArray[index]), 1.0f) : 1.0f;
+                    }
+                }
+            }
+        });
+
+        // Bind color vertex buffer.
+		shader.bindBuffer(colorSelectionBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
+    }
+
+	// Issue instance drawing command.
+	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, verticesPerParticle, particleCount));
 }
 
+#if 0
 /******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
@@ -198,42 +268,6 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 
 	if(particleCount() <= 0 || !renderer)
 		return;
-
-#ifdef Q_OS_MACOS
-	// This is a workaround for a specific graphics compatibility problem on macOS/MacBook Pro with AMD Radeon Pro 5500M graphics hardware. 
-	// The uploading the 'selection' VBO to the GPU creates artifacts on this system. As a workaround, we compute
-	// an effective color VBO that has the selection colors baked in.
-	// See OVITO forum post: https://www.ovito.org/forum/topic/expression-select-not-working/#postid-1910
-	ConstDataBufferPtr effectiveColors; 
-	ConstDataBufferPtr effectiveSelection; 
-	if(selection() && OpenGLSceneRenderer::openGLRenderer() == "AMD Radeon Pro 5500M OpenGL Engine") {
-		if(colors() != _inputColors || selection() != _inputSelection || _inputUniformParticleColor != uniformColor()) {
-			if(colors()) {
-				_effectiveColors = colors().makeCopy();
-			}
-			else {
-				_effectiveColors = DataOORef<DataBuffer>::create(selection()->dataset(), ExecutionContext::Scripting, selection()->size(), DataBuffer::Float, 3, 0, false);
-				_effectiveColors->fill(uniformColor());
-			}
-			_effectiveColors->fillSelected(selectionColor(), *selection());
-			_inputUniformParticleColor = uniformColor();
-			_inputColors = colors();
-			_inputSelection = selection();
-		}
-		effectiveColors = _effectiveColors;
-	}
-	else {
-		effectiveColors = colors();
-		effectiveSelection = selection();
-		_effectiveColors.reset();
-		_inputColors.reset();
-		_inputSelection.reset();
-	}
-#else
-	// On regular systems, simply upoad the color and selection VBOs to the GPU as is.
-	const ConstDataBufferPtr& effectiveColors = colors(); 
-	const ConstDataBufferPtr& effectiveSelection = selection(); 
-#endif
 
 	// Upload data to OpenGL VBOs.
 	_positionsBuffer.uploadData<Point3>(positions(), _verticesPerParticle);
@@ -631,5 +665,6 @@ void OpenGLParticlePrimitive::renderImposterGeometries(OpenGLSceneRenderer* rend
 		_indexBuffer.oglBuffer().release();
 	}
 }
+#endif
 
 }	// End of namespace

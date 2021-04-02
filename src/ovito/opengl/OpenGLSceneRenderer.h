@@ -26,8 +26,9 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "OpenGLHelpers.h"
+#include "OpenGLResourceManager.h"
 
-#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLFunctions_3_2_Core>
 #include <QOpenGLShader>
@@ -41,12 +42,12 @@ namespace Ovito {
  * \brief An OpenGL-based scene renderer. This serves as base class for both the interactive renderer used
  *        by the viewports and the standard output renderer.
  */
-class OVITO_OPENGLRENDERER_EXPORT OpenGLSceneRenderer : public SceneRenderer, protected QOpenGLFunctions
+class OVITO_OPENGLRENDERER_EXPORT OpenGLSceneRenderer : public SceneRenderer, public QOpenGLExtraFunctions
 {
 public:
 
 	/// Defines a metaclass specialization for this renderer class.
-	class OOMetaClass : public SceneRenderer::OOMetaClass
+	class OVITO_OPENGLRENDERER_EXPORT OOMetaClass : public SceneRenderer::OOMetaClass
 	{
 	public:
 		/// Inherit standard constructor from base meta class.
@@ -146,7 +147,7 @@ public:
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingOpenGLSceneRenderer class to implement the picking mechanism.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount) { return 1; }
+	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
 
 	/// Binds the default vertex array object again in case another VAO was bound in between.
 	/// This method should be called before calling an OpenGL rendering function.
@@ -172,6 +173,12 @@ public:
 
 	/// Reports OpenGL error status codes.
 	void checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine);
+
+	/// Returns the monotonically increasing identifier of the current frame being rendered.
+	OpenGLResourceManager::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
+
+	/// Sets monotonically increasing identifier of the current frame being rendered.
+	void setCurrentResourceFrame(OpenGLResourceManager::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
 
 	/// Determines whether OpenGL geometry shader programs should be used or not.
 	static bool geometryShadersEnabled(bool forceDefaultSetting = false);
@@ -283,6 +290,9 @@ private:
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
+
+	/// The monotonically increasing identifier of the current Vulkan frame being rendered.
+	OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;

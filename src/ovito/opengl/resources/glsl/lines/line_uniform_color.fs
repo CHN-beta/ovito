@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,46 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \file OpenGLSharedResource.h
- * \brief Contains the definition of the Ovito::OpenGLSharedResource class.
- */
+// Uniforms:
+uniform vec4 color;
 
-#pragma once
+// Outputs:
+out vec4 fragColor;
 
-
-#include <ovito/core/Core.h>
-
-namespace Ovito {
-
-class OpenGLContextInfo;
-class OpenGLContextManager;
-
-class OpenGLSharedResource
+void main()
 {
-public:
-
-	/// Destructor.
-    ~OpenGLSharedResource();
-
-    /// This should be called after the OpenGL resources have been allocated.
-    void attachOpenGLResources();
-
-    /// This will free the OpenGL resources. It is automatically called by the destructor.
-    void destroyOpenGLResources();
-
-protected:
-
-    /// This method that takes care of freeing the shared OpenGL resources.
-    virtual void freeOpenGLResources() = 0;
-
-private:
-    OpenGLContextInfo* _contextInfo = nullptr;
-    OpenGLSharedResource* _next = nullptr;
-    OpenGLSharedResource* _prev = nullptr;
-
-    friend class OpenGLContextManager;
-    friend class OpenGLContextInfo;
-};
-
-}	// End of namespace
+	fragColor = color;
+}

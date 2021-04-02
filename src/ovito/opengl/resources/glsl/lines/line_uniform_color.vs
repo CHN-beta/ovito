@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,33 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "../global_uniforms.glsl"
 
+// Inputs
+in vec4 position;
 
-#include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
-
-namespace Ovito {
-
-class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
-
-/**
- * \brief This class is responsible for rendering line primitives using OpenGL.
- */
-class OpenGLLinePrimitive : public LinePrimitive
+void main()
 {
-public:
-
-	/// \brief Renders the geometry.
-	void render(OpenGLSceneRenderer* renderer);
-
-protected:
-
-	/// \brief Renders the lines using GL_LINES mode.
-	void renderThinLines(OpenGLSceneRenderer* renderer);
-
-	/// \brief Renders the lines using polygons.
-	void renderThickLines(OpenGLSceneRenderer* renderer);
-};
-
-}	// End of namespace
+	// Apply model-view-projection matrix.
+	gl_Position = modelview_projection_matrix * position;
+}

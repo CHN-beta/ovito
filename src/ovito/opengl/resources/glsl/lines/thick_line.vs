@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,43 +20,45 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// Inputs from calling program:
-uniform mat4 modelview_matrix;
-uniform mat4 projection_matrix;
-uniform bool is_perspective;
-uniform float line_width;
-uniform int picking_base_id;
-uniform bool is_picking_mode;
+#include "../global_uniforms.glsl"
 
-in vec3 position;
-in vec4 color;
-in vec3 vector;
-out vec4 vertex_color_fs;
+// Uniforms:
+uniform float line_thickness; // Half line width in viewport space. 
+
+// Inputs:
+in vec4 position_from;
+in vec4 position_to;
+in vec4 color_from;
+in vec4 color_to;
+
+// Outputs:
+out vec4 color_fs;
 
 void main()
 {
-	if(!is_picking_mode) {
-		// Forward color to fragment shader.
-		vertex_color_fs = color;
-	}
-	else {
-		// Compute color from object ID.
-		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 4);
-	}
+    // The index of the quad corner.
+    int corner = gl_VertexID;
 
-	vec4 view_position = modelview_matrix * vec4(position, 1.0);
-	vec3 view_dir;
-	if(is_perspective)
-		view_dir = view_position.xyz;
+	// Apply model-view-projection matrix to line points.
+	vec4 proj_from = modelview_projection_matrix * position_from;
+	vec4 proj_to   = modelview_projection_matrix * position_to;
+
+	// Compute line direction vector.
+	vec2 delta = normalize(proj_to.xy - proj_from.xy) * line_thickness;
+
+	// Take into account aspect ratio of viewport:
+	delta.y *= inverse_viewport_size.x / inverse_viewport_size.y;
+
+	// Emit quad vertices.
+	if(corner == 0)
+		gl_Position = proj_from + vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
+	else if(corner == 1)
+		gl_Position = proj_from - vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
+	else if(corner == 2)
+		gl_Position = proj_to + vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
 	else
-		view_dir = vec3(0,0,-1);
-	vec3 u = cross(view_dir, (modelview_matrix * vec4(vector,0.0)).xyz);
-	if(u != vec3(0)) {
-		float w = projection_matrix[0][3] * view_position.x + projection_matrix[1][3] * view_position.y
-			+ projection_matrix[2][3] * view_position.z + projection_matrix[3][3];
-		gl_Position = projection_matrix * (view_position - vec4((w * line_width / length(u)) * u, 0.0));
-	}
-	else {
-		gl_Position = vec4(0);
-	}
+		gl_Position = proj_to - vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
+
+	// Forward color to fragment shader.
+	color_fs = (corner < 2) ? color_from : color_to;
 }

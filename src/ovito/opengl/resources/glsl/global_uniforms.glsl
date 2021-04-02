@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,33 +20,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+uniform mat4 modelview_projection_matrix;
+uniform mat4 projection_matrix;
+uniform mat4 inverse_projection_matrix;
+uniform mat4 modelview_matrix;
+uniform vec2 viewport_origin; 			// Corner of the current viewport rectangle in window coordinates.
+uniform vec2 inverse_viewport_size;	    // One over the width/height of the viewport rectangle in window space.
 
-
-#include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
-
-namespace Ovito {
-
-class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
-
-/**
- * \brief This class is responsible for rendering line primitives using OpenGL.
- */
-class OpenGLLinePrimitive : public LinePrimitive
+bool is_perspective()
 {
-public:
+    return projection_matrix[0][3] != 0.0 
+        || projection_matrix[1][3] != 0.0 
+        || projection_matrix[2][3] != 0.0 
+        || projection_matrix[3][3] != 1.0;
+}
 
-	/// \brief Renders the geometry.
-	void render(OpenGLSceneRenderer* renderer);
-
-protected:
-
-	/// \brief Renders the lines using GL_LINES mode.
-	void renderThinLines(OpenGLSceneRenderer* renderer);
-
-	/// \brief Renders the lines using polygons.
-	void renderThickLines(OpenGLSceneRenderer* renderer);
-};
-
-}	// End of namespace
+void calculate_view_ray(in vec2 viewport_position, out vec3 ray_origin, out vec3 ray_dir)
+{
+    vec4 near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);
+    vec4 far = near + inverse_projection_matrix[2];
+    ray_origin = near.xyz / near.w;
+    ray_dir = far.xyz / far.w - ray_origin;
+}

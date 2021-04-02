@@ -63,6 +63,16 @@ public:
 		}
 	}
 
+	/// Transfers a local OVITO data buffer into the OpenGL VBO.
+	template<typename U>
+	void uploadDataOrUniform(const ConstDataBufferPtr& sourceBuffer, const U& uniformValue, size_t elementCount) {
+		OVITO_ASSERT(!sourceBuffer || sourceBuffer->size() == elementCount);
+		if(sourceBuffer) {
+			uploadData<U>(sourceBuffer);
+		}
+		else OVITO_ASSERT(false);
+	}
+
 	/// Creates the buffer object in the OpenGL server. This function must be called with a current QOpenGLContext.
 	/// The buffer will be bound to and can only be used in that context (or any other context that is shared with it).
 	bool create(QOpenGLBuffer::UsagePattern usagePattern, int elementCount, int verticesPerElement = 1) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,12 +20,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// Texture sampler:
 uniform sampler2D tex;
 
-in vec2 tex_coords;
-out vec4 FragColor;
+// Inputs:
+in vec2 texcoord_fs;
+
+// Ouputs:
+out vec4 fragColor;
 
 void main()
 {
-	FragColor = texture(tex, tex_coords);
+	fragColor = texture(tex, texcoord_fs);
 }

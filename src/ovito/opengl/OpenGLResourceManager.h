@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,33 +20,34 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * \file OpenGLResourceManager.h
+ * \brief Contains the definition of the Ovito::OpenGLResourceManager class.
+ */
+
 #pragma once
 
-
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
+#include <ovito/core/rendering/RendererResourceCache.h>
+
+#include <QOpenGLTexture>
 
 namespace Ovito {
 
-class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
-
-/**
- * \brief This class is responsible for rendering line primitives using OpenGL.
- */
-class OpenGLLinePrimitive : public LinePrimitive
+class OVITO_OPENGLRENDERER_EXPORT OpenGLResourceManager : public RendererResourceCache
 {
+    Q_DISABLE_COPY(OpenGLResourceManager);
+
 public:
 
-	/// \brief Renders the geometry.
-	void render(OpenGLSceneRenderer* renderer);
+    /// Returns the thread-local instance of the class.
+    static OpenGLResourceManager* instance(); 
 
-protected:
+    /// Default constructor.
+    OpenGLResourceManager() = default;
 
-	/// \brief Renders the lines using GL_LINES mode.
-	void renderThinLines(OpenGLSceneRenderer* renderer);
-
-	/// \brief Renders the lines using polygons.
-	void renderThickLines(OpenGLSceneRenderer* renderer);
+    /// Create an OpenGL texture object for a QImage.
+    QOpenGLTexture* uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
 };
 
 }	// End of namespace

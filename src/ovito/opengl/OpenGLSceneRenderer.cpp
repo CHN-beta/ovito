@@ -245,6 +245,9 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 	}
     OVITO_REPORT_OPENGL_ERRORS(this);
 
+	// Make sure we have a valid frame set for the resource manager during this render pass.
+	OVITO_ASSERT(_currentResourceFrame != 0);
+
 	// Reset OpenGL state.
 	initializeGLState();
 
@@ -298,6 +301,7 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameB
 	    OVITO_REPORT_OPENGL_ERRORS(this);
 	}
 	_vertexArrayObject.reset();
+
 	_glcontext = nullptr;
 
 	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
@@ -388,9 +392,7 @@ const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
 std::shared_ptr<LinePrimitive> OpenGLSceneRenderer::createLinePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLLinePrimitive>(this);
+	return std::make_shared<OpenGLLinePrimitive>();
 }
 
 /******************************************************************************
@@ -412,10 +414,7 @@ std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
 		ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-//	OVITO_ASSERT(glcontext() != nullptr);
-//	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
-	return std::make_shared<OpenGLParticlePrimitive>(this, shape, shadingMode, renderingQuality);
+	return std::make_shared<OpenGLParticlePrimitive>(shape, shadingMode, renderingQuality);
 }
 
 /******************************************************************************
@@ -440,9 +439,7 @@ void OpenGLSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitiv
 std::shared_ptr<TextPrimitive> OpenGLSceneRenderer::createTextPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLTextPrimitive>(this);
+	return std::make_shared<OpenGLTextPrimitive>();
 }
 
 /******************************************************************************
@@ -463,9 +460,7 @@ void OpenGLSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primi
 std::shared_ptr<ImagePrimitive> OpenGLSceneRenderer::createImagePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLImagePrimitive>(this);
+	return std::make_shared<OpenGLImagePrimitive>();
 }
 
 /******************************************************************************
@@ -620,34 +615,43 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
 	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
-
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
 		if(shaderType == QOpenGLShader::Geometry || (glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
 			shaderSource.append("#version 150\n");
 		else
 			shaderSource.append("#version 130\n");
-
-		// Inject utilities code file, which is shared by all shaders.
-		QFile utilitiesSourceFile(QStringLiteral(":/openglrenderer/glsl/utilities.glsl"));
-		if(!utilitiesSourceFile.open(QFile::ReadOnly))
-			throw Exception(QString("Unable to open shader source file %1.").arg(utilitiesSourceFile.fileName()));
-		shaderSource.append(utilitiesSourceFile.readAll());
 	}
 	else {
 		// Using OpenGL ES context.
-
 		// Inject GLSL version directive into shader source. 
 		if(glformat().majorVersion() >= 3)
 			shaderSource.append("#version 300 es\n");
-
 	}
 
 	// Load actual shader source code.
 	QFile shaderSourceFile(filename);
 	if(!shaderSourceFile.open(QFile::ReadOnly))
 		throw Exception(QString("Unable to open shader source file %1.").arg(filename));
-	shaderSource.append(shaderSourceFile.readAll());
+
+	// Parse each line of the shader file and process #include directives.
+	while(!shaderSourceFile.atEnd()) {
+		QByteArray line = shaderSourceFile.readLine();
+		if(line.startsWith("#include")) {
+			// Resolve relative file paths.
+			QFileInfo includeFile(QFileInfo(shaderSourceFile).dir(), QString::fromUtf8(line.mid(8).replace('\"', "").trimmed()));
+
+			// Load the secondary shader file and insert it into the source of the primary shader.
+			QFile secondarySourceFile(includeFile.filePath());
+			if(!secondarySourceFile.open(QFile::ReadOnly))
+				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFile.filePath()).arg(filename));
+			shaderSource.append(secondarySourceFile.readAll());
+			shaderSource.append('\n');
+		}
+		else {
+			shaderSource.append(line);
+		}
+	}
 
 	// Load and compile vertex shader source.
 	if(!program->addShaderFromSourceCode(shaderType, shaderSource)) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,33 +20,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+uniform int picking_base_id;
 
-
-#include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
-
-namespace Ovito {
-
-class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
-
-/**
- * \brief This class is responsible for rendering line primitives using OpenGL.
- */
-class OpenGLLinePrimitive : public LinePrimitive
+vec4 pickingModeColor(in int primitiveID)
 {
-public:
+	// Compute color from object ID.
+	int objectID = picking_base_id + primitiveID;
 
-	/// \brief Renders the geometry.
-	void render(OpenGLSceneRenderer* renderer);
-
-protected:
-
-	/// \brief Renders the lines using GL_LINES mode.
-	void renderThinLines(OpenGLSceneRenderer* renderer);
-
-	/// \brief Renders the lines using polygons.
-	void renderThickLines(OpenGLSceneRenderer* renderer);
-};
-
-}	// End of namespace
+	return vec4(
+		float(objectID & 0xFF) / 255.0,
+		float((objectID >> 8) & 0xFF) / 255.0,
+		float((objectID >> 16) & 0xFF) / 255.0,
+		float((objectID >> 24) & 0xFF) / 255.0);
+}

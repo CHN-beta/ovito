@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,25 +20,20 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// Inputs from calling program:
-uniform mat4 modelview_projection_matrix;
-uniform int picking_base_id;
-uniform bool is_picking_mode;
+#include "../global_uniforms.glsl"
 
-in vec3 position;
+// Inputs
+in vec4 position;
 in vec4 color;
-out vec4 vertex_color_fs;
+
+// Outputs:
+out vec4 color_fs;
 
 void main()
 {
-	if(!is_picking_mode) {
-		// Forward color to fragment shader.
-		vertex_color_fs = color;
-	}
-	else {
-		// Compute color from object ID.
-		vertex_color_fs = pickingModeColor(picking_base_id, gl_VertexID / 2);
-	}
+	// Forward color to fragment shader.
+	color_fs = color;
 
-	gl_Position = modelview_projection_matrix * vec4(position, 1.0);
+	// Apply model-view-projection matrix.
+	gl_Position = modelview_projection_matrix * position;
 }

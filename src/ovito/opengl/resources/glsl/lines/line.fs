@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,10 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-in vec4 vertex_color_fs;
-out vec4 FragColor;
+// Inputs:
+in vec4 color_fs;
+
+// Outputs:
+out vec4 fragColor;
 
 void main()
 {
-	FragColor = vertex_color_fs;
+	fragColor = color_fs;
 }
