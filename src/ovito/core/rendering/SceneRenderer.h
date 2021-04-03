@@ -145,6 +145,12 @@ public:
 	/// Returns the current model-to-view transformation matrix.
 	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
 
+	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	virtual void setRenderingViewport(const QRect& viewportRect) { _viewportRect = viewportRect; }
+
+	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	const QRect& renderingViewport() const { return _viewportRect; }
+
 	/// Requests a new line geometry buffer from the renderer.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() {
 		OVITO_ASSERT(!isBoundingBoxPass());
@@ -215,8 +221,7 @@ public:
 	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) {}
 
 	/// Renders a 2d polyline or polygon into an interactive viewport.
-	/// This method is only implemented by real-time renderers used for the interactive viewports of OVITO.
-	virtual void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed) {}
+	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed);
 
 	/// Returns whether this renderer is rendering an interactive viewport.
 	/// \return true if rendering a real-time viewport; false if rendering a static image.
@@ -347,6 +352,9 @@ private:
 
 	/// Indicates that a bounding box pass is active.
 	bool _isBoundingBoxPass = false;
+
+	/// The rectangular region of the framebuffer we are rendering into (in device coordinates).
+	QRect _viewportRect;
 
 	/// Working variable used for computing the bounding box of the entire scene.
 	Box3 _sceneBoundingBox;

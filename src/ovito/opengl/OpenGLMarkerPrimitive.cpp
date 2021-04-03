@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,37 +23,71 @@
 #include <ovito/core/Core.h>
 #include "OpenGLMarkerPrimitive.h"
 #include "OpenGLSceneRenderer.h"
+#include "OpenGLShaderHelper.h"
 
 namespace Ovito {
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-OpenGLMarkerPrimitive::OpenGLMarkerPrimitive(OpenGLSceneRenderer* renderer, MarkerShape shape) :
-	MarkerPrimitive(shape)
-{
-	QString prefix = renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles") : QStringLiteral(":/openglrenderer");
-
-	// Initialize OpenGL shaders.
-	if(shape == BoxShape) {
-		_shader = renderer->loadShaderProgram("box_marker",
-				prefix + "/glsl/markers/box_lines.vs",
-				prefix + "/glsl/markers/marker.fs");
-	}
-	else {
-		_shader = renderer->loadShaderProgram("dot_marker",
-				prefix + "/glsl/markers/marker.vs",
-				prefix + "/glsl/markers/marker.fs");
-	}
-}
 
 /******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
 void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 {
+	// Step out early if there is nothing to render.
 	if(!positions() || positions()->size() == 0)
 		return;
+
+    // The effective number of primitives being rendered:
+    uint32_t verticesPerPrimitive = 0;
+
+	OpenGLShaderHelper shader(renderer);
+	switch(shape()) {
+	
+	case BoxShape:
+
+		if(renderer->isPicking())
+			shader.load("marker_box", "marker/marker_box.vert", "marker/marker_box.frag");
+		else
+			shader.load("marker_box_picking", "marker/marker_box_picking.vert", "marker/marker_box_picking.frag");
+		verticesPerPrimitive = 24; // 12 edges of a wireframe cube, 2 vertices per edge.
+		break;
+
+	default:
+		return;
+	}
+
+    // Are we rendering semi-transparent markers?
+    bool useBlending = !renderer->isPicking() && color().a() < 1.0;
+	if(useBlending) shader.enableBlending();
+
+	if(renderer->isPicking()) {
+		// Pass picking base ID to shader.
+		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size()));
+	}
+	else {
+		// Pass uniform marker color to fragment shader as a uniform value.
+		shader.setUniformValue("color", color());
+	}
+
+	// Marker sclaing factor:
+	shader.setUniformValue("marker_size", 4.0 / renderer->renderingViewport().height());
+
+	// Upload marker positions.
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());
+	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+
+	// Issue instance drawing command.
+	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_LINES, 0, verticesPerPrimitive, positions()->size()));
+
+
+#if 0
+	// Activate the right OpenGL shader program.
+	OpenGLShaderHelper shader(renderer);
+	if(renderer->isPicking())
+		shader.load("line_thin_picking", "lines/line_picking.vert", "lines/line.frag");
+	else if(colors())
+		shader.load("line_thin", "lines/line.vert", "lines/line.frag");
+	else
+		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
 
 #ifndef Q_OS_WASM	
 	// Load OpenGL shader program.
@@ -117,6 +151,7 @@ void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 
 	// Reset state.
 	_shader->release();
+#endif
 #endif
 }
 

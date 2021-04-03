@@ -71,12 +71,12 @@ void OpenGLViewportWindow::releaseResources()
 {
 	// Release any OpenGL resources held by the viewport renderers.
 	if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {
-		OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
+		makeCurrent();
 		OpenGLResourceManager::instance()->releaseResourceFrame(_viewportRenderer->currentResourceFrame());
 		_viewportRenderer->setCurrentResourceFrame(0);
 	}
 	if(_pickingRenderer && _pickingRenderer->currentResourceFrame()) {
-		OVITO_ASSERT(QOpenGLContext::currentContext() != nullptr);
+		makeCurrent();
 		OpenGLResourceManager::instance()->releaseResourceFrame(_pickingRenderer->currentResourceFrame());
 		_pickingRenderer->setCurrentResourceFrame(0);
 	}
@@ -116,7 +116,6 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
 		try {
 			if(pickingRenderer()->isRefreshRequired()) {
-				qDebug() << "---Rendering picking buffer for viewport" << viewport()->viewportTitle();
 				// Request a new frame from the resource manager for this render pass.
 				previousResourceFrame = pickingRenderer()->currentResourceFrame();
 				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
@@ -251,8 +250,6 @@ void OpenGLViewportWindow::paintGL()
 			stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
 			stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
 			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
-			stream << "OpenGL geometry shaders: " << QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, context()) << "\n";
-			stream << "Using geometry shaders: " << OpenGLSceneRenderer::geometryShadersEnabled() << "\n";
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);

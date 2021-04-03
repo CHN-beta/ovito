@@ -52,11 +52,11 @@ void OpenGLLinePrimitive::renderThinLines(OpenGLSceneRenderer* renderer)
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
 	if(renderer->isPicking())
-		shader.load("line_thin_picking", "lines/line_picking.vs", "lines/line.fs");
+		shader.load("line_thin_picking", "lines/line_picking.vert", "lines/line.frag");
 	else if(colors())
-		shader.load("line_thin", "lines/line.vs", "lines/line.fs");
+		shader.load("line_thin", "lines/line.vert", "lines/line.frag");
 	else
-		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vs", "lines/line_uniform_color.fs");
+		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
 	
 	// Upload vertex positions.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());
@@ -94,11 +94,11 @@ void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
 	if(renderer->isPicking())
-		shader.load("line_thick_picking", "lines/thick_line_picking.vs", "lines/line.fs");
+		shader.load("line_thick_picking", "lines/thick_line_picking.vert", "lines/line.frag");
 	else if(colors())
-		shader.load("line_thick", "lines/thick_line.vs", "lines/line.fs");
+		shader.load("line_thick", "lines/thick_line.vert", "lines/line.frag");
 	else
-		shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vs", "lines/line_uniform_color.fs");
+		shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vert", "lines/line_uniform_color.frag");
 
     // Put start/end vertex positions into one combined Vulkan buffer.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());

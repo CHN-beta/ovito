@@ -29,8 +29,6 @@
 #include "OpenGLResourceManager.h"
 
 #include <QOpenGLExtraFunctions>
-#include <QOpenGLFunctions_3_0>
-#include <QOpenGLFunctions_3_2_Core>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
@@ -127,17 +125,11 @@ public:
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
 
-	/// Renders a 2d polyline or polygon into an interactive viewport.
-	virtual void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed) override;
-
 	/// Returns the OpenGL context this renderer uses.
 	QOpenGLContext* glcontext() const { return _glcontext; }
 
 	/// Returns the surface format of the current OpenGL context.
 	const QSurfaceFormat& glformat() const { return _glformat; }
-
-	/// Indicates whether it is okay to use GLSL geometry shaders.
-	bool useGeometryShaders() const { return _useGeometryShaders; }
 
 	/// Translates an OpenGL error code to a human-readable message string.
 	static const char* openglErrorString(GLenum errorCode);
@@ -159,8 +151,8 @@ public:
 	/// Sets the frame buffer background color.
 	void setClearColor(const ColorA& color);
 
-	/// Sets the rendering region in the frame buffer.
-	void setRenderingViewport(int x, int y, int width, int height);
+	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	virtual void setRenderingViewport(const QRect& viewportRect) override;
 
 	/// Clears the frame buffer contents.
 	void clearFrameBuffer(bool clearDepthBuffer = true, bool clearStencilBuffer = true);
@@ -179,12 +171,6 @@ public:
 
 	/// Sets monotonically increasing identifier of the current frame being rendered.
 	void setCurrentResourceFrame(OpenGLResourceManager::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
-
-	/// Determines whether OpenGL geometry shader programs should be used or not.
-	static bool geometryShadersEnabled(bool forceDefaultSetting = false);
-
-	/// Determines whether OpenGL geometry shader programs are supported by the hardware.
-	static bool geometryShadersSupported() { return _openglSupportsGeomShaders; }
 
 	/// Returns the vendor name of the OpenGL implementation in use.
 	static const QByteArray& openGLVendor() { return _openGLVendor; }
@@ -206,7 +192,7 @@ public:
 
 protected:
 
-	/// \brief Loads and compiles a GLSL shader and adds it to the given program object.
+	/// Loads and compiles a GLSL shader and adds it to the given program object.
 	void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename);
 
 	/// Makes the renderer's GL context current.
@@ -226,38 +212,6 @@ protected:
 			rebindVAO();
 	}
 
-#ifndef Q_OS_WASM
-
-	/// The OpenGL glPointParameterf() function.
-	void glPointSize(GLfloat size) {
-		if(_glFunctions32) _glFunctions32->glPointSize(size);
-		else if(_glFunctions30) _glFunctions30->glPointSize(size);
-	}
-
-	/// The OpenGL glPointParameterf() function.
-	void glPointParameterf(GLenum pname, GLfloat param) {
-		if(_glFunctions32) _glFunctions32->glPointParameterf(pname, param);
-		else if(_glFunctions30) _glFunctions30->glPointParameterf(pname, param);
-	}
-
-	/// The OpenGL glPointParameterfv() function.
-	void glPointParameterfv(GLenum pname, const GLfloat* params) {
-		if(_glFunctions32) _glFunctions32->glPointParameterfv(pname, params);
-		else if(_glFunctions30) _glFunctions30->glPointParameterfv(pname, params);
-	}
-
-	/// The OpenGL glMultiDrawArrays() function.
-	void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) {
-		if(_glFunctions32) _glFunctions32->glMultiDrawArrays(mode, first, count, drawcount);
-		else if(_glFunctions30) _glFunctions30->glMultiDrawArrays(mode, first, count, drawcount);
-	}
-
-	void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
-		if(_glFunctions30) _glFunctions30->glTexEnvf(target, pname, param);
-	}
-
-#endif
-
 private:
 
 	/// The OpenGL context this renderer uses.
@@ -269,24 +223,14 @@ private:
 	/// The surface used by the GL context.
 	QSurface* _glsurface = nullptr;
 
-#ifndef Q_OS_WASM
-
-	/// The OpenGL 3.0 functions object.
-	QOpenGLFunctions_3_0* _glFunctions30 = nullptr;
-
-	/// The OpenGL 3.2 core profile functions object.
-	QOpenGLFunctions_3_2_Core* _glFunctions32 = nullptr;
-
-#endif	
+	/// Pointer to the optional glMultiDrawArraysIndirect() function. Requires OpenGL 4.3.
+	void (APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
 	/// The OpenGL vertex array object that is required by OpenGL 3.2 core profile.
 	QScopedPointer<QOpenGLVertexArrayObject> _vertexArrayObject;
 
 	/// The OpenGL surface format.
 	QSurfaceFormat _glformat;
-
-	/// Indicates whether it is okay to use GLSL geometry shaders.
-	bool _useGeometryShaders = false;
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
@@ -318,9 +262,6 @@ private:
 	/// The current surface format used by the OpenGL implementation.
 	static QSurfaceFormat _openglSurfaceFormat;
 
-	/// Indicates whether the current OpenGL implementation supports geometry shader programs.
-	static bool _openglSupportsGeomShaders;
-
 	friend class OpenGLMeshPrimitive;
 	friend class OpenGLCylinderPrimitive;
 	friend class OpenGLImagePrimitive;
@@ -328,7 +269,6 @@ private:
 	friend class OpenGLTextPrimitive;
 	friend class OpenGLParticlePrimitive;
 	friend class OpenGLMarkerPrimitive;
-	template<typename T> friend class OpenGLBuffer;
 };
 
 }	// End of namespace

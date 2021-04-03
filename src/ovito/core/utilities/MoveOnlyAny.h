@@ -67,7 +67,7 @@ private:
 					_Manager_external<_Tp>>;
 
 	template<typename _Tp, typename _VTp = std::decay_t<_Tp>>
-	using _Decay_if_not_any = std::enable_if_t<!std::is_same_v<_VTp, any_moveonly>, _VTp>;
+	using _Decay_if_not_any = std::enable_if_t<!std::is_same<_VTp, any_moveonly>::value, _VTp>;
 
 	/// Emplace with an object created from @p __args as the contained object.
 	template <typename _Tp, typename... _Args, typename _Mgr = _Manager<_Tp>>
@@ -328,7 +328,7 @@ void* __any_caster(const any_moveonly* __any)
 	using _Up = std::remove_cv_t<_Tp>;
 	// The contained value has a decayed type, so if decay_t<U> is not U,
 	// then it's not possible to have a contained value of type U:
-	if(!std::is_same_v<std::decay_t<_Up>, _Up>)
+	if(!std::is_same<std::decay_t<_Up>, _Up>::value)
 		return nullptr;
 	// Only movable types can be used for contained values:
 	else if(!std::is_move_constructible_v<_Up>)

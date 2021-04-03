@@ -66,7 +66,7 @@ public:
 
 		// Check if the key exists in the cache.
 		for(CacheEntry& entry : _entries) {
-			if(entry.key.type() == typeid(Key) && entry.value.type() == typeid(Value) && key == boost::any_cast<const Key&>(entry.key)) {
+			if(entry.key.type() == typeid(Key) && entry.value.type() == typeid(Value) && key == any_cast<const Key&>(entry.key)) {
 				// Register the frame in which the resource was actively used.
 				if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
 					entry.frames.push_back(resourceFrame);
@@ -139,7 +139,7 @@ private:
 
 	struct CacheEntry {
 		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)), frames{{_frame}} {}
-		boost::any key;
+		Ovito::any_moveonly key;
 		Ovito::any_moveonly value;
 		QVarLengthArray<ResourceFrameHandle, 6> frames;
 

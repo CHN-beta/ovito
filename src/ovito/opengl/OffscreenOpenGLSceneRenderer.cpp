@@ -155,7 +155,7 @@ void OffscreenOpenGLSceneRenderer::initializeGLState()
 {
 	OpenGLSceneRenderer::initializeGLState();
 
-	setRenderingViewport(0, 0, _framebufferSize.width(), _framebufferSize.height());
+	setRenderingViewport(QRect(QPoint(0,0), _framebufferSize));
 	setDepthTestEnabled(true);
 	if(renderSettings())
 		setClearColor(ColorA(renderSettings()->backgroundColor(), 0));

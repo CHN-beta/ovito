@@ -87,8 +87,8 @@ void PickingOpenGLSceneRenderer::initializeGLState()
 {
 	OpenGLSceneRenderer::initializeGLState();
 
-	// Set up GL viewport.
-	setRenderingViewport(0, 0, _framebufferObject->width(), _framebufferObject->height());
+	// Set up viewport area.
+	setRenderingViewport(QRect(QPoint(0, 0), _framebufferObject->size()));
 	// Fill framebuffer with zeros.
 	setClearColor(ColorA(0, 0, 0, 0));
 }

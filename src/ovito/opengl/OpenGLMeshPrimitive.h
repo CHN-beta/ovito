@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,9 +27,13 @@
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
-#include "OpenGLBuffer.h"
+
+#include <QOpenGLBuffer>
 
 namespace Ovito {
+
+class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
+class OpenGLShaderHelper;  // defined in OpenGLShaderHelper.h
 
 /**
  * \brief Buffer object that stores a triangle mesh to be rendered in the viewports.
@@ -38,32 +42,11 @@ class OpenGLMeshPrimitive : public MeshPrimitive
 {
 public:
 
-	/// Constructor.
-	OpenGLMeshPrimitive(OpenGLSceneRenderer* renderer);
-
 	/// Sets the mesh to be stored in this buffer object.
 	virtual void setMesh(const TriMesh& mesh, DepthSortingMode depthSortingMode) override {
 		MeshPrimitive::setMesh(mesh, depthSortingMode);
 		_depthSortingMode = depthSortingMode;
-		discardBuffers();
-	}
-
-	/// Sets array of materials referenced by the materialIndex() field of the mesh faces.
-	virtual void setMaterialColors(std::vector<ColorA> colors) override { 
-		MeshPrimitive::setMaterialColors(std::move(colors));
-		discardBuffers();
-	}
-
-	/// Sets the rendering color to be used if the mesh doesn't have per-vertex colors.
-	virtual void setUniformColor(const ColorA& color) override { 
-		MeshPrimitive::setUniformColor(color); 
-		discardBuffers();
-	}
-
-	/// Sets whether mesh edges are rendered as wireframe.
-	virtual void setEmphasizeEdges(bool emphasizeEdges) override { 
-		MeshPrimitive::setEmphasizeEdges(emphasizeEdges); 
-		discardBuffers();
+		_wireframeLines.reset();
 	}
 
 	/// \brief Renders the geometry.
@@ -71,39 +54,27 @@ public:
 
 private:
 
-	/// Throws away the OpenGL vertex buffers whenever the mesh changes.
-	void discardBuffers();
+	/// Renders the mesh wireframe edges.
+	void renderWireframe(OpenGLSceneRenderer* renderer);
 
-	/// Fills the OpenGL vertex buffers with the mesh data.
-	void setupBuffers();
+	/// Generates the list of wireframe line elements.
+	const ConstDataBufferPtr& wireframeLines(SceneRenderer* renderer);
 
-private:
+	/// Prepares the OpenGL buffer with the per-instance transformation matrices.
+	QOpenGLBuffer getInstanceTMBuffer(OpenGLSceneRenderer* renderer, OpenGLShaderHelper& shader);
 
-	/// Stores data of a single vertex passed to the OpenGL shader.
+	/// Stores data of a single vertex passed to the shader.
 	struct ColoredVertexWithNormal {
-		Point_3<float> pos;
+		Point_3<float> position;
 		Vector_3<float> normal;
 		ColorAT<float> color;
 	};
 
-	/// The internal OpenGL vertex buffer that stores the per-vertex data.
-	OpenGLBuffer<ColoredVertexWithNormal> _vertexBuffer;
-
-	/// The OpenGL shader program for renderint the triangles.
-	QOpenGLShaderProgram* _faceShader;
-
-	/// The OpenGL shader program for rendering the wireframe edges.
-	QOpenGLShaderProgram* _edgeShader;
+	/// The list of wireframe line elements.
+	ConstDataBufferPtr _wireframeLines;	// Array of Point3, two per line element.
 
 	/// Controls how the OpenGL renderer performs depth-correct rendering of semi-transparent meshes.
 	DepthSortingMode _depthSortingMode = AnyShapeMode;
-
-	/// Stores the center coordinates of the triangles, which are used to render semi-transparent faces in the 
-	/// correct order from back to front.
-	std::vector<Vector_3<float>> _triangleDepthSortData;
-
-	/// The internal OpenGL vertex buffer that stores the vertex data for rendering polygon edges.
-	OpenGLBuffer<Point_3<float>> _edgeLinesBuffer;
 };
 
 }	// End of namespace

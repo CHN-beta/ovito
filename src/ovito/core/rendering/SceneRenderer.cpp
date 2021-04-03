@@ -410,6 +410,48 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 }
 
 /******************************************************************************
+* Renders a 2d polyline in the viewport.
+******************************************************************************/
+void SceneRenderer::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
+{
+	if(isBoundingBoxPass())
+		return;
+	OVITO_ASSERT(count >= 2);
+
+	std::shared_ptr<LinePrimitive> primitive = createLinePrimitive();
+	primitive->setUniformColor(color);
+
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, (closed ? count : count-1) * 2, DataBuffer::Float, 3, 0, false);
+	Point3* lineSegment = vertices.begin();
+	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
+		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
+		lineSegment[1] = Point3(points[i+1].x(), points[i+1].y(), 0.0);
+	}
+	if(closed) {
+		lineSegment[0] = Point3(points[count-1].x(), points[count-1].y(), 0.0);
+		lineSegment[1] = Point3(points[0].x(), points[0].y(), 0.0);
+		lineSegment += 2;
+	}
+	OVITO_ASSERT(lineSegment == vertices.end());
+	primitive->setPositions(vertices.take());
+
+	// Set up model-view-projection matrices.
+	ViewProjectionParameters originalProjParams = projParams();
+	ViewProjectionParameters newProjParams;
+	newProjParams.aspectRatio = originalProjParams.aspectRatio;
+	newProjParams.projectionMatrix = Matrix4::ortho(renderingViewport().left(), renderingViewport().right(), renderingViewport().bottom(), renderingViewport().top(), -1.0, 1.0);
+	newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
+	setProjParams(newProjParams);
+	setWorldTransform(AffineTransformation::Identity());
+
+	setDepthTestEnabled(false);
+	renderLines(primitive);
+	setDepthTestEnabled(true);
+
+	setProjParams(originalProjParams);
+}
+
+/******************************************************************************
 * Computes the world-space radius of an object located at the given world-space position,
 * which should appear exactly one pixel wide in the rendered image.
 ******************************************************************************/

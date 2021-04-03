@@ -45,6 +45,9 @@ public:
 	/// Constructor.
 	OpenGLShaderHelper(OpenGLSceneRenderer* renderer) : _renderer(renderer) {}
 
+	/// Returns the internal OpenGL shader object.
+	QOpenGLShaderProgram& shaderObject() const { return *_shader; }
+
 	/// Loads a shader program.
 	void load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString()) {
 		if(_shader)
@@ -70,12 +73,17 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM().linear().inverse().transposed()))));
 
 		// Get current viewport rectangle.
 		GLint viewportCoords[4];
 		OVITO_CHECK_OPENGL(_renderer, _renderer->glGetIntegerv(GL_VIEWPORT, viewportCoords));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)viewportCoords[0], (float)viewportCoords[1]));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)viewportCoords[2], 2.0f / (float)viewportCoords[3]));
+	
+		// Need to render only the front-facing sides of the geometry.
+		_renderer->glCullFace(GL_BACK);
+		_renderer->glEnable(GL_CULL_FACE);
 	}
 
 	/// Destructor.
@@ -87,19 +95,34 @@ public:
 
 			// Unbind the shader program.
 			_shader->release();
+
+			// Restore old context state.
+		    if(_disableBlendingWhenDone) 
+				_renderer->glDisable(GL_BLEND);
 		}
+	}
+
+	/// Temporarily enables alpha blending. 
+	void enableBlending() {
+	    _disableBlendingWhenDone |= !_renderer->glIsEnabled(GL_BLEND);
+    	OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_BLEND));
+    	OVITO_CHECK_OPENGL(_renderer, _renderer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 	}
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
 	void bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride = 0, int offset = 0, VertexInputRate inputRate = PerVertex) {
+		bindBuffer(buffer, _shader->attributeLocation(attributeName), type, tupleSize, stride, offset, inputRate);
+	}
+
+	/// Binds an OpenGL buffer to a vertex attribute of the shader.
+	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride = 0, int offset = 0, VertexInputRate inputRate = PerVertex) {
+		OVITO_ASSERT(attrIndex >= 0);
 		OVITO_REPORT_OPENGL_ERRORS(_renderer);
 		OVITO_ASSERT(buffer.isCreated());
 		if(!buffer.bind()) {
 			qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName();
 			_renderer->throwException(QStringLiteral("Failed to bind OpenGL vertex buffer for shader '%1'.").arg(_shader->objectName()));
 		}
-		GLuint attrIndex = _shader->attributeLocation(attributeName);
-		OVITO_ASSERT(attrIndex >= 0);
 		OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
 		OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
 		if(inputRate == PerInstance) {
@@ -118,6 +141,11 @@ public:
 	/// Passes a uniform value to the shader.
 	void setUniformValue(const char* name, const ColorA& color) {
 		_shader->setUniformValue(name, color.r(), color.g(), color.b(), color.a());
+	}
+
+	/// Passes a uniform value to the shader.
+	void setUniformValue(const char* name, const Vector3& vec) {
+		_shader->setUniformValue(name, vec.x(), vec.y(), vec.z());
 	}
 
 	/// Passes a uniform value to the shader.
@@ -151,11 +179,17 @@ private:
 	/// Uploads some data to a new OpenGL buffer object.
 	static QOpenGLBuffer createCachedBufferImpl(int bufferSize, QOpenGLBuffer::Type usage, std::function<void(void*)>&& fillMemoryFunc);
 
+	/// The GLSL shader object.
 	QOpenGLShaderProgram* _shader = nullptr;
+
+	/// The renderer object.
 	OpenGLSceneRenderer* _renderer;
 
 	/// List of shader vertex attributes that have been marked as per-instance attributes.
 	QVarLengthArray<GLuint, 4> _instanceAttributes;
+
+	/// Indicates that alpha blending should be turned off after rendering is done.
+	bool _disableBlendingWhenDone = false;
 };
 
 }	// End of namespace

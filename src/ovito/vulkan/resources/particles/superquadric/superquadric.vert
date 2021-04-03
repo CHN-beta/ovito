@@ -66,8 +66,6 @@ void main()
 	// The x-component of the input vector is exponent 'e', the y-component is 'n'.
 	particle_exponents_fs.x = 2.0 / (roundness.x > 0.0 ? roundness.x : 1.0);
 	particle_exponents_fs.y = 2.0 / (roundness.y > 0.0 ? roundness.y : 1.0);
-//	particle_exponents_fs.x = 2.0 / 0.8;
-//	particle_exponents_fs.y = 2.0 / 0.5;
 
     // Calculate ray passing through the vertex (in view space).
     calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);

@@ -25,6 +25,8 @@
 #include "VulkanMeshPrimitive.h"
 #include "VulkanSceneRenderer.h"
 
+#include <boost/range/irange.hpp>
+
 namespace Ovito {
 
 /******************************************************************************
@@ -537,9 +539,6 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
         renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 1, 1, &instanceTMBuffer, &offset);
 
         if(perInstanceColors() && !renderer->isPicking()) {
-            // The look-up key for storing the per-instance colors in the Vulkan buffer cache.
-            RendererResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
-
             // Upload the per-instance colors to GPU memory.
             VkBuffer instanceColorBuffer = renderer->context()->uploadDataBuffer(perInstanceColors(), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
@@ -556,7 +555,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     else if(_depthSortingMode == ConvexShapeMode) {
         // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
-        // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontfrace culling
+        // Each time we pass the entire triangle list to Vulkan and use Vulkan's backface/frontfrace culling
         // option to render the right subset of triangles.
         if(!cullFaces() && renderer->context()->supportsExtendedDynamicState()) {
             // First pass is only needed if backface culling is not active.
@@ -568,7 +567,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
             renderer->context()->vkCmdSetCullModeEXT(renderer->currentCommandBuffer(), VK_CULL_MODE_BACK_BIT);
         renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), faceCount() * 3, renderInstanceCount, 0, 0);
     }
-    else {
+    else if(!useInstancedRendering()) {
         // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
 
         // Viewing direction in object space:
@@ -625,6 +624,50 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
 
         // Draw triangles in sorted order.
         renderer->deviceFunctions()->vkCmdDrawIndexed(renderer->currentCommandBuffer(), faceCount() * 3, renderInstanceCount, 0, 0, 0);
+    }
+    else {
+        // Create a buffer for an indirect drawing command to render the particles in back-to-front order. 
+
+        // Viewing direction in object space:
+        const Vector3 direction = renderer->modelViewTM().inverse().column(2);
+
+        // The caching key for the indirect drawing command buffer.
+        RendererResourceKey<VulkanMeshPrimitive, ConstDataBufferPtr, Vector3> indirectBufferCacheKey{
+            perInstanceTMs(),
+            direction
+        };
+
+        // Create indirect drawing buffer.
+        VkBuffer indirectBuffer = renderer->context()->createCachedBuffer(indirectBufferCacheKey, renderInstanceCount * sizeof(VkDrawIndirectCommand), renderer->currentResourceFrame(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, [&](void* buffer) {
+
+            // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
+            std::vector<FloatType> distances(renderInstanceCount);
+			boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(perInstanceTMs())](size_t i) {
+				return direction.dot(tmArray[i].translation());
+			});
+
+            // Create index array with all indices.
+            std::vector<uint32_t> sortedIndices(renderInstanceCount);
+            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
+
+            // Sort indices with respect to distance (back-to-front order).
+            std::sort(sortedIndices.begin(), sortedIndices.end(), [&](uint32_t a, uint32_t b) {
+                return distances[a] < distances[b];
+            });
+
+            // Fill the buffer with VkDrawIndirectCommand records.
+            VkDrawIndirectCommand* dst = reinterpret_cast<VkDrawIndirectCommand*>(buffer);
+            for(uint32_t index : sortedIndices) {
+                dst->vertexCount = faceCount() * 3;
+                dst->instanceCount = 1;
+                dst->firstVertex = 0;
+                dst->firstInstance = index;
+                ++dst;
+            }
+        });
+
+        // Draw instances in sorted order.
+        renderer->deviceFunctions()->vkCmdDrawIndirect(renderer->currentCommandBuffer(), indirectBuffer, 0, renderInstanceCount, sizeof(VkDrawIndirectCommand));
     }
 }
 

@@ -39,7 +39,7 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 
 	// Activate the OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
-    shader.load("image", "image/image.vs", "image/image.fs");
+    shader.load("image", "image/image.vert", "image/image.frag");
 
     // Generate an OpenGL texture with the image.
     QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(image(), renderer->currentResourceFrame());
@@ -67,10 +67,8 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 
     // Temporarily enable alpha blending and disable depth testing.
     bool wasDepthTestEnabled = renderer->glIsEnabled(GL_DEPTH_TEST);
-    bool wasBlendEnabled = renderer->glIsEnabled(GL_BLEND);
     OVITO_CHECK_OPENGL(renderer, renderer->glDisable(GL_DEPTH_TEST));
-    OVITO_CHECK_OPENGL(renderer, renderer->glEnable(GL_BLEND));
-    OVITO_CHECK_OPENGL(renderer, renderer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    shader.enableBlending();
 
     // Draw a quad with 4 vertices.
     OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
@@ -80,7 +78,6 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 
     // Restore old context state.
     if(wasDepthTestEnabled) renderer->glEnable(GL_DEPTH_TEST);
-    if(!wasBlendEnabled) renderer->glDisable(GL_BLEND);
 }
 
 }	// End of namespace

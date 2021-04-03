@@ -86,12 +86,12 @@ public:
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
 
-	/// Renders a 2d polyline or polygon into an interactive viewport.
-	virtual void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed) override;
-
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	/// This is an internal method used by the PickingVulkanSceneRenderer class to implement the picking mechanism.
 	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
+
+	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	virtual void setRenderingViewport(const QRect& viewportRect) override;
 
 	/// Temporarily enables/disables the depth test while rendering.
 	virtual void setDepthTestEnabled(bool enabled) override;

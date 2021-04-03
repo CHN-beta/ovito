@@ -37,6 +37,7 @@ void main()
 	);
 
 	// Const array of vertex normals for the cube triangle strip.
+    // Note the difference between Vulkan and OpenGL.
 	const vec3 normals[14] = vec3[14](
         vec3( 1.0,  0.0,  0.0),
         vec3( 1.0,  0.0,  0.0),

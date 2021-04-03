@@ -183,21 +183,8 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     // Make sure our Vulkan objects have been created.
     initResources();
 
-    // Specify dynamic Vulkan viewport area.
-    VkViewport viewport;
-    viewport.x = viewport.y = 0;
-    viewport.width = frameBufferSize().width();
-    viewport.height = frameBufferSize().height();
-    viewport.minDepth = 0;
-    viewport.maxDepth = 1;
-    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
-
-    // Specify dynamic Vulkan scissor rectangle.
-    VkRect2D scissor;
-    scissor.offset.x = scissor.offset.y = 0;
-    scissor.extent.width = viewport.width;
-    scissor.extent.height = viewport.height;
-    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
+    // Specify viewport area.
+    setRenderingViewport(QRect(QPoint(0,0), frameBufferSize()));
 
     // Enable depth tests by default.
     setDepthTestEnabled(true);
@@ -238,12 +225,29 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 }
 
 /******************************************************************************
-* Renders a 2d polyline in the viewport.
+* Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
 ******************************************************************************/
-void VulkanSceneRenderer::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
+void VulkanSceneRenderer::setRenderingViewport(const QRect& viewportRect)
 {
-	if(isBoundingBoxPass())
-		return;
+	SceneRenderer::setRenderingViewport(viewportRect);
+
+    // Specify dynamic Vulkan viewport area.
+    VkViewport viewport;
+    viewport.x = viewportRect.x();
+    viewport.y = viewportRect.y();
+    viewport.width = viewportRect.width();
+    viewport.height = viewportRect.height();
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
+
+    // Specify dynamic Vulkan scissor rectangle.
+    VkRect2D scissor;
+    scissor.offset.x = viewportRect.x();
+    scissor.offset.y = viewportRect.y();
+    scissor.extent.width = viewportRect.width();
+    scissor.extent.height = viewportRect.height();
+    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
 }
 
 /******************************************************************************
