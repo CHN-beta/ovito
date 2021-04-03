@@ -428,10 +428,6 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		// Release the fence object.
 		deviceFunctions()->vkDestroyFence(logicalDevice(), fence, nullptr);
 
-		// Tell the Vulkan resource manager that we are done rendering the frame.
-		context()->releaseResourceFrame(currentResourceFrame());
-		setCurrentResourceFrame(0);
-
 		// Get layout of the image (including row pitch).
 		VkImageSubresource subres = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
 		VkSubresourceLayout layout;
@@ -468,6 +464,10 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		}
 		frameBuffer->update();
 	}
+
+	// Tell the Vulkan resource manager that we are done rendering the frame.
+	context()->releaseResourceFrame(currentResourceFrame());
+	setCurrentResourceFrame(0);
 
 	// Release command buffer.
 	if(_cmdBuf) {

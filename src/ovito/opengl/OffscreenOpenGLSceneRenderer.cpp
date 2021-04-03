@@ -80,8 +80,9 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 
 	// Create a OpenGL context for rendering to an offscreen buffer.
 	_offscreenContext.reset(new QOpenGLContext());
-	// The context should share its resources with the one of the viewport renderers.
-	_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
+	// The context should share its resources with the one of the viewport renderers (only when operating in the same thread).
+	if(QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
+		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
 	if(!_offscreenContext->create())
 		throwException(tr("Failed to create OpenGL context for rendering."));
 
@@ -144,6 +145,10 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
 		throwException(tr("Failed to make OpenGL context current."));
 
+	// Tell the resource manager that we are beginning a new frame.
+	OVITO_ASSERT(currentResourceFrame() == 0);
+	setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+
 	OpenGLSceneRenderer::beginFrame(time, params, vp);
 }
 
@@ -205,6 +210,14 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		frameBuffer->update();
 	}
 
+	// Tell the resource manager that we are done rendering the frame.
+	if(_previousResourceFrame) {
+		OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
+	}
+	// Keep the resource from the last frame alive to speed up rendering successive frames.
+	_previousResourceFrame = currentResourceFrame();
+	setCurrentResourceFrame(0);
+
 	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 }
 
@@ -214,6 +227,12 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 void OffscreenOpenGLSceneRenderer::endRender()
 {
 	OpenGLSceneRenderer::endRender();
+
+	// Tell the resource manager that we are done rendering the frame.
+	if(_previousResourceFrame) {
+		OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
+		_previousResourceFrame = 0;
+	}
 
 	// Release OpenGL resources.
 	QOpenGLFramebufferObject::bindDefault();

@@ -235,7 +235,7 @@ private:
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
 
-	/// The monotonically increasing identifier of the current Vulkan frame being rendered.
+	/// The monotonically increasing identifier of the current frame being rendered.
 	OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.

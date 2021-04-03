@@ -44,8 +44,8 @@
 #include <QSurface>
 #include <QWindow>
 #include <QScreen>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	#include <QOpenGLVersionFunctionsFactory>
+#ifdef OVITO_DEBUG
+	#include <QOpenGLDebugLogger>
 #endif
 
 namespace Ovito {
@@ -172,12 +172,28 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     initializeOpenGLFunctions();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-	// Get optional function pointers.
-	glMultiDrawArraysIndirect = reinterpret_cast<void (APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
-
 	// Obtain surface format.
     OVITO_REPORT_OPENGL_ERRORS(this);
 	_glformat = _glcontext->format();
+
+#ifdef OVITO_DEBUG
+	// Initialize debug logger.
+	if(_glformat.testOption(QSurfaceFormat::DebugContext)) {
+		QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>();
+		if(!logger) {
+			logger = new QOpenGLDebugLogger(this);
+			connect(logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& debugMessage) {
+				qDebug() << debugMessage;
+			});
+		}
+		logger->initialize();
+		logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
+		logger->enableMessages();
+	}
+#endif
+
+	// Get optional function pointers.
+	glMultiDrawArraysIndirect = reinterpret_cast<void (APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
 
 	// Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
 	if(glformat().majorVersion() >= 3) {
@@ -242,6 +258,12 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameB
 	    initializeOpenGLFunctions();
 	    OVITO_REPORT_OPENGL_ERRORS(this);
 	}
+#ifdef OVITO_DEBUG
+	// Stop debug logger.
+	if(QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>()) {
+		logger->stopLogging();
+	}
+#endif
 	_vertexArrayObject.reset();
 	_glcontext = nullptr;
 
@@ -498,6 +520,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
 	OVITO_ASSERT(contextGroup);
 
+	OVITO_ASSERT(QThread::currentThread() == contextGroup->thread());
 	OVITO_ASSERT(QOpenGLShaderProgram::hasOpenGLShaderPrograms());
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
@@ -523,7 +546,6 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	}
 
 	// Make the shader program a child object of the GL context group.
-	program->moveToThread(contextGroup->thread());
 	program->setParent(contextGroup);
 	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(id));
 

@@ -38,7 +38,7 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(int bufferSize, QOpenGL
 
     // Prepare the OpenGL buffer object.
     QOpenGLBuffer bufferObject(usage);
-	bufferObject.setUsagePattern(QOpenGLBuffer::StreamDraw);
+	bufferObject.setUsagePattern(QOpenGLBuffer::StaticDraw/*QOpenGLBuffer::StreamDraw*/);
 	if(!bufferObject.create())
 		throw Exception(QStringLiteral("Failed to create OpenGL buffer object."));
 

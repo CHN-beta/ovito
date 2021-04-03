@@ -89,6 +89,9 @@ private:
 
 	/// The resolution of the output image.
 	QSize _outputSize;
+
+	/// The monotonically increasing identifier of the last frame that was rendered.
+	OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;
 };
 
 }	// End of namespace
