@@ -89,7 +89,7 @@ private:
 	}
 
 	template <typename _Res, typename _Tp, typename... _Args>
-	using __any_constructible = std::enable_if<std::is_move_constructible_v<_Tp> && std::is_constructible_v<_Tp, _Args...>, _Res>;
+	using __any_constructible = std::enable_if<std::is_move_constructible<_Tp>::value && std::is_constructible<_Tp, _Args...>::value, _Res>;
 
 	template <typename _Tp, typename... _Args>
 	using __any_constructible_t = typename __any_constructible<bool, _Tp, _Args...>::type;
@@ -226,7 +226,7 @@ public:
 	}
 
 	template<typename _Tp>
-	static constexpr bool __is_valid_cast() { return std::is_reference_v<_Tp> || std::is_copy_constructible_v<_Tp>; }
+	static constexpr bool __is_valid_cast() { return std::is_reference<_Tp>::value || std::is_copy_constructible<_Tp>::value; }
 
 private:
 	enum _Op {
@@ -301,7 +301,7 @@ inline _ValueType any_cast(any_moveonly& __any)
 {
 	using _Up = std::remove_cv_t<std::remove_reference_t<_ValueType>>;
 	static_assert(any_moveonly::__is_valid_cast<_ValueType>(), "Template argument must be a reference or CopyConstructible type");
-	static_assert(std::is_constructible_v<_ValueType, _Up&>, "Template argument must be constructible from an lvalue.");
+	static_assert(std::is_constructible<_ValueType, _Up&>::value, "Template argument must be constructible from an lvalue.");
 	auto __p = any_cast<_Up>(&__any);
 	if(__p)
 		return static_cast<_ValueType>(*__p);
@@ -313,7 +313,7 @@ inline _ValueType any_cast(any_moveonly&& __any)
 {
 	using _Up = __remove_cvref_t<_ValueType>;
 	static_assert(any_moveonly::__is_valid_cast<_ValueType>(), "Template argument must be a reference or CopyConstructible type");
-	static_assert(std::is_constructible_v<_ValueType, _Up>, "Template argument must be constructible from an rvalue.");
+	static_assert(std::is_constructible<_ValueType, _Up>::value, "Template argument must be constructible from an rvalue.");
 	auto __p = any_cast<_Up>(&__any);
 	if (__p)
 		return static_cast<_ValueType>(std::move(*__p));
@@ -331,7 +331,7 @@ void* __any_caster(const any_moveonly* __any)
 	if(!std::is_same<std::decay_t<_Up>, _Up>::value)
 		return nullptr;
 	// Only movable types can be used for contained values:
-	else if(!std::is_move_constructible_v<_Up>)
+	else if(!std::is_move_constructible<_Up>::value)
 		return nullptr;
 	// First try comparing function addresses, which works without RTTI
 	else if (__any->_manager == &any_moveonly::_Manager<_Up>::_S_manage	|| __any->type() == typeid(_Tp)) {
