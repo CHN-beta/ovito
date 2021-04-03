@@ -575,6 +575,8 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
 		if(shaderType == QOpenGLShader::Geometry || (glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
 			shaderSource.append("#version 150\n");
+		else if(glformat().majorVersion() == 2)
+			shaderSource.append("#version 120\n");
 		else
 			shaderSource.append("#version 130\n");
 	}
@@ -584,6 +586,14 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		if(glformat().majorVersion() >= 3)
 			shaderSource.append("#version 300 es\n");
 	}
+
+	if(glformat().majorVersion() == 2) {
+		if(shaderType == QOpenGLShader::Vertex) {
+			shaderSource.append("attribute int vertexID;\n");
+			shaderSource.append("attribute int instanceID;\n");
+		}
+	}
+
 
 	// Load actual shader source code.
 	QFile shaderSourceFile(filename);
@@ -605,6 +615,30 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			shaderSource.append('\n');
 		}
 		else {
+
+			if(glformat().majorVersion() == 2) {
+				if(shaderType == QOpenGLShader::Vertex) {
+					if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
+					else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
+					else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
+					else if(line.startsWith("noperspective out ")) line = QByteArrayLiteral("varying") + line.mid(17);
+					else {
+						line.replace("gl_VertexID", "vertexID");
+						line.replace("gl_InstanceID", "instanceID");
+					}
+				}
+				else if(shaderType == QOpenGLShader::Fragment) {
+					if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
+					else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
+					else if(line.startsWith("noperspective in ")) line = QByteArrayLiteral("varying") + line.mid(16);
+					else if(line.startsWith("out ")) continue;
+					else {
+						line.replace("fragColor", "gl_FragColor");
+						line.replace("texture(", "texture2D(");
+					}
+				}
+			}
+
 			shaderSource.append(line);
 		}
 	}

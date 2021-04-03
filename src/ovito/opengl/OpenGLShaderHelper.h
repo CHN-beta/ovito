@@ -82,16 +82,17 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)viewportCoords[2], 2.0f / (float)viewportCoords[3]));
 	
 		// Need to render only the front-facing sides of the geometry.
-		_renderer->glCullFace(GL_BACK);
-		_renderer->glEnable(GL_CULL_FACE);
+		OVITO_CHECK_OPENGL(_renderer, _renderer->glCullFace(GL_BACK));
+		OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_CULL_FACE));
 	}
 
 	/// Destructor.
 	~OpenGLShaderHelper() {
 		if(_shader) {
 			// Reset attribute states.
-			for(GLuint attrIndex : _instanceAttributes)
-				_renderer->glVertexAttribDivisor(attrIndex, 0);
+			for(GLuint attrIndex : _instanceAttributes) {
+				OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 0));
+			}
 
 			// Unbind the shader program.
 			_shader->release();
@@ -126,7 +127,7 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
 		OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
 		if(inputRate == PerInstance) {
-			_renderer->glVertexAttribDivisor(attrIndex, 1);
+			OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 1));
 			_instanceAttributes.push_back(attrIndex);
 		}
 		buffer.release();
@@ -135,27 +136,27 @@ public:
 	/// Passes the base object ID to the shader in picking mode.
 	void setPickingBaseId(GLint baseId) {
 		OVITO_ASSERT(_renderer->isPicking());
-		_shader->setUniformValue("picking_base_id", baseId);
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("picking_base_id", baseId));
 	}
 
 	/// Passes a uniform value to the shader.
 	void setUniformValue(const char* name, const ColorA& color) {
-		_shader->setUniformValue(name, color.r(), color.g(), color.b(), color.a());
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, color.r(), color.g(), color.b(), color.a()));
 	}
 
 	/// Passes a uniform value to the shader.
 	void setUniformValue(const char* name, const Vector3& vec) {
-		_shader->setUniformValue(name, vec.x(), vec.y(), vec.z());
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, vec.x(), vec.y(), vec.z()));
 	}
 
 	/// Passes a uniform value to the shader.
 	void setUniformValue(const char* name, const Vector4& vec) {
-		_shader->setUniformValue(name, vec.x(), vec.y(), vec.z(), vec.w());
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, vec.x(), vec.y(), vec.z(), vec.w()));
 	}
 
 	/// Passes a uniform value to the shader.
 	void setUniformValue(const char* name, FloatType value) {
-		_shader->setUniformValue(name, static_cast<GLfloat>(value));
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, static_cast<GLfloat>(value)));
 	}
 
 	/// Uploads some data to the Vulkan device as a buffer object and caches it.
