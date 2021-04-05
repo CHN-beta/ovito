@@ -47,68 +47,140 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
     switch(particleShape()) {
         case SquareCubicShape:
             if(shadingMode() == NormalShading) {
-                if(!renderer->isPicking())
-					shader.load("cube", "particles/cube/cube.vert", "particles/cube/cube.frag");
-                else
-					shader.load("cube_picking", "particles/cube/cube_picking.vert", "particles/cube/cube_picking.frag");
-                shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
+                if(!renderer->useGeometryShaders()) {
+                    if(!renderer->isPicking())
+                        shader.load("cube", "particles/cube/cube.vert", "particles/cube/cube.frag");
+                    else
+                        shader.load("cube_picking", "particles/cube/cube_picking.vert", "particles/cube/cube_picking.frag");
+                    shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
+                }
+                else {
+                    if(!renderer->isPicking())
+                        shader.load("cube", "particles/cube/cube.geom.vert", "particles/cube/cube.frag", "particles/cube/cube.geom");
+                    else
+                        shader.load("cube_picking", "particles/cube/cube_picking.geom.vert", "particles/cube/cube_picking.frag", "particles/cube/cube_picking.geom");
+                    shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                }
             }
             else {
-                if(!renderer->isPicking()) 
-					shader.load("square", "particles/square/square.vert", "particles/square/square.frag");
-                else
-					shader.load("square_picking", "particles/square/square_picking.vert", "particles/square/square_picking.frag");
-                shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                if(!renderer->useGeometryShaders()) {
+                    if(!renderer->isPicking()) 
+                        shader.load("square", "particles/square/square.vert", "particles/square/square.frag");
+                    else
+                        shader.load("square_picking", "particles/square/square_picking.vert", "particles/square/square_picking.frag");
+                    shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                }
+                else {
+                    if(!renderer->isPicking()) 
+                        shader.load("square", "particles/square/square.geom.vert", "particles/square/square.frag", "particles/square/square.geom");
+                    else
+                        shader.load("square_picking", "particles/square/square_picking.geom.vert", "particles/square/square_picking.frag", "particles/square/square_picking.geom");
+                    shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                }
             }
             break;
         case BoxShape:
             if(shadingMode() == NormalShading) {
-                if(!renderer->isPicking())
-					shader.load("box", "particles/box/box.vert", "particles/box/box.frag");
-                else
-					shader.load("box_picking", "particles/box/box_picking.vert", "particles/box/box_picking.frag");
-                shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+                if(!renderer->useGeometryShaders()) {
+                    if(!renderer->isPicking())
+                        shader.load("box", "particles/box/box.vert", "particles/box/box.frag");
+                    else
+                        shader.load("box_picking", "particles/box/box_picking.vert", "particles/box/box_picking.frag");
+                    shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+                }
+                else {
+                    if(!renderer->isPicking())
+                        shader.load("box", "particles/box/box.geom.vert", "particles/box/box.frag", "particles/box/box.geom");
+                    else
+                        shader.load("box_picking", "particles/box/box_picking.geom.vert", "particles/box/box_picking.frag", "particles/box/box_picking.geom");
+                    shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                }
             }
             else return;
             break;
         case SphericalShape:
             if(shadingMode() == NormalShading) {
                 if(renderingQuality() >= HighQuality) {
-                    if(!renderer->isPicking())
-						shader.load("sphere", "particles/sphere/sphere.vert", "particles/sphere/sphere.frag");
-                    else
-						shader.load("sphere_picking", "particles/sphere/sphere_picking.vert", "particles/sphere/sphere_picking.frag");
-                    shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
+                    if(!renderer->useGeometryShaders()) {
+                        if(!renderer->isPicking())
+                            shader.load("sphere", "particles/sphere/sphere.vert", "particles/sphere/sphere.frag");
+                        else
+                            shader.load("sphere_picking", "particles/sphere/sphere_picking.vert", "particles/sphere/sphere_picking.frag");
+                        shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
+                    }
+                    else {
+                        if(!renderer->isPicking())
+                            shader.load("sphere", "particles/sphere/sphere.geom.vert", "particles/sphere/sphere.frag", "particles/sphere/sphere.geom");
+                        else
+                            shader.load("sphere_picking", "particles/sphere/sphere_picking.geom.vert", "particles/sphere/sphere_picking.frag", "particles/sphere/sphere_picking.geom");
+                        shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                    }
                 }
                 else {
-                    if(!renderer->isPicking())
-						shader.load("imposter", "particles/imposter/imposter.vert", "particles/imposter/imposter.frag");
-                    else
-						shader.load("imposter_picking", "particles/imposter/imposter_picking.vert", "particles/imposter/imposter_picking.frag");
-                    shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                    if(!renderer->useGeometryShaders()) {
+                        if(!renderer->isPicking())
+                            shader.load("imposter", "particles/imposter/imposter.vert", "particles/imposter/imposter.frag");
+                        else
+                            shader.load("imposter_picking", "particles/imposter/imposter_picking.vert", "particles/imposter/imposter_picking.frag");
+                        shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                    }
+                    else {
+                        if(!renderer->isPicking())
+                            shader.load("imposter", "particles/imposter/imposter.geom.vert", "particles/imposter/imposter.frag", "particles/imposter/imposter.geom");
+                        else
+                            shader.load("imposter_picking", "particles/imposter/imposter_picking.geom.vert", "particles/imposter/imposter_picking.frag", "particles/imposter/imposter_picking.geom");
+                        shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                    }
                 }
             }
             else {
-                if(!renderer->isPicking())
-					shader.load("circle", "particles/circle/circle.vert", "particles/circle/circle.frag");
-                else
-					shader.load("circle_picking", "particles/circle/circle_picking.vert", "particles/circle/circle_picking.frag");
-                shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                if(!renderer->useGeometryShaders()) {
+                    if(!renderer->isPicking())
+                        shader.load("circle", "particles/circle/circle.vert", "particles/circle/circle.frag");
+                    else
+                        shader.load("circle_picking", "particles/circle/circle_picking.vert", "particles/circle/circle_picking.frag");
+                    shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                }
+                else {
+                    if(!renderer->isPicking())
+                        shader.load("circle", "particles/circle/circle.geom.vert", "particles/circle/circle.frag", "particles/circle/circle.geom");
+                    else
+                        shader.load("circle_picking", "particles/circle/circle_picking.geom.vert", "particles/circle/circle_picking.frag", "particles/circle/circle_picking.geom");
+                    shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                }
             }
             break;
         case EllipsoidShape:
-            if(!renderer->isPicking())
-				shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.vert", "particles/ellipsoid/ellipsoid.frag");
-            else
-				shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.vert", "particles/ellipsoid/ellipsoid_picking.frag");
-            shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+            if(!renderer->useGeometryShaders()) {
+                if(!renderer->isPicking())
+                    shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.vert", "particles/ellipsoid/ellipsoid.frag");
+                else
+                    shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.vert", "particles/ellipsoid/ellipsoid_picking.frag");
+                shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+            }
+            else {
+                if(!renderer->isPicking())
+                    shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.geom.vert", "particles/ellipsoid/ellipsoid.frag", "particles/ellipsoid/ellipsoid.geom");
+                else
+                    shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.geom.vert", "particles/ellipsoid/ellipsoid_picking.frag", "particles/ellipsoid/ellipsoid_picking.geom");
+                shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+            }
             break;
         case SuperquadricShape:
-            if(!renderer->isPicking())
-				shader.load("superquadric", "particles/superquadric/superquadric.vert", "particles/superquadric/superquadric.frag");
-            else
-				shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.vert", "particles/superquadric/superquadric_picking.frag");
-    	    shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+            if(!renderer->useGeometryShaders()) {
+                if(!renderer->isPicking())
+                    shader.load("superquadric", "particles/superquadric/superquadric.vert", "particles/superquadric/superquadric.frag");
+                else
+                    shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.vert", "particles/superquadric/superquadric_picking.frag");
+                shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+            }
+            else {
+                if(!renderer->isPicking())
+                    shader.load("superquadric", "particles/superquadric/superquadric.geom.vert", "particles/superquadric/superquadric.frag", "particles/superquadric/superquadric.geom");
+                else
+                    shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.geom.vert", "particles/superquadric/superquadric_picking.frag", "particles/superquadric/superquadric_picking.geom");
+                shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+            }
             break;
         default:
             return;

@@ -187,6 +187,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 	_glversion = QT_VERSION_CHECK(_glformat.majorVersion(), _glformat.minorVersion(), 0);
 
 #ifdef OVITO_DEBUG
+//	_glversion = QT_VERSION_CHECK(4, 1, 0);
 //	_glversion = QT_VERSION_CHECK(3, 2, 0);
 //	_glversion = QT_VERSION_CHECK(3, 1, 0);
 //	_glversion = QT_VERSION_CHECK(2, 1, 0);

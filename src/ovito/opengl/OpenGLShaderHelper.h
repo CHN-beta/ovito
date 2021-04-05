@@ -63,6 +63,9 @@ public:
 			!geometryShaderFile.isEmpty() ? prefix + geometryShaderFile : QString());
 		OVITO_REPORT_OPENGL_ERRORS(_renderer);
 
+		// Are we using a geometry shader?
+		_usingGeometryShader = !geometryShaderFile.isEmpty();
+
 		// Bind the OpenGL shader program.
 		if(!_shader->bind())
 			_renderer->throwException(QStringLiteral("Failed to bind OpenGL shader '%1'.").arg(id));
@@ -116,6 +119,8 @@ public:
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
 	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) {
+		OVITO_ASSERT(verticesPerInstance() > 0);
+		OVITO_ASSERT(instanceCount() > 0);
 		OVITO_ASSERT(attrIndex >= 0);
 		OVITO_REPORT_OPENGL_ERRORS(_renderer);
 		OVITO_ASSERT(buffer.isCreated());
@@ -126,7 +131,7 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
 		OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
 		// Does the OpenGL context support instanced arrays (requires OpenGL 3.3+)?
-		if(inputRate == PerInstance && _renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
+		if(inputRate == PerInstance && !usingGeometryShader() && _renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
 			OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 1));
 			_instanceAttributes.push_back(attrIndex);
 		}
@@ -164,11 +169,17 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, value));
 	}
 
+	/// Indicates whether an OpenGL geometry is being used.
+	bool usingGeometryShader() const { return _usingGeometryShader; }
+
 	/// Returns the number of vertices per rendered instance.
 	GLsizei verticesPerInstance() const { return _verticesPerInstance; }
 
 	/// Specifies the number of vertices per rendered instance.
-	void setVerticesPerInstance(GLsizei n) { _verticesPerInstance = n; }
+	void setVerticesPerInstance(GLsizei n) { 
+		OVITO_ASSERT(!usingGeometryShader() || n == 1);
+		_verticesPerInstance = n; 
+	}
 
 	/// Returns the number of primitive instances to be rendered.
 	GLsizei instanceCount() const { return _instanceCount; }
@@ -186,8 +197,8 @@ public:
 		// Depending on whether the OpenGL implementation supports instanced arrays, we 
 		// have to take into account the instancing parameters in the cache look up.
 
-	    // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+)?
-	    if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
+	    // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+) or are we using a geometry shader?
+	    if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0) || usingGeometryShader()) {
 			bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame());
 		}
 		else {
@@ -216,7 +227,14 @@ public:
 		// That's because the 'baseinstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification. 
 		OVITO_ASSERT(!_renderer->isPicking());
 
-		if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
+		// Are we using a geometry shader? If yes, render point primitives only.
+		if(usingGeometryShader()) {
+			// Look up the index drawing buffer from the cache and call implementation.
+			struct IndexBufferKeyTag {};
+			RendererResourceKey<IndexBufferKeyTag, std::decay_t<KeyType>> indexBufferKey{ std::forward<KeyType>(cacheKey) };
+			drawArraysOrderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
+		}
+		else if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
 			// On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
 
 			// Look up the indirect drawing buffer from the cache and call implementation.
@@ -244,6 +262,9 @@ private:
 	/// Issues a drawing command with an ordering of the instances.
 	void drawArraysOrderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
 
+	/// Renders the primtives using a geometry shader in a specified order.
+	void drawArraysOrderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
+
 	/// Makes the gl_VertexID and gl_InstanceID special variables available in older OpenGL implementations.
 	void setupVertexAndInstanceIDOpenGL2();
 
@@ -264,6 +285,9 @@ private:
 
 	/// The number of instances to render.
 	GLsizei _instanceCount = 0;
+
+	/// Indicates that a OpenGL geometry shader is active.
+	bool _usingGeometryShader = false;
 };
 
 }	// End of namespace

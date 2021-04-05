@@ -175,6 +175,9 @@ public:
 	/// Returns the OpenGL context version encoded as an integer.
 	quint32 glversion() const { return _glversion; }
 
+	/// Indicates whether OpenGL geometry shaders are supported.
+	bool useGeometryShaders() const { return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
+
 	/// Returns the vendor name of the OpenGL implementation in use.
 	static const QByteArray& openGLVendor() { return _openGLVendor; }
 

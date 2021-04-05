@@ -263,7 +263,7 @@ bool Application::initialize()
 	format.setMinorVersion(0);
 #endif
 #ifdef OVITO_DEBUG
-	format.setOption(QSurfaceFormat::DebugContext);
+//	format.setOption(QSurfaceFormat::DebugContext);
 #endif
 	QSurfaceFormat::setDefaultFormat(format);
 

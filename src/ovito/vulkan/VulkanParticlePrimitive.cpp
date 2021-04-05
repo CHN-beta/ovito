@@ -650,7 +650,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
         case EllipsoidShape:
         case SuperquadricShape:
 
-            if(shadingMode() == NormalShading && renderingQuality() >= HighQuality) {
+            if(particleShape() != SphericalShape || (shadingMode() == NormalShading && renderingQuality() >= HighQuality)) {
                 // Pass model-view-projection matrix to vertex shader as a push constant.
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
 
