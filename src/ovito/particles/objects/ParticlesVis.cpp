@@ -383,17 +383,17 @@ FloatType ParticlesVis::particleRadius(size_t particleIndex, ConstPropertyAccess
 	if(radiusProperty && radiusProperty.size() > particleIndex) {
 		// Take particle radius directly from the radius property.
 		FloatType r = radiusProperty[particleIndex];
-		if(r > 0) return r;
+		if(r > 0) return r * radiusScaleFactor();
 	}
 	else if(typeProperty && typeProperty->size() > particleIndex) {
 		// Assign radius based on particle types.
 		ConstPropertyAccess<int> typeData(typeProperty);
 		const ParticleType* ptype = static_object_cast<ParticleType>(typeProperty->elementType(typeData[particleIndex]));
 		if(ptype && ptype->radius() > 0)
-			return ptype->radius();
+			return ptype->radius() * radiusScaleFactor();
 	}
 
-	return defaultParticleRadius();
+	return defaultParticleRadius() * radiusScaleFactor();
 }
 
 /******************************************************************************

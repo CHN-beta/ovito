@@ -29,8 +29,10 @@ function(add_vulkan_shader target shaderfile)
 	# CMake 3.19 and newer define the Vulkan::glslc imported target for the shader compiler.
 	IF(TARGET Vulkan::glslc)
 		SET(glslc_executable "$<TARGET_FILE:Vulkan::glslc>")
-	#ELSE()
-	#	find_program(GLSLC glslc)
+	ELSE()
+		FIND_PROGRAM(glslc_executable
+			NAMES glslc
+			HINTS "$ENV{VULKAN_SDK}/bin")
 	ENDIF()
 
     SET(current-shader-path ${CMAKE_CURRENT_SOURCE_DIR}/${shaderfile})
@@ -45,7 +47,7 @@ function(add_vulkan_shader target shaderfile)
 		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/shading.glsl"
 		           "${CMAKE_CURRENT_SOURCE_DIR}/resources/global_uniforms.glsl"
            IMPLICIT_DEPENDS CXX "${current-shader-path}"
-		   COMMENT "Compiling Vulkan shader ${shaderfile}"
+		   COMMENT "Compiling Vulkan shader file ${shaderfile}"
            VERBATIM)
 
     # Make sure our build depends on this output.

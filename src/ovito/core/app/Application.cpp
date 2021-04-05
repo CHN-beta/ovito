@@ -253,8 +253,8 @@ bool Application::initialize()
 	format.setStencilBufferSize(1);
 #ifdef Q_OS_MACOS
 	// macOS only supports core profile contexts.
-	format.setMajorVersion(3);
-	format.setMinorVersion(2);
+	format.setMajorVersion(4);
+	format.setMinorVersion(3);
 	format.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 #else
@@ -263,7 +263,7 @@ bool Application::initialize()
 	format.setMinorVersion(0);
 #endif
 #ifdef OVITO_DEBUG
-//	format.setOption(QSurfaceFormat::DebugContext);
+	format.setOption(QSurfaceFormat::DebugContext);
 #endif
 	QSurfaceFormat::setDefaultFormat(format);
 
