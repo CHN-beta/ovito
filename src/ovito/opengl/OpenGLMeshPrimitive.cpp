@@ -53,6 +53,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 			shader.load("mesh", "mesh/mesh.vert", "mesh/mesh.frag");
         else
 			shader.load("mesh_picking", "mesh/mesh_picking.vert", "mesh/mesh_picking.frag");
+        shader.setInstanceCount(1);
     }
     else {
         if(!renderer->isPicking()) {
@@ -61,9 +62,12 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
             else
 				shader.load("mesh_instanced_with_colors", "mesh/mesh_instanced_with_colors.vert", "mesh/mesh_instanced_with_colors.frag");
         }
-        else
+        else {
 			shader.load("mesh_instanced_picking", "mesh/mesh_instanced_picking.vert", "mesh/mesh_instanced_picking.frag");
+        }
+        shader.setInstanceCount(perInstanceTMs()->size());
     }
+    shader.setVerticesPerInstance(faceCount() * 3);
 
     // Are we rendering a semi-transparent mesh?
     bool useBlending = !renderer->isPicking() && !isFullyOpaque();
@@ -94,7 +98,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
     };
 
     // Upload vertex buffer to GPU memory.
-    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(meshCacheKey, faceCount() * 3 * sizeof(ColoredVertexWithNormal), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(meshCacheKey, sizeof(ColoredVertexWithNormal), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
         ColoredVertexWithNormal* renderVertices = reinterpret_cast<ColoredVertexWithNormal*>(buffer);
         if(!mesh().hasNormals()) {
             quint32 allMask = 0;
@@ -209,32 +213,27 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(meshBuffer, "color",    GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color),    OpenGLShaderHelper::PerVertex);
 
-    // The number of instances the drawing command should draw.
-    uint32_t renderInstanceCount = 1;
-
     if(useInstancedRendering()) {
-        renderInstanceCount = perInstanceTMs()->size();
-
         // Upload the per-instance TMs to GPU memory.
         QOpenGLBuffer instanceTMBuffer = getInstanceTMBuffer(renderer, shader);
 
         // Bind buffer with the instance matrices.
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
 
         if(perInstanceColors() && !renderer->isPicking()) {
             // Upload the per-instance colors to GPU memory.
-            QOpenGLBuffer instanceColorBuffer = shader.uploadDataBuffer(perInstanceColors(), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer instanceColorBuffer = shader.uploadDataBuffer(perInstanceColors(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
 
             // Bind buffer with the instance colors.
-      		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceColorBuffer, "instance_color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance));
+      		shader.bindBuffer(instanceColorBuffer, "instance_color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
         }
     }
 
     if(renderer->isPicking() || isFullyOpaque()) {
 		// Draw triangles in regular storage order (not sorted).
-		OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLES, 0, faceCount() * 3, renderInstanceCount));
+		shader.drawArrays(GL_TRIANGLES);
 	}
     else if(_depthSortingMode == ConvexShapeMode) {
         // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
@@ -245,12 +244,12 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
             // First pass is only needed if backface culling is not active.
 			renderer->glCullFace(GL_FRONT);
 			renderer->glEnable(GL_CULL_FACE);
-			OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLES, 0, faceCount() * 3, renderInstanceCount));
+    		shader.drawArrays(GL_TRIANGLES);
         }
         // Now render front-facing triangles only.
 		renderer->glCullFace(GL_BACK);
 		renderer->glEnable(GL_CULL_FACE);
-		OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLES, 0, faceCount() * 3, renderInstanceCount));
+        shader.drawArrays(GL_TRIANGLES);
     }
     else if(!useInstancedRendering()) {
         // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
@@ -266,7 +265,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
         };
 
         // Create index buffer with three entries per triangle face.
-        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(indexBufferCacheKey, faceCount() * 3 * sizeof(uint32_t), renderer->currentResourceFrame(), QOpenGLBuffer::IndexBuffer, [&](void* buffer) {
+        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(indexBufferCacheKey, sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
 
             // Compute each face's center point.
             std::vector<Vector_3<float>> faceCenters(faceCount());
@@ -297,7 +296,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
             });
 
             // Fill the index buffer with vertex indices to render.
-            uint32_t* dst = reinterpret_cast<uint32_t*>(buffer);
+            GLsizei* dst = reinterpret_cast<GLsizei*>(buffer);
             for(uint32_t index : sortedIndices) {
                 *dst++ = index * 3;
                 *dst++ = index * 3 + 1;
@@ -310,41 +309,33 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 			renderer->throwException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
 
         // Draw triangles in sorted order.
-		OVITO_CHECK_OPENGL(renderer, renderer->glDrawElementsInstanced(GL_TRIANGLES, faceCount() * 3, GL_UNSIGNED_INT, nullptr, renderInstanceCount));
+		OVITO_CHECK_OPENGL(renderer, renderer->glDrawElements(GL_TRIANGLES, faceCount() * 3, GL_UNSIGNED_INT, nullptr));
 
 		indexBuffer.release();
     }
 	else {
-        // Create a buffer for an indirect drawing command to render the mesh instances in back-to-front order. 
+        // Render the mesh instances in back-to-front order. 
 
         // Viewing direction in object space:
         const Vector3 direction = renderer->modelViewTM().inverse().column(2);
 
-        // The caching key for the indirect drawing command buffer.
-        RendererResourceKey<OpenGLMeshPrimitive, ConstDataBufferPtr, Vector3> indirectBufferCacheKey{
+        // The caching key for the ordering of the primitives.
+        RendererResourceKey<OpenGLMeshPrimitive, ConstDataBufferPtr, Vector3> orderingCacheKey{
             perInstanceTMs(),
             direction
         };
 
-		// Data structure used by the glMultiDrawArraysIndirect() command:
-		struct DrawArraysIndirectCommand {
-			GLuint count;
-			GLuint instanceCount;
-			GLuint first;
-			GLuint baseInstance;
-		};
-
-        // Create indirect drawing buffer.
-        QOpenGLBuffer indirectBuffer = shader.createCachedBuffer(indirectBufferCacheKey, renderInstanceCount * sizeof(DrawArraysIndirectCommand), renderer->currentResourceFrame(), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), [&](void* buffer) {
+        // Render the primitives.
+        shader.drawArraysOrdered(GL_TRIANGLES, orderingCacheKey, [&]() {
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
-            std::vector<FloatType> distances(renderInstanceCount);
-			boost::transform(boost::irange<size_t>(0, renderInstanceCount), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(perInstanceTMs())](size_t i) {
+            std::vector<FloatType> distances(shader.instanceCount());
+			boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(perInstanceTMs())](size_t i) {
 				return direction.dot(tmArray[i].translation());
 			});
 
             // Create index array with all indices.
-            std::vector<uint32_t> sortedIndices(renderInstanceCount);
+            std::vector<uint32_t> sortedIndices(shader.instanceCount());
             std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
 
             // Sort indices with respect to distance (back-to-front order).
@@ -352,25 +343,8 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                 return distances[a] < distances[b];
             });
 
-            // Fill the buffer with DrawArraysIndirectCommand records.
-            DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
-            for(uint32_t index : sortedIndices) {
-                dst->count = faceCount() * 3;
-                dst->instanceCount = 1;
-                dst->first = 0;
-                dst->baseInstance = index;
-                ++dst;
-            }
+            return sortedIndices;
         });
-
-		// Bind the GL buffer.
-		if(!indirectBuffer.bind())
-			renderer->throwException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
-
-        // Draw triangle strip instances in sorted order.
-		OVITO_CHECK_OPENGL(renderer, renderer->glMultiDrawArraysIndirect(GL_TRIANGLES, nullptr, renderInstanceCount, 0));
-
-		indirectBuffer.release();		
 	}
 
 	// Reset depth offset.
@@ -390,7 +364,7 @@ QOpenGLBuffer OpenGLMeshPrimitive::getInstanceTMBuffer(OpenGLSceneRenderer* rend
     RendererResourceKey<OpenGLMeshPrimitive, ConstDataBufferPtr> instanceTMsKey{ perInstanceTMs() };
 
     // Upload the per-instance TMs to GPU memory.
-    return shader.createCachedBuffer(instanceTMsKey, perInstanceTMs()->size() * 3 * sizeof(Vector_4<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+    return shader.createCachedBuffer(instanceTMsKey, 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
         for(const AffineTransformation& tm : ConstDataBufferAccess<AffineTransformation>(perInstanceTMs())) {
             *row++ = static_cast<Vector_4<float>>(tm.row(0));
@@ -456,8 +430,13 @@ void OpenGLMeshPrimitive::renderWireframe(OpenGLSceneRenderer* renderer)
     ColorA wireframeColor(0.1, 0.1, 0.1, uniformColor().a());
 	shader.setUniformValue("color", wireframeColor);
 
+    // Get the wireframe lines geometry.
+    const ConstDataBufferPtr& wireframeLinesBuffer = wireframeLines(renderer);
+    shader.setVerticesPerInstance(wireframeLinesBuffer->size());
+    shader.setInstanceCount(useInstancedRendering() ? perInstanceTMs()->size() : 1);
+
     // Bind vertex buffer for wireframe vertex positions.
-    QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLines(renderer), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLinesBuffer, OpenGLShaderHelper::PerVertex, QOpenGLBuffer::VertexBuffer);
 	shader.bindBuffer(buffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
 
     // Bind vertex buffer for instance TMs.
@@ -465,13 +444,13 @@ void OpenGLMeshPrimitive::renderWireframe(OpenGLSceneRenderer* renderer)
         // Upload the per-instance TMs to GPU memory.
         QOpenGLBuffer instanceTMBuffer = getInstanceTMBuffer(renderer, shader);
         // Bind buffer with the instance matrices.
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
-		OVITO_CHECK_OPENGL(renderer, shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance));
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+		shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
     }
 
     // Draw lines.
-	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_LINES, 0, wireframeLines(renderer)->size(), useInstancedRendering() ? perInstanceTMs()->size() : 1));
+	shader.drawArrays(GL_LINES);
 }
 
 }	// End of namespace

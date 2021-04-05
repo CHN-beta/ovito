@@ -52,23 +52,19 @@ void main()
     float arrowHeadRadius = 2.5;
     float arrowHeadLength = (radius * arrowHeadRadius * 1.8) / length(uv_tm[0]);
     if(arrowHeadLength < 1.0) {
-        switch(gl_VertexID) {
-            case 0: vpos = vec2(1.0, 0.0); break;
-            case 1: vpos = vec2(1.0 - arrowHeadLength, arrowHeadRadius); break;
-            case 2: vpos = vec2(1.0 - arrowHeadLength, 1.0); break;
-            case 3: vpos = vec2(0.0, 1.0); break;
-            case 4: vpos = vec2(0.0,-1.0); break;
-            case 5: vpos = vec2(1.0 - arrowHeadLength,-1.0); break;
-            case 6: vpos = vec2(1.0 - arrowHeadLength,-arrowHeadRadius); break;
-        }
+        if(gl_VertexID == 0) vpos = vec2(1.0, 0.0);
+        else if(gl_VertexID == 1) vpos = vec2(1.0 - arrowHeadLength, arrowHeadRadius);
+        else if(gl_VertexID == 2) vpos = vec2(1.0 - arrowHeadLength, 1.0);
+        else if(gl_VertexID == 3) vpos = vec2(0.0, 1.0);
+        else if(gl_VertexID == 4) vpos = vec2(0.0,-1.0);
+        else if(gl_VertexID == 5) vpos = vec2(1.0 - arrowHeadLength,-1.0);
+        else if(gl_VertexID == 6) vpos = vec2(1.0 - arrowHeadLength,-arrowHeadRadius);
     }
     else {
-        switch(gl_VertexID) {
-            case 0: vpos = vec2(1.0, 0.0); break;
-            case 1: vpos = vec2(0.0, arrowHeadRadius / arrowHeadLength); break;
-            case 6: vpos = vec2(0.0,-arrowHeadRadius / arrowHeadLength); break;
-            default: vpos = vec2(0.0, 0.0); break;
-        }
+        if(gl_VertexID == 0) vpos = vec2(1.0, 0.0);
+        else if(gl_VertexID == 1) vpos = vec2(0.0, arrowHeadRadius / arrowHeadLength);
+        else if(gl_VertexID == 6) vpos = vec2(0.0,-arrowHeadRadius / arrowHeadLength);
+        else vpos = vec2(0.0, 0.0);
     }
 
 	// Project corner vertex.

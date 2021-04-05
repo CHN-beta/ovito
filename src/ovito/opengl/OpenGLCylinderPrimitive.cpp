@@ -83,6 +83,9 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             return;
     }
 
+	shader.setVerticesPerInstance(verticesPerPrimitive);
+	shader.setInstanceCount(primitiveCount);
+
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
 	if(useBlending) shader.enableBlending();
@@ -121,7 +124,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
     };
 
     // Upload vertex buffer with the base and head positions and radii.
-    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, primitiveCount * sizeof(BaseHeadRadius), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, sizeof(BaseHeadRadius), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
         OVITO_ASSERT(!radii() || radii()->size() == basePositions()->size());
         ConstDataBufferAccess<Point3> basePositionArray(basePositions());
         ConstDataBufferAccess<Point3> headPositionArray(headPositions());
@@ -156,7 +159,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
         };
 
         // Upload vertex buffer with the color data.
-        QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, primitiveCount * sizeof(Vector_4<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+        QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
             OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size());
             OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size());
             const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
@@ -186,7 +189,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).
-    OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(primitiveDrawMode, 0, verticesPerPrimitive, primitiveCount));
+    shader.drawArrays(primitiveDrawMode);
 
     // Draw cylindric part of the arrows.
     if(shape() == ArrowShape && shadingMode() == NormalShading) {
@@ -197,7 +200,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
     		shader.setPickingBaseId(pickingBaseId);
         }
 
-        OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, verticesPerPrimitive, primitiveCount));
+        shader.drawArrays(GL_TRIANGLE_STRIP);
     }
 }
 

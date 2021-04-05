@@ -57,9 +57,6 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
-    // The index of the cylinder being rendered.
-    int primitive_index = gl_InstanceID;
-
     // The index of the box corner.
     int corner = gl_VertexID;
 
@@ -71,7 +68,7 @@ void main()
             orientation_tm[0] = normalize(vec3(orientation_tm[2].y, -orientation_tm[2].x, 0.0)) * radius;
         else
             orientation_tm[0] = normalize(vec3(-orientation_tm[2].z, 0.0, orientation_tm[2].x)) * radius;
-        orientation_tm[1] = normalize(cross(orientation_tm[0], orientation_tm[2])) * radius;
+        orientation_tm[1] = normalize(cross(orientation_tm[2], orientation_tm[0])) * radius;
     }
     else {
         orientation_tm = mat3(0.0);
@@ -81,7 +78,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * box[corner]), 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(primitive_index);
+    color_fs = pickingModeColor(gl_InstanceID);
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(modelview_matrix[0]);

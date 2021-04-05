@@ -39,7 +39,7 @@ void main()
 	vec4 proj_to   = modelview_projection_matrix * position_to;
 
 	// Compute line direction vector.
-	vec2 delta = normalize(proj_to.xy - proj_from.xy) * line_thickness;
+	vec2 delta = normalize(proj_to.xy / proj_to.w - proj_from.xy / proj_from.w) * line_thickness;
 
 	// Take into account aspect ratio of viewport:
 	delta.y *= inverse_viewport_size.x / inverse_viewport_size.y;

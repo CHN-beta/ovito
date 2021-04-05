@@ -42,10 +42,6 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 	if(indices() && indices()->size() == 0)
         return;
 
-    // The effective number of particles being rendered:
-    uint32_t particleCount = indices() ? indices()->size() : positions()->size();
-    uint32_t verticesPerParticle = 0;
-
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
     switch(particleShape()) {
@@ -55,14 +51,14 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 					shader.load("cube", "particles/cube/cube.vert", "particles/cube/cube.frag");
                 else
 					shader.load("cube_picking", "particles/cube/cube_picking.vert", "particles/cube/cube_picking.frag");
-                verticesPerParticle = 14; // Cube rendered as triangle strip.
+                shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
             }
             else {
                 if(!renderer->isPicking()) 
 					shader.load("square", "particles/square/square.vert", "particles/square/square.frag");
                 else
 					shader.load("square_picking", "particles/square/square_picking.vert", "particles/square/square_picking.frag");
-                verticesPerParticle = 4; // Square rendered as triangle strip.
+                shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
             }
             break;
         case BoxShape:
@@ -71,7 +67,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 					shader.load("box", "particles/box/box.vert", "particles/box/box.frag");
                 else
 					shader.load("box_picking", "particles/box/box_picking.vert", "particles/box/box_picking.frag");
-                verticesPerParticle = 14; // Box rendered as triangle strip.
+                shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else return;
             break;
@@ -82,14 +78,14 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 						shader.load("sphere", "particles/sphere/sphere.vert", "particles/sphere/sphere.frag");
                     else
 						shader.load("sphere_picking", "particles/sphere/sphere_picking.vert", "particles/sphere/sphere_picking.frag");
-                    verticesPerParticle = 14; // Cube rendered as triangle strip.
+                    shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
                 }
                 else {
                     if(!renderer->isPicking())
 						shader.load("imposter", "particles/imposter/imposter.vert", "particles/imposter/imposter.frag");
                     else
 						shader.load("imposter_picking", "particles/imposter/imposter_picking.vert", "particles/imposter/imposter_picking.frag");
-                    verticesPerParticle = 4; // Square rendered as triangle strip.
+                    shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
                 }
             }
             else {
@@ -97,7 +93,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 					shader.load("circle", "particles/circle/circle.vert", "particles/circle/circle.frag");
                 else
 					shader.load("circle_picking", "particles/circle/circle_picking.vert", "particles/circle/circle_picking.frag");
-                verticesPerParticle = 4; // Square rendered as triangle strip.
+                shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
             }
             break;
         case EllipsoidShape:
@@ -105,18 +101,21 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 				shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.vert", "particles/ellipsoid/ellipsoid.frag");
             else
 				shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.vert", "particles/ellipsoid/ellipsoid_picking.frag");
-            verticesPerParticle = 14; // Box rendered as triangle strip.
+            shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             break;
         case SuperquadricShape:
             if(!renderer->isPicking())
 				shader.load("superquadric", "particles/superquadric/superquadric.vert", "particles/superquadric/superquadric.frag");
             else
 				shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.vert", "particles/superquadric/superquadric_picking.frag");
-            verticesPerParticle = 14; // Box rendered as triangle strip.
+    	    shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             break;
         default:
             return;
     }
+
+    // The effective number of particles being rendered:
+	shader.setInstanceCount(indices() ? indices()->size() : positions()->size());
 
     // Are we rendering semi-transparent particles?
     bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
@@ -138,7 +137,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
     };
 
     // Upload vertex buffer with the particle positions and radii.
-    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, particleCount * sizeof(Vector_4<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+    QOpenGLBuffer positionRadiusBuffer = shader.createCachedBuffer(positionRadiusCacheKey, sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
         OVITO_ASSERT(!radii() || radii()->size() == positions()->size());
         ConstDataBufferAccess<Point3> positionArray(positions());
         ConstDataBufferAccess<FloatType> radiusArray(radii());
@@ -183,7 +182,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
         };
 
         // Upload vertex buffer with the particle colors.
-        QOpenGLBuffer colorSelectionBuffer = shader.createCachedBuffer(colorSelectionCacheKey, particleCount * sizeof(ColorAT<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+        QOpenGLBuffer colorSelectionBuffer = shader.createCachedBuffer(colorSelectionCacheKey, sizeof(ColorAT<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
             OVITO_ASSERT(!transparencies() || transparencies()->size() == positions()->size());
             OVITO_ASSERT(!selection() || selection()->size() == positions()->size());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
@@ -268,7 +267,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
         };
 
         // Upload vertex buffer with the particle transformation matrices.
-        QOpenGLBuffer shapeOrientationBuffer = shader.createCachedBuffer(shapeOrientationCacheKey, particleCount * sizeof(Matrix_4<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+        QOpenGLBuffer shapeOrientationBuffer = shader.createCachedBuffer(shapeOrientationCacheKey, sizeof(Matrix_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
             ConstDataBufferAccess<Vector3> asphericalShapeArray(asphericalShapes());
             ConstDataBufferAccess<Quaternion> orientationArray(orientations());
             ConstDataBufferAccess<FloatType> radiusArray(radii());
@@ -368,7 +367,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
         };
 
         // Upload vertex buffer with the roundness values.
-        QOpenGLBuffer roundnessBuffer = shader.createCachedBuffer(roundnessCacheKey, particleCount * sizeof(Vector_2<float>), renderer->currentResourceFrame(), QOpenGLBuffer::VertexBuffer, [&](void* buffer) {
+        QOpenGLBuffer roundnessBuffer = shader.createCachedBuffer(roundnessCacheKey, sizeof(Vector_2<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
             Vector_2<float>* dst = reinterpret_cast<Vector_2<float>*>(buffer);
             if(roundness()) {
                 OVITO_ASSERT(roundness()->size() == positions()->size());
@@ -385,7 +384,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                 }
             }
             else {
-                std::fill(dst, dst + particleCount, Vector_2<float>(1,1));
+                std::fill(dst, dst + shader.instanceCount(), Vector_2<float>(1,1));
             }
         });
 
@@ -393,39 +392,32 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
 		shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector_2<float>), 0, OpenGLShaderHelper::PerInstance);
     }
 
-    if(!useBlending || !renderer->glMultiDrawArraysIndirect) {
+    if(!useBlending) {
         // Draw triangle strip instances in regular storage order (not sorted).
-		OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, verticesPerParticle, particleCount));
+		shader.drawArrays(GL_TRIANGLE_STRIP);
     }
     else {
-        // Create a buffer for an indirect drawing command to render the particles in back-to-front order. 
+        // Render the particles in back-to-front order. 
+        OVITO_ASSERT(!renderer->isPicking());
 
         // Viewing direction in object space:
         const Vector3 direction = renderer->modelViewTM().inverse().column(2);
 
-        // The caching key for the indirect drawing command buffer.
-        RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> indirectBufferCacheKey{
+        // The caching key for the particle ordering.
+        RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Vector3, int> orderingCacheKey{
             indices(),
             positions(),
             direction,
-            verticesPerParticle
+            shader.verticesPerInstance()
         };
 
-		// Data structure used by the glMultiDrawArraysIndirect() command:
-		struct DrawArraysIndirectCommand {
-			GLuint count;
-			GLuint instanceCount;
-			GLuint first;
-			GLuint baseInstance;
-		};
-
-        // Create indirect drawing buffer.
-        QOpenGLBuffer indirectBuffer = shader.createCachedBuffer(indirectBufferCacheKey, particleCount * sizeof(DrawArraysIndirectCommand), renderer->currentResourceFrame(), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), [&](void* buffer) {
+        // Render primitives.
+        shader.drawArraysOrdered(GL_TRIANGLE_STRIP, orderingCacheKey, [&]() {
 
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
-            std::vector<FloatType> distances(particleCount);
+            std::vector<FloatType> distances(shader.instanceCount());
             if(!indices()) {
-                boost::transform(boost::irange<size_t>(0, particleCount), distances.begin(), [direction, positionsArray = ConstDataBufferAccess<Vector3>(positions())](size_t i) {
+                boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, positionsArray = ConstDataBufferAccess<Vector3>(positions())](size_t i) {
                     return direction.dot(positionsArray[i]);
                 });
             }
@@ -436,7 +428,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
             }
 
             // Create index array with all particle indices.
-            std::vector<uint32_t> sortedIndices(particleCount);
+            std::vector<uint32_t> sortedIndices(shader.instanceCount());
             std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
 
             // Sort particle indices with respect to distance (back-to-front order).
@@ -444,25 +436,8 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                 return distances[a] < distances[b];
             });
 
-            // Fill the buffer with DrawArraysIndirectCommand records.
-            DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
-            for(uint32_t index : sortedIndices) {
-                dst->count = verticesPerParticle;
-                dst->instanceCount = 1;
-                dst->first = 0;
-                dst->baseInstance = index;
-                ++dst;
-            }
+            return sortedIndices;
         });
-
-		// Bind the GL buffer.
-		if(!indirectBuffer.bind())
-			renderer->throwException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
-
-        // Draw triangle strip instances in sorted order.
-		OVITO_CHECK_OPENGL(renderer, renderer->glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, nullptr, particleCount, 0));
-
-		indirectBuffer.release();
 	}
 }
 

@@ -25,12 +25,12 @@
 
 // Inputs:
 flat in vec4 color_fs;
-flat in vec3 normal_fs;
+flat in vec3 flat_normal_fs;
 
 // Outputs:
 out vec4 fragColor;
 
 void main()
 {
-    fragColor = shadeSurfaceColor(normal_fs, color_fs);
+    fragColor = shadeSurfaceColor(flat_normal_fs, color_fs);
 }

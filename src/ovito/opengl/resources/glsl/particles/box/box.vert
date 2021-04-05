@@ -30,7 +30,7 @@ in mat4 shape_orientation;
 
 // Outputs:
 flat out vec4 color_fs;
-flat out vec3 normal_fs;
+flat out vec3 flat_normal_fs;
 
 void main()
 {
@@ -71,9 +71,6 @@ void main()
         vec3(-1.0,  0.0,  0.0)
     );
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceID;
-
     // The index of the box corner.
     int corner = gl_VertexID;
 
@@ -87,5 +84,5 @@ void main()
     color_fs = color;
 
     // Transform local vertex normal.
-    normal_fs = normalize(vec3(normal_tm * shape_orientation * vec4(normals[corner], 0.0)));
+    flat_normal_fs = normalize(vec3(normal_tm * shape_orientation * vec4(normals[corner], 0.0)));
 }

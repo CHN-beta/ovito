@@ -77,7 +77,7 @@ void main()
             orientation_tm[0] = normalize(vec3(orientation_tm[2].y, -orientation_tm[2].x, 0.0)) * arrowHeadRadius;
         else
             orientation_tm[0] = normalize(vec3(-orientation_tm[2].z, 0.0, orientation_tm[2].x)) * arrowHeadRadius;
-        orientation_tm[1] = normalize(cross(orientation_tm[0], orientation_tm[2])) * arrowHeadRadius;
+        orientation_tm[1] = normalize(cross(orientation_tm[2], orientation_tm[0])) * arrowHeadRadius;
     }
     else {
         orientation_tm = mat3(0.0);

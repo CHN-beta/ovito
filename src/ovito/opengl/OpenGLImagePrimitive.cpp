@@ -41,6 +41,9 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 	OpenGLShaderHelper shader(renderer);
     shader.load("image", "image/image.vert", "image/image.frag");
 
+	shader.setVerticesPerInstance(4);
+	shader.setInstanceCount(1);
+
     // Generate an OpenGL texture with the image.
     QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(image(), renderer->currentResourceFrame());
     texture->bind();
@@ -54,13 +57,12 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
         b.maxc.x() = (int)(b.maxc.x() / aaLevel) * aaLevel;
         b.maxc.y() = (int)(b.maxc.y() / aaLevel) * aaLevel;
     }
-    GLint vc[4];
-    renderer->glGetIntegerv(GL_VIEWPORT, vc);
+    const QRect& vpRect = renderer->renderingViewport();
     Vector4 image_rect(
-        b.minc.x() / vc[2] * 2.0 - 1.0, 
-        1.0 - b.maxc.y() / vc[3] * 2.0,
-        b.maxc.x() / vc[2] * 2.0 - 1.0, 
-        1.0 - b.minc.y() / vc[3] * 2.0);
+        b.minc.x() / vpRect.width() * 2.0 - 1.0, 
+        1.0 - b.maxc.y() / vpRect.height() * 2.0,
+        b.maxc.x() / vpRect.width() * 2.0 - 1.0, 
+        1.0 - b.minc.y() / vpRect.height() * 2.0);
         
     // Pass the image rectangle to the shader as a uniform.
     shader.setUniformValue("image_rect", image_rect);
@@ -71,13 +73,14 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
     shader.enableBlending();
 
     // Draw a quad with 4 vertices.
-    OVITO_CHECK_OPENGL(renderer, renderer->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
+    shader.drawArrays(GL_TRIANGLE_STRIP);
 
     // Release the texture.
     texture->release();
 
     // Restore old context state.
-    if(wasDepthTestEnabled) renderer->glEnable(GL_DEPTH_TEST);
+    if(wasDepthTestEnabled) 
+        renderer->glEnable(GL_DEPTH_TEST);
 }
 
 }	// End of namespace

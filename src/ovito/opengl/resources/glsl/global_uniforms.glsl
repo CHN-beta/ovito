@@ -43,3 +43,33 @@ void calculate_view_ray(in vec2 viewport_position, out vec3 ray_origin, out vec3
     ray_origin = near.xyz / near.w;
     ray_dir = far.xyz / far.w - ray_origin;
 }
+
+// Replacement for inverse(mat3) function, which is only available in GLSL version 1.40. 
+float determinant_mat2(in mat2 matrix) {
+    return matrix[0].x * matrix[1].y - matrix[0].y * matrix[1].x;
+}
+mat3 inverse_mat3(in mat3 matrix) {
+    vec3 row0 = matrix[0];
+    vec3 row1 = matrix[1];
+    vec3 row2 = matrix[2];
+
+    vec3 minors0 = vec3(
+        determinant_mat2(mat2(row1.y, row1.z, row2.y, row2.z)),
+        determinant_mat2(mat2(row1.z, row1.x, row2.z, row2.x)),
+        determinant_mat2(mat2(row1.x, row1.y, row2.x, row2.y))
+    );
+    vec3 minors1 = vec3(
+        determinant_mat2(mat2(row2.y, row2.z, row0.y, row0.z)),
+        determinant_mat2(mat2(row2.z, row2.x, row0.z, row0.x)),
+        determinant_mat2(mat2(row2.x, row2.y, row0.x, row0.y))
+    );
+    vec3 minors2 = vec3(
+        determinant_mat2(mat2(row0.y, row0.z, row1.y, row1.z)),
+        determinant_mat2(mat2(row0.z, row0.x, row1.z, row1.x)),
+        determinant_mat2(mat2(row0.x, row0.y, row1.x, row1.y))
+    );
+
+    mat3 adj = transpose(mat3(minors0, minors1, minors2));
+
+    return (1.0 / dot(row0, minors0)) * adj;
+}

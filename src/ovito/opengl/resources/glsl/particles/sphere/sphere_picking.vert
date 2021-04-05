@@ -54,9 +54,6 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceID;
-
     // The index of the cube corner.
     int corner = gl_VertexID;
 
@@ -64,7 +61,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(position + cube[corner] * radius, 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(particle_index);
+    color_fs = pickingModeColor(gl_InstanceID);
 
     // Pass particle radius and center position to fragment shader.
     float radius_scalingfactor = length(modelview_matrix[0]);

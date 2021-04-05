@@ -29,9 +29,6 @@ void main()
         vec2( 1.0,  1.0)
 	);
 
-    // The index of the cylinder being rendered.
-    int primitive_index = gl_InstanceIndex;
-
     // The index of the quad corner.
     int corner = gl_VertexIndex;
 
@@ -51,5 +48,5 @@ void main()
     gl_Position = PushConstants.mvp * vec4(base + uv_tm * quad[corner], 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(PushConstants.pickingBaseId, primitive_index);
+    color_fs = pickingModeColor(PushConstants.pickingBaseId, gl_InstanceIndex);
 }

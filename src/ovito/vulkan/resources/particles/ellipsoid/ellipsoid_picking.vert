@@ -43,9 +43,6 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceIndex;
-
     // The index of the box corner.
     int corner = gl_VertexIndex;
 
@@ -56,7 +53,7 @@ void main()
     gl_Position = PushConstants.mvp * scaled_corner;
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(PushConstants.pickingBaseId, particle_index);
+    color_fs = pickingModeColor(PushConstants.pickingBaseId, gl_InstanceIndex);
 
     // Pass ellipsoid matrix and center position to fragment shader.
 	particle_view_pos_fs = PushConstants.modelview_matrix * vec4(position, 1.0);

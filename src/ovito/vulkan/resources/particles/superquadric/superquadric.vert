@@ -44,9 +44,6 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceIndex;
-
     // The index of the box corner.
     int corner = gl_VertexIndex;
 

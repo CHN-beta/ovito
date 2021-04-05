@@ -36,9 +36,6 @@ void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 	if(!positions() || positions()->size() == 0)
 		return;
 
-    // The effective number of primitives being rendered:
-    uint32_t verticesPerPrimitive = 0;
-
 	OpenGLShaderHelper shader(renderer);
 	switch(shape()) {
 	
@@ -48,12 +45,13 @@ void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 			shader.load("marker_box", "marker/marker_box.vert", "marker/marker_box.frag");
 		else
 			shader.load("marker_box_picking", "marker/marker_box_picking.vert", "marker/marker_box_picking.frag");
-		verticesPerPrimitive = 24; // 12 edges of a wireframe cube, 2 vertices per edge.
+		shader.setVerticesPerInstance(24); // 12 edges of a wireframe cube, 2 vertices per edge.
 		break;
 
 	default:
 		return;
 	}
+	shader.setInstanceCount(positions()->size());
 
     // Are we rendering semi-transparent markers?
     bool useBlending = !renderer->isPicking() && color().a() < 1.0;
@@ -72,87 +70,11 @@ void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 	shader.setUniformValue("marker_size", 4.0 / renderer->renderingViewport().height());
 
 	// Upload marker positions.
-	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), renderer->currentResourceFrame());
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 
 	// Issue instance drawing command.
-	OVITO_CHECK_OPENGL(renderer, renderer->glDrawArraysInstanced(GL_LINES, 0, verticesPerPrimitive, positions()->size()));
-
-
-#if 0
-	// Activate the right OpenGL shader program.
-	OpenGLShaderHelper shader(renderer);
-	if(renderer->isPicking())
-		shader.load("line_thin_picking", "lines/line_picking.vert", "lines/line.frag");
-	else if(colors())
-		shader.load("line_thin", "lines/line.vert", "lines/line.frag");
-	else
-		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
-
-#ifndef Q_OS_WASM	
-	// Load OpenGL shader program.
-	if(!_shader->bind())
-		renderer->throwException(QStringLiteral("Failed to bind OpenGL shader program."));
-
-	int verticesPerMarker = 1;
-	if(shape() == BoxShape)
-		verticesPerMarker = 24;
-
-	// Fill VBOs.
-	_positionsBuffer.uploadData<Point3>(positions(), verticesPerMarker);
-
-	// Bind VBOs.
-	_positionsBuffer.bindPositions(renderer, _shader);
-
-	// Set up state.
-	_shader->setUniformValue("is_picking_mode", (bool)renderer->isPicking());
-	if(!renderer->isPicking()) {
-		_shader->setUniformValue("color", color().r(), color().g(), color().b(), color().a());
-	}
-	else {
-		GLint pickingBaseID = renderer->registerSubObjectIDs(positions()->size());
-		_shader->setUniformValue("picking_base_id", pickingBaseID);
-	}
-
-	if(shape() == DotShape) {
-		OVITO_CHECK_OPENGL(renderer, renderer->glPointSize(3));
-		_shader->setUniformValue("modelview_projection_matrix", (QMatrix4x4)(renderer->projParams().projectionMatrix * renderer->modelViewTM()));
-		renderer->glDrawArrays(GL_POINTS, 0, positions()->size());
-	}
-	else if(shape() == BoxShape) {
-		_shader->setUniformValue("projection_matrix", (QMatrix4x4)renderer->projParams().projectionMatrix);
-		_shader->setUniformValue("viewprojection_matrix", (QMatrix4x4)(renderer->projParams().projectionMatrix * renderer->projParams().viewMatrix));
-		_shader->setUniformValue("model_matrix", (QMatrix4x4)renderer->worldTransform());
-		_shader->setUniformValue("modelview_matrix", (QMatrix4x4)renderer->modelViewTM());
-		GLint viewportCoords[4];
-		renderer->glGetIntegerv(GL_VIEWPORT, viewportCoords);
-		_shader->setUniformValue("marker_size", 4.0f / viewportCoords[3]);
-
-		static const QVector3D cubeVerts[] = {
-				{-1, -1, -1}, { 1,-1,-1},
-				{-1, -1,  1}, { 1,-1, 1},
-				{-1, -1, -1}, {-1,-1, 1},
-				{ 1, -1, -1}, { 1,-1, 1},
-				{-1,  1, -1}, { 1, 1,-1},
-				{-1,  1,  1}, { 1, 1, 1},
-				{-1,  1, -1}, {-1, 1, 1},
-				{ 1,  1, -1}, { 1, 1, 1},
-				{-1, -1, -1}, {-1, 1,-1},
-				{ 1, -1, -1}, { 1, 1,-1},
-				{ 1, -1,  1}, { 1, 1, 1},
-				{-1, -1,  1}, {-1, 1, 1}
-		};
-		_shader->setUniformValueArray("cubeVerts", cubeVerts, 24);
-
-		renderer->glDrawArrays(GL_LINES, 0, _positionsBuffer.elementCount() * _positionsBuffer.verticesPerElement());
-	}
-
-	_positionsBuffer.detachPositions(renderer, _shader);
-
-	// Reset state.
-	_shader->release();
-#endif
-#endif
+	shader.drawArrays(GL_LINES);
 }
 
 }	// End of namespace

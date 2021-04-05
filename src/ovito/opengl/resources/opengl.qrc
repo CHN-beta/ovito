@@ -2,7 +2,6 @@
 
 <qresource prefix="/openglrenderer">
 
-	<file>glsl/utilities.glsl</file>
 	<file>glsl/global_uniforms.glsl</file>
 	<file>glsl/picking.glsl</file>
 	<file>glsl/shading.glsl</file>

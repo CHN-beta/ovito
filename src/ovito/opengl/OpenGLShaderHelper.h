@@ -76,10 +76,9 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM().linear().inverse().transposed()))));
 
 		// Get current viewport rectangle.
-		GLint viewportCoords[4];
-		OVITO_CHECK_OPENGL(_renderer, _renderer->glGetIntegerv(GL_VIEWPORT, viewportCoords));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)viewportCoords[0], (float)viewportCoords[1]));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)viewportCoords[2], 2.0f / (float)viewportCoords[3]));
+	    const QRect& vpRect = _renderer->renderingViewport();
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)vpRect.left(), (float)vpRect.top()));
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)vpRect.width(), 2.0f / (float)vpRect.height()));
 	
 		// Need to render only the front-facing sides of the geometry.
 		OVITO_CHECK_OPENGL(_renderer, _renderer->glCullFace(GL_BACK));
@@ -111,12 +110,12 @@ public:
 	}
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
-	void bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride = 0, int offset = 0, VertexInputRate inputRate = PerVertex) {
+	void bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) {
 		bindBuffer(buffer, _shader->attributeLocation(attributeName), type, tupleSize, stride, offset, inputRate);
 	}
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
-	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride = 0, int offset = 0, VertexInputRate inputRate = PerVertex) {
+	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) {
 		OVITO_ASSERT(attrIndex >= 0);
 		OVITO_REPORT_OPENGL_ERRORS(_renderer);
 		OVITO_ASSERT(buffer.isCreated());
@@ -126,7 +125,8 @@ public:
 		}
 		OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
 		OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
-		if(inputRate == PerInstance) {
+		// Does the OpenGL context support instanced arrays (requires OpenGL 3.3+)?
+		if(inputRate == PerInstance && _renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
 			OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 1));
 			_instanceAttributes.push_back(attrIndex);
 		}
@@ -159,26 +159,93 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, static_cast<GLfloat>(value)));
 	}
 
-	/// Uploads some data to the Vulkan device as a buffer object and caches it.
-	template<typename KeyType>
-	static QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, int bufferSize, OpenGLResourceManager::ResourceFrameHandle resourceFrame, QOpenGLBuffer::Type usage, std::function<void(void*)>&& fillMemoryFunc) {
-		// Check if this OVITO data buffer has already been uploaded to the GPU.
-		QOpenGLBuffer& bufferObject = OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), resourceFrame);
-
-		// If not, do it now.
-		if(!bufferObject.isCreated())
-			bufferObject = createCachedBufferImpl(bufferSize, usage, std::move(fillMemoryFunc));
-
-		return bufferObject;
+	/// Passes a uniform value to the shader.
+	void setUniformValue(const char* name, GLint value) {
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, value));
 	}
 
-	/// Uploads an OVITO DataBuffer to the Vulkan device.
-	static QOpenGLBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, OpenGLResourceManager::ResourceFrameHandle resourceFrame, QOpenGLBuffer::Type usage = QOpenGLBuffer::VertexBuffer);
+	/// Returns the number of vertices per rendered instance.
+	GLsizei verticesPerInstance() const { return _verticesPerInstance; }
+
+	/// Specifies the number of vertices per rendered instance.
+	void setVerticesPerInstance(GLsizei n) { _verticesPerInstance = n; }
+
+	/// Returns the number of primitive instances to be rendered.
+	GLsizei instanceCount() const { return _instanceCount; }
+
+	/// Specifies the number of primitive instances to be rendered.
+	void setInstanceCount(GLsizei instanceCount) { _instanceCount = instanceCount; }
+
+	/// Uploads some data to the Vulkan device as a buffer object and caches it.
+	template<typename KeyType>
+	QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc) {
+
+		QOpenGLBuffer* bufferObject;
+
+		// Check if this OVITO data buffer has already been created and uploaded to the GPU.
+		// Depending on whether the OpenGL implementation supports instanced arrays, we 
+		// have to take into account the instancing parameters in the cache look up.
+
+	    // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+)?
+	    if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
+			bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame());
+		}
+		else {
+			std::tuple<std::decay_t<KeyType>, GLsizei, GLsizei> combinedKey{ std::forward<KeyType>(cacheKey), instanceCount(), verticesPerInstance() };
+			bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(combinedKey), _renderer->currentResourceFrame());
+		}
+
+		// If not, do it now.
+		if(!bufferObject->isCreated())
+			*bufferObject = createCachedBufferImpl(elementSize, usage, inputRate, std::move(fillMemoryFunc));
+
+		return *bufferObject;
+	}
+
+	/// Uploads an OVITO DataBuffer to the GPU device.
+	QOpenGLBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, VertexInputRate inputRate, QOpenGLBuffer::Type usage = QOpenGLBuffer::VertexBuffer);
+
+	/// Issues a drawing command.
+	void drawArrays(GLenum mode);
+
+	/// Issues a drawing command with an ordering of the instances.
+	template<typename KeyType>
+	void drawArraysOrdered(GLenum mode, KeyType&& cacheKey, std::function<std::vector<uint32_t>()>&& computeOrderingFunc) {
+
+		// Ordered drawing is not support by picking shaders, which access the gl_InstanceID special variable.
+		// That's because the 'baseinstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification. 
+		OVITO_ASSERT(!_renderer->isPicking());
+
+		if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
+			// On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
+
+			// Look up the indirect drawing buffer from the cache and call implementation.
+			drawArraysOrderedOpenGL4(mode, OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
+		}
+		else {
+			// On older contexts, use glMultiDrawArrays() to render the instances in a prescribed order.
+
+			// Look up the glMultiDrawArrays() parameters from the cache and call implementation.
+			drawArraysOrderedOpenGL2or3(mode, OpenGLResourceManager::instance()->lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
+		}
+	}
 
 private:
 
 	/// Uploads some data to a new OpenGL buffer object.
-	static QOpenGLBuffer createCachedBufferImpl(int bufferSize, QOpenGLBuffer::Type usage, std::function<void(void*)>&& fillMemoryFunc);
+	QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc);
+
+	/// Issues a drawing command with an ordering of the instances.
+	void drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
+
+	/// Implemention of the drawArrays() method for OpenGL 2.x.
+	void drawArraysOpenGL2(GLenum mode);
+
+	/// Issues a drawing command with an ordering of the instances.
+	void drawArraysOrderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
+
+	/// Makes the gl_VertexID and gl_InstanceID special variables available in older OpenGL implementations.
+	void setupVertexAndInstanceIDOpenGL2();
 
 	/// The GLSL shader object.
 	QOpenGLShaderProgram* _shader = nullptr;
@@ -191,6 +258,12 @@ private:
 
 	/// Indicates that alpha blending should be turned off after rendering is done.
 	bool _disableBlendingWhenDone = false;
+
+	/// The number of vertices per rendered primitive instance.
+	GLsizei _verticesPerInstance = 0;
+
+	/// The number of instances to render.
+	GLsizei _instanceCount = 0;
 };
 
 }	// End of namespace

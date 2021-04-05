@@ -32,6 +32,7 @@
 
 #include <initializer_list>
 #include <type_traits>
+#include <typeinfo>
 #include <boost/any.hpp>
 
 namespace Ovito {
@@ -217,7 +218,7 @@ public:
 	bool has_value() const noexcept { return _manager != nullptr; }
 
 	/// The @c typeid of the contained object, or @c typeid(void) if empty.
-	const type_info& type() const noexcept {
+	const std::type_info& type() const noexcept {
 		if(!has_value())
 			return typeid(void);
 		_Arg __arg;
@@ -311,7 +312,7 @@ inline _ValueType any_cast(any_moveonly& __any)
 template<typename _ValueType>
 inline _ValueType any_cast(any_moveonly&& __any)
 {
-	using _Up = __remove_cvref_t<_ValueType>;
+	using _Up = std::remove_cv_t<std::remove_reference_t<_ValueType>>;
 	static_assert(any_moveonly::__is_valid_cast<_ValueType>(), "Template argument must be a reference or CopyConstructible type");
 	static_assert(std::is_constructible<_ValueType, _Up>::value, "Template argument must be constructible from an rvalue.");
 	auto __p = any_cast<_Up>(&__any);

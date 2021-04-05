@@ -44,9 +44,6 @@ void main()
         vec2( 1.0,  1.0)
 	);
 
-    // The index of the cylinder being rendered.
-    int primitive_index = gl_InstanceID;
-
     // The index of the quad corner.
     int corner = gl_VertexID;
 
@@ -66,5 +63,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm * quad[corner], 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(primitive_index);
+    color_fs = pickingModeColor(gl_InstanceID);
 }

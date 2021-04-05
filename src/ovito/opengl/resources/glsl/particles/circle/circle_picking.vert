@@ -41,9 +41,6 @@ void main()
         vec2( 1.0,  1.0)
 	);
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceID;
-
     // The index of the quad corner.
     int corner = gl_VertexID;
 
@@ -57,7 +54,7 @@ void main()
     gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(quad[corner] * viewspace_radius, 0.0, 0.0));
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(particle_index);
+    color_fs = pickingModeColor(gl_InstanceID);
 
     // Pass UV quad coordinates to fragment shader.
     uv_fs = quad[corner];

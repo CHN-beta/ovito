@@ -51,9 +51,6 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
-    // The index of the particle being rendered.
-    int particle_index = gl_InstanceID;
-
     // The index of the box corner.
     int corner = gl_VertexID;
 
@@ -64,5 +61,5 @@ void main()
     gl_Position = modelview_projection_matrix * scaled_corner;
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(particle_index);
+    color_fs = pickingModeColor(gl_InstanceID);
 }

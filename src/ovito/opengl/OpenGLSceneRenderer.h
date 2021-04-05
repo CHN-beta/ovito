@@ -172,6 +172,9 @@ public:
 	/// Sets monotonically increasing identifier of the current frame being rendered.
 	void setCurrentResourceFrame(OpenGLResourceManager::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
 
+	/// Returns the OpenGL context version encoded as an integer.
+	quint32 glversion() const { return _glversion; }
+
 	/// Returns the vendor name of the OpenGL implementation in use.
 	static const QByteArray& openGLVendor() { return _openGLVendor; }
 
@@ -186,6 +189,9 @@ public:
 
 	/// Returns the current surface format used by the OpenGL implementation.
 	static const QSurfaceFormat& openglSurfaceFormat() { return _openglSurfaceFormat; }
+
+	/// Returns the list of extensions supported by the OpenGL implementation.
+	static const QSet<QByteArray>& openglExtensions() { return _openglExtensions; }
 
 	/// Determines the capabilities of the current OpenGL implementation.
 	static void determineOpenGLInfo();
@@ -223,6 +229,9 @@ private:
 	/// The surface used by the GL context.
 	QSurface* _glsurface = nullptr;
 
+	/// Pointer to the glMultiDrawArrays() function. Requires OpenGL 2.0.
+	void (APIENTRY *glMultiDrawArrays)(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) = nullptr;
+
 	/// Pointer to the optional glMultiDrawArraysIndirect() function. Requires OpenGL 4.3.
 	void (APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
@@ -231,6 +240,9 @@ private:
 
 	/// The OpenGL surface format.
 	QSurfaceFormat _glformat;
+
+	/// The OpenGL version of the context encoded as an integer.
+	quint32 _glversion;
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
@@ -262,6 +274,9 @@ private:
 	/// The current surface format used by the OpenGL implementation.
 	static QSurfaceFormat _openglSurfaceFormat;
 
+	/// The list of extensions supported by the OpenGL implementation.
+	static QSet<QByteArray> _openglExtensions;
+
 	friend class OpenGLMeshPrimitive;
 	friend class OpenGLCylinderPrimitive;
 	friend class OpenGLImagePrimitive;
@@ -269,6 +284,7 @@ private:
 	friend class OpenGLTextPrimitive;
 	friend class OpenGLParticlePrimitive;
 	friend class OpenGLMarkerPrimitive;
+	friend class OpenGLShaderHelper;
 };
 
 }	// End of namespace

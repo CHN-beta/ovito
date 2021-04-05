@@ -67,6 +67,9 @@ QByteArray OpenGLSceneRenderer::_openGLSLVersion;
 /// The current surface format used by the OpenGL implementation.
 QSurfaceFormat OpenGLSceneRenderer::_openglSurfaceFormat;
 
+/// The list of extensions supported by the OpenGL implementation.
+QSet<QByteArray> OpenGLSceneRenderer::_openglExtensions;
+
 /******************************************************************************
 * Is called by OVITO to query the class for any information that should be 
 * included in the application's system report.
@@ -89,6 +92,9 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 		stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
 		stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
 		stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+		stream << "Supported extensions:\n";
+		for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
+			stream << extension << "\n";
 	}
 }
 
@@ -134,6 +140,7 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	_openGLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_VERSION));
 	_openGLSLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
 	_openglSurfaceFormat = QOpenGLContext::currentContext()->format();
+	_openglExtensions = tempContext.extensions();
 }
 
 /******************************************************************************
@@ -176,7 +183,14 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     OVITO_REPORT_OPENGL_ERRORS(this);
 	_glformat = _glcontext->format();
 
+	// Get the OpenGL version.
+	_glversion = QT_VERSION_CHECK(_glformat.majorVersion(), _glformat.minorVersion(), 0);
+
 #ifdef OVITO_DEBUG
+//	_glversion = QT_VERSION_CHECK(3, 2, 0);
+//	_glversion = QT_VERSION_CHECK(3, 1, 0);
+//	_glversion = QT_VERSION_CHECK(2, 1, 0);
+
 	// Initialize debug logger.
 	if(_glformat.testOption(QSurfaceFormat::DebugContext)) {
 		QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>();
@@ -193,7 +207,9 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 #endif
 
 	// Get optional function pointers.
+	glMultiDrawArrays = reinterpret_cast<void (APIENTRY *)(GLenum, const GLint*, const GLsizei*, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArrays"));
 	glMultiDrawArraysIndirect = reinterpret_cast<void (APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
+	OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in OpenGL 2.0+.
 
 	// Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
 	if(glformat().majorVersion() >= 3) {
@@ -573,12 +589,14 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
-		if(shaderType == QOpenGLShader::Geometry || (glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
+		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0))
 			shaderSource.append("#version 150\n");
-		else if(glformat().majorVersion() == 2)
-			shaderSource.append("#version 120\n");
-		else
+		else if(_glversion >= QT_VERSION_CHECK(3, 1, 0))
+			shaderSource.append("#version 140\n");
+		else if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
 			shaderSource.append("#version 130\n");
+		else
+			shaderSource.append("#version 120\n");
 	}
 	else {
 		// Using OpenGL ES context.
@@ -587,13 +605,84 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			shaderSource.append("#version 300 es\n");
 	}
 
-	if(glformat().majorVersion() == 2) {
+	if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
+		// This is needed to emulate the special shader variables 'gl_VertexID' and 'gl_InstanceID' in GLSL 1.20:
 		if(shaderType == QOpenGLShader::Vertex) {
-			shaderSource.append("attribute int vertexID;\n");
-			shaderSource.append("attribute int instanceID;\n");
+			// Note: Data type 'float' is used for the vertex attribute, because some OpenGL implementation have poor support for integer
+			// vertex attributes.
+			shaderSource.append("attribute float vertexID;\n");
+			shaderSource.append("uniform int vertices_per_instance;\n");
+		}
+	}
+	else if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+		// This is needed to compute the special shader variable 'gl_VertexID' when instanced arrays are not supported:
+		if(shaderType == QOpenGLShader::Vertex) {
+			shaderSource.append("uniform int vertices_per_instance;\n");
 		}
 	}
 
+	// Helper function that appends a source code line to the buffer after preprocessing ist.
+	auto preprocessShaderLine = [&](QByteArray& line) {
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
+			// Automatically back-port shader source code to make it compatible with OpenGL 2.1 (GLSL 1.20):
+			if(shaderType == QOpenGLShader::Vertex) {
+				if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
+				else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
+				else if(line.startsWith("flat out vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
+				else if(line.startsWith("noperspective out ")) return;
+				else if(line.contains("calculate_view_ray(vec2(")) return;
+				else if(line.contains("flat_normal_fs")) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+				else {
+					line.replace("gl_VertexID", "int(mod(vertexID+0.5, vertices_per_instance))");
+					line.replace("gl_InstanceID", "(int(vertexID) / vertices_per_instance)");
+					line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
+					line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(objectID / 256.0, 256.0))");
+					line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(objectID / 65536.0, 256.0))");
+					line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(objectID / 16777216.0, 256.0))");
+					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
+				}
+			}
+			else if(shaderType == QOpenGLShader::Fragment) {
+				if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
+				else if(line.startsWith("flat in vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
+				else if(line.startsWith("noperspective in ")) return;
+				else if(line.startsWith("out ")) return;
+				else if(line.contains("vec3 ray_dir_norm =")) {
+					line = 
+						"vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
+						"vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
+						"vec4 _far = _near + inverse_projection_matrix[2];\n"
+						"vec3 ray_origin = _near.xyz / _near.w;\n"
+						"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n";
+				}
+				else {
+					line.replace("fragColor", "gl_FragColor");
+					line.replace("texture(", "texture2D(");
+					line.replace("shadeSurfaceColor(flat_normal_fs", "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))");
+					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+				}
+			}
+		}
+		else {
+			// Automatically back-port shader source code to make it compatible with OpenGL 3.0 - 3.2:
+			if(shaderType == QOpenGLShader::Vertex) {
+				if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+					line.replace("gl_VertexID", "(gl_VertexID % vertices_per_instance)");
+					line.replace("gl_InstanceID", "(gl_VertexID / vertices_per_instance)");
+				}
+				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
+					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
+			}
+			else if(shaderType == QOpenGLShader::Fragment) { 
+				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
+					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+			}
+		}
+
+		shaderSource.append(line);	
+	};
 
 	// Load actual shader source code.
 	QFile shaderSourceFile(filename);
@@ -611,35 +700,14 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			QFile secondarySourceFile(includeFile.filePath());
 			if(!secondarySourceFile.open(QFile::ReadOnly))
 				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFile.filePath()).arg(filename));
-			shaderSource.append(secondarySourceFile.readAll());
+			while(!secondarySourceFile.atEnd()) {
+				line = secondarySourceFile.readLine();
+				preprocessShaderLine(line);
+			}
 			shaderSource.append('\n');
 		}
 		else {
-
-			if(glformat().majorVersion() == 2) {
-				if(shaderType == QOpenGLShader::Vertex) {
-					if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
-					else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
-					else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
-					else if(line.startsWith("noperspective out ")) line = QByteArrayLiteral("varying") + line.mid(17);
-					else {
-						line.replace("gl_VertexID", "vertexID");
-						line.replace("gl_InstanceID", "instanceID");
-					}
-				}
-				else if(shaderType == QOpenGLShader::Fragment) {
-					if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
-					else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
-					else if(line.startsWith("noperspective in ")) line = QByteArrayLiteral("varying") + line.mid(16);
-					else if(line.startsWith("out ")) continue;
-					else {
-						line.replace("fragColor", "gl_FragColor");
-						line.replace("texture(", "texture2D(");
-					}
-				}
-			}
-
-			shaderSource.append(line);
+			preprocessShaderLine(line);
 		}
 	}
 
