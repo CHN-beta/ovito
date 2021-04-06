@@ -53,8 +53,8 @@ public:
 		if(_shader)
 			_shader->release();
 
-		// Determine resource path prefix depending on whether we are running on a Desktop or GLES platform.
-		QString prefix = _renderer->glcontext()->isOpenGLES() ? QStringLiteral(":/openglrenderer_gles/glsl/") : QStringLiteral(":/openglrenderer/glsl/");
+		// Prepend this to paths when loading GLSL shaders from the resource file.
+		QString prefix = QStringLiteral(":/openglrenderer/glsl/");
 
 		// Compile the shader program.
 		_shader = _renderer->loadShaderProgram(id, 

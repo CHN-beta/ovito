@@ -36,7 +36,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OffscreenOpenGLSceneRenderer.cpp
 		PickingOpenGLSceneRenderer.cpp
 		resources/opengl.qrc
-		resources_gles/opengl_gles.qrc
 )
 
 IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")

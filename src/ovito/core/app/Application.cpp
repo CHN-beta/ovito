@@ -113,6 +113,10 @@ Application::Application()
 	_idealThreadCount = std::max(1, QThread::idealThreadCount());
 	if(qEnvironmentVariableIsSet("OVITO_THREAD_COUNT"))
 		_idealThreadCount = std::max(1, qgetenv("OVITO_THREAD_COUNT").toInt());
+
+	// Request at least to parallel threads in the global thread pool, even when running on a single-core machine (e.g. a virtual machine).
+	// Concurrent multi-threading is required to avoid deadlocks due to task interdependencies.
+	QThreadPool::globalInstance()->setMaxThreadCount(std::max(2, QThreadPool::globalInstance()->maxThreadCount()));
 }
 
 /******************************************************************************
@@ -262,9 +266,12 @@ bool Application::initialize()
 	format.setMajorVersion(2);
 	format.setMinorVersion(0);
 #endif
-#ifdef OVITO_DEBUG
+
+	// Enable this code to display debug log messages from the OpenGL driver.
+//#ifdef OVITO_DEBUG
 //	format.setOption(QSurfaceFormat::DebugContext);
-#endif
+//#endif
+
 	QSurfaceFormat::setDefaultFormat(format);
 
 	// Register Qt resources.

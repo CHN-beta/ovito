@@ -18,7 +18,7 @@
       <title>Requirements</title>
       <para>
         OVITO requires a 64-bit operating system and runs on processors with x86-64 architecture.
-        The graphical user interface of OVITO requires 3D graphics hardware with support for the <link xlink:href="https://en.wikipedia.org/wiki/OpenGL">OpenGL</link> programming interface (OpenGL 3.0 or newer). 
+        The graphical user interface of OVITO requires 3D graphics hardware with support for the <link xlink:href="https://en.wikipedia.org/wiki/OpenGL">OpenGL</link> programming interface (OpenGL 2.1 or newer). 
         In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications,
         which can lead to compatibility problems.
       </para>
