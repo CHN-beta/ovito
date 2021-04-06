@@ -313,13 +313,12 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 			// Create the rendering primitive for the connections between backbone and base sites.
 			visCache.connectionPrimitive = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-#if 0
-			visCache.connectionPrimitive->startSetElements(particles->elementCount());
-			ConstPropertyAccess<Color> colorArray(colors);
+			visCache.connectionPrimitive->setUniformRadius(cylinderRadius());
+			visCache.connectionPrimitive->setColors(colors);
+			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			for(size_t i = 0; i < positionsArray.size(); i++)
-				visCache.connectionPrimitive->setElement(i, positionsArray[i], 0.8 * nucleotideAxisArray[i], colorArray[i], cylinderRadius());
-			visCache.connectionPrimitive->endSetElements();
-#endif
+				headPositions[i] = positionsArray[i] + 0.8 * nucleotideAxisArray[i];
+			visCache.connectionPrimitive->setPositions(positionProperty, headPositions.take());
 		}
 		else {
 			visCache.connectionPrimitive.reset();
