@@ -403,8 +403,8 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
     // The look-up key for the Vulkan buffer cache.
-    RendererResourceKey<VulkanMeshPrimitive, const TriMesh*, int, std::vector<ColorA>, ColorA> meshCacheKey{
-        &mesh(),
+    RendererResourceKey<VulkanMeshPrimitive, std::shared_ptr<VulkanMeshPrimitive>, int, std::vector<ColorA>, ColorA> meshCacheKey{
+        shared_from_this(),
         faceCount(),
         materialColors(),
         uniformColor()

@@ -35,7 +35,7 @@ class VulkanSceneRenderer;
 /**
  * \brief This class is responsible for rendering mesh primitives using Vulkan.
  */
-class VulkanMeshPrimitive : public MeshPrimitive
+class VulkanMeshPrimitive : public MeshPrimitive, public std::enable_shared_from_this<VulkanMeshPrimitive>
 {
 public:
 

@@ -90,8 +90,8 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	}
 
     // The look-up key for the buffer cache.
-    RendererResourceKey<OpenGLMeshPrimitive, const TriMesh*, int, std::vector<ColorA>, ColorA> meshCacheKey{
-        &mesh(),
+    RendererResourceKey<OpenGLMeshPrimitive, std::shared_ptr<OpenGLMeshPrimitive>, int, std::vector<ColorA>, ColorA> meshCacheKey{
+        shared_from_this(),
         faceCount(),
         materialColors(),
         uniformColor()
@@ -258,8 +258,8 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
         const Vector3 direction = renderer->modelViewTM().inverse().column(2);
 
         // The caching key for the index buffer.
-        RendererResourceKey<OpenGLMeshPrimitive, const TriMesh*, int, Vector3> indexBufferCacheKey{
-			&mesh(),
+        RendererResourceKey<OpenGLMeshPrimitive, std::shared_ptr<OpenGLMeshPrimitive>, int, Vector3> indexBufferCacheKey{
+			shared_from_this(),
         	faceCount(),
 			direction
         };

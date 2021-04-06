@@ -38,7 +38,7 @@ class OpenGLShaderHelper;  // defined in OpenGLShaderHelper.h
 /**
  * \brief Buffer object that stores a triangle mesh to be rendered in the viewports.
  */
-class OpenGLMeshPrimitive : public MeshPrimitive
+class OpenGLMeshPrimitive : public MeshPrimitive, public std::enable_shared_from_this<OpenGLMeshPrimitive>
 {
 public:
 
