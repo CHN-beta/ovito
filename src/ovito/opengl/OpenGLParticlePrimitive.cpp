@@ -116,7 +116,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                         shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
                     }
                 }
-                else {
+                else if(renderingQuality() >= MediumQuality) {
                     if(!renderer->useGeometryShaders()) {
                         if(!renderer->isPicking())
                             shader.load("imposter", "particles/imposter/imposter.vert", "particles/imposter/imposter.frag");
@@ -129,6 +129,22 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                             shader.load("imposter", "particles/imposter/imposter.geom.vert", "particles/imposter/imposter.frag", "particles/imposter/imposter.geom");
                         else
                             shader.load("imposter_picking", "particles/imposter/imposter_picking.geom.vert", "particles/imposter/imposter_picking.frag", "particles/imposter/imposter_picking.geom");
+                        shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                    }
+                }
+                else {
+                    if(!renderer->useGeometryShaders()) {
+                        if(!renderer->isPicking())
+                            shader.load("imposter_flat", "particles/imposter_flat/imposter_flat.vert", "particles/imposter_flat/imposter_flat.frag");
+                        else
+                            shader.load("imposter_flat_picking", "particles/imposter_flat/imposter_flat_picking.vert", "particles/imposter_flat/imposter_flat_picking.frag");
+                        shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
+                    }
+                    else {
+                        if(!renderer->isPicking())
+                            shader.load("imposter_flat", "particles/imposter_flat/imposter_flat.geom.vert", "particles/imposter_flat/imposter_flat.frag", "particles/imposter_flat/imposter_flat.geom");
+                        else
+                            shader.load("imposter_flat_picking", "particles/imposter_flat/imposter_flat_picking.geom.vert", "particles/imposter_flat/imposter_flat_picking.frag", "particles/imposter_flat/imposter_flat_picking.geom");
                         shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
                     }
                 }

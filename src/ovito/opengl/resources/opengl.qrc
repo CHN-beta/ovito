@@ -51,6 +51,15 @@
 	<file>glsl/particles/imposter/imposter_picking.geom.vert</file>
 	<file>glsl/particles/imposter/imposter_picking.geom</file>
 
+	<file>glsl/particles/imposter_flat/imposter_flat.vert</file>
+	<file>glsl/particles/imposter_flat/imposter_flat.frag</file>
+	<file>glsl/particles/imposter_flat/imposter_flat_picking.vert</file>
+	<file>glsl/particles/imposter_flat/imposter_flat_picking.frag</file>
+	<file>glsl/particles/imposter_flat/imposter_flat.geom.vert</file>
+	<file>glsl/particles/imposter_flat/imposter_flat.geom</file>
+	<file>glsl/particles/imposter_flat/imposter_flat_picking.geom.vert</file>
+	<file>glsl/particles/imposter_flat/imposter_flat_picking.geom</file>
+
 	<file>glsl/particles/box/box.vert</file>
 	<file>glsl/particles/box/box.frag</file>
 	<file>glsl/particles/box/box_picking.vert</file>
