@@ -177,8 +177,8 @@ void VulkanPipeline::create(VulkanContext& context,
             VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcColorBlendFactor
             VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstColorBlendFactor
             VK_BLEND_OP_ADD,                      // VkBlendOp                colorBlendOp
-            VK_BLEND_FACTOR_SRC_ALPHA,            // VkBlendFactor            srcAlphaBlendFactor
-            VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,  // VkBlendFactor            dstAlphaBlendFactor
+            VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,            // VkBlendFactor            srcAlphaBlendFactor
+            VK_BLEND_FACTOR_ONE,  // VkBlendFactor            dstAlphaBlendFactor
             VK_BLEND_OP_ADD,                      // VkBlendOp                alphaBlendOp
             VK_COLOR_COMPONENT_R_BIT |            // VkColorComponentFlags    colorWriteMask
             VK_COLOR_COMPONENT_G_BIT |
