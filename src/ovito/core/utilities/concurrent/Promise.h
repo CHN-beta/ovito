@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -355,7 +355,7 @@ public:
 	void reset() {
 		if(isValid()) {
 			// Set the task to the 'finished' if this is the master SynchronousOperation.
-			// If this is not the master, keep the task unfinished, because there the operation is still going on.
+			// If this is not the master, keep the task unfinished, because the operation is still going on.
 			if(_isMaster && !isFinished()) {
 				task()->setStarted();
 				task()->setFinished();

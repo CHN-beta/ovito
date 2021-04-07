@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,8 +62,8 @@ public:
 public:
 
 	/// Constructor.
-	ParticlePrimitive(ShadingMode shadingMode, RenderingQuality renderingQuality, ParticleShape shape)
-		: _shadingMode(shadingMode), _renderingQuality(renderingQuality), _particleShape(shape) {
+	ParticlePrimitive(ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality)
+		: _particleShape(shape), _shadingMode(shadingMode), _renderingQuality(renderingQuality) {
 	}
 
 	/// \brief Sets the array of particle indices to render.

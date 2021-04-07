@@ -21,17 +21,16 @@
   </para>
 
   <para>
-    To start an image/movie rendering process, use the <guibutton>Render Active Viewport</guibutton> 
-    button above the panel or the corresponding button in the main toolbar. OVITO will always render the currently
-    active viewport, which is marked with a yellow border. Click in a viewport with the right mouse button 
-    to make it the active one.
+    To start an image/movie rendering process, use the <guibutton>Render active viewport</guibutton> 
+    button located at the bottom of the panel or the button in the toolbar located above the viewports. OVITO will always render the currently
+    active viewport, which is indicated by a yellow border. Right-click in a viewport to make it the active one.
   </para>
 
   <para>
-    By default, rendered images are shown in the so-called frame buffer window but do get automatically saved to disk. 
+    By default, rendered images are displayed in the so-called frame buffer window after rendering is complete, but they are not automatically saved to disk. 
     That means they will be lost as soon as you close the frame buffer window or quit OVITO. To save rendered images, you can either use the <guimenuitem>Save to file</guimenuitem> function
-    found in the toolbar of the frame buffer window after rendering is complete, or activate the <guimenuitem>Save to file</guimenuitem> option in the
-    <emphasis>Render Settings</emphasis> panel, which is described below.
+    found in the toolbar of the frame buffer window after rendering is complete, or activate the <guimenuitem>Save to file</guimenuitem> option in advance in the
+    <emphasis>Render settings</emphasis> panel, which is described below.
   </para>
 
   <para>
@@ -82,8 +81,8 @@
 
         <listitem>
           <para>Sets the width and height of the rendered image or movie in pixels. 
-            Note that you can activate the <link linkend="usage.viewports.menu">Preview Mode</link> for a viewport to
-            see which area of the viewport will be visible in rendered images.
+            Note that you can activate the <link linkend="usage.viewports.menu">preview mode</link> for the selected viewport to
+            see exactly which rectangular area of the viewport will be visible in rendered images.
           </para>
         </listitem>
       </varlistentry>
@@ -109,18 +108,18 @@
           transparent that are not covered by any objects. This is useful if you intend to
           put the image in front of some other background later, for instance on a presentation slide.
           Note that transparency information (<emphasis>alpha channel</emphasis>) must be 
-          supported by the output format for this to work. Best choice is the PNG format.</para>
+          supported by the output format for this to work. Best choice is the PNG file format.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>Switch renderer</term>
         <listitem>
-          <para>This selects a different rendering engine. OVITO offers
-          several rendering engines, which differ in terms of quality and rendering speed. 
+          <para>Use this button to select a different rendering engine. OVITO Pro offers
+          several rendering engines, which differ in terms of visual quality and rendering speed. 
           See the <link linkend="rendering">Rendering</link> page for a list of options.
-          Each render engine has specific parameters and settings, which are shown in a separate 
-          panel below the <emphasis>Render settings</emphasis> rollout.
+          Each render engine has specific parameters and settings, which are displayed in the separate 
+          panel below the <emphasis>Render settings</emphasis> panel.
           </para>
         </listitem>
       </varlistentry>

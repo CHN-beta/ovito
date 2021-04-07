@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
 	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const { return {}; }
 
 	/// Creates a new property object for a standard property of this container class.
-	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {}) const;
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
 	/// Creates a new property object for a user-defined property.
 	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
@@ -147,6 +147,9 @@ public:
 	}
 
 protected:
+
+	/// Is called by the system after construction of the meta-class instance.
+	virtual void initialize() override;
 
 	/// Registers a new standard property with this property meta class.
 	void registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, OvitoClassPtr typedPropertyElementClass = {}, QString title = QString());

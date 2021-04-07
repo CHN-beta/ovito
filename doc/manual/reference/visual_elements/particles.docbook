@@ -24,9 +24,9 @@
   <para>
     The <emphasis>Particles</emphasis> visual element provides a set of parameters controlling the
     visual representation of all particles, which will be described in the section below.
-    Additionally, the visualization is affected by certain properties, listed in the following table, that particles may optionally
-    possess. By setting the values of these particle properties, for example using the <link linkend="particles.modifiers.compute_property">
-    Compute property</link> modifier, you can control the visualization on a per-particle basis.
+    Additionally, the visualization is affected by certain properties of the particles themselves, listed in the following table. 
+    By setting the values of these particle properties, for example using the <link linkend="particles.modifiers.compute_property">
+    Compute property</link> modifier, you can fully control the visualization on a per-particle basis.
     <informaltable>
       <tgroup cols="3">
         <colspec colnum="1" colname="name" colwidth="2*" />
@@ -43,17 +43,17 @@
           <row>
             <entry><literal>Color</literal></entry>
             <entry>Real (R,&#xA0;G,&#xA0;B)</entry>
-            <entry><para>Controls the display color of individual particles. Red, green and blue components are in the range [0,1].</para></entry>
+            <entry><para>Controls the display color of individual particles. Red, green and blue components must be in the range [0,1].</para></entry>
           </row>
           <row>
             <entry><literal>Radius</literal></entry>
             <entry>Real</entry>
-            <entry><para>Controls the display size of individual particles.</para></entry>
+            <entry><para>Controls the display size on a per-particle basis.</para></entry>
           </row>
           <row>
             <entry><literal>Particle&#xA0;Type</literal></entry>
             <entry>Integer</entry>
-            <entry><para>Used to determine size and color if the <emphasis>Radius</emphasis> or <emphasis>Color</emphasis> properties are not present.</para></entry>
+            <entry><para>Used to determine size and color if the <emphasis>Radius</emphasis> or <emphasis>Color</emphasis> per-particle properties are not present.</para></entry>
           </row>
           <row>
             <entry><literal>Transparency</literal></entry>
@@ -84,10 +84,10 @@
 
     <variablelist>
       <varlistentry>
-        <term>Shape</term>
+        <term>Standard shape</term>
         <listitem>
-          <para>Selects the display shape of particles. The current program version offers the choice between
-          the following modes:
+          <para>Selects the display shape of particles for which the shape is not already specified on a per-type basis. 
+          The current program version offers the choice between the following shapes:
           <variablelist>
             <varlistentry>
               <term>Sphere/Ellipsoid</term>
@@ -136,17 +136,25 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term>Default particle radius</term>
+        <term>Standard radius</term>
         <listitem>
-          <para>Specifies the display size of particles that have an otherwise unspecified size.
-          This size value is only used for particles for which none of the following applies:
+          <para>Specifies the fallback size to be used for particles for which the display size is not already specified
+          on a per-type or per-particle basis.
+          In other words, this value is only used for particles for which none of the following applies:
           <itemizedlist>
             <listitem><para>The <literal>Radius</literal> particle property has a non-zero value.</para></listitem>
-            <listitem><para>The particle's type, as specified by the <literal>Particle Type</literal>, has a non-zero radius.</para></listitem>
+            <listitem><para>The particle's type, as specified by the <literal>Particle Type</literal> property, has a non-zero radius.</para></listitem>
           </itemizedlist>
-          In other words, this parameter provides a fallback value if no display size has been set on a
-          per-particle basis or on a per-type basis.
           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>Radius scaling factor</term>
+        <listitem>
+          <para>This global scaling factor is applied to all particles in the system at rendering time. 
+          It is applied in addition to any other factors controlling the size of particles (per-type radius, per-particle radius, standard radius). 
+          By setting it to a value below 100%, the scaling factor provides a convenient way of generating a balls-and-stick visualization of a molecular system,
+          with reduced atomic spheres that are connected by cylindrical bonds.</para>
         </listitem>
       </varlistentry>
       <varlistentry>

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ ParticleType* StructureIdentificationModifier::createStructureType(int id, Parti
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	AsynchronousModifier::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -167,6 +167,9 @@ public:
 	virtual std::unique_ptr<SerializedClassInfo> createClassInfoStructure() const {
 		return std::make_unique<SerializedClassInfo>();
 	}
+
+	/// \brief Is called by OVITO to query the class for any information that should be included in the application's system report.
+	virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const {}
 
 protected:
 

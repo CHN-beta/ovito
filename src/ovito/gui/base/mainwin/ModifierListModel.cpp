@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -433,8 +433,15 @@ void ModifierListModel::insertModifier()
 		else if(!action->templateName().isEmpty()) {
 			// Load modifier template from the store.
 			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset);
+			// Put the modifiers into a group if the template consists of two or more modifiers.
+			OORef<ModifierGroup> modifierGroup;
+			if(modifierSet.size() >= 2) {
+				modifierGroup = OORef<ModifierGroup>::create(dataset, ExecutionContext::Interactive);
+				modifierGroup->setCollapsed(true);
+				modifierGroup->setTitle(action->templateName());
+			}
 			// Insert modifier(s) into the data pipeline.
-			_pipelineListModel->applyModifiers(modifierSet);
+			_pipelineListModel->applyModifiers(modifierSet, modifierGroup);
 		}
 		else if(!action->scriptPath().isEmpty()) {
 
@@ -450,6 +457,7 @@ void ModifierListModel::insertModifier()
 					const Modifier::OOMetaClass* modifierClass = static_cast<const Modifier::OOMetaClass*>(clazz);
 
 					// Instantiate the PythonScriptModifier class.
+					UndoSuspender noUndo(dataset->undoStack());
 					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset, ExecutionContext::Interactive));
 					OVITO_CHECK_OBJECT_POINTER(modifier);
 					modifier->setTitle(action->text());
@@ -458,6 +466,8 @@ void ModifierListModel::insertModifier()
 					bool callSuccessful = QMetaObject::invokeMethod(modifier, "setScriptCode", Qt::DirectConnection, Q_ARG(const QString&, scriptCode));
 					OVITO_ASSERT(callSuccessful);
 
+					// Resume undo recording.
+					noUndo.reset();
 					// Insert modifier(s) into the data pipeline.
 					_pipelineListModel->applyModifiers({modifier});
 				}

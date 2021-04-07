@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,9 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE GroImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE GroImporter(DataSet* dataset) : ParticleImporter(dataset) {
+		setRecenterCell(true);
+	}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("GRO"); }
@@ -68,7 +70,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request);
+		return std::make_shared<FrameLoader>(request, recenterCell(), generateBonds());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -84,13 +86,18 @@ private:
 	{
 	public:
 
-		/// Inherit constructor from base class.
-		using ParticleImporter::FrameLoader::FrameLoader;
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell), _generateBonds(generateBonds) {}
 
 	protected:
 
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
+
+	private:
+
+		/// Controls the generation of ad-hoc bonds during data import.
+		bool _generateBonds;
 	};
 
 	/// The format-specific task object that is responsible for scanning the input file for animation frames.

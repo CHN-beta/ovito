@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,6 +42,7 @@ void VoxelGrid::OOMetaClass::initialize()
 	// Enable automatic conversion of a VoxelPropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<VoxelPropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, VoxelPropertyReference>();
+	QMetaType::registerComparators<VoxelPropertyReference>();
 
 	setPropertyClassDisplayName(tr("Voxel grid"));
 	setElementDescriptionName(QStringLiteral("voxels"));
@@ -118,7 +119,7 @@ void VoxelGrid::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	PropertyContainer::saveToStream(stream, excludeRecomputableData);
 

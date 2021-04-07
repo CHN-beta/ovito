@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,13 +84,13 @@ HistogramModifier::HistogramModifier(DataSet* dataset) : GenericPropertyModifier
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void HistogramModifier::initializeModifier(ModifierApplication* modApp)
+void HistogramModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	GenericPropertyModifier::initializeModifier(modApp);
+	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if(sourceProperty().isNull() && subject() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {

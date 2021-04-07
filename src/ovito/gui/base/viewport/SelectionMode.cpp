@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,12 +89,17 @@ void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* 
 	ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
 	setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
 
-	// Display a description of the object under the mouse cursor in the status bar.
-	if(inputManager()->mainWindow()) {
-		if(pickResult.isValid() && pickResult.pickInfo())
-			inputManager()->mainWindow()->showStatusBarMessage(pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId()));
-		else
+	// Display a description of the object under the mouse cursor in the status bar and in a tooltip window.
+	if(pickResult.isValid() && pickResult.pickInfo()) {
+		QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
+		if(inputManager()->mainWindow())
+			inputManager()->mainWindow()->showStatusBarMessage(infoText);
+		vpwin->showToolTip(infoText, getMousePosition(event));
+	}
+	else {
+		if(inputManager()->mainWindow())
 			inputManager()->mainWindow()->clearStatusBarMessage();
+		vpwin->hideToolTip();
 	}
 
 	ViewportInputMode::mouseMoveEvent(vpwin, event);

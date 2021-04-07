@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -24,8 +24,8 @@
 
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR 		"3")
-SET(OVITO_VERSION_MINOR 		"4")
-SET(OVITO_VERSION_REVISION		"1")
+SET(OVITO_VERSION_MINOR 		"5")
+SET(OVITO_VERSION_REVISION		"0")
 
 # Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
@@ -69,7 +69,7 @@ ENDIF()
 # The copyright notice shown in the application's About dialog:
 STRING(TIMESTAMP _CURRENT_YEAR "%Y")
 SET(OVITO_COPYRIGHT_NOTICE
-	"<p>A scientific visualization and analysis software for atomistic simulation data.</p>\
+	"<p>A scientific data visualization and analysis software <br>for particle-based simulations.</p>\
 	 <p>Copyright (C) ${_CURRENT_YEAR}, OVITO GmbH, Germany</p>\
 	 <p>\
 	 This is free, open-source software, and you are welcome to redistribute\

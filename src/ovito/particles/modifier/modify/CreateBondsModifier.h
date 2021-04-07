@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,15 +30,13 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
-/// The < operator for QVraiant has been removed in Qt 6. Redefining it here is an ugly hack and should be 
+/// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be 
 /// solved in a different way in the future.
-inline bool operator<(const QVariant& a, const QVariant& b) {
-	return a.toString() < b.toString();
+template<> inline bool qMapLessThanKey<QPair<QVariant, QVariant>>(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2)
+{
+	return key1.first.toString() < key2.first.toString() || (!(key2.first.toString() < key1.first.toString()) && key1.second.toString() < key2.second.toString());
 }
-#endif
 
 namespace Ovito { namespace Particles {
 
@@ -69,8 +67,9 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public AsynchronousModifier
 public:
 
 	enum CutoffMode {
-		UniformCutoff,		///< A single cutoff radius for all particles.
-		PairCutoff,			///< Individual cutoff radius for each pair of particle types.
+		UniformCutoff,		///< A uniform distance cutoff for all pairs of particles.
+		PairCutoff,			///< Individual cutoff for each pair-wise combination of particle types.
+		TypeRadiusCutoff,	///< Cutoff based on Van der Waals radii of the two particle types involved.
 	};
 	Q_ENUM(CutoffMode);
 
@@ -86,18 +85,30 @@ private:
 
 		/// Constructor.
 		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-				const SimulationCellObject* simCell, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
-				ConstPropertyPtr moleculeIDs) :
+				const SimulationCellObject* simCell, DataOORef<BondsObject> bondsObject, DataOORef<BondType> bondType, const ParticlesObject* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
+				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
 					Engine(dataSource, executionContext),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
 					_simCell(simCell),
+					_particles(particles),
 					_cutoffMode(cutoffMode),
 					_maxCutoff(maxCutoff),
 					_minCutoff(minCutoff),
 					_pairCutoffsSquared(std::move(pairCutoffsSquared)),
+					_typeVdWRadiusMap(std::move(typeVdWRadiusMap)),
+					_vdwPrefactor(vdwPrefactor),
 					_moleculeIDs(std::move(moleculeIDs)),
-					_inputFingerprint(std::move(fingerprint)) {}
+					_inputFingerprint(std::move(fingerprint)),
+					_bonds(std::move(bondsObject)),
+					_bondType(std::move(bondType)),
+					_isHydrogenType(std::move(isHydrogenType)) {}
+
+		/// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
+		virtual bool preferSynchronousExecution() override { 
+			// It's okay to perform the modifier operation synchronously for small inputs.
+			return _positions->size() < (_cutoffMode == TypeRadiusCutoff ? 400 : 200);
+		}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
@@ -108,8 +119,8 @@ private:
 		/// This method is called by the system whenever the preliminary pipeline input changes.
 		virtual bool pipelineInputChanged() override { return false; }
 
-		/// Returns the list of generated bonds.
-		std::vector<Bond>& bonds() { return _bonds; }
+		/// Returns the generated BondsObject.
+		DataOORef<BondsObject>& bonds() { return _bonds; }
 
 		/// Returns the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
@@ -119,13 +130,19 @@ private:
 		const CutoffMode _cutoffMode;
 		const FloatType _maxCutoff;
 		const FloatType _minCutoff;
-		const std::vector<std::vector<FloatType>> _pairCutoffsSquared;
+		const FloatType _vdwPrefactor;
+		std::vector<std::vector<FloatType>> _pairCutoffsSquared;
+		std::vector<FloatType> _typeVdWRadiusMap;		
+		std::vector<bool> _isHydrogenType;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
 		ConstPropertyPtr _moleculeIDs;
 		DataOORef<const SimulationCellObject> _simCell;
+		DataOORef<const ParticlesObject> _particles;
 		ParticleOrderingFingerprint _inputFingerprint;
-		std::vector<Bond> _bonds;
+		DataOORef<BondsObject> _bonds;
+		DataOORef<BondType> _bondType;
+		size_t _numGeneratedBonds;
 	};
 
 public:
@@ -138,7 +155,7 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 	/// Sets the cutoff radius for a pair of particle types.
 	void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);
@@ -163,20 +180,27 @@ protected:
 
 private:
 
-	/// The mode of choosing the cutoff radius.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CutoffMode, cutoffMode, setCutoffMode);
+	/// The mode of determing the bond cutoff.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CutoffMode, cutoffMode, setCutoffMode, PROPERTY_FIELD_MEMORIZE);
 
-	/// The cutoff radius for bond generation.
+	/// The uniform cutoff distance for bond generation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, uniformCutoff, setUniformCutoff, PROPERTY_FIELD_MEMORIZE);
 
 	/// The minimum bond length.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, minimumCutoff, setMinimumCutoff);
+
+	/// The prefactor to be used for computing the cutoff distance from the Van der Waals radii.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwPrefactor, setVdwPrefactor);
 
 	/// The cutoff radii for pairs of particle types.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PairwiseCutoffsList, pairwiseCutoffs, setPairwiseCutoffs);
 
 	/// If true, bonds will only be created between atoms from the same molecule.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
+
+	/// If true, no bonds will be created between two particles of type "H".
+	/// This option is only applied in mode TypeRadiusCutoff,
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
 
 	/// The bond type object that will be assigned to the newly created bonds.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondType>, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

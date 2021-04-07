@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/gui/qml/mainwin/ViewportsPanel.h>
 #include <ovito/gui/qml/dataset/WasmFileManager.h>
-#include <ovito/gui/qml/viewport/ViewportWindow.h>
+#include <ovito/gui/qml/viewport/OpenGLViewportWindow.h>
 #include <ovito/gui/qml/properties/ParameterUI.h>
 #include <ovito/gui/qml/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
@@ -80,6 +80,10 @@ void WasmApplication::registerCommandLineParameters(QCommandLineParser& parser)
 ******************************************************************************/
 void WasmApplication::createQtApplication(int& argc, char** argv)
 {
+	// Specify the default OpenGL surface format.
+	// When running in a web brwoser, try to obtain a WebGL 2.0 context if supported by the web browser.
+	QSurfaceFormat::setDefaultFormat(OpenGLSceneRenderer::getDefaultSurfaceFormat());
+
 #ifdef Q_OS_WASM
 
 	// Let the base class create a QtGui application object.
@@ -109,10 +113,6 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 	new QApplication(argc, argv);
 
 #endif
-
-	// Specify the default OpenGL surface format.
-	// When running in a web brwoser, try to obtain a WebGL 2.0 context if supported by the web browser.
-	QSurfaceFormat::setDefaultFormat(OpenGLSceneRenderer::getDefaultSurfaceFormat());
 }
 
 /******************************************************************************
@@ -123,7 +123,7 @@ bool WasmApplication::startupApplication()
 	// Make the C++ classes available as a Qt Quick items in QML. 
 	qmlRegisterType<MainWindow>("org.ovito", 1, 0, "MainWindow");
 	qmlRegisterType<ViewportsPanel>("org.ovito", 1, 0, "ViewportsPanel");
-	qmlRegisterType<ViewportWindow>("org.ovito", 1, 0, "ViewportWindow");
+	qmlRegisterType<OpenGLViewportWindow>("org.ovito", 1, 0, "OpenGLViewportWindow");
 	qmlRegisterUncreatableType<Viewport>("org.ovito", 1, 0, "Viewport", tr("Viewports cannot be created from QML."));
 	qmlRegisterSingletonType<ViewportSettings>("org.ovito", 1, 0, "ViewportSettings", [](QQmlEngine* eng, QJSEngine*) -> QObject* {
 		eng->setObjectOwnership(&ViewportSettings::getSettings(), QQmlEngine::CppOwnership);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request, sortParticles(), columnMapping(), autoRescaleCoordinates());
+		return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -93,8 +93,8 @@ private:
 	public:
 
 		/// Normal constructor.
-		FrameLoader(const LoadOperationRequest& request, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
-		  : ParticleImporter::FrameLoader(request),
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
+		  : ParticleImporter::FrameLoader(request, recenterCell),
 			_sortParticles(sortParticles),
 			_columnMapping(columnMapping),
 			_autoRescaleCoordinates(autoRescaleCoordinates) {}
@@ -128,7 +128,7 @@ private:
 protected:
 
 	/// \brief Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;

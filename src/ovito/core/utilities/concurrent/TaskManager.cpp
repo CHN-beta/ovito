@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -137,7 +137,7 @@ void TaskManager::setConsoleLoggingEnabled(bool enabled)
 void TaskManager::taskProgressTextChangedInternal(const QString& msg)
 {
 	if(!msg.isEmpty())
-		std::cerr << "OVITO: " << qPrintable(msg) << std::endl;
+		qInfo().noquote() << "OVITO:" << msg;
 }
 
 /******************************************************************************

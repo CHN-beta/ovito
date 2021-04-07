@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -114,7 +114,7 @@ void ElementTypeEditor::onSaveAsDefault()
 
 	ElementType::setDefaultColor(etype->ownerProperty(), etype->nameOrNumericId(), etype->color());
 
-	mainWindow()->statusBar()->showMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
+	mainWindow()->showStatusBarMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -422,7 +422,7 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		primitives.segments->setColors(segmentColors.take());
 
 		// Create rendering primitive for the line corner points.
-		primitives.corners = renderer->createParticlePrimitive((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+		primitives.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, (shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 		primitives.corners->setPositions(cornerPoints.take());
 		primitives.corners->setColors(cornerColors.take());
 		primitives.corners->setUniformRadius(lineRadius);
@@ -534,7 +534,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	segmentBuffer->setUniformColor(Color(1,1,1));
 	renderer->renderCylinders(segmentBuffer);
 
-	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 	cornerBuffer->setPositions(cornerVertices.take());
 	cornerBuffer->setUniformColor(Color(1,1,1));
 	cornerBuffer->setUniformRadius(lineRadius);
@@ -543,7 +543,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	if(!segment->line.empty()) {
 		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false); 
 		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
-		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
 		headBuffer->setPositions(wrappedHeadPos.take());
 		headBuffer->setUniformColor(Color(1,1,1));
 		headBuffer->setUniformRadius(headRadius);
@@ -754,16 +754,16 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 			DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
 			const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
 			QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), structure);
-			str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
+			str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
 			Vector3 transformedVector = segment->burgersVector.toSpatialVector();
-			str += tr(" | Spatial Burgers vector: [%1 %2 %3]")
+			str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
 					.arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
 					.arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
 					.arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
-			str += tr(" | Cluster Id: %1").arg(segment->burgersVector.cluster()->id);
-			str += tr(" | Dislocation Id: %1").arg(segment->id);
+			str += tr("<sep><key>Cluster Id:</key> <val>%1</val>").arg(segment->burgersVector.cluster()->id);
+			str += tr("<sep><key>Dislocation Id:</key> <val>%1</val>").arg(segment->id);
 			if(structure) {
-				str += tr(" | Crystal structure: %1").arg(structure->name());
+				str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(structure->name());
 			}
 		}
 	}
@@ -780,18 +780,18 @@ QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
 				if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
 					const Vector3& burgersVector = burgersVectorProperty[segmentIndex];
 					QString formattedBurgersVector = DislocationVis::formatBurgersVector(burgersVector, phase);
-					str = tr("True Burgers vector: %1").arg(formattedBurgersVector);
+					str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
 					ConstPropertyAccess<Matrix3> correspondenceProperty = microstructureObj()->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty);
 					if(correspondenceProperty) {
 						Vector3 transformedVector = correspondenceProperty[region] * burgersVector;
-						str += tr(" | Spatial Burgers vector: [%1 %2 %3]")
+						str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")
 								.arg(QLocale::c().toString(transformedVector.x(), 'f', 4), 7)
 								.arg(QLocale::c().toString(transformedVector.y(), 'f', 4), 7)
 								.arg(QLocale::c().toString(transformedVector.z(), 'f', 4), 7);
 					}
-					str += tr(" | Crystal region: %1").arg(region);
-					str += tr(" | Dislocation segment: %1").arg(segmentIndex);
-					str += tr(" | Crystal structure: %1").arg(phase->name());
+					str += tr("<sep><key>Crystal region:</key> <val>%1</val>").arg(region);
+					str += tr("<sep><key>Dislocation segment:</key> <val>%1</val>").arg(segmentIndex);
+					str += tr("<sep><key>Crystal structure:</key> <val>%1</val>").arg(phase->name());
 				}
 			}
 		}

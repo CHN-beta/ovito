@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,6 +51,9 @@ public Q_SLOTS:
 
 	/// \brief Performs the layout of the viewports in the panel.
 	void layoutViewports();
+
+	/// Destroys all viewport windows in the panel and recreates them.
+	void recreateViewportWindows();
 
 protected:
 

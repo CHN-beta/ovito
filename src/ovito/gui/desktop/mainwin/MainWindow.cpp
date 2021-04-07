@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,12 +27,11 @@
 #include <ovito/gui/desktop/widgets/animation/AnimationTrackBar.h>
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
+#include <ovito/gui/desktop/widgets/general/StatusBar.h>
+#include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -111,21 +110,24 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	animationPanelLayout->addWidget(trackBar);
 
 	// Create status bar.
-	_statusBarLayout = new QHBoxLayout();
-	_statusBarLayout->setContentsMargins(0,0,0,0);
-	_statusBarLayout->setSpacing(0);
-	animationPanelLayout->addLayout(_statusBarLayout, 1);
+	QWidget* statusBarContainer = new QWidget();
+	statusBarContainer->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+	_statusBarLayout = new QHBoxLayout(statusBarContainer);
+	_statusBarLayout->setContentsMargins(2,0,0,0);
+	_statusBarLayout->setSpacing(2);
+	animationPanelLayout->addWidget(statusBarContainer, 1);
 
-	_statusBar = new QStatusBar(animationPanel);
-	_statusBar->setSizeGripEnabled(false);
+	_statusBar = new StatusBar();
 	_statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-	setStatusBar(_statusBar);
-	_statusBarLayout->addWidget(_statusBar, 1);
+	_statusBarLayout->addWidget(_statusBar);
+	_statusBar->overflowWidget()->setParent(animationPanel);
 
 	TaskDisplayWidget* taskDisplay = new TaskDisplayWidget(this);
-	_statusBarLayout->insertWidget(1, taskDisplay);
+	taskDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+	_statusBarLayout->addWidget(taskDisplay, 1);
 
 	_coordinateDisplay = new CoordinateDisplayWidget(datasetContainer(), animationPanel);
+	_coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(_coordinateDisplay);
 	_statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));
 
@@ -226,6 +228,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 
 	// Create the frame buffer window.
 	_frameBufferWindow = new FrameBufferWindow(this);
+	_frameBufferWindow->setWindowTitle(tr("Render output"));
 
 	// Update window title when document path changes.
 	connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
@@ -278,6 +281,7 @@ void MainWindow::restoreLayout()
 	QVariant state = settings.value("state");
 	if(state.canConvert<QByteArray>())
 		restoreState(state.toByteArray());
+	commandPanel()->restoreLayout();
 }
 
 /******************************************************************************
@@ -288,6 +292,7 @@ void MainWindow::saveLayout()
 	QSettings settings;
 	settings.beginGroup("app/mainwindow");
 	settings.setValue("state", saveState());
+	commandPanel()->saveLayout();
 }
 
 /******************************************************************************
@@ -336,8 +341,8 @@ void MainWindow::createMainMenu()
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_ONLINE_HELP));
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_SCRIPTING_HELP));
 	helpMenu->addSeparator();
-	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_OPENGL_INFO));
-#ifndef  Q_OS_MACX
+	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_GRAPHICS_SYSINFO));
+#ifndef  Q_OS_MACOS
 	helpMenu->addSeparator();
 #endif
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_ABOUT));
@@ -386,6 +391,11 @@ void MainWindow::createMainToolbar()
 	_mainToolbar->addSeparator();
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
+
+	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
+	pipelinesLabel->setIndent(36);
+	_mainToolbar->addWidget(pipelinesLabel);
+	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
 }
 
 /******************************************************************************
@@ -394,7 +404,7 @@ void MainWindow::createMainToolbar()
 bool MainWindow::event(QEvent* event)
 {
 	if(event->type() == QEvent::StatusTip) {
-		statusBar()->showMessage(static_cast<QStatusTipEvent*>(event)->tip());
+		showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
 		return true;
 	}
 	return QMainWindow::event(event);
@@ -462,32 +472,6 @@ void MainWindow::openHelpTopic(const QString& page)
 void MainWindow::setViewportInputFocus() 
 {
 	viewportsPanel()->setFocus(Qt::OtherFocusReason);
-}
-
-/******************************************************************************
-* Returns the master OpenGL context managed by this window, which is used to
-* render the viewports. If sharing of OpenGL contexts between viewports is
-* disabled, then this function returns the GL context of the first viewport
-* in this window.
-******************************************************************************/
-QOpenGLContext* MainWindow::getOpenGLContext()
-{
-	if(_glcontext)
-		return _glcontext;
-
-	if(OpenGLSceneRenderer::contextSharingEnabled()) {
-		_glcontext = new QOpenGLContext(this);
-		_glcontext->setFormat(ViewportSceneRenderer::getDefaultSurfaceFormat());
-		if(!_glcontext->create())
-			throw Exception(tr("Failed to create OpenGL context."), &datasetContainer());
-	}
-	else {
-		ViewportWindow* vpWindow = viewportsPanel()->findChild<ViewportWindow*>();
-		if(vpWindow)
-			_glcontext = vpWindow->context();
-	}
-
-	return _glcontext;
 }
 
 /******************************************************************************
@@ -566,6 +550,22 @@ bool MainWindow::openDataInspector(PipelineObject* dataSource, const QString& ob
 		return true;
 	}
 	return false;
+}
+
+/******************************************************************************
+* Displays a message string in the window's status bar.
+******************************************************************************/
+void MainWindow::showStatusBarMessage(const QString& message, int timeout) 
+{
+	_statusBar->showMessage(message, timeout);
+}
+
+/******************************************************************************
+* Hides any messages currently displayed in the window's status bar.
+******************************************************************************/
+void MainWindow::clearStatusBarMessage() 
+{
+	_statusBar->clearMessage();
 }
 
 }	// End of namespace

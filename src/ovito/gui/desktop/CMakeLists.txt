@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -69,6 +69,8 @@ OVITO_STANDARD_PLUGIN(Gui
 		widgets/general/AutocompleteTextEdit.cpp
 		widgets/general/HtmlListWidget.cpp
 		widgets/general/ViewportModeButton.cpp
+		widgets/general/StatusBar.cpp
+		widgets/general/PopupUpdateComboBox.cpp
 		widgets/animation/AnimationTimeSpinner.cpp
 		widgets/animation/AnimationFramesToolButton.cpp
 		widgets/animation/AnimationTimeSlider.cpp
@@ -107,9 +109,11 @@ OVITO_STANDARD_PLUGIN(Gui
 		properties/VariantComboBoxParameterUI.cpp
 		properties/Vector3ParameterUI.cpp
 		properties/OpenDataInspectorButton.cpp
+		properties/ModifierGroupEditor.cpp
 		rendering/RenderSettingsEditor.cpp
-		viewport/ViewportWindow.cpp
+		rendering/StandardSceneRendererEditor.cpp
 		viewport/ViewportMenu.cpp
+		viewport/WidgetViewportWindow.cpp
 		viewport/input/XFormModes.cpp
 		viewport/overlays/CoordinateTripodOverlayEditor.cpp
 		viewport/overlays/TextLabelOverlayEditor.cpp
@@ -120,7 +124,6 @@ OVITO_STANDARD_PLUGIN(Gui
 		utilities/concurrent/ProgressDialog.cpp
 		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
-		OpenGLRenderer
 		GuiBase
 	LIB_DEPENDENCIES
 		${OVITO_QT_MAJOR_VERSION}::Widgets 

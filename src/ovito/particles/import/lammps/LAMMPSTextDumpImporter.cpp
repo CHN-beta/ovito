@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -467,7 +467,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void LAMMPSTextDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void LAMMPSTextDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

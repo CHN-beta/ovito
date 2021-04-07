@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -134,13 +134,13 @@ bool SpatialCorrelationFunctionModifier::OOMetaClass::isApplicableTo(const DataC
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void SpatialCorrelationFunctionModifier::initializeModifier(ModifierApplication* modApp)
+void SpatialCorrelationFunctionModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	AsynchronousModifier::initializeModifier(modApp);
+	AsynchronousModifier::initializeModifier(time, modApp, executionContext);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const ParticlesObject* container = input.getObject<ParticlesObject>()) {
 			ParticlePropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {

@@ -23,7 +23,7 @@
   <simplesect>
     <title>Linux</title>
     <para>
-      OVITO for Linux includes Qt libraries that have been built from the unmodified sources of Qt 5.15.1 distributed by the Qt Company.
+      OVITO for Linux includes Qt libraries that have been built from the unmodified sources of Qt 5.15.2 distributed by the Qt Company.
       The following commands have been used to generate them:
 <programlisting>
 # Build platform: CentOS 6.9
@@ -43,6 +43,9 @@
     -pch \
     -no-eglfs \
     -no-linuxfb \
+    -feature-vulkan \
+    -I $VULKAN_SDK/include -L $VULKAN_SDK/lib \
+    -no-feature-qdoc \
     -skip qtactiveqt \
     -skip qtconnectivity \
     -skip qt3d \

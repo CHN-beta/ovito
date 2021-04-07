@@ -339,7 +339,7 @@ int ptm_index(ptm_local_handle_t local_handle,
 	if (flags & (PTM_CHECK_SC | PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO | PTM_CHECK_BCC)) {
 
 		const int num_inner = 1, num_outer = 0;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env);
+		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, NULL, &env);
         if (ret == 0) {
             int num_points = env.num;
 		    ptm::normalize_vertices(num_points, env.points, ch_points);
@@ -359,7 +359,7 @@ int ptm_index(ptm_local_handle_t local_handle,
 	if (flags & (PTM_CHECK_DCUB | PTM_CHECK_DHEX)) {
 
 		const int num_inner = 4, num_outer = 3;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &dmn_env);
+		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &dmn_env);
 		if (ret == 0) {
 			ptm::normalize_vertices(PTM_NUM_NBRS_DCUB + 1, dmn_env.points, ch_points);
 			ch.ok = false;
@@ -371,7 +371,7 @@ int ptm_index(ptm_local_handle_t local_handle,
 	if (flags & PTM_CHECK_GRAPHENE) {
 
 		const int num_inner = 3, num_outer = 2;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &grp_env);
+		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &grp_env);
 		if (ret == 0) {
 			ret = match_graphene(grp_env.points, &res);
 		}

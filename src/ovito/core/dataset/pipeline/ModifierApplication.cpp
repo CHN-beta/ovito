@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,9 +34,12 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(ModifierApplication);
 DEFINE_REFERENCE_FIELD(ModifierApplication, modifier);
 DEFINE_REFERENCE_FIELD(ModifierApplication, input);
+DEFINE_REFERENCE_FIELD(ModifierApplication, modifierGroup);
 SET_PROPERTY_FIELD_LABEL(ModifierApplication, modifier, "Modifier");
 SET_PROPERTY_FIELD_LABEL(ModifierApplication, input, "Input");
+SET_PROPERTY_FIELD_LABEL(ModifierApplication, modifierGroup, "Group");
 SET_PROPERTY_FIELD_CHANGE_EVENT(ModifierApplication, input, ReferenceEvent::PipelineChanged);
+SET_PROPERTY_FIELD_CHANGE_EVENT(ModifierApplication, modifierGroup, ReferenceEvent::PipelineChanged);
 
 /******************************************************************************
 * Returns the global class registry, which allows looking up the
@@ -56,6 +59,24 @@ ModifierApplication::ModifierApplication(DataSet* dataset) : CachingPipelineObje
 }
 
 /******************************************************************************
+* Asks this object to delete itself.
+******************************************************************************/
+void ModifierApplication::deleteReferenceObject() 
+{
+	// Detach the modifier application from its input, modifier and group.
+	OORef<Modifier> modifier = this->modifier();
+	setInput(nullptr);
+	setModifier(nullptr);
+	setModifierGroup(nullptr);
+
+	// Delete modifier if there are no more modifier applications left.
+	if(modifier->modifierApplications().empty())
+		modifier->deleteReferenceObject();
+
+	CachingPipelineObject::deleteReferenceObject();
+}
+
+/******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
 TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationRequest& request) const
@@ -67,7 +88,7 @@ TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationReque
 		iv.intersect(input()->validityInterval(request));
 
 	// Let the modifier determine the local validity interval.
-	if(modifier() && modifier()->isEnabled()) 
+	if(modifierAndGroupEnabled()) 
 		iv.intersect(modifier()->validityInterval(request, this));
 
 	return iv;
@@ -78,19 +99,28 @@ TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationReque
 ******************************************************************************/
 bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled && source == modifier()) {
+	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled && (source == modifier() || source == modifierGroup())) {
 		// If modifier provides animation frames, the animation interval might change when the
 		// modifier gets enabled/disabled.
 		if(!isBeingLoaded())
 			notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-		if(!modifier()->isEnabled()) {
+		if(!modifierAndGroupEnabled()) {
 			// Ignore modifier's status if it is currently disabled.
-			setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier is currently turned off.")));
+			if(!modifierGroup() || modifierGroup()->isEnabled())
+				setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier is currently turned off.")));
+			else
+				setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier group is currently turned off.")));
 			// Also clear pipeline cache in order to reduce memory footprint when modifier is disabled.
 			pipelineCache().invalidate(TimeInterval::empty(), true);
 		}
-		// Propagate enabled/disabled notification events from the modifier.
+
+		// Manually generate target changed event when modifier group is being enabled/disabled.
+		// That's because events from the group are not automatically propagated.
+		if(source == modifierGroup())
+			notifyTargetChanged();
+
+		// Propagate enabled/disabled notification events from the modifier or the modifier group.
 		return true;
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged && source == modifier()) {
@@ -104,7 +134,7 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 		// Propagate animation interval events from the modifier or the upstream pipeline.
 		return true;
 	}
-	else if(event.type() == ReferenceEvent::TargetChanged) {
+	else if(event.type() == ReferenceEvent::TargetChanged && (source == input() || source == modifier())) {
 		// Invalidate cached results when the modifier or the upstream pipeline change.
 		TimeInterval validityInterval = static_cast<const TargetChangedEvent&>(event).unchangedInterval();
 
@@ -166,6 +196,21 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field
 		// The animation length might have changed when the pipeline has changed.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
+	else if(field == PROPERTY_FIELD(modifierGroup)) {
+		// Register/unregister modapp with modifier group:
+		if(oldTarget) static_object_cast<ModifierGroup>(oldTarget)->unregisterModApp(this);
+		if(newTarget) static_object_cast<ModifierGroup>(newTarget)->registerModApp(this);
+
+		if(!isBeingLoaded() && modifier()) {
+			// Whenever the modifier application is moved in or out of a modifier group, 
+			// its effective enabled/disabled status may change. Emulate a corresponding notification event in this case.
+			ModifierGroup* oldGroup = static_object_cast<ModifierGroup>(oldTarget);
+			ModifierGroup* newGroup = static_object_cast<ModifierGroup>(newTarget);
+			if((!oldGroup || oldGroup->isEnabled()) != (!newGroup || newGroup->isEnabled())) {
+				modifier()->notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
+			}
+		}
+	}
 
 	CachingPipelineObject::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -213,8 +258,8 @@ Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultipl
 ******************************************************************************/
 PipelineFlowState ModifierApplication::evaluateSynchronous(TimePoint time)
 {
-	// If modifier is disabled, bypass cache and forward results of upstream pipeline.
-	if(input() && (!modifier() || modifier()->isEnabled() == false))
+	// If modifier or the modifier group are disabled, bypass cache and forward results of upstream pipeline.
+	if(input() && !modifierAndGroupEnabled())
 		return input()->evaluateSynchronous(time);
 
 	return CachingPipelineObject::evaluateSynchronous(time);
@@ -226,7 +271,7 @@ PipelineFlowState ModifierApplication::evaluateSynchronous(TimePoint time)
 SharedFuture<PipelineFlowState> ModifierApplication::evaluate(const PipelineEvaluationRequest& request)
 {
 	// If modifier is disabled, bypass cache and forward results of upstream pipeline.
-	if(input() && (!modifier() || modifier()->isEnabled() == false))
+	if(input() && !modifierAndGroupEnabled())
 		return input()->evaluate(request);
 	
 	// Otherwise, let the base class call our evaluateInternal() method.
@@ -242,7 +287,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 	PipelineEvaluationRequest upstreamRequest = request;
 
 	// Ask the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-	if(modifier() && modifier()->isEnabled())
+	if(modifierAndGroupEnabled())
 		modifier()->inputCachingHints(upstreamRequest.modifiableCachingIntervals(), this);
 
 	// Obtain input data and pass it on to the modifier.
@@ -260,7 +305,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 
 			// Without a modifier, this ModifierApplication becomes a no-op.
 			// The same is true when the Modifier is disabled or if the input data is invalid.
-			if(!modifier() || !modifier()->isEnabled() || !inputData)
+			if(!modifierAndGroupEnabled() || !inputData)
 				return inputData;
 
 			Future<PipelineFlowState> future;
@@ -334,7 +379,7 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(TimePoint tim
 				throwException(tr("Modifier input is empty."));
 
 			// Apply modifier:
-			if(modifier() && modifier()->isEnabled())
+			if(modifierAndGroupEnabled())
 				modifier()->evaluateSynchronous(time, this, state);
 		}
 		catch(const Exception& ex) {
@@ -366,7 +411,7 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(TimePoint tim
 int ModifierApplication::numberOfSourceFrames() const
 {
 	int n = input() ? input()->numberOfSourceFrames() : CachingPipelineObject::numberOfSourceFrames();
-	if(modifier() && modifier()->isEnabled())
+	if(modifierAndGroupEnabled())
 		n = modifier()->numberOfSourceFrames(n);
 	return n;
 }
@@ -377,7 +422,7 @@ int ModifierApplication::numberOfSourceFrames() const
 int ModifierApplication::animationTimeToSourceFrame(TimePoint time) const
 {
 	int frame = input() ? input()->animationTimeToSourceFrame(time) : CachingPipelineObject::animationTimeToSourceFrame(time);
-	if(modifier() && modifier()->isEnabled())
+	if(modifierAndGroupEnabled())
 		frame = modifier()->animationTimeToSourceFrame(time, frame);
 	return frame;
 }
@@ -388,7 +433,7 @@ int ModifierApplication::animationTimeToSourceFrame(TimePoint time) const
 TimePoint ModifierApplication::sourceFrameToAnimationTime(int frame) const
 {
 	TimePoint time = input() ? input()->sourceFrameToAnimationTime(frame) : CachingPipelineObject::sourceFrameToAnimationTime(frame);
-	if(modifier() && modifier()->isEnabled())
+	if(modifierAndGroupEnabled())
 		time = modifier()->sourceFrameToAnimationTime(frame, time);
 	return time;
 }
@@ -399,7 +444,7 @@ TimePoint ModifierApplication::sourceFrameToAnimationTime(int frame) const
 QMap<int, QString> ModifierApplication::animationFrameLabels() const
 {
 	QMap<int, QString> labels = input() ? input()->animationFrameLabels() : CachingPipelineObject::animationFrameLabels();
-	if(modifier() && modifier()->isEnabled())
+	if(modifierAndGroupEnabled())
 		return modifier()->animationFrameLabels(std::move(labels));
 	return labels;
 }
@@ -418,6 +463,32 @@ PipelineObject* ModifierApplication::pipelineSource() const
 			break;
 	}
 	return obj;
+}
+
+/******************************************************************************
+* Returns the modifier application that precedes this modifier application in the pipeline.
+* If this modifier application is referenced by more than one pipeline object (=it is preceded by a pipeline branch),
+* then nullptr is returned.
+******************************************************************************/
+ModifierApplication* ModifierApplication::getPredecessorModApp() const
+{
+	int pipelineCount = 0;
+	ModifierApplication* predecessor = nullptr;
+	visitDependents([&](RefMaker* dependent) {
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
+			if(modApp->input() == this && !modApp->pipelines(true).empty()) {
+				pipelineCount++;
+				predecessor = modApp;
+			}
+		}
+		else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+            if(pipeline->dataProvider() == this) {
+				if(pipeline->isInScene())
+		    		pipelineCount++;
+			}
+		}
+	});
+	return (pipelineCount <= 1) ? predecessor : nullptr;
 }
 
 }	// End of namespace

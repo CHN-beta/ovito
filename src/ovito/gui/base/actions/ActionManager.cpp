@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,15 +53,16 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), ":/guibase/actions/file/file_import_remote.bw.svg", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
 	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), ":/guibase/actions/file/file_export.bw.svg", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
 	createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), ":/guibase/actions/file/new_window.bw.svg", tr("Open another OVITO program window."), QKeySequence::New);
-	createCommandAction(ACTION_HELP_ABOUT, tr("About Ovito"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
+	createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
 	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), ":/guibase/actions/file/user_manual.bw.svg", tr("Open the user manual."), QKeySequence::HelpContents);
 	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), ":/guibase/actions/file/scripting_manual.bw.svg", tr("Open the Python API documentation."));
-	createCommandAction(ACTION_HELP_OPENGL_INFO, tr("OpenGL Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display OpenGL graphics driver information."));
+	createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display system and graphics hardware information."));
 
 	createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), ":/guibase/actions/edit/edit_undo.bw.svg", tr("Reverse the last action."), QKeySequence::Undo);
 	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), ":/guibase/actions/edit/edit_redo.bw.svg", tr("Restore the previously reversed action."), QKeySequence::Redo);
 	createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."))->setVisible(false);
 
+	createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), ":/guibase/actions/edit/create_pipeline.svg", tr("Creates a new pipeline with an external file as data source."));
 	createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), ":/guibase/actions/edit/clone_pipeline.bw.svg", tr("Duplicate the current pipeline to show multiple datasets side by side."));
 	createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), ":/guibase/actions/edit/rename_pipeline.bw.svg", tr("Assign a new name to the selected pipeline."));
 	createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), ":/guibase/actions/edit/edit_delete.bw.svg", tr("Delete the selected object from the scene."));
@@ -72,7 +73,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 
 	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), ":/guibase/actions/viewport/maximize_viewport.bw.svg", tr("Enlarge/reduce the active viewport."));
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS, tr("Zoom Scene Extents"), ":/guibase/actions/viewport/zoom_scene_extents.bw.svg",
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 		tr("Zoom active viewport to show everything. Use CONTROL key to zoom all viewports at once."));
 #else
 		tr("Zoom active viewport to show everything. Use COMMAND key to zoom all viewports at once."));

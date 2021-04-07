@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,17 +44,45 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(0);
 
-	// Derive a custom class from the list parameter UI to display the particle type colors.
+	// Derive a custom class from the list parameter UI to display the element type colors, names and IDs.
 	class CustomRefTargetListParameterUI : public RefTargetListParameterUI {
 	public:
 		using RefTargetListParameterUI::RefTargetListParameterUI;
 	protected:
+
+		/// Returns a data item from the list data model.
 		virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override {
-			if(role == Qt::DecorationRole && target != nullptr) {
-				return (QColor)static_object_cast<ElementType>(target)->color();
+			if(const ElementType* type = static_object_cast<ElementType>(target)) {
+				if(role == Qt::DisplayRole) {
+					if(index.column() == 0) {
+						return type->nameOrNumericId();
+					}
+					else if(index.column() == 1) {
+						return type->numericId();
+					}
+				}
+				else if(role == Qt::DecorationRole) {
+					if(index.column() == 0)
+						return (QColor)type->color();
+				}
 			}
-			else return RefTargetListParameterUI::getItemData(target, index, role);
+			return RefTargetListParameterUI::getItemData(target, index, role);
 		}
+
+		/// Returns the number of columns for the table view.
+		virtual int tableColumnCount() override { return 2; }
+
+		/// Returns the header data under the given role for the given RefTarget.
+		virtual QVariant getHorizontalHeaderData(int index, int role) override {
+			if(role == Qt::DisplayRole) {
+				if(index == 0)
+					return QVariant::fromValue(tr("Name"));
+				else if(index == 1)
+					return QVariant::fromValue(tr("Id"));
+			}
+			return RefTargetListParameterUI::getHorizontalHeaderData(index, role);
+		}
+
 		/// Opens a sub-editor for the object that is selected in the list view.
 		virtual void openSubEditor() override {
 			RefTargetListParameterUI::openSubEditor();
@@ -68,7 +96,11 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->addWidget(subEditorContainer);
 
 	RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(PropertyObject::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
-	layout->insertWidget(0, elementTypesListUI->listWidget(150));
+	QTableView* tableWidget = elementTypesListUI->tableWidget(250);
+	layout->insertWidget(0, tableWidget);
+	tableWidget->verticalHeader()->setDefaultSectionSize(tableWidget->verticalHeader()->minimumSectionSize());
+	tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+	tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/desktop/viewport/ViewportMenu.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportSettings.h>
@@ -55,7 +56,9 @@ ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
-	return static_cast<ViewportWindow*>(vp->window());
+	if(WidgetViewportWindow* window = static_cast<WidgetViewportWindow*>(vp->window()))
+		return window->widget();
+	return nullptr;
 }
 
 /******************************************************************************
@@ -65,35 +68,45 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 {
 	disconnect(_activeViewportChangedConnection);
 	disconnect(_maximizedViewportChangedConnection);
+	_viewportConfig = newViewportConfiguration;
+	
+	// Create the interactive viewport windows.
+	recreateViewportWindows();
 
+	if(_viewportConfig) {
+		// Repaint the viewport borders when another viewport has been activated.
+		_activeViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::activeViewportChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
+		// Update layout when a viewport has been maximized.
+		_maximizedViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
+	}
+}
+
+/******************************************************************************
+* Destroys all viewport windows in the panel and recreates them.
+******************************************************************************/
+void ViewportsPanel::recreateViewportWindows()
+{
 	// Delete all existing viewport widgets first.
 	for(QWidget* widget : findChildren<QWidget*>())
 		delete widget;
 
-	_viewportConfig = newViewportConfiguration;
-
-	if(newViewportConfiguration) {
-
+	if(_viewportConfig) {
 		// Create windows for the new viewports.
 		try {
 			ViewportInputManager* inputManager = _mainWindow->viewportInputManager();
-			for(Viewport* vp : newViewportConfiguration->viewports()) {
+			for(Viewport* vp : _viewportConfig->viewports()) {
 				OVITO_ASSERT(vp->window() == nullptr);
-				ViewportWindow* viewportWindow = new ViewportWindow(vp, inputManager, _mainWindow, this);
-				if(newViewportConfiguration->activeViewport() == vp)
-					viewportWindow->setFocus();
+				WidgetViewportWindow* viewportWindow = WidgetViewportWindow::createViewportWindow(vp, inputManager, _mainWindow, this);
+				if(!viewportWindow)
+					vp->throwException(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
+				if(_viewportConfig->activeViewport() == vp)
+					viewportWindow->widget()->setFocus();
 			}
 		}
 		catch(const Exception& ex) {
 			ex.reportError(true);
-			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
+//			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 		}
-
-		// Repaint the viewport borders when another viewport has been activated.
-		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, (void (ViewportsPanel::*)())&ViewportsPanel::update);
-
-		// Update layout when a viewport has been maximized.
-		_maximizedViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::layoutViewports);
 
 		// Layout viewport widgets.
 		layoutViewports();
@@ -136,8 +149,8 @@ void ViewportsPanel::onViewportModeCursorChanged(const QCursor& cursor)
 	if(!_viewportConfig) return;
 
 	for(Viewport* vp : _viewportConfig->viewports()) {
-		if(ViewportWindow* vpWindow = static_cast<ViewportWindow*>(vp->window())) {
-			vpWindow->setCursor(cursor);
+		if(ViewportWindowInterface* window = vp->window()) {
+			window->setCursor(cursor);
 		}
 	}
 }

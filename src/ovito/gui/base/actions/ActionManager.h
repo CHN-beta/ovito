@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,8 +53,8 @@ namespace Ovito {
 #define ACTION_HELP_SHOW_ONLINE_HELP	"HelpShowOnlineHelp"
 /// This action shows the scripting reference manual.
 #define ACTION_HELP_SHOW_SCRIPTING_HELP	"HelpShowScriptingReference"
-/// This action displays OpenGL diagnostics.
-#define ACTION_HELP_OPENGL_INFO			"HelpOpenGLInfo"
+/// This action displays graphics hardware information.
+#define ACTION_HELP_GRAPHICS_SYSINFO 	"HelpSystemInfo"
 
 /// This action undoes the last operation.
 #define ACTION_EDIT_UNDO				"EditUndo"
@@ -96,12 +96,12 @@ namespace Ovito {
 #define ACTION_MODIFIER_MOVE_UP				"ModifierMoveUp"
 /// This action moves the currently selected modifer down one entry in the modifier stack.
 #define ACTION_MODIFIER_MOVE_DOWN			"ModifierMoveDown"
-/// This action toggles the enabled/disable state of the currently selected modifier.
-#define ACTION_MODIFIER_TOGGLE_STATE		"ModifierToggleEnabledState"
 /// This action opens the dialog box for managing modifier templates.
 #define ACTION_MODIFIER_MANAGE_TEMPLATES	"ModifierManageTemplates"
 /// This action creates a unique copy of the selected pipeline item.
 #define ACTION_PIPELINE_MAKE_INDEPENDENT	"PipelineMakeUnique"
+/// This action creates or dissolves a modifier group in the pipeline editor.
+#define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP	"PipelineToggleModifierGroup"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE			"ViewportLayerDelete"
@@ -109,8 +109,6 @@ namespace Ovito {
 #define ACTION_VIEWPORT_LAYER_MOVE_UP			"ViewportLayerMoveUp"
 /// This action moves the currently selected viewport layer down one entry in the stack.
 #define ACTION_VIEWPORT_LAYER_MOVE_DOWN			"ViewportLayerMoveDown"
-/// This action toggles the enabled/disable state of the currently selected viewport layer.
-#define ACTION_VIEWPORT_LAYER_TOGGLE_STATE		"ViewportLayerToggleEnabledState"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION		"AnimationGotoStart"
@@ -153,6 +151,13 @@ namespace Ovito {
 /// This actions lets the user generate script code from the selected data pipeline.
 #define ACTION_SCRIPTING_GENERATE_CODE		"ScriptingGenerateCode"
 
+/// This action adds a new pipeline to the scene with a FileSource.
+#define ACTION_NEW_PIPELINE_FILESOURCE		"NewPipeline.FileSource"
+/// This action adds a new pipeline to the scene with a PythonScriptSource.
+#define ACTION_NEW_PIPELINE_PYTHONSOURCE	"NewPipeline.PythonScriptSource"
+/// This action adds a new pipeline to the scene with a LammpsScriptSource.
+#define ACTION_NEW_PIPELINE_LAMMPSSOURCE	"NewPipeline.LammpsScriptSource"
+
 /**
  * \brief Manages all available user interface actions.
  */
@@ -191,6 +196,9 @@ public:
 		OVITO_ASSERT_MSG(action != nullptr, "ActionManager::getAction()", "Action does not exist.");
 		return action;
 	}
+
+	/// Returns the list of registered actions.
+	const QVector<QAction*>& actions() const { return _actions; }
 
 	/// \brief Invokes the command action with the given ID.
 	/// \param actionId The unique identifier string of the action to invoke.

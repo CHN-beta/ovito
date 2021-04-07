@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -96,6 +96,7 @@ SET(SourceFiles
 	dataset/pipeline/AsynchronousModifier.cpp
 	dataset/pipeline/Modifier.cpp
 	dataset/pipeline/ModifierApplication.cpp
+	dataset/pipeline/ModifierGroup.cpp
 	dataset/pipeline/ModifierTemplates.cpp
 	dataset/pipeline/AsynchronousModifierApplication.cpp
 	dataset/pipeline/AsynchronousDelegatingModifier.cpp
@@ -119,6 +120,7 @@ SET(SourceFiles
 	rendering/SceneRenderer.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
+	rendering/StandardSceneRenderer.cpp
 	viewport/Viewport.cpp
 	viewport/ViewportWindowInterface.cpp
 	viewport/ViewportConfiguration.cpp

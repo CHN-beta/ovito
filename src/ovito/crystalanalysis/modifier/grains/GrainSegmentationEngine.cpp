@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -84,7 +84,7 @@ void GrainSegmentationEngine1::perform()
 {
 	// First phase of grain segmentation algorithm:
 	if(!createNeighborBonds()) return;
-	if(!rotateHexagonalAtoms()) return;
+	if(!rotateInterfaceAtoms()) return;
 	if(!computeDisorientationAngles()) return;
 	if(!determineMergeSequence()) return;
 
@@ -176,45 +176,28 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 	return !isCanceled();
 }
 
-bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, bool parent_fcc, bool parent_dcub,
-												   FloatType& disorientation, Quaternion& output, size_t& index)
+bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, InterfaceHandler& interfaceHandler,
+												   Quaternion& output)
 {
-	disorientation = std::numeric_limits<FloatType>::infinity();
-	index = std::numeric_limits<size_t>::max();
-	// Check for a coherent interface (or a crystalline bond, which we check below)
-	if (!isCrystallineBond(bond)) {
+	bond.disorientation = std::numeric_limits<FloatType>::infinity();
+	if (!interfaceHandler.reorder_bond(bond, _adjustedStructureTypes)) {
 		return false;
 	}
 
 	auto a = bond.a;
 	auto b = bond.b;
-	if (_adjustedStructureTypes[a] == _adjustedStructureTypes[b]) {
-		return false;
-	}
-
-	// We want ordering of (a, b) to be (parent phase, defect phase)
-	bool flipped = false;
-	flipped |= parent_fcc   && _adjustedStructureTypes[a] == PTMAlgorithm::HCP;
-	flipped |= !parent_fcc  && _adjustedStructureTypes[a] == PTMAlgorithm::FCC;
-	flipped |= parent_dcub  && _adjustedStructureTypes[a] == PTMAlgorithm::HEX_DIAMOND;
-	flipped |= !parent_dcub && _adjustedStructureTypes[a] == PTMAlgorithm::CUBIC_DIAMOND;
-	if (flipped) {
-		std::swap(a, b);
-	}
-
-	disorientation = PTMAlgorithm::calculate_interfacial_disorientation(_adjustedStructureTypes[a],
-																		_adjustedStructureTypes[b],
-																		_adjustedOrientations[a],
-																		_adjustedOrientations[b],
-																		output);
-	index = b;
-	return true;
+	bond.disorientation = PTMAlgorithm::calculate_interfacial_disorientation(_adjustedStructureTypes[a],
+																			 _adjustedStructureTypes[b],
+																			 _adjustedOrientations[a],
+																			 _adjustedOrientations[b],
+																			 output);
+	return bond.disorientation < _misorientationThreshold;
 }
 
 /******************************************************************************
-* Rotates hexagonal atoms (HCP and hex-diamond) to an equivalent cubic orientation.
+* Rotates defect phase atoms to an equivalent parent-phase orientation.
 ******************************************************************************/
-bool GrainSegmentationEngine1::rotateHexagonalAtoms()
+bool GrainSegmentationEngine1::rotateInterfaceAtoms()
 {
 	ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
 	ConstPropertyAccess<Quaternion> orientationsArray(orientations());
@@ -229,31 +212,6 @@ bool GrainSegmentationEngine1::rotateHexagonalAtoms()
 
 	setProgressText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
 
-	// Count structure types
-	int structureCounts[PTMAlgorithm::NUM_STRUCTURE_TYPES] = {0};
-	for (auto structureType: structuresArray) {
-		structureCounts[(int)structureType]++;
-	}
-
-	bool parent_fcc = structureCounts[(size_t)PTMAlgorithm::FCC] >= structureCounts[(size_t)PTMAlgorithm::HCP];
-	bool parent_dcub = structureCounts[(size_t)PTMAlgorithm::CUBIC_DIAMOND] >= structureCounts[(size_t)PTMAlgorithm::HEX_DIAMOND];
-
-	// Set structure targets (i.e. which way a structure will flip)
-	PTMAlgorithm::StructureType target[PTMAlgorithm::NUM_STRUCTURE_TYPES];
-	if (parent_fcc) {
-		target[(size_t)PTMAlgorithm::HCP] = PTMAlgorithm::FCC;
-	}
-	else {
-		target[(size_t)PTMAlgorithm::FCC] = PTMAlgorithm::HCP;
-	}
-
-	if (parent_dcub) {
-		target[(size_t)PTMAlgorithm::HEX_DIAMOND] = PTMAlgorithm::CUBIC_DIAMOND;
-	}
-	else {
-		target[(size_t)PTMAlgorithm::CUBIC_DIAMOND] = PTMAlgorithm::HEX_DIAMOND;
-	}
-
 
 	// Construct local neighbor list builder.
 	PTMNeighborFinder neighFinder(false);
@@ -264,15 +222,13 @@ bool GrainSegmentationEngine1::rotateHexagonalAtoms()
 	// TODO: replace comparator with a lambda function
 	boost::heap::priority_queue<NeighborBond, boost::heap::compare<PriorityQueueCompare>> pq;
 
-	size_t index;
 	Quaternion rotated;
-	FloatType disorientation;
+	auto interfaceHandler = InterfaceHandler(structuresArray);
 
 	// Populate priority queue with bonds at an cubic-hexagonal interface
 	for (auto bond : _neighborBonds) {
-		if (interface_cubic_hex(bond, parent_fcc, parent_dcub, disorientation, rotated, index)
-			&& disorientation < _misorientationThreshold) {
-			pq.push({bond.a, bond.b, disorientation});
+		if (interface_cubic_hex(bond, interfaceHandler, rotated)) {
+			pq.push({bond.a, bond.b, bond.disorientation});
 		}
 	}
 
@@ -280,14 +236,14 @@ bool GrainSegmentationEngine1::rotateHexagonalAtoms()
 		auto bond = *pq.begin();
 		pq.pop();
 
-		if (!interface_cubic_hex(bond, parent_fcc, parent_dcub, disorientation, rotated, index)) {
+		if (!interface_cubic_hex(bond, interfaceHandler, rotated)) {
 			continue;
 		}
 
 		// flip structure from 'defect' phase to parent phase and adjust orientation
+		size_t index = bond.b;
 		auto defectStructureType = _adjustedStructureTypes[index];
-		auto targetStructureType = target[(size_t)defectStructureType];
-		_adjustedStructureTypes[index] = targetStructureType;
+		_adjustedStructureTypes[index] = interfaceHandler.parent_phase(defectStructureType);
 		_adjustedOrientations[index] = rotated;
 
 		// find neighbors to add to the queue
@@ -297,11 +253,8 @@ bool GrainSegmentationEngine1::rotateHexagonalAtoms()
 			size_t neighborIndex = neighQuery.neighbors()[j].index;
 			bond.a = index;
 			bond.b = neighborIndex;
-
-			size_t dummy;
-			if (interface_cubic_hex(bond, parent_fcc, parent_dcub, disorientation, rotated, dummy)
-				&& disorientation < _misorientationThreshold) {
-				pq.push({bond.a, bond.b, disorientation});
+			if (interface_cubic_hex(bond, interfaceHandler, rotated)) {
+				pq.push({bond.a, bond.b, bond.disorientation});
 			}
 		}
 	}

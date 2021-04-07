@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/objects/BondsVis.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -31,6 +32,8 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "CreateBondsModifier.h"
 
+#include <boost/range/numeric.hpp>
+
 namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(CreateBondsModifier);
@@ -38,7 +41,9 @@ DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, minimumCutoff);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, vdwPrefactor);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, onlyIntraMoleculeBonds);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, skipHydrogenHydrogenBonds);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, autoDisableBondDisplay);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondType);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondsVis);
@@ -46,12 +51,15 @@ SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, cutoffMode, "Cutoff mode");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, uniformCutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, pairwiseCutoffs, "Pair-wise cutoffs");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, minimumCutoff, "Lower cutoff");
+SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, vdwPrefactor, "VdW prefactor");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, onlyIntraMoleculeBonds, "Suppress inter-molecular bonds");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondType, "Bond type");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, bondsVis, "Visual element");
+SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, skipHydrogenHydrogenBonds, "Don't generate H-H bonds");
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, autoDisableBondDisplay, "Auto-disable bond display");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, uniformCutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, minimumCutoff, WorldParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, vdwPrefactor, PercentParameterUnit, 0);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -61,7 +69,9 @@ CreateBondsModifier::CreateBondsModifier(DataSet* dataset) : AsynchronousModifie
 	_uniformCutoff(3.2),
 	_onlyIntraMoleculeBonds(false),
 	_minimumCutoff(0),
-	_autoDisableBondDisplay(true)
+	_autoDisableBondDisplay(true),
+	_skipHydrogenHydrogenBonds(true),
+	_vdwPrefactor(0.6) // Value 0.6 has been adopted from VMD source code.
 {
 }
 
@@ -116,7 +126,7 @@ void CreateBondsModifier::setPairwiseCutoff(const QVariant& typeA, const QVarian
 		newList.remove(qMakePair(typeA, typeB));
 		newList.remove(qMakePair(typeB, typeA));
 	}
-	setPairwiseCutoffs(newList);
+	setPairwiseCutoffs(std::move(newList));
 }
 
 /******************************************************************************
@@ -135,15 +145,15 @@ FloatType CreateBondsModifier::getPairwiseCutoff(const QVariant& typeA, const QV
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void CreateBondsModifier::initializeModifier(ModifierApplication* modApp)
+void CreateBondsModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	AsynchronousModifier::initializeModifier(modApp);
+	AsynchronousModifier::initializeModifier(time, modApp, executionContext);
 
-	// Adopt the upstream BondsVis object if there is already is one.
-	// Also initialize the numeric ID of the type ID to not conflict with any existing bond types.
 	int bondTypeId = 1;
-	const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 	if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+		// Adopt the upstream BondsVis object if there already is one.
+		// Also choose a unique numeric bond type ID, which does not conflict with any existing bond type.
 		if(const BondsObject* bonds = particles->bonds()) {
 			if(BondsVis* bondsVis = bonds->visElement<BondsVis>()) {
 				setBondsVis(bondsVis);
@@ -152,10 +162,35 @@ void CreateBondsModifier::initializeModifier(ModifierApplication* modApp)
 				bondTypeId = bondTypeProperty->generateUniqueElementTypeId();
 			}
 		}
+
+		// Initialize the pair-wise cutoffs based on the van der Waals radii of the particle types.
+		if(executionContext == ExecutionContext::Interactive && pairwiseCutoffs().empty()) {
+			if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+				PairwiseCutoffsList cutoffList;
+				for(const ElementType* type1 : typeProperty->elementTypes()) {
+					if(const ParticleType* ptype1 = dynamic_object_cast<ParticleType>(type1)) {
+						if(ptype1->vdwRadius() > 0.0) {
+							QVariant key1 = ptype1->name().isEmpty() ? QVariant::fromValue(ptype1->numericId()) : QVariant::fromValue(ptype1->name());
+							for(const ElementType* type2 : typeProperty->elementTypes()) {
+								if(const ParticleType* ptype2 = dynamic_object_cast<ParticleType>(type2)) {
+									if(ptype2->vdwRadius() > 0.0 && (ptype1->name() != QStringLiteral("H") || ptype2->name() != QStringLiteral("H"))) {
+										// Note: Prefactor 0.6 has been adopted from VMD source code.
+										FloatType cutoff = 0.6 * (ptype1->vdwRadius() + ptype2->vdwRadius());
+										QVariant key2 = ptype2->name().isEmpty() ? QVariant::fromValue(ptype2->numericId()) : QVariant::fromValue(ptype2->name());
+										cutoffList[qMakePair(key1, key2)] = cutoff;
+									}
+								}
+							}
+						}
+					}
+				}
+				setPairwiseCutoffs(std::move(cutoffList));
+			}
+		}
 	}
 	if(bondType() && bondType()->numericId() == 0) {
 		bondType()->setNumericId(bondTypeId);
-		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty), Application::instance()->executionContext());
+		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty), executionContext);
 	}
 }
 
@@ -190,14 +225,18 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 
 	// The neighbor list cutoff.
 	FloatType maxCutoff = uniformCutoff();
+	// The list of per-type VdW radii.
+	std::vector<FloatType> typeVdWRadiusMap;
+	// Flags indicating which type(s) are hydrogens.
+	std::vector<bool> isHydrogenType;
 
 	// Build table of pair-wise cutoff radii.
 	const PropertyObject* typeProperty = nullptr;
 	std::vector<std::vector<FloatType>> pairCutoffSquaredTable;
 	if(cutoffMode() == PairCutoff) {
+		maxCutoff = 0;
 		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
 		if(typeProperty) {
-			maxCutoff = 0;
 			for(auto entry = pairwiseCutoffs().begin(); entry != pairwiseCutoffs().end(); ++entry) {
 				FloatType cutoff = entry.value();
 				if(cutoff > 0) {
@@ -219,14 +258,61 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 				throwException(tr("At least one positive bond cutoff must be set for a valid pair of particle types."));
 		}
 	}
+	else if(cutoffMode() == TypeRadiusCutoff) {
+		maxCutoff = 0;
+		if(vdwPrefactor() <= 0.0)
+			throwException(tr("Van der Waal radius scaling factor must be positive."));
+		typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
+		if(typeProperty) {
+			for(const ElementType* type : typeProperty->elementTypes()) {
+				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
+					if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
+						if(ptype->vdwRadius() > maxCutoff)
+							maxCutoff = ptype->vdwRadius();
+						if(type->numericId() >= typeVdWRadiusMap.size())
+							typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+						typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
+						if(skipHydrogenHydrogenBonds()) {
+							if(type->numericId() >= isHydrogenType.size())
+								isHydrogenType.resize(type->numericId() + 1, false);
+							isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
+						}
+					}
+				}
+			}
+			maxCutoff *= vdwPrefactor() * 2.0;
+			if(maxCutoff == 0.0)
+				throwException(tr("The van der Waals (VdW) radii of all particle types are undefined or zero. Creating bonds based on the VdW radius requires at least one particle type with a positive radius value."));
+		}
+		OVITO_ASSERT(!typeVdWRadiusMap.empty());
+	}
+	if(maxCutoff <= 0.0)
+		throwException(tr("Maximum bond cutoff range is zero. A positive value is required."));
 
 	// Get molecule IDs.
 	const PropertyObject* moleculeProperty = onlyIntraMoleculeBonds() ? particles->getProperty(ParticlesObject::MoleculeProperty) : nullptr;
 
+	// Create the bonds object that will store the generated bonds.
+	DataOORef<BondsObject> bondsObject;
+	if(particles->bonds()) {
+		bondsObject = DataOORef<BondsObject>::makeCopy(particles->bonds());
+		bondsObject->verifyIntegrity();
+	}
+	else {
+		bondsObject = DataOORef<BondsObject>::create(dataset(), executionContext);
+		bondsObject->setDataSource(modApp);
+	}
+	if(bondsObject->visElement())
+		bondsObject->setVisElement(bondsVis());
+
+	// Pass a deep copy of the original bond type to the data pipeline.
+	DataOORef<BondType> clonedBondType = DataOORef<BondType>::makeDeepCopy(bondType());
+
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<BondsEngine>(modApp, executionContext, particles, posProperty,
-			typeProperty, simCell, cutoffMode(),
-			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), moleculeProperty);
+			typeProperty, simCell, std::move(bondsObject), std::move(clonedBondType), particles, cutoffMode(),
+			maxCutoff, minimumCutoff(), std::move(pairCutoffSquaredTable), 
+			std::move(typeVdWRadiusMap), vdwPrefactor(), moleculeProperty, std::move(isHydrogenType));
 }
 
 /******************************************************************************
@@ -235,69 +321,90 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 void CreateBondsModifier::BondsEngine::perform()
 {
 	setProgressText(tr("Generating bonds"));
-
+	
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborFinder;
 	if(!neighborFinder.prepare(_maxCutoff, _positions, _simCell, {}, this))
 		return;
 
+	// The lower bond length cutoff squared.
 	FloatType minCutoffSquared = _minCutoff * _minCutoff;
 
 	ConstPropertyAccess<qlonglong> moleculeIDsArray(_moleculeIDs);
 	ConstPropertyAccess<int> particleTypesArray(_particleTypes);
 
 	// Generate bonds.
-	size_t particleCount = _positions->size();
-	setProgressMaximum(particleCount);
-	if(!particleTypesArray) {
-		for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
-			for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
-				if(neighborQuery.distanceSquared() < minCutoffSquared)
-					continue;
-				if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()])
-					continue;
+	size_t particleCount = _particles->elementCount();
+	// Multi-threaded loop over all particles, each thread producing a partial bonds list.
+	auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, *this, [&](size_t particleIndex, std::vector<Bond>& bondList) {
 
-				Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
-
-				// Skip every other bond to create only one bond per particle pair.
-				if(!bond.isOdd())
-					bonds().push_back(bond);
-			}
-			// Update progress indicator.
-			if(!setProgressValueIntermittent(particleIndex))
-				return;
+		// Get the type of the central particles.
+		int type1;
+		bool isHydrogenType1 = false;
+		if(particleTypesArray) {
+			type1 = particleTypesArray[particleIndex];
+			if(type1 < 0) return;
+			if(type1 < _isHydrogenType.size())
+				isHydrogenType1 = _isHydrogenType[type1];
 		}
-	}
-	else {
-		for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
-			for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
-				if(neighborQuery.distanceSquared() < minCutoffSquared)
-					continue;
-				if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()])
-					continue;
-				int type1 = particleTypesArray[particleIndex];
+
+		// Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
+		for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
+			if(neighborQuery.distanceSquared() < minCutoffSquared)
+				continue;
+			if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()])
+				continue;
+
+			if(particleTypesArray) {
 				int type2 = particleTypesArray[neighborQuery.current()];
-				if(type1 >= 0 && type1 < (int)_pairCutoffsSquared.size() && type2 >= 0 && type2 < (int)_pairCutoffsSquared[type1].size()) {
-					if(neighborQuery.distanceSquared() <= _pairCutoffsSquared[type1][type2]) {
-						Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
-						// Skip every other bond to create only one bond per particle pair.
-						if(!bond.isOdd())
-							bonds().push_back(bond);
+				if(type2 < 0) continue;
+				if(type1 < (int)_typeVdWRadiusMap.size() && type2 < (int)_typeVdWRadiusMap.size()) {
+					// Avoid generating H-H bonds.
+					if(isHydrogenType1 && type2 < _isHydrogenType.size()) {
+						if(_isHydrogenType[type2]) 
+							continue;
 					}
+					FloatType cutoff = _vdwPrefactor * (_typeVdWRadiusMap[type1] + _typeVdWRadiusMap[type2]);
+					if(neighborQuery.distanceSquared() > cutoff*cutoff) 
+						continue;
 				}
+				else if(type1 < (int)_pairCutoffsSquared.size() && type2 < (int)_pairCutoffsSquared[type1].size()) {
+					if(neighborQuery.distanceSquared() > _pairCutoffsSquared[type1][type2])
+						continue;
+				}
+				else continue;
 			}
-			// Update progress indicator.
-			if(!setProgressValueIntermittent(particleIndex))
-				return;
+
+			Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
+
+			// Skip every other bond to create only one bond per particle pair.
+			if(!bond.isOdd())
+				bondList.push_back(bond);
 		}
-	}
-	setProgressValue(particleCount);
+	});
+	if(isCanceled())
+		return;
+
+	// Flatten the bonds list into a single std::vector.
+	size_t totalBondCount = boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
+	std::vector<Bond>& bondsList = partialBondsLists.front();
+	bondsList.reserve(totalBondCount);
+	std::for_each(std::next(partialBondsLists.begin()), partialBondsLists.end(), [&](const std::vector<Bond>& bonds) { bondsList.insert(bondsList.end(), bonds.begin(), bonds.end()); });
+	if(isCanceled())
+		return;
+
+	// Insert bonds into BondsObject.
+	_numGeneratedBonds = bonds()->addBonds(bondsList, nullptr, _particles.get(), executionContext(), {}, std::move(_bondType));
 
 	// Release data that is no longer needed.
 	_positions.reset();
 	_particleTypes.reset();
 	_moleculeIDs.reset();
 	_simCell.reset();
+	_particles.reset();
+	decltype(_typeVdWRadiusMap){}.swap(_typeVdWRadiusMap);
+	decltype(_pairCutoffsSquared){}.swap(_pairCutoffsSquared);
+	decltype(_isHydrogenType){}.swap(_isHydrogenType);
 }
 
 /******************************************************************************
@@ -311,26 +418,24 @@ void CreateBondsModifier::BondsEngine::applyResults(TimePoint time, ModifierAppl
 	// Make the parent particle system mutable.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
-	// Bonds have been created for a specific particles ordering. Make sure it's still the same.
+	// Bonds have been created for a specific particle ordering. Make sure it's still the same.
 	if(_inputFingerprint.hasChanged(particles))
 		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	// Pass a deep copy of the original bond type to the data pipeline.
-	DataOORef<BondType> clonedBondType = DataOORef<BondType>::makeDeepCopy(modifier->bondType());
-
 	// Add our bonds to the system.
-	particles->addBonds(bonds(), modifier->bondsVis(), Application::instance()->executionContext(), {}, std::move(clonedBondType));
+	particles->setBonds(bonds());
 
-	size_t bondsCount = bonds().size();
-	state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(bondsCount), modApp);
+	// Output the number of newly added bonds to the pipeline.
+	state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(_numGeneratedBonds), modApp);
 
-	// If the number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
+	// If the total number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
+	size_t bondsCount = bonds()->elementCount();
 	if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
 		modifier->bondsVis()->setEnabled(false);
-		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. As a precaution, the display of bonds has been disabled. You can manually enable it again if needed.").arg(bondsCount)));
+		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. As a precaution, the display of bonds has been disabled. You can manually enable it again if needed.").arg(_numGeneratedBonds)));
 	}
 	else {
-		state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(bondsCount)));
+		state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(_numGeneratedBonds)));
 	}
 }
 
@@ -348,6 +453,7 @@ bool CreateBondsModifier::applyCachedResultsSynchronous(TimePoint time, Modifier
 	// Bonds have not been computed yet, but still add the empty BondsObject to the pipeline output
 	// so that subsequent modifiers in the pipeline see it.
 	state.expectMutableObject<ParticlesObject>()->addBonds({}, bondsVis(), Application::instance()->executionContext(), {}, bondType());
+	OVITO_ASSERT(state.expectObject<ParticlesObject>()->bonds());
 
 	return false;
 }

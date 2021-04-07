@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -229,8 +229,14 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	_framesListFuture.reset();
 
 	// If there are too many frames, time tick values may overflow. Warn the user in this case.
-	if(restrictToFrame() < 0 && frames.size() >= animationTimeToSourceFrame(TimePositiveInfinity())) {
-		qWarning() << "Warning: Number of frames in loaded trajectory exceeds the maximum supported by OVITO (" << (animationTimeToSourceFrame(TimePositiveInfinity())-1) << " frames). "
+	int frameLimit = TimePositiveInfinity() - std::max(0, dataset()->animationSettings()->frameToTime(playbackStartTime()));
+	if(playbackSpeedDenominator() > playbackSpeedNumerator()) {
+		frameLimit /= std::max(1, playbackSpeedDenominator()); 
+		frameLimit *= std::max(1, playbackSpeedNumerator());
+	}
+	frameLimit /= dataset()->animationSettings()->ticksPerFrame(); 
+	if(restrictToFrame() < 0 && frames.size() >= frameLimit) {
+		qWarning() << "Warning: Number of frames in loaded trajectory exceeds the maximum supported by OVITO (" << (frameLimit-1) << " frames). "
 			"Note: You can increase the limit by setting the animation frames-per-second parameter to a higher value.";
 	}
 
@@ -612,7 +618,7 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	CachingPipelineObject::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x03);
@@ -650,6 +656,19 @@ QString FileSource::objectTitle() const
 	if(importer())
 		return QString("%2 [%1]").arg(importer()->objectTitle()).arg(filename);
 	return CachingPipelineObject::objectTitle();
+}
+
+/******************************************************************************
+* Sets the source frame number that is currently used as a sub-object data collection.
+******************************************************************************/
+void FileSource::setDataCollectionFrame(int frame) 
+{ 
+	if(frame != _dataCollectionFrame) {
+		_dataCollectionFrame = frame; 
+		
+		if(numberOfFiles() > 1)
+			notifyDependents(ReferenceEvent::TitleChanged);
+	}
 }
 
 /******************************************************************************

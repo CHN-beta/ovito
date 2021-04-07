@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,10 +41,12 @@ class PipelineListItem : public RefMaker
 public:
 
 	enum PipelineItemType {
+		DeletedObject,
 		VisualElement,
 		Modifier,
 		DataSource,
 		DataObject,
+		ModifierGroup,
 		VisualElementsHeader,
 		ModificationsHeader,
 		DataSourceHeader,
@@ -75,7 +77,10 @@ public:
 	PipelineItemType itemType() const { return _itemType; }
 
 	/// Returns whether this list item represents an OVITO object.
-	bool isObjectItem() const { return _itemType <= DataObject; }
+	bool isObjectItem() const { return _itemType < VisualElementsHeader; }
+
+	/// Indicates whether this item is being updated.
+	bool isUpdatePending() const { return _updatePending; }	
 
 Q_SIGNALS:
 
@@ -93,6 +98,20 @@ protected:
 	/// Updates the stored title string of the item.
 	void updateTitle();
 
+	/// Helper method that emits the itemChanged() signal.
+	Q_INVOKABLE void emitItemChanged() {
+		_updatePending = false;
+		Q_EMIT itemChanged(this);
+	}
+
+	/// Emits an item changed signal soon after.
+	void emitItemChangedLater() {
+		if(_updatePending) return;	// Update is already pending.
+		_updatePending = true;
+		// Invoke actual update function at a later time when control returns to the GUI event loop.
+		QMetaObject::invokeMethod(this, "emitItemChanged", Qt::QueuedConnection);
+	}
+
 private:
 
 	/// The object represented by this item in the list box.
@@ -106,6 +125,9 @@ private:
 
 	/// The display title of the list item.
 	QString _title;
+
+	/// Indicates that this item is being updated.
+	bool _updatePending = false;	
 };
 
 }	// End of namespace

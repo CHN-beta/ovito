@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* pare
 	setCheckable(true);
 	setChecked(action->isChecked());
 
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 	if(action->highlightColor().isValid())
 		setStyleSheet("QPushButton:checked { background-color: " + action->highlightColor().name() + " }");
 	else

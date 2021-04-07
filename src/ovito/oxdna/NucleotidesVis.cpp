@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -251,7 +251,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 	if(!visCache.backbonePrimitive) {
 
 		// Create the rendering primitive for the backbone sites.
-		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality, ParticlePrimitive::SphericalShape);
+		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
 
 		// Fill in the position data.
 		visCache.backbonePrimitive->setPositions(positionProperty);
@@ -270,7 +270,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 		if(nucleotideAxisProperty) {
 			// Create the rendering primitive for the base sites.
-			visCache.basePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality, ParticlePrimitive::EllipsoidShape);
+			visCache.basePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::EllipsoidShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
 
 			// Fill in the position data for the base sites.
 			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
@@ -313,13 +313,12 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 			// Create the rendering primitive for the connections between backbone and base sites.
 			visCache.connectionPrimitive = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-#if 0
-			visCache.connectionPrimitive->startSetElements(particles->elementCount());
-			ConstPropertyAccess<Color> colorArray(colors);
+			visCache.connectionPrimitive->setUniformRadius(cylinderRadius());
+			visCache.connectionPrimitive->setColors(colors);
+			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			for(size_t i = 0; i < positionsArray.size(); i++)
-				visCache.connectionPrimitive->setElement(i, positionsArray[i], 0.8 * nucleotideAxisArray[i], colorArray[i], cylinderRadius());
-			visCache.connectionPrimitive->endSetElements();
-#endif
+				headPositions[i] = positionsArray[i] + 0.8 * nucleotideAxisArray[i];
+			visCache.connectionPrimitive->setPositions(positionProperty, headPositions.take());
 		}
 		else {
 			visCache.connectionPrimitive.reset();

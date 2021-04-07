@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -194,8 +194,14 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		CylinderPrimitive::RenderingQuality // Bond rendering quality
 	>;
 
+	// The data structure stored in the vis cache.
+	struct CacheValue {
+		std::shared_ptr<CylinderPrimitive> cylinders;
+		std::shared_ptr<ParticlePrimitive> vertices;
+	};
+
 	// Lookup the rendering primitive in the vis cache.
-	auto& cylinders = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
+	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
 			renderer,
 			bondTopologyProperty,
 			bondPeriodicImageProperty,
@@ -214,8 +220,13 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			shadingMode(),
 			renderingQuality()));
 
+	// Make sure the primitive for the nodal vertices gets created if particles display is turned off.
+	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false);
+	if(renderNodalVertices && !visCache.vertices && visCache.cylinders)
+		visCache.cylinders.reset();
+
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!cylinders) {
+	if(!visCache.cylinders) {
 
 		FloatType bondRadius = bondWidth() / 2;
 		if(bondTopologyProperty && positionProperty && bondRadius > 0) {
@@ -226,6 +237,11 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
 			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
 
+			// Allocate buffers for the nodal vertices.
+			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, positionProperty->size(), DataBuffer::Float, 3, 0, false) : nullptr;
+			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Int, 1, 0, false) : nullptr;
+			boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
+
 			// Cache some values.
 			ConstPropertyAccess<Point3> positions(positionProperty);
 			size_t particleCount = positions.size();
@@ -234,7 +250,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 			// Obtain the radii of the particles.
 			ConstPropertyAccessAndRef<FloatType> particleRadii;
 			if(particleVis)
-				particleRadii = particleVis->particleRadii(particles);
+				particleRadii = particleVis->particleRadii(particles, false);
 			// Make sure the particle radius array has the correct length.
 			if(particleRadii && particleRadii.size() != particleCount) 
 				particleRadii.reset();
@@ -268,11 +284,21 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 						t = FloatType(0.5) + std::min(FloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(FloatType(0.5), particleRadii[particleIndex2]/blen);
 					}
 					bondColors[cylinderIndex] = *color++;
+					if(nodalColors && !visitedParticles.test(particleIndex1)) {
+						nodalColors[particleIndex1] = bondColors[cylinderIndex];
+						visitedParticles.set(particleIndex1);
+						nodalIndices.push_back(particleIndex1);
+					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex1];
 					bondPositions2[cylinderIndex++] = positions[particleIndex1] + vec * t;
 
 					bondColors[cylinderIndex] = *color++;
+					if(nodalColors && !visitedParticles.test(particleIndex2)) {
+						nodalColors[particleIndex2] = bondColors[cylinderIndex];
+						visitedParticles.set(particleIndex2);
+						nodalIndices.push_back(particleIndex2);
+					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex2];
 					bondPositions2[cylinderIndex++] = positions[particleIndex2] - vec * (FloatType(1) - t);
@@ -290,26 +316,40 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 				}
 			}
 
-			cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
-			cylinders->setUniformRadius(bondRadius);
-			cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
-			cylinders->setColors(bondColors.take());
-			cylinders->setTransparencies(bondTransparencies.take());
+			visCache.cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+			visCache.cylinders->setUniformRadius(bondRadius);
+			visCache.cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
+			visCache.cylinders->setColors(bondColors.take());
+			visCache.cylinders->setTransparencies(bondTransparencies.take());
+
+			if(renderNodalVertices) {
+				OVITO_ASSERT(positionProperty);
+				visCache.vertices = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, (shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
+				visCache.vertices->setPositions(positionProperty);
+				visCache.vertices->setUniformRadius(bondRadius);
+				visCache.vertices->setColors(nodalColors.take());
+				visCache.vertices->setIndices(nodalIndices.take());
+			}
 		}
 	}
-
-	if(!cylinders)
+	if(!visCache.cylinders)
 		return;
 
 	if(renderer->isPicking()) {
-		OORef<BondPickInfo> pickInfo(new BondPickInfo(flowState));
+		OORef<BondPickInfo> pickInfo(new BondPickInfo(particles, simulationCell));
 		renderer->beginPickObject(contextNode, pickInfo);
 	}
-
-	renderer->renderCylinders(cylinders);
-
+	renderer->renderCylinders(visCache.cylinders);
 	if(renderer->isPicking()) {
 		renderer->endPickObject();
+	}
+
+	if(visCache.vertices && renderNodalVertices) {
+		if(renderer->isPicking())
+			renderer->beginPickObject(contextNode);
+		renderer->renderParticles(visCache.vertices);
+		if(renderer->isPicking())
+			renderer->endPickObject();
 	}
 }
 
@@ -442,77 +482,77 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 {
 	QString str;
 	size_t bondIndex = subobjectId / 2;
-	if(const ParticlesObject* particles = pipelineState().getObject<ParticlesObject>()) {
-		if(particles->bonds()) {
-			ConstPropertyAccess<ParticleIndexPair> topologyProperty = particles->bonds()->getTopology();
-			if(topologyProperty && topologyProperty.size() > bondIndex) {
-				size_t index1 = topologyProperty[bondIndex][0];
-				size_t index2 = topologyProperty[bondIndex][1];
-				str = tr("Bond");
+	if(particles()->bonds()) {
+		ConstPropertyAccess<ParticleIndexPair> topologyProperty = particles()->bonds()->getTopology();
+		if(topologyProperty && topologyProperty.size() > bondIndex) {
+			size_t index1 = topologyProperty[bondIndex][0];
+			size_t index2 = topologyProperty[bondIndex][1];
+			str = tr("Bond: ");
 
-				// Bond length
-				ConstPropertyAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
-				if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
-					const Point3& p1 = posProperty[index1];
-					const Point3& p2 = posProperty[index2];
-					Vector3 delta = p2 - p1;
-					if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
-						if(const SimulationCellObject* simCell = pipelineState().getObject<SimulationCellObject>()) {
-							delta += simCell->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
-						}
+			// Bond length
+			ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+			if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
+				const Point3& p1 = posProperty[index1];
+				const Point3& p2 = posProperty[index2];
+				Vector3 delta = p2 - p1;
+				if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
+					if(simulationCell()) {
+						delta += simulationCell()->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
 					}
-					str += QString(" | Length: %1 | Delta: (%2 %3 %4)").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
 				}
+				str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
+			}
 
-				// Bond properties
-				for(const PropertyObject* property : particles->bonds()->properties()) {
-					if(property->size() <= bondIndex) continue;
-					if(property->type() == BondsObject::SelectionProperty) continue;
-					if(property->type() == BondsObject::ColorProperty) continue;
-					if(!str.isEmpty()) str += QStringLiteral(" | ");
-					str += property->name();
-					str += QStringLiteral(" ");
-					if(property->dataType() == PropertyObject::Int) {
-						ConstPropertyAccess<int, true> data(property);
-						for(size_t component = 0; component < data.componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-							if(property->elementTypes().empty() == false) {
-								if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
-									if(!ptype->name().isEmpty())
-										str += QString(" (%1)").arg(ptype->name());
-								}
+			// Bond properties
+			for(const PropertyObject* property : particles()->bonds()->properties()) {
+				if(property->size() <= bondIndex) continue;
+				if(property->type() == BondsObject::SelectionProperty) continue;
+				if(property->type() == BondsObject::ColorProperty) continue;
+				if(!str.isEmpty()) str += QStringLiteral("<sep>");
+				str += QStringLiteral("<key>");
+				str += property->name().toHtmlEscaped();
+				str += QStringLiteral(":</key> <val>");
+				if(property->dataType() == PropertyObject::Int) {
+					ConstPropertyAccess<int, true> data(property);
+					for(size_t component = 0; component < data.componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
+						if(property->elementTypes().empty() == false) {
+							if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
+								if(!ptype->name().isEmpty())
+									str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
 							}
 						}
 					}
-					else if(property->dataType() == PropertyObject::Int64) {
-						ConstPropertyAccess<qlonglong, true> data(property);
-						for(size_t component = 0; component < property->componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-						}
-					}
-					else if(property->dataType() == PropertyObject::Float) {
-						ConstPropertyAccess<FloatType, true> data(property);
-						for(size_t component = 0; component < property->componentCount(); component++) {
-							if(component != 0) str += QStringLiteral(", ");
-							str += QString::number(data.get(bondIndex, component));
-						}
-					}
-					else {
-						str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+				}
+				else if(property->dataType() == PropertyObject::Int64) {
+					ConstPropertyAccess<qlonglong, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
 					}
 				}
-
-				// Pair type info.
-				const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-				if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
-					ConstPropertyAccess<int> typeData(typeProperty);
-					const ElementType* type1 = typeProperty->elementType(typeData[index1]);
-					const ElementType* type2 = typeProperty->elementType(typeData[index2]);
-					if(type1 && type2) {
-						str += QString(" | Particles: %1 - %2").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
+				else if(property->dataType() == PropertyObject::Float) {
+					ConstPropertyAccess<FloatType, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(bondIndex, component));
 					}
+				}
+				else {
+					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
+				}
+				str += QStringLiteral("</val>");
+			}
+
+			// Pair type info.
+			const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
+			if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
+				ConstPropertyAccess<int> typeData(typeProperty);
+				const ElementType* type1 = typeProperty->elementType(typeData[index1]);
+				const ElementType* type2 = typeProperty->elementType(typeData[index2]);
+				if(type1 && type2) {
+					str += QString("<sep><key>Particles:</key> <val>%1 - %2</val>").arg(type1->nameOrNumericId(), type2->nameOrNumericId());
 				}
 			}
 		}

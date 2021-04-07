@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,9 +77,27 @@ public:
 	/// \brief Compares two references for inequality.
 	bool operator!=(const PropertyReference& other) const { return !(*this == other); }
 
+	/// \brief Strict ordering function.
+	bool operator<(const PropertyReference& other) const {
+		if(containerClass() == other.containerClass()) {
+			if(type() == other.type()) {
+				if(vectorComponent() == other.vectorComponent()) {
+					return name() < other.name();
+				}
+				else return vectorComponent() < other.vectorComponent();
+			}
+			else return type() < other.type();
+		}
+		else return containerClass() < other.containerClass();
+	}
+
 	/// \brief Returns true if this reference does not point to any property.
 	/// \return true if this is a default-constructed PropertyReference.
 	bool isNull() const { return type() == 0 && name().isEmpty(); }
+
+	/// \brief Returns whether this reference refers to any property.
+	/// \return false if this is a default-constructed PropertyReference.
+	explicit operator bool() const { return !isNull(); }
 
 	/// \brief Returns the display name of the referenced property including the optional vector component.
 	QString nameWithComponent() const;
@@ -141,6 +159,15 @@ public:
 
 	/// \brief Constructs a reference based on an existing PropertyObject.
 	TypedPropertyReference(const PropertyObject* property, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), property, vectorComponent) {}
+
+	/// \brief Compares two references for equality.
+	bool operator==(const TypedPropertyReference& other) const { return PropertyReference::operator==(other); }
+
+	/// \brief Compares two references for inequality.
+	bool operator!=(const TypedPropertyReference& other) const { return PropertyReference::operator!=(other); }
+
+	/// \brief Strict ordering function.
+	bool operator<(const TypedPropertyReference& other) const { return PropertyReference::operator<(other); }
 
 	friend SaveStream& operator<<(SaveStream& stream, const TypedPropertyReference& r) {
 		return stream << static_cast<const PropertyReference&>(r);

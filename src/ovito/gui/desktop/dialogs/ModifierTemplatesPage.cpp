@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,30 +104,54 @@ void ModifierTemplatesPage::onCreateTemplate()
 		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
 		mainLayout->setSpacing(2);
 
-		mainLayout->addWidget(new QLabel(tr("Modifiers to include in template:")));
-		QListWidget* modifierListWidget = new QListWidget(&dlg);
-		modifierListWidget->setUniformItemSizes(true);
+		mainLayout->addWidget(new QLabel(tr("Modifiers to include in the new template:")));
+		QTreeWidget* modifierListWidget = new QTreeWidget(&dlg);
+		modifierListWidget->setUniformRowHeights(true);
+		modifierListWidget->setRootIsDecorated(false);
+		modifierListWidget->header()->hide();
 		PipelineListModel* pipelineModel = mainWindow->commandPanel()->modifyPage()->pipelineListModel();
-		Modifier* selectedModifier = nullptr;
-		QVector<OORef<Modifier>> modifierList;
-		for(int index = 0; index < pipelineModel->rowCount(); index++) {
-			PipelineListItem* item = pipelineModel->item(index);
-			ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object());
-			if(modApp && modApp->modifier()) {
-				QListWidgetItem* listItem = new QListWidgetItem(modApp->modifier()->objectTitle(), modifierListWidget);
-				listItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
-				if(pipelineModel->selectedItem() == item) {
-					selectedModifier = modApp->modifier();
-					listItem->setCheckState(Qt::Checked);
+		QVector<RefTarget*> selectedPipelineObjects = pipelineModel->selectedObjects();
+		QVector<QTreeWidgetItem*> itemList;
+		int rowCount = 0;
+
+		// Iterate over the modifiers in the selected pipeline.
+		if(PipelineSceneNode* pipeline = pipelineModel->selectedPipeline()) {
+			ModifierGroup* currentGroup = nullptr;
+			QTreeWidgetItem* currentGroupItem = nullptr;
+			ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
+			while(modApp) {
+				if(modApp->modifierGroup() != currentGroup) {
+					if(modApp->modifierGroup()) {
+						currentGroupItem = new QTreeWidgetItem(modifierListWidget, {modApp->modifierGroup()->objectTitle()});
+						currentGroupItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsAutoTristate);
+						currentGroupItem->setExpanded(true);
+						rowCount++;
+					}
+					else currentGroupItem = nullptr;
+					currentGroup = modApp->modifierGroup();
 				}
-				else listItem->setCheckState(Qt::Unchecked);
-				modifierList.push_back(modApp->modifier());
+				if(modApp->modifier()) {
+					QTreeWidgetItem* listItem = currentGroupItem 
+						? new QTreeWidgetItem(currentGroupItem, {modApp->modifier()->objectTitle()})
+						: new QTreeWidgetItem(modifierListWidget, {modApp->modifier()->objectTitle()});
+					listItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
+					if(selectedPipelineObjects.contains(modApp) || selectedPipelineObjects.contains(modApp->modifierGroup())) {
+						listItem->setCheckState(0, Qt::Checked);
+					}
+					else {
+						listItem->setCheckState(0, Qt::Unchecked);
+					}
+					listItem->setData(0, Qt::UserRole, QVariant::fromValue(OORef<OvitoObject>(modApp->modifier())));
+					itemList.push_back(listItem);
+					rowCount++;
+				}
+				modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
 			}
 		}
-		if(modifierList.empty())
+		if(itemList.empty())
 			throw Exception(tr("A modifier template must always be created on the basis of existing modifiers, but the current data pipeline does not contain any modifiers. "
 								"Please close this dialog, insert some modifier into the pipeline first, configure its settings and then come back here to create a template from it."));
-		modifierListWidget->setMaximumHeight(modifierListWidget->sizeHintForRow(0) * qBound(3, modifierListWidget->count(), 10) + 2 * modifierListWidget->frameWidth());
+		modifierListWidget->setMaximumHeight(modifierListWidget->sizeHintForRow(0) * qBound(3, rowCount, 10) + 2 * modifierListWidget->frameWidth());
 		mainLayout->addWidget(modifierListWidget, 1);
 
 		mainLayout->addSpacing(8);
@@ -135,15 +159,29 @@ void ModifierTemplatesPage::onCreateTemplate()
 		QComboBox* nameBox = new QComboBox(&dlg);
 		nameBox->setEditable(true);
 		nameBox->addItems(ModifierTemplates::get()->templateList());
-		if(selectedModifier)
-			nameBox->setCurrentText(tr("Custom %1").arg(selectedModifier->objectTitle()));
-		else
+
+		ModifierApplication* selectedModApp = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierApplication>(selectedPipelineObjects.front()) : nullptr;
+		if(selectedModApp && selectedModApp->modifier()) {
+			if(selectedModApp->modifier()->title().isEmpty())
+				nameBox->setCurrentText(tr("Custom %1").arg(selectedModApp->modifier()->objectTitle()));
+			else
+				nameBox->setCurrentText(selectedModApp->modifier()->title());
+		}
+		else if(ModifierGroup* selectedModGroup = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierGroup>(selectedPipelineObjects.front()) : nullptr) {
+			if(selectedModGroup->title().isEmpty())
+				nameBox->setCurrentText(tr("My %1").arg(selectedModGroup->objectTitle()));
+			else
+				nameBox->setCurrentText(selectedModGroup->title());
+		}
+		else {
 			nameBox->setCurrentText(tr("Custom modifier template 1"));
+		}
+		
 		mainLayout->addWidget(nameBox);
 
 		mainLayout->addSpacing(12);
 		QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-		connect(buttonBox, &QDialogButtonBox::accepted, [this, &dlg, nameBox, modifierListWidget]() {
+		connect(buttonBox, &QDialogButtonBox::accepted, [this, &dlg, nameBox, &itemList]() {
 			QString name = nameBox->currentText().trimmed();
 			if(name.isEmpty()) {
 				QMessageBox::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));
@@ -153,10 +191,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 				if(QMessageBox::question(&dlg, tr("Create modifier template"), tr("A modifier template with the same name '%1' already exists. Do you want to replace it?").arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
 					return;
 			}
-			int selCount = 0;
-			for(int i = 0; i < modifierListWidget->count(); i++)
-				if(modifierListWidget->item(i)->checkState() == Qt::Checked)
-					selCount++;
+			int selCount = boost::count_if(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; });
 			if(!selCount) {
 				QMessageBox::critical(&dlg, tr("Create modifier template"), tr("Please check at least one modifier to include in the new template."));
 				return;
@@ -171,14 +206,14 @@ void ModifierTemplatesPage::onCreateTemplate()
 		});
 
 		mainLayout->addWidget(buttonBox);
-
 		if(dlg.exec() == QDialog::Accepted) {
 			QVector<OORef<Modifier>> selectedModifierList;
-			for(int i = 0; i < modifierListWidget->count(); i++) {
-				if(modifierListWidget->item(i)->checkState() == Qt::Checked) {
-					selectedModifierList.push_back(modifierList[i]);
+			for(QTreeWidgetItem* item : itemList) {
+				if(item->checkState(0) == Qt::Checked) {
+					selectedModifierList.push_back(static_object_cast<Modifier>(item->data(0, Qt::UserRole).value<OORef<OvitoObject>>()));
 				}
 			}
+			OVITO_ASSERT(!selectedModifierList.empty());
 			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList);
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;

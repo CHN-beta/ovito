@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,8 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include "GeneralSettingsPage.h"
 
 namespace Ovito {
@@ -40,6 +43,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 
 	QSettings settings;
 
+	// Group "User interface":
 	QGroupBox* uiGroupBox = new QGroupBox(tr("User interface"), page);
 	layout1->addWidget(uiGroupBox);
 	QGridLayout* layout2 = new QGridLayout(uiGroupBox);
@@ -55,6 +59,72 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	layout2->addWidget(_sortModifiersByCategory, 1, 0);
 	_sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
 
+	// Group "3D graphics system":
+	QGroupBox* graphicsGroupBox = new QGroupBox(tr("3D graphics"), page);
+	layout1->addWidget(graphicsGroupBox);
+	layout2 = new QGridLayout(graphicsGroupBox);
+	layout2->setColumnStretch(2, 1);
+
+	layout2->addWidget(new QLabel(tr("Graphics hardware interface:")), 0, 0);
+	_graphicsSystem = new QButtonGroup(page);
+	QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
+	QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan"), graphicsGroupBox);
+	layout2->addWidget(openglOption, 0, 1);
+	layout2->addWidget(vulkanOption, 1, 1);
+	_graphicsSystem->addButton(openglOption, 0);
+	_graphicsSystem->addButton(vulkanOption, 1);
+	_vulkanDevices = new QComboBox();
+	layout2->addWidget(_vulkanDevices, 1, 2);
+	if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "VulkanSceneRenderer")) {
+		if(settings.value("rendering/selected_graphics_api").toString() == "Vulkan")
+			vulkanOption->setChecked(true);
+		else
+			openglOption->setChecked(true);
+
+		// Call the VulkanSceneRenderer::OOMetaClass::querySystemInformation() function to let the Vulkan plugin write the
+		// list of available devices to the application settings store, from where we can read them.
+		QString dummyBuffer;
+		QTextStream dummyStream(&dummyBuffer);
+		rendererClass->querySystemInformation(dummyStream, *Application::instance()->datasetContainer());
+
+		settings.beginGroup("rendering/vulkan");
+		int numDevices = settings.beginReadArray("available_devices");
+		if(numDevices != 0) {
+			for(int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+				settings.setArrayIndex(deviceIndex);
+				QString title = settings.value("name").toString();
+				switch(settings.value("deviceType").toInt()) {
+				case 1: // VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+					title += tr(" (integrated GPU)");
+					break;
+				case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU 
+					title += tr(" (discrete GPU)");
+					break;
+				case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU  
+					title += tr(" (virtual GPU)");
+					break;
+				}
+				_vulkanDevices->addItem(std::move(title));
+			}
+		}
+		else {
+			_vulkanDevices->addItem(tr("<No devices found>"));
+			vulkanOption->setEnabled(false);
+			openglOption->setChecked(true);
+			_vulkanDevices->setEnabled(false);
+		}
+		settings.endArray();
+		_vulkanDevices->setCurrentIndex(settings.value("selected_device", 0).toInt());
+		settings.endGroup();
+	}
+	else {
+		vulkanOption->setEnabled(false);
+		openglOption->setChecked(true);
+		_vulkanDevices->setEnabled(false);
+		_vulkanDevices->addItem(tr("Not available on this platform"));
+	}
+
+	// Group "Program updates":
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QGroupBox* updateGroupBox = new QGroupBox(tr("Program updates"), page);
 	layout1->addWidget(updateGroupBox);
@@ -90,6 +160,36 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 	QSettings settings;
 	settings.setValue("file/use_qt_dialog", _useQtFileDialog->isChecked());
 	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
+
+	// Check if user has selected a different 3D graphics API than before.
+	bool recreateViewportWindows = false;
+	bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
+	bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
+	if(isVulkanSelected != wasVulkanSelected) {
+		// Save new API selection in the application settings store.
+		if(isVulkanSelected)
+			settings.setValue("rendering/selected_graphics_api", "Vulkan");
+		else
+			settings.remove("rendering/selected_graphics_api");
+		recreateViewportWindows = true;
+	}
+
+	// Check if a different Vulkan device was selected by the user.
+	if(settings.value("rendering/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
+		settings.setValue("rendering/vulkan/selected_device", _vulkanDevices->currentIndex());
+		recreateViewportWindows = true;
+	}
+
+	// Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
+	// No restart of the software is required.
+	if(recreateViewportWindows) {
+		for(QWidget* widget : QApplication::topLevelWidgets()) {
+			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
+				mainWindow->viewportsPanel()->recreateViewportWindows();
+			}
+		}
+	}
+
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
 	settings.setValue("updates/transmit_id", _enableUsageStatistics->isChecked());

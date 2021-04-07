@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,21 +25,20 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/Viewport.h>
-#include "ViewportWindow.h"
 
 namespace Ovito {
 
 /**
  * \brief The context menu of the viewports.
  */
-class ViewportMenu : public QMenu
+class OVITO_GUI_EXPORT ViewportMenu : public QMenu
 {
 	Q_OBJECT
 
 public:
 
 	/// Initializes the menu.
-	ViewportMenu(ViewportWindow* vpWindow);
+	ViewportMenu(Viewport* viewport, QWidget* viewportWidget);
 
 	/// Displays the menu.
 	void show(const QPoint& pos);
@@ -60,8 +59,8 @@ private:
 	/// The viewport this menu belongs to.
 	Viewport* _viewport;
 
-	/// The window this menu is shown in.
-	ViewportWindow* _vpWindow;
+	/// The viewport widget this menu is shown in.
+	QWidget* _viewportWidget;
 
 	/// The view type sub-menu.
 	QMenu* _viewTypeMenu;

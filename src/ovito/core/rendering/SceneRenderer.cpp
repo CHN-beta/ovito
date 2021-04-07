@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/viewport/ViewportGizmo.h>
 
 namespace Ovito {
 
@@ -50,7 +51,38 @@ SceneRenderer::SceneRenderer(DataSet* dataset) : RefTarget(dataset)
 ******************************************************************************/
 QSize SceneRenderer::outputSize() const
 {
-	return { renderSettings()->outputImageWidth(), renderSettings()->outputImageHeight() };
+	if(isInteractive() && viewport() && viewport()->window()) {
+		return viewport()->windowSize();
+	}
+	else if(renderSettings()) {
+		return { renderSettings()->outputImageWidth(), renderSettings()->outputImageHeight() };
+	}
+	else {
+		OVITO_ASSERT(false);
+		return {};
+	}
+}
+
+/******************************************************************************
+* Returns the device pixel ratio of the output device we are rendering to.
+******************************************************************************/
+qreal SceneRenderer::devicePixelRatio() const
+{
+	if(viewport() && isInteractive()) {
+		// Query the device pixel ratio from the UI window associated with the viewport we are rendering into.
+		if(ViewportWindowInterface* window = viewport()->window())
+			return window->devicePixelRatio();
+	}
+
+	return 1.0;
+}
+
+/******************************************************************************
+* Returns the line rendering width to use in object picking mode.
+******************************************************************************/
+FloatType SceneRenderer::defaultLinePickingWidth()
+{
+	return FloatType(6) * devicePixelRatio();
 }
 
 /******************************************************************************
@@ -95,6 +127,39 @@ Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjection
 	}
 
 	return _sceneBoundingBox;
+}
+
+/******************************************************************************
+* Prepares the renderer for rendering and sets the data set to be rendered.
+******************************************************************************/
+bool SceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) 
+{
+	OVITO_ASSERT_MSG(_renderDataset == nullptr, "SceneRenderer::startRender()", "startRender() called again without calling endRender() first.");
+	_renderDataset = dataset;
+	_renderSettings = settings;
+	return true;
+}
+
+/******************************************************************************
+* Is called after rendering has finished.
+******************************************************************************/
+void SceneRenderer::endRender() 
+{
+	_renderDataset = nullptr;
+	_renderSettings = nullptr;
+}
+
+/******************************************************************************
+* Sets the view projection parameters, the animation frame to render,
+* and the viewport being rendered.
+******************************************************************************/
+void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) 
+{
+	_time = time;
+	_viewport = vp;
+	setProjParams(params);
+	_modelWorldTM.setIdentity();
+	_modelViewTM = projParams().viewMatrix;
 }
 
 /******************************************************************************
@@ -281,6 +346,37 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 }
 
 /******************************************************************************
+* This virtual method is responsible for rendering additional content that is only
+* visible in the interactive viewports.
+******************************************************************************/
+void SceneRenderer::renderInteractiveContent()
+{
+	OVITO_ASSERT(viewport());
+
+	// Render construction grid.
+	if(viewport()->isGridVisible())
+		renderGrid();
+
+	// Render visual 3D representation of the modifiers.
+	renderModifiers(false);
+
+	// Render visual 2D representation of the modifiers.
+	renderModifiers(true);
+
+	// Render viewport gizmos.
+	if(ViewportWindowInterface* viewportWindow = viewport()->window()) {
+		// First, render 3D content.
+		for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
+			gizmo->renderOverlay3D(viewport(), this);
+		}
+		// Then, render 2D content on top.
+		for(ViewportGizmo* gizmo : viewportWindow->viewportGizmos()) {
+			gizmo->renderOverlay2D(viewport(), this);
+		}
+	}
+}
+
+/******************************************************************************
 * Renders the visual representation of the modifiers.
 ******************************************************************************/
 void SceneRenderer::renderModifiers(bool renderOverlay)
@@ -314,6 +410,48 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 }
 
 /******************************************************************************
+* Renders a 2d polyline in the viewport.
+******************************************************************************/
+void SceneRenderer::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
+{
+	if(isBoundingBoxPass())
+		return;
+	OVITO_ASSERT(count >= 2);
+
+	std::shared_ptr<LinePrimitive> primitive = createLinePrimitive();
+	primitive->setUniformColor(color);
+
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, (closed ? count : count-1) * 2, DataBuffer::Float, 3, 0, false);
+	Point3* lineSegment = vertices.begin();
+	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
+		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
+		lineSegment[1] = Point3(points[i+1].x(), points[i+1].y(), 0.0);
+	}
+	if(closed) {
+		lineSegment[0] = Point3(points[count-1].x(), points[count-1].y(), 0.0);
+		lineSegment[1] = Point3(points[0].x(), points[0].y(), 0.0);
+		lineSegment += 2;
+	}
+	OVITO_ASSERT(lineSegment == vertices.end());
+	primitive->setPositions(vertices.take());
+
+	// Set up model-view-projection matrices.
+	ViewProjectionParameters originalProjParams = projParams();
+	ViewProjectionParameters newProjParams;
+	newProjParams.aspectRatio = originalProjParams.aspectRatio;
+	newProjParams.projectionMatrix = Matrix4::ortho(renderingViewport().left(), renderingViewport().right(), renderingViewport().bottom(), renderingViewport().top(), -1.0, 1.0);
+	newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
+	setProjParams(newProjParams);
+	setWorldTransform(AffineTransformation::Identity());
+
+	setDepthTestEnabled(false);
+	renderLines(primitive);
+	setDepthTestEnabled(true);
+
+	setProjParams(originalProjParams);
+}
+
+/******************************************************************************
 * Computes the world-space radius of an object located at the given world-space position,
 * which should appear exactly one pixel wide in the rendered image.
 ******************************************************************************/
@@ -338,6 +476,125 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 	}
 	else {
 		return projParams().fieldOfView / (FloatType)height * baseSize;
+	}
+}
+
+/******************************************************************************
+* Determines the range of the construction grid to display.
+******************************************************************************/
+std::tuple<FloatType, Box2I> SceneRenderer::determineGridRange(Viewport* vp)
+{
+	// Determine the area of the construction grid that is visible in the viewport.
+	static const Point2 testPoints[] = {
+		{-1,-1}, {1,-1}, {1, 1}, {-1, 1}, {0,1}, {0,-1}, {1,0}, {-1,0},
+		{0,1}, {0,-1}, {1,0}, {-1,0}, {-1, 0.5}, {-1,-0.5}, {1,-0.5}, {1,0.5}, {0,0}
+	};
+
+	// Compute intersection points of test rays with grid plane.
+	Box2 visibleGridRect;
+	size_t numberOfIntersections = 0;
+	for(size_t i = 0; i < sizeof(testPoints)/sizeof(testPoints[0]); i++) {
+		Point3 p;
+		if(vp->computeConstructionPlaneIntersection(testPoints[i], p, 0.1f)) {
+			numberOfIntersections++;
+			visibleGridRect.addPoint(p.x(), p.y());
+		}
+	}
+
+	if(numberOfIntersections < 2) {
+		// Cannot determine visible parts of the grid.
+        return std::tuple<FloatType, Box2I>(0.0f, Box2I());
+	}
+
+	// Determine grid spacing adaptively.
+	Point3 gridCenter(visibleGridRect.center().x(), visibleGridRect.center().y(), 0);
+	FloatType gridSpacing = vp->nonScalingSize(vp->gridMatrix() * gridCenter) * 2.0f;
+	// Round to nearest power of 10.
+	gridSpacing = pow((FloatType)10, floor(log10(gridSpacing)));
+
+	// Determine how many grid lines need to be rendered.
+	int xstart = (int)floor(visibleGridRect.minc.x() / (gridSpacing * 10)) * 10;
+	int xend = (int)ceil(visibleGridRect.maxc.x() / (gridSpacing * 10)) * 10;
+	int ystart = (int)floor(visibleGridRect.minc.y() / (gridSpacing * 10)) * 10;
+	int yend = (int)ceil(visibleGridRect.maxc.y() / (gridSpacing * 10)) * 10;
+
+	return std::tuple<FloatType, Box2I>(gridSpacing, Box2I(Point2I(xstart, ystart), Point2I(xend, yend)));
+}
+
+/******************************************************************************
+* Renders the construction grid.
+******************************************************************************/
+void SceneRenderer::renderGrid()
+{
+	if(isPicking())
+		return;
+
+	FloatType gridSpacing;
+	Box2I gridRange;
+	std::tie(gridSpacing, gridRange) = determineGridRange(viewport());
+	if(gridSpacing <= 0) return;
+
+	// Determine how many grid lines need to be rendered.
+	int xstart = gridRange.minc.x();
+	int ystart = gridRange.minc.y();
+	int numLinesX = gridRange.size(0) + 1;
+	int numLinesY = gridRange.size(1) + 1;
+
+	FloatType xstartF = (FloatType)xstart * gridSpacing;
+	FloatType ystartF = (FloatType)ystart * gridSpacing;
+	FloatType xendF = (FloatType)(xstart + numLinesX - 1) * gridSpacing;
+	FloatType yendF = (FloatType)(ystart + numLinesY - 1) * gridSpacing;
+
+	setWorldTransform(viewport()->gridMatrix());
+
+	if(!isBoundingBoxPass()) {
+
+		// Allocate vertex buffer.
+		int numVertices = 2 * (numLinesX + numLinesY);
+
+		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 4, 0, false);
+
+		// Build lines array.
+		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
+		ColorA majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS);
+		ColorA majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS);
+
+		Point3* v = vertexPositions.begin();
+		ColorA* c = vertexColors.begin();
+		FloatType x = xstartF;
+		for(int i = xstart; i < xstart + numLinesX; i++, x += gridSpacing, c += 2) {
+			*v++ = Point3(x, ystartF, 0);
+			*v++ = Point3(x, yendF, 0);
+			if((i % 10) != 0)
+				c[0] = c[1] = color;
+			else if(i != 0)
+				c[0] = c[1] = majorColor;
+			else
+				c[0] = c[1] = majorMajorColor;
+		}
+		FloatType y = ystartF;
+		for(int i = ystart; i < ystart + numLinesY; i++, y += gridSpacing, c += 2) {
+			*v++ = Point3(xstartF, y, 0);
+			*v++ = Point3(xendF, y, 0);
+			if((i % 10) != 0)
+				c[0] = c[1] = color;
+			else if(i != 0)
+				c[0] = c[1] = majorColor;
+			else
+				c[0] = c[1] = majorMajorColor;
+		}
+		OVITO_ASSERT(c == vertexColors.end());
+
+		// Render grid lines.
+		if(!_constructionGridGeometry)
+			_constructionGridGeometry = createLinePrimitive();
+		_constructionGridGeometry->setPositions(vertexPositions.take());
+		_constructionGridGeometry->setColors(vertexColors.take());
+		renderLines(_constructionGridGeometry);
+	}
+	else {
+		addToLocalBoundingBox(Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
 	}
 }
 

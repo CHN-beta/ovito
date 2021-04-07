@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 Alexander Stukowski
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -23,9 +23,8 @@
 # Define the GUI component of the OpenGLRenderer plugin.
 OVITO_STANDARD_PLUGIN(OpenGLRendererGui
 	SOURCES
-		StandardSceneRendererEditor.cpp
+		OpenGLViewportWindow.cpp
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer
 	GUI_PLUGIN
-	HAS_NO_EXPORTS
 )

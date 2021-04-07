@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,7 +65,7 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request);
+		return std::make_shared<FrameLoader>(request, recenterCell());
 	}
 
 private:
@@ -75,7 +75,7 @@ private:
 	{
 	public:
 
-		/// Inherit constructor from base class.
+		/// Constructor.
 		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:

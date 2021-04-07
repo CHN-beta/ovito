@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,10 @@ protected:
 	/// This method is called when a reference target changes.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-protected Q_SLOTS:
+private Q_SLOTS:
+
+	/// Updates the combobox list showing the available data sources.
+	void updateSourcesList();
 
 	/// Updates the UI.
 	void updateEditorFields();

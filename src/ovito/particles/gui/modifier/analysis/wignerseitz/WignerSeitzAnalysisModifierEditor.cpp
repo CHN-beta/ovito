@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -135,7 +135,7 @@ void WignerSeitzAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	layout->addWidget(statusLabel());
 
 	// Open a sub-editor for the reference object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(WignerSeitzAnalysisModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference")));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(WignerSeitzAnalysisModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &WignerSeitzAnalysisModifierEditor::onContentsChanged);
 }

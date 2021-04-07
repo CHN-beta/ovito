@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,6 +40,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RenderSettingsEditor);
+DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 
 // Predefined output image dimensions.
@@ -138,13 +139,19 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		layout2->addWidget(imageHeightUI->label(), 1, 0);
 		layout2->addLayout(imageHeightUI->createFieldLayout(), 1, 1);
 
-		sizePresetsBox = new QComboBox(groupBox);
-		sizePresetsBox->addItem(tr("Presets..."));
-		sizePresetsBox->insertSeparator(1);
+		_sizePresetsBox = new QComboBox(groupBox);
+		_sizePresetsBox->addItem(tr("Presets..."));
+		_sizePresetsBox->insertSeparator(1);
 		for(int i = 0; i < sizeof(imageSizePresets)/sizeof(imageSizePresets[0]); i++)
-			sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
-		connect(sizePresetsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &RenderSettingsEditor::onSizePresetActivated);
-		layout2->addWidget(sizePresetsBox, 0, 2);
+			_sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
+		connect(_sizePresetsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &RenderSettingsEditor::onSizePresetActivated);
+		layout2->addWidget(_sizePresetsBox, 0, 2);
+
+		_viewportPreviewModeBox = new QCheckBox(tr("Preview"));
+		layout2->addWidget(_viewportPreviewModeBox, 1, 2, Qt::AlignRight | Qt::AlignVCenter);
+		connect(&mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
+		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
+		onViewportConfigReplaced(mainWindow()->datasetContainer().currentSet() ? mainWindow()->datasetContainer().currentSet()->viewportConfig() : nullptr);
 	}
 
 	// Render output
@@ -173,33 +180,57 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		//connect(saveFileUI->checkBox(), &QCheckBox::toggled, skipExistingImagesUI, &BooleanParameterUI::setEnabled);
 	}
 
-	// Options
+	// Background
 	{
-		QGroupBox* groupBox = new QGroupBox(tr("Options"));
+		QGroupBox* groupBox = new QGroupBox(tr("Background"));
 		layout->addWidget(groupBox);
 		QGridLayout* layout2 = new QGridLayout(groupBox);
 		layout2->setContentsMargins(4,4,4,4);
 		layout2->setSpacing(2);
 
 		// Background color parameter.
-		layout2->addWidget(new QLabel(tr("Background:")), 0, 0, 1, 3);
-
 		ColorParameterUI* backgroundColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(RenderSettings::backgroundColorController));
-		layout2->addWidget(backgroundColorPUI->colorPicker(), 1, 1, 1, 2);
+		layout2->addWidget(backgroundColorPUI->colorPicker(), 0, 1, 1, 2);
 
 		// Alpha channel.
 		BooleanRadioButtonParameterUI* generateAlphaUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(RenderSettings::generateAlphaChannel));
-		layout2->addWidget(generateAlphaUI->buttonFalse(), 1, 0, 1, 1);
-		layout2->addWidget(generateAlphaUI->buttonTrue(), 2, 0, 1, 3);
+		layout2->addWidget(generateAlphaUI->buttonFalse(), 0, 0, 1, 1);
+		layout2->addWidget(generateAlphaUI->buttonTrue(), 1, 0, 1, 3);
 		generateAlphaUI->buttonFalse()->setText(tr("Color:"));
 		generateAlphaUI->buttonTrue()->setText(tr("Transparent"));
-
-		// Create 'Switch renderer' button.
-		QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."), groupBox);
-		connect(switchRendererButton, &QPushButton::clicked, this, &RenderSettingsEditor::onSwitchRenderer);
-		layout2->setRowMinimumHeight(3, 8);
-		layout2->addWidget(switchRendererButton, 4, 0, 1, 3);
 	}
+
+#ifndef Q_OS_MACOS
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(4,4,4,4);
+	sublayout->setSpacing(4);
+#else
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(0,0,0,0);
+	sublayout->setSpacing(4);
+#endif
+	layout->addLayout(sublayout);
+
+	// Create 'Render active viewport' button.
+	QPushButton* renderViewportButton = new QPushButton();
+	renderViewportButton->setAutoDefault(true);
+	QAction* renderAction = mainWindow()->actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
+	renderViewportButton->setText(tr("Render active viewport"));
+	renderViewportButton->setIcon(renderAction->icon());
+	connect(renderViewportButton, &QPushButton::clicked, renderAction, &QAction::trigger);
+	sublayout->addWidget(renderViewportButton, 3);
+
+	// Create 'Switch renderer' button.
+	QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."));
+	connect(switchRendererButton, &QPushButton::clicked, this, &RenderSettingsEditor::onSwitchRenderer);
+#ifndef Q_OS_MACOS
+	sublayout->addWidget(switchRendererButton, 1);
+#else
+	switchRendererButton->setToolTip(switchRendererButton->text());
+	switchRendererButton->setText({});
+	switchRendererButton->setIcon(QIcon(":/guibase/actions/file/preferences.bw.svg"));
+	sublayout->addWidget(switchRendererButton, 1);
+#endif
 
 	// Open a sub-editor for the renderer.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
@@ -236,7 +267,7 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 			PROPERTY_FIELD(RenderSettings::outputImageHeight).memorizeDefaultValue(settings);
 		});
 	}
-	sizePresetsBox->setCurrentIndex(0);
+	_sizePresetsBox->setCurrentIndex(0);
 }
 
 /******************************************************************************
@@ -248,6 +279,11 @@ void RenderSettingsEditor::onSwitchRenderer()
 	if(!settings) return;
 
 	QVector<OvitoClassPtr> rendererClasses = PluginManager::instance().listClasses(SceneRenderer::OOClass());
+
+	// Filter out internal renderer implementations, which should not be visible to the user.
+	// Internal renderer implementation have no UI description string assigned.
+	rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(), 
+		[](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); }), rendererClasses.end());
 
 	// Preferred ordering of renderers:
 	const QStringList displayOrdering = {
@@ -269,7 +305,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	dlg.setWindowTitle(tr("Switch renderer"));
 	QGridLayout* layout = new QGridLayout(&dlg);
 
-	QLabel* label = new QLabel(tr("Select a rendering engine to use for producing output images or movies."));
+	QLabel* label = new QLabel(tr("Select the rendering engine to be used for generating output images and movies."));
 	label->setWordWrap(true);
 	layout->addWidget(label, 0, 0, 1, 2);
 
@@ -309,6 +345,60 @@ void RenderSettingsEditor::onSwitchRenderer()
 			settings->setRenderer(std::move(renderer));
 		});
 	}
+}
+
+/******************************************************************************
+* This is called whenever the current viewport configuration of current dataset
+* has been replaced by a new one.
+******************************************************************************/
+void RenderSettingsEditor::onViewportConfigReplaced(ViewportConfiguration* newViewportConfiguration)
+{
+	disconnect(_activeViewportChangedConnection);
+	if(newViewportConfiguration) {
+		_activeViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::activeViewportChanged, this, &RenderSettingsEditor::onActiveViewportChanged);
+		onActiveViewportChanged(newViewportConfiguration->activeViewport());
+	}
+	else onActiveViewportChanged(nullptr);
+}
+
+/******************************************************************************
+* This is called when another viewport became active.
+******************************************************************************/
+void RenderSettingsEditor::onActiveViewportChanged(Viewport* activeViewport)
+{
+	_activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewport);
+}
+
+/******************************************************************************
+* This method is called when a referenced object has changed.
+******************************************************************************/
+bool RenderSettingsEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(source == activeViewport() && event.type() == ReferenceEvent::TargetChanged) {
+		_viewportPreviewModeBox->setChecked(activeViewport()->renderPreviewMode());
+	}
+	return PropertiesEditor::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Gets called when the data provider of the pipeline has been replaced.
+******************************************************************************/
+void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(activeViewport)) {
+		_viewportPreviewModeBox->setEnabled(activeViewport() != nullptr);
+		_viewportPreviewModeBox->setChecked(activeViewport() && activeViewport()->renderPreviewMode());
+	}
+	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when the user toggles the preview mode checkbox.
+******************************************************************************/
+void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
+{
+	if(activeViewport())
+		activeViewport()->setRenderPreviewMode(checked);
 }
 
 }	// End of namespace

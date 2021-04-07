@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -115,7 +115,7 @@ class OVITO_CORE_EXPORT FrameBuffer : public QObject
 public:
 
 	/// Constructor.
-	FrameBuffer(QObject* parent = nullptr) : QObject(parent) {}
+	explicit FrameBuffer(QObject* parent = nullptr) : QObject(parent) {}
 
 	/// Constructor.
 	FrameBuffer(int width, int height, QObject* parent = nullptr);

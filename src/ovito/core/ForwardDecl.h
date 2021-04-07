@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -96,6 +96,7 @@ namespace Ovito {
 	class Modifier;
 	class ModifierClass;
 	using ModifierClassPtr = const ModifierClass*;
+	class ModifierGroup;
 	class ModifierApplication;
 	class PipelineSceneNode;
 	class PipelineFlowState;

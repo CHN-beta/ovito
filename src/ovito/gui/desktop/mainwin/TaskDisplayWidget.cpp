@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "TaskDisplayWidget.h"
@@ -31,20 +32,22 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the widget and associates it with the main window.
 ******************************************************************************/
-TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : QWidget(nullptr), _mainWindow(mainWindow)
+TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainWindow)
 {
 	setVisible(false);
 
 	QHBoxLayout* progressWidgetLayout = new QHBoxLayout(this);
-	progressWidgetLayout->setContentsMargins(0,0,0,0);
+	progressWidgetLayout->setContentsMargins(10,0,0,0);
 	progressWidgetLayout->setSpacing(0);
-	_progressTextDisplay = new QLabel();
+	_progressTextDisplay = new ElidedTextLabel();
 	_progressTextDisplay->setLineWidth(0);
 	_progressTextDisplay->setAlignment(Qt::Alignment(Qt::AlignRight | Qt::AlignVCenter));
 	_progressTextDisplay->setAutoFillBackground(true);
 	_progressTextDisplay->setMargin(2);
-	_progressTextDisplay->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+	_progressTextDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Ignored);
+	progressWidgetLayout->addWidget(_progressTextDisplay);
 	_progressBar = new QProgressBar(this);
+	_progressBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 #if 0
 	_cancelTaskButton = new QToolButton(this);
 	_cancelTaskButton->setText(tr("Cancel"));
@@ -125,9 +128,7 @@ void TaskDisplayWidget::showIndicator()
 {
 	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
 	if(isHidden() && taskManager.runningTasks().empty() == false) {
-		_mainWindow->statusBar()->addWidget(_progressTextDisplay, 1);
 		show();
-		_progressTextDisplay->show();
 		updateIndicator();
 	}
 }
@@ -144,7 +145,6 @@ void TaskDisplayWidget::updateIndicator()
 	if(taskManager.runningTasks().empty()) {
 		_delayTimer.stop();
 		hide();
-		_mainWindow->statusBar()->removeWidget(_progressTextDisplay);
 	}
 	else {
 		for(auto iter = taskManager.runningTasks().cbegin(); iter != taskManager.runningTasks().cend(); iter++) {

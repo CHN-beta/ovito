@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -190,8 +190,8 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 	OVITO_ASSERT(!descriptor.isVector());
 	OVITO_ASSERT((descriptor.isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
+	// Check for cyclic strong references.
+	if(inactiveTarget && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
 		throw CyclicReferenceError();
 
 	// Move the old pointer value into a local temporary.
@@ -227,10 +227,10 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG)
-template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
-template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
-template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
+	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
+	template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
 #endif
 
 #ifdef OVITO_DEBUG
@@ -450,8 +450,8 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
 	OVITO_ASSERT(descriptor.isVector());
 	OVITO_ASSERT((descriptor.isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
-	// Check for cyclic references.
-	if(inactiveTarget && owner->isReferencedBy(inactiveTarget))
+	// Check for cyclic strong references.
+	if(inactiveTarget && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
 		throw CyclicReferenceError();
 
 	// Move the old pointer value into a local temporary.
@@ -526,8 +526,8 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 	OVITO_CHECK_OBJECT_POINTER(owner);
 	OVITO_ASSERT(descriptor.isVector());
 
-	// Check for cyclic references.
-	if(target && owner->isReferencedBy(target))
+	// Check for cyclic strong references.
+	if(target && (!descriptor.flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor.isWeakReference()) && owner->isReferencedBy(target, true))
 		throw CyclicReferenceError();
 
 	// Add new reference to list.
@@ -559,10 +559,10 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG)
-template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
-template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
-template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
+	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
+	template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
 #endif
 
 }	// End of namespace

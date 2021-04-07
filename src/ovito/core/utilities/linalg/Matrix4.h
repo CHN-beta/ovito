@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2014 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -140,6 +140,23 @@ public:
 		  (*this)[3] = Vector_4<T>(m14,m24,m34,m44); }
 #endif
 
+	/// \brief Initializes the 4x4 matrix from a 3x3 matrix.
+	/// The lower matrix row and the right column are initialized to (0,0,0,1).
+#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
+	explicit Q_DECL_CONSTEXPR Matrix_4(const Matrix_3<T>& tm)
+		: std::array<Vector_4<T>,4>{{
+			Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
+			Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
+			Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0)),
+			Vector_4<T>(   T(0),   T(0),   T(0),T(1))}} {}
+#else
+	explicit Matrix_4(const Matrix_3<T>& tm)
+		{ (*this)[0] = Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0));
+		  (*this)[1] = Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0));
+		  (*this)[2] = Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0));
+		  (*this)[3] = Vector_4<T>(   T(0),   T(0),   T(0),T(1)); }
+#endif
+
 	/// \brief Constructor that initializes the matrix from four column vectors.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
 	Q_DECL_CONSTEXPR Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4)
@@ -197,8 +214,8 @@ public:
 		{ this->fill(typename Vector_4<T>::Zero()); }
 #endif
 
-		/// \brief Initializes the matrix to the identity matrix.
-		/// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
+	/// \brief Initializes the matrix to the identity matrix.
+	/// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
 	Q_DECL_CONSTEXPR Matrix_4(Identity)
 		: std::array<Vector_4<T>,4>{{
@@ -213,6 +230,16 @@ public:
 		  (*this)[2] = Vector_4<T>(T(0),T(0),T(1),T(0));
 		  (*this)[3] = Vector_4<T>(T(0),T(0),T(0),T(1)); }
 #endif
+
+	/// \brief Casts the matrix to a matrix with another data type.
+	template<typename U>
+	Q_DECL_CONSTEXPR explicit operator Matrix_4<U>() const {
+		return Matrix_4<U>(
+				static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
+				static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),
+				static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)), static_cast<U>((*this)(2,3)),
+				static_cast<U>((*this)(3,0)), static_cast<U>((*this)(3,1)), static_cast<U>((*this)(3,2)), static_cast<U>((*this)(3,3)));
+	}
 
 	/// \brief Returns the number of rows of this matrix.
 	static Q_DECL_CONSTEXPR size_type row_count() { return 4; }

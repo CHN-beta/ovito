@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
+#include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -176,7 +176,7 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		// Take the current mouse cursor position to make the input mode
 		// look more responsive. The cursor position recorded when the mouse event was
 		// generates may be too old.
-		_currentPoint = static_cast<ViewportWindow*>(vpwin)->mapFromGlobal(QCursor::pos());
+		_currentPoint = ViewportsPanel::viewportWidget(viewport())->mapFromGlobal(QCursor::pos());
 
 		viewport()->dataset()->undoStack().resetCurrentCompoundOperation();
 		doXForm();

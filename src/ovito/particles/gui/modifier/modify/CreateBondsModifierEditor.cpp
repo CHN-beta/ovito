@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/modify/CreateBondsModifier.h>
+#include <ovito/particles/objects/ParticleType.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
@@ -46,32 +47,58 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	layout1->setContentsMargins(4,4,4,4);
 	layout1->setSpacing(6);
 
+	IntegerRadioButtonParameterUI* cutoffModePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::cutoffMode));
+
+	// Uniform cutoff parameter.
 	QGridLayout* gridlayout = new QGridLayout();
 	gridlayout->setContentsMargins(0,0,0,0);
 	gridlayout->setColumnStretch(1, 1);
-
-	IntegerRadioButtonParameterUI* cutoffModePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::cutoffMode));
-	QRadioButton* uniformCutoffModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::UniformCutoff, tr("Uniform cutoff radius"));
-
-	// Cutoff parameter.
-	FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
+	QRadioButton* uniformCutoffModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::UniformCutoff, tr("Uniform cutoff distance:"));
+	FloatParameterUI* uniformCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
 	gridlayout->addWidget(uniformCutoffModeBtn, 0, 0);
-	gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
-	cutoffRadiusPUI->setEnabled(false);
-	connect(uniformCutoffModeBtn, &QRadioButton::toggled, cutoffRadiusPUI, &FloatParameterUI::setEnabled);
-
+	gridlayout->addLayout(uniformCutoffPUI->createFieldLayout(), 0, 1);
+	uniformCutoffPUI->setEnabled(false);
+	connect(uniformCutoffModeBtn, &QRadioButton::toggled, uniformCutoffPUI, &FloatParameterUI::setEnabled);
 	layout1->addLayout(gridlayout);
 
+	// Van der Waals mode.
+	QRadioButton* typeRadiusModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::TypeRadiusCutoff, tr("Van der Waals radii:"));
+	layout1->addWidget(typeRadiusModeBtn);
+	QVBoxLayout* sublayout = new QVBoxLayout();
+	sublayout->setContentsMargins(26,0,0,0);
+	BooleanParameterUI* skipHydrogenHydrogenBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
+	sublayout->addWidget(skipHydrogenHydrogenBondsUI->checkBox());
+	skipHydrogenHydrogenBondsUI->setEnabled(false);
+	connect(typeRadiusModeBtn, &QRadioButton::toggled, skipHydrogenHydrogenBondsUI, &ParameterUI::setEnabled);
+
+	_vdwTable = new QTableWidget();
+	_vdwTable->verticalHeader()->setVisible(false);
+	_vdwTable->setEnabled(false);
+	_vdwTable->setShowGrid(false);
+	_vdwTable->setColumnCount(2);
+	_vdwTable->setHorizontalHeaderLabels(QStringList() << tr("Particle type") << tr("VdW radius"));
+	_vdwTable->verticalHeader()->setDefaultSectionSize(_vdwTable->verticalHeader()->minimumSectionSize());
+	_vdwTable->horizontalHeader()->setStretchLastSection(true);
+	connect(typeRadiusModeBtn, &QRadioButton::toggled, _vdwTable, &QTableView::setEnabled);
+	sublayout->addWidget(_vdwTable);
+	layout1->addLayout(sublayout);
+
+	// Pair-wise cutoff mode.
 	QRadioButton* pairCutoffModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::PairCutoff, tr("Pair-wise cutoffs:"));
 	layout1->addWidget(pairCutoffModeBtn);
+	sublayout = new QVBoxLayout();
+	sublayout->setContentsMargins(26,0,0,0);
 
 	_pairCutoffTable = new QTableView();
 	_pairCutoffTable->verticalHeader()->setVisible(false);
 	_pairCutoffTable->setEnabled(false);
 	_pairCutoffTableModel = new PairCutoffTableModel(_pairCutoffTable);
 	_pairCutoffTable->setModel(_pairCutoffTableModel);
-	connect(pairCutoffModeBtn,&QRadioButton::toggled, _pairCutoffTable, &QTableView::setEnabled);
-	layout1->addWidget(_pairCutoffTable);
+	_pairCutoffTable->verticalHeader()->setDefaultSectionSize(_pairCutoffTable->verticalHeader()->minimumSectionSize());
+	_pairCutoffTable->horizontalHeader()->setStretchLastSection(true);
+	connect(pairCutoffModeBtn, &QRadioButton::toggled, _pairCutoffTable, &QTableView::setEnabled);
+	sublayout->addWidget(_pairCutoffTable);
+	layout1->addLayout(sublayout);
 
 	BooleanParameterUI* onlyIntraMoleculeBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
 	layout1->addWidget(onlyIntraMoleculeBondsUI->checkBox());
@@ -93,11 +120,14 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondsVis), rolloutParams.after(rollout));
 
 	// Open a sub-editor for the bond type.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondType), rolloutParams.after(rollout).setTitle(tr("New")));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondType), rolloutParams.after(rollout).setTitle(tr("Bond type")));
 
 	// Update pair-wise cutoff table whenever a modifier has been loaded into the editor.
 	connect(this, &CreateBondsModifierEditor::contentsReplaced, this, &CreateBondsModifierEditor::updatePairCutoffList);
 	connect(this, &CreateBondsModifierEditor::contentsChanged, this, &CreateBondsModifierEditor::updatePairCutoffListValues);
+
+	// Update van der Waals radius list.
+	connect(this, &CreateBondsModifierEditor::contentsReplaced, this, &CreateBondsModifierEditor::updateVanDerWaalsList);
 }
 
 /******************************************************************************
@@ -120,7 +150,9 @@ void CreateBondsModifierEditor::updatePairCutoffList()
 			}
 		}
 	}
+	bool isEmpty = pairCutoffs.empty();
 	_pairCutoffTableModel->setContent(mod, std::move(pairCutoffs));
+	_pairCutoffTable->resizeColumnToContents(isEmpty ? 0 : 2);
 }
 
 /******************************************************************************
@@ -136,9 +168,17 @@ void CreateBondsModifierEditor::updatePairCutoffListValues()
 ******************************************************************************/
 QVariant CreateBondsModifierEditor::PairCutoffTableModel::data(const QModelIndex& index, int role) const
 {
+	if(_data.empty()) {
+		if(role == Qt::DisplayRole && index.column() == 0) return tr("No particle types defined");
+		else return {};
+	}
 	if(role == Qt::DisplayRole || role == Qt::EditRole) {
-		if(index.column() == 0) return _data[index.row()].first->nameOrNumericId();
-		else if(index.column() == 1) return _data[index.row()].second->nameOrNumericId();
+		if(index.column() == 0) {
+			return _data[index.row()].first->nameOrNumericId();
+		}
+		else if(index.column() == 1) {
+			return _data[index.row()].second->nameOrNumericId();
+		}
 		else if(index.column() == 2) {
 			const auto& type1 = _data[index.row()].first;
 			const auto& type2 = _data[index.row()].second;
@@ -153,7 +193,7 @@ QVariant CreateBondsModifierEditor::PairCutoffTableModel::data(const QModelIndex
 		if(index.column() == 0) return (QColor)_data[index.row()].first->color();
 		else if(index.column() == 1) return (QColor)_data[index.row()].second->color();
 	}
-	return QVariant();
+	return {};
 }
 
 /******************************************************************************
@@ -176,6 +216,55 @@ bool CreateBondsModifierEditor::PairCutoffTableModel::setData(const QModelIndex&
 		return true;
 	}
 	return false;
+}
+
+/******************************************************************************
+* Updates the list of van der Waals radii.
+******************************************************************************/
+void CreateBondsModifierEditor::updateVanDerWaalsList()
+{
+	_vdwTable->clearContents();
+
+	CreateBondsModifier* mod = static_object_cast<CreateBondsModifier>(editObject());
+	if(!mod) return;
+
+	int row = 0;
+
+	// Obtain the list of particle types and their van der Waals radii from the modifier's input.
+	const PipelineFlowState& inputState = getModifierInput();
+	if(const ParticlesObject* particles = inputState.getObject<ParticlesObject>()) {
+		if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+			// Count number of table entries.
+			for(const ElementType* type : typeProperty->elementTypes()) {
+				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type))
+					row++;
+			}
+			// Create table entries.
+			_vdwTable->setRowCount(row);
+			row = 0;
+			for(const ElementType* type : typeProperty->elementTypes()) {
+				if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
+					QTableWidgetItem* nameItem = new QTableWidgetItem(ptype->nameOrNumericId());
+					nameItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren);
+					_vdwTable->setItem(row, 0, nameItem);
+					QTableWidgetItem* radiusItem = new QTableWidgetItem(
+						(ptype->vdwRadius() > 0.0) ? QString::number(ptype->vdwRadius())
+						: tr("‹unspecified›"));
+					radiusItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren);
+					_vdwTable->setItem(row, 1, radiusItem);
+					row++;
+				}
+			}
+			OVITO_ASSERT(row == _vdwTable->rowCount());
+		}
+	}
+	if(row == 0) {
+		_vdwTable->setRowCount(1);
+		QTableWidgetItem* emptyItem = new QTableWidgetItem(tr("No particle types defined"));
+		emptyItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren);
+		_vdwTable->setItem(0, 0, emptyItem);
+	}
+	_vdwTable->resizeColumnToContents(0);
 }
 
 }	// End of namespace

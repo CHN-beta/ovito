@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ private Q_SLOTS:
 
 	void on_Quit_triggered();
 	void on_HelpAbout_triggered();
-	void on_HelpOpenGLInfo_triggered();
+	void on_HelpSystemInfo_triggered();
 	void on_HelpShowOnlineHelp_triggered();
 	void on_HelpShowScriptingReference_triggered();
 	void on_FileOpen_triggered();
@@ -66,6 +66,7 @@ private Q_SLOTS:
 	void on_RenderActiveViewport_triggered();
 	void on_ClonePipeline_triggered();
 	void on_RenamePipeline_triggered();
+	void on_NewPipelineFileSource_triggered();
 
 private:
 

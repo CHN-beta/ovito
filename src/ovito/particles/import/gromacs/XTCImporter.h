@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,6 +60,7 @@ public:
 	/// \brief Constructs a new instance of this class.
 	Q_INVOKABLE XTCImporter(DataSet* dataset) : ParticleImporter(dataset) {
 		setMultiTimestepFile(true);
+		setRecenterCell(true);
 	}
 
 	/// Returns the title of this object.
@@ -70,7 +71,7 @@ public:
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-		return std::make_shared<FrameLoader>(request);
+		return std::make_shared<FrameLoader>(request, recenterCell());
 	}
 
 	/// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
@@ -85,7 +86,7 @@ private:
 	{
 	public:
 
-		/// Inherit constructor from base class.
+		/// Constructor.
 		using ParticleImporter::FrameLoader::FrameLoader;
 
 	protected:

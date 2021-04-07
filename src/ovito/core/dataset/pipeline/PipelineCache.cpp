@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,7 +112,13 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 	}
 	else {
 		preliminaryValidityInterval = pipelineObject->validityInterval(request);
-		future = pipelineObject->evaluateInternal(request);
+		try {
+			future = pipelineObject->evaluateInternal(request);
+		}
+		catch(const Exception& ex) {
+			pipelineObject->setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join('\n')));
+			future = Future<PipelineFlowState>::createImmediateEmplace(nullptr, pipelineObject->status());
+		}
 	}
 
 	// Pre-register the evaluation operation.

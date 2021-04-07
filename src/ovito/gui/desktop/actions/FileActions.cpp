@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,6 @@
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -37,9 +36,7 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
-	#include <QOperatingSystemVersion>
-#endif
+#include <QOperatingSystemVersion>
 
 namespace Ovito {
 
@@ -92,12 +89,12 @@ void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 }
 
 /******************************************************************************
-* Handles the ACTION_HELP_OPENGL_INFO command.
+* Handles the ACTION_HELP_GRAPHICS_SYSINFO command.
 ******************************************************************************/
-void WidgetActionManager::on_HelpOpenGLInfo_triggered()
+void WidgetActionManager::on_HelpSystemInfo_triggered()
 {
 	QDialog dlg(mainWindow());
-	dlg.setWindowTitle(tr("OpenGL Information"));
+	dlg.setWindowTitle(tr("System Information"));
 	QVBoxLayout* layout = new QVBoxLayout(&dlg);
 	QTextEdit* textEdit = new QTextEdit(&dlg);
 	textEdit->setReadOnly(true);
@@ -105,16 +102,8 @@ void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
 	stream << "======= System info =======\n";
 	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
-	stream << "Application: " << QApplication::applicationName() << " " << QApplication::applicationVersion() << "\n";
-#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
-	stream << "OS: " <<  QOperatingSystemVersion::current().name() << "(" << QOperatingSystemVersion::current().majorVersion() << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
-#else
-	#if defined(Q_OS_MAC)
-		stream << "OS: Mac OS X (" << QSysInfo::macVersion() << ")" << "\n";
-	#elif defined(Q_OS_WIN)
-		stream << "OS: Windows (" << QSysInfo::windowsVersion() << ")" << "\n";
-	#endif
-#endif
+	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #if defined(Q_OS_LINUX)
 	// Get 'uname' output.
 	QProcess unameProcess;
@@ -131,30 +120,17 @@ void WidgetActionManager::on_HelpOpenGLInfo_triggered()
 	lsbOutput.replace('\n', ' ');
 	stream << "LSB output: " << lsbOutput << "\n";
 #endif
-	stream << "Architecture: " << (QT_POINTER_SIZE*8) << " bit" << "\n";
-	stream << "Floating-point size: " << (sizeof(FloatType)*8) << " bit" << "\n";
-	stream << "Qt version: " << QT_VERSION_STR << "\n";
+	stream << "Processor architecture: " << (QT_POINTER_SIZE*8) << "-bit" << "\n";
+	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
+	stream << "Qt framework version: " << QT_VERSION_STR << "\n";
 	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
-	stream << "======= OpenGL info =======" << "\n";
-	const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
-	stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
-	stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
-	stream << "Alpha: " << format.hasAlpha() << "\n";
-	stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
-	stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
-	stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
-	stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
-	stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
-	stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
-	stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
-	stream << "Geometry shaders supported: " << (OpenGLSceneRenderer::geometryShadersSupported() ? "yes" : "no") << "\n";
-	stream << "Using deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
-	stream << "Using geometry shaders: " << (OpenGLSceneRenderer::geometryShadersEnabled() ? "yes" : "no") << "\n";
-	stream << "Context sharing enabled: " << (OpenGLSceneRenderer::contextSharingEnabled() ? "yes" : "no") << "\n";
-	if(!text.isEmpty())
-		textEdit->setPlainText(text);
-	else
-		textEdit->setPlainText(tr("Could not obtain OpenGL information."));
+	// Let the plugin class add their information to their system report.
+	for(Plugin* plugin : PluginManager::instance().plugins()) {
+		for(OvitoClassPtr clazz : plugin->classes()) {
+			clazz->querySystemInformation(stream, mainWindow()->datasetContainer());
+		}
+	}
+	textEdit->setPlainText(text);
 	textEdit->setMinimumSize(QSize(600, 400));
 	layout->addWidget(textEdit);
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, &dlg);

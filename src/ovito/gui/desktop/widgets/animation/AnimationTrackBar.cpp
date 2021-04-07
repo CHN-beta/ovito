@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,9 +36,14 @@ using namespace std;
 * The constructor of the AnimationTrackBar class.
 ******************************************************************************/
 AnimationTrackBar::AnimationTrackBar(MainWindow* mainWindow, AnimationTimeSlider* timeSlider, QWidget* parent) :
-	QFrame(parent), _timeSlider(timeSlider), _animSettings(nullptr),
-	_keyPen(Qt::black), _selectedKeyPen(QColor(255,255,255)), _selectionCursor(Qt::CrossCursor),
-	_isDragging(false), _dragStartPos(-1)
+	QFrame(parent), 
+	_timeSlider(timeSlider), 
+	_animSettings(nullptr),
+	_keyPen(Qt::black), 
+	_selectedKeyPen(QColor(255,255,255)), 
+	_selectionCursor(Qt::CrossCursor),
+	_isDragging(false), 
+	_dragStartPos(-1)
 {
 	_keyBrushes[0] = QBrush(QColor(150,150,200));	// Color for float controller keys
 	_keyBrushes[1] = QBrush(QColor(150,150,200));	// Color for integer controller keys
@@ -179,7 +184,12 @@ void AnimationTrackBar::paintKey(QPainter& painter, AnimationKey* key, KeyframeC
 ******************************************************************************/
 QSize AnimationTrackBar::sizeHint() const
 {
-	return QSize(QFrame::sizeHint().width(), fontMetrics().height() * 1 + frameWidth() * 2 + 6);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	int extraHeight = 0;
+#else
+	int extraHeight = 6;
+#endif
+	return QSize(QFrame::sizeHint().width(), fontMetrics().height() * 1 + frameWidth() * 2 + extraHeight);
 }
 
 /******************************************************************************

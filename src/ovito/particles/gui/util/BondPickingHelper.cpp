@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2018 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,16 +44,14 @@ bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& c
 
 		// Check if that was a bond.
 		if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult.pickInfo())) {
-			if(const ParticlesObject* particles = pickInfo->pipelineState().getObject<ParticlesObject>()) {
-				if(particles->bonds()) {
-					size_t bondIndex = vpPickResult.subobjectId() / 2;
-					const PropertyObject* topologyProperty = particles->bonds()->getTopology();
-					if(topologyProperty && topologyProperty->size() > bondIndex) {
-						// Save reference to the selected bond.
-						result.sceneNode = vpPickResult.pipelineNode();
-						result.bondIndex = bondIndex;
-						return true;
-					}
+			if(pickInfo->particles()->bonds()) {
+				size_t bondIndex = vpPickResult.subobjectId() / 2;
+				const PropertyObject* topologyProperty = pickInfo->particles()->bonds()->getTopology();
+				if(topologyProperty && topologyProperty->size() > bondIndex) {
+					// Save reference to the selected bond.
+					result.sceneNode = vpPickResult.pipelineNode();
+					result.bondIndex = bondIndex;
+					return true;
 				}
 			}
 		}

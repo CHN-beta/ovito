@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,33 +32,6 @@
 namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(CastepCellImporter);
-
-const char* CastepCellImporter::chemical_symbols[] = {
-    // 0
-    "X",
-    // 1
-    "H", "He",
-    // 2
-    "Li", "Be", "B", "C", "N", "O", "F", "Ne",
-    // 3
-    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
-    // 4
-    "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
-    "Ga", "Ge", "As", "Se", "Br", "Kr",
-    // 5
-    "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd",
-    "In", "Sn", "Sb", "Te", "I", "Xe",
-    // 6
-    "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy",
-    "Ho", "Er", "Tm", "Yb", "Lu",
-    "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi",
-    "Po", "At", "Rn",
-    // 7
-    "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk",
-    "Cf", "Es", "Fm", "Md", "No", "Lr",
-    "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc",
-    "Lv", "Ts", "Og"
-};
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -172,9 +145,9 @@ void CastepCellImporter::FrameLoader::loadFile()
 				int atomicNumber;
 				if(sscanf(line, "%u " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &atomicNumber, &pos.x(), &pos.y(), &pos.z()) == 4) {
 					coords.push_back(pos);
-					if(atomicNumber < 0 || atomicNumber >= sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
+					if(atomicNumber < 0 || atomicNumber >= ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
 						atomicNumber = 0;
-					types.push_back(QLatin1String(chemical_symbols[atomicNumber]));
+					types.push_back(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
 				}
 				else if(sscanf(line, "%*s " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pos.x(), &pos.y(), &pos.z()) == 3) {
 					coords.push_back(pos);

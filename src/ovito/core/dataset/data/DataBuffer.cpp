@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -151,7 +151,7 @@ void DataBuffer::truncate(size_t numElementsToRemove)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 

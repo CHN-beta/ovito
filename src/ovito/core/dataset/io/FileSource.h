@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,6 +40,7 @@ class OVITO_CORE_EXPORT FileSource : public CachingPipelineObject
 {
 	Q_OBJECT
 	OVITO_CLASS(FileSource)
+	Q_CLASSINFO("DisplayName", "External file source");
 
 public:
 
@@ -113,13 +114,13 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// Sets the source frame number that is currently used as a sub-object data collection.
-	void setDataCollectionFrame(int frame) { _dataCollectionFrame = frame; }
+	void setDataCollectionFrame(int frame);
 
 private:
 

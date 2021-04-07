@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,9 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "Application.h"
+
+#include <QLoggingCategory>
+#include <QSurfaceFormat>
 
 // Called from Application::initialize() to register the embedded Qt resource files
 // when running a statically linked executable. Following the Qt documentation, this
@@ -55,14 +58,45 @@ Application* Application::_instance = nullptr;
 QtMessageHandler Application::defaultQtMessageHandler = nullptr;
 
 /******************************************************************************
-* Handler method for Qt error messages.
+* Handler method for Qt log messages.
 * This can be used to set a debugger breakpoint for the OVITO_ASSERT macros.
 ******************************************************************************/
 void Application::qtMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
 	// Forward message to default handler.
 	if(defaultQtMessageHandler) defaultQtMessageHandler(type, context, msg);
-	else std::cerr << qPrintable(msg) << std::endl;
+	else std::cerr << qPrintable(qFormatLogMessage(type, context, msg)) << std::endl;
+}
+
+/******************************************************************************
+* Handler method for Qt log messages that should be redirected to a file.
+******************************************************************************/
+static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, const QString& msg) 
+{
+	// Format the message string to be written to the log file.
+	QString formattedMsg = qFormatLogMessage(type, context, msg);
+
+	// The log file object.
+	static QFile logFile(QDir::fromNativeSeparators(qEnvironmentVariable("OVITO_LOG_FILE", QStringLiteral("ovito.log"))));
+	
+	// Synchronize concurrent access to the log file. 
+	static QMutex ioMutex;
+	QMutexLocker mutexLocker(&ioMutex);
+
+	// Open the log file for writing if it is not open yet.
+	if(!logFile.isOpen()) {
+		if(!logFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			std::cerr << "WARNING: Failed to open log file '" << qPrintable(logFile.fileName()) << "' for writing: ";
+			std::cerr << qPrintable(logFile.errorString()) << std::endl;
+			Application::qtMessageOutput(type, context, msg);
+			return;
+		}
+	}
+
+	// Write to the text stream.
+	static QTextStream stream(&logFile);
+	stream << formattedMsg << '\n';
+	stream.flush();
 }
 
 /******************************************************************************
@@ -79,6 +113,10 @@ Application::Application()
 	_idealThreadCount = std::max(1, QThread::idealThreadCount());
 	if(qEnvironmentVariableIsSet("OVITO_THREAD_COUNT"))
 		_idealThreadCount = std::max(1, qgetenv("OVITO_THREAD_COUNT").toInt());
+
+	// Request at least to parallel threads in the global thread pool, even when running on a single-core machine (e.g. a virtual machine).
+	// Concurrent multi-threading is required to avoid deadlocks due to task interdependencies.
+	QThreadPool::globalInstance()->setMaxThreadCount(std::max(2, QThreadPool::globalInstance()->maxThreadCount()));
 }
 
 /******************************************************************************
@@ -139,8 +177,23 @@ QString Application::applicationName()
 ******************************************************************************/
 bool Application::initialize()
 {
-	// Install custom Qt error message handler to catch fatal errors in debug mode.
-	defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
+	// Install custom Qt error message handler to catch fatal errors in debug mode
+	// or redirect log output to file instead of the console if requested by the user.
+	if(qEnvironmentVariableIsSet("OVITO_LOG_FILE")) {
+		// Install a message handler that writes log output to a text file. 
+		defaultQtMessageHandler = qInstallMessageHandler(qtMessageLogFile);
+		// QDebugStateSaver saver(qInfo());
+		qInfo().noquote() << "#" << applicationName() << applicationVersionString() << "started on" << QDateTime::currentDateTime().toString();
+	}
+	else {
+		// Install message handler that forwards to the default Qt handler or writes to stderr stream.
+		defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
+	}
+
+#ifdef OVITO_DEBUG
+	// Activate Qt logging messages related to Vulkan.
+	QLoggingCategory::setFilterRules(QStringLiteral("qt.vulkan=true"));
+#endif
 
 	// Activate default "C" locale, which will be used to parse numbers in strings.
 	std::setlocale(LC_ALL, "C");
@@ -186,6 +239,40 @@ bool Application::initialize()
 	QMetaType::registerConverter<Vector3, Color>();
 	QMetaType::registerConverter<QVector3D, Color>();
 	QMetaType::registerConverter<Color, QVector3D>(&Color::operator QVector3D);
+
+	// Enable OpenGL context sharing globally.
+	QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#if 1
+	// Always use desktop OpenGL (avoid ANGLE on Windows):
+	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#else
+	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
+	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+#endif
+
+	// Specify default OpenGL surface format.
+	QSurfaceFormat format;
+#ifndef Q_OS_WASM
+	format.setDepthBufferSize(24);
+	format.setStencilBufferSize(1);
+#ifdef Q_OS_MACOS
+	// macOS only supports core profile contexts.
+	format.setMajorVersion(4);
+	format.setMinorVersion(3);
+	format.setProfile(QSurfaceFormat::CoreProfile);
+#endif
+#else
+	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
+	format.setMajorVersion(2);
+	format.setMinorVersion(0);
+#endif
+
+	// Enable this code to display debug log messages from the OpenGL driver.
+//#ifdef OVITO_DEBUG
+//	format.setOption(QSurfaceFormat::DebugContext);
+//#endif
+
+	QSurfaceFormat::setDefaultFormat(format);
 
 	// Register Qt resources.
 	::registerQtResources();
@@ -256,9 +343,8 @@ FileManager* Application::createFileManager()
 void Application::reportError(const Exception& exception, bool /*blocking*/)
 {
 	for(int i = exception.messages().size() - 1; i >= 0; i--) {
-		std::cerr << "ERROR: " << qPrintable(exception.messages()[i]) << std::endl;
+		qInfo().noquote() << "ERROR:" << exception.messages()[i];
 	}
-	std::cerr << std::flush;
 }
 
 #ifndef Q_OS_WASM

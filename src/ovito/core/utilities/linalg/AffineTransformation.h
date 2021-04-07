@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2014 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -569,6 +569,15 @@ public:
 				(*this)(1,0), (*this)(1,1), (*this)(1,2), (*this)(1,3),
 				(*this)(2,0), (*this)(2,1), (*this)(2,2), (*this)(2,3),
 				0, 0, 0, 1);
+	}
+
+	/// \brief Converts the matrix to a Qt 4x3 matrix.
+	operator QMatrix4x3() const {
+		QMatrix4x3 m;
+		for(int col = 0; col < 4; col++)
+			for(int row = 0; row < 3; row++)
+				m(row, col) = static_cast<float>((*this)(row, col));
+		return m;
 	}
 };
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -176,7 +176,7 @@ public:
 protected:
 
 	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
@@ -208,7 +208,7 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
 
 	/// The attached editable proxy object.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// The current number of strong references to this DataObject that exist.
 	mutable QAtomicInt _dataReferenceCount{0};
@@ -225,12 +225,16 @@ using DataObjectClassPtr = const DataObject::OOMetaClass*;
 #include <ovito/core/dataset/data/DataOORef.h>
 
 namespace Ovito {
+
 // Instantiate class templates.
-#if !defined(Core_EXPORTS)
-extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
-extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
-#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
-template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
-template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+#ifndef OVITO_BUILD_MONOLITHIC
+	#if !defined(Core_EXPORTS)
+		extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+		extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+	#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+		template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
+		template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
+	#endif
 #endif
-}
+
+}	// End of namespace

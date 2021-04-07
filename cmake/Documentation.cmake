@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -57,7 +57,7 @@ IF(OVITO_BUILD_GUI)
 			# Run the documentation target automatically as part of the build process.
 			ADD_DEPENDENCIES(Ovito documentation)
 			# Install the generated documentation files alongside with the application.
-			INSTALL(DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html/" DESTINATION "${OVITO_RELATIVE_SHARE_DIRECTORY}/doc/manual/html/")
+			INSTALL(DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html/" DESTINATION "${OVITO_RELATIVE_SHARE_DIRECTORY}/doc/manual/html/" PATTERN "*.pptx" EXCLUDE)
 		ENDIF()
 	ENDIf()
 

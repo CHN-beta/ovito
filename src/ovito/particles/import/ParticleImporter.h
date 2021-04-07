@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,8 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), _sortParticles(false) {}
+	ParticleImporter(DataSet* dataset) : FileSourceImporter(dataset), 
+		_sortParticles(false), _generateBonds(false), _recenterCell(false) {}
 
 	/// Indicates whether this file importer type loads particle trajectories.
 	virtual bool isTrajectoryFormat() const { return false; } 
@@ -64,6 +65,9 @@ protected:
 
 		/// Constructor.
 		using StandardFrameLoader::StandardFrameLoader;
+
+		/// Constructor.
+		FrameLoader(const LoadOperationRequest& request, bool recenterCell) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell) {}
 
 		/// Returns the particles container object, newly creating it first if necessary.
 		ParticlesObject* particles();
@@ -98,13 +102,25 @@ protected:
 		/// Determines the PBC shift vectors for bonds based on the minimum image convention.
 		void generateBondPeriodicImageProperty();
 
-		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
-		void computeVelocityMagnitude();
+		/// Generates ad-hoc bonds between atoms based on their van der Waals radii.
+		void generateBonds();
+
+		/// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0), 
+		/// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
+		void correctOffcenterCell();
 
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.
 		virtual void loadFile() override;
+
+	private:
+
+		/// If the 'Velocity' vector particle property is present, then this method computes the 'Velocity Magnitude' scalar property.
+		void computeVelocityMagnitude();
+
+		/// Translates the simulation cell (and the particles) such that it is centered at the coordinate origin.
+		void recenterSimulationCell();
 
 	private:
 
@@ -122,6 +138,9 @@ protected:
 
 		/// The impropers container object.
 		ImpropersObject* _impropers = nullptr;
+
+		/// Controls the dynamic centering of the simulation cell during import.
+		bool _recenterCell = false;
 	};
 
 	/// \brief Is called when the value of a property of this object has changed.
@@ -132,8 +151,14 @@ protected:
 
 private:
 
-	/// Request sorting of the input particle with respect to IDs.
+	/// Controls sorting of the input particle with respect to IDs.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, sortParticles, setSortParticles);
+
+	/// Controls the generation of atomic ad-hoc bonds during data import.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateBonds, setGenerateBonds);
+
+	/// Controls the dynamic recentering of simulation cell to the coordinate origin.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, recenterCell, setRecenterCell);
 };
 
 }	// End of namespace

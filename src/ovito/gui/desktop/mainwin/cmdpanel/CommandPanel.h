@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,6 +63,12 @@ public:
 	/// \brief Returns the default size for the command panel.
 	virtual QSize sizeHint() const { return QSize(336, 300); }
 
+	/// Loads the layout of the widgets from the settings store.
+	void restoreLayout();
+
+	/// Saves the layout of the widgets to the settings store.
+	void saveLayout();
+
 private:
 
 	QTabWidget* _tabWidget;
@@ -72,5 +78,3 @@ private:
 };
 
 }	// End of namespace
-
-

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,8 +82,6 @@ private:
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
 	};
-
-	static const char* chemical_symbols[];
 };
 
 }	// End of namespace

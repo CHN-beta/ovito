@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -277,7 +277,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
 	/// \brief Saves the class' contents to an output stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from an input stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ public:
 		OVITO_ASSERT(!ptr || ptr->getOOClass().isDerivedFrom(T::OOClass()));
 		if(ptr && !ptr->getOOClass().isDerivedFrom(T::OOClass()))
 			throw Exception(tr("Class hierarchy mismatch in file. The object class '%1' is not derived from '%2'.").arg(ptr->getOOClass().name()).arg(T::OOClass().name()));
-		return static_object_cast<T>(ptr);
+		return static_object_cast<T>(std::move(ptr));
 	}
 
 	/// Returns the dataset to which objects loaded from the stream will be added to.

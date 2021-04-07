@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor& field)
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);
@@ -272,7 +272,7 @@ void AnimationSettings::scheduleNextAnimationFrame()
 	int timerSpeed = 1000 / std::abs(_activePlaybackRate);
 	if(playbackSpeed() > 1) timerSpeed /= playbackSpeed();
 	else if(playbackSpeed() < -1) timerSpeed *= -playbackSpeed();
-	QTimer::singleShot(timerSpeed / framesPerSecond(), this, &AnimationSettings::onPlaybackTimer);
+	QTimer::singleShot(timerSpeed * ticksPerFrame() / TICKS_PER_SECOND, this, &AnimationSettings::onPlaybackTimer);
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -137,13 +137,13 @@ TimeInterval ColorCodingModifier::validityInterval(const PipelineEvaluationReque
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void ColorCodingModifier::initializeModifier(ModifierApplication* modApp)
+void ColorCodingModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	DelegatingModifier::initializeModifier(modApp);
+	DelegatingModifier::initializeModifier(time, modApp, executionContext);
 
 	// When the modifier is inserted, automatically select the most recently added property from the input.
-	if(sourceProperty().isNull() && delegate() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	if(sourceProperty().isNull() && delegate() && executionContext == ExecutionContext::Interactive) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -139,13 +139,13 @@ QString SlipSurfacePickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                         int phaseId = phaseArray[region];
                         if(const MicrostructurePhase* phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(phaseId))) {
                             QString formattedBurgersVector = DislocationVis::formatBurgersVector(burgersVectorProperty[facetIndex], phase);
-                            str = tr("Slip vector: %1").arg(formattedBurgersVector);
+                            str = tr("<key>Slip vector:</key> %1").arg(formattedBurgersVector);
                             if(ConstPropertyAccess<Vector3> crystallographicNormalProperty = surfaceMesh()->faces()->getProperty(SurfaceMeshFaces::CrystallographicNormalProperty)) {
                                 QString formattedNormalVector = DislocationVis::formatBurgersVector(crystallographicNormalProperty[facetIndex], phase);
-                                str += tr(" | Crystallographic normal: %1").arg(formattedNormalVector);
+                                str += tr("<sep><key>Crystallographic normal:</key> %1").arg(formattedNormalVector);
                             }
-                            str += tr(" | Crystal region: %1").arg(region);
-                            str += tr(" | Crystal structure: %1").arg(phase->name());
+                            str += tr("<sep><key>Crystal region:</key> %1").arg(region);
+                            str += tr("<sep><key>Crystal structure:</key> %1").arg(phase->name());
                         }
                     }
                 }

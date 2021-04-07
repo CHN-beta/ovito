@@ -21,7 +21,7 @@
     produces corresponding script statements for OVITO's Python programming interface.
     The generated source code may be saved to disk, further customized if desired,
     and then run using the embedded 
-    <pydoc-link href="introduction/custom_modifiers" anchor="custom-modifier-functions" no-pro-tag="1"><command>ovitos</command></pydoc-link> 
+    <pydoc-link href="introduction/running" anchor="ovito-s-python-interpreter" no-pro-tag="1"><command>ovitos</command></pydoc-link> 
     script interpreter or any regular Python interpreter after installing the 
     <link xlink:href="https://www.ovito.org/python-downloads/"><literal>ovito</literal></link> Python module.
   </para>
@@ -56,9 +56,9 @@
     <para>
       The following aspects are <emphasis>not</emphasis> covered by the code generator yet:
       <itemizedlist>
-        <listitem>Direct modifications you make to imported data objects, e.g. particle type colors and radii</listitem>
-        <listitem>Data file export</listitem>
-        <listitem>Key-frame based parameter and object animations</listitem>
+        <listitem>Direct modifications you make to imported data objects in the GUI, e.g. the colors and radii of particle types</listitem>
+        <listitem>Data export to an output file</listitem>
+        <listitem>Key-frame based parameter animations</listitem>
       </itemizedlist>
       Thus, you have may have to amend the generated script with corresponding code statatements yourself to 
       take care of these things. See the sections 

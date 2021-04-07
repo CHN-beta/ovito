@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,21 +59,17 @@ public:
 	/// Returns the main toolbar of the window.
 	QToolBar* mainToolbar() const { return _mainToolbar; }
 
-	/// Returns the status bar of the main window.
-	QStatusBar* statusBar() const { return _statusBar; }
-
 	/// Displays a message string in the window's status bar.
-	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override {
-		statusBar()->showMessage(message, timeout);
-	}
+	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
 
 	/// Hides any messages currently displayed in the window's status bar.
-	virtual void clearStatusBarMessage() override {
-		statusBar()->clearMessage();
-	}
+	virtual void clearStatusBarMessage() override;
 
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() override;
+
+	/// Closes the main window (and shuts down application if this is the last open window).
+	virtual void closeMainWindow() override { QMainWindow::close(); }
 
 	/// Returns the frame buffer window showing the rendered image.
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
@@ -97,18 +93,13 @@ public:
 	CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
 
 	/// Returns the container widget for viewports.
-	QWidget* viewportsPanel() const { return _viewportsPanel; }
+	ViewportsPanel* viewportsPanel() const { return _viewportsPanel; }
 
 	/// Returns the layout manager for the status bar area of the main window.
 	QHBoxLayout* statusBarLayout() const { return _statusBarLayout; }
 
 	/// \brief Shows the online manual and opens the given help page.
 	static void openHelpTopic(const QString& page);
-
-	/// Returns the master OpenGL context managed by this window, which is used to render the viewports.
-	/// If sharing of OpenGL contexts between viewports is disabled, then this function returns the GL context
-	/// of the first viewport in this window.
-	QOpenGLContext* getOpenGLContext();
 
 	/// Returns the page of the command panel that is currently visible.
 	CommandPanelPage currentCommandPanelPage() const;
@@ -162,7 +153,7 @@ private:
 	QToolBar* _mainToolbar;
 
 	/// The internal status bar widget.
-	QStatusBar* _statusBar;
+	StatusBar* _statusBar;
 
 	/// The frame buffer window showing the rendered image.
 	FrameBufferWindow* _frameBufferWindow;
@@ -174,7 +165,7 @@ private:
 	GuiDataSetContainer _datasetContainer;
 
 	/// The container widget for viewports.
-	QWidget* _viewportsPanel;
+	ViewportsPanel* _viewportsPanel;
 
 	/// The widget that numerically displays the object transformation.
 	CoordinateDisplayWidget* _coordinateDisplay;
