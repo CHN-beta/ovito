@@ -60,6 +60,10 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 	if(applicationSettings.value("rendering/selected_graphics_api").toString() == "Vulkan")
 		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
 
+	// In headless mode, OpenGL is not available (it requires a windowing system). Try Vulkan instead, which supports headless operation.
+	if(Application::instance()->headlessMode() && !rendererClass)
+		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+
 	// Fall back to OpenGL renderer as the default implementation.
 	if(!rendererClass)
 		rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
