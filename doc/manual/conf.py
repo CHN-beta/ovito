@@ -98,6 +98,8 @@ pygments_style = 'sphinx'
 
 # A string of reStructuredText that will be included at the beginning of every source file that is read.
 rst_prolog = """
+.. highlight:: console
+
 .. |ovito-pro| replace:: Pro
 """
 

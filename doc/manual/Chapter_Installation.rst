@@ -1,5 +1,3 @@
-.. highlight:: console
-
 ============
 Installation
 ============
@@ -21,7 +19,7 @@ Installation steps
 
 *Linux*:
     Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command, e.g.: :command:`tar xJfv ovito-3.0.0-x86_64.tar.xz`.
-    This will create a new subdirectory containing the program files.
+    This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
 *Windows*:
@@ -70,7 +68,7 @@ Starting :command:`ovito` or the script interpreter :command:`ovitos` may fail w
   ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
            cannot open shared object file: No such file or directory
 
-This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` subdirectory after 
+This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
 extracting the OVITO installation archive on a computer other than the target machine. 
 **Solution:** Reinstall OVITO by extracting the installation archive on the target machine. 
 Do *not* transfer the program directory tree between different computers after it has been extracted.

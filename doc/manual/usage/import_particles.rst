@@ -1,5 +1,3 @@
-.. highlight:: console
-
 Importing data
 ==============
 
@@ -49,7 +47,7 @@ A series of snapshot files:
   By default, whenever you import a new simulation file, OVITO tries to detect if the file is part of a numbered sequence of files
   with similar names in the same directory. To this end, the last number (if any) in the filename you've picked is replaced with the wildcard
   character ``*`` to generate a search pattern, which will subsequently be used to look in the directory for more files belonging to the sequence.
-  For instance, if you imported a file named <filename>anim1c_5000.dump</filename>, OVITO will generate the search pattern
+  For instance, if you imported a file named :file:`anim1c_5000.dump`, OVITO will generate the search pattern
   :file:`anim1c_*.dump` to find more snapshots (e.g. :file:`anim1c_0.dump`, :file:`anim1c_1000.dump`, :file:`anim1c_2000.dump`, etc). It is possible to
   manually override the generated file pattern in the input field highlighted in the screenshot or to turn off the 
   automatic search by deactivating the :guilabel:`auto-generate` option.
@@ -185,6 +183,4 @@ of the dataset. See the :ref:`Clone Pipeline <clone_pipeline>` function for more
 .. _usage.animation:
 .. _file_formats.input:
 .. _scene_objects.file_source:
-.. _usage.modification_pipeline:
-.. _usage.modification_pipeline.pipeline_listbox:
 .. _clone_pipeline:
