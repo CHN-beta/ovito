@@ -90,5 +90,4 @@ accordingly. This gives you the possibility to :ref:`animate the camera <usage.a
 .. _viewports.adjust_view_dialog:
 .. _core.render_settings:
 .. _application_settings.viewports:
-.. _usage.rendering:
 .. _usage.animation.camera:

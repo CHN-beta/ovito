@@ -12,9 +12,15 @@ macOS
 Makefile
 md
 NetCDF
+OpenGL
 openSUSE
+OSPRay 
+preconfigured
 preinstalled
 Qt
+renderer
+stepwise
+Tachyon
 unchecking
 unselected
 viewport
