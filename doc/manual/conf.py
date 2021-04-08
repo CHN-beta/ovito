@@ -100,7 +100,10 @@ pygments_style = 'sphinx'
 rst_prolog = """
 .. highlight:: console
 
-.. |ovito-pro| replace:: Pro
+.. role:: ovito-pro-tag-role(raw)
+   :format: html
+   
+.. |ovito-pro| replace:: :ovito-pro-tag-role:`<a class="ovito-pro-tag" href="https://www.ovito.org/about/ovito-pro/" data-tooltip="This program feature is only available in the Pro edition of OVITO. Click to learn more." data-tooltip-position="bottom">pro</a>`
 """
 
 # If true, keep warnings as "system message" paragraphs in the built documents.

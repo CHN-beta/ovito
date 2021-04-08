@@ -11,7 +11,6 @@ applied to the loaded simulation data one after another. The output of this proc
 .. image:: /images/usage/pipeline/pipeline_example.*
    :width: 100%
 
-
 OVITO offers an extensive set of modifier functions to choose from (see
 :ref:`reference <particles.modifiers>` section), each performing specific
 tasks like selection, coloring, data analysis or filtering.
@@ -28,8 +27,8 @@ visualization solutions. And the pipeline architecture offers another important 
 Once you have figured out the right modification steps for your problem, you can apply
 the processing pipeline to as many other input datasets as you like in a batch-processing manner.
 
-.. _usage.modification_pipeline.pipeline_listbox:
 
+.. _usage.modification_pipeline.pipeline_listbox:
 
 Pipeline editor
 ---------------

@@ -6,11 +6,12 @@ OVITO User Manual
  
 .. toctree::
   :maxdepth: 2
+  :includehidden:
 
   Chapter_Introduction
   Chapter_Installation
   Chapter_Usage
   Chapter_Howtos
   Chapter_Reference
-..  development/Chapter_Development
+  development/Chapter_Development
 ..  Chapter_Credits
