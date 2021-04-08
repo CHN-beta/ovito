@@ -14,6 +14,9 @@
 import sys
 import os
 
+# Use the Read-The-Docs theme.
+import sphinx_rtd_theme
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -28,7 +31,8 @@ needs_sphinx = '2.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx_rtd_theme'
 ]
 
 autodoc_default_options = {
@@ -92,6 +96,11 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
+# A string of reStructuredText that will be included at the beginning of every source file that is read.
+rst_prolog = """
+.. |ovito-pro| replace:: Pro
+"""
+
 # If true, keep warnings as "system message" paragraphs in the built documents.
 keep_warnings = False
 
@@ -109,7 +118,7 @@ nitpick_ignore = [
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'rtd'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -117,7 +126,7 @@ html_theme = 'rtd'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ["."]
+#html_theme_path = ["."]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -128,7 +137,7 @@ html_theme_path = ["."]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = "ovito_logo.png"
+html_logo = "_static/ovito_logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -139,6 +148,10 @@ html_favicon = "ovito.ico"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = ['style.css']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

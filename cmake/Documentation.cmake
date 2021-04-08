@@ -84,7 +84,7 @@ IF(OVITO_BUILD_GUI)
 								-n                                            # Run in nit-picky mode
 								-W                                            # Turn warnings into errors
 								# Additional config settings passed to Sphinx, which are added to the options found in conf.py: 
-								-D "version=${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}"
+								-D "version=${OVITO_VERSION_STRING}"
 								-D "release=${OVITO_VERSION_STRING}"
 								-D "copyright=${current_year} OVITO GmbH, Germany"
 
