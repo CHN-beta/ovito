@@ -7,7 +7,13 @@ Gromacs
 interatomic
 macOS
 md
+OpenGL
+OSPRay 
+preconfigured
 preinstalled
+renderer
+stepwise
+Tachyon
 unchecking
 unselected
 viewport

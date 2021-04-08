@@ -8,8 +8,8 @@ Usage
   usage/viewports
   usage/particle_properties
   usage/modification_pipeline
-..  usage/rendering
-..  usage/miscellaneous
+  usage/rendering
+  usage/miscellaneous
 ..  usage/export_particles
 ..  usage/animation
 
