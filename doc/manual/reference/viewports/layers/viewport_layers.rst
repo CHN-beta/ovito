@@ -3,12 +3,13 @@
 Viewport layers
 ---------------
 
-.. .. toctree::
-  
-..  color_legend_layer
-..  coordinate_tripod_layer
-..  python_script_layer
-..  text_label_layer
+.. toctree::
+   :hidden:
+   
+   Color legend <color_legend_layer>
+   Coordinate tripod <coordinate_tripod_layer>
+   Python script <python_script_layer>
+   Text label <text_label_layer>
   
 .. image:: /images/viewport_layers/viewport_overlay_command_panel.*
    :width: 40%
@@ -28,7 +29,7 @@ OVITO activates the render preview mode automatically for the active viewport wh
    :width: 40%
    :align: right
 
-Available viewport layer types:
+**Available viewport layer types**
 
 ================================================================ ==================================
 Layer type                                                       Description
@@ -44,9 +45,3 @@ Layer type                                                       Description
    * :py:class:`~ovito.vis.ViewportOverlay` (Python API)
    * :py:attr:`Viewport.overlays <ovito.vis.Viewport.overlays>` (Python API)
    * :py:attr:`Viewport.underlays <ovito.vis.Viewport.underlays>` (Python API)
-
-
-.. _viewport_layers.color_legend:
-.. _viewport_layers.coordinate_tripod:
-.. _viewport_layers.python_script:
-.. _viewport_layers.text_label:

@@ -87,7 +87,4 @@ Use the :guilabel:`Create Camera` function to insert a camera object into the th
 scene. This object will be linked to the viewport, and moving the camera object around automatically updates the viewport
 accordingly. This gives you the possibility to :ref:`animate the camera <usage.animation.camera>`.
 
-.. _viewports.adjust_view_dialog:
-.. _core.render_settings:
-.. _application_settings.viewports:
 .. _usage.animation.camera:

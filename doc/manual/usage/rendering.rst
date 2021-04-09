@@ -77,9 +77,3 @@ Alternatively, you can produce a series of image files, one per frame, and combi
   you can activate the :guilabel:`Preview Mode` for the active viewport.
   This option can be found in the :ref:`viewport menu <usage.viewports.menu>`, which can be opened by clicking
   the viewport's caption in the upper left corner.
-
-.. _rendering:
-.. _rendering.opengl_renderer:
-.. _rendering.tachyon_renderer:
-.. _rendering.ospray_renderer:
-.. _animation.animation_settings_dialog:

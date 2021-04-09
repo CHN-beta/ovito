@@ -35,9 +35,10 @@
 	font-size: 80%;
 	font-weight: normal;
 	font-style: normal;
+    font-family: Lato,proxima-nova,Helvetica Neue,Arial,sans-serif;
 	vertical-align: baseline;
 	border-radius: 0.25rem;
-	padding: 2px 3px;
+	padding: 2px 3px !important;
 	margin-left: 0.2rem;
 }
 

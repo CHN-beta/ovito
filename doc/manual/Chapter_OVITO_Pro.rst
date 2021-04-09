@@ -71,7 +71,7 @@ Deactivating an installation
 
 .. image:: /images/licensing/deactivate_installation_screenshot.*
    :align: right
-   :width: 50%
+   :width: 60%
 
 Your OVITO Pro license allows you to install the software only on a limited number of computers simultaneously. 
 This limit is enforced by the OVITO license server, which keeps track of all program installations.
