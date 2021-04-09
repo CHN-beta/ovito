@@ -7,7 +7,9 @@ ffmpeg
 GmbH
 Gromacs
 HDF5
+Ingo
 interatomic
+Liu
 macOS
 Makefile
 md
@@ -19,8 +21,10 @@ preconfigured
 preinstalled
 Qt
 renderer
+Rycroft
 stepwise
 Tachyon
+Theobald
 unchecking
 unselected
 viewport

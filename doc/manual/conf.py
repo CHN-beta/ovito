@@ -229,6 +229,10 @@ try:
 
         # Boolean controlling whether a misspelling is emitted as a sphinx warning or as an info message.
         #spelling_warning = False
+
+        # A list of glob-style patterns that should be ignored when checking spelling. They are matched against the 
+        # source file names relative to the source directory, using slashes as directory separators on all platforms.
+        spelling_exclude_patterns=['licenses/*']
 except:
     pass
 

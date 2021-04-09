@@ -9,10 +9,9 @@ Note that the following build instructions pertain to the code of *OVITO Basic*,
 is available under the GNU GPLv3 and MIT open source licenses and includes only :ref:`subset of program features <credits.ovito_pro>`.
 
 .. toctree::
+   :maxdepth: 1
 
    requirements
    build_linux
    build_windows
    build_macosx
-
-.. _credits.ovito_pro:
