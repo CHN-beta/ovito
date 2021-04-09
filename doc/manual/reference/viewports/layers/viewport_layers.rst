@@ -41,10 +41,9 @@ Layer type                                                       Description
 
 .. seealso::
 
-  Python references
-.. * :py:class:`~ovito.vis.ViewportOverlay` (Python API)
-.. * :py:attr:`~ovito.vis.Viewport.overlays` (Python API)
-.. * :py:attr:`~ovito.vis.Viewport.underlays` (Python API)
+   * :py:class:`~ovito.vis.ViewportOverlay` (Python API)
+   * :py:attr:`Viewport.overlays <ovito.vis.Viewport.overlays>` (Python API)
+   * :py:attr:`Viewport.underlays <ovito.vis.Viewport.underlays>` (Python API)
 
 
 .. _viewport_layers.color_legend:

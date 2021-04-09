@@ -32,6 +32,7 @@ needs_sphinx = '2.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
     'sphinx_rtd_theme'
 ]
 
@@ -118,6 +119,11 @@ nitpick_ignore = [
     ('py:class', 'str'),
     ('py:class', 'float')
 ]
+
+# Locations and names of other projects that should be linked to in this documentation.
+intersphinx_mapping = {
+    'pydoc': ('https://ovito.org/docs/current/python/', None),
+}
 
 # -- Options for HTML output ----------------------------------------------
 
