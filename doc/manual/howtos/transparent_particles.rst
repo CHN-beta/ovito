@@ -24,5 +24,3 @@ modifier was used to set the ``Transparency`` property according to a simple mat
 Thus, instead of assigning a uniform transparency value to all particles, each particle's value is computed
 individually from its X position divided by the simulation cell size, 
 which varies between 0 to 1 from one side of the simulation box to the other.
-
-.. _particles.modifiers.compute_property:

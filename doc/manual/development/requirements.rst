@@ -50,5 +50,3 @@ and get compiled automatically as part of the build process:
    `KISS FFT <https://github.com/mborgerding/kissfft>`_         Required by the :ref:`Spatial correlation function <particles.modifiers.correlation_function>` plugin.
    ============================================================ ====================================================================
 
-.. _particles.modifiers.voronoi_analysis:
-.. _particles.modifiers.correlation_function:

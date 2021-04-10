@@ -18,4 +18,3 @@ you can select table rows and OVITO will highlight the corresponding dislocation
 Click the crosshair button again or right click in a viewport to deactivate the highlight mode.
 
 .. _scene_objects.dislocations:
-.. _particles.modifiers.dislocation_analysis:

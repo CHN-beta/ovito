@@ -25,4 +25,3 @@ as explained :ref:`here <usage.global_attributes>`. The save button on the right
 a shortcut to access the file export function.
 
 .. _data_sources:
-.. _particles.modifiers.cluster_analysis:

@@ -92,5 +92,4 @@ lets you write your own Python function to add arbitrary 2D graphics
 to rendered images or movies, for example to enrich the visualization with additional information
 like a :ref:`scale bar <howto.scale_bar>`.
 
-.. _particles.modifiers.python_script:
 .. _howto.scale_bar:

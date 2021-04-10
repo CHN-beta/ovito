@@ -53,4 +53,3 @@ The new attribute ``bcc_fraction`` may now be included as a placeholder in the t
 
 
 .. _usage.global_attributes:
-.. _particles.modifiers.common_neighbor_analysis:

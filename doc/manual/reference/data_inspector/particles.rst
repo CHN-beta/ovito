@@ -32,5 +32,3 @@ using this function. If you are interested in *wrapped* distances, then you shou
 :ref:`create bonds <particles.modifiers.create_bonds>` between the particles and measure the length of these
 bonds instead.
 
-.. _particles.modifiers.expression_select:
-.. _particles.modifiers.create_bonds:

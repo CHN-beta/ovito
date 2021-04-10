@@ -110,8 +110,4 @@ Bond property             Data type (components)     Description
 ========================= ========================== =======================================================================================
 
 .. _scene_objects.particles:
-.. _particles.modifiers.assign_color:
-.. _particles.modifiers.coordination_analysis:
-.. _particles.modifiers.color_coding:
-.. _particles.modifiers.select_particle_type:
 .. _usage.export:

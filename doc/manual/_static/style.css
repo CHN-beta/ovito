@@ -27,7 +27,7 @@
 /* Define the look of the "pro" tag, which is used to mark exclusive program features in the manual. */
 .ovito-pro-tag {
 	background-color: rgb(230,200,170);
-	color: rgb(0,0,0);
+	color: rgb(64, 64, 64) !important;
     line-height: 1;
     text-decoration: none;
 	text-align: center;
