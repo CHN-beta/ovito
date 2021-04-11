@@ -283,10 +283,10 @@ ENDIF()
 # Generate all the build targets.
 ADD_SUBDIRECTORY(src)
 
-# Generate user documentation.
-INCLUDE(cmake/Documentation.cmake)
-
 # This allows external CMake projects to inject their customization code into the OVITO project:
 IF(OVITO_CMAKE_FILE_INJECTION_PROJECT)
 	INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PROJECT}")
 ENDIF()
+
+# Generate the user manual.
+ADD_SUBDIRECTORY(doc/manual)

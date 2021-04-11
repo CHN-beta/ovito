@@ -7,7 +7,7 @@ Modifiers are the basic building blocks for creating a :ref:`data pipeline <usag
 Like tools in a toolbox, each modifier implements a very specific, well-defined type of operation or computation, and typically you will need to
 combine several modifiers to accomplish more complex tasks.
 
-**List of modifiers:**
+**List of modifiers available in OVITO:**
 
 .. table::
   :width: 100%
@@ -182,6 +182,7 @@ Cluster analysis
 Coordination analysis
 --------------------------------------------
 
+.. _particles.modifiers.dislocation_analysis.fileformat:
 .. _particles.modifiers.dislocation_analysis:
 
 Dislocation analysis (DXA)

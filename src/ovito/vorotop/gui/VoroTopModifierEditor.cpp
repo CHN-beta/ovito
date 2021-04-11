@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(VoroTopModifier, VoroTopModifierEditor);
 void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("VoroTop analysis"), rolloutParams, "particles.modifiers.vorotop_analysis.html");
+	QWidget* rollout = createRollout(tr("VoroTop analysis"), rolloutParams, "manual:particles.modifiers.vorotop_analysis");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

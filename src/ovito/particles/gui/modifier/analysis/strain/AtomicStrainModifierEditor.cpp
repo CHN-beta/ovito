@@ -42,7 +42,7 @@ SET_OVITO_OBJECT_EDITOR(AtomicStrainModifier, AtomicStrainModifierEditor);
 void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Atomic strain"), rolloutParams, "particles.modifiers.atomic_strain.html");
+	QWidget* rollout = createRollout(tr("Atomic strain"), rolloutParams, "manual:particles.modifiers.atomic_strain");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

@@ -50,7 +50,7 @@ SET_OVITO_OBJECT_EDITOR(FileSource, FileSourceEditor);
 void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("External file"), rolloutParams, "data_sources.html");
+	QWidget* rollout = createRollout(tr("External file"), rolloutParams, "data_sources");
 
 	// Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -167,7 +167,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 		connect(editPlaybackBtn, &QPushButton::clicked, this, [&]() {
 			if(!editObject()) return;
 			ModalPropertiesEditorDialog(editObject(), new FileSourcePlaybackRateEditor(), container(), 
-				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "data_sources.html").exec();
+				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:data_sources").exec();
 			updateInformationLabel();
 		});
 		

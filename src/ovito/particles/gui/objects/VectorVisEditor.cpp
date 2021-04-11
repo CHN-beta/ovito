@@ -41,7 +41,7 @@ SET_OVITO_OBJECT_EDITOR(VectorVis, VectorVisEditor);
 void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Vector display"), rolloutParams, "visual_elements.vectors.html");
+	QWidget* rollout = createRollout(tr("Vector display"), rolloutParams, "manual:visual_elements.vectors");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

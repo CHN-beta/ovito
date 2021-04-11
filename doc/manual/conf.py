@@ -56,7 +56,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'OVITO'
+project = 'OVITO User Manual'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -121,9 +121,10 @@ nitpick_ignore = [
 ]
 
 # Locations and names of other projects that should be linked to in this documentation.
-intersphinx_mapping = {
-    'pydoc': ('https://ovito.org/docs/current/python/', None),
-}
+if os.getenv("OVITO_PYDOC_INTERSPHINX_LOCATION"):
+    intersphinx_mapping = { 'pydoc': ('python/', os.getenv("OVITO_PYDOC_INTERSPHINX_LOCATION")) }
+else:
+    intersphinx_mapping = { 'pydoc': ('https://ovito.org/docs/current/python/', None) }
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -134,7 +135,10 @@ html_theme = 'sphinx_rtd_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    # Only display the logo image, do not display the project name at the top of the sidebar
+    'logo_only': True
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = ["."]
@@ -241,55 +245,3 @@ try:
         spelling_exclude_patterns=['licenses/*']
 except:
     pass
-
-def process_docstring(app, what, name, obj, options, lines):
-    # Filter out lines that contain the keyword "SIGNATURE:"
-    # These lines allow the C++ code to specify a custom function signature string for the Python documentation.
-    lines[:] = [line for line in lines if not line.strip().startswith('SIGNATURE:')]
-
-def process_signature(app, what, name, obj, options, signature, return_annotation):
-    # Look for keyword "SIGNATURE:" in the docstring.
-    # This allows the C++ code to specify a custom function signature string for the Python documentation.
-    if obj.__doc__:
-        for line in obj.__doc__.splitlines():
-            if line.strip().startswith("SIGNATURE:"):
-                return (line[len("SIGNATURE:"):].strip(), return_annotation)
-    return (signature, return_annotation)
-
-def skip_member(app, what, name, obj, skip, options):
-    # This will skip class aliases and exclude them from the documentation:
-    if what == "module" and getattr(obj, "__name__", name) != name:
-        return True
-
-    # Skip objects whose docstring contains the special keyword 'AUTODOC_SKIP_MEMBER'.
-    # This is mainly needed, because pybind11 automatically generates docstrings for enum types,
-    # and there is no other way to suppress the including of these enums in the documentation.
-    if "AUTODOC_SKIP_MEMBER" in str(getattr(obj, "__doc__", "")):
-        return True
-
-    return None
-'''
-import docutils
-from sphinx.util.nodes import split_explicit_title
-
-def ovitoman_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
-    """Role for linking to the OVITO user manual."""
-    env = inliner.document.settings.env
-    text = docutils.utils.unescape(text)
-    has_explicit, title, target = split_explicit_title(text)
-    if '#' in target:
-        target, anchor = target.split('#')
-        anchor = '#' + anchor
-    else:
-        anchor = ''
-    url = env.config.ovito_user_manual_url + '/' + target + env.config.html_file_suffix + anchor
-    ref = docutils.nodes.reference(rawtext, title, refuri=url)
-    return [ref], []
-'''
-def setup(app):
-    app.connect('autodoc-process-docstring', process_docstring)
-    app.connect('autodoc-process-signature', process_signature)
-    app.connect('autodoc-skip-member', skip_member)
-    #app.add_role('ovitoman', ovitoman_role)
-    #app.add_config_value('ovito_user_manual_url', '.', 'html')
-   

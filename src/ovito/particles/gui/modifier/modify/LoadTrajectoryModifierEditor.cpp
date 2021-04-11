@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(LoadTrajectoryModifier, LoadTrajectoryModifierEditor);
 void LoadTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Load Trajectory"), rolloutParams, "particles.modifiers.load_trajectory.html");
+	QWidget* rollout = createRollout(tr("Load Trajectory"), rolloutParams, "manual:particles.modifiers.load_trajectory");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

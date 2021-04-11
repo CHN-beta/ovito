@@ -60,7 +60,7 @@ static const int imageSizePresets[][2] = {
 void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Render settings"), rolloutParams, "core.render_settings.html");
+	QWidget* rollout = createRollout(tr("Render settings"), rolloutParams, "manual:core.render_settings");
 
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
@@ -327,7 +327,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
-		mainWindow()->openHelpTopic("usage.rendering.html");
+		mainWindow()->openHelpTopic("usage.rendering");
 	});
 	connect(rendererListWidget, &QListWidget::itemDoubleClicked, &dlg, &QDialog::accept);
 	layout->addWidget(buttonBox, 2, 1, Qt::AlignRight);

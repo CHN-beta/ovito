@@ -45,7 +45,7 @@ IMPLEMENT_OVITO_CLASS(DislocationTypeListParameterUI);
 void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Dislocation analysis"), rolloutParams, "particles.modifiers.dislocation_analysis.html");
+	QWidget* rollout = createRollout(tr("Dislocation analysis"), rolloutParams, "particles.modifiers.dislocation_analysis");
 
     QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
@@ -122,7 +122,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	});
 
 	// Line postprocessing.
-	rollout = createRollout(tr("Line post-processing"), rolloutParams.after(rollout), "particles.modifiers.dislocation_analysis.html");
+	rollout = createRollout(tr("Line post-processing"), rolloutParams.after(rollout), "particles.modifiers.dislocation_analysis");
 
 	layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
@@ -150,7 +150,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 	sublayout->addLayout(linePointIntervalUI->createFieldLayout(), 0, 1);
 
 	// Surface post-processing.
-	rollout = createRollout(tr("Surface post-processing"), rolloutParams.after(rollout), "particles.modifiers.dislocation_analysis.html");
+	rollout = createRollout(tr("Surface post-processing"), rolloutParams.after(rollout), "manual:particles.modifiers.dislocation_analysis");
 
 	QGridLayout* gridlayout = new QGridLayout(rollout);
 	gridlayout->setContentsMargins(4,4,4,4);

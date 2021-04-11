@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(ExpressionSelectionModifier, ExpressionSelectionModifier
 ******************************************************************************/
 void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Expression selection"), rolloutParams, "particles.modifiers.expression_select.html");
+	QWidget* rollout = createRollout(tr("Expression selection"), rolloutParams, "manual:particles.modifiers.expression_select");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -58,7 +58,7 @@ void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameter
 	layout->addSpacing(12);
 	layout->addWidget(statusLabel());
 
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "particles.modifiers.expression_select.html");
+	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
 	variableNamesList = new QLabel();

@@ -202,7 +202,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 
 		// Implement Help button.
 		connect(buttonBox, &QDialogButtonBox::helpRequested, [mainWindow]() {
-			mainWindow->openHelpTopic(QStringLiteral("modifier_templates.html"));
+			mainWindow->openHelpTopic(QStringLiteral("manual:modifier_templates"));
 		});
 
 		mainLayout->addWidget(buttonBox);

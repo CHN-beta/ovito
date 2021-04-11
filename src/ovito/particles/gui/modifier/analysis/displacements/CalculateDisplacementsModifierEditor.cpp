@@ -42,7 +42,7 @@ SET_OVITO_OBJECT_EDITOR(CalculateDisplacementsModifier, CalculateDisplacementsMo
 void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "particles.modifiers.displacement_vectors.html");
+	QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "manual:particles.modifiers.displacement_vectors");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

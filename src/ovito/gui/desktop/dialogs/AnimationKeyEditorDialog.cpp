@@ -393,7 +393,7 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 
 	// Handler for Help button.
 	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		MainWindow::openHelpTopic(QStringLiteral("usage.animation.html"));
+		MainWindow::openHelpTopic(QStringLiteral("manual:usage.animation"));
 	});
 
 	mainLayout->addWidget(buttonBox);

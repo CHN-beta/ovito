@@ -44,7 +44,7 @@ SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEdit
 void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Grain segmentation"), rolloutParams, "particles.modifiers.grain_segmentation.html");
+	QWidget* rollout = createRollout(tr("Grain segmentation"), rolloutParams, "manual:particles.modifiers.grain_segmentation");
 
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);

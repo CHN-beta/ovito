@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(ChillPlusModifier, ChillPlusModifierEditor);
 void ChillPlusModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Chill+"), rolloutParams, "particles.modifiers.chill_plus.html");
+	QWidget* rollout = createRollout(tr("Chill+"), rolloutParams, "manual:particles.modifiers.chill_plus");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

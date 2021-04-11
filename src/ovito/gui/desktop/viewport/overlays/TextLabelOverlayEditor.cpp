@@ -51,7 +51,7 @@ SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Text label"), rolloutParams, "viewport_layers.text_label.html");
+	QWidget* rollout = createRollout(tr("Text label"), rolloutParams, "manual:viewport_layers.text_label");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
@@ -141,7 +141,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	layout->addWidget(labelFontPUI->label(), row, 0);
 	layout->addWidget(labelFontPUI->fontPicker(), row++, 1, 1, 2);
 
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "viewport_layers.text_label.html");
+	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:viewport_layers.text_label");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
     _attributeNamesList = new QLabel();

@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(AffineTransformationModifier, AffineTransformationModifi
 void AffineTransformationModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the first rollout.
-	QWidget* rollout = rollout = createRollout(tr("Transformation"), rolloutParams, "particles.modifiers.affine_transformation.html");
+	QWidget* rollout = rollout = createRollout(tr("Transformation"), rolloutParams, "manual:particles.modifiers.affine_transformation");
 
 	QVBoxLayout* topLayout = new QVBoxLayout(rollout);
 	topLayout->setContentsMargins(8,8,8,8);
@@ -142,7 +142,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
 	connect(this, &PropertiesEditor::contentsChanged, this, &AffineTransformationModifierEditor::updateUI);
 
 	// Create a second rollout.
-	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "particles.modifiers.slice.html");
+	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.slice");
 
 	// Create the rollout contents.
 	topLayout = new QVBoxLayout(rollout);

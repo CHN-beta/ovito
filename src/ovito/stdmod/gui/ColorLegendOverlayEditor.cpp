@@ -54,7 +54,7 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	OVITO_ASSERT(QMetaType::hasRegisteredComparators<PropertyDataObjectReference>());
 
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "viewport_layers.color_legend.html");
+	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "manual:viewport_layers.color_legend");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

@@ -38,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(AmbientOcclusionModifier, AmbientOcclusionModifierEditor
 void AmbientOcclusionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Ambient occlusion"), rolloutParams, "particles.modifiers.ambient_occlusion.html");
+	QWidget* rollout = createRollout(tr("Ambient occlusion"), rolloutParams, "manual:particles.modifiers.ambient_occlusion");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

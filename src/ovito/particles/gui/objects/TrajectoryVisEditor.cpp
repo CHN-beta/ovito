@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
 void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Trajectory lines"), rolloutParams, "visual_elements.trajectory_lines.html");
+	QWidget* rollout = createRollout(tr("Trajectory lines"), rolloutParams, "manual:visual_elements.trajectory_lines");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

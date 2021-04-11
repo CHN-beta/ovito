@@ -40,7 +40,7 @@ SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
 void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Create bonds"), rolloutParams, "particles.modifiers.create_bonds.html");
+	QWidget* rollout = createRollout(tr("Create bonds"), rolloutParams, "manual:particles.modifiers.create_bonds");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

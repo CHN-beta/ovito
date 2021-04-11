@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(PropertyObject, PropertyObjectEditor);
 void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "scene_objects.particles.html");
+	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.particles");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
