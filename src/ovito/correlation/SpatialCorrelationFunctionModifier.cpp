@@ -67,7 +67,7 @@ SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, sourceProperty1, "F
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, sourceProperty2, "Second property");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, averagingDirection, "Averaging direction");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, fftGridSpacing, "FFT grid spacing");
-SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, applyWindow, "Apply window function to nonperiodic directions");
+SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, applyWindow, "Apply window function to non-periodic directions");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, doComputeNeighCorrelation, "Direct summation");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, neighCutoff, "Neighbor cutoff radius");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, numberOfNeighBins, "Number of neighbor bins");

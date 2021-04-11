@@ -324,7 +324,7 @@ void AnimationSettings::onPlaybackTimer()
 }
 
 /******************************************************************************
-* Recalculates the length of the animation interval to accomodate all loaded
+* Recalculates the length of the animation interval to accommodate all loaded
 * source animations in the scene.
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()

@@ -63,8 +63,8 @@
     <para>
       The second method offered by the modifier is based on a smeared-out representation of the finite-sized 
       particle spheres in terms of <emphasis>overlapping Gaussian distribution functions</emphasis> centered at each particle. The resulting density field, 
-      which is computed on a discrete grid, has local maxima at each particle site and decays to zero far away from any particles. 
-      Next, the surface boundary is constructed as an iso-surface of the Gaussian density field, with the threshold chosen such that the 
+      which is computed on a discrete grid, has local maximums at each particle site and decays to zero far away from any particles. 
+      Next, the surface boundary is constructed as an isosurface of the Gaussian density field, with the threshold chosen such that the 
       resulting isosurface roughly matches the finite diameters of the spherical input particles. This approach thus provides the advantage
       of accounting for the finite extent of the particles themselves, which is important for small molecules
       that do not form a bulk structure and in which a majority of atoms is at the surface.

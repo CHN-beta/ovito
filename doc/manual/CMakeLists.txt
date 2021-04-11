@@ -73,14 +73,6 @@ IF(OVITO_BUILD_GUI)
 			-D "release=${OVITO_VERSION_STRING}"
 			-D "copyright=${current_year} OVITO GmbH, Germany"
 
-		# Run Sphinx spellchecker:
-		# Note: Setting the DYLD_FALLBACK_LIBRARY_PATH environment variable is needed for PyEnchant module to find the libenchant.dylib from MacPorts.
-		COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}" DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py" 
-			"."                                           # Sphinx source directory 
-			"${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
-			-W                                            # Turn warnings into errors
-			-b spelling                                   # Execute the 'spelling' builder
-
 		# Extract the link targets from the Intersphinx inventory file and write them to a text file.
 		# The file will be used by the OVITO application to open the correct HTML page corresponding to 
 		# a help topic ID.
@@ -99,6 +91,8 @@ IF(OVITO_BUILD_GUI)
 		# Build the final version of the scripting reference after the user manual, to make
 		# Intersphinx cross-references from the scripting reference to the user manual work.
 		ADD_DEPENDENCIES(scripting_documentation documentation)
+		# Make both manuals dependencies of the spell-checking target.
+		ADD_DEPENDENCIES(documentation_spellcheck documentation scripting_documentation)
 	ENDIF()
 
 	IF(OVITO_BUILD_DOCUMENTATION)

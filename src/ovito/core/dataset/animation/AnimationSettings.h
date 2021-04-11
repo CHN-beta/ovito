@@ -233,7 +233,7 @@ public Q_SLOTS:
 	/// Sets whether the animation is played back in a loop in the interactive viewports.
     void setLoopPlaybackSlot(bool loop) { setLoopPlayback(loop); }
 
-	/// Recalculates the length of the animation interval to accomodate all loaded source animations
+	/// Recalculates the length of the animation interval to accommodate all loaded source animations
 	/// in the scene.
 	void adjustAnimationInterval();
 
@@ -312,7 +312,7 @@ private:
 	/// Specifies the number of frames to skip when playing back the animation in the interactive viewports.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackEveryNthFrame, setPlaybackEveryNthFrame);
 
-	/// Controls whether the animation interval is automatically adjusted to accomodate all loaded
+	/// Controls whether the animation interval is automatically adjusted to accommodate all loaded
 	/// source animations in the scene.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustInterval, setAutoAdjustInterval);
 

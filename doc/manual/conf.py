@@ -238,7 +238,7 @@ try:
         #spelling_show_whole_line = True
 
         # Boolean controlling whether a misspelling is emitted as a sphinx warning or as an info message.
-        #spelling_warning = False
+        spelling_warning = True
 
         # A list of glob-style patterns that should be ignored when checking spelling. They are matched against the 
         # source file names relative to the source directory, using slashes as directory separators on all platforms.
