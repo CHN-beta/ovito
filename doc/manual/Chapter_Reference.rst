@@ -26,4 +26,5 @@ Reference
 .. _visual_elements.bonds:
 .. _visual_elements.vectors:
 .. _visual_elements.simulation_cell:
+.. _visual_elements.voxel_grid:
 .. _python_code_generation:

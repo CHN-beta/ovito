@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/tri/TriMeshObject.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
 namespace Ovito { namespace Mesh {
@@ -46,9 +47,12 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
 
 		/// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
 		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override {
+			QVector<DataObjectReference> result;
 			if(input.containsObject<SurfaceMesh>())
-				return { DataObjectReference(&SurfaceMesh::OOClass()) };
-			return {};
+				result.push_back(DataObjectReference(&SurfaceMesh::OOClass()));
+			if(input.containsObject<TriMeshObject>())
+				result.push_back(DataObjectReference(&TriMeshObject::OOClass()));
+			return result;
 		}
 
 		/// The name by which Python scripts can refer to this modifier delegate.
