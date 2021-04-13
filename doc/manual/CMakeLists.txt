@@ -76,6 +76,7 @@ IF(OVITO_BUILD_GUI)
 			"${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script throigh the system's Python interpreter
 			"."                                           # Sphinx source directory 
 			"${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
+			-a -E                                         # Always write all output files. Don’t use a saved environment. 
 			-n                                            # Run in nit-picky mode
 			-W                                            # Turn warnings into errors
 			# Additional config settings passed to Sphinx, which are added to the options found in conf.py: 
