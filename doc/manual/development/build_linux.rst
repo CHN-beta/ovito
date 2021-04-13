@@ -24,7 +24,7 @@ First install the required :ref:`build tools and third-party libraries <developm
           sudo apt-get install build-essential git cmake-curses-gui qt5-default libqt5svg5-dev \
                 libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
                 libavresample-dev libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev \
-                libhdf5-serial-dev libssh-dev
+                libhdf5-serial-dev libssh-dev python3-sphinx python3-sphinx-rtd-theme
 
    * - openSUSE
      - .. code::

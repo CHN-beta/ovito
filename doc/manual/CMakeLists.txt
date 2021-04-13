@@ -58,12 +58,22 @@ IF(OVITO_BUILD_GUI)
 	# Get current year.
 	STRING(TIMESTAMP current_year "%Y")
 
+	# Tell Interpshinx where to find the scripting reference manual files when building the user manual.
+	# Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists 
+	# in the python/ sub-directory (only the case when this is an OVITO Pro build).
+	# Otherwise, fall back to using the online version of the scripting reference at https://ovito.org/docs/current/python/.
+	# For further information, see the 'intersphinx_mapping' configuration variable in the file 'conf.py'.
+	IF(EXISTS "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
+		SET(OVITO_PYDOC_INTERSPHINX_LOCATION "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
+	ENDIF()
+
 	# Build reStructuredText documentation using Sphinx.
 	ADD_CUSTOM_TARGET(documentation
 		# Create the destination directory for the generated HTML files:
 		COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/html"
 		# Run Sphinx command to generate HTML files:
-		COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py" 
+		COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}" 
+			"${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script throigh the system's Python interpreter
 			"."                                           # Sphinx source directory 
 			"${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
 			-n                                            # Run in nit-picky mode
@@ -75,7 +85,7 @@ IF(OVITO_BUILD_GUI)
 
 		# Extract the link targets from the Intersphinx inventory file and write them to a text file.
 		# The file will be used by the OVITO application to open the correct HTML page corresponding to 
-		# a help topic ID.
+		# a help topic ID. See MainWindow::openHelpTopic() method for further information.
 		COMMAND "${CMAKE_COMMAND}" -E env DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib "${Python3_EXECUTABLE}"
 			-m sphinx.ext.intersphinx "${OVITO_SHARE_DIRECTORY}/doc/manual/html/objects.inv"
 			> "${OVITO_SHARE_DIRECTORY}/doc/manual/html/objects.txt"
