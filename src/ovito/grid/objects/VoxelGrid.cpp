@@ -158,7 +158,8 @@ void VoxelGrid::verifyIntegrity() const
 
 	size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
 	if(elementCount() != expectedElementCount)
-		throwException(tr("Property arrays in voxel grid object have wrong length. Array length %1 does not match the number of grid elements %2.").arg(elementCount()).arg(expectedElementCount));
+		throwException(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the number of voxel grid cells (%2) for grid shape %3x%4x%5.")
+			.arg(elementCount()).arg(expectedElementCount).arg(shape()[0]).arg(shape()[1]).arg(shape()[2]));
 
 	if(!domain())
 		throwException(tr("Voxel grid has no simulation cell assigned."));
