@@ -79,7 +79,7 @@
             </row>
             <row>
               <entry><link linkend="scene_objects.surface_mesh">Surfaces</link></entry>
-              <entry><para>Applies the affine transformation to the vertices of <link linkend="scene_objects.surface_mesh">surface meshes</link>.</para></entry>
+              <entry><para>Applies the affine transformation to the vertices of <link linkend="scene_objects.surface_mesh">surface meshes</link> and <link linkend="scene_objects.triangle_mesh">triangle meshes</link>.</para></entry>
             </row>
             <row>
               <entry><link linkend="scene_objects.voxel_grid">Voxel&#xA0;grids</link></entry>
