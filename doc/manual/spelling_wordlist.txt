@@ -6,6 +6,7 @@ animatable
 antisites
 autocorrelation
 atomistic
+aspherical
 backend
 backends
 centrosymmetry
@@ -102,6 +103,7 @@ selectable
 Seitz
 smoothens
 specular
+spherocylindrical
 stepwise
 subdirectory
 submatrix
