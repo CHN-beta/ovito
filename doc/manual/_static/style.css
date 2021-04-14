@@ -19,6 +19,30 @@
     margin: 0px 0px 24px;
 }
 
+/* Make sure two figures in the side bar do not appear side by side. */ 
+.rst-content .align-right {
+    clear: both;
+}
+
+/* Let several default-aligned figures appear side by side. */ 
+.rst-content .align-default {
+    display: inline-block;
+}
+.rst-content p.caption .headerlink {
+    display: table;
+}
+
+/* Formatting of menu items */
+.rst-content .menuselection {
+    border: 1px solid #b6c7d3;
+    background: #f0f0f0;
+    font-size: 80%;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2.4px 6px;
+    margin: auto 2px;
+}
+
 /* Break lines within table cells. */
 .wy-table-responsive table td {
     white-space: normal;

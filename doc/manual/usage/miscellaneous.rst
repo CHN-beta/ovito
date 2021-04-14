@@ -10,7 +10,7 @@ The following sections briefly introduce various useful functions and features o
 Saving the session state
 ------------------------
 You can save the current program session, including the data pipeline, viewports, render settings, etc., to a :file:`.ovito` *state file*
-(main menu: :guilabel:`File → Save Session State`). This allows you
+(main menu: :menuselection:`File --> Save Session State`). This allows you
 to preserve the current visualization setup for future use. For instance, you can use a state file as a template to 
 visualize several simulations using the same data analysis pipeline and camera setup.
 

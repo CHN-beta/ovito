@@ -120,6 +120,18 @@ combine several modifiers to accomplish more complex tasks.
 
   particles/atomic_strain
   Bond analysis <particles/bond_analysis>
+  particles/show_periodic_images
+  particles/scatter_plot
+  particles/select_particle_type
+  particles/slice
+  particles/smooth_trajectory
+  Time averaging <particles/time_averaging>
+  Time series <particles/time_series>
+  particles/unwrap_trajectories
+  particles/voronoi_analysis
+  particles/vorotop_analysis
+  particles/wigner_seitz_analysis
+  particles/wrap_at_periodic_boundaries
 
 .. particles/bond_angle_analysis
 .. particles/affine_transformation
@@ -157,20 +169,7 @@ combine several modifiers to accomplish more complex tasks.
 .. particles/manual_selection
 .. particles/polyhedral_template_matching
 .. particles/python_script
-.. particles/show_periodic_images
-.. particles/scatter_plot
-.. particles/select_particle_type
 .. particles/bin_and_reduce
-.. particles/slice
-.. particles/smooth_trajectory
-.. particles/time_averaging
-.. particles/time_series
-.. particles/unwrap_trajectories
-.. particles/voronoi_analysis
-.. particles/vorotop_analysis
-.. particles/wigner_seitz_analysis
-.. particles/wrap_at_periodic_boundaries
-
 
 .. _particles.modifiers.cluster_analysis:
 
@@ -208,11 +207,6 @@ Grain segmentation
 Histogram
 --------------------------------------------
 
-.. _particles.modifiers.scatter_plot:
-
-Scatter plot
---------------------------------------------
-
 .. _particles.modifiers.bin_and_reduce:
 
 Spatial binning |ovito-pro|
@@ -221,26 +215,6 @@ Spatial binning |ovito-pro|
 .. _particles.modifiers.correlation_function:
 
 Correlation function
---------------------------------------------
-
-.. _particles.modifiers.time_averaging:
-
-Time averaging |ovito-pro|
---------------------------------------------
-
-.. _particles.modifiers.time_series:
-
-Time series |ovito-pro|
---------------------------------------------
-
-.. _particles.modifiers.voronoi_analysis:
-
-Voronoi analysis
---------------------------------------------
-
-.. _particles.modifiers.wigner_seitz_analysis:
-
-Wigner-Seitz analysis
 --------------------------------------------
 
 .. _particles.modifiers.ambient_occlusion:
@@ -298,31 +272,6 @@ Load trajectory
 Python script |ovito-pro|
 --------------------------------------------
 
-.. _particles.modifiers.show_periodic_images:
-
-Replicate
---------------------------------------------
-
-.. _particles.modifiers.slice:
-
-Slice
---------------------------------------------
-
-.. _particles.modifiers.smooth_trajectory:
-
-Smooth trajectory
---------------------------------------------
-
-.. _particles.modifiers.unwrap_trajectories:
-
-Unwrap trajectories
---------------------------------------------
-
-.. _particles.modifiers.wrap_at_periodic_boundaries:
-
-Wrap at periodic boundaries
---------------------------------------------
-
 .. _particles.modifiers.clear_selection:
 
 Clear selection
@@ -340,17 +289,12 @@ Expression selection
 
 .. _particles.modifiers.manual_selection:              
 
-Slice
+Manual selection
 --------------------------------------------
 
 .. _particles.modifiers.invert_selection:               
 
 Invert selection
---------------------------------------------
-
-.. _particles.modifiers.select_particle_type:          
-
-Select type
 --------------------------------------------
 
 .. _particles.modifiers.bond_angle_analysis:             
@@ -360,7 +304,7 @@ Ackland-Jones analysis
 
 .. _particles.modifiers.centrosymmetry:                  
 
-Slice
+Centrosymmetry parameter
 --------------------------------------------
 
 .. _particles.modifiers.chill_plus:                      
@@ -381,11 +325,6 @@ Identify diamond structure
 .. _particles.modifiers.polyhedral_template_matching:    
 
 Polyhedral template matching
---------------------------------------------
-
-.. _particles.modifiers.vorotop_analysis:                
-
-VoroTop analysis
 --------------------------------------------
 
 .. _particles.modifiers.construct_surface_mesh:          

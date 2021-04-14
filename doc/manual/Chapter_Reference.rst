@@ -18,6 +18,7 @@ Reference
 
 .. _scene_objects.surface_mesh:
 .. _scene_objects.triangle_mesh:
+.. _scene_objects.simulation_cell:
 .. _visual_elements:
 .. _visual_elements.dislocations:
 .. _visual_elements.surface_mesh:
