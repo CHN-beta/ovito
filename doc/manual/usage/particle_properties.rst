@@ -110,4 +110,3 @@ Bond property             Data type (components)     Description
 ========================= ========================== =======================================================================================
 
 .. _scene_objects.particles:
-.. _usage.export:
