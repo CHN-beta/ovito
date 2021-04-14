@@ -60,6 +60,4 @@ consecutive snapshots.
   
   :py:class:`ovito.modifiers.SmoothTrajectoryModifier` (Python API)
 
-
-.. _howto.aspherical_particles:
 .. _scene_objects.file_source.configure_playback:

@@ -4,7 +4,7 @@ Exporting data
 ==============
 
 
-The :guilabel:`File → Export File` function of OVITO exports the results of
+The :menuselection:`File --> Export File` function of OVITO exports the results of
 the current data pipeline to a file. Depending on the selected output format (see table below), different fragments of the dataset are exported,
 e.g. the particles and their properties, the bonds, other computed quantities, etc.
 Furthermore, you can choose which animation frame(s) should be exported (just the current frame or a range), and whether the

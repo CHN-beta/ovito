@@ -95,13 +95,16 @@ recomputation
 reflectance
 renderable
 renderer
+repositioned
 repositions
 rescale
+rescaling
 runtime
 Rycroft
 Schlaefli
 selectable
 Seitz
+smoothen
 smoothens
 specular
 spherocylindrical
