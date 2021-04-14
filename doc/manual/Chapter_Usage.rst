@@ -11,6 +11,6 @@ Usage
   usage/rendering
   usage/miscellaneous
   usage/export_particles
-..  usage/animation
+  usage/animation
 
  

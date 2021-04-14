@@ -86,5 +86,3 @@ be rendered in the interactive viewport window just like they are in the final o
 Use the :guilabel:`Create Camera` function to insert a camera object into the three-dimensional
 scene. This object will be linked to the viewport, and moving the camera object around automatically updates the viewport
 accordingly. This gives you the possibility to :ref:`animate the camera <usage.animation.camera>`.
-
-.. _usage.animation.camera:

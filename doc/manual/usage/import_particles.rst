@@ -179,7 +179,6 @@ to visualize the same data in different ways, for example by applying different 
 of the dataset. See the :ref:`Clone Pipeline <clone_pipeline>` function for more information.
 
 
-.. _usage.animation:
 .. _file_formats.input:
 .. _scene_objects.file_source:
 .. _clone_pipeline:
