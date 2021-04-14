@@ -7,8 +7,8 @@ Application settings
   :width: 38%
   :align: right
 
-To open the application settings dialog, select :guilabel:`Edit → Application settings` from the main menu on Windows/Linux.
-On macOS, select :guilabel:`Ovito → Preferences` instead.
+To open the application settings dialog, select :menuselection:`Edit --> Application settings` from the main menu on Windows/Linux.
+On macOS, select :menuselection:`Ovito --> Preferences` instead.
 The dialog consists of several tabs:
 
 .. toctree::

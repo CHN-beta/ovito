@@ -87,7 +87,7 @@ Remote data access
 
 OVITO comes with built-in SSH and HTTP(S) clients for accessing files on remote machines. This feature can save you from having to transfer
 files stored in remote locations, for example on HPC clusters, to your local desktop computer first.
-To open a file located on a remote host, select :guilabel:`File → Load Remote File` from the menu.
+To open a file located on a remote host, select :menuselection:`File --> Load Remote File` from the menu.
 
 The current version of OVITO does not provide a way to browse directories on remote machines. You have to directly specify
 the full path to the remote file as an URL of the form::
@@ -132,7 +132,7 @@ using :ref:`branched data pipelines <clone_pipeline>`, which dynamically duplica
 slightly different way.
 
 The simplest way to visualize multiple datasets in one picture is to invoke the
-:guilabel:`File → Load File` function from the menu several times to import all datasets into the same scene.
+:menuselection:`File --> Load File` function from the menu several times to import all datasets into the same scene.
 When importing the second dataset, OVITO will ask you whether to replace the already loaded dataset or not.
 Pick the :guilabel:`Add to scene` option here in order to insert it as an additional object into the existing scene.
 
