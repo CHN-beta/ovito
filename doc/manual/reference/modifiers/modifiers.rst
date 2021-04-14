@@ -120,11 +120,14 @@ combine several modifiers to accomplish more complex tasks.
 
   particles/atomic_strain
   Bond analysis <particles/bond_analysis>
+  particles/polyhedral_template_matching
+  Python script <particles/python_script>
   particles/show_periodic_images
   particles/scatter_plot
   particles/select_particle_type
   particles/slice
   particles/smooth_trajectory
+  Spatial binning <particles/bin_and_reduce>
   Time averaging <particles/time_averaging>
   Time series <particles/time_series>
   particles/unwrap_trajectories
@@ -167,9 +170,6 @@ combine several modifiers to accomplish more complex tasks.
 .. particles/invert_selection
 .. particles/load_trajectory
 .. particles/manual_selection
-.. particles/polyhedral_template_matching
-.. particles/python_script
-.. particles/bin_and_reduce
 
 .. _particles.modifiers.cluster_analysis:
 
@@ -205,11 +205,6 @@ Grain segmentation
 .. _particles.modifiers.histogram:
 
 Histogram
---------------------------------------------
-
-.. _particles.modifiers.bin_and_reduce:
-
-Spatial binning |ovito-pro|
 --------------------------------------------
 
 .. _particles.modifiers.correlation_function:
@@ -267,11 +262,6 @@ Freeze property
 Load trajectory
 --------------------------------------------
 
-.. _particles.modifiers.python_script:
-
-Python script |ovito-pro|
---------------------------------------------
-
 .. _particles.modifiers.clear_selection:
 
 Clear selection
@@ -320,11 +310,6 @@ Common neighbor analysis
 .. _particles.modifiers.identify_diamond_structure:      
 
 Identify diamond structure
---------------------------------------------
-
-.. _particles.modifiers.polyhedral_template_matching:    
-
-Polyhedral template matching
 --------------------------------------------
 
 .. _particles.modifiers.construct_surface_mesh:          

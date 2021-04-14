@@ -4,7 +4,7 @@ Visualize internal motion using marker marker
 =============================================
 
 .. figure:: /images/howtos/shear_marker.gif
-   :figwidth: 30%
+   :figwidth: 40%
    :align: right
    
    Marker atoms in a deforming crystal

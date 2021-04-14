@@ -59,5 +59,3 @@ consecutive snapshots.
 .. seealso::
   
   :py:class:`ovito.modifiers.SmoothTrajectoryModifier` (Python API)
-
-.. _scene_objects.file_source.configure_playback:
