@@ -74,6 +74,11 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 		if(sscanf(stream.readLine(), "%5i%5s%5s%5i", &i1, s1, s2, &i2) != 4 || i1 < 1 || i2 < 1 || qstrlen(stream.line()) < 20)
 			return false;
 
+		// The following extra check is necessary to avoid mistaking an XDATCAR file, which stores the simulation cell 
+		// vectors in lines 3-5, for a GRO file (see test case 'POSCAR/XDATCAR.testcase'):
+		if(s1[0] == '.' || s2[0] == '.')
+			return false;
+
 		// Parse atomic xyz coordinates.
 		// First, determine column width by counting distance between decimal points.
 		const char* token = stream.line() + 20;
