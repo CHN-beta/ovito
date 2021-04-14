@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -183,7 +183,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 			PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
 			Quaternion* q = orientations.begin();
 			for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty)) {
-				*q++ = Quaternion(tensor.transposed());
+				*q++ = Quaternion(tensor/*.transposed()*/);
 			}
 		}
 	}
