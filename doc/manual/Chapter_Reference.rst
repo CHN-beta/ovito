@@ -1,14 +1,13 @@
 =========
 Reference
 =========
-
-..  reference/file_formats/file_formats
-..  reference/scene_objects/pipelines
-..  reference/scene_objects/scene_objects
+  
 ..  reference/visual_elements/visual_elements
 
 .. toctree::
-
+  reference/file_formats/file_formats
+  reference/scene_objects/pipelines
+  reference/scene_objects/scene_objects
   reference/modifiers/modifiers
   reference/viewports/viewports
   reference/rendering/rendering

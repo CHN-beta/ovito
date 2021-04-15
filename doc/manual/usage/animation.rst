@@ -200,4 +200,3 @@ By the way, instead of animating the camera's position, you can also animate the
 and let it rotate, for example. This is done in an analogous way by selecting the simulation box
 and using the :guilabel:`Rotate` tool while *Auto-key* mode is active.
 
-.. _scene_objects.file_source.configure_playback:
