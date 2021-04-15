@@ -124,3 +124,4 @@ void main()
 	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
     fragColor = shadeSurfaceColorDir(normalize(surface_normal), color_fs, ray_dir_norm);
+}
