@@ -63,11 +63,8 @@ md
 microrotation
 microstructure
 Mises
-<<<<<<< HEAD
 multiblock
-=======
 misorientations
->>>>>>> a3b12e2fd68cf26efa2ad4d031615b1d3556a4fe
 NetCDF
 nm
 Nordlund

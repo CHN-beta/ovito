@@ -28,7 +28,7 @@
       <li>{{ title }}</li>
     {%- endblock %}
     {%- block breadcrumbs_aside %}
-      <li class="wy-breadcrumbs-aside">
+      <li class="wy-breadcrumbs-aside" style="text-align: right;">
         {%- if hasdoc(pagename) and display_vcs_links %}
           {%- if display_github %}
             {%- if check_meta and 'github_url' in meta %}
@@ -56,7 +56,8 @@
           {%- elif show_source and has_source and sourcename %}
             <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow"> {{ _('View page source') }}</a>
           {%- endif %}
-          <a href="https://www.ovito.org">OVITO&nbsp;Website <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <a href="https://www.ovito.org" style="padding: 1px;"">www.ovito.org&nbsp;<span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a><br>
+          <a href="{{ pathto('python/index.html', true) }}" style="padding: 1px;">Scripting&nbsp;Manual&nbsp;<span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         {%- endif %}
       </li>
     {%- endblock %}
