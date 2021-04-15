@@ -21,7 +21,7 @@ all grains as a :ref:`data table <scene_objects.data_table>`.
   early preview version with caution and help us improve the algorithm by reporting any issues you may observe when applying it to your simulations.
   This documentation page is only preliminary and will be further expanded in a future version of OVITO.
 
-The grain segmentation algorithm is illustrated in the figures below. The local structural environment is determined for every atom using PTM (left). PTM also determines the local orientations (coloured, middle) but does not explicitly
+The grain segmentation algorithm is illustrated in the figures below. The local structural environment is determined for every atom using PTM (left). PTM also determines the local orientations (colored, middle) but does not explicitly
 group atoms into grains. Hierarchical clustering is used to identify grains (right).
 
 .. figure:: /images/modifiers/grain_segmentation_ptm.png
@@ -72,7 +72,7 @@ Minimum Spanning Tree
   The distance of a contraction (or merge) is simply the edge misorientation.
 
   This is a fast algorithm which has lower memory usage. The merge distance has a simple interpretation (misorientation between neighboring atoms or crystal clusters) and is scale invariant.
-  Drawbacks are that it can produce poor results in microstructures containing low-angle grain boundaries, and it performs poorly in the presense of local perturbations due to, e.g., thermal atomic displacements or elastic lattice distortions. 
+  Drawbacks are that it can produce poor results in microstructures containing low-angle grain boundaries, and it performs poorly in the presence of local perturbations due to, e.g., thermal atomic displacements or elastic lattice distortions. 
   This method is best suited for low-temperature simulations.
 
   This approach is similar to that of `Panzarino and Rupert <https://doi.org/10.1007/s11837-013-0831-9>`__. The key differences are the use of PTM (more robust structural determination),

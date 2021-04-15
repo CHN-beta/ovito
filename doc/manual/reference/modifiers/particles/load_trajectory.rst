@@ -16,7 +16,7 @@ of the MD simulation and contains the initial atomic positions and the definitio
 which do not change throughout the simulation. The trajectories of the particles computed by the MD code are then written
 to an output file, which stores just the time-dependent coordinates and sometimes other varying information such as the atomic energies.
 
-LAMMPS is a simulation code that employes this topology-trajectory file philosophy. LAMMPS uses the *data* file format
+LAMMPS is a simulation code that employs this topology-trajectory file philosophy. LAMMPS uses the *data* file format
 for input files, which define the atom types and bonds in the simulation, whereas the *dump* file format serves as output format 
 storing the computed atom trajectories and other time-varying information.
 
