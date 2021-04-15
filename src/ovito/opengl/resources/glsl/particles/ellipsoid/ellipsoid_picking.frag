@@ -25,6 +25,7 @@
 // Inputs:
 flat in vec4 color_fs;
 flat in mat3 view_to_sphere_fs;
+flat in mat3 sphere_to_view_fs;
 flat in vec3 particle_view_pos_fs;
 noperspective in vec3 ray_origin;
 noperspective in vec3 ray_dir;
@@ -62,7 +63,7 @@ void main()
 	vec3 sphere_intersection_pnt = tnear * ray_dir2 - sphere_dir;
 
 	// Calculate intersection point in view coordinate system.
-    vec3 view_intersection_pnt = inverse(view_to_sphere_fs) * sphere_intersection_pnt + particle_view_pos_fs;
+    vec3 view_intersection_pnt = sphere_to_view_fs * sphere_intersection_pnt + particle_view_pos_fs;
 
 	// Output the ray-sphere intersection point as the fragment depth
 	// rather than the depth of the bounding box polygons.

@@ -26,6 +26,7 @@
 // Inputs:
 flat in vec4 color_fs;
 flat in mat3 view_to_sphere_fs;
+flat in mat3 sphere_to_view_fs;
 flat in vec3 particle_view_pos_fs;
 noperspective in vec3 ray_origin;
 noperspective in vec3 ray_dir;
@@ -35,11 +36,10 @@ out vec4 fragColor;
 
 void main()
 {
-	vec3 ray_dir_norm = ray_dir;
 	vec3 sphere_dir = view_to_sphere_fs * (particle_view_pos_fs - ray_origin);
 
 	// Ray direction in sphere coordinate system.
-	vec3 ray_dir2 = normalize(view_to_sphere_fs * ray_dir_norm);
+	vec3 ray_dir2 = normalize(view_to_sphere_fs * ray_dir);
 
 	// Perform ray-sphere intersection test.
 	float b = dot(ray_dir2, sphere_dir);
@@ -63,7 +63,7 @@ void main()
 	vec3 sphere_intersection_pnt = tnear * ray_dir2 - sphere_dir;
 
 	// Calculate intersection point in view coordinate system.
-    vec3 view_intersection_pnt = inverse(view_to_sphere_fs) * sphere_intersection_pnt + particle_view_pos_fs;
+    vec3 view_intersection_pnt = sphere_to_view_fs * sphere_intersection_pnt + particle_view_pos_fs;
 
 	// Output the ray-sphere intersection point as the fragment depth
 	// rather than the depth of the bounding box polygons.
@@ -74,5 +74,5 @@ void main()
 
     // Calculate surface normal in view coordinate system.
     vec3 surface_normal = normalize(sphere_intersection_pnt * view_to_sphere_fs);
-    fragColor = shadeSurfaceColor(surface_normal, color_fs);
+    fragColor = shadeSurfaceColorDir(surface_normal, color_fs, normalize(ray_dir));
 }

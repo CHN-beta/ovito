@@ -40,5 +40,5 @@ void main()
 	vec3 surface_normal = vec3(uv_fs, sqrt(1.0 - rsq));
 
 	// Compute local surface color.
-	fragColor = shadeSurfaceColor(surface_normal, color_fs);
+	fragColor = shadeSurfaceColorDir(surface_normal, color_fs, vec3(0.0, 0.0, -1.0));
 }

@@ -31,6 +31,7 @@ in mat4 shape_orientation;
 // Outputs:
 flat out vec4 color_fs;
 flat out mat3 view_to_sphere_fs;
+flat out mat3 sphere_to_view_fs;
 flat out vec3 particle_view_pos_fs;
 noperspective out vec3 ray_origin;
 noperspective out vec3 ray_dir;
@@ -67,9 +68,12 @@ void main()
     // Compute color from object ID.
     color_fs = pickingModeColor(gl_InstanceID);
 
-    // Pass ellipsoid matrix and center position to fragment shader.
+    // Pass particle center position to fragment shader.
 	particle_view_pos_fs = (modelview_matrix * vec4(position, 1.0)).xyz;
-    view_to_sphere_fs = inverse(mat3(modelview_matrix) * mat3(shape_orientation));
+
+    // Matrices for converting to/from unit sphere space.
+    sphere_to_view_fs = mat3(modelview_matrix) * mat3(shape_orientation);
+    view_to_sphere_fs = inverse(sphere_to_view_fs);
 
     // Calculate ray passing through the vertex (in view space).
     calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);

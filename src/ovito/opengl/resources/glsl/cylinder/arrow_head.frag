@@ -150,5 +150,5 @@ void main()
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
-    fragColor = shadeSurfaceColor(normalize(surface_normal), color_fs);
+    fragColor = shadeSurfaceColorDir(normalize(surface_normal), color_fs, ray_dir_norm);
 }

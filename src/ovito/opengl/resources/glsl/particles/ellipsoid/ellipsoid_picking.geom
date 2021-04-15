@@ -34,6 +34,7 @@ in mat4 shape_orientation_gs[1];
 // Outputs:
 flat out vec4 color_fs;
 flat out mat3 view_to_sphere_fs;
+flat out mat3 sphere_to_view_fs;
 flat out vec3 particle_view_pos_fs;
 noperspective out vec3 ray_origin;
 noperspective out vec3 ray_dir;
@@ -58,6 +59,13 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
+    // Compute particle center position in view space.
+    vec3 particle_view_pos = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
+
+    // Matrices for converting to/from unit sphere space.
+    mat3 sphere_to_view = mat3(modelview_matrix) * mat3(shape_orientation_gs[0]);
+    mat3 view_to_sphere = inverse(sphere_to_view);
+
     for(int corner = 0; corner < 14; corner++) 
     {
         // Compute rotated and scaled unit cube corner coordinates.
@@ -70,8 +78,9 @@ void main()
         color_fs = color_gs[0];
 
         // Pass ellipsoid matrix and center position to fragment shader.
-        particle_view_pos_fs = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
-        view_to_sphere_fs = inverse(mat3(modelview_matrix) * mat3(shape_orientation_gs[0]));
+        particle_view_pos_fs = particle_view_pos;
+        view_to_sphere_fs = view_to_sphere;
+        sphere_to_view_fs = sphere_to_view;
 
         // Calculate ray passing through the vertex (in view space).
         calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);

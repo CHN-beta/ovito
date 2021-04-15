@@ -490,7 +490,7 @@ void main()
 		P.z *= (1.0 + r);
 
 	// Transform the normal from superellipsoid space to view space.
-	vec3 surface_normal = normalize(transpose(view_particle_matrix_fs) * P);
+	vec3 surface_normal = normalize(P * view_particle_matrix_fs);
 
-    fragColor = shadeSurfaceColor(surface_normal, color_fs);
+    fragColor = shadeSurfaceColorDir(surface_normal, color_fs, ray_dir_norm);
 }

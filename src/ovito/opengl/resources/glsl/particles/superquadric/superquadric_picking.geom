@@ -59,6 +59,17 @@ void main()
         vec3(-1.0, -1.0,  1.0)
 	);
 
+    // Compute particle center in view space.
+    vec3 particle_view_pos = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
+
+    // Compute ellipsoid matrix.
+    mat3 view_particle_matrix = inverse(mat3(modelview_matrix) * mat3(shape_orientation_gs[0]));
+
+    // The x-component of the input vector is exponent 'e', the y-component is 'n'.
+    vec2 particle_exponents;
+    particle_exponents.x = 2.0 / (roundness_gs[0].x > 0.0 ? roundness_gs[0].x : 1.0);
+    particle_exponents.y = 2.0 / (roundness_gs[0].y > 0.0 ? roundness_gs[0].y : 1.0);
+
     for(int corner = 0; corner < 14; corner++) 
     {
         // Compute rotated and scaled unit cube corner coordinates.
@@ -70,13 +81,14 @@ void main()
         // Forward particle color to fragment shader.
         color_fs = color_gs[0];
 
-        // Pass ellipsoid matrix and center position to fragment shader.
-        particle_view_pos_fs = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
-        view_particle_matrix_fs = inverse(mat3(modelview_matrix) * mat3(shape_orientation_gs[0]));
+        // Pass particle center position to fragment shader.
+        particle_view_pos_fs = particle_view_pos;
+
+        // Pass ellipsoid matrix to fragment shader.
+        view_particle_matrix_fs = view_particle_matrix;
 
         // The x-component of the input vector is exponent 'e', the y-component is 'n'.
-        particle_exponents_fs.x = 2.0 / (roundness_gs[0].x > 0.0 ? roundness_gs[0].x : 1.0);
-        particle_exponents_fs.y = 2.0 / (roundness_gs[0].y > 0.0 ? roundness_gs[0].y : 1.0);
+        particle_exponents_fs = particle_exponents;
 
         // Calculate ray passing through the vertex (in view space).
         calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);

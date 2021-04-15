@@ -41,7 +41,7 @@ void main()
 	vec3 surface_normal = vec3(uv_fs, sqrt(1.0 - rsq));
 
 	// Compute local surface color.
-	fragColor = shadeSurfaceColor(surface_normal, color_fs);
+	fragColor = shadeSurfaceColorDir(surface_normal, color_fs, vec3(0.0, 0.0, -1.0));
 
 	// Vary the depth value across the imposter to obtain proper intersections between particles.
 	float ze = radius_and_eyez_fs.y + surface_normal.z * radius_and_eyez_fs.x;

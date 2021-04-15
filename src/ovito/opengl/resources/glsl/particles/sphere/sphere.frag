@@ -68,5 +68,5 @@ void main()
 
     // Calculate surface normal in view coordinate system.
     vec3 surface_normal = normalize(view_intersection_pnt - particle_view_pos_fs);
-    fragColor = shadeSurfaceColor(surface_normal, color_fs);
+    fragColor = shadeSurfaceColorDir(surface_normal, color_fs, ray_dir_norm);
 }
