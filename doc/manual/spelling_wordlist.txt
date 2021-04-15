@@ -5,13 +5,13 @@ affine
 animatable
 antisite
 antisites
-autocorrelation
-atomistic
 aspherical
+atomistic
+autocorrelation
 backend
 backends
-centrosymmetry
 centrosymmetric
+centrosymmetry
 CMake
 composable
 conda
@@ -50,6 +50,7 @@ interatomic
 interfacial
 interstitials
 isosurface
+isosurfaces
 iterable
 keyframe
 keyframing
@@ -62,7 +63,11 @@ md
 microrotation
 microstructure
 Mises
+<<<<<<< HEAD
 multiblock
+=======
+misorientations
+>>>>>>> a3b12e2fd68cf26efa2ad4d031615b1d3556a4fe
 NetCDF
 nm
 Nordlund
@@ -90,10 +95,11 @@ preload
 preloaded
 preloading
 prepend
+preprint
 programmatically
 Qt
-quaternions
 quaternion
+quaternions
 raytracing
 realtime
 recomputation
@@ -108,23 +114,24 @@ rescan
 runtime
 Rycroft
 Schlaefli
-selectable
 Seitz
 smoothen
+selectable
 smoothens
 specular
 spherocylindrical
 stepwise
 subdirectory
+sublattice
 submatrix
 superquadric
 supersampling
 Tachyon
 th
 Theobald
-topologies
 timestep
 timesteps
+topologies
 trilinear
 unchecking
 unitless
@@ -141,6 +148,8 @@ voxels
 Waals
 Wigner
 Wilkie
+wurtzite
 Xcode
 xyz
+zincblende
 zlib
