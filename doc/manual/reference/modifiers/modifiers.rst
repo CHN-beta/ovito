@@ -120,6 +120,16 @@ combine several modifiers to accomplish more complex tasks.
 
   particles/atomic_strain
   Bond analysis <particles/bond_analysis>
+  particles/expression_select
+  particles/freeze_property
+  particles/generate_trajectory_lines
+  particles/grain_segmentation
+  particles/histogram
+  particles/identify_diamond
+  particles/interactive_molecular_dynamics
+  particles/invert_selection
+  particles/load_trajectory
+  particles/manual_selection
   particles/polyhedral_template_matching
   Python script <particles/python_script>
   particles/show_periodic_images
@@ -159,17 +169,7 @@ combine several modifiers to accomplish more complex tasks.
 .. particles/dislocation_analysis
 .. particles/displacement_vectors
 .. particles/elastic_strain
-.. particles/grain_segmentation
 .. particles/expand_selection
-.. particles/expression_select
-.. particles/freeze_property
-.. particles/generate_trajectory_lines
-.. particles/histogram
-.. particles/identify_diamond
-.. particles/interactive_molecular_dynamics
-.. particles/invert_selection
-.. particles/load_trajectory
-.. particles/manual_selection
 
 .. _particles.modifiers.cluster_analysis:
 
@@ -195,16 +195,6 @@ Displacement vectors
 .. _particles.modifiers.elastic_strain:
 
 Elastic strain calculation
---------------------------------------------
-
-.. _particles.modifiers.grain_segmentation:
-
-Grain segmentation
---------------------------------------------
-
-.. _particles.modifiers.histogram:
-
-Histogram
 --------------------------------------------
 
 .. _particles.modifiers.correlation_function:
@@ -252,16 +242,6 @@ Compute property
 Delete selected
 --------------------------------------------
 
-.. _particles.modifiers.freeze_property:
-
-Freeze property
---------------------------------------------
-
-.. _particles.modifiers.load_trajectory:
-
-Load trajectory
---------------------------------------------
-
 .. _particles.modifiers.clear_selection:
 
 Clear selection
@@ -270,21 +250,6 @@ Clear selection
 .. _particles.modifiers.expand_selection:               
 
 Expand selection
---------------------------------------------
-
-.. _particles.modifiers.expression_select:   
-
-Expression selection
---------------------------------------------
-
-.. _particles.modifiers.manual_selection:              
-
-Manual selection
---------------------------------------------
-
-.. _particles.modifiers.invert_selection:               
-
-Invert selection
 --------------------------------------------
 
 .. _particles.modifiers.bond_angle_analysis:             
@@ -307,11 +272,6 @@ Chill+
 Common neighbor analysis
 --------------------------------------------
 
-.. _particles.modifiers.identify_diamond_structure:      
-
-Identify diamond structure
---------------------------------------------
-
 .. _particles.modifiers.construct_surface_mesh:          
 
 Construct surface mesh
@@ -331,14 +291,3 @@ Create isosurface
 
 Coordination polyhedra
 --------------------------------------------
-
-.. _particles.modifiers.generate_trajectory_lines:      
-
-Generate trajectory lines
---------------------------------------------
-
-.. _particles.modifiers.interactive_molecular_dynamics:  
-
-Interactive molecular dynamics
---------------------------------------------
-
