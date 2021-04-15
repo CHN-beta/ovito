@@ -95,6 +95,10 @@
 	<file>glsl/cylinder/cylinder_flat.vert</file>
 	<file>glsl/cylinder/cylinder_flat_picking.frag</file>
 	<file>glsl/cylinder/cylinder_flat_picking.vert</file>
+	<file>glsl/cylinder/cylinder.geom</file>
+	<file>glsl/cylinder/cylinder.geom.vert</file>
+	<file>glsl/cylinder/cylinder_picking.geom</file>
+	<file>glsl/cylinder/cylinder_picking.geom.vert</file>
 
 	<file>glsl/cylinder/arrow_head.frag</file>
 	<file>glsl/cylinder/arrow_head.vert</file>

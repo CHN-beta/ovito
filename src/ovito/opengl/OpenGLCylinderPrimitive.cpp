@@ -36,9 +36,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 	if(!basePositions() || !headPositions() || basePositions()->size() == 0)
 		return;
 
-    // The effective number of primitives being rendered:
-    uint32_t primitiveCount = basePositions()->size();
-    uint32_t verticesPerPrimitive = 0;
+    // The OpenGL drawing primitive.
     GLenum primitiveDrawMode = GL_TRIANGLE_STRIP;
 
 	// Activate the right OpenGL shader program.
@@ -46,18 +44,28 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
     switch(shape()) {
         case CylinderShape:
             if(shadingMode() == NormalShading) {
-                if(!renderer->isPicking())
-					shader.load("cylinder", "cylinder/cylinder.vert", "cylinder/cylinder.frag");
-                else
-					shader.load("cylinder_picking", "cylinder/cylinder_picking.vert", "cylinder/cylinder_picking.frag");
-                verticesPerPrimitive = 14; // Box rendered as triangle strip.
+                if(!renderer->useGeometryShaders()) {
+                    if(!renderer->isPicking())
+                        shader.load("cylinder", "cylinder/cylinder.vert", "cylinder/cylinder.frag");
+                    else
+                        shader.load("cylinder_picking", "cylinder/cylinder_picking.vert", "cylinder/cylinder_picking.frag");
+                    shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
+                }
+                else {
+                    qWarning() << "Rendering cylinders " << basePositions()->size() << "using geometry shader";
+                    if(!renderer->isPicking())
+                        shader.load("cylinder", "cylinder/cylinder.geom.vert", "cylinder/cylinder.frag", "cylinder/cylinder.geom");
+                    else
+                        shader.load("cylinder_picking", "cylinder/cylinder_picking.geom.vert", "cylinder/cylinder_picking.frag", "cylinder/cylinder_picking.geom");
+                    shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                }
             }
             else {
                 if(!renderer->isPicking())
 					shader.load("cylinder_flat", "cylinder/cylinder_flat.vert", "cylinder/cylinder_flat.frag");
                 else
 					shader.load("cylinder_flat_picking", "cylinder/cylinder_flat_picking.vert", "cylinder/cylinder_flat_picking.frag");
-                verticesPerPrimitive = 4; // Quad rendered as triangle strip.
+                shader.setVerticesPerInstance(4); // Quad rendered as triangle strip.
             }
             break;
 
@@ -67,14 +75,14 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 					shader.load("arrow_head", "cylinder/arrow_head.vert", "cylinder/arrow_head.frag");
                 else
 					shader.load("arrow_head_picking", "cylinder/arrow_head_picking.vert", "cylinder/arrow_head_picking.frag");
-                verticesPerPrimitive = 14; // Box rendered as triangle strip.
+                shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else {
                 if(!renderer->isPicking())
 					shader.load("arrow_flat", "cylinder/arrow_flat.vert", "cylinder/arrow_flat.frag");
                 else
 					shader.load("arrow_flat_picking", "cylinder/arrow_flat_picking.vert", "cylinder/arrow_flat_picking.frag");
-                verticesPerPrimitive = 7; // 2D arrow rendered as triangle fan.
+                shader.setVerticesPerInstance(7); // 2D arrow rendered as triangle fan.
                 primitiveDrawMode = GL_TRIANGLE_FAN;
             }
             break;
@@ -83,8 +91,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             return;
     }
 
-	shader.setVerticesPerInstance(verticesPerPrimitive);
-	shader.setInstanceCount(primitiveCount);
+	shader.setInstanceCount(basePositions()->size());
 
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
@@ -167,7 +174,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
-            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + primitiveCount * 4; dst != dst_end;) {
+            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + shader.instanceCount() * 4; dst != dst_end;) {
                 // RGB:
                 if(color) {
                     *dst++ = static_cast<float>(*color++);

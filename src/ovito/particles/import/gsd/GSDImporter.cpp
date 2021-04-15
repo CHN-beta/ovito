@@ -360,6 +360,7 @@ void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shape
 	ParticleType* mutableType = typeProperty->makeMutable(existingType);
 	mutableType->setShapeMesh(shapeObject);
 	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
+	mutableType->setRadius(1.0);
 }
 
 /******************************************************************************
