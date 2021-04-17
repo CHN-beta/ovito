@@ -1,7 +1,7 @@
 .. _scene_objects: 
 
-Data object types
-=================
+Data objects
+============
 
 A dataset loaded into OVITO from a simulation file may consist of several individual *data objects*, which represent different
 facets of the information, e.g. the simulation cell geometry, the atomic coordinates, the bond list, etc. 
@@ -16,9 +16,9 @@ rendering the graphical representation do.
 .. table::
   :widths: auto
 
-  ================================================================== =================
+  ================================================================== ==================================================================
   Data object type                                                   Description
-  ================================================================== =================
+  ================================================================== ==================================================================
   :ref:`Particles <scene_objects.particles>`                         A set of particles which may be associated with an arbitrary set of per-particle property values
   :ref:`Bonds <scene_objects.bonds>`                                 A set of bonds connecting pairs of particles
   :ref:`Simulation cell <scene_objects.simulation_cell>`             The simulation cell geometry and boundary conditions
@@ -28,11 +28,24 @@ rendering the graphical representation do.
   :ref:`Voxel grid <scene_objects.voxel_grid>`                       A structured 2d or 3d grid made of uniform voxel elements
   :ref:`Trajectory lines <scene_objects.particle_trajectory_lines>`  The continuous particle trajectory lines computed by the :ref:`particles.modifiers.generate_trajectory_lines` modifier
   :ref:`Dislocations <scene_objects.dislocations>`                   Line crystal defects extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
-  ================================================================== =================
+  ================================================================== ==================================================================
 
     
 .. seealso::
 
   :py:class:`ovito.data.DataObject` (Python API)  
 
-.. _scene_objects.particle_trajectory_lines: 
+
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+
+  particles
+  bonds
+  simulation_cell
+  surface_mesh
+  triangle_mesh
+  data_table
+  voxel_grid
+  particle_trajectory_lines
+  dislocations

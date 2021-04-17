@@ -1,4 +1,5 @@
 accessor
+acentrosymmetric
 Ackland
 adaptively
 affine
@@ -11,11 +12,13 @@ atomistic
 autocorrelation
 backend
 backends
+bcc
 bicrystal
 Bravais
 centrosymmetric
 centrosymmetry
 CMake
+CNA
 composable
 conda
 CPython
@@ -29,6 +32,7 @@ der
 dihedrals
 dimensionality
 discretized
+discriminable
 disorientations
 Edelsbrunner
 equisized
@@ -47,6 +51,7 @@ Gromacs
 Hann
 hardcoded
 HDF5
+hoc
 Hošek
 hostname
 hydrostatic
@@ -73,6 +78,7 @@ macOS
 macromolecular
 Makefile
 md
+micromechanical
 microrotation
 microstructure
 microstructures
@@ -85,6 +91,7 @@ nd
 NetCDF
 nm
 Nordlund
+omni
 omnidirectional
 OpenGL
 openSUSE
@@ -111,6 +118,7 @@ preload
 preloaded
 preloading
 prepend
+prepending
 preprint
 preprocessing
 priori
@@ -136,10 +144,12 @@ Schlaefli
 segmentations
 Seitz
 selectable
+shader
 simplices
 smoothen
 smoothens
 specular
+Spherocylinder
 spherocylindrical
 stepwise
 subdirectory
@@ -159,7 +169,10 @@ timestep
 timesteps
 topologies
 trilinear
+uncheck
 unchecking
+undeformed
+undercoordinated
 unitless
 unselected
 vectorial
@@ -174,6 +187,8 @@ voxels
 Waals
 Wigner
 Wilkie
+wireframe
+Wolde
 wurtzite
 Xcode
 xyz

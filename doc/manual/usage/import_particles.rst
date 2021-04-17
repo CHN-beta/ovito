@@ -180,4 +180,3 @@ Instead of importing several data files into OVITO, you can also duplicate a dat
 to visualize the same data in different ways, for example by applying different sets of modifiers to each replica
 of the dataset. See the :ref:`Clone Pipeline <clone_pipeline>` function for more information.
 
-.. _clone_pipeline:

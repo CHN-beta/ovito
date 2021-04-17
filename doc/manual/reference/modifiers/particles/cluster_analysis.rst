@@ -61,7 +61,7 @@ Calculation of gyration radius and gyration tensor
 Furthermore, the modifier can compute the `radius of gyration <https://en.wikipedia.org/wiki/Radius_of_gyration>`__ 
 of each cluster as well as the `gyration tensor <https://en.wikipedia.org/wiki/Gyration_tensor>`__.
 Both quantities will appear as additional columns in the generated table of clusters. 
-The symmetric gyration tensor has six independent components: xx, yy, zz, xy, xz, yz (in simulation units of length squared).
+The symmetric gyration tensor has six independent components: ``xx``, ``yy``, ``zz``, ``xy``, ``xz``, ``yz`` (in simulation units of length squared).
 The data table is accessible in the :ref:`data inspector panel <data_inspector.data_tables>`:
 
 .. image:: /images/modifiers/cluster_analysis_table.png

@@ -12,9 +12,3 @@ Reference
   reference/rendering/rendering
   reference/data_inspector/data_inspector
   reference/app_settings/application_settings
-
-
-.. _scene_objects.surface_mesh:
-.. _scene_objects.triangle_mesh:
-.. _scene_objects.simulation_cell:
-.. _python_code_generation:

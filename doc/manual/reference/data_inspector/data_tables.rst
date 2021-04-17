@@ -26,5 +26,3 @@ The plot area supports mouse navigation:
 * Left button + :kbd:`Shift` + drag: panning
 * Mouse wheel: zoom in/out
 * Right click: reset view
-
-.. _scene_objects.data_table:

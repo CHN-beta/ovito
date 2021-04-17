@@ -16,5 +16,3 @@ Hold down the :kbd:`Ctrl` key (:kbd:`Command` key on macOS) to
 select multiple dislocation lines. This also works the other way around: With the highlighting mode active,
 you can select table rows and OVITO will highlight the corresponding dislocations in the viewports.
 Click the crosshair button again or right click in a viewport to deactivate the highlight mode.
-
-.. _scene_objects.dislocations:

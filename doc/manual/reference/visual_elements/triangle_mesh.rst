@@ -16,7 +16,7 @@ which are general polyhedral objects made of vertices and triangular faces conne
 Typically, :ref:`triangle meshes <scene_objects.triangle_mesh>` are imported into OVITO from an external
 data file, for example an STL or an OBJ file. See the :ref:`list of supported file formats <file_formats.input>`.
 
-The faces or the vertices of a triangle mesh may be associated with color information loaded from the imported geoemtry file. 
+The faces or the vertices of a triangle mesh may be associated with color information loaded from the imported geometry file. 
 If not present, the uniform color of the mesh is controlled by the user though this visualization element.
 
 Parameters

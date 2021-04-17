@@ -63,7 +63,7 @@ Particle selection
   Treats currently selected and unselected particles as two different species.
   Computes three separate bond length histograms: one for bonds connecting two selected particles,
   one for bonds connecting two unselected particles, and one for bonds connecting one selected and one unselected particle.
-  Accordingly, the bond angle histogram is partioned into six partial histograms, one for each triplet combination 
+  Accordingly, the bond angle histogram is partitioned into six partial histograms, one for each triplet combination 
   of selected and unselected particles.
   
 Time-averaged distributions

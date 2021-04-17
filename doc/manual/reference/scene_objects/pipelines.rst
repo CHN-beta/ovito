@@ -19,8 +19,6 @@ The following sections describe the different building blocks that you use to bu
   :hidden:
   :titlesonly:
 
-  data_sources.rst
-
-..  
-  code_generation.rst
-  clone_pipeline.st
+  data_sources
+  clone_pipeline
+  Python code generator <code_generation>

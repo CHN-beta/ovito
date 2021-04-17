@@ -108,5 +108,3 @@ Bond property             Data type (components)     Description
                                                      If not present, bonds are rendered fully opaque.
 ``Selection``             Integer                    Stores the current selection state of bonds (1 for selected bonds; 0 otherwise).
 ========================= ========================== =======================================================================================
-
-.. _scene_objects.particles:

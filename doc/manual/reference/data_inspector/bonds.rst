@@ -24,5 +24,3 @@ This information may be used to select the bonds connected to a particular parti
 the first particle (particle index 0), we could use the following filter expression::
 
   Topology.A==0 || Topology.B==0
-
-.. _scene_objects.bonds:

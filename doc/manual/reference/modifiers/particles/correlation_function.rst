@@ -48,7 +48,7 @@ Number of neighbor bins
 
 Type of plot
   * :guilabel:`Value correlation` computes :math:`C(r) = \langle P_1(0) P_2(r) \rangle`.
-  * :guilabel:`Difference correlation` computes :math:`C(r) = \langle (P_1(0) - P_2(r))^2 \rangle/2 = (\langle P_1^2 \rangle + \langle P_2^2 \rangle ) / 2 - C(r)`.
+  * :guilabel:`Difference correlation` computes :math:`\langle (P_1(0) - P_2(r))^2 \rangle/2 = (\langle P_1^2 \rangle + \langle P_2^2 \rangle ) / 2 - C(r)`.
 
 Normalize by RDF
   Divide the value correlation function :math:`C(r)` by the radial distribution function (RDF). 
