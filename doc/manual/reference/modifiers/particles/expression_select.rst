@@ -27,10 +27,8 @@ that can be referenced in the expression.
 Expression syntax
 """""""""""""""""
 
-The expression syntax supported by the modifier is very
-similar to the C programming language. Arithmetic expressions can be created from
-float literals, variables or functions using the following operators
-in this order of precedence:
+The expression syntax supported by the modifier is very similar to the C programming language. Arithmetic expressions can be created from
+float literals, variables or functions using the following operators in this order of precedence:
 
 .. table::
   :widths: auto

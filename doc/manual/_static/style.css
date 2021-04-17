@@ -25,7 +25,7 @@
 }
 
 /* Let several default-aligned figures appear side by side. */ 
-.rst-content .align-default {
+.rst-content .figure.align-default {
     display: inline-block;
 }
 .rst-content p.caption .headerlink {

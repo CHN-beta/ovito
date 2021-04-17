@@ -118,8 +118,32 @@ combine several modifiers to accomplish more complex tasks.
   :maxdepth: 1
   :hidden:
 
+  particles/bond_angle_analysis
+  particles/affine_transformation
+  particles/ambient_occlusion
+  particles/assign_color
   particles/atomic_strain
   Bond analysis <particles/bond_analysis>
+  particles/centrosymmetry
+  particles/chill_plus
+  particles/clear_selection
+  particles/cluster_analysis
+  Color by type <particles/color_by_type>
+  particles/color_coding
+  particles/combine_particle_sets
+  particles/common_neighbor_analysis
+  particles/compute_property
+  particles/construct_surface_mesh
+  particles/coordination_analysis
+  particles/coordination_polyhedra
+  particles/correlation_function
+  particles/create_bonds
+  particles/create_isosurface
+  particles/delete_selected_particles
+  particles/dislocation_analysis
+  particles/displacement_vectors
+  particles/elastic_strain
+  particles/expand_selection
   particles/expression_select
   particles/freeze_property
   particles/generate_trajectory_lines
@@ -146,148 +170,3 @@ combine several modifiers to accomplish more complex tasks.
   particles/wigner_seitz_analysis
   particles/wrap_at_periodic_boundaries
 
-.. particles/bond_angle_analysis
-.. particles/affine_transformation
-.. particles/ambient_occlusion
-.. particles/assign_color
-.. particles/centrosymmetry
-.. particles/chill_plus
-.. particles/clear_selection
-.. particles/cluster_analysis
-.. particles/color_by_type
-.. particles/color_coding
-.. particles/combine_particle_sets
-.. particles/common_neighbor_analysis
-.. particles/compute_property
-.. particles/construct_surface_mesh
-.. particles/coordination_analysis
-.. particles/coordination_polyhedra
-.. particles/correlation_function
-.. particles/create_bonds
-.. particles/create_isosurface
-.. particles/delete_selected_particles
-.. particles/dislocation_analysis
-.. particles/displacement_vectors
-.. particles/elastic_strain
-.. particles/expand_selection
-
-.. _particles.modifiers.cluster_analysis:
-
-Cluster analysis
---------------------------------------------
-
-.. _particles.modifiers.coordination_analysis:
-
-Coordination analysis
---------------------------------------------
-
-.. _particles.modifiers.dislocation_analysis.fileformat:
-.. _particles.modifiers.dislocation_analysis:
-
-Dislocation analysis (DXA)
---------------------------------------------
-
-.. _particles.modifiers.displacement_vectors:
-
-Displacement vectors
---------------------------------------------
-
-.. _particles.modifiers.elastic_strain:
-
-Elastic strain calculation
---------------------------------------------
-
-.. _particles.modifiers.correlation_function:
-
-Correlation function
---------------------------------------------
-
-.. _particles.modifiers.ambient_occlusion:
-
-Ambient occlusion
---------------------------------------------
-
-.. _particles.modifiers.assign_color:
-
-Assign color
---------------------------------------------
-
-.. _particles.modifiers.color_by_type:
-
-Color by type |ovito-pro|
---------------------------------------------
-
-.. _particles.modifiers.color_coding:
-
-Color coding
---------------------------------------------
-
-.. _particles.modifiers.affine_transformation:
-
-Affine transformation
---------------------------------------------
-
-.. _particles.modifiers.combine_particle_sets:
-
-Combine datasets
---------------------------------------------
-
-.. _particles.modifiers.compute_property:
-
-Compute property
---------------------------------------------
-
-.. _particles.modifiers.delete_selected_particles:
-
-Delete selected
---------------------------------------------
-
-.. _particles.modifiers.clear_selection:
-
-Clear selection
---------------------------------------------
-
-.. _particles.modifiers.expand_selection:               
-
-Expand selection
---------------------------------------------
-
-.. _particles.modifiers.bond_angle_analysis:             
-
-Ackland-Jones analysis
---------------------------------------------
-
-.. _particles.modifiers.centrosymmetry:                  
-
-Centrosymmetry parameter
---------------------------------------------
-
-.. _particles.modifiers.chill_plus:                      
-
-Chill+
---------------------------------------------
-
-.. _particles.modifiers.common_neighbor_analysis:        
-
-Common neighbor analysis
---------------------------------------------
-
-.. _particles.modifiers.construct_surface_mesh:          
-
-Construct surface mesh
---------------------------------------------
-
-.. _particles.modifiers.create_bonds:                    
-
-Create bonds
---------------------------------------------
-
-.. _particles.modifiers.create_isosurface:              
-
-Create isosurface
---------------------------------------------
-
-.. _particles.modifiers.coordination_polyhedra:          
-
-Coordination polyhedra
---------------------------------------------

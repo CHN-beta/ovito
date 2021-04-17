@@ -11,6 +11,8 @@ atomistic
 autocorrelation
 backend
 backends
+bicrystal
+Bravais
 centrosymmetric
 centrosymmetry
 CMake
@@ -26,7 +28,9 @@ denoising
 der
 dihedrals
 dimensionality
+discretized
 disorientations
+Edelsbrunner
 equisized
 equispaced
 exemplarily
@@ -41,6 +45,7 @@ GmbH
 graphene
 Gromacs
 Hann
+hardcoded
 HDF5
 Hošek
 hostname
@@ -53,6 +58,8 @@ Ingo
 interatomic
 interfacial
 interstitials
+iso
+Iso
 isosurface
 isosurfaces
 iterable
@@ -72,6 +79,7 @@ microstructures
 Mises
 misorientation
 misorientations
+Mücke
 multiblock
 nd
 NetCDF
@@ -82,8 +90,8 @@ OpenGL
 openSUSE
 orientable
 OSPRay 
-oxDNA
 ovito
+oxDNA
 parallelepiped
 parallelized
 pbc
@@ -92,7 +100,9 @@ polycrystalline
 polyhedra
 polyline
 polylines
+porosities
 POV
+pre
 preconfigured
 predefine
 predefines
@@ -102,6 +112,8 @@ preloaded
 preloading
 prepend
 preprint
+preprocessing
+priori
 programmatically
 Qt
 quaternion
@@ -121,9 +133,10 @@ rescan
 runtime
 Rycroft
 Schlaefli
-Seitz
 segmentations
+Seitz
 selectable
+simplices
 smoothen
 smoothens
 specular
@@ -137,6 +150,9 @@ submatrix
 superquadric
 supersampling
 Tachyon
+Taubin
+tetrahedra
+tetrahedra
 th
 Theobald
 timestep

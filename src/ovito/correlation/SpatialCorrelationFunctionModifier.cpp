@@ -416,7 +416,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	if(isCanceled())
 		return;
 
-	// FIXME. Apply windowing function in nonperiodic directions here.
+	// FIXME. Apply windowing function in non-periodic directions here.
 
 	// Compute reciprocal-space correlation function from a product in Fourier space.
 

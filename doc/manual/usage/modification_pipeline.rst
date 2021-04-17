@@ -108,5 +108,3 @@ select a second group of particle and subsequently assign them a different color
 Note that data visualization always happens only for the final results leaving the pipeline. That means in the viewports you will only observe the final
 selection state of the particles (OVITO highlights them with a red color). If you would like to inspect a transient state of the data at some intermediate point along the pipeline,
 you have to temporarily disable the subsequent modifiers in the pipeline editor.
-
-.. _visual_elements:

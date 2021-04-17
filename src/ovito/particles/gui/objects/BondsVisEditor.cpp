@@ -54,6 +54,7 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	layout->addWidget(new QLabel(tr("Shading mode:")), 0, 0);
 	layout->addWidget(shadingModeUI->comboBox(), 0, 1);
 
+#if 0
 	// Rendering quality.
 	VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(BondsVis::renderingQuality));
 	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)CylinderPrimitive::LowQuality));
@@ -61,20 +62,21 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)CylinderPrimitive::HighQuality));
 	layout->addWidget(new QLabel(tr("Rendering quality:")), 1, 0);
 	layout->addWidget(renderingQualityUI->comboBox(), 1, 1);
+#endif
 
 	// Bond width.
 	FloatParameterUI* bondWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(BondsVis::bondWidth));
-	layout->addWidget(bondWidthUI->label(), 2, 0);
-	layout->addLayout(bondWidthUI->createFieldLayout(), 2, 1);
+	layout->addWidget(bondWidthUI->label(), 1, 0);
+	layout->addLayout(bondWidthUI->createFieldLayout(), 1, 1);
 
 	// Bond color.
 	ColorParameterUI* bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
-	layout->addWidget(bondColorUI->label(), 3, 0);
-	layout->addWidget(bondColorUI->colorPicker(), 3, 1);
+	layout->addWidget(bondColorUI->label(), 2, 0);
+	layout->addWidget(bondColorUI->colorPicker(), 2, 1);
 
 	// Use particle colors.
 	BooleanParameterUI* useParticleColorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(BondsVis::useParticleColors));
-	layout->addWidget(useParticleColorsUI->checkBox(), 4, 1);
+	layout->addWidget(useParticleColorsUI->checkBox(), 3, 1);
 }
 
 }	// End of namespace

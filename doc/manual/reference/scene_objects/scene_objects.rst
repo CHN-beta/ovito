@@ -13,19 +13,22 @@ which are responsible for producing the three-dimensional graphical representati
 That means data objects themselves have no configurable visualization parameters; only the :ref:`visual elements <visual_elements>`
 rendering the graphical representation do.
 
-================================================================== =================
-Data object type                                                   Description
-================================================================== =================
-:ref:`Particles <scene_objects.particles>`                         A set of particles which may be associated with an arbitrary set of per-particle property values
-:ref:`Bonds <scene_objects.bonds>`                                 A set of bonds connecting pairs of particles
-:ref:`Simulation cell <scene_objects.simulation_cell>`             The simulation cell geometry and boundary conditions
-:ref:`Surface mesh <scene_objects.surface_mesh>`                   A mesh structure representing a two-dimensional closed manifold embedded in the simulation domain
-:ref:`Triangle mesh <scene_objects.triangle_mesh>`                 A general polyhedral mesh made of vertices and triangular faces
-:ref:`Data table <scene_objects.data_table>`                       A table of values arranged in columns and rows, which can be visualized as a 2d data plot
-:ref:`Voxel grid <scene_objects.voxel_grid>`                       A structured 2d or 3d grid made of uniform voxel elements
-:ref:`Trajectory lines <scene_objects.particle_trajectory_lines>`  The continuous particle trajectory lines computed by the :ref:`particles.modifiers.generate_trajectory_lines` modifier
-:ref:`Dislocations <scene_objects.dislocations>`                   Line crystal defects extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
-================================================================== =================
+.. table::
+  :widths: auto
+
+  ================================================================== =================
+  Data object type                                                   Description
+  ================================================================== =================
+  :ref:`Particles <scene_objects.particles>`                         A set of particles which may be associated with an arbitrary set of per-particle property values
+  :ref:`Bonds <scene_objects.bonds>`                                 A set of bonds connecting pairs of particles
+  :ref:`Simulation cell <scene_objects.simulation_cell>`             The simulation cell geometry and boundary conditions
+  :ref:`Surface mesh <scene_objects.surface_mesh>`                   A mesh structure representing a two-dimensional closed manifold embedded in the simulation domain
+  :ref:`Triangle mesh <scene_objects.triangle_mesh>`                 A general polyhedral mesh made of vertices and triangular faces
+  :ref:`Data table <scene_objects.data_table>`                       A table of values arranged in columns and rows, which can be visualized as a 2d data plot
+  :ref:`Voxel grid <scene_objects.voxel_grid>`                       A structured 2d or 3d grid made of uniform voxel elements
+  :ref:`Trajectory lines <scene_objects.particle_trajectory_lines>`  The continuous particle trajectory lines computed by the :ref:`particles.modifiers.generate_trajectory_lines` modifier
+  :ref:`Dislocations <scene_objects.dislocations>`                   Line crystal defects extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
+  ================================================================== =================
 
     
 .. seealso::
