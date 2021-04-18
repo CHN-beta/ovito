@@ -93,7 +93,7 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &ClonePipelineDialog::reject);
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
-		MainWindow::openHelpTopic("clone_pipeline.html");
+		MainWindow::openHelpTopic("manual:clone_pipeline");
 	});
 	mainLayout->addWidget(buttonBox);
 }

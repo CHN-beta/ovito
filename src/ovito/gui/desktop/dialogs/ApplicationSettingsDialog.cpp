@@ -122,7 +122,7 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-	MainWindow::openHelpTopic(QStringLiteral("application_settings.html"));
+	MainWindow::openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 
 }	// End of namespace

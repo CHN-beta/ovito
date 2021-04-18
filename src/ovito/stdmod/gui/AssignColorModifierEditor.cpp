@@ -38,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(AssignColorModifier, AssignColorModifierEditor);
 void AssignColorModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Assign color"), rolloutParams, "particles.modifiers.assign_color.html");
+	QWidget* rollout = createRollout(tr("Assign color"), rolloutParams, "manual:particles.modifiers.assign_color");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

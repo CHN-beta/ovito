@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(ColorByTypeModifier, ColorByTypeModifierEditor);
 ******************************************************************************/
 void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Color by type"), rolloutParams, "particles.modifiers.color_by_type.html");
+	QWidget* rollout = createRollout(tr("Color by type"), rolloutParams, "manual:particles.modifiers.color_by_type");
 #ifdef OVITO_BUILD_BASIC
     disableRollout(rollout, tr("This program feature is only available in OVITO Pro &mdash; the extended version of our software. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information."));
 #endif

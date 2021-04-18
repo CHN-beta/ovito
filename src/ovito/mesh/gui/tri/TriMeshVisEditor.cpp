@@ -38,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(TriMeshVis, TriMeshVisEditor);
 void TriMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Triangle mesh display"), rolloutParams, "visual_elements.triangle_mesh.html");
+	QWidget* rollout = createRollout(tr("Triangle mesh display"), rolloutParams, "manual:visual_elements.triangle_mesh");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

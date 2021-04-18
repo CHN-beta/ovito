@@ -44,7 +44,7 @@ SET_OVITO_OBJECT_EDITOR(GenerateTrajectoryLinesModifier, GenerateTrajectoryLines
 void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Generate trajectory lines"), rolloutParams, "particles.modifiers.generate_trajectory_lines.html");
+	QWidget* rollout = createRollout(tr("Generate trajectory lines"), rolloutParams, "manual:particles.modifiers.generate_trajectory_lines");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

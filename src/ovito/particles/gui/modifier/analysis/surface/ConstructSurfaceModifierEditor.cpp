@@ -41,7 +41,7 @@ SET_OVITO_OBJECT_EDITOR(ConstructSurfaceModifier, ConstructSurfaceModifierEditor
 void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Construct surface mesh"), rolloutParams, "particles.modifiers.construct_surface_mesh.html");
+	QWidget* rollout = createRollout(tr("Construct surface mesh"), rolloutParams, "manual:particles.modifiers.construct_surface_mesh");
 
     QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);

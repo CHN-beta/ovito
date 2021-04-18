@@ -399,7 +399,7 @@ private:
 	/// Controls whether the input selection is preserved. If false, the selection is cleared by the modifier.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
 
-	/// Controls whether the value range of the color map is automically adjusted to the range of input values.
+	/// Controls whether the value range of the color map is automatically adjusted to the range of input values.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustRange, setAutoAdjustRange);
 
 	friend class ColorCodingModifierDelegate;

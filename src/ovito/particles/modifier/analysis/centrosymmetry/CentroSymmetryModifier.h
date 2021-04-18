@@ -33,7 +33,7 @@
 namespace Ovito { namespace Particles {
 
 /**
- * \brief Calculates the centro-symmetry parameter (CSP) for particles.
+ * \brief Calculates the centrosymmetry parameter (CSP) for particles.
  */
 class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public AsynchronousModifier
 {

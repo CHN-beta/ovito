@@ -1,0 +1,59 @@
+.. _particles.modifiers.affine_transformation:
+
+Affine transformation
+---------------------
+
+.. image:: /images/modifiers/affine_transformation_panel.png
+  :width: 30%
+  :align: right
+
+This modifier applies an affine transformation to the system. It may be used to translate, scale, rotate or shear
+the particles, the simulation cell and/or other elements. The transformation can either be specified explicitly in terms of a 3x3
+matrix plus a translation vector, or implicitly by prescribing a fixed shape for the final simulation cell.
+
+Given a 3x3 linear transformation matrix :math:`\mathbf{M}`
+and a translation vector :math:`\mathbf{t}`, which together describe a general affine transformation,
+the transformed position of a particle at the original position :math:`\mathbf{x}`
+is computed as :math:`\mathbf{x}' =  \mathbf{M} \cdot \mathbf{x} + \mathbf{t}`.
+This notation uses column vectors.
+
+The button :guilabel:`Enter rotation` opens a dialog box which lets you specify a rotation
+axis, a rotation angle and a center of rotation. Based on these inputs, OVITO computes the corresponding
+affine transformation for you.
+
+Transform to target box
+"""""""""""""""""""""""
+
+The :guilabel:`Transform to target box` option lets the modifier dynamically compute the affine transformation 
+based the original shape of the simulation cell and a specified target cell shape. The automatically determined transformation 
+maps the existing simulation cell exactly onto the given target cell shape. All contents of the simulation cell (e.g. particles, surface meshes, etc.) will be mapped into the new
+cell shape accordingly, unless you turn off their transformation (see next section).
+
+Note that you can use this option to replace a varying simulation cell loaded from the input trajectory file(s)
+with a constant simulation cell shape of your choice.
+
+Transformed elements
+""""""""""""""""""""
+
+You can select the types of data elements that should get transformed by the modifier:
+
+.. table::
+  :widths: auto
+
+  =============================================================== =================================================================================
+  Element type                                                    Description
+  =============================================================== =================================================================================
+  :ref:`Particles <scene_objects.particles>`                      Applies the affine transformation to the coordinates of particles (i.e. the ``Position`` particle property).
+  :ref:`Vector particle properties <usage.particle_properties>`   Applies the linear part :math:`\mathbf{M}` of the affine transformation to the ``Velocity``, ``Force`` and ``Displacement`` particle properties.
+  :ref:`Simulation cell <scene_objects.simulation_cell>`          Applies the affine transformation to the origin of the :ref:`simulation cell <scene_objects.simulation_cell>` and the linear part to the three cell vectors.
+  :ref:`Surfaces <scene_objects.surface_mesh>`                    Applies the affine transformation to the vertices of :ref:`surface meshes <scene_objects.surface_mesh>` and :ref:`triangle meshes <scene_objects.triangle_mesh>`.
+  :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the affine transformation to the domain shape of a :ref:`voxel grid <scene_objects.voxel_grid>`.
+  :ref:`Dislocations <scene_objects.dislocations>`                Applies the affine transformation to a set of :ref:`dislocation lines <scene_objects.dislocations>`.
+  =============================================================== =================================================================================
+
+The option :guilabel:`Transform selected elements only` restricts the application of the transformation to
+the currently selected particles.
+
+.. seealso::
+  
+  :py:class:`ovito.modifiers.AffineTransformationModifier` (Python API)

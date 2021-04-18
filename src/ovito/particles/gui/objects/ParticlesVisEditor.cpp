@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(ParticlesVis, ParticlesVisEditor);
 void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Particle display"), rolloutParams, "visual_elements.particles.html");
+	QWidget* rollout = createRollout(tr("Particle display"), rolloutParams, "manual:visual_elements.particles");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

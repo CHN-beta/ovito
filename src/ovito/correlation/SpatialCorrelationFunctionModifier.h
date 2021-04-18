@@ -272,7 +272,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, sourceProperty2, setSourceProperty2);
 	/// Controls the cutoff radius for the FFT grid.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fftGridSpacing, setFFTGridSpacing);
-	/// Controls if a windowing function should be applied in nonperiodic directions.
+	/// Controls if a windowing function should be applied in non-periodic directions.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, applyWindow, setApplyWindow, PROPERTY_FIELD_MEMORIZE);
 	/// Controls whether the real-space correlation should be computed by direct summation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, doComputeNeighCorrelation, setComputeNeighCorrelation, PROPERTY_FIELD_MEMORIZE);

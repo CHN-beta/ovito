@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);
 ******************************************************************************/
 void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Replicate"), rolloutParams, "particles.modifiers.show_periodic_images.html");
+	QWidget* rollout = createRollout(tr("Replicate"), rolloutParams, "manual:particles.modifiers.show_periodic_images");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
@@ -67,7 +67,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 	layout->addWidget(uniqueIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
 	// Create a second rollout.
-	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "particles.modifiers.show_periodic_images.html");
+	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.show_periodic_images");
 
 	// Create the rollout contents.
 	QVBoxLayout* topLayout = new QVBoxLayout(rollout);

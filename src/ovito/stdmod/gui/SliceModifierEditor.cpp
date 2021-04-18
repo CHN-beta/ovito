@@ -53,7 +53,7 @@ SET_OVITO_OBJECT_EDITOR(SliceModifier, SliceModifierEditor);
 void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Slice"), rolloutParams, "particles.modifiers.slice.html");
+	QWidget* rollout = createRollout(tr("Slice"), rolloutParams, "manual:particles.modifiers.slice");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -132,7 +132,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	layout->addWidget(statusLabel());
 
 	// Create a second rollout.
-	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "particles.modifiers.slice.html");
+	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.slice");
 
 	// Create the rollout contents.
 	layout = new QVBoxLayout(rollout);

@@ -50,7 +50,7 @@
       <varlistentry>
         <term>Apply window function to nonperiodic directions</term>
         <listitem>
-          <para>This property controls whether nonperiodic directions have a Hann window applied to them. Applying a window function is necessary to remove spurios oscillations and power-law scaling of the (implicit) rectangular window of the nonperiodic domain.</para>
+          <para>This property controls whether nonperiodic directions have a Hann window applied to them. Applying a window function is necessary to remove spurious oscillations and power-law scaling of the (implicit) rectangular window of the nonperiodic domain.</para>
         </listitem>
       </varlistentry>
 

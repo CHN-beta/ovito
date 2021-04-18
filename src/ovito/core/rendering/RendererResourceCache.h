@@ -138,7 +138,7 @@ public:
 private:
 
 	struct CacheEntry {
-		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)), frames{{_frame}} {}
+		template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)) { frames.push_back(_frame); }
 		Ovito::any_moveonly key;
 		Ovito::any_moveonly value;
 		QVarLengthArray<ResourceFrameHandle, 6> frames;

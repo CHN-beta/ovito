@@ -46,7 +46,7 @@ SET_OVITO_OBJECT_EDITOR(ComputePropertyModifier, ComputePropertyModifierEditor);
 ******************************************************************************/
 void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Compute property"), rolloutParams, "particles.modifiers.compute_property.html");
+	QWidget* rollout = createRollout(tr("Compute property"), rolloutParams, "manual:particles.modifiers.compute_property");
 
     // Create the rollout contents.
 	QVBoxLayout* mainLayout = new QVBoxLayout(rollout);
@@ -106,7 +106,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 	mainLayout->addWidget(statusLabel());
 
 	// List of available input variables.
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "particles.modifiers.compute_property.html");
+	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.compute_property");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
     variableNamesDisplay = new QLabel();

@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(InteractiveMolecularDynamicsModifier, InteractiveMolecul
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Interactive molecular dynamics (IMD)"), rolloutParams, "particles.modifiers.interactive_molecular_dynamics.html");
+	QWidget* rollout = createRollout(tr("Interactive molecular dynamics (IMD)"), rolloutParams, "manual:particles.modifiers.interactive_molecular_dynamics");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

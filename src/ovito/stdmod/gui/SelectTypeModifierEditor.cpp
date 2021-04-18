@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
 ******************************************************************************/
 void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Select type"), rolloutParams, "particles.modifiers.select_particle_type.html");
+	QWidget* rollout = createRollout(tr("Select type"), rolloutParams, "manual:particles.modifiers.select_particle_type");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
