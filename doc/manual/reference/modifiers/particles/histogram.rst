@@ -1,7 +1,7 @@
 .. _particles.modifiers.histogram:
 
 Histogram
-"""""""""
+---------
 
 .. image:: /images/modifiers/histogram_panel.png
   :width: 35%

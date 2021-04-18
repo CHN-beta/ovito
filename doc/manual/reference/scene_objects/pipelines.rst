@@ -21,4 +21,4 @@ The following sections describe the different building blocks that you use to bu
 
   data_sources
   clone_pipeline
-  Python code generator <code_generation>
+  code_generation

@@ -1,7 +1,7 @@
 .. _particles.modifiers.expression_select:
 
 Expression selection
-""""""""""""""""""""
+--------------------
 
 .. image:: /images/modifiers/expression_select_panel.png
   :width: 30%

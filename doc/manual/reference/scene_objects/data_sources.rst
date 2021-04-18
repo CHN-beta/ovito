@@ -120,5 +120,5 @@ See also the :ref:`advanced animations <usage.animation>` section for further in
 
 .. seealso::
 
-  * :py:class:`ovito.pipeline.FileSource` (Python API) |ovito-pro|
-  * :py:class:`ovito.pipeline.StaticSource` (Python API) |ovito-pro|
+  * :py:class:`ovito.pipeline.FileSource` (Python API)
+  * :py:class:`ovito.pipeline.StaticSource` (Python API)

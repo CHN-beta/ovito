@@ -3,6 +3,8 @@ Reference
 =========
   
 .. toctree::
+  :maxdepth: 2
+
   reference/file_formats/file_formats
   reference/scene_objects/pipelines
   reference/scene_objects/scene_objects

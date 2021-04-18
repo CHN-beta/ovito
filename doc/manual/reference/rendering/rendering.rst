@@ -33,5 +33,5 @@ Rendering engine                                           Description
   render_settings
   ../animation/animation_settings_dialog
   opengl_renderer
-  OSPRay renderer <ospray_renderer>
-  Tachyon renderer <tachyon_renderer>
+  ospray_renderer
+  tachyon_renderer

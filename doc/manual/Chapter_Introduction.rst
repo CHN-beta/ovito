@@ -1,8 +1,7 @@
 
 =================
-Introducing OVITO
+About OVITO
 =================
-
 
 .. image:: images/ovito_screenshot.png
 

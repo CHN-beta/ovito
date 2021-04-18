@@ -63,9 +63,12 @@
 	vertical-align: baseline;
 	border-radius: 0.25rem;
 	padding: 2px 3px !important;
-	margin-left: 0.2rem;
+	/*margin-left: 0.2rem;*/
 }
-
+/* Do no show the "pro" tag in the TOC menu.  */
+.wy-menu-vertical .ovito-pro-tag {
+    display: none !important;
+}
 
 [data-tooltip] {
     display: inline-block;

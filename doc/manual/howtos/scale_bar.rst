@@ -12,4 +12,4 @@ use an OVITO Python script to paint a custom scale bar on top of a viewport or t
 
 For this you have to add a :ref:`Python script layer <viewport_layers.python_script>` |ovito-pro| to
 the viewport where you want to display a scale bar. You can then copy/paste this
-:ref:`example_scale_bar_overlay` |ovito-pro| into the script editor of the viewport layer.
+:ref:`example_scale_bar_overlay` into the script editor of the viewport layer.

@@ -123,12 +123,12 @@ combine several modifiers to accomplish more complex tasks.
   particles/ambient_occlusion
   particles/assign_color
   particles/atomic_strain
-  Bond analysis <particles/bond_analysis>
+  particles/bond_analysis
   particles/centrosymmetry
   particles/chill_plus
   particles/clear_selection
   particles/cluster_analysis
-  Color by type <particles/color_by_type>
+  particles/color_by_type
   particles/color_coding
   particles/combine_particle_sets
   particles/common_neighbor_analysis
@@ -136,7 +136,6 @@ combine several modifiers to accomplish more complex tasks.
   particles/construct_surface_mesh
   particles/coordination_analysis
   particles/coordination_polyhedra
-  particles/correlation_function
   particles/create_bonds
   particles/create_isosurface
   particles/delete_selected_particles
@@ -155,15 +154,16 @@ combine several modifiers to accomplish more complex tasks.
   particles/load_trajectory
   particles/manual_selection
   particles/polyhedral_template_matching
-  Python script <particles/python_script>
+  particles/python_script
   particles/show_periodic_images
   particles/scatter_plot
   particles/select_particle_type
   particles/slice
   particles/smooth_trajectory
-  Spatial binning <particles/bin_and_reduce>
-  Time averaging <particles/time_averaging>
-  Time series <particles/time_series>
+  particles/bin_and_reduce
+  particles/correlation_function
+  particles/time_averaging
+  particles/time_series
   particles/unwrap_trajectories
   particles/voronoi_analysis
   particles/vorotop_analysis

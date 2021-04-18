@@ -3,6 +3,7 @@ Usage
 =====
 
 .. toctree::
+  :maxdepth: 1
   
   usage/import_particles
   usage/viewports

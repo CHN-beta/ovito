@@ -6,19 +6,18 @@ Binary program packages of OVITO for Linux, Windows, and macOS can be downloaded
 
 .. _installation.requirements:
 
-Requirements
-============
+System Requirements
+===================
 
 OVITO requires a 64-bit operating system and runs on processors with x86-64 architecture.
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
 In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
-
-Installation steps
-===================
+Installation instructions
+=========================
 
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command, e.g.: :command:`tar xJfv ovito-3.0.0-x86_64.tar.xz`.
+    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.5.0-x86_64.tar.xz`.
     This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
@@ -30,40 +29,37 @@ Installation steps
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
     Then start OVITO by double-clicking the application bundle.
 
-Running OVITO on a remote machine
-===================================
+Running OVITO on remote machines
+================================
     
-Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because it requires direct 
-access to the graphics hardware (so-called OpenGL direct rendering mode). 
-Thus, if you try to run :command:`ovito` in an SSH terminal, you will likely get failure messages during program startup 
-or just a black application window. 
+Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct 
+access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages 
+during program startup or just a black application window. 
   
-It is possible, however, to run OVITO through an SSH connection using a VirtualGL + VNC setup.
+It is possible to run OVITO on a remote machine through an SSH connection using a VirtualGL + VNC setup.
 For further information, please see the `www.virtualgl.org <https://www.virtualgl.org/>`_ website.
 In this mode, OVITO will make use of the graphics hardware of the remote machine, which must be set up to allow running
 applications in a desktop environment. Please contact your local computing center staff to find out whether 
-this kind of remote visualization mode is supported by the HPC cluster you work on. 
+this kind of remote visualization mode is supported by the HPC cluster(s) you work on. 
 
-Installing the Python module
-============================
+Python module installation
+==========================
 
-The **OVITO Pro** program packages ship with an integrated Python interpreter (":command:`ovitos`") that gets installed alongside with the graphical desktop application,
+The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the desktop application,
 allowing you to execute Python scripts written for OVITO. 
-Optionally, it is possible to install OVITO as a Python module into an existing Python interpreter on your system in case you would like to make use of 
-OVITO's functionality in scripts written for other interpreters (e.g. the system Python interpreter or **Anaconda**).
-Please refer to the `scripting manual <href="introduction/running" anchor="installing-the-ovito-module-in-your-python-interpreter" no-pro-tag="1">`_ for more 
-information on the setup procedure.
+Optionally, you can install the ``ovito`` Python module into existing Python interpreters on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
+OVITO's functionality in script-based workflows. Please refer to :ref:`this section <use_ovito_with_system_interpreter>` for further setup instructions.
     
 Troubleshooting
-================
+===============
 
-If you run into any problems during the installation of OVITO, you can contact us 
-via the `online support forum <https://www.ovito.org/forum/>`_. The OVITO team will be happy to provide help.
+If you run into any problems during the installation of OVITO, you can contact us via our `online support forum <https://www.ovito.org/forum/>`_. 
+The OVITO team will be happy to help you.
 
 Linux
------------------
+-----
 
-Starting :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
+Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
 
   ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
            cannot open shared object file: No such file or directory

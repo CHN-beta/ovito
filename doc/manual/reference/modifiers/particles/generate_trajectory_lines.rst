@@ -1,7 +1,7 @@
 .. _particles.modifiers.generate_trajectory_lines:
 
 Generate trajectory lines
-"""""""""""""""""""""""""
+-------------------------
 
 .. image:: /images/modifiers/generate_trajectory_lines_panel.png
   :width: 35%
