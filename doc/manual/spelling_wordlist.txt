@@ -45,6 +45,7 @@ FHI
 filesystem
 Gaussians
 getter
+glyphs
 GmbH
 graphene
 Gromacs
@@ -58,8 +59,10 @@ hydrostatic
 icosahedra
 icosahedral
 icosahedron
+imposters
 impropers
 Ingo
+inhomogeneous
 interatomic
 interfacial
 interstitials
@@ -87,10 +90,13 @@ misorientation
 misorientations
 Mücke
 multiblock
+multiphase
 nd
 NetCDF
 nm
 Nordlund
+normals
+offscreen
 omni
 omnidirectional
 OpenGL
@@ -110,6 +116,7 @@ polylines
 porosities
 POV
 pre
+precomputed
 preconfigured
 predefine
 predefines
@@ -122,6 +129,7 @@ prepending
 preprint
 preprocessing
 priori
+Proc
 programmatically
 Qt
 quaternion
@@ -152,6 +160,7 @@ specular
 Spherocylinder
 spherocylindrical
 stepwise
+stretchability
 subdirectory
 subgrain
 subgrains
