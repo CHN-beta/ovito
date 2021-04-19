@@ -52,7 +52,6 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
                     shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
                 }
                 else {
-                    qWarning() << "Rendering cylinders " << basePositions()->size() << "using geometry shader";
                     if(!renderer->isPicking())
                         shader.load("cylinder", "cylinder/cylinder.geom.vert", "cylinder/cylinder.frag", "cylinder/cylinder.geom");
                     else
