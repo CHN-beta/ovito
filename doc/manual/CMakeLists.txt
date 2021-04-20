@@ -60,10 +60,10 @@ IF(OVITO_BUILD_GUI)
 
 	# Tell Interpshinx where to find the scripting reference manual files when building the user manual.
 	# Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists 
-	# in the python/ sub-directory (only the case when this is an OVITO Pro build).
+	# in the python/ sub-directory (only the case when building OVITO Pro).
 	# Otherwise, fall back to using the online version of the scripting reference at https://ovito.org/docs/current/python/.
 	# For further information, see the 'intersphinx_mapping' configuration variable in the file 'conf.py'.
-	IF(EXISTS "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
+	IF(OVITO_BUILD_PROFESSIONAL)
 		SET(OVITO_PYDOC_INTERSPHINX_LOCATION "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
 	ENDIF()
 
