@@ -1,18 +1,27 @@
 .. OVITO User Manual master file
 
+.. _ovito_user_manual:
+
 *****************
 OVITO User Manual
 *****************
- 
+
+.. sidebar:: Quick links
+
+  * :ref:`particles.modifiers`
+  * :ref:`file_formats.input`
+  * :ref:`file_formats.output`
+  * :ref:`Python API <scripting_manual>`
+
 .. toctree::
   :maxdepth: 2
   :includehidden:
 
-  Chapter_Introduction
-  Chapter_Installation
-  Chapter_Usage
-  Chapter_Howtos
-  Chapter_Reference
-  Chapter_OVITO_Pro
-  development/Chapter_Development
-  Chapter_Credits
+  introduction
+  installation
+  usage/index
+  advanced_topics/index
+  reference/index
+  ovito_pro
+  development/index
+  licenses/index

@@ -101,6 +101,7 @@ SET(SourceFiles
 	dataset/pipeline/AsynchronousModifierApplication.cpp
 	dataset/pipeline/AsynchronousDelegatingModifier.cpp
 	dataset/pipeline/StaticSource.cpp
+	dataset/pipeline/BasePipelineSource.cpp
 	dataset/pipeline/DelegatingModifier.cpp
 	utilities/units/UnitsManager.cpp
 	utilities/io/ObjectSaveStream.cpp

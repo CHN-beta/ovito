@@ -1,24 +1,3 @@
-.. _data_sources:
-
-Data sources
-============
-
-.. image:: /images/scene_objects/data_source_and_data_objects.*
-  :width: 35%
-  :align: right  
-
-A *data source* is an essential part of every :ref:`pipeline <usage.modification_pipeline>` as it provides the input data that is passed to the modifiers. 
-The data source of the current pipeline appears under the "Data source" section of the pipeline editor as depicted in this screenshot.
-Most of the time you will work with the *External File* data
-source type, which imports the input data for the pipeline from one or more files stored on your local computer or a remote machine.
-
-=================== =====================
-Data source         Description
-=================== =====================
-External file       Reads the simulation data from an external file.
-Static source       Feeds a static dataset that is held in memory to the data pipeline.
-=================== =====================
-
 .. _scene_objects.file_source:
 
 External file
@@ -34,8 +13,23 @@ via OVITO's :menuselection:`Load File` or :menuselection:`Load Remote File` menu
 You can return to the panel at any time by selecting the topmost entry under the "Data source" section of the
 :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
+.. _file_formats:
+
+Supported file formats
+""""""""""""""""""""""
+
+The *external file* data source can read various file formats containing different kinds of :ref:`data objects <scene_objects>`.
+Furthermore, the :ref:`file export function <usage.export>` of OVITO allows you to write the results of the data pipeline to
+disk in various output format:
+
+.. toctree::
+  :maxdepth: 1
+
+  ../../file_formats/file_formats_input
+  ../../file_formats/file_formats_output
+
 Toolbar functions
------------------
+"""""""""""""""""
 
 .. image:: /images/scene_objects/file_source_toolbar.*
   :width: 35%
@@ -68,7 +62,7 @@ Load entire trajectory into memory
   of the trajectory in memory at a time to reduce the memory footprint.
          
 File sequence - Search pattern
--------------------------------
+""""""""""""""""""""""""""""""
 
 This section allows you to specify a filename search pattern to load multiple files from the 
 same directory as one trajectory. The search pattern must contain a single '*' wildcard character,
@@ -81,7 +75,7 @@ a file with a number it its name. You can turn this behavior permanently off
 by unchecking the "auto-generate" option.
 
 Trajectory - Playback ratio
----------------------------
+"""""""""""""""""""""""""""
 
 After importing a new trajectory consisting of *N* simulation snapshots,
 OVITO will adjust the animation interval (which is shown as timeline below the viewports) 
@@ -95,7 +89,7 @@ button, which opens the *Configure trajectory playback* dialog (see next section
 .. _scene_objects.file_source.configure_playback:
 
 Configure trajectory playback
------------------------------
+"""""""""""""""""""""""""""""
 
 .. image:: /images/scene_objects/configure_trajectory_playback.*
   :width: 40%
@@ -117,8 +111,7 @@ and you want to render a short movie showing the whole trajectory but having few
 
 See also the :ref:`advanced animations <usage.animation>` section for further information.
 
-
 .. seealso::
 
   * :py:class:`ovito.pipeline.FileSource` (Python API)
-  * :py:class:`ovito.pipeline.StaticSource` (Python API)
+  * :py:func:`ovito.io.import_file` (Python API)

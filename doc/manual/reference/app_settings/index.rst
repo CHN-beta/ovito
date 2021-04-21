@@ -19,10 +19,10 @@ The dialog consists of several tabs:
   modifier_templates
   particle_settings
 
-Where OVITO stores its settings
-"""""""""""""""""""""""""""""""
+Where settings are stored
+"""""""""""""""""""""""""
 
-The program stores all user settings in a platform-dependent location to preserve them across sessions. On Windows, the information
+OVITO stores all user settings in a platform-dependent location to preserve them across program sessions. On Windows, the information
 is saved in the user section of the system registry. On Linux, it is stored in an INI configuration file in the user's
 home directory, and on macOS, it is stored in a property list file. The precise storage
 location on your local computer is displayed by the application settings dialog at the bottom.

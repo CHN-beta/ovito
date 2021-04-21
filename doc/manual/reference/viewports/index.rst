@@ -2,6 +2,7 @@ Viewports
 =========
 
 .. toctree::
+  :maxdepth: 1
 
-  layers/viewport_layers
+  layers/index
   adjust_view_dialog

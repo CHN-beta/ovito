@@ -39,10 +39,10 @@ IF(OVITO_BUILD_GUI)
 		# This CMake target generates the user manual as a set of static HTML pages which get shipped with
 		# the Ovito installation packages and which can be accessed from the Help menu of the application.
 		ADD_CUSTOM_TARGET(documentation_docbook
-						COMMAND ${CMAKE_COMMAND} "-E" copy_directory "images/" "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/images/"
+						COMMAND ${CMAKE_COMMAND} "-E" copy_directory "../images/" "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/images/"
 						COMMAND ${CMAKE_COMMAND} "-E" copy "manual.css" "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/"
 						COMMAND ${XSLT_PROCESSOR} "--xinclude" --nonet --stringparam base.dir "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/" html-customization-layer.xsl Manual.docbook
-						WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+						WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/docbook"
 						COMMENT "Generating user documentation")
 	ENDIf()
 

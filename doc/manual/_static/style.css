@@ -16,7 +16,7 @@
 
 /* Adjust title bar of the sidebar panel to the zero padding style. */
 .rst-content .sidebar .sidebar-title {
-    margin: 0px 0px 24px;
+    margin: 0px 0px 4px;
 }
 
 /* Make sure two figures in the side bar do not appear side by side. */ 

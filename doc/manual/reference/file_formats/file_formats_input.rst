@@ -1,18 +1,7 @@
-.. _file_formats:
-
-File formats
-============
-
-..   
-    <itemizedlist>
-      <listitem><xref linkend="file_formats.input" xrefstyle="template:%t" /></listitem>
-      <listitem><xref linkend="file_formats.output" xrefstyle="template:%t" /></listitem>
-    </itemizedlist>
-
 .. _file_formats.input:
   
-Input formats
--------------
+Input file formats
+------------------
 
 OVITO can read the following file formats:
 
@@ -166,65 +155,3 @@ OVITO can read the following file formats:
   * - oxDNA 
     - Configuration/topology file format used by the `oxDNA <https://dna.physics.ox.ac.uk/>`__ simulation code for coarse-grained DNA models.  
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>` 
-
-.. _file_formats.output:
-
-Output formats
---------------
-
-OVITO can export data to the following file formats:
-
-.. list-table:: 
-  :widths: 20 55 25 
-  :header-rows: 1
-
-  * - Format name 
-    - Description 
-    - Data type(s) 
-
-  * - LAMMPS data 
-    - File format read by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.  
-    - :ref:`particles <scene_objects.particles>`, :ref:`Bonds <scene_objects.bonds>`, angles, dihedrals, impropers
-                        
-  * - XYZ 
-    - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__ and
-      `here <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`__.  
-    - :ref:`particles <scene_objects.particles>`
-
-  * - POSCAR 
-    - File format used by the *ab initio* simulation package `VASP <http://www.vasp.at/">`__.  
-    - :ref:`particles <scene_objects.particles>` 
-
-  * - IMD 
-    - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.  
-    - :ref:`particles <scene_objects.particles>` 
-
-  * - FHI-aims 
-    - File format used by the *ab initio* simulation package `FHI-aims <https://aimsclub.fhi-berlin.mpg.de/index.php>`__.  
-    - :ref:`particles <scene_objects.particles>` 
-
-  * - NetCDF 
-    - Binary format for molecular dynamics data following the `AMBER format convention <http://ambermd.org/netcdf/nctraj.pdf>`__.  
-    - :ref:`particles <scene_objects.particles>` 
-                    
-  * - GSD/HOOMD 
-    - Binary format for molecular dynamics data used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
-      See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.  
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, global attributes 
-            
-  * - Table of values 
-    - A simple tabular text file with scalar quantities computed by OVITO's data pipeline.  
-    - global attributes          
-            
-  * - VTK 
-    - Generic text-based data format used by the ParaView software.  
-    - :ref:`surface meshes <scene_objects.surface_mesh>`, :ref:`voxel grids <scene_objects.voxel_grid>`, :ref:`dislocations <scene_objects.dislocations>`       
-            
-  * - POV-Ray scene 
-    - Exports the entire scene to a file that can be rendered with `POV-Ray <http://www.povray.org/>`__.  
-    - any 
-                    
-  * - Crystal Analysis (.ca) 
-    - Format that can store dislocation lines extracted from an atomistic crystal model by the :ref:`particles.modifiers.dislocation_analysis` modifier.
-      The format is documented :ref:`here <particles.modifiers.dislocation_analysis.fileformat>`.
-    - :ref:`dislocations <scene_objects.dislocations>`, :ref:`surface meshes <scene_objects.surface_mesh>`

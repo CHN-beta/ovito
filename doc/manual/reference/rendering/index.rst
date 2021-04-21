@@ -1,7 +1,7 @@
 .. _rendering:
-
-Image and movie rendering
-=========================
+  
+Rendering
+=========
 
 .. image:: /images/rendering/render_settings_panel.*
   :width: 30%

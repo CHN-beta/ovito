@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,6 @@ DEFINE_PROPERTY_FIELD(FileSource, sourceUrls);
 DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedNumerator);
 DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedDenominator);
 DEFINE_PROPERTY_FIELD(FileSource, playbackStartTime);
-DEFINE_REFERENCE_FIELD(FileSource, dataCollection);
 DEFINE_PROPERTY_FIELD(FileSource, autoGenerateFilePattern);
 DEFINE_PROPERTY_FIELD(FileSource, restrictToFrame);
 SET_PROPERTY_FIELD_LABEL(FileSource, importer, "File Importer");
@@ -50,7 +49,6 @@ SET_PROPERTY_FIELD_LABEL(FileSource, sourceUrls, "Source location");
 SET_PROPERTY_FIELD_LABEL(FileSource, playbackSpeedNumerator, "Playback rate numerator");
 SET_PROPERTY_FIELD_LABEL(FileSource, playbackSpeedDenominator, "Playback rate denominator");
 SET_PROPERTY_FIELD_LABEL(FileSource, playbackStartTime, "Playback start time");
-SET_PROPERTY_FIELD_LABEL(FileSource, dataCollection, "Data");
 SET_PROPERTY_FIELD_LABEL(FileSource, autoGenerateFilePattern, "Auto-generate pattern");
 SET_PROPERTY_FIELD_LABEL(FileSource, restrictToFrame, "Restrict to frame");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(FileSource, playbackSpeedNumerator, IntegerParameterUnit, 1);
@@ -77,7 +75,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 /******************************************************************************
 * Constructs the object.
 ******************************************************************************/
-FileSource::FileSource(DataSet* dataset) : CachingPipelineObject(dataset),
+FileSource::FileSource(DataSet* dataset) : BasePipelineSource(dataset),
 	_playbackSpeedNumerator(1),
 	_playbackSpeedDenominator(1),
 	_playbackStartTime(0),
@@ -380,7 +378,7 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 ******************************************************************************/
 TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
-	TimeInterval iv = CachingPipelineObject::validityInterval(request);
+	TimeInterval iv = BasePipelineSource::validityInterval(request);
 
 	// Restrict the validity interval to the duration of the requested source frame.
 	if(restrictToFrame() < 0) {
@@ -458,7 +456,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 }
 
 /******************************************************************************
-* Computes the time interval covered on the time line by the given source source.
+* Computes the time interval covered on the timeline by the given source animation frame.
 ******************************************************************************/
 TimeInterval FileSource::frameTimeInterval(int frame) const
 {
@@ -481,7 +479,7 @@ TimeInterval FileSource::frameTimeInterval(int frame) const
 Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 {
 	// First request the list of source frames and wait until it becomes available.
-	auto future = requestFrameList(false)
+	Future<PipelineFlowState> stateFuture = requestFrameList(false)
 		.then(executor(), [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
 			// Is the requested frame out of range?
@@ -532,56 +530,18 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					// Also give the state the precomputed validity interval.
 					loadRequest.state.setStateValidity(interval);
 
-					// Load the frame data and process results in the UI thread.
-					auto future = importer()->loadFrame(loadRequest).then(executor(), [this, frame, interval](PipelineFlowState state) {
-							OVITO_ASSERT_MSG(state, "FileSource::requestFrameInternal()", "File importer did not return a valid pipeline state.");
-
-							// Create editable proxy objects for the data objects in the loaded collection.
-							OVITO_ASSERT(state.data()->isSafeToModify());
-							if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
-								_updatingEditableProxies = true;
-								ConstDataObjectPath dataPath = { state.data() };
-								state.data()->updateEditableProxies(state, dataPath);
-								_updatingEditableProxies = false;
-							}
-
-							// Adopt the loaded data collection as our internal master data collection (only if it is for the current animation time).
-							if(interval.contains(dataset()->animationSettings()->time())) {
-								setDataCollectionFrame(frame);
-								setDataCollection(state.data());
-								setStatus(state.status());
-								notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-							}
-
-							// Return the result state.
-							return state;
-						});
-					return future;
+					// Load the frame data and return results to the caller.
+					return importer()->loadFrame(loadRequest);
 				});
 
 			// Change activity status during long-running load operations.
 			registerActiveFuture(loadFrameFuture);
 
 			return loadFrameFuture;
-		})
-		// Post-process the results of the loading operation before returning them to the caller.
-		//
-		//  - Turn any exception that was thrown during loading into a
-		//    valid pipeline state with an error code.
-		//
-		.then_future(executor(), [this, frame](Future<PipelineFlowState> future) {
-				OVITO_ASSERT(future.isFinished());
-				OVITO_ASSERT(!future.isCanceled());
-				try {
-					return future.result();
-				}
-				catch(Exception& ex) {
-					ex.setContext(dataset());
-					ex.reportError();
-					return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))), frameTimeInterval(frame));
-				}
-			});
-	return future;
+		});
+
+	// Post-process the results of the loading operation before returning them to the caller.
+	return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
 }
 
 /******************************************************************************
@@ -620,7 +580,7 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 ******************************************************************************/
 void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-	CachingPipelineObject::saveToStream(stream, excludeRecomputableData);
+	BasePipelineSource::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x03);
 	stream << _frames;
 	stream.endChunk();
@@ -631,7 +591,7 @@ void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 ******************************************************************************/
 void FileSource::loadFromStream(ObjectLoadStream& stream)
 {
-	CachingPipelineObject::loadFromStream(stream);
+	BasePipelineSource::loadFromStream(stream);
 	stream.expectChunk(0x03);
 	stream >> _frames;
 	stream.closeChunk();
@@ -655,20 +615,7 @@ QString FileSource::objectTitle() const
 	}
 	if(importer())
 		return QString("%2 [%1]").arg(importer()->objectTitle()).arg(filename);
-	return CachingPipelineObject::objectTitle();
-}
-
-/******************************************************************************
-* Sets the source frame number that is currently used as a sub-object data collection.
-******************************************************************************/
-void FileSource::setDataCollectionFrame(int frame) 
-{ 
-	if(frame != _dataCollectionFrame) {
-		_dataCollectionFrame = frame; 
-		
-		if(numberOfFiles() > 1)
-			notifyDependents(ReferenceEvent::TitleChanged);
-	}
+	return BasePipelineSource::objectTitle();
 }
 
 /******************************************************************************
@@ -709,43 +656,12 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
 		// Inform animation system that global time line length probably changed.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
-	CachingPipelineObject::propertyChanged(field);
-}
-
-/******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
-******************************************************************************/
-bool FileSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
-
-			// The user has modified one of the editable proxy objects attached to the data collection.
-			// Apply the changes made to the proxy objects to the actual data objects.
-			UndoSuspender noUndo(this);
-			PipelineFlowState state(dataCollection(), PipelineStatus::Success);
-			_updatingEditableProxies = true;
-			// Temporarily detach data collection from the FileSource to ignore change signals sent by the data collection.
-			setDataCollection(nullptr);
-			ConstDataObjectPath dataPath = {state.data()};
-			state.data()->updateEditableProxies(state, dataPath);
-			// Re-attach the updated data collection to the FileSource.
-			setDataCollection(state.data());
-			_updatingEditableProxies = false;
-
-			// Invalidate pipeline cache, except at the current animation time. 
-			// Here we use the updated data collection.
-			if(dataCollectionFrame() >= 0)
-				pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
-		}
-		else {
-			// When the data collection was change by a script, then we simply invalidate the pipeline cache
-			// and inform the scene that the pipeline must be re-evaluated.
-			pipelineCache().invalidate();
-			notifyTargetChanged();
-		}
+	else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
+		// The active frame is part of the source's UI title.	
+		if(numberOfFiles() > 1)
+			notifyDependents(ReferenceEvent::TitleChanged);
 	}
-	return CachingPipelineObject::referenceEvent(source, event);
+	BasePipelineSource::propertyChanged(field);
 }
 
 /******************************************************************************

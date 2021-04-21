@@ -1,3 +1,5 @@
+.. _installation:
+
 ============
 Installation
 ============
@@ -12,6 +14,8 @@ System Requirements
 OVITO requires a 64-bit operating system and runs on processors with x86-64 architecture.
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
 In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
+
+.. _installation.instructions:
 
 Installation instructions
 =========================
@@ -29,7 +33,9 @@ Installation instructions
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
     Then start OVITO by double-clicking the application bundle.
 
-Running OVITO on remote machines
+.. _installation.remote:
+
+Running on remote machines
 ================================
     
 Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct 
@@ -49,7 +55,9 @@ The **OVITO Pro** program packages ship with an :ref:`integrated Python interpre
 allowing you to execute Python scripts written for OVITO. 
 Optionally, you can install the ``ovito`` Python module into existing Python interpreters on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
 OVITO's functionality in script-based workflows. Please refer to :ref:`this section <use_ovito_with_system_interpreter>` for further setup instructions.
-    
+
+.. _installation.troubleshooting:
+
 Troubleshooting
 ===============
 
@@ -87,9 +95,3 @@ preinstalled on fresh Linux systems. **Solution:** Install the required librarie
   # On CentOS/RHEL systems:
   sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
-
-Building OVITO from source
-===========================
-
-**OVITO Basic** is available under an Open Source license and you can download the source code to build the program yourself, for example to develop new plugin functions for OVITO. 
-See the `developers section <development>`_ for further instructions.
