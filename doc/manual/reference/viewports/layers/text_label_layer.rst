@@ -48,6 +48,6 @@ The new attribute ``bcc_fraction`` may now be included as a placeholder in the t
 
 .. seealso::
   
-  :py:class:`~ovito.vis.TextLabelOverlay` (Python API)
+  :py:class:`ovito.vis.TextLabelOverlay` (Python API)
 
 

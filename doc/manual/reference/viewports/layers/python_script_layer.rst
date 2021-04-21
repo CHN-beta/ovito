@@ -39,4 +39,4 @@ Examples
 
 .. seealso::
 
-  :py:class:`~ovito.vis.PythonViewportOverlay` (Python API)
+  :py:class:`ovito.vis.PythonViewportOverlay` (Python API)

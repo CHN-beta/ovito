@@ -154,7 +154,7 @@ protected:
 	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
+	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
 
 private:
 

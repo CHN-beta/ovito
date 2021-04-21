@@ -42,6 +42,6 @@ Layer type                                                       Description
 
 .. seealso::
 
-   * :py:class:`~ovito.vis.ViewportOverlay` (Python API)
+   * :py:class:`ovito.vis.ViewportOverlay` (Python API)
    * :py:attr:`Viewport.overlays <ovito.vis.Viewport.overlays>` (Python API)
    * :py:attr:`Viewport.underlays <ovito.vis.Viewport.underlays>` (Python API)

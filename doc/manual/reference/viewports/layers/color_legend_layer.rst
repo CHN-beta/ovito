@@ -51,4 +51,4 @@ Additionally, it is possible to append a physical unit to the format string, e.g
 
 .. seealso::
 
-  :py:class:`~ovito.vis.ColorLegendOverlay` (Python API)
+  :py:class:`ovito.vis.ColorLegendOverlay` (Python API)

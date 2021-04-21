@@ -15,4 +15,4 @@ indicate the orientation of the simulation coordinate system.
 
 .. seealso::
 
-  :py:class:`~ovito.vis.CoordinateTripodOverlay` (Python API)
+  :py:class:`ovito.vis.CoordinateTripodOverlay` (Python API)
