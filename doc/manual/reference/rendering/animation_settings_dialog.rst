@@ -1,7 +1,7 @@
 .. _animation.animation_settings_dialog:
 
 Animation settings
-==================
+------------------
 
 .. image:: /images/animation_settings_dialog/animation_settings_dialog.*
   :width: 40%

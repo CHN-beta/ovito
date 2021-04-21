@@ -31,7 +31,7 @@ Rendering engine                                           Description
   :hidden:
 
   render_settings
-  ../animation/animation_settings_dialog
+  animation_settings_dialog
   opengl_renderer
   ospray_renderer
   tachyon_renderer
