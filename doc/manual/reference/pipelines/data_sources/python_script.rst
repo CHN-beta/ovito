@@ -1,6 +1,6 @@
-.. _data_source.lammps_script:
+.. _data_source.python_script:
 
-LAMMPS script |ovito-pro|
+Python script |ovito-pro|
 -------------------------
 
 to be written...

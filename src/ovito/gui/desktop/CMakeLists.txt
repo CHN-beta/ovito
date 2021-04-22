@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -141,6 +141,14 @@ ENDIF()
 SET_PROPERTY(SOURCE actions/FileActions.cpp
 	APPEND PROPERTY COMPILE_DEFINITIONS
 	"OVITO_COPYRIGHT_NOTICE=\"${OVITO_COPYRIGHT_NOTICE}\"")
+
+# Let the GUI module know if we are building a preview/development version of OVITO.
+# A notice will be shown in the main window reminding the user to switch to the
+# final release once it becomes available.
+IF(OVITO_USE_GIT_REVISION_NUMBER)
+	STRING(TIMESTAMP current_date "%d-%b-%Y")
+	TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_DEVELOPMENT_BUILD_DATE=\"${current_date}\"")
+ENDIF()
 
 # Compute the relative path where the documentation files get installed relative to the executable. 
 FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")

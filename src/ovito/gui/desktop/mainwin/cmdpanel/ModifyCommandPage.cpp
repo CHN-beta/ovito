@@ -389,7 +389,7 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
 {
 	QString finalText = htmlPage;
 
-#ifdef OVITO_EXPIRATION_DATE
+#if defined(OVITO_EXPIRATION_DATE)
 	QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);
 	QDate currentDate = QDate::currentDate();
 	QString expirationNotice;
@@ -414,6 +414,12 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
 			.arg(expirationDate.toString(Qt::SystemLocaleShortDate));
 	}
 	finalText.replace(QStringLiteral("<p>&nbsp;</p>"), expirationNotice);
+#elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
+	QString previewNotice = tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180);\">You are using an early development build of %1, which was created on %2.</p> "
+			"<p style=\"background-color: rgb(230,180,180);\">Remember to install the final release of %1 as soon as it becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
+		.arg(Application::applicationName())
+		.arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
+	finalText.replace(QStringLiteral("<p>&nbsp;</p>"), previewNotice);
 #endif
 
 	QTextBrowser* aboutLabel = _aboutRollout->findChild<QTextBrowser*>("AboutLabel");

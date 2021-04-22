@@ -50,8 +50,10 @@ namespace Ovito {
 MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
-#ifdef OVITO_EXPIRATION_DATE
+#if defined(OVITO_EXPIRATION_DATE)
 	_baseWindowTitle += tr(" - Preview build expiring on %1").arg(QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate).toString(Qt::SystemLocaleShortDate));
+#elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
+	_baseWindowTitle += tr(" - Development build %1 created on %2").arg(Application::applicationVersionString()).arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
 #endif
 	setWindowTitle(_baseWindowTitle);
 	setAttribute(Qt::WA_DeleteOnClose);
