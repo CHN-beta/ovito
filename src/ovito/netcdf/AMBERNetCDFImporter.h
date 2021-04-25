@@ -97,7 +97,7 @@ private:
 		ParticleInputColumnMapping detectColumnMapping(size_t movieFrame = 0);
 
         /// Map dimensions from NetCDF file to internal representation.
-        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t *startp, size_t *countp);
+        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t& particleCountDim, size_t *startp, size_t *countp);
 
 		bool _ncIsOpen = false;
 		int _ncid = -1;

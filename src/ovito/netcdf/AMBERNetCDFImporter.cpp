@@ -256,11 +256,11 @@ ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(
 		OVITO_ASSERT(nDims >= 1);
 
 		int nDimsDetected;
-		size_t componentCount;
+		size_t componentCount, particleCountDim;
 		size_t startp[4];
 		size_t countp[4];
 		// Check if dimensions make sense and we can understand them.
-		if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
+		if(detectDims(movieFrame, 0, nDims, dimIds, nDimsDetected, componentCount, particleCountDim, startp, countp)) {
 			// Do we support this data type?
 			if(type == NC_BYTE || type == NC_SHORT || type == NC_INT || type == NC_LONG) {
 				columnMapping.push_back(mapVariableToColumn(name, PropertyObject::Int, componentCount));
@@ -287,7 +287,7 @@ ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(
 /******************************************************************************
 * Close the current NetCDF file.
 ******************************************************************************/
-bool AMBERNetCDFImporter::NetCDFFile::detectDims(int movieFrame, int particleCount, int nDims, int* dimIds, int& nDimsDetected, size_t& componentCount, size_t* startp, size_t* countp)
+bool AMBERNetCDFImporter::NetCDFFile::detectDims(int movieFrame, int particleCount, int nDims, int* dimIds, int& nDimsDetected, size_t& componentCount, size_t& particleCountDim, size_t* startp, size_t* countp)
 {
 	if(nDims < 1) return false;
 
@@ -309,6 +309,7 @@ bool AMBERNetCDFImporter::NetCDFFile::detectDims(int movieFrame, int particleCou
 	nDims--;
 	dimIds++;
 	componentCount = 1;
+	particleCountDim = nDimsDetected - 1;
 
 	// Is it a vector property?
 	if(nDims >= 1) {
@@ -470,8 +471,8 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
 	// Detect dims
 	int nDimsDetected;
-	size_t componentCount;
-	if(ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp)) {
+	size_t componentCount, particleCountDim;
+	if(ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, particleCountDim, startp, countp)) {
 		auto data = std::make_unique<FloatType[]>(componentCount * particleCount);
 #ifdef FLOATTYPE_FLOAT
 		NCERRI( nc_get_vara_float(ncFile._ncid, ncFile._coordinatesVar, startp, countp, data.get()), tr("(While reading variable 'coordinates'.)"));
@@ -508,7 +509,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 		if(nDims == 0) continue;
 
 		// Construct pointers to NetCDF dimension indices.
-		if(!ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, startp, countp))
+		if(!ncFile.detectDims(movieFrame, particleCount, nDims, dimIds, nDimsDetected, componentCount, particleCountDim, startp, countp))
 			continue;
 
 		// Create property to load this information into.
@@ -539,16 +540,16 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
 		if(property->dataType() == PropertyObject::Int) {
 			// Read integer property data in chunks so that we can report I/O progress.
-			size_t totalCount = countp[1];
+			size_t totalCount = countp[particleCountDim];
 			size_t remaining = totalCount;
-			countp[1] = 1000000;
-			setProgressMaximum(totalCount / countp[1] + 1);
+			countp[particleCountDim] = 1000000;
+			setProgressMaximum(totalCount / countp[particleCountDim] + 1);
 			OVITO_ASSERT(totalCount <= property->size());
 			PropertyAccess<int,true> propertyArray(property);
-			for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
-				countp[1] = std::min(countp[1], remaining);
-				remaining -= countp[1];
-				OVITO_ASSERT(countp[1] >= 1);
+			for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
+				countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
+				remaining -= countp[particleCountDim];
+				OVITO_ASSERT(countp[particleCountDim] >= 1);
 				NCERRI( nc_get_vara_int(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
 				if(!incrementProgressValue())
 					return;
@@ -572,16 +573,16 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 		}
 		else if(property->dataType() == PropertyObject::Int64) {
 			// Read 64-bit integer property data in chunks so that we can report I/O progress.
-			size_t totalCount = countp[1];
+			size_t totalCount = countp[particleCountDim];
 			size_t remaining = totalCount;
-			countp[1] = 1000000;
-			setProgressMaximum(totalCount / countp[1] + 1);
+			countp[particleCountDim] = 1000000;
+			setProgressMaximum(totalCount / countp[particleCountDim] + 1);
 			OVITO_ASSERT(totalCount <= property->size());
 			PropertyAccess<qlonglong,true> propertyArray(property);
-			for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
-				countp[1] = std::min(countp[1], remaining);
-				remaining -= countp[1];
-				OVITO_ASSERT(countp[1] >= 1);
+			for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
+				countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
+				remaining -= countp[particleCountDim];
+				OVITO_ASSERT(countp[particleCountDim] >= 1);
 				NCERRI( nc_get_vara_longlong(ncFile._ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
 				if(!incrementProgressValue())
 					return;
@@ -604,14 +605,14 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 			else {
 
 				// Read property data in chunks so that we can report I/O progress.
-				size_t totalCount = countp[1];
+				size_t totalCount = countp[particleCountDim];
 				size_t remaining = totalCount;
-				countp[1] = 1000000;
-				setProgressMaximum(totalCount / countp[1] + 1);
-				for(size_t chunk = 0; chunk < totalCount; chunk += countp[1], startp[1] += countp[1]) {
-					countp[1] = std::min(countp[1], remaining);
-					remaining -= countp[1];
-					OVITO_ASSERT(countp[1] >= 1);
+				countp[particleCountDim] = 1000000;
+				setProgressMaximum(totalCount / countp[particleCountDim] + 1);
+				for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
+					countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
+					remaining -= countp[particleCountDim];
+					OVITO_ASSERT(countp[particleCountDim] >= 1);
 #ifdef FLOATTYPE_FLOAT
 					NCERRI( nc_get_vara_float(_ncFile.ncid, varId, startp, countp, propertyArray.begin() + chunk * property->componentCount()), tr("(While reading variable '%1'.)").arg(columnName) );
 #else
