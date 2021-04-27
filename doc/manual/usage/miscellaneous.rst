@@ -47,13 +47,10 @@ all particles. The tool also lets you measure distances between pairs of particl
 Viewport layers
 ---------------
 
-
-.. |viewport-layer-label| replace:: :guilabel:`Viewport Layers`
-
 Viewport layers are a way to superimpose additional information and graphics
 such as text labels, color legends, and coordinate tripods on top of the rendered image of the three-dimensional scene.
 OVITO offers several different layer types, which may be added to a viewport from the
-:ref:`|viewport-layer-label| <viewport_layers>` tab of the command panel.
+:ref:`Viewport Layers <viewport_layers>` tab of the command panel.
 
 
 .. _usage.modifier_templates:
@@ -82,7 +79,8 @@ of data files, modifiers, and rendering of images and movies.
 Scripts for OVITO are written in the Python programming language. If you are not familiar with Python,
 you can find several tutorials and books online that cover this subject. Note that OVITO is based on the Python 3.x language standard.
 
-OVITO's scripting interface is documented in a separate **Scripting Reference** (link missing) manual. You can access it directly from OVITO's help menu.
+OVITO's Python API is documented in a separate :ref:`scripting reference manual <scripting_manual>`. 
+You can access it directly from OVITO's help menu.
 
 In addition to automating tasks, the scripting interface allows you to extend OVITO.
 For example, the :ref:`Python script modifier <particles.modifiers.python_script>`

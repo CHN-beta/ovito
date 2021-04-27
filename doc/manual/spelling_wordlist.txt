@@ -116,6 +116,7 @@ polylines
 porosities
 POV
 pre
+precompiled
 precomputed
 preconfigured
 predefine

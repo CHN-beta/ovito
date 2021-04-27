@@ -50,8 +50,8 @@ Further applications
 """"""""""""""""""""
 
 A Python-based data source may be used to implement a simple kind of file reader for data file formats not
-natively supported by OVITO. Then your ``create()`` function is responsible for opening and parsing the 
-data file using Python's I/O fascilities. The data read from the input file must be translated into corresponding
+directly supported by OVITO. Then your ``create()`` function is responsible for opening and parsing the 
+data file using Python's I/O facilities. The data read from the input file must be translated into corresponding
 calls to OVITO's Python API for creating new data objects such as particles.
 
 Requirements
