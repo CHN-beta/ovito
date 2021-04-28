@@ -116,193 +116,68 @@ that match one of the known structure types.
 Note that you can compute a local lattice constant (including hydrostatic strain) from the interatomic distance by dividing it by the
 factor :math:`\sqrt{1/2}` (for FCC, HCP), :math:`\sqrt{3/4}` (for BCC), or :math:`\sqrt{3/16}` (for cubic diamond and hexagonal diamond) using, e.g., the :ref:`particles.modifiers.compute_property` modifier
 
+.. _particles.modifiers.polyhedral_template_matching.orientations:
+
 Local lattice orientations
 """"""""""""""""""""""""""
 
 The PTM modifier provides the option to calculate a local lattice orientation for atoms that match one of the structural types. The computed orientations are
 encoded as `quaternions <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__ and stored in the ``Orientation`` particle property.
+This particle property stores the (x,y,z,w) components of each quaternion, following `the convention of Ken Shoemake <http://campar.in.tum.de/twiki/pub/Chair/DwarfTutorial/quatut.pdf>`__. 
+
 To visualize the computed local lattice orientations, you can switch the :ref:`particle display shape <visual_elements.particles>` to :guilabel:`Cube/Box`
-or apply this :ref:`Python modifier script <example_visualize_local_lattice_orientation>`, which maps the local orientation information to a particle color.
+or apply this :ref:`Python modifier script <example_visualize_local_lattice_orientation>`, which maps the local orientations to RGB particle colors.
 Lattice orientations are calculated such that they lie in the fundamental zone of the symmetry group for each structural type.
 This means that two atoms with very similar orientations can have large misorientations if they lie close to the boundaries of the fundamental zone.
 For atoms not matching any of the known structure types, no local lattice orientation can be computed. These atoms are assigned the invalid quaternion vector (0,0,0,0).
 
-Orientations are calculated relative to the following reference templates. In the table, the neighbor positions of each reference configuration
-are given in Cartesian coordinates with the central particle located at the origin.
+Orientations are calculated relative to structure-specific reference templates, which are defined in the 
+`source code of the PTM implementation <https://gitlab.com/stuko/ovito/-/blob/master/src/3rdparty/ptm/ptm_constants.h#L84-217>`__ used in OVITO.
+The neighbor atom positions of each reference configuration are given in Cartesian coordinates with the central particle located at the origin.
+Furthermore, the reference templates are scaled such that the mean distance of the neighbors is 1.
+This is a slight departure from the templates in the published PTM paper, in that the central atom is no longer included in this calculation.
 
-.. list-table::
-  :width: 100%
-  :widths: auto
-  :header-rows: 1
+.. tip::
 
-  * - Neighbor
-    - FCC
-    - HCP
-    - BCC
-    - ICO
-    - Simple cubic
-    - Cubic diamond
-    - Hexagonal diamond
-    - Graphene
-  * - 1
-    - :math:`0 \: k_1 \: k_1`
-    - :math:`k_1 \: 0 \: k_1`
-    - :math:`-k_2 \: -k_2 \: -k_2`
-    - :math:`0 \: k_3 \: k_4`
-    - :math:`0 \: 0 \: -k_5`
-    - :math:`-k_6 \: k_6 \: k_6`
-    - :math:`k_6 \: k_6 \: k_6`
-    - :math:`0 \: 2 k_7 \: 0`
-  * - 2
-    - :math:`0 \: -k_1 \: -k_1`
-    - :math:`-k_1 /3 \: -4k_1 /3 \: -k_1 /3`
-    - :math:`k_2 \: k_2 \: k_2`
-    - :math:`0 \: -k_3 \: -k_4`
-    - :math:`0 \: 0 \: k_5`
-    - :math:`-k_6 \: -k_6 \: -k_6`
-    - :math:`-k_6 \: k_6 \: -k_6`
-    - :math:`k_8 \: -k_7 \: 0`
-  * - 3
-    - :math:`0 \: k_1 \: -k_1`
-    - :math:`k_1 \: k_1 \: 0`
-    - :math:`k_2 \: -k_2 \: -k_2`
-    - :math:`0 \: k_3 \: -k_4`
-    - :math:`0 \: -k_5 \: 0`
-    - :math:`k_6 \: -k_6 \: k_6`
-    - :math:`k_6 \: -k_6 \: -k_6`
-    - :math:`-k_8 \: -k_7 \: 0`
-  * - 4
-    - :math:`0 \: -k_1 \: k_1`
-    - :math:`-k_1 /3 \: -k_1 /3 \: -4k_1 /3`
-    - :math:`-k_2 \: k_2 \: k_2`
-    - :math:`0 \: -k_3 \: k_4`
-    - :math:`0 \: k_5 \: 0`
-    - :math:`k_6 \: k_6 \: -k_6`
-    - :math:`-k_6 \: -k_6 \: k_6`
-    - :math:`-k_8 \: 3k_7 \: 0`
-  * - 5
-    - :math:`k_1 \: 0 \: k_1`
-    - :math:`0 \: k_1 \: k_1`
-    - :math:`-k_2 \: k_2 \: -k_2`
-    - :math:`-k_3 \: -k_4 \: 0`
-    - :math:`-k_5 \: 0 \: 0`
-    - :math:`-2k_6 \: 0 \: 2k_6`
-    - :math:`2k_6 /3 \: 8k_6 /3 \: 2k_6 /3`
-    - :math:`k_8 \: 3k_7 \: 0`
-  * - 6
-    - :math:`-k_1 \: 0 \: -k_1`
-    - :math:`-4k_1 /3 \: -k_1 /3 \: -k_1 /3`
-    - :math:`k_2 \: -k_2 \: k_2`
-    - :math:`k_3 \: k_4 \: 0`
-    - :math:`k_5 \: 0 \: 0`
-    - :math:`-2k_6 \: 2k_6 \: 0`
-    - :math:`8k_6 /3 \: 2k_6 /3 \: 2k_6 /3`
-    - :math:`2k_8 \: 0 \: 0`
-  * - 7
-    - :math:`k_1 \: 0 \: -k_1`
-    - :math:`-k_1 \: k_1 \: 0`
-    - :math:`-k_2 \: -k_2 \: k_2`
-    - :math:`k_3 \: -k_4 \: 0`
-    - 
-    - :math:`0 \: 2k_6 \: 2k_6`
-    - :math:`2k_6 /3 \: 2k_6 /3 \: 8k_6 /3`
-    - :math:`k_8 \: -3k_7 \: 0`
-  * - 8
-    - :math:`-k_1 \: 0 \: k_1`
-    - :math:`0 \: k_1 \: -k_1`
-    - :math:`k_2 \: k_2 \: -k_2`
-    - :math:`-k_3 \: k_4 \: 0`
-    - 
-    - :math:`-2k_6 \: -2k_6 \: 0`
-    - :math:`-2k_6 \: 0 \: -2k_6`
-    - :math:`-k_8 \: -3k_7 \: 0`
-  * - 9
-    - :math:`k_1 \: k_1 \: 0`
-    - :math:`k_1 \: 0 \: -k_1`
-    - :math:`0 \: 0 \: -2k_2`
-    - :math:`-k_4 \: 0 \: -k_3`
-    - 
-    - :math:`-2k_6 \: 0 \: -2k_6`
-    - :math:`-2k_6 \: 2k_6 \: -0`
-    - :math:`-2k_8 \: 0 \: 0`
-  * - 10
-    - :math:`-k_1 \: -k_1 \: 0`
-    - :math:`k_1 \: -k_1 \: 0`
-    - :math:`0 \: 0 \: 2k_2`
-    - :math:`k_4 \: 0 \: k_3`
-    - 
-    - :math:`0 \: -2k_6 \: -2k_6`
-    - :math:`0 \: 2k_6 \: -2k_6`
-    - 
-  * - 11
-    - :math:`k_1 \: -k_1 \: 0`
-    - :math:`-k_1 \: 0 \: k_1`
-    - :math:`0 \: -2k_2 \: 0`
-    - :math:`k_4 \: 0 \: -k_3`
-    - 
-    - :math:`0 \: -2k_6 \: 2k_6`
-    - :math:`0 \: -2k_6 \: -2k_6`
-    - 
-  * - 12
-    - :math:`-k_1 \: k_1 \: 0`
-    - :math:`0 \: -k_1 \: k_1`
-    - :math:`0 \: 2k_2 \: 0`
-    - :math:`-k_4 \: 0 \: k_3`
-    - 
-    - :math:`2k_6 \: -2k_6 \: 0`
-    - :math:`2k_6 \: -2k_6 \: 0`
-    - 
-  * - 13
-    - 
-    - 
-    - :math:`-2k_2 \: 0 \: 0`
-    -
-    -
-    - :math:`2k_6 \: 0 \: 2k_6`
-    - :math:`2k_6 \: -0 \: -2k_6`
-    - 
-  * - 14
-    - 
-    - 
-    - :math:`2k_2 \: 0 \: 0`
-    - 
-    - 
-    - :math:`0 \: 2k_6 \: -2k_6`
-    - :math:`-2k_6 \: -2k_6 \: 0`
-    - 
-  * - 15
-    - 
-    - 
-    - 
-    - 
-    - 
-    - :math:`2k_6 \: 0 \: -2k_6`
-    - :math:`0 \: -2k_6 \: 2k_6` 
-    - 
-  * - 16
-    - 
-    - 
-    - 
-    - 
-    - 
-    - :math:`2k_6 \: 2k_6 \: 0`
-    - :math:`-2k_6 \: 0 \: 2k_6` 
-    - 
+  .. highlight:: python
 
-.. list-table::
-  :width: 100%
-  :widths: 25 25 25 25
-  
-  * - :math:`k_1 = \sqrt{2} / 2`
-    - :math:`k_2 = 14 / (8 \sqrt{3} + 12)`
-    - :math:`k_3 = \sqrt{2 / (5 + \sqrt{5})}`
-    - :math:`k_4 = \sqrt{1/10 (5 + \sqrt{5})}`
-  * - :math:`k_5 = 1`
-    - :math:`k_6 = 4/(6 \sqrt{2} + \sqrt{3})`
-    - :math:`k_7 = (6 \sqrt{3} - 3) / 22`
-    - :math:`k_8 = (18 - 3 \sqrt{3}) / 22`
+  OVITO's compact quaternion representation of orientations may easily be converted to other representation types. 
+  The ``Orientation`` property array generated by the PTM modifier is a :math:`N \times 4` array 
+  containing the :math:`(x,y,z,w)` components of the quaternion associated with each particle::
 
-The reference templates are scaled such that the mean distance of the neighbors is 1.  This is a slight departure from the templates in the published PTM paper, in that the central atom is no longer included in this calculation.
+    q = data.particles['Orientation']
+    qx = q[:,0]; qy = q[:,1]; qz = q[:,2]; qw = q[:,3]
+
+  .. list-table::
+    :header-rows: 1
+
+    * - Rotation axis and angle:
+      - Matrix representation:
+    
+    * - The following Python code translates the quaternions to pairs of rotation axes and angles.
+        The two output arrays will contain the three-dimensional unit axis vectors 
+        and the corresponding rotation angles (in radians) for each particle::
+
+          scale = numpy.sqrt(qx**2 + qy**2 + qz**2)
+          axes = numpy.full((len(q), 3), (0.0, 0.0, 1.0))
+          numpy.true_divide(qx, scale, out=axes[:,0], where=(scale>1e-12))
+          numpy.true_divide(qy, scale, out=axes[:,1], where=(scale>1e-12))
+          numpy.true_divide(qz, scale, out=axes[:,2], where=(scale>1e-12))
+          angles = numpy.zeros(len(q))
+          angles = 2.0 * numpy.arccos(qw, out=angles, where=(scale>1e-12))
+    
+      - Alternatively, you can convert the quaternions to :math:`3 \times 3` orientation matrices::
+
+          matrices = numpy.empty((len(q),3,3))
+          matrices[:,0,0] = 1.0-2.0*(qy*qy + qz*qz)
+          matrices[:,0,1] = 2.0*(qx*qy - qw*qz)
+          matrices[:,0,2] = 2.0*(qx*qz + qw*qy)
+          matrices[:,1,0] = 2.0*(qx*qy + qw*qz)
+          matrices[:,1,1] = 1.0-2.0*(qx*qx + qz*qz)
+          matrices[:,1,2] = 2.0*(qy*qz - qw*qx)
+          matrices[:,2,0] = 2.0*(qx*qz - qw*qy)
+          matrices[:,2,1] = 2.0*(qy*qz + qw*qx)
+          matrices[:,2,2] = 1.0-2.0*(qx*qx + qy*qy)   
 
 Elastic deformation gradients
 """""""""""""""""""""""""""""

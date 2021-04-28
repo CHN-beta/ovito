@@ -13,7 +13,8 @@ in crystal regions having similar local lattice orientations. The algorithm work
 The modifier assigns a new property named ``Grain`` to the particles
 to indicate which grain each atom belongs to (encoded as an integer grain identifier). The special grain identifier 0 means an atom does not belong to any grain.
 The modifier furthermore computes a mean lattice orientation for each identified grain and outputs a list of
-all grains as a :ref:`data table <scene_objects.data_table>`.
+all grains as a :ref:`data table <scene_objects.data_table>`. The grain orientations are expressed as 4-component quaternions
+similar to the :ref:`per-atom lattice orientations computed by the PTM modifier <particles.modifiers.polyhedral_template_matching.orientations>`. 
 
 .. caution::
 
