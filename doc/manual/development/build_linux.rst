@@ -1,6 +1,6 @@
 .. _development.build_linux:
 
-Building OVITO Basic on Linux
+Building OVITO on Linux
 =============================
 
 The following instructions have been written for Ubuntu Linux 16.04 or newer, or any compatible Debian-based distribution.

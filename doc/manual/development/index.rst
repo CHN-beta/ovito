@@ -4,9 +4,9 @@
 Developer information
 =====================
 
-The latest source code of OVITO is available in our repository on `GitLab <https://gitlab.com/stuko/ovito/>`_.
-Note that the following build instructions pertain to the code of *OVITO Basic*, which
-is available under the GNU GPLv3 and MIT open source licenses and includes only :ref:`subset of program features <credits.ovito_pro>`.
+The latest source code of :program:`OVITO` is available in a public repository on `GitLab <https://gitlab.com/stuko/ovito/>`_.
+It serves as current basis of the *OVITO Basic* program packages distributed by OVITO GmbH, which
+are made available under the GNU GPLv3 and MIT open source licenses.
 
 .. toctree::
    :maxdepth: 1

@@ -4,7 +4,7 @@ Animation settings
 ------------------
 
 .. image:: /images/animation_settings_dialog/animation_settings_dialog.*
-  :width: 40%
+  :width: 35%
   :align: right
 
 The *Animation Settings* dialog can be opened from the animation toolbar:

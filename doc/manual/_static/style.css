@@ -43,6 +43,11 @@
     margin: auto 2px;
 }
 
+/* Avoids the "Pro" tooltip being cut off at the table borders. */
+.wy-table-responsive {
+    overflow: visible;
+}
+
 /* Break lines within table cells. */
 .wy-table-responsive table td {
     white-space: normal;

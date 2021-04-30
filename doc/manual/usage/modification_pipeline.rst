@@ -33,7 +33,7 @@ the processing pipeline to as many other input datasets as you like in a batch-p
 Pipeline editor
 ---------------
 .. image:: /images/usage/pipeline/pipeline_editor.*
-  :width: 45%
+  :width: 40%
   :align: right
 
 The pipeline editor, shown in the screenshot on the right, is the central place in OVITO's user interface where you perform
@@ -63,9 +63,9 @@ then assign a color coding to the particles and finally slice the dataset.
  
 You can temporarily disable modifiers in the pipeline by unchecking the box next to them.
 To permanently remove a modifier from the pipeline, use the *Delete Modifier* button found in
-the toolbar on the right. And since the order in which actions are performed sometimes matters, the up and down arrow buttons allow
-you to rearrange the modifiers within the pipeline sequence.
-
+the toolbar on the right. And since the order in which actions are performed sometimes matters, 
+you can rearrange the modifiers within the pipeline using drag-and-drop operations or the
+the up/down arrow buttons in the toolbar.
 
 .. _usage.modification_pipeline.display: 
 
@@ -90,7 +90,7 @@ corresponding box in the pipeline editor.
 Transient pipeline states and particle selection
 ------------------------------------------------
 
-Some modifier functions in OVITO, for example the :ref:`Delete selected <particles.modifiers.delete_selected_particles>` modifier,
+Some modifier functions in OVITO, for example the :ref:`particles.modifiers.delete_selected_particles` modifier,
 act only on the currently selected subset of particles or bonds. What elements are currently selected, is determined by the value of their
 ``Selection`` property as explained in the :ref:`previous section <usage.particle_properties>`.
 The program provides several modifiers for selecting particles based on different criteria.
@@ -100,10 +100,10 @@ Within the pipeline, the selection will stay the same up to the point where anot
 pipeline replaces it again.
  
 This system allows you to apply different operations to different groups of particles in a successive fashion. For example,
-you could use a :ref:`Select type <particles.modifiers.select_particle_type>` modifier to first select particles
-of one chemical or structural type and then apply an :ref:`Assign color <particles.modifiers.assign_color>` modifier
-to give them a particular color. Next, you could insert another instance of the :ref:`Select type <particles.modifiers.select_particle_type>` modifier to 
-select a second group of particle and subsequently assign them a different color using another :ref:`Assign color <particles.modifiers.assign_color>` modifier instance.
+you could use a :ref:`particles.modifiers.select_particle_type` modifier to first select particles
+of one chemical or structural type and then apply an :ref:`particles.modifiers.assign_color` modifier
+to give them a particular color. Next, you could insert another instance of the :ref:`particles.modifiers.select_particle_type` modifier to 
+select a second group of particle and subsequently assign them a different color using another :ref:`particles.modifiers.assign_color` modifier instance.
 
 Note that data visualization always happens only for the final results leaving the pipeline. That means in the viewports you will only observe the final
 selection state of the particles (OVITO highlights them with a red color). If you would like to inspect a transient state of the data at some intermediate point along the pipeline,

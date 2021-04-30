@@ -1,6 +1,6 @@
 .. _development.build_macosx:
 
-Building OVITO Basic on macOS
+Building OVITO on macOS
 =============================
 
 Installing dependencies

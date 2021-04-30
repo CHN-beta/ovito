@@ -1,7 +1,7 @@
 .. _application_settings.particles:
 
-Particle settings
-=================
+Particle-related settings
+=========================
 
 .. image:: /images/app_settings/particle_settings.*
   :width: 45%

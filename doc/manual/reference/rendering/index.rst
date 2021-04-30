@@ -19,13 +19,13 @@ They are listed in the following table. The OpenGL rendering engine is the defau
 pictures that provide roughly the same basic visual quality as the interactive viewports of OVITO. The other available
 rendering engines can produce visually more appealing pictures but require also longer rendering times.
 
-========================================================== ===============================================================================================================
-Rendering engine                                           Description
-========================================================== ===============================================================================================================
-:ref:`OpenGL renderer <rendering.opengl_renderer>`         Hardware-accelerated renderer, which is also used for real-time display in the interactive viewports
-:ref:`Tachyon renderer <rendering.tachyon_renderer>`       Software-based ray-tracing renderer, with support for ambient occlusion lighting, shadows and depth of field
-:ref:`OSPRay renderer <rendering.ospray_renderer>`         Another highly optimized software rendering engine with similar features as the Tachyon renderer but reduced memory requirements
-========================================================== ===============================================================================================================
+================================================================ ===============================================================================================================
+Rendering engine                                                 Description
+================================================================ ===============================================================================================================
+:ref:`OpenGL renderer <rendering.opengl_renderer>`               Hardware-accelerated renderer, which is also used for real-time display in the interactive viewports
+:ref:`Tachyon renderer <rendering.tachyon_renderer>` |ovito-pro| Software-based ray-tracing renderer, with support for ambient occlusion lighting, shadows and depth of field
+:ref:`OSPRay renderer <rendering.ospray_renderer>` |ovito-pro|   Another highly optimized software rendering engine with similar features as the Tachyon renderer but reduced memory requirements
+================================================================ ===============================================================================================================
 
 .. toctree::
   :hidden:

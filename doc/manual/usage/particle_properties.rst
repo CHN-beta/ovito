@@ -46,7 +46,7 @@ the values of its properties in the status bar.
 
 OVITO provides a rich set of functions for modifying the properties of particles. These so-called *modifiers*
 will be introduced in more detail in a following section of this manual. But to already give you a first idea of the principle:
-The :ref:`Assign color <particles.modifiers.assign_color>` modifier function lets you assign a uniform color of your choice
+The :ref:`particles.modifiers.assign_color` modifier function lets you assign a uniform color of your choice
 to all currently selected particles. It does that by setting the ``Color`` property of the
 particles to the given RGB value (if the ``Color`` property doesn't exist yet, it is automatically created). 
 The subset of currently selected particles is determined by the ``Selection`` particle property: Particles whose ``Selection``
@@ -57,10 +57,10 @@ For example, the :ref:`Select type <particles.modifiers.select_particle_type>` m
 property of each particle to decide whether or not to select that particle. It allows you to select all atoms of a particular chemical type, for example,
 and then perform some operation only on that subset of particles.
 
-Another typical modifier is the :ref:`Coordination Analysis <particles.modifiers.coordination_analysis>` modifier.
+Another typical modifier is the :ref:`particles.modifiers.coordination_analysis` modifier.
 It computes the number of neighbors of each particle within a given cutoff range and stores the computation results in a new particle property named ``Coordination``. 
 Subsequently, you can refer to the values of this property, for example to select particles having a coordination number in a certain range
-or to color particles based on their coordination number (see :ref:`Color Coding <particles.modifiers.color_coding>` modifier).
+or to color particles based on their coordination number (see :ref:`particles.modifiers.color_coding` modifier).
 
 Of course it is possible to export the particle property values to an output file. OVITO supports a variety of output formats for that (see the 
 :ref:`data export <usage.export>` section of this manual). For instance, the *XYZ* format is a simple table

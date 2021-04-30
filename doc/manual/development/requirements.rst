@@ -1,7 +1,7 @@
 .. _development.requirements:
 
-Requirements
-============
+Build requirements
+==================
 
 The prerequisites for building OVITO from source are:
 

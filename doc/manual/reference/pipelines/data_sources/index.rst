@@ -8,9 +8,9 @@ Data sources
   :align: right
 
 A *data source* is an essential part of every :ref:`pipeline <usage.modification_pipeline>` as it provides the input data that enters the 
-pipeline and is passed to the modifiers. The data source of the current pipeline appears under the "Data source" section of the pipeline editor as 
-depicted in this screenshot. Most of the time you will work with the *External File* data
-source type, which imports the input data for the pipeline from one or more files stored on your local computer or a remote machine.
+pipeline and is passed to the modifiers. The data source of the current pipeline appears under the `Data source` section of the pipeline editor as 
+depicted in this screenshot. Most of the time you will work with the data source type :ref:`External file <scene_objects.file_source>`, 
+which imports the input data for the pipeline from one or more files stored on your local computer or a remote machine.
 
 .. list-table::
   :widths: 35 65

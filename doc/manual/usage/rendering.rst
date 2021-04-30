@@ -20,8 +20,8 @@ and you are happy with the result.
 
 OVITO Pro comes with several rendering engines to choose from, which differ in terms of speed, visual quality and memory requirements.
 The default :ref:`OpenGL renderer <rendering.opengl_renderer>` is the fastest one and produces pictures that are more or less
-identical to what you see in the interactive viewports. The :ref:`Tachyon <rendering.tachyon_renderer>` |ovito-pro| and 
-:ref:`OSPRay <rendering.ospray_renderer>` |ovito-pro| rendering engines, on the other hand,
+identical to what you see in the interactive viewports. The :ref:`Tachyon <rendering.tachyon_renderer>` and 
+:ref:`OSPRay <rendering.ospray_renderer>` rendering engines, on the other hand,
 are software-based ray tracing engines, which are able to generate high-quality visualizations that include shadows, ambient occlusion shading and depth of field effects.
 See the :ref:`reference section <rendering>` to learn more about the rendering capabilities of OVITO.
 

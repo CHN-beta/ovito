@@ -75,7 +75,7 @@ A pair of topology and trajectory files:
   *any other supported format*   XYZ
   ============================== ======================
 
-  The topology file will be loaded first (e.g. a LAMMPS *data* file) and a :ref:`Load trajectory <particles.modifiers.load_trajectory>` modifier 
+  The topology file will be loaded first (e.g. a LAMMPS *data* file) and a :ref:`particles.modifiers.load_trajectory` modifier 
   will be inserted into the data pipeline to load the time-dependent atomic positions
   from the trajectory file (e.g. a LAMMPS *dump* file). This modifier merges both pieces of information -the static topology and the dynamic trajectory data- into a single animated dataset.
 
@@ -98,7 +98,7 @@ the full path to the remote file as an URL of the form::
 
 In this URL, replace :command:`user` with the SSH login name for your remote machine,
 :command:`hostname` with the host name of the remote machine,
-and :command:`/path/filename` with the full path to the simulation file that should be loaded.
+and :command:`/path/filename` with the full path to the simulation file to load.
 Similarly, you can let OVITO retrieve a data file from a web server by specifying an URL of the form::
 
   https://www.website.org/path/filename

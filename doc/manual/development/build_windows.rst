@@ -1,6 +1,6 @@
 .. _development.build_windows:
 
-Building OVITO Basic on Windows
+Building OVITO on Windows
 ===============================
 
 The required steps are quite involved, in particular those for building/installing the prerequisites, 

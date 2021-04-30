@@ -27,6 +27,10 @@ Third-party software
     - License
     - Instructions
 
+  * - OVITO legacy code
+    - :ref:`license <appendix.license.ovito_legacy>`
+    - 
+
   * - `Qt <https://www.qt.io/developers/>`__
     - LGPL v3
     - :ref:`Info <appendix.license.qt.instructions>`
@@ -158,7 +162,7 @@ Third-party software
 .. toctree::
   :hidden:
 
-  ovito_pro
+  ovito_legacy
   GPL
   FDL
   Qt.instructions

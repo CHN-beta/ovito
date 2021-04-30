@@ -10,13 +10,13 @@ of OVITO, which loads the input data from a simulation file stored on disk.
 You can insert new data pipeline with a Python script data source into the scene using the :ref:`pipeline selector widget <usage.import.multiple_datasets>` 
 located in the toolbar of OVITO. 
 
-What is a Python script data source?
-""""""""""""""""""""""""""""""""""""
+What is a Python data source?
+"""""""""""""""""""""""""""""
 
 .. highlight:: python
 
-A Python-based data source consists of the definition of a Python function, which you enter into the integrated code editor window 
-of OVITO Pro. For instance::
+A Python-based data source consists of the definition of a Python function, which you enter into the integrated code editor window. 
+Here is a simple example for such a function::
 
     from ovito.data import *
     
@@ -25,25 +25,25 @@ of OVITO Pro. For instance::
             data.cell = SimulationCell(pbc = (False, False, False))
         data.cell_[:,:3] = [[10,0,0],[0,10,0],[0,0,10]]
 
-This function creates and initializes a :py:class:`~ovito.data.SimulationCell` object, and places it into 
+This example function creates and initializes a :py:class:`~ovito.data.SimulationCell` object, and places it into 
 the empty :py:class:`~ovito.data.DataCollection` container provided by the system. 
-The pipeline system of OVITO will execute that Python function 
+The pipeline system of OVITO will run that Python function 
 whenever needed in order to generate the data objects that flow down the pipeline. These data objects will be 
-seen by any subsequent modifiers that you've inserted into the pipeline. And eventually
-the final output will appear in the interactive viewports of OVITO.
+seen by any subsequent modifiers that you insert into the pipeline. And eventually
+the final pipeline output will appear in the interactive viewports of OVITO.
 
 Capabilities
 """"""""""""
 
-The Python-based data source gives you a way to generate ad-hoc content within OVITO, for example a molecular structure
+The Python data source gives you a way to generate ad-hoc contents within OVITO, for example a molecular structure
 constructed by an algorithm you write in Python. It frees you from having to prepare these contents outside of OVITO, 
-using for example a simulation code or external model building tool, and then import them into OVITO using the regular file
-import function.
+using for example a simulation code or external model building tool, and then importing them into OVITO using the regular file
+import function (creating a :ref:`file-based data source <scene_objects.file_source>`).
 
-Within your user-defined ``create()`` function, you have a lot of freedom how you generate a dataset and which
-kinds of data objects you create. You can build a simulation cell, add particles, bonds, global attributes, surface meshes,
+Within the ``create()`` function you define, you have a lot of freedom how you build a new dataset and which
+kinds of data objects you create. You can add a simulation cell, particles, bonds, global attributes, surface meshes,
 and any other type of data object OVITO supports. Furthermore, you can define function parameters in your ``create()`` function,
-which will be exposed in the user interface of OVITO. You can adjust the values of these parameters and the pipeline system 
+which will be exposed in the user interface of OVITO (see below). You can interactively adjust the values of these parameters and the pipeline system 
 will automatically re-run your function to update the results.
 
 Further applications
@@ -65,7 +65,44 @@ It must accept at least the following two parameters:
         By incorporating this value in your algorithm, you can implement data sources that produce time-dependent content or trajectories.
 :data: A :py:class:`~ovito.data.DataCollection` object provided by the pipeline system, which should be populated with data objects by the function. 
 
+The :py:class:`~ovito.data.DataCollection` passed into the function by the pipeline system will initially be empty (when the function is 
+run for the first time) and your code should populate it with new data objects, typically by appending them to the :py:attr:`DataCollection.objects <ovito.data.DataCollection.objects>` list
+or by assiging them directly to specific storage fields such as the :py:attr:`~ovito.data.DataCollection.cell` field as in the example above.
 
+However, there is one important caveat to prepare for: The system may run your ``create()`` function multiple times, and on subsequent invocations
+the :py:class:`~ovito.data.DataCollection` won't be empty anymore. It will contain the data objects from a previous invocation. That's because the pipeline system
+maintains a data cache to give the user the possibility to directly manipulate some of the objects in the graphical user interface of OVITO, 
+for example the colors and radii of particles types or the settings of :ref:`visual elements <visual_elements>` associated with data objects.
+
+That is an aspect your ``create()`` function needs to be prepared for. It must re-use any existing data objects in the data collection instead
+of recreating them during each execution, in order to preserve the adjustments the user makes to these objects in the GUI. In the code example above, 
+the function first checks if the data collection already contains an existing :py:class:`~ovito.data.SimulationCell` and creates a new one only if 
+this is not the case. The same kind of existance check should be performed when creating a particles, bonds, particle types, etc.::
+
+    # Create the Particles data object only if it does not already exists from a previous run:
+    if not data.particles: 
+        data.particles = Particles(vis = ParticlesVis(scaling = 0.5))
+
+Resizing the :py:class:`~ovito.data.Particles` property container or adding properties can be performed without a 
+check, because these operations preserve existing object instances instead of completely replacing them::
+
+    data.particles_.count = 3
+    data.particles_.create_property('Position', data=[(-0.06, 1.83, 0.81),(1.79, -0.88, -0.11),(-1.73, -0.77, -0.61)])
+
+But make sure you do not accidentally recreate nested sub-objects, for example the :py:class:`~ovito.data.ParticleType` instances
+that are added to the ``Particle Type`` property. Only on the first run the :py:attr:`Property.types <ovito.data.Property.types>` list
+will be empty::
+
+    type_property = data.particles_.create_property('Particle Type')
+    if len(type_property.types) == 0: 
+        type_property.types.append(ParticleType(id=1, name='Cu', color=(1,1,0)))
+        type_property.types.append(ParticleType(id=2, name='O', color=(1,0,0)))
+
+In the GUI, you have the possibility to explicitly reset the cached data collection of the data source and discard all 
+cached data objects by pressing the button :guilabel:`Reset data collection`. The pipeline system will then start over
+by invoking your ``create()`` function with an empty data collection, and all data objects are newly created and
+initialized. Any changes the user has made to the old data objects in the GUI will be thrown away. (Applied modifiers will
+be preserved, of course, because the reset operation only affects the source of the pipeline.)
 
 User-defined function parameters
 """"""""""""""""""""""""""""""""

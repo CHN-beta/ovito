@@ -1,9 +1,9 @@
-.. _appendix.license.ovito_pro:
+.. _appendix.license.ovito_legacy:
 
-OVITO license
--------------
+OVITO license (legacy code)
+-------------------------------
 
-Copyright 2009-2020 OVITO GmbH, Alexander Stukowski and Technische Universität Darmstadt
+Copyright 2009-2019 Alexander Stukowski and Technische Universität Darmstadt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this
 software and associated documentation files (the "Software"), to deal in the Software
@@ -20,3 +20,10 @@ PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS 
 FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+.. note::
+  
+  This license applies only to legacy versions of the :program:`OVITO` source code which
+  were released by Dr. Alexander Stukowski and Technische Universität Darmstadt before 
+  the year 2020. New versions of :program:`OVITO Basic` and :program:`OVITO Pro`
+  are made available under different licenses.
