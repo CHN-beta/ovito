@@ -42,6 +42,9 @@ public:
 	ConstDataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<const DataObject*, 3>((int)std::distance(first, last)) {
 		std::copy(first, last, begin());
 	}
+
+	/// Default constructor.
+	ConstDataObjectPath() : QVarLengthArray<const DataObject*, 3>(0) {}
 #endif
 
 	/// Converts the path to a string representation.
@@ -52,7 +55,7 @@ public:
 
 	/// Returns a data object path that includes all but the last data object from this path.
 	ConstDataObjectPath parentPath() const {
-		if(empty()) return ConstDataObjectPath();
+		if(empty()) return ConstDataObjectPath{};
 		return ConstDataObjectPath(begin(), std::prev(end()));
 	}
 };
@@ -72,6 +75,9 @@ public:
 	DataObjectPath(InputIterator first, InputIterator last) : QVarLengthArray<DataObject*, 3>((int)std::distance(first, last)) {
 		std::copy(first, last, begin());
 	}
+
+	/// Default constructor.
+	DataObjectPath() : QVarLengthArray<DataObject*, 3>(0) {}
 #endif
 
 	/// A path to a mutable object can be implicitly converted to a path to a constant object.
@@ -87,7 +93,7 @@ public:
 
 	/// Returns a data object path that includes all but the last data object from this path.
 	DataObjectPath parentPath() const {
-		if(empty()) return DataObjectPath();
+		if(empty()) return DataObjectPath{};
 		return DataObjectPath(begin(), std::prev(end()));
 	}
 };
