@@ -523,7 +523,11 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 		if(item->itemType() == PipelineListItem::Modifier) {
 			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
 				if(modApp->modifierGroup())
+#ifndef Q_OS_WIN
 					return QStringLiteral(" ") + item->title();
+#else
+					return QStringLiteral("   ") + item->title();
+#endif
 			}
 		}
 		return item->title();
