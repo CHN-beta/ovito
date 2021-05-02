@@ -32,9 +32,8 @@ IF(OVITO_BUILD_GUI)
 	FILE(MAKE_DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html")
 
 	# Locate the XSLT processor program, which transforms Docbook documents into the output format.
+	# NOTE: This program is only needed to generate the legacy documentation files (before release 3.5.0).
 	FIND_PROGRAM(XSLT_PROCESSOR "xsltproc" DOC "Path to the XSLT processor program for building the Docbook-based documentation.")
-
-	# XSL transform Docbook files.
 	IF(XSLT_PROCESSOR)
 		# This CMake target generates the user manual as a set of static HTML pages which get shipped with
 		# the Ovito installation packages and which can be accessed from the Help menu of the application.
@@ -109,9 +108,10 @@ IF(OVITO_BUILD_GUI)
 	IF(OVITO_BUILD_DOCUMENTATION)
 		# Run the documentation target automatically as part of the build process.
 		ADD_DEPENDENCIES(Ovito documentation)
-		# Install the generated documentation files alongside with the application.
-		INSTALL(DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html/" DESTINATION "${OVITO_RELATIVE_SHARE_DIRECTORY}/doc/manual/html/" PATTERN "*.pptx" EXCLUDE)
 	ENDIF()
+
+	# Install the generated documentation files alongside with the application.
+	INSTALL(DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html/" DESTINATION "${OVITO_RELATIVE_SHARE_DIRECTORY}/doc/manual/html/" PATTERN "*.pptx" EXCLUDE)
 ENDIF()
 
 # Find the Doxygen program.
