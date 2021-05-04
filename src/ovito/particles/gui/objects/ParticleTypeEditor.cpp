@@ -81,7 +81,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 		// Update the placeholder text of the name input field to reflect the numeric ID of the current particle type.
 		if(QLineEdit* lineEdit = qobject_cast<QLineEdit*>(namePUI->textBox())) {
 			if(ElementType* ptype = dynamic_object_cast<ElementType>(newEditObject))
-				lineEdit->setPlaceholderText(QStringLiteral("‹%1›").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
+				lineEdit->setPlaceholderText(tr("‹%1›").arg(ElementType::generateDefaultTypeName(ptype->numericId())));
 			else
 				lineEdit->setPlaceholderText({});
 		}
