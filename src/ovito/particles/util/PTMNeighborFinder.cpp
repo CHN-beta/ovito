@@ -99,6 +99,7 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::option
 	}
 
 	const double (*ptmTemplate)[3] = PTMAlgorithm::get_template(_structureType, _templateIndex);
+	const int8_t (*scaledTemplate)[3] = PTMAlgorithm::get_scaled_template(_structureType, _templateIndex);
 	for(int i = 0; i < _list.size(); i++) {
 		Neighbor& n = _list[i];
 		int index = remap_permutation[i + 1];
@@ -113,6 +114,14 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::option
 		else {
 			const double* q = ptmTemplate[i + 1];
 			n.idealVector = Vector3(q[0], q[1], q[2]);
+		}
+
+		if(scaledTemplate == nullptr) {
+			n.scaledVector = Vector_3<double>(0, 0, 0);
+		}
+		else {
+			const int8_t* q = scaledTemplate[i + 1];
+			n.scaledVector = Vector_3<double>(q[0], q[1], q[2]);
 		}
 
 		if(_finder._all_properties && _structureType != PTMAlgorithm::OTHER) {

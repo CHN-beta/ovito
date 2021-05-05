@@ -19,6 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "ptm_canonical_coloured.h"
 #include "ptm_convex_hull_incremental.h"
 #include "ptm_alt_templates.h"
+#include "ptm_scaled_templates.h"
 #include "ptm_quat.h"
 
 
@@ -40,6 +41,10 @@ typedef struct
 	const double (*penrose_alt1)[3];
 	const double (*penrose_alt2)[3];
 	const double (*penrose_alt3)[3];
+	const int8_t (*scaled)[3];
+	const int8_t (*scaled_alt1)[3];
+	const int8_t (*scaled_alt2)[3];
+	const int8_t (*scaled_alt3)[3];
 	int num_mappings;
 	const int8_t (*mapping)[PTM_MAX_POINTS];
 	int num_conventional_mappings;
@@ -64,6 +69,10 @@ const refdata_t structure_sc = {	PTM_MATCH_SC,			//.type
 					NULL,				//.penrose_alt1
 					NULL,				//.penrose_alt2
 					NULL,				//.penrose_alt3
+					ptm_scaled_template_sc,		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_CUBIC_MAPPINGS,		//.num_mappings
 					mapping_sc,			//.mapping
 					0,				//.num_conventional_mappings
@@ -87,6 +96,10 @@ const refdata_t structure_fcc = {	PTM_MATCH_FCC,			//.type
 					NULL,				//.penrose_alt1
 					NULL,				//.penrose_alt2
 					NULL,				//.penrose_alt3
+					ptm_scaled_template_fcc,		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_CUBIC_MAPPINGS,		//.num_mappings
 					mapping_fcc,			//.mapping
 					0,				//.num_conventional_mappings
@@ -110,6 +123,10 @@ const refdata_t structure_hcp = {	PTM_MATCH_HCP,				//.type
 					penrose_hcp_alt1,			//.penrose_alt1
 					NULL,					//.penrose_alt2
 					NULL,					//.penrose_alt3
+					ptm_scaled_template_hcp,		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_HEX_MAPPINGS,			//.num_mappings
 					mapping_hcp,				//.mapping
 					NUM_CONVENTIONAL_HEX_MAPPINGS,		//.num_conventional_mappings
@@ -133,6 +150,10 @@ const refdata_t structure_ico = {	PTM_MATCH_ICO,			//.type
 					NULL,				//.penrose_alt1
 					NULL,				//.penrose_alt2
 					NULL,				//.penrose_alt3
+					NULL,       		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_ICO_MAPPINGS,		//.num_mappings
 					mapping_ico,			//.mapping
 					0,				//.num_conventional_mappings
@@ -156,6 +177,10 @@ const refdata_t structure_bcc = {	PTM_MATCH_BCC,			//.type
 					NULL,				//.penrose_alt1
 					NULL,				//.penrose_alt2
 					NULL,				//.penrose_alt3
+					ptm_scaled_template_bcc,		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_CUBIC_MAPPINGS,		//.num_mappings
 					mapping_bcc,			//.mapping
 					0,				//.num_conventional_mappings
@@ -179,6 +204,10 @@ const refdata_t structure_dcub = {	PTM_MATCH_DCUB,				//.type
 					penrose_dcub_alt1,			//.penrose_alt1
 					NULL,					//.penrose_alt2
 					NULL,					//.penrose_alt3
+					ptm_scaled_template_dcub,		//.scaled
+					ptm_scaled_template_dcub_alt1,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					NUM_DCUB_MAPPINGS,			//.num_mappings
 					mapping_dcub,				//.mapping
 					NUM_CONVENTIONAL_DCUB_MAPPINGS,		//.num_conventional_mappings
@@ -202,6 +231,10 @@ const refdata_t structure_dhex = {	PTM_MATCH_DHEX,				//.type
 					penrose_dhex_alt1,			//.penrose_alt1
 					penrose_dhex_alt2,			//.penrose_alt2
 					penrose_dhex_alt3,			//.penrose_alt3
+					ptm_scaled_template_dhex,		//.scaled
+					ptm_scaled_template_dhex_alt1,				//.scaled_alt1
+					ptm_scaled_template_dhex_alt2,				//.scaled_alt2
+					ptm_scaled_template_dhex_alt3,				//.scaled_alt3
 					NUM_DHEX_MAPPINGS,			//.num_mappings
 					mapping_dhex,				//.mapping
 					NUM_CONVENTIONAL_DHEX_MAPPINGS,		//.num_conventional_mappings
@@ -225,6 +258,10 @@ const refdata_t structure_graphene = {	PTM_MATCH_GRAPHENE,			//.type
 					penrose_graphene_alt1,			//.penrose_alt1
 					NULL,					//.penrose_alt2
 					NULL,					//.penrose_alt3
+					NULL,       		//.scaled
+					NULL,				//.scaled_alt1
+					NULL,				//.scaled_alt2
+					NULL,				//.scaled_alt3
 					-1,					//.num_mappings
 					mapping_graphene,			//.mapping
 					NUM_CONVENTIONAL_GRAPHENE_MAPPINGS,	//.num_conventional_mappings

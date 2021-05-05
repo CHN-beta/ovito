@@ -61,6 +61,7 @@ public:
 	struct Neighbor : public NearestNeighborFinder::Neighbor
 	{
 		Vector3 idealVector;
+		Vector3 scaledVector;
 		FloatType disorientation;
 	};
 
