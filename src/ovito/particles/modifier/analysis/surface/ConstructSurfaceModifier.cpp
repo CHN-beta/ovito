@@ -123,9 +123,14 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	const PropertyObject* selProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Get particle "Grain" property.
-	const PropertyObject* grainProperty = particles->getProperty(QStringLiteral("Grain"));
-	if(grainProperty && (grainProperty->dataType() != PropertyObject::Int64 || grainProperty->componentCount() != 1))
-		grainProperty = nullptr;
+	ConstPropertyPtr grainProperty = particles->getProperty(QStringLiteral("Grain"));
+	if(grainProperty && grainProperty->componentCount() != 1)
+		grainProperty.reset();
+	if(grainProperty && grainProperty->dataType() != PropertyObject::Int64) {
+		auto copy = DataOORef<PropertyObject>::makeCopy(grainProperty);
+		copy->convertDataType(DataBuffer::Int64);
+		grainProperty = std::move(copy);
+	}
 
 	// Get simulation cell.
 	const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
@@ -156,7 +161,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 		return std::make_shared<AlphaShapeEngine>(modApp, executionContext, dataset(), 
 				posProperty,
 				selProperty,
-				grainProperty,
+				std::move(grainProperty),
 				std::move(mesh),
 				probeSphereRadius(),
 				smoothingLevel(),

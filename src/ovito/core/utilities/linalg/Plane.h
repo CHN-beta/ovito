@@ -100,7 +100,7 @@ public:
 	/// \note The three points must linearly independent of each other.
 	Plane_3(const Point_3<T>& p1, const Point_3<T>& p2, const Point_3<T>& p3, bool normalize) {
 		if(normalize) {
-			normal = (p2-p1).cross(p3-p1).normalized();
+			normal = (p2-p1).cross(p3-p1).safelyNormalized();
 			dist = normal.dot(p1 - typename Point_3<T>::Origin());
 		}
 		else {
