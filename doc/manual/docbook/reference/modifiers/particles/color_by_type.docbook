@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<section version="5.0"
+         xsi:schemaLocation="http://docbook.org/ns/docbook http://docbook.org/xml/5.0/xsd/docbook.xsd"
+         xml:id="particles.modifiers.color_by_type"
+         xmlns="http://docbook.org/ns/docbook"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:xs="http://www.w3.org/2001/XMLSchema"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:ns="http://docbook.org/ns/docbook">
+  <title>Color by type<ovito-pro/></title>
+
+  <para>
+    <informalfigure><screenshot><mediaobject><imageobject>
+       <imagedata fileref="images/modifiers/color_by_type_panel.png" format="PNG" scale="50" />
+    </imageobject></mediaobject></screenshot></informalfigure>
+
+    This modifier assigns the <literal>Color</literal> property of particles, bonds, or other data elements
+    to visualize the discrete values of one of their <emphasis>typed properties</emphasis>. A typed property 
+    is one that has some named types defined, associating each numeric value with a corresponding name and color, for example:
+    <itemizedlist>
+      <listitem>Typed particle properties:
+      <itemizedlist>
+        <listitem><literal>Particle Type</literal></listitem>
+        <listitem><literal>Residue Type</literal></listitem>
+        <listitem><literal>Atom Name</literal></listitem>
+        <listitem><literal>Structure Type</literal></listitem>
+      </itemizedlist>
+      </listitem>
+      <listitem>Typed bond properties:
+      <itemizedlist>
+        <listitem><literal>Bond Type</literal></listitem>
+      </itemizedlist>
+      </listitem>
+    </itemizedlist>
+  </para>
+
+  <para>
+    While this modifier allows you to color the data elements based on one of these properties, 
+    the <link linkend="viewport_layers.color_legend">color legend layer</link> may be added to the active viewport to include a legend with type names
+    and the corresponding colors in the rendered picture. The following picture shows two different applications 
+    of the <emphasis>Color by type</emphasis> modifier to visualize the <literal>Residue Type</literal> and the <literal>Particle Type</literal>
+    particle properties of a molecule, respectively:
+    <screenshot><mediaobject><imageobject>
+      <imagedata fileref="images/modifiers/color_by_type_example.png" format="png" scale="110" />
+    </imageobject></mediaobject></screenshot>
+  </para>
+
+  <para>
+    The <emphasis>Color by type</emphasis> modifier lets you color particles and bonds based on some <emphasis>discrete</emphasis> property with predefined named types.
+    OVITO furthermore offers the <link linkend="particles.modifiers.color_coding">Color coding</link> modifier, which is the right tool to visualize the values of <emphasis>continuous</emphasis> properties. 
+  </para>
+
+  <simplesect>
+    <title>Parameters</title>
+
+    <variablelist>
+
+      <varlistentry>
+        <term>Operate on</term>
+        <listitem>
+          <para>Selects the class of data elements (particles, bonds, voxel, etc.) the modifier should operate on.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>Property</term>
+        <listitem>
+          <para>The typed property that serves as input for the modifier and which the assigned colors should be based on. 
+                The drop-down list shows only properties with discrete values for which at least one element type is defined, 
+                e.g. a particle type.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>Color only selected elements</term>
+        <listitem>
+          <para>This option lets the modifier assign new colors only to the currently selected data elements. 
+          Existing colors of the unselected elements will be preserved. This allows you to color only a subset of the 
+          particles or bonds. Use the <link linkend="particles.modifiers.select_particle_type">Select type</link> modifier, for example,
+          to first create a selection and define the subset of data elements that are going to be colored by type.</para>
+          <para>The <emphasis>Clear selection</emphasis> option tells the modifier to reset the element selection after 
+          it has assigned the colors. This is useful in order to see the assigned colors in the interactive viewports of
+          OVITO, which may otherwise be masked by the red highlighting color used for rendering selected elements.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>Types</term>
+        <listitem>
+          <para>The list of types defined by the selected input property and their associated colors. 
+          Note that this list is not directly editable in the modifier panel. To change the colors representing the individual types,
+          you have to modify the original particle or bond types created by the pipeline's <link linkend="data_sources">data source</link>.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </simplesect>
+
+  <simplesect>
+    <title>See also</title>
+    <para>
+      <pydoc-link href="modules/ovito_modifiers" anchor="ovito.modifiers.ColorByTypeModifier"><classname>ColorByTypeModifier</classname> (Python API)</pydoc-link>
+    </para>
+  </simplesect>
+
+</section>

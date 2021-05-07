@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(SurfaceMeshVis, SurfaceMeshVisEditor);
 void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "visual_elements.surface_mesh.html");
+	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:visual_elements.surface_mesh");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

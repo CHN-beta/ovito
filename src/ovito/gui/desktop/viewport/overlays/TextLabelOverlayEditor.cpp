@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,7 @@
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/desktop/widgets/general/PopupUpdateComboBox.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/overlays/TextLabelOverlay.h>
@@ -50,7 +51,7 @@ SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Text label"), rolloutParams, "viewport_layers.text_label.html");
+	QWidget* rollout = createRollout(tr("Text label"), rolloutParams, "manual:viewport_layers.text_label");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
@@ -60,36 +61,11 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	layout->setColumnStretch(2, 1);
 	int row = 0;
 
-	// This widget displays the list of available pipeline nodes in the current scene.
-	class PipelineSceneNodeComboBox : public QComboBox {
-	public:
-		/// Initializes the widget.
-		PipelineSceneNodeComboBox(QWidget* parent = nullptr) : QComboBox(parent), _overlay(nullptr) {}
+	PopupUpdateComboBox* nodeComboBox = new PopupUpdateComboBox();
+	connect(nodeComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
 
-		/// Sets the overlay being edited.
-		void setOverlay(TextLabelOverlay* overlay) { _overlay = overlay; }
-
-		/// Is called just before the drop-down box is activated.
-		virtual void showPopup() override {
-			clear();
-			if(_overlay) {
-				// Find all ObjectNodes in the scene.
-				_overlay->dataset()->sceneRoot()->visitObjectNodes([this](PipelineSceneNode* node) {
-					addItem(node->objectTitle(), QVariant::fromValue(node));
-					return true;
-				});
-				setCurrentIndex(findData(QVariant::fromValue(_overlay->sourceNode())));
-			}
-			if(count() == 0) addItem(tr("<none>"));
-			QComboBox::showPopup();
-		}
-
-	private:
-		TextLabelOverlay* _overlay;
-	};
-
-	PipelineSceneNodeComboBox* nodeComboBox = new PipelineSceneNodeComboBox();
 	CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", nodeComboBox,
+			// updateWidgetFunction:
 			[nodeComboBox](const QVariant& value) {
 				nodeComboBox->clear();
 				PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(value.value<PipelineSceneNode*>());
@@ -101,13 +77,13 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 				}
 				nodeComboBox->setCurrentIndex(0);
 			},
+			// updatePropertyFunction:
 			[nodeComboBox]() {
 				return nodeComboBox->currentData();
 			},
-			[nodeComboBox](RefTarget* editObject) {
-				nodeComboBox->setOverlay(dynamic_object_cast<TextLabelOverlay>(editObject));
-			});
-	connect(nodeComboBox, (void (QComboBox::*)(int))&QComboBox::activated, sourcePUI, &CustomParameterUI::updatePropertyValue);
+			// resetUIFunction:
+			{});
+	connect(nodeComboBox, QOverload<int>::of(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
 	layout->addWidget(new QLabel(tr("Data source:")), row, 0);
 	layout->addWidget(sourcePUI->widget(), row++, 1, 1, 2);
 
@@ -165,7 +141,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	layout->addWidget(labelFontPUI->label(), row, 0);
 	layout->addWidget(labelFontPUI->fontPicker(), row++, 1, 1, 2);
 
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "viewport_layers.text_label.html");
+	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:viewport_layers.text_label");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
     _attributeNamesList = new QLabel();
@@ -186,6 +162,26 @@ bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEv
 		updateEditorFieldsLater(this);
 	}
 	return PropertiesEditor::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Updates the combobox list showing the available data sources.
+******************************************************************************/
+void TextLabelOverlayEditor::updateSourcesList()
+{
+	QComboBox* combobox = static_cast<QComboBox*>(sender());
+
+	combobox->clear();
+	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
+		// Enumerate all pipelines in the scene.
+		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+			combobox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
+			return true;
+		});
+		combobox->setCurrentIndex(combobox->findData(QVariant::fromValue(overlay->sourceNode())));
+	}
+	if(combobox->count() == 0) 
+		combobox->addItem(tr("<none>"));
 }
 
 /******************************************************************************

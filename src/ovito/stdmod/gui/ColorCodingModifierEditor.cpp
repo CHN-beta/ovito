@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ SET_OVITO_OBJECT_EDITOR(ColorCodingModifier, ColorCodingModifierEditor);
 void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Color coding"), rolloutParams, "particles.modifiers.color_coding.html");
+	QWidget* rollout = createRollout(tr("Color coding"), rolloutParams, "manual:particles.modifiers.color_coding");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

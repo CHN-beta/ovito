@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,13 +50,13 @@ ManualSelectionModifier::ManualSelectionModifier(DataSet* dataset) : GenericProp
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void ManualSelectionModifier::initializeModifier(ModifierApplication* modApp)
+void ManualSelectionModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	Modifier::initializeModifier(modApp);
+	Modifier::initializeModifier(time, modApp, executionContext);
 
 	// Take a snapshot of the existing selection state at the time the modifier is created.
 	if(!getSelectionSet(modApp, false)) {
-		resetSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+		resetSelection(modApp, modApp->evaluateInputSynchronous(time));
 	}
 }
 

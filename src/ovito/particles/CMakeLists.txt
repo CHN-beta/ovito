@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -35,7 +35,6 @@ SET(SourceFiles
 	objects/TrajectoryVis.cpp
 	objects/VectorVis.cpp
 	modifier/coloring/AmbientOcclusionModifier.cpp
-	modifier/coloring/AmbientOcclusionRenderer.cpp
 	modifier/modify/WrapPeriodicImagesModifier.cpp
 	modifier/modify/UnwrapTrajectoriesModifier.cpp
 	modifier/modify/CreateBondsModifier.cpp
@@ -121,7 +120,7 @@ ENDIF()
 OVITO_STANDARD_PLUGIN(Particles
 	SOURCES ${SourceFiles}
 	PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay
-	PRIVATE_LIB_DEPENDENCIES VoroPlusPlus OpenGLRenderer PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
+	PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile
 	OPTIONAL_PLUGIN_DEPENDENCIES StdMod
 	PRECOMPILED_HEADERS Particles.h
 	LIB_DEPENDENCIES ${OVITO_QT_MAJOR_VERSION}::Xml

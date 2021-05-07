@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -176,7 +176,6 @@ bool parallelForChunks(size_t loopCount, Task& promise, Function kernel)
 	return !promise.isCanceled();
 }
 
-
 template<class Function>
 void parallelForChunks(size_t loopCount, Function kernel)
 {
@@ -209,6 +208,69 @@ void parallelForChunks(size_t loopCount, Function kernel)
 #else
 	kernel(0, loopCount);
 #endif
+}
+
+template<typename ResultObject, class Function>
+std::vector<ResultObject> parallelForCollect(size_t loopCount, Task& task, Function&& kernel, size_t progressChunkSize = 1024)
+{
+	task.setProgressMaximum(loopCount / progressChunkSize);
+	task.setProgressValue(0);
+
+#ifndef OVITO_DISABLE_THREADING
+	std::vector<std::future<void>> workers;
+	size_t num_threads = Application::instance()->idealThreadCount();
+	std::vector<ResultObject> results{num_threads};
+	size_t chunkSize = loopCount / num_threads;
+	size_t startIndex = 0;
+	size_t endIndex = chunkSize;
+	for(size_t t = 0; t < num_threads; t++) {
+		if(t == num_threads - 1)
+			endIndex += loopCount % num_threads;
+		workers.push_back(std::async(std::launch::async, [&task, &kernel, startIndex, endIndex, progressChunkSize, threadResult = &results[t]]() {
+			for(size_t i = startIndex; i < endIndex;) {
+				// Execute kernel.
+				kernel(i, *threadResult);
+
+				i++;
+
+				// Update progress indicator.
+				if((i % progressChunkSize) == 0) {
+					OVITO_ASSERT(i != 0);
+					task.incrementProgressValue();
+				}
+				if(task.isCanceled())
+					return;
+			}
+		}));
+		startIndex = endIndex;
+		endIndex += chunkSize;
+	}
+
+	for(auto& t : workers)
+		t.wait();
+	for(auto& t : workers)
+		t.get();
+#else
+	std::vector<ResultObject> results{1};
+	for(size_t i = 0; i < loopCount; ) {
+		// Execute kernel.
+		kernel(i, results.front());
+		i++;
+
+		// Update progress indicator.
+		if((i % progressChunkSize) == 0) {
+			OVITO_ASSERT(i != 0);
+			task.incrementProgressValue();
+		}
+		if(task.isCanceled())
+			break;
+	}
+#endif
+
+	task.incrementProgressValue(loopCount % progressChunkSize);
+	if(task.isCanceled())
+		results.clear();
+	return results;
 }
 
 }	// End of namespace

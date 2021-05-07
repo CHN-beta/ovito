@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -182,7 +182,7 @@ public:
 	/// Returns a vector with the input particle colors.
 	ConstPropertyPtr inputParticleColors() const;
 
-	/// Returns a vector with the input particle radii.
+	/// Returns a vector with the input particle radii. The global radius scaling factor of the ParticlesVis is not included.
 	ConstPropertyPtr inputParticleRadii() const;
 
 	/// Returns a vector with the input bond colors.

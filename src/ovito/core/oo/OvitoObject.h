@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,7 +119,7 @@ protected:
 	///
 	/// The default implementation of this method does nothing.
 	/// \sa loadFromStream()
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) {}
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const {}
 
 	/// \brief Loads the data of this class from an input stream.
 	/// \param stream The source stream.
@@ -208,7 +208,7 @@ private:
 /// \brief Dynamic cast operator for subclasses of OvitoObject.
 ///
 /// Returns a pointer to the input object, cast to type \c T if the object is of type \c T
-/// (or a subclass); otherwise returns \c NULL.
+/// (or a subclass); otherwise returns \c nullptr.
 ///
 /// \relates OvitoObject
 template<class T, class U>
@@ -219,7 +219,7 @@ inline T* dynamic_object_cast(U* obj) noexcept {
 /// \brief Dynamic cast operator for subclasses of OvitoObject derived.
 ///
 /// Returns a constant pointer to the input object, cast to type \c T if the object is of type \c T
-/// (or subclass); otherwise returns \c NULL.
+/// (or subclass); otherwise returns \c nullptr.
 ///
 /// \relates OvitoObject
 template<class T, class U>
@@ -264,7 +264,7 @@ T* const_pointer_cast(const T* p) noexcept {
 /// \brief Dynamic cast operator for fancy pointers to OVITO objects.
 ///
 /// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
-/// (or a subclass); otherwise returns \c NULL.
+/// (or a subclass); otherwise returns \c nullptr.
 ///
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
@@ -275,7 +275,7 @@ inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 /// \brief Dynamic cast operator for fancy pointers to OVITO objects.
 ///
 /// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
-/// (or a subclass); otherwise returns \c NULL.
+/// (or a subclass); otherwise returns \c nullptr.
 ///
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>

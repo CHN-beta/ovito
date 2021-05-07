@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -364,7 +364,7 @@ bool SceneNode::isSelected() const
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 Alexander Stukowski
+//  Copyright 2015 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ SET_OVITO_OBJECT_EDITOR(ElasticStrainModifier, ElasticStrainModifierEditor);
 void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Elastic strain calculation"), rolloutParams, "particles.modifiers.elastic_strain.html");
+	QWidget* rollout = createRollout(tr("Elastic strain calculation"), rolloutParams, "manual:particles.modifiers.elastic_strain");
 
     QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/properties/ElementType.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 
 namespace Ovito { namespace Particles {
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,12 +37,12 @@ SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);
 ******************************************************************************/
 void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Replicate"), rolloutParams, "particles.modifiers.show_periodic_images.html");
+	QWidget* rollout = createRollout(tr("Replicate"), rolloutParams, "manual:particles.modifiers.show_periodic_images");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 	layout->setHorizontalSpacing(2);
 	layout->setVerticalSpacing(2);
 #endif
@@ -67,7 +67,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 	layout->addWidget(uniqueIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
 	// Create a second rollout.
-	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "particles.modifiers.show_periodic_images.html");
+	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.show_periodic_images");
 
 	// Create the rollout contents.
 	QVBoxLayout* topLayout = new QVBoxLayout(rollout);

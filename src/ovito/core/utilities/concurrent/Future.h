@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -370,7 +370,7 @@ template<typename FC, class Executor>
 typename Ovito::detail::resulting_future_type<FC,std::tuple<Future<R...>>>::type Future<R...>::then_future(Executor&& executor, bool defer, FC&& cont) noexcept
 {
 	// Infer the exact future/promise/task types to create.
-	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
+	using result_future_type = typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type;
 	using result_promise_type = typename result_future_type::promise_type;
 	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
 

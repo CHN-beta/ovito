@@ -47,6 +47,9 @@ public:
 
 	QLabel* overflowWidget() { return _overflowLabel; }
 
+	virtual QSize sizeHint() const override;
+	virtual QSize minimumSizeHint() const override { return sizeHint(); }
+
 public Q_SLOTS:
 
 	/// Displays the given message for the specified number of milli-seconds
@@ -63,6 +66,7 @@ private:
 
 	QTimer* _timer = nullptr;
 	QLabel* _overflowLabel = nullptr;
+	mutable int _preferredHeight = 0;
 };
 
 }	// End of namespace

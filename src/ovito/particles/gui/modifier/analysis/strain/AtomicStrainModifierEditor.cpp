@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_OVITO_OBJECT_EDITOR(AtomicStrainModifier, AtomicStrainModifierEditor);
 void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Atomic strain"), rolloutParams, "particles.modifiers.atomic_strain.html");
+	QWidget* rollout = createRollout(tr("Atomic strain"), rolloutParams, "manual:particles.modifiers.atomic_strain");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -148,7 +148,7 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
 	layout->addWidget(statusLabel());
 
 	// Open a sub-editor for the reference object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference")));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &AtomicStrainModifierEditor::onContentsChanged);
 }

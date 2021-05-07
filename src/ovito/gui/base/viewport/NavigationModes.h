@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -258,9 +258,6 @@ private:
 
 	/// Indicates that the mouse cursor is over an object.
 	bool _showCursor = false;
-
-	/// The geometry buffer used to render the orbit center.
-	std::shared_ptr<CylinderPrimitive> _orbitCenterMarker;
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ SET_OVITO_OBJECT_EDITOR(CommonNeighborAnalysisModifier, CommonNeighborAnalysisMo
 void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Common neighbor analysis"), rolloutParams, "particles.modifiers.common_neighbor_analysis.html");
+	QWidget* rollout = createRollout(tr("Common neighbor analysis"), rolloutParams, "manual:particles.modifiers.common_neighbor_analysis");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

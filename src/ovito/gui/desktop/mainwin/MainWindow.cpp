@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,12 +28,10 @@
 #include <ovito/gui/desktop/widgets/rendering/FrameBufferWindow.h>
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
+#include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
-#include <ovito/gui/desktop/viewport/ViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -52,8 +50,10 @@ namespace Ovito {
 MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
-#ifdef OVITO_EXPIRATION_DATE
+#if defined(OVITO_EXPIRATION_DATE)
 	_baseWindowTitle += tr(" - Preview build expiring on %1").arg(QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate).toString(Qt::SystemLocaleShortDate));
+#elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
+	_baseWindowTitle += tr(" - Development build %1 created on %2").arg(Application::applicationVersionString()).arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
 #endif
 	setWindowTitle(_baseWindowTitle);
 	setAttribute(Qt::WA_DeleteOnClose);
@@ -112,20 +112,24 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 	animationPanelLayout->addWidget(trackBar);
 
 	// Create status bar.
-	_statusBarLayout = new QHBoxLayout();
+	QWidget* statusBarContainer = new QWidget();
+	statusBarContainer->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+	_statusBarLayout = new QHBoxLayout(statusBarContainer);
 	_statusBarLayout->setContentsMargins(2,0,0,0);
 	_statusBarLayout->setSpacing(2);
-	animationPanelLayout->addLayout(_statusBarLayout, 1);
+	animationPanelLayout->addWidget(statusBarContainer, 1);
 
-	_statusBar = new StatusBar(animationPanel);
+	_statusBar = new StatusBar();
 	_statusBar->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-	_statusBarLayout->addWidget(_statusBar, 1);
+	_statusBarLayout->addWidget(_statusBar);
 	_statusBar->overflowWidget()->setParent(animationPanel);
 
 	TaskDisplayWidget* taskDisplay = new TaskDisplayWidget(this);
-	_statusBarLayout->insertWidget(1, taskDisplay);
+	taskDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+	_statusBarLayout->addWidget(taskDisplay, 1);
 
 	_coordinateDisplay = new CoordinateDisplayWidget(datasetContainer(), animationPanel);
+	_coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 	_statusBarLayout->addWidget(_coordinateDisplay);
 	_statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));
 
@@ -226,6 +230,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 
 	// Create the frame buffer window.
 	_frameBufferWindow = new FrameBufferWindow(this);
+	_frameBufferWindow->setWindowTitle(tr("Render output"));
 
 	// Update window title when document path changes.
 	connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
@@ -278,6 +283,7 @@ void MainWindow::restoreLayout()
 	QVariant state = settings.value("state");
 	if(state.canConvert<QByteArray>())
 		restoreState(state.toByteArray());
+	commandPanel()->restoreLayout();
 }
 
 /******************************************************************************
@@ -288,6 +294,7 @@ void MainWindow::saveLayout()
 	QSettings settings;
 	settings.beginGroup("app/mainwindow");
 	settings.setValue("state", saveState());
+	commandPanel()->saveLayout();
 }
 
 /******************************************************************************
@@ -336,8 +343,8 @@ void MainWindow::createMainMenu()
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_ONLINE_HELP));
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_SCRIPTING_HELP));
 	helpMenu->addSeparator();
-	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_OPENGL_INFO));
-#ifndef  Q_OS_MACX
+	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_GRAPHICS_SYSINFO));
+#ifndef  Q_OS_MACOS
 	helpMenu->addSeparator();
 #endif
 	helpMenu->addAction(actionManager()->getAction(ACTION_HELP_ABOUT));
@@ -386,6 +393,11 @@ void MainWindow::createMainToolbar()
 	_mainToolbar->addSeparator();
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
+
+	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
+	pipelinesLabel->setIndent(36);
+	_mainToolbar->addWidget(pipelinesLabel);
+	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
 }
 
 /******************************************************************************
@@ -444,15 +456,62 @@ void MainWindow::processViewportUpdates()
 /******************************************************************************
 * Shows the online manual and opens the given help page.
 ******************************************************************************/
-void MainWindow::openHelpTopic(const QString& page)
+void MainWindow::openHelpTopic(const QString& helpTopicId)
 {
+	// Determine the filesystem path where OVITO's documentation files are installed.
 	QDir prefixDir(QCoreApplication::applicationDirPath());
 	QDir helpDir = QDir(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_DOCUMENTATION_PATH));	
 
-	// Use the web browser to display online help.
-	QString fullPath = helpDir.absoluteFilePath(page.isEmpty() ? QStringLiteral("index.html") : page);
-	if(!QDesktopServices::openUrl(QUrl::fromLocalFile(fullPath))) {
-		Exception(tr("Could not launch web browser to display online manual. The requested file path is %1").arg(fullPath)).reportError();
+	// Resolve the help topic ID.
+	QUrl url;
+	if(helpTopicId.endsWith(".html") || helpTopicId.contains(".html#")) {
+		// If a HTML file name has been specified, open it directly.
+		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(helpTopicId));
+	}
+	else if(helpTopicId.startsWith("manual:")) {
+		// If a Sphinx link target has been specified, resolve it to a HTML file path using the
+		// Intersphinx inventory. The file 'objects.txt' is generated by the script 'ovito/doc/manual/CMakeLists.txt'
+		// and gets distributed together with the application.
+		QFile inventoryFile(helpDir.absoluteFilePath("objects.txt"));
+		if(!inventoryFile.open(QIODevice::ReadOnly | QIODevice::Text))
+			qWarning() << "WARNING: Could not open Intersphinx inventory file to resolve help topic reference:" << inventoryFile.fileName() << inventoryFile.errorString();			
+		QTextStream stream(&inventoryFile);
+		// Skip file until to the line "std:label":
+		while(!stream.atEnd()) {
+			QString line = stream.readLine();
+			if(line.startsWith("std:label"))
+				break;
+		}
+		// Now parse the link target list.
+		QString searchString = QChar('\t') + helpTopicId.midRef(7) + QChar(' ');
+		while(!stream.atEnd()) {
+			QString line = stream.readLine();
+			if(line.startsWith(searchString)) {
+				int startIndex = line.lastIndexOf(QChar(' '));
+				QString filePath = line.mid(startIndex + 1).trimmed();
+				QString anchor;
+				int anchorIndex = filePath.indexOf(QChar('#'));
+				if(anchorIndex >= 0) {
+					anchor = filePath.mid(anchorIndex + 1);
+					filePath.truncate(anchorIndex);
+				}
+				url = QUrl::fromLocalFile(helpDir.absoluteFilePath(filePath));
+				url.setFragment(anchor);
+				break;
+			}
+		}
+		OVITO_ASSERT(!url.isEmpty());
+	}
+	else {
+		OVITO_ASSERT(helpTopicId.isEmpty());
+		
+		// If no help topic has been specified, open the main index page of the user manual.
+		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
+	}
+
+	// Use the local web browser to display the help page.
+	if(!QDesktopServices::openUrl(url)) {
+		Exception(tr("Could not launch web browser to display manual. The requested URL is:\n%1").arg(url.toDisplayString())).reportError();
 	}
 }
 
@@ -462,32 +521,6 @@ void MainWindow::openHelpTopic(const QString& page)
 void MainWindow::setViewportInputFocus() 
 {
 	viewportsPanel()->setFocus(Qt::OtherFocusReason);
-}
-
-/******************************************************************************
-* Returns the master OpenGL context managed by this window, which is used to
-* render the viewports. If sharing of OpenGL contexts between viewports is
-* disabled, then this function returns the GL context of the first viewport
-* in this window.
-******************************************************************************/
-QOpenGLContext* MainWindow::getOpenGLContext()
-{
-	if(_glcontext)
-		return _glcontext;
-
-	if(OpenGLSceneRenderer::contextSharingEnabled()) {
-		_glcontext = new QOpenGLContext(this);
-		_glcontext->setFormat(ViewportSceneRenderer::getDefaultSurfaceFormat());
-		if(!_glcontext->create())
-			throw Exception(tr("Failed to create OpenGL context."), &datasetContainer());
-	}
-	else {
-		ViewportWindow* vpWindow = viewportsPanel()->findChild<ViewportWindow*>();
-		if(vpWindow)
-			_glcontext = vpWindow->context();
-	}
-
-	return _glcontext;
 }
 
 /******************************************************************************

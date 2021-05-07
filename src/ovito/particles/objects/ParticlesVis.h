@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,7 +84,7 @@ public:
 	ConstPropertyPtr particleColors(const ParticlesObject* particles, bool highlightSelection) const;
 
 	/// Determines the particle radii used for rendering.
-	ConstPropertyPtr particleRadii(const ParticlesObject* particles) const;
+	ConstPropertyPtr particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const;
 
 	/// Determines the display radius of a single particle.
 	FloatType particleRadius(size_t particleIndex, ConstPropertyAccess<FloatType> radiusProperty, const PropertyObject* typeProperty) const;
@@ -122,8 +122,11 @@ private:
 
 private:
 
-	/// Controls the default display radius of atomic particles.
+	/// Controls the default display radius of particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls the global scaling factor, which is applied to all rendered particles.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radiusScaleFactor, setRadiusScaleFactor);
 
 	/// Controls the rendering quality mode for particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePrimitive::RenderingQuality, renderingQuality, setRenderingQuality);

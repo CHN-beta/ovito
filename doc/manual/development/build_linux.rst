@@ -1,0 +1,72 @@
+.. _development.build_linux:
+
+Building OVITO on Linux
+=============================
+
+The following instructions have been written for Ubuntu Linux 16.04 or newer, or any compatible Debian-based distribution.
+Other Linux distributions may require slightly different build steps.
+
+Installing dependencies
+-----------------------
+
+First install the required :ref:`build tools and third-party libraries <development.requirements>`:
+
+.. list-table::
+   :width: 100%
+   :widths: auto
+   :header-rows: 1
+
+   * - Linux distribution
+     - Installation command
+   * - Ubuntu / Debian
+     - .. code::
+
+          sudo apt-get install build-essential git cmake-curses-gui qt5-default libqt5svg5-dev \
+                libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
+                libavresample-dev libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev \
+                libhdf5-serial-dev libssh-dev python3-sphinx python3-sphinx-rtd-theme
+
+   * - openSUSE
+     - .. code::
+          
+          sudo zypper install git cmake gcc-c++ libQt5Concurrent-devel libQt5Core-devel libQt5Gui-devel \
+                 libQt5Network-devel libQt5DBus-devel libQt5OpenGL-devel libQt5PrintSupport-devel \
+                 libQt5Widgets-devel libQt5Xml-devel libQt5Svg-devel libavutil-devel libavresample-devel \
+                 libavfilter-devel libavcodec-devel libavdevice-devel netcdf-devel libssh-devel \
+                 boost-devel hdf5-devel libswscale-devel
+
+   * - CentOS / RHEL
+     - .. code::
+       
+          sudo yum install epel-release
+          sudo yum install git gcc gcc-c++ cmake qt5-qtbase-devel qt5-qtsvg-devel qt5-qttools-devel \
+                               boost-devel netcdf-devel hdf5-devel libssh-devel
+
+       These packages allow building only a basic version of OVITO without video encoding support and documentation.
+       In order to build a more complete version, other :ref:`dependencies <development.requirements>` must be installed manually.
+
+Getting the source code
+-----------------------
+
+Download the source repository of OVITO into a new subdirectory named :file:`ovito/`::
+
+  git clone https://gitlab.com/stuko/ovito.git
+
+Compiling OVITO
+---------------
+
+Create a build directory and let `CMake <https://www.cmake.org/>`_ generate a Makefile::
+
+  cd ovito
+  mkdir build
+  cd build
+  cmake -DCMAKE_BUILD_TYPE=Release ..
+
+If this step fails, you can now run :command:`ccmake .` to start up the
+`CMake <https://www.cmake.org/>`_ configuration program and adjust the build options as needed.
+
+The build OVITO run::
+
+  make -j4
+
+If this step is successful, the :program:`ovito` executable can be found in the directory :file:`ovito/build/bin/`.

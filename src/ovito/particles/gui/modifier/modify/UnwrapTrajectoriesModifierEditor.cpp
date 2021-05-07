@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2019 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ SET_OVITO_OBJECT_EDITOR(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierEd
 void UnwrapTrajectoriesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Unwrap trajectories"), rolloutParams, "particles.modifiers.unwrap_trajectories.html");
+	QWidget* rollout = createRollout(tr("Unwrap trajectories"), rolloutParams, "manual:particles.modifiers.unwrap_trajectories");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

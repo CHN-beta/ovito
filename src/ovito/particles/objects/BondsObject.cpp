@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,7 @@
 #include "BondsObject.h"
 #include "BondType.h"
 #include "ParticlesObject.h"
+#include "ParticleBondMap.h"
 
 namespace Ovito { namespace Particles {
 
@@ -94,6 +95,150 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 			}
 		}
 		++topoIter;
+	}
+}
+
+/******************************************************************************
+* Creates new bonds making sure bonds are not created twice.
+******************************************************************************/
+size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
+{
+	OVITO_ASSERT(isSafeToModify());
+
+	if(bondsVis)
+		setVisElement(bondsVis);
+
+	// Are there existing bonds?
+	if(elementCount() == 0) {
+		setElementCount(newBonds.size());
+
+		// Create essential bond properties.
+		PropertyAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty, false, executionContext);
+		PropertyAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
+		PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
+
+		// Transfer per-bond data into the standard property arrays.
+		auto t = topologyProperty.begin();
+		auto pbc = periodicImageProperty.begin();
+		for(const Bond& bond : newBonds) {
+			OVITO_ASSERT(!particles || bond.index1 < particles->elementCount());
+			OVITO_ASSERT(!particles || bond.index2 < particles->elementCount());
+			(*t)[0] = bond.index1;
+			(*t)[1] = bond.index2;
+			++t;
+			*pbc++ = bond.pbcShift;
+		}
+		topologyProperty.reset();
+		periodicImageProperty.reset();
+
+		// Insert bond type.
+		if(bondTypeProperty) {
+			bondTypeProperty->fill<int>(bondType->numericId());
+			bondTypeProperty->addElementType(std::move(bondType));
+		}
+
+		// Insert other bond properties.
+		for(const auto& bprop : bondProperties) {
+			OVITO_ASSERT(bprop->size() == newBonds.size());
+			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
+			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
+			OVITO_ASSERT(!bondTypeProperty || bprop->type() != BondsObject::TypeProperty);
+			createProperty(bprop);
+		}
+
+		return newBonds.size();
+	}
+	else {
+		// This is needed to determine which bonds already exist.
+		ParticleBondMap bondMap(*this);
+
+		// Check which bonds are new and need to be merged.
+		size_t originalBondCount = elementCount();
+		size_t outputBondCount = originalBondCount;
+		std::vector<size_t> mapping(newBonds.size());
+		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
+			// Check if there is already a bond like this.
+			const Bond& bond = newBonds[bondIndex];
+			auto existingBondIndex = bondMap.findBond(bond);
+			if(existingBondIndex == originalBondCount) {
+				// It's a new bond.
+				mapping[bondIndex] = outputBondCount;
+				outputBondCount++;
+			}
+			else {
+				// It's an already existing bond.
+				mapping[bondIndex] = existingBondIndex;
+			}
+		}
+		if(outputBondCount == originalBondCount)
+			return 0;
+
+		// Resize the existing property arrays.
+		setElementCount(outputBondCount);
+
+		PropertyAccess<ParticleIndexPair> newBondsTopology = expectMutableProperty(BondsObject::TopologyProperty);
+		PropertyAccess<Vector3I> newBondsPeriodicImages = createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
+		PropertyAccess<int> newBondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
+
+		if(newBondTypeProperty && !newBondTypeProperty.buffer()->elementType(bondType->numericId()))
+			newBondTypeProperty.buffer()->addElementType(bondType);
+
+		// Copy bonds information into the extended arrays.
+		for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
+			if(mapping[bondIndex] >= originalBondCount) {
+				const Bond& bond = newBonds[bondIndex];
+				OVITO_ASSERT(!particles || bond.index1 < particles->elementCount());
+				OVITO_ASSERT(!particles || bond.index2 < particles->elementCount());
+				newBondsTopology[mapping[bondIndex]][0] = bond.index1;
+				newBondsTopology[mapping[bondIndex]][1] = bond.index2;
+				newBondsPeriodicImages[mapping[bondIndex]] = bond.pbcShift;
+				if(newBondTypeProperty) 
+					newBondTypeProperty[mapping[bondIndex]] = bondType->numericId();
+			}
+		}
+		newBondsTopology.reset();
+		newBondsPeriodicImages.reset();
+		newBondTypeProperty.reset();
+
+		// Initialize property values of existing properties for new bonds.
+		for(PropertyObject* bondPropertyObject : makePropertiesMutable()) {
+			if(bondPropertyObject->type() == BondsObject::ColorProperty) {
+				if(particles) {
+					ConstPropertyPtr bondColors;
+					if(particles->bonds() != this) {
+						// Create a temporary copy of the ParticlesObject, which is assigned this BondsObject. 
+						DataOORef<ParticlesObject> particlesCopy = DataOORef<ParticlesObject>::makeCopy(particles);
+						particlesCopy->setBonds(this);
+						bondColors = particlesCopy->inputBondColors(true);
+					}
+					else {
+						bondColors = particles->inputBondColors(true);
+					}
+					bondPropertyObject->copyRangeFrom(*bondColors, originalBondCount, originalBondCount, outputBondCount - originalBondCount);
+				}
+			}
+		}
+
+		// Merge new bond properties.
+		for(const auto& bprop : bondProperties) {
+			OVITO_ASSERT(bprop->size() == newBonds.size());
+			OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
+			OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
+			OVITO_ASSERT(!bondType || bprop->type() != BondsObject::TypeProperty);
+
+			PropertyObject* propertyObject;
+			if(bprop->type() != BondsObject::UserProperty) {
+				propertyObject = createProperty(bprop->type(), true, executionContext);
+			}
+			else {
+				propertyObject = createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
+			}
+
+			// Copy bond property data.
+			propertyObject->mappedCopyFrom(*bprop, mapping);
+		}
+
+		return outputBondCount - originalBondCount;
 	}
 }
 
@@ -178,6 +323,7 @@ void BondsObject::OOMetaClass::initialize()
 	// Enable automatic conversion of a BondPropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<BondPropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, BondPropertyReference>();
+	QMetaType::registerComparators<BondPropertyReference>();
 
 	setPropertyClassDisplayName(tr("Bonds"));
 	setElementDescriptionName(QStringLiteral("bonds"));

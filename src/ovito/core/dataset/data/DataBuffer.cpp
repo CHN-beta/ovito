@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,8 +91,11 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 ******************************************************************************/
 void DataBuffer::resize(size_t newSize, bool preserveData)
 {
+	// Note: Do not reallocate the buffer when its size is reduced.
+	// The PropertyContainerAccess::filterResize() method relies on 
+	// the data buffer's memory pointer to remain the same when the buffer is shrinked.
 	prepareWriteAccess();
-	if(newSize > _capacity || newSize < _capacity * 3 / 4 || !_data) {
+	if(newSize > _capacity || !_data) {
 		std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newSize * _stride]);
 		if(preserveData)
 			std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
@@ -151,7 +154,7 @@ void DataBuffer::truncate(size_t numElementsToRemove)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 

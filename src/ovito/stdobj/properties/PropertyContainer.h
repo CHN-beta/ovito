@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
 #include "PropertyContainerClass.h"
+#include "PropertyReference.h"
 
 namespace Ovito { namespace StdObj {
 
@@ -51,6 +52,7 @@ public:
 	/// Appends a new property to the list of properties.
 	void addProperty(const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		if(properties().empty())
 			_elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
@@ -61,6 +63,7 @@ public:
 	/// Inserts a new property into the list of properties.
 	void insertProperty(int index, const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		OVITO_ASSERT(properties().contains(const_cast<PropertyObject*>(property)) == false);
 		if(properties().empty())
 			_elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
@@ -71,6 +74,7 @@ public:
 	/// Removes a property from this container.
 	void removeProperty(const PropertyObject* property) {
 		OVITO_ASSERT(property);
+		OVITO_ASSERT(isSafeToModify());
 		int index = properties().indexOf(const_cast<PropertyObject*>(property));
 		OVITO_ASSERT(index >= 0);
 		_properties.remove(this, PROPERTY_FIELD(properties), index);
@@ -126,7 +130,7 @@ public:
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = {});
+	PropertyObject* createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath = ConstDataObjectPath{});
 
 	/// Creates a user-defined property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
@@ -161,7 +165,7 @@ public:
 protected:
 
 	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;

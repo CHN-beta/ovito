@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 Alexander Stukowski
+//  Copyright 2014 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -111,7 +111,7 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
 	Q_DECL_CONSTEXPR explicit Vector_4(const Vector_3<T>& v, T w) : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
 #else
-	explicit Vector_4(const Vector_3<T>& v, T w) { this->x() = v.x; this->y() = v.y; this->z() = v.z; this->w() = w; }
+	explicit Vector_4(const Vector_3<T>& v, T w) { this->x() = v.x(); this->y() = v.y(); this->z() = v.z(); this->w() = w; }
 #endif
 
 	/// Conversion constructor from a Qt vector.
@@ -121,6 +121,10 @@ public:
 #else
 		{ this->x() = T(v.x()); this->y() = T(v.y()); this->z() = T(v.z()); this->w() = T(v.w()); }
 #endif
+
+	/// Casts the vector to another component type \a U.
+	template<typename U>
+	Q_DECL_CONSTEXPR explicit operator Vector_4<U>() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
 
     /////////////////////////////// Unary operators //////////////////////////////
 

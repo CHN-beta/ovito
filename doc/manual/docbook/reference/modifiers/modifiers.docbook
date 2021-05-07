@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<section version="5.0"
+         xsi:schemaLocation="http://docbook.org/ns/docbook http://docbook.org/xml/5.0/xsd/docbook.xsd"
+         xml:id="particles.modifiers" xmlns="http://docbook.org/ns/docbook"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:xs="http://www.w3.org/2001/XMLSchema"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:ns="http://docbook.org/ns/docbook">
+  <title>Modifiers</title>
+
+  <para>
+
+    Modifiers are the basic building blocks for creating a <link linkend="usage.modification_pipeline">data pipeline</link> in OVITO.
+    Like tools in a toolbox, each modifier implements a very specific, well-defined type of operation or computation, and typically you will need to
+    combine several modifiers to accomplish more complex tasks.
+
+    <informaltable>
+        <tgroup cols="2">
+          <colspec colname='name'/>
+          <colspec colname='descr'/>
+          <thead>
+            <row>
+              <entry>Modifier name</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+
+          <tbody>
+
+		<!-- ANALYSIS -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Analysis</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.atomic_strain">Atomic&#xA0;strain</link></entry>
+              <entry>Calculates local strain tensors based on the relative motion of neighboring particles. </entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.bond_analysis">Bond&#xA0;analysis</link><ovito-pro/></entry>
+              <entry>Computes bond angle and bond length distributions.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.cluster_analysis">Cluster&#xA0;analysis</link></entry>
+              <entry>Decomposes a particle system into clusters of particles.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.coordination_analysis">Coordination&#xA0;analysis</link></entry>
+              <entry>Determines the number of neighbors of each particle and computes the radial distribution function for the system.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.dislocation_analysis">Dislocation&#xA0;analysis&#xA0;(DXA)</link></entry>
+              <entry>Identifies dislocation defects in a crystal.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.displacement_vectors">Displacement&#xA0;vectors</link></entry>
+              <entry>Calculates the displacements of particles based on an initial and a deformed configuration.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.elastic_strain">Elastic&#xA0;strain&#xA0;calculation</link></entry>
+              <entry>Calculates the atomic-level elastic strain tensors in crystalline systems.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.grain_segmentation">Grain&#xA0;segmentation</link></entry>
+              <entry>Determines the grain structure in a polycrystalline microstructure.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.histogram">Histogram</link></entry>
+              <entry>Computes the histogram of a property.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.scatter_plot">Scatter&#xA0;plot</link></entry>
+              <entry>Generates a scatter plot of two properties.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.bin_and_reduce">Spatial&#xA0;binning</link><ovito-pro/></entry>
+              <entry>Aggregates a particle property over a one-, two- or three-dimensional bin grid.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.correlation_function">Spatial&#xA0;correlation&#xA0;function</link></entry>
+              <entry>Calculates the spatial cross-correlation function between two particle properties.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.time_averaging">Time&#xA0;averaging</link><ovito-pro/></entry>
+              <entry>Computes the average of some time-dependent input quantity over the entire trajectory.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.time_series">Time&#xA0;series</link><ovito-pro/></entry>
+              <entry>Plots the value of a global attribute as function of simulation time.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.voronoi_analysis">Voronoi&#xA0;analysis</link></entry>
+              <entry>Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.wigner_seitz_analysis">Wigner-Seitz&#xA0;defect&#xA0;analysis</link></entry>
+              <entry>Identifies point defects (vacancies and interstitials) in a crystal lattice.</entry>
+            </row>
+
+		<!-- COLORING -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Coloring</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.ambient_occlusion">Ambient&#xA0;occlusion</link></entry>
+              <entry>Performs an ambient occlusion calculation to shade particles.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.assign_color">Assign&#xA0;color</link></entry>
+              <entry>Assigns a color to all selected elements.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.color_by_type">Color&#xA0;by&#xA0;type</link><ovito-pro/></entry>
+              <entry>Colors particles or bonds according to a typed (discrete) property.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.color_coding">Color&#xA0;coding</link></entry>
+              <entry>Colors particles or bonds based on the value of a scalar (continuous) property.</entry>
+            </row>
+
+		<!-- MODIFICATION -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Modification</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.affine_transformation">Affine&#xA0;transformation</link></entry>
+              <entry>Applies an affine transformation to the system.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.combine_particle_sets">Combine&#xA0;datasets</link></entry>
+              <entry>Merges the particles and bonds from two separate input files into one dataset.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.compute_property">Compute&#xA0;property</link></entry>
+              <entry>Assigns property values to particles or bonds according to a user-defined formula.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.delete_selected_particles">Delete&#xA0;selected</link></entry>
+              <entry>Deletes all selected elements.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.freeze_property">Freeze&#xA0;property</link></entry>
+              <entry>Freezes the values of a dynamic particle property at a given animation time to make them available at other times.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.load_trajectory">Load&#xA0;trajectory</link></entry>
+              <entry>Loads time-dependent atomic positions from a separate trajectory file.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.python_script">Python&#xA0;script</link><ovito-pro/></entry>
+              <entry>Lets you write your own modifier function in Python.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.show_periodic_images">Replicate</link></entry>
+              <entry>Duplicates particles and other data elements to visualize periodic images of the system.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.slice">Slice</link></entry>
+              <entry>Cuts the structure along an infinite plane.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.smooth_trajectory">Smooth&#xA0;trajectory</link></entry>
+              <entry>Computes time-averaged particle positions using a sliding window or generates intermediate sub-frames using linear interpolation.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.unwrap_trajectories">Unwrap&#xA0;trajectories</link></entry>
+              <entry>Computes unwrapped particle coordinates in order to generate continuous trajectories at periodic cell boundaries.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.wrap_at_periodic_boundaries">Wrap&#xA0;at&#xA0;periodic&#xA0;boundaries</link></entry>
+              <entry>Folds particles located outside of the periodic simulation box back into the box.</entry>
+            </row>
+
+		<!-- SELECTION -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Selection</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.clear_selection">Clear&#xA0;selection</link></entry>
+              <entry>Resets the selection state of all elements.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.expand_selection">Expand&#xA0;selection</link></entry>
+              <entry>Selects particles that are neighbors of already selected particles.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.expression_select">Expression&#xA0;selection</link></entry>
+              <entry>Selects particles and other elements based on a user-defined criterion.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.manual_selection">Manual&#xA0;selection</link></entry>
+              <entry>Lets you select individual particles or bonds with the mouse.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.invert_selection">Invert&#xA0;selection</link></entry>
+              <entry>Inverts the selection state of each element.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.select_particle_type">Select&#xA0;type</link></entry>
+              <entry>Selects all elements of a particular type, e.g. all atoms of a chemical species.</entry>
+            </row>
+
+		<!-- STRUCTURE IDENTIFICATION -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Structure identification</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.bond_angle_analysis">Ackland-Jones&#xA0;analysis</link></entry>
+              <entry>Identifies common crystal structures by an analysis of the bond-angle distribution.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.centrosymmetry">Centrosymmetry&#xA0;parameter</link></entry>
+              <entry>Calculates the centrosymmetry parameter for every particle.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.chill_plus">Chill+</link></entry>
+              <entry>Identifies hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.common_neighbor_analysis">Common&#xA0;neighbor&#xA0;analysis</link></entry>
+              <entry>Performs the common neighbor analysis (CNA) to determine local crystal structures.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.identify_diamond_structure">Identify&#xA0;diamond&#xA0;structure</link></entry>
+              <entry>Identifies atoms that are arranged in a cubic or hexagonal diamond lattice.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.polyhedral_template_matching">Polyhedral&#xA0;template&#xA0;matching</link></entry>
+              <entry>Identifies common crystal structures using the PTM method and computes local crystal orientations.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.vorotop_analysis">VoroTop&#xA0;analysis</link></entry>
+              <entry>Identifies local structure of particles using the topology of their Voronoi polyhedra.</entry>
+            </row>
+
+		<!-- VISUALIZATION -->
+            <row>
+              <entry namest="name" nameend="descr" align="center" role="subth">Visualization</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.construct_surface_mesh">Construct&#xA0;surface&#xA0;mesh</link></entry>
+              <entry>Constructs a triangle mesh representing the surface of a solid.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.create_bonds">Create&#xA0;bonds</link></entry>
+              <entry>Creates bonds between particles.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.create_isosurface">Create&#xA0;isosurface</link></entry>
+              <entry>Generates an isosurface from a scalar field.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.coordination_polyhedra">Coordination&#xA0;polyhedra</link></entry>
+              <entry>Shows coordination polyhedra.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.generate_trajectory_lines">Generate&#xA0;trajectory&#xA0;lines</link></entry>
+              <entry>Generates trajectory lines from the time-dependent particle positions.</entry>
+            </row>
+            <row>
+              <entry><link linkend="particles.modifiers.interactive_molecular_dynamics">Interactive&#xA0;molecular&#xA0;dynamics</link></entry>
+              <entry>Visualize live atomic trajectories from a running MD simulation as they are being calculated.</entry>
+            </row>
+
+          </tbody>
+        </tgroup>
+      </informaltable>
+   </para>
+
+  <xi:include href="particles/bond_angle_analysis.docbook"/>
+
+  <xi:include href="particles/affine_transformation.docbook"/>
+
+  <xi:include href="particles/ambient_occlusion.docbook"/>
+
+  <xi:include href="particles/assign_color.docbook"/>
+
+  <xi:include href="particles/atomic_strain.docbook"/>
+
+  <xi:include href="particles/bond_analysis.docbook"/>
+
+  <xi:include href="particles/centrosymmetry.docbook"/>
+
+  <xi:include href="particles/chill_plus.docbook"/>
+
+  <xi:include href="particles/clear_selection.docbook"/>
+
+  <xi:include href="particles/cluster_analysis.docbook"/>
+
+  <xi:include href="particles/color_by_type.docbook"/>
+
+  <xi:include href="particles/color_coding.docbook"/>
+
+  <xi:include href="particles/combine_particle_sets.docbook"/>
+
+  <xi:include href="particles/common_neighbor_analysis.docbook"/>
+
+  <xi:include href="particles/compute_property.docbook"/>
+
+  <xi:include href="particles/construct_surface_mesh.docbook"/>
+
+  <xi:include href="particles/coordination_analysis.docbook"/>
+
+  <xi:include href="particles/coordination_polyhedra.docbook"/>
+
+  <xi:include href="particles/correlation_function.docbook"/>
+
+  <xi:include href="particles/create_bonds.docbook"/>
+
+  <xi:include href="particles/create_isosurface.docbook"/>
+
+  <xi:include href="particles/delete_selected_particles.docbook"/>
+
+  <xi:include href="particles/dislocation_analysis.docbook"/>
+
+  <xi:include href="particles/displacement_vectors.docbook"/>
+
+  <xi:include href="particles/elastic_strain.docbook"/>
+
+  <xi:include href="particles/grain_segmentation.docbook"/>
+
+  <xi:include href="particles/expand_selection.docbook"/>
+
+  <xi:include href="particles/expression_select.docbook"/>
+
+  <xi:include href="particles/freeze_property.docbook"/>
+
+  <xi:include href="particles/generate_trajectory_lines.docbook"/>
+
+  <xi:include href="particles/histogram.docbook"/>
+
+  <xi:include href="particles/identify_diamond.docbook"/>
+
+  <xi:include href="particles/interactive_molecular_dynamics.docbook"/>
+
+  <xi:include href="particles/invert_selection.docbook"/>
+
+  <xi:include href="particles/load_trajectory.docbook"/>
+
+  <xi:include href="particles/manual_selection.docbook"/>
+
+  <xi:include href="particles/polyhedral_template_matching.docbook"/>
+
+  <xi:include href="particles/python_script.docbook"/>
+
+  <xi:include href="particles/show_periodic_images.docbook"/>
+
+  <xi:include href="particles/scatter_plot.docbook"/>
+
+  <xi:include href="particles/select_particle_type.docbook"/>
+
+  <xi:include href="particles/bin_and_reduce.docbook"/>
+
+  <xi:include href="particles/slice.docbook"/>
+
+  <xi:include href="particles/smooth_trajectory.docbook"/>
+
+  <xi:include href="particles/time_averaging.docbook"/>
+
+  <xi:include href="particles/time_series.docbook"/>
+
+  <xi:include href="particles/unwrap_trajectories.docbook"/>
+
+  <xi:include href="particles/voronoi_analysis.docbook"/>
+
+  <xi:include href="particles/vorotop_analysis.docbook"/>
+
+  <xi:include href="particles/wigner_seitz_analysis.docbook"/>
+
+  <xi:include href="particles/wrap_at_periodic_boundaries.docbook"/>
+
+</section>

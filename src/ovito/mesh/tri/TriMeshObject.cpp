@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,7 +67,7 @@ const TriMeshPtr& TriMeshObject::modifiableMesh()
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void TriMeshObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void TriMeshObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 	if(mesh()) {

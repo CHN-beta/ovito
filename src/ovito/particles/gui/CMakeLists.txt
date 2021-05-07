@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -68,6 +68,12 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
 		import/imd/IMDImporterEditor.cpp
 		import/cfg/CFGImporterEditor.cpp
 		import/gsd/GSDImporterEditor.cpp
+		import/pdb/PDBImporterEditor.cpp
+		import/cif/CIFImporterEditor.cpp
+		import/cif/mmCIFImporterEditor.cpp
+		import/gromacs/GroImporterEditor.cpp
+		import/gromacs/XTCImporterEditor.cpp
+		import/vasp/POSCARImporterEditor.cpp
 		import/xyz/XYZImporterEditor.cpp
 		export/FileColumnParticleExporterEditor.cpp
 		export/lammps/LAMMPSDataExporterEditor.cpp

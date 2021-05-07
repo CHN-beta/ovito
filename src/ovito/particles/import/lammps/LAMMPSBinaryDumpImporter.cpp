@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -553,7 +553,7 @@ Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(c
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void LAMMPSBinaryDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void LAMMPSBinaryDumpImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

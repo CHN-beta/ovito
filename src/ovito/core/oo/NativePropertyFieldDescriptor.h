@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,6 @@ public:
 					static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
 			}, \
 			[](Ovito::RefMaker* obj, Ovito::OORef<Ovito::RefTarget> newTarget) { \
-				OVITO_ASSERT(!((classname::__##name##_flags) & Ovito::PropertyFieldFlag::PROPERTY_FIELD_WEAK_REF)); \
 				static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
 					static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
 			} \
@@ -123,7 +122,6 @@ public:
 				static_cast<classname*>(obj)->_##name.remove(obj, PROPERTY_FIELD(classname::name), index); \
 			}, \
 			[](Ovito::RefMaker* obj, int index, Ovito::OORef<Ovito::RefTarget> newTarget) { \
-				OVITO_ASSERT(!((classname::__##name##_flags) & Ovito::PropertyFieldFlag::PROPERTY_FIELD_WEAK_REF)); \
 				static_cast<classname*>(obj)->_##name.insert(obj, PROPERTY_FIELD(classname::name), index, \
 					static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
 			} \

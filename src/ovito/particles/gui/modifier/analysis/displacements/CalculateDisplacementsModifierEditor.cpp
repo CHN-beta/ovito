@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_OVITO_OBJECT_EDITOR(CalculateDisplacementsModifier, CalculateDisplacementsMo
 void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "particles.modifiers.displacement_vectors.html");
+	QWidget* rollout = createRollout(tr("Calculate displacements"), rolloutParams, "manual:particles.modifiers.displacement_vectors");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -119,7 +119,7 @@ void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParame
 	layout->addWidget(statusLabel());
 
 	// Open a sub-editor for the reference object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(CalculateDisplacementsModifier::referenceConfiguration), rolloutParams.after(rollout).setTitle(tr("Reference")));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(CalculateDisplacementsModifier::referenceConfiguration), rolloutParams.after(rollout).setTitle(tr("Reference: %1")));
 
 	connect(this, &PropertiesEditor::contentsChanged, this, &CalculateDisplacementsModifierEditor::onContentsChanged);
 }

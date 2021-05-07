@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
@@ -39,9 +40,11 @@ DEFINE_REFERENCE_FIELD(PipelineSceneNode, dataProvider);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacementVisElements);
+DEFINE_REFERENCE_FIELD(PipelineSceneNode, pipelineSource);
 DEFINE_PROPERTY_FIELD(PipelineSceneNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, dataProvider, "Pipeline object");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
+SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineSource, "Pipeline source");
 SET_PROPERTY_FIELD_CHANGE_EVENT(PipelineSceneNode, dataProvider, ReferenceEvent::PipelineChanged);
 
 /******************************************************************************
@@ -171,12 +174,14 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 			if(!dataset()->undoStack().isUndoingOrRedoing())
 				deleteNode();
 		}
-		else if(event.type() == ReferenceEvent::TitleChanged && !nodeName().isEmpty()) {
-			// Forward this event to dependents of the pipeline.
+		else if(event.type() == ReferenceEvent::PipelineChanged) {
+			// Determine the new source object of the pipeline.
+			updatePipelineSourceReference();
+			// Forward pipeline changed events from the pipeline.
 			return true;
 		}
-		else if(event.type() == ReferenceEvent::PipelineChanged || event.type() == ReferenceEvent::AnimationFramesChanged) {
-			// Forward pipeline changed events from the pipeline.
+		else if(event.type() == ReferenceEvent::AnimationFramesChanged) {
+			// Forward animation interval events from the pipeline.
 			return true;
 		}
 		else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
@@ -208,6 +213,12 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 			}
 		}
 	}
+	if(source == pipelineSource()) {
+		if(event.type() == ReferenceEvent::TitleChanged && nodeName().isEmpty()) {
+			// Forward this event to dependents of the pipeline.
+			return true;
+		}
+	}
 	return SceneNode::referenceEvent(source, event);
 }
 
@@ -221,12 +232,11 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 		invalidatePipelineCache(TimeInterval::empty(), false);
 
 		// The animation length and the title of the pipeline might have changed.
-		if(!isBeingLoaded()) {
+		if(!isBeingLoaded())
 			notifyDependents(ReferenceEvent::AnimationFramesChanged);
-			if(!nodeName().isEmpty()) {
-				notifyDependents(ReferenceEvent::TitleChanged);
-			}
-		}
+
+		// Determine the new source object of the pipeline.
+		updatePipelineSourceReference();
 	}
 	else if(field == PROPERTY_FIELD(replacedVisElements)) {
 		OVITO_ASSERT(false);
@@ -235,13 +245,18 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 		// Reset pipeline cache if a new replacement for a visual element is assigned.
 		invalidatePipelineCache();
 	}
+	else if(field == PROPERTY_FIELD(pipelineSource)) {
+		// When the source of the pipeline is being replaced, the pipeline's title changes.
+		if(nodeName().isEmpty())
+			notifyDependents(ReferenceEvent::TitleChanged);		
+	}
 	SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void PipelineSceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void PipelineSceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	SceneNode::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);
@@ -278,13 +293,13 @@ void PipelineSceneNode::rescaleTime(const TimeInterval& oldAnimationInterval, co
 ******************************************************************************/
 QString PipelineSceneNode::objectTitle() const
 {
-	// If a user-defined name has been assigned to this node, return it as the node's display title.
+	// If a user-defined name has been assigned to this pipeline, return it as the node's display title.
 	if(!nodeName().isEmpty())
 		return nodeName();
 
-	// Otherwise, use the title of the node's data source object.
-	if(PipelineObject* source = pipelineSource())
-		return source->objectTitle();
+	// Otherwise, use the title of the pipeline's data source.
+	if(pipelineSource())
+		return pipelineSource()->objectTitle();
 
 	// Fall back to default behavior.
 	return SceneNode::objectTitle();
@@ -301,21 +316,20 @@ ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(modApp);
+	modifier->initializeModifier(dataset()->animationSettings()->time(), modApp, Application::instance()->executionContext());
 	setDataProvider(modApp);
 	return modApp;
 }
 
 /******************************************************************************
-* Traverses the node's pipeline until the end and returns the object that
-* generates the input data for the pipeline.
+* Determines the current source of the data pipeline and updates the internal weak reference field.
 ******************************************************************************/
-PipelineObject* PipelineSceneNode::pipelineSource() const
+void PipelineSceneNode::updatePipelineSourceReference()
 {
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dataProvider()))
-		return modApp->pipelineSource();
+		_pipelineSource.set(this, PROPERTY_FIELD(pipelineSource), modApp->pipelineSource());
 	else
-		return dataProvider();
+		_pipelineSource.set(this, PROPERTY_FIELD(pipelineSource), dataProvider());
 }
 
 /******************************************************************************
@@ -406,9 +420,25 @@ void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObjec
 ******************************************************************************/
 void PipelineSceneNode::deleteNode()
 {
+	// Temporary reference to the pipeline's stages.
+	OORef<PipelineObject> oldDataProvider = dataProvider();
+
 	// Throw away data source.
 	// This will also clear the caches of the pipeline.
 	setDataProvider(nullptr);
+
+	// Walk along the pipeline and delete the individual modifiers/source objects (unless they are shared with another pipeline).
+	// This is necessary to update any other references the scene may have to the pipeline's modifiers, 
+	// e.g. the ColorLegendOverlay.
+	while(oldDataProvider) {
+		OORef<PipelineObject> next;
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(oldDataProvider.get()))
+			next = modApp->input();
+		// Delete the pipeline stage if it is not part of any other pipeline in the scene.
+		if(oldDataProvider->pipelines(false).isEmpty())
+			oldDataProvider->deleteReferenceObject();
+		oldDataProvider = std::move(next);
+	}
 
 	// Discard transient references to visual elements.
 	_visElements.clear(this, PROPERTY_FIELD(visElements));

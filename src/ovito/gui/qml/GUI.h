@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,15 +42,9 @@
 * Forward declarations
 ******************************************************************************/
 namespace Ovito {
-
-   
         class MainWindow;
-        class WasmDataSetContainer;
-
-		
-			class ViewportWindow;
-		
-    
+        class WasmDataSetContainer;		
+        class OpenGLViewportWindow;
 }
 
 #endif

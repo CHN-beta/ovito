@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the menu.
 ******************************************************************************/
-ViewportMenu::ViewportMenu(ViewportWindow* vpWindow) : QMenu(vpWindow), _viewport(vpWindow->viewport()), _vpWindow(vpWindow)
+ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(viewportWidget), _viewport(viewport), _viewportWidget(viewportWidget)
 {
 	QAction* action;
 
@@ -104,7 +104,7 @@ void ViewportMenu::show(const QPoint& pos)
 	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
 	// Show context menu.
-	exec(_vpWindow->mapToGlobal(pos));
+	exec(_viewportWidget->mapToGlobal(pos));
 }
 
 /******************************************************************************
@@ -185,7 +185,7 @@ void ViewportMenu::onViewType(QAction* action)
 ******************************************************************************/
 void ViewportMenu::onAdjustView()
 {
-	AdjustViewDialog* dialog = new AdjustViewDialog(_viewport, _vpWindow->window());
+	AdjustViewDialog* dialog = new AdjustViewDialog(_viewport, _viewportWidget);
 	dialog->show();
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2013 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,6 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 
 namespace Ovito { namespace Particles {
 

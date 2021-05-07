@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2019 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -421,7 +421,7 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 
 		// Initialize the renderer.
 		operation.setProgressText(tr("Initializing renderer"));
-		if(renderer->startRender(this, settings)) {
+		if(renderer->startRender(this, settings, frameBuffer->size())) {
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
@@ -434,7 +434,7 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 
 				videoEncoderPtr.reset(new VideoEncoder());
 				videoEncoder = videoEncoderPtr.data();
-				int ticksPerFrame = (settings->framesPerSecond() > 0) ? (TICKS_PER_SECOND / settings->framesPerSecond()) : animationSettings()->ticksPerFrame();
+				int ticksPerFrame = std::max(1, (settings->framesPerSecond() > 0) ? (TICKS_PER_SECOND / settings->framesPerSecond()) : animationSettings()->ticksPerFrame());
 				videoEncoder->openFile(settings->imageFilename(), settings->outputImageWidth(), settings->outputImageHeight(), ticksPerFrame);
 			}
 #endif
@@ -550,10 +550,8 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 
 	// Request scene bounding box.
 	Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
-	if(operation.isCanceled()) {
-		renderer->endFrame(false);
+	if(operation.isCanceled())
 		return false;
-	}
 
 	// Determine final view projection.
 	projParams = viewport->computeProjectionParameters(renderTime, settings->outputImageAspectRatio(), boundingBox);
@@ -566,7 +564,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 				{
 					layer->render(viewport, renderTime, frameBuffer, projParams, settings, operation.subOperation());
 					if(operation.isCanceled()) {
-						renderer->endFrame(false);
+						renderer->endFrame(false, nullptr);
 						return false;
 					}
 				}
@@ -577,13 +575,13 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 		// Let the scene renderer do its work.
 		renderer->beginFrame(renderTime, projParams, viewport);
 		if(!renderer->renderFrame(frameBuffer, SceneRenderer::NonStereoscopic, operation.subOperation())) {
-			renderer->endFrame(false);
+			renderer->endFrame(false, frameBuffer);
 			return false;
 		}
-		renderer->endFrame(true);
+		renderer->endFrame(true, frameBuffer);
 	}
 	catch(...) {
-		renderer->endFrame(false);
+		renderer->endFrame(false, nullptr);
 		throw;
 	}
 
@@ -617,16 +615,16 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 }
 
 /******************************************************************************
-* Saves the dataset to the given file.
+* Saves the dataset to a session state file.
 ******************************************************************************/
-void DataSet::saveToFile(const QString& filePath)
+void DataSet::saveToFile(const QString& filePath) const
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
 
 	QFile fileStream(absolutePath);
     if(!fileStream.open(QIODevice::WriteOnly))
-    	throwException(tr("Failed to open output file '%1' for writing.").arg(absolutePath));
+    	throwException(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
 	ObjectSaveStream stream(dataStream, SynchronousOperation::create(taskManager()));
@@ -634,7 +632,30 @@ void DataSet::saveToFile(const QString& filePath)
 	stream.close();
 
 	if(fileStream.error() != QFile::NoError)
-		throwException(tr("Failed to write output file '%1'.").arg(absolutePath));
+		throwException(tr("Failed to write session state file '%1': %2").arg(absolutePath).arg(fileStream.errorString()));
+	fileStream.close();
+}
+
+/******************************************************************************
+* Loads the dataset's contents from a session state file.
+******************************************************************************/
+void DataSet::loadFromFile(const QString& filePath)
+{
+	// Make path absolute.
+	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+
+	QFile fileStream(absolutePath);
+    if(!fileStream.open(QIODevice::ReadOnly))
+    	throwException(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
+
+	QDataStream dataStream(&fileStream);
+	ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));
+	stream.setDataset(this);
+	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
+	stream.close();
+
+	if(fileStream.error() != QFile::NoError)
+		throwException(tr("Failed to load state file '%1'.").arg(absolutePath));		
 	fileStream.close();
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,6 +49,26 @@ CommandPanel::CommandPanel(MainWindow* mainWindow, QWidget* parent) : QWidget(pa
 	_tabWidget->setTabToolTip(1, tr("Rendering"));
 	_tabWidget->setTabToolTip(2, tr("Viewport layers"));
 	setCurrentPage(MainWindow::MODIFY_PAGE);
+}
+
+/******************************************************************************
+* Loads the layout of the widgets from the settings store.
+******************************************************************************/
+void CommandPanel::restoreLayout() 
+{
+	_modifyPage->restoreLayout();
+	_renderPage->restoreLayout();
+	_overlayPage->restoreLayout();
+}
+
+/******************************************************************************
+* Saves the layout of the widgets to the settings store.
+******************************************************************************/
+void CommandPanel::saveLayout() 
+{
+	_modifyPage->saveLayout();
+	_renderPage->saveLayout();
+	_overlayPage->saveLayout();
 }
 
 }	// End of namespace

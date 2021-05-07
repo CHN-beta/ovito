@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,9 +28,9 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
-#include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/desktop/widgets/general/PopupUpdateComboBox.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -38,6 +38,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdmod/viewport/ColorLegendOverlay.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include "ColorLegendOverlayEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -50,8 +51,10 @@ SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
 ******************************************************************************/
 void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
+	OVITO_ASSERT(QMetaType::hasRegisteredComparators<PropertyDataObjectReference>());
+
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "viewport_layers.color_legend.html");
+	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "manual:viewport_layers.color_legend");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
@@ -60,66 +63,12 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	layout->setColumnStretch(1, 1);
 	int row = 0;
 
-	// This widget displays the list of available ColorCodingModifiers in the current scene.
-	class ModifierComboBox : public QComboBox {
-	public:
-		/// Initializes the widget.
-		ModifierComboBox(QWidget* parent = nullptr) : QComboBox(parent), _overlay(nullptr) {}
-
-		/// Sets the overlay being edited.
-		void setOverlay(ColorLegendOverlay* overlay) { _overlay = overlay; }
-
-		/// Is called just before the drop-down box is activated.
-		virtual void showPopup() override {
-			clear();
-			if(_overlay) {
-				// Find all ColorCodingModifiers in the scene. For this we have to visit all
-				// object nodes and iterate over their modification pipelines.
-				_overlay->dataset()->sceneRoot()->visitObjectNodes([this](PipelineSceneNode* node) {
-					PipelineObject* obj = node->dataProvider();
-					while(obj) {
-						if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-							if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
-								addItem(mod->sourceProperty().nameWithComponent(), QVariant::fromValue(mod));
-							}
-							obj = modApp->input();
-						}
-						else break;
-					}
-					return true;
-				});
-				setCurrentIndex(findData(QVariant::fromValue(_overlay->modifier())));
-			}
-			if(count() == 0) addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
-			QComboBox::showPopup();
-		}
-
-	private:
-		ColorLegendOverlay* _overlay;
-	};
-
-	ModifierComboBox* modifierComboBox = new ModifierComboBox();
-	CustomParameterUI* modifierPUI = new CustomParameterUI(this, "modifier", modifierComboBox,
-			[modifierComboBox](const QVariant& value) {
-				modifierComboBox->clear();
-				ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(value.value<ColorCodingModifier*>());
-				if(mod) {
-					modifierComboBox->addItem(mod->sourceProperty().nameWithComponent(), QVariant::fromValue(mod));
-				}
-				else {
-					modifierComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
-				}
-				modifierComboBox->setCurrentIndex(0);
-			},
-			[modifierComboBox]() {
-				return modifierComboBox->currentData();
-			},
-			[modifierComboBox](RefTarget* editObject) {
-				modifierComboBox->setOverlay(dynamic_object_cast<ColorLegendOverlay>(editObject));
-			});
-	connect(modifierComboBox, (void (QComboBox::*)(int))&QComboBox::activated, modifierPUI, &CustomParameterUI::updatePropertyValue);
-	layout->addWidget(new QLabel(tr("Source modifier:")), row, 0);
-	layout->addWidget(modifierPUI->widget(), row++, 1);
+	_sourcesComboBox = new PopupUpdateComboBox();
+	connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateSourcesList);
+	connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList);
+	connect(_sourcesComboBox, QOverload<int>::of(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
+	layout->addWidget(new QLabel(tr("Color source:")), row, 0);
+	layout->addWidget(_sourcesComboBox, row++, 1);
 
 	QGroupBox* positionBox = new QGroupBox(tr("Position"));
 	layout->addWidget(positionBox, row++, 0, 1, 2);
@@ -158,7 +107,7 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
 	sublayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow++, 0, 1, 2);
 
-	QGroupBox* sizeBox = new QGroupBox(tr("Size"));
+	QGroupBox* sizeBox = new QGroupBox(tr("Size and border"));
 	layout->addWidget(sizeBox, row++, 0, 1, 2);
 	sublayout = new QGridLayout(sizeBox);
 	sublayout->setContentsMargins(4,4,4,4);
@@ -174,6 +123,13 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	sublayout->addWidget(aspectRatioPUI->label(), subrow, 0);
 	sublayout->addLayout(aspectRatioPUI->createFieldLayout(), subrow++, 1);
 
+	BooleanParameterUI* borderEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::borderEnabled));
+	sublayout->addWidget(borderEnabledPUI->checkBox(), subrow, 0);
+	borderEnabledPUI->checkBox()->setText(tr("Border:"));
+
+	ColorParameterUI* borderColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::borderColor));
+	sublayout->addWidget(borderColorPUI->colorPicker(), subrow++, 1);
+
 	QGroupBox* labelBox = new QGroupBox(tr("Labels"));
 	layout->addWidget(labelBox, row++, 0, 1, 2);
 	sublayout = new QGridLayout(labelBox);
@@ -187,17 +143,17 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	sublayout->addWidget(new QLabel(tr("Custom title:")), subrow, 0);
 	sublayout->addWidget(titlePUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* label1PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label1));
+	_label1PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label1));
 	sublayout->addWidget(new QLabel(tr("Custom label 1:")), subrow, 0);
-	sublayout->addWidget(label1PUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_label1PUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* label2PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label2));
+	_label2PUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::label2));
 	sublayout->addWidget(new QLabel(tr("Custom label 2:")), subrow, 0);
-	sublayout->addWidget(label2PUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_label2PUI->textBox(), subrow++, 1, 1, 2);
 
-	StringParameterUI* valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::valueFormatString));
+	_valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::valueFormatString));
 	sublayout->addWidget(new QLabel(tr("Format string:")), subrow, 0);
-	sublayout->addWidget(valueFormatStringPUI->textBox(), subrow++, 1, 1, 2);
+	sublayout->addWidget(_valueFormatStringPUI->textBox(), subrow++, 1, 1, 2);
 
 	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::fontSize));
 	sublayout->addWidget(new QLabel(tr("Text size/color:")), subrow, 0);
@@ -215,6 +171,104 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::font));
 	sublayout->addWidget(labelFontPUI->label(), subrow, 0);
 	sublayout->addWidget(labelFontPUI->fontPicker(), subrow++, 1, 1, 2);
+}
+
+/******************************************************************************
+* Updates the combobox list showing the available data sources.
+******************************************************************************/
+void ColorLegendOverlayEditor::updateSourcesList()
+{
+	_label1PUI->setEnabled(false);
+	_label2PUI->setEnabled(false);
+	_valueFormatStringPUI->setEnabled(false);
+
+	_sourcesComboBox->clear();
+	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
+
+		// Find all ColorCodingModifiers in the scene. For this we have to visit all
+		// pipelines and iterate over their modifier applications.		
+		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+			// Walk along the pipeline:
+			PipelineObject* obj = pipeline->dataProvider();
+			while(obj) {
+				if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
+					if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
+						// Prepend Color Coding modifier to the front of the list.
+						_sourcesComboBox->insertItem(0, mod->sourceProperty().nameWithComponent(), QVariant::fromValue(mod));
+					}
+					obj = modApp->input();
+				}
+				else break;
+			}
+
+			// Now evaluate the pipeline and look for typed properties in its output data collection.
+			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
+			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
+				const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+
+				// Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
+				if(property->isTypedProperty() && dataPath.size() >= 2) {
+					QVariant ref = QVariant::fromValue(PropertyDataObjectReference(dataPath));
+					
+					// Append typed properties at the end of the list.
+					if(_sourcesComboBox->findData(ref) < 0)
+						_sourcesComboBox->addItem(dataPath.toUIString(), std::move(ref));
+				}
+			}
+
+			return true;
+		});
+
+		// Select the item in the list that corresponds to the current parameter value.
+		if(overlay->modifier()) {
+			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->modifier()));
+			if(index >= 0)
+				_sourcesComboBox->setCurrentIndex(index);
+			else {
+				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
+				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+			}
+			_label1PUI->setEnabled(true);
+			_label2PUI->setEnabled(true);
+			_valueFormatStringPUI->setEnabled(true);
+		}
+		else if(overlay->sourceProperty()) {
+			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
+			if(index >= 0)
+				_sourcesComboBox->setCurrentIndex(index);
+			else {
+				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrString());
+				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+			}
+		}
+		else {
+			_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
+			_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+		}
+	}
+	if(_sourcesComboBox->count() == 0)
+		_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
+}
+
+/******************************************************************************
+* Is called when the user selects a new source object for the color legend.
+******************************************************************************/
+void ColorLegendOverlayEditor::colorSourceSelected()
+{
+	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
+		undoableTransaction(tr("Select color source"), [&]() {
+			QVariant selectedData = static_cast<QComboBox*>(sender())->currentData();
+
+			if(selectedData.canConvert<ColorCodingModifier*>()) {
+				overlay->setModifier(selectedData.value<ColorCodingModifier*>());
+				overlay->setSourceProperty({});
+			}
+			else if(selectedData.canConvert<PropertyDataObjectReference>()) {
+				overlay->setModifier(nullptr);
+				overlay->setSourceProperty(selectedData.value<PropertyDataObjectReference>());
+			}
+		});
+	}
 }
 
 }	// End of namespace

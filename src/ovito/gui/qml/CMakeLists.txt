@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 Alexander Stukowski
+#  Copyright 2020 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -30,7 +30,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/ViewportsPanel.cpp
 		properties/ParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
-		viewport/ViewportWindow.cpp
+		viewport/OpenGLViewportWindow.cpp
 		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer

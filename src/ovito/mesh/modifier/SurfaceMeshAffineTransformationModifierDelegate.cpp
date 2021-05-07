@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,6 +45,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 		tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
 
 	for(const DataObject* obj : state.data()->objects()) {
+		// Process SurfaceMesh objects.
 		if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
 			// Make sure the input mesh data structure is valid. 
 			existingSurface->verifyMeshIntegrity();
@@ -76,6 +77,23 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 			for(Plane3& plane : cuttingPlanes)
 				plane = tm * plane;
 			newSurface->setCuttingPlanes(std::move(cuttingPlanes));
+		}
+		// Process TriangleMesh objects.
+		else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
+			// Create a copy of the TriMeshObject.
+			TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
+			const TriMeshPtr& mesh = newMeshObj->modifiableMesh();
+
+			// Apply transformation to the vertices coordinates.
+			for(Point3& p : mesh->vertices())
+				p = tm * p;
+			mesh->invalidateVertices();
+			// Apply transformation to the normal vectors.
+			if(mesh->hasNormals()) {
+				for(Vector3& n : mesh->normals())
+					n = tm * n;
+				mesh->invalidateFaces();
+			}
 		}
 	}
 

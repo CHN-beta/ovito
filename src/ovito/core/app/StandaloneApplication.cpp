@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -90,17 +90,6 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		return false;
 	}
 
-#if 1
-	// Always use desktop OpenGL (avoid ANGLE on Windows):
-	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-#elif 0
-	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
-	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-#else
-	// Use software rasterizer on Windows:
-	QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
-#endif
-
 	// Create Qt application object.
 	createQtApplication(argc, argv);
 
@@ -121,7 +110,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
 		// Parse the command line parameters again after the plugins have registered their options.
 		if(!_cmdLineParser.parse(arguments)) {
-	        std::cerr << "Error: " << qPrintable(_cmdLineParser.errorText()) << std::endl;
+	        qInfo().noquote() << "Error:" << _cmdLineParser.errorText();
 			_consoleMode = true;
 			shutdown();
 			return false;

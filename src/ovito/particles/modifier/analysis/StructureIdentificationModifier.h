@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -141,7 +141,7 @@ public:
 protected:
 
 	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
@@ -154,7 +154,7 @@ protected:
 	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ParticleType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
+	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
 
 private:
 

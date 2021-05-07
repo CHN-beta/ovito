@@ -1,0 +1,102 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2021 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+#include "../global_uniforms.glsl"
+#include "../picking.glsl"
+
+// Inputs:
+in vec3 base;
+in vec3 head;
+in float radius;
+
+// Outputs:
+flat out vec4 color_fs;
+flat out vec3 center;	// Transformed cone vertex in view coordinates
+flat out vec3 axis;		// Transformed cone axis in view coordinates
+flat out float cone_radius;	// The radius of the cone
+noperspective out vec3 ray_origin;
+noperspective out vec3 ray_dir;
+
+void main()
+{
+	// Const array of vertex positions for the box triangle strip.
+	const vec3 box[14] = vec3[14](
+        vec3( 1.0,  1.0,  0.0),
+        vec3( 1.0, -1.0,  0.0),
+        vec3( 1.0,  1.0, -1.0),
+        vec3( 1.0, -1.0, -1.0),
+        vec3(-1.0, -1.0, -1.0),
+        vec3( 1.0, -1.0,  0.0),
+        vec3(-1.0, -1.0,  0.0),
+        vec3( 1.0,  1.0,  0.0),
+        vec3(-1.0,  1.0,  0.0),
+        vec3( 1.0,  1.0, -1.0),
+        vec3(-1.0,  1.0, -1.0),
+        vec3(-1.0, -1.0, -1.0),
+        vec3(-1.0,  1.0,  0.0),
+        vec3(-1.0, -1.0,  0.0)
+	);
+
+    // The index of the box corner.
+    int corner = gl_VertexID;
+
+    float arrowHeadRadius = radius * 2.5;
+    float arrowHeadLength = (arrowHeadRadius * 1.8);
+
+    // Set up an axis tripod that is aligned with the cone.
+    mat3 orientation_tm;
+    orientation_tm[2] = head - base;
+    float len = length(orientation_tm[2]);
+    if(len != 0.0) {
+        if(arrowHeadLength > len) {
+            arrowHeadRadius *= len / arrowHeadLength;
+            arrowHeadLength = len;
+        }
+        orientation_tm[2] *= arrowHeadLength / len;
+
+        if(orientation_tm[2].y != 0.0 || orientation_tm[2].x != 0.0)
+            orientation_tm[0] = normalize(vec3(orientation_tm[2].y, -orientation_tm[2].x, 0.0)) * arrowHeadRadius;
+        else
+            orientation_tm[0] = normalize(vec3(-orientation_tm[2].z, 0.0, orientation_tm[2].x)) * arrowHeadRadius;
+        orientation_tm[1] = normalize(cross(orientation_tm[2], orientation_tm[0])) * arrowHeadRadius;
+    }
+    else {
+        orientation_tm = mat3(0.0);
+    }
+
+	// Apply model-view-projection matrix to box vertex position.
+    gl_Position = modelview_projection_matrix * vec4(head + (orientation_tm * box[corner]), 1.0);
+
+    // Compute color from object ID.
+    color_fs = pickingModeColor(gl_InstanceID);
+
+    // Apply additional scaling to cone radius due to model-view transformation. 
+	// Pass square of cylinder radius to fragment shader.
+    cone_radius = arrowHeadRadius * length(modelview_matrix[0]);
+
+	// Transform cone to eye coordinates.
+    center = (modelview_matrix * vec4(head, 1.0)).xyz;
+    axis = (modelview_matrix * vec4(-orientation_tm[2], 0.0)).xyz;
+
+    // Calculate ray passing through the vertex (in view space).
+    calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+}

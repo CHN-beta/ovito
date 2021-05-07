@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2018 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ SET_OVITO_OBJECT_EDITOR(ParticlesComputePropertyModifierDelegate, ParticlesCompu
 void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Neighbor mode panel.
-	QWidget* neighorRollout = createRollout(tr("Neighbor particles"), rolloutParams, "particles.modifiers.compute_property.html");
+	QWidget* neighorRollout = createRollout(tr("Neighbor particles"), rolloutParams, "manual:particles.modifiers.compute_property");
 
 	QVBoxLayout* mainLayout = new QVBoxLayout(neighorRollout);
 	mainLayout->setContentsMargins(4,4,4,4);

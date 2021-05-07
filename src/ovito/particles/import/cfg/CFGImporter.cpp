@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -207,7 +207,7 @@ void CFGImporter::FrameLoader::loadFile()
 	setParticleCount(header.numParticles);
 
 	// Prepare the mapping between input file columns and particle properties.
-	InputColumnReader columnParser(cfgMapping, particles(), executionContext());
+	InputColumnReader columnParser(cfgMapping, particles(), executionContext(), false);
 
 	// Create particle mass and type properties.
 	int currentAtomType = 0;

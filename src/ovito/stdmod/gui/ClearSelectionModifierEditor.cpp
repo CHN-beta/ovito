@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ SET_OVITO_OBJECT_EDITOR(ClearSelectionModifier, ClearSelectionModifierEditor);
 ******************************************************************************/
 void ClearSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Clear selection"), rolloutParams, "particles.modifiers.clear_selection.html");
+	QWidget* rollout = createRollout(tr("Clear selection"), rolloutParams, "manual:particles.modifiers.clear_selection");
 
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(8,8,8,8);

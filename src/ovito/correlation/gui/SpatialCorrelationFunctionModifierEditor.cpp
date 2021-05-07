@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2019 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -51,7 +51,7 @@ SET_OVITO_OBJECT_EDITOR(SpatialCorrelationFunctionModifier, SpatialCorrelationFu
 void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Spatial correlation function"), rolloutParams, "particles.modifiers.correlation_function.html");
+	QWidget* rollout = createRollout(tr("Spatial correlation function"), rolloutParams, "manual:particles.modifiers.correlation_function");
 
 	// Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

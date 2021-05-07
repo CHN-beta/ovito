@@ -1,0 +1,45 @@
+.. _appendix.license.libssh.instructions:
+
+Build instructions for libssh
+-----------------------------
+
+The OVITO package includes a binary version of the libssh library licensed under the GNU Lesser General Public License (LGPLv2.1).
+In accordance with the requirements of this license, this page provides instructions on how to rebuild a compatible version of the library from source code.
+
+Windows
+"""""""
+
+OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.9.4.
+The following commands have been used to generate them::
+
+  # Compiler: Microsoft Visual C++ 2019 (command line tools)
+  # OpenSSL version: 1.1.1g
+  # Zlib version: 1.2.11
+  cd libssh-0.9.4
+  mkdir build
+  cd build
+  cmake -G "NMake Makefiles" ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_INSTALL_PREFIX=../../libssh ^
+    -DZLIB_INCLUDE_DIR=%cd:\=/%/../../zlib/include ^
+    -DZLIB_LIBRARY=%cd:\=/%/../../zlib/lib/zlib.lib ^
+    -DOPENSSL_ROOT_DIR=%cd:\=/%/../../openssl ^
+    ..
+  nmake install
+
+Linux
+"""""
+
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.4.
+The following commands have been used to build them::
+
+  # Build platform: CentOS 6.9
+  # Compiler: GCC 7.1 (CentOS devtoolset-7)
+  cmake -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF .
+  make install
+
+macOS
+"""""
+
+OVITO for macOS includes a binary version of libssh 0.8.9 that has been automatically generated with `MacPorts <https://www.macports.org>`__.
+See the corresponding `Portfile <https://github.com/macports/macports-ports/blob/master/devel/libssh/Portfile>`__.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -305,8 +305,16 @@ void POSCARImporter::FrameLoader::loadFile()
 			statusString += readDensityGrid(stream);
 		}
 	}
+	posProperty.reset();
+	typeProperty.reset();
 
 	state().setStatus(statusString);
+
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
 
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,9 +60,6 @@ public:
     /// Puts an update request event for this window on the event loop.
 	virtual void renderLater() = 0;
 
-	/// Immediately redraws the contents of this window.
-	virtual void renderNow() = 0;
-
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() = 0;
@@ -80,6 +77,9 @@ public:
 	/// This method is automatically called by the Viewport class destructor.
 	virtual void destroyViewportWindow() = 0;
 
+	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
+	virtual SceneRenderer* sceneRenderer() const { return nullptr; }
+
 	/// Renders custom GUI elements in the viewport on top of the scene.
 	virtual void renderGui(SceneRenderer* renderer) = 0;
 
@@ -87,7 +87,7 @@ public:
 	virtual ViewportPickResult pick(const QPointF& pos) = 0;
 
 	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() = 0;
+	virtual void makeOpenGLContextCurrent() {}
 
 	/// Returns the list of gizmos to render in the viewport.
 	virtual const std::vector<ViewportGizmo*>& viewportGizmos() = 0;
@@ -100,6 +100,9 @@ public:
 
 	/// Hides the tooltip window previously shown by showToolTip().
 	virtual void hideToolTip() {}
+
+	/// Sets the mouse cursor shape for the window. 
+	virtual void setCursor(const QCursor& cursor) {}
 
 protected:
 

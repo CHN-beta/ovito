@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,6 @@
 #include <QtDebug>
 #include <QtGui>
 #include <QCommandLineParser>
-#include <QOpenGLWidget>
 
 /******************************************************************************
 * Forward declaration of classes.
@@ -95,8 +94,9 @@ namespace Ovito {
 	class OverlayCommandPage;
 	class UtilityCommandPage;
 	class ViewportMenu;
-	class ViewportWindow;
 	class StatusBar;
+	class PopupUpdateComboBox;
+	class ViewportsPanel;
 }
 
 #endif // __OVITO_GUI_

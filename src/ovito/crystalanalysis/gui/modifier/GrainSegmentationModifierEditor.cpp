@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -44,7 +44,7 @@ SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEdit
 void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create the rollout.
-	QWidget* rollout = createRollout(tr("Grain segmentation"), rolloutParams, "particles.modifiers.grain_segmentation.html");
+	QWidget* rollout = createRollout(tr("Grain segmentation"), rolloutParams, "manual:particles.modifiers.grain_segmentation");
 
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2018 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);
 void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Combine Datasets"), rolloutParams, "particles.modifiers.combine_particle_sets.html");
+	QWidget* rollout = createRollout(tr("Combine Datasets"), rolloutParams, "manual:particles.modifiers.combine_particle_sets");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -48,7 +48,7 @@ void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& r
 	layout->addWidget(statusLabel());
 
 	// Open a sub-editor for the source object.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source")));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
 }
 
 }	// End of namespace

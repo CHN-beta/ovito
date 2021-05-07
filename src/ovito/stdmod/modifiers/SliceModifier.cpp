@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -252,13 +252,13 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
 * This method is called by the system when the modifier has been inserted
 * into a PipelineObject.
 ******************************************************************************/
-void SliceModifier::initializeModifier(ModifierApplication* modApp)
+void SliceModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	MultiDelegatingModifier::initializeModifier(modApp);
+	MultiDelegatingModifier::initializeModifier(time, modApp, executionContext);
 
 	// Get the input simulation cell to initially place the cutting plane in
 	// the center of the cell.
-	const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 		TimeInterval iv;
 		if(distanceController() && distanceController()->getFloatValue(0, iv) == 0) {

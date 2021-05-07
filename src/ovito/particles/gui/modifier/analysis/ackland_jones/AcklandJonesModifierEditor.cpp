@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ SET_OVITO_OBJECT_EDITOR(AcklandJonesModifier, AcklandJonesModifierEditor);
 void AcklandJonesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Ackland-Jones analysis"), rolloutParams, "particles.modifiers.bond_angle_analysis.html");
+	QWidget* rollout = createRollout(tr("Ackland-Jones analysis"), rolloutParams, "manual:particles.modifiers.bond_angle_analysis");
 
     // Create the rollout contents.
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);

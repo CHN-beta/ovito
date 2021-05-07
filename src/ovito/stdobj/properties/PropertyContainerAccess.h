@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -261,9 +261,11 @@ public:
 	/// the corresponding bits in the bit array are set.
 	void filterResize(const boost::dynamic_bitset<>& mask) {
 		OVITO_ASSERT(mask.size() == elementCount());
+		size_t deleteCount = std::numeric_limits<size_t>::max();
 		for(const PropertyObject* property : mutableProperties()) {
 			OVITO_ASSERT(property->size() == elementCount());
 			const_cast<PropertyObject*>(property)->filterResize(mask);
+			deleteCount = elementCount() - property->size();
 
 #ifdef OVITO_DEBUG
 			// Note: filterResize() should never reallocate memory.
@@ -272,6 +274,9 @@ public:
 				OVITO_ASSERT(_cachedPointers[pindex] == _mutableCachedPointers[pindex] && _cachedPointers[pindex] == property->cbuffer());
 #endif
 		}
+		if(deleteCount == std::numeric_limits<size_t>::max())
+			deleteCount = mask.count();
+		_elementCount -= deleteCount;
 	}
 
     /// Exchanges the contents of this data structure with another structure.

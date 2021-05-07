@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,9 +59,9 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ParticleType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext)
+ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext)
 {
-	DataOORef<ParticleType> stype = DataOORef<ParticleType>::create(dataset(), executionContext);
+	DataOORef<ElementType> stype = DataOORef<ElementType>::create(dataset(), executionContext);
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
 	stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext);
@@ -72,7 +72,7 @@ ParticleType* StructureIdentificationModifier::createStructureType(int id, Parti
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	AsynchronousModifier::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

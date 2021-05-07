@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -232,7 +232,7 @@ bool GuiDataSetContainer::fileLoad(const QString& filename)
 
 		QFile fileStream(absoluteFilepath);
 		if(!fileStream.open(QIODevice::ReadOnly))
-			throw Exception(tr("Failed to open session state file '%1' for reading.").arg(absoluteFilepath), this);
+			throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()), this);
 
 		QDataStream dataStream(&fileStream);
 		ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));

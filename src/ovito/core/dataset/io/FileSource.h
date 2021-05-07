@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/pipeline/CachingPipelineObject.h>
+#include <ovito/core/dataset/pipeline/BasePipelineSource.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include "FileSourceImporter.h"
@@ -36,10 +36,11 @@ namespace Ovito {
  *
  * This class works in concert with the FileSourceImporter class.
  */
-class OVITO_CORE_EXPORT FileSource : public CachingPipelineObject
+class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 {
 	Q_OBJECT
 	OVITO_CLASS(FileSource)
+	Q_CLASSINFO("DisplayName", "External file source");
 
 public:
 
@@ -64,9 +65,6 @@ public:
 	/// \brief Scans the external file source and updates the internal frame list.
 	SharedFuture<QVector<FileSourceImporter::Frame>> updateListOfFrames(bool refetchCurrentFile = false);
 
-	/// \brief Returns the source frame that is currently used as a sub-object data collection.
-	int dataCollectionFrame() const { return _dataCollectionFrame; }
-
 	/// \brief Returns the list of animation frames in the input file(s).
 	const QVector<FileSourceImporter::Frame>& frames() const { return _frames; }
 
@@ -88,10 +86,6 @@ public:
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override;
 
-	/// Returns the list of data objects that are managed by this data source.
-	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
-	virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
-
 	/// \brief Scans the external data file(s) to find all contained frames.
 	/// This method is an implementation detail. Please use the high-level method updateListOfFrames() instead.
 	SharedFuture<QVector<FileSourceImporter::Frame>> requestFrameList(bool forceRescan);
@@ -109,17 +103,14 @@ protected:
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
-	/// Is called when a RefTarget referenced by this object has generated an event.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
 	/// Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-	/// Sets the source frame number that is currently used as a sub-object data collection.
-	void setDataCollectionFrame(int frame) { _dataCollectionFrame = frame; }
+	/// Computes the time interval covered on the timeline by the given source animation frame.
+	virtual TimeInterval frameTimeInterval(int frame) const override;
 
 private:
 
@@ -129,9 +120,6 @@ private:
 	/// Updates the internal list of input frames.
 	/// Invalidates cached frames in case they did change.
 	void setListOfFrames(QVector<FileSourceImporter::Frame> frames);
-
-	/// Computes the time interval covered on the time line by the given source source.
-	TimeInterval frameTimeInterval(int frame) const;
 
 	/// If the file source currently uses a wildcard search pattern, replaces it 
 	/// with a single concrete filename. 
@@ -157,9 +145,6 @@ private:
 	/// Specifies the starting animation frame to which the first frame of the file sequence is mapped.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackStartTime, setPlaybackStartTime);
 
-	/// Stores the master copy of the loaded data collection.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
-
 	/// Controls the automatic generation of a file name pattern in the GUI.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);
 
@@ -178,16 +163,9 @@ private:
 	/// The active future if loading the list of frames is in progress.
 	SharedFuture<QVector<FileSourceImporter::Frame>> _framesListFuture;
 
-	/// The source frame that is currently stored in the internal data collection.
-	int _dataCollectionFrame = -1;
-
 	/// The file that was originally selected by the user for import.
 	/// The animation time slider will automatically be positioned to show the frame corresponding to this file.
 	QString _originallySelectedFilename;
-
-	/// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
-	/// and that change signals received from the data collection should be ignored.
-	bool _updatingEditableProxies = false;
 };
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 Alexander Stukowski
+//  Copyright 2016 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,6 +55,9 @@ protected Q_SLOTS:
 	/// Updates the cutoff values in the pair-wise cutoff table.
 	void updatePairCutoffListValues();
 
+	/// Updates the list of van der Waals radii.
+	void updateVanDerWaalsList();
+
 private:
 
 	class PairCutoffTableModel : public QAbstractTableModel {
@@ -62,7 +65,7 @@ private:
 		typedef std::vector<std::pair<OORef<ElementType>,OORef<ElementType>>> ContentType;
 
 		using QAbstractTableModel::QAbstractTableModel;
-		virtual int	rowCount(const QModelIndex& parent) const override { return _data.size(); }
+		virtual int	rowCount(const QModelIndex& parent) const override { return !_data.empty() ? _data.size() : 1; }
 		virtual int	columnCount(const QModelIndex& parent) const override { return 3; }
 		virtual QVariant data(const QModelIndex& index, int role) const override;
 		virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
@@ -75,7 +78,7 @@ private:
 			}
 		}
 		virtual Qt::ItemFlags flags(const QModelIndex& index) const override {
-			if(index.column() != 2)
+			if(index.column() != 2 || _data.empty())
 				return Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 			else
 				return Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable);
@@ -95,6 +98,7 @@ private:
 
 	QTableView* _pairCutoffTable;
 	PairCutoffTableModel* _pairCutoffTableModel;
+	QTableWidget* _vdwTable;
 };
 
 }	// End of namespace

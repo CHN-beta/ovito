@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 Alexander Stukowski
+//  Copyright 2017 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,13 +70,13 @@ void AffineTransformationModifier::initializeObject(ExecutionContext executionCo
 * This method is called by the system when the modifier has been inserted
 * into a PipelineObject.
 ******************************************************************************/
-void AffineTransformationModifier::initializeModifier(ModifierApplication* modApp)
+void AffineTransformationModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
 {
-	MultiDelegatingModifier::initializeModifier(modApp);
+	MultiDelegatingModifier::initializeModifier(time, modApp, executionContext);
 
 	// Take the simulation cell from the input object as the default destination cell geometry for absolute scaling.
 	if(targetCell() == AffineTransformation::Zero()) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
 		if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>())
 			setTargetCell(cell->cellMatrix());
 	}

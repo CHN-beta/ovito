@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/gui/qml/mainwin/MainWindow.h>
-#include <ovito/gui/qml/viewport/ViewportWindow.h>
+#include <ovito/gui/qml/viewport/OpenGLViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -55,7 +55,7 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 	disconnect(_maximizedViewportChangedConnection);
 
 	// Delete all existing viewport windows first.
-	for(ViewportWindow* window : findChildren<ViewportWindow*>())
+	for(OpenGLViewportWindow* window : findChildren<OpenGLViewportWindow*>())
 		delete window;
 
 	_viewportConfig = newViewportConfiguration;
@@ -63,7 +63,7 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 
 		// Load the QML component for creating new viewport window instances.
 		if(!_viewportComponent) {
-			_viewportComponent = new QQmlComponent(qmlContext(this)->engine(), QUrl::fromLocalFile(":/gui/ui/ViewportWindow.qml"), QQmlComponent::PreferSynchronous, this);
+			_viewportComponent = new QQmlComponent(qmlContext(this)->engine(), QUrl::fromLocalFile(":/gui/ui/OpenGLViewportWindow.qml"), QQmlComponent::PreferSynchronous, this);
 			if(_viewportComponent->isError())
           		qWarning() << _viewportComponent->errors();
 		}
@@ -73,9 +73,9 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 			for(Viewport* vp : viewportConfiguration()->viewports()) {
 
 				// Create the window for the viewport.
-				ViewportWindow* vpwin = qobject_cast<ViewportWindow*>(_viewportComponent->create());
+				OpenGLViewportWindow* vpwin = qobject_cast<OpenGLViewportWindow*>(_viewportComponent->create());
 				if(!vpwin) {
-					qWarning() << "Creation of ViewportWindow instance failed.";
+					qWarning() << "Creation of OpenGLViewportWindow instance failed.";
 					break;
 				}
 
@@ -138,7 +138,7 @@ void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 {
 	if(!_viewportConfig) return;
 
-	for(ViewportWindow* window : findChildren<ViewportWindow*>()) {
+	for(OpenGLViewportWindow* window : findChildren<OpenGLViewportWindow*>()) {
 		window->setCursor(cursor);
 	}
 }
@@ -148,7 +148,7 @@ void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 ******************************************************************************/
 void ViewportsPanel::updateViewportWindows()
 {
-	for(ViewportWindow* window : findChildren<ViewportWindow*>()) {
+	for(OpenGLViewportWindow* window : findChildren<OpenGLViewportWindow*>()) {
 		window->update();
 	}
 }
@@ -182,7 +182,7 @@ void ViewportsPanel::layoutViewports()
 	// Count the number of visible windows.
 	int nvisible = 0;
 	for(Viewport* viewport : viewports) {
-		ViewportWindow* vpwin = static_cast<ViewportWindow*>(viewport->window());
+		OpenGLViewportWindow* vpwin = static_cast<OpenGLViewportWindow*>(viewport->window());
 		if(!vpwin) continue;
 		if(maximizedViewport == nullptr || maximizedViewport == viewport)
 			nvisible++;
@@ -201,7 +201,7 @@ void ViewportsPanel::layoutViewports()
 	// Position items.
 	int count = 0;
 	for(Viewport* viewport : viewports) {
-		ViewportWindow* vpwin = static_cast<ViewportWindow*>(viewport->window());
+		OpenGLViewportWindow* vpwin = static_cast<OpenGLViewportWindow*>(viewport->window());
 		if(!vpwin) continue;
 		if(maximizedViewport != nullptr && maximizedViewport != viewport)
 			continue;

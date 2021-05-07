@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(SimulationCellObject, SimulationCellEditor);
 void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create rollout.
-	QWidget* rollout = createRollout(QString(), rolloutParams, "scene_objects.simulation_cell.html");
+	QWidget* rollout = createRollout(QString(), rolloutParams, "manual:scene_objects.simulation_cell");
 
 	QVBoxLayout* layout1 = new QVBoxLayout(rollout);
 	layout1->setContentsMargins(4,4,4,4);

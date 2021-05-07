@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,33 +35,6 @@
 namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(XSFImporter);
-
-const char* XSFImporter::chemical_symbols[] = {
-    // 0
-    "X",
-    // 1
-    "H", "He",
-    // 2
-    "Li", "Be", "B", "C", "N", "O", "F", "Ne",
-    // 3
-    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
-    // 4
-    "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
-    "Ga", "Ge", "As", "Se", "Br", "Kr",
-    // 5
-    "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd",
-    "In", "Sn", "Sb", "Te", "I", "Xe",
-    // 6
-    "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy",
-    "Ho", "Er", "Tm", "Yb", "Lu",
-    "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi",
-    "Po", "At", "Rn",
-    // 7
-    "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk",
-    "Cf", "Es", "Fm", "Md", "No", "Lr",
-    "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc",
-    "Lv", "Ts", "Og"
-};
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -157,8 +130,8 @@ void XSFImporter::FrameLoader::loadFile()
 				if(nfields != 4 && nfields != 7) break;
 				coords.push_back(pos);
 				int atomTypeId;
-				if(sscanf(atomTypeName, "%i", &atomTypeId) == 1 && atomTypeId >= 0 && atomTypeId < sizeof(chemical_symbols)/sizeof(chemical_symbols[0])) {
-					types.emplace_back(QLatin1String(chemical_symbols[atomTypeId]));
+				if(sscanf(atomTypeName, "%i", &atomTypeId) == 1 && atomTypeId >= 0 && atomTypeId < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES) {
+					types.emplace_back(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomTypeId)));
 				}
 				else {
 					types.emplace_back(QLatin1String(atomTypeName));
@@ -291,8 +264,11 @@ void XSFImporter::FrameLoader::loadFile()
 				for(int i = 0; i < typeProperty->elementTypes().size(); i++) {
 					const ElementType* type = typeProperty->elementTypes()[i];
 					int typeId = type->numericId();
-					if(type->name().isEmpty() && typeId >= 0 && typeId < sizeof(chemical_symbols)/sizeof(chemical_symbols[0]))
-						typeProperty->makeMutable(type)->setName(chemical_symbols[typeId]);
+					if(type->name().isEmpty() && typeId >= 0 && typeId < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES) {
+						ElementType* mutableType = typeProperty->makeMutable(type);
+						mutableType->setName(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(typeId)));
+						mutableType->initializeType(ParticlePropertyReference(typeProperty), executionContext());
+					}
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,9 +36,6 @@ namespace Ovito {
 class OpenGLTextPrimitive : public TextPrimitive
 {
 public:
-
-	/// Constructor.
-	OpenGLTextPrimitive(OpenGLSceneRenderer* renderer);
 
 	/// \brief Sets the text to be rendered.
 	virtual void setText(const QString& text) override {

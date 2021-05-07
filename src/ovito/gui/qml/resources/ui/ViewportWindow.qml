@@ -4,7 +4,7 @@ import QtQuick.Controls 2.12
 // Items in this module are defined in C++ code.
 import org.ovito 1.0
 
-ViewportWindow {
+OpenGLViewportWindow {
 	id: viewportWindow
 
 	onViewportError: {

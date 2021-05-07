@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -218,7 +218,7 @@ bool AsynchronousModifier::applyCachedResultsSynchronous(TimePoint time, Modifie
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void AsynchronousModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void AsynchronousModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	Modifier::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

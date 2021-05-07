@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -125,6 +125,10 @@ void mmCIFImporter::FrameLoader::loadFile()
 		structure.merge_chain_parts();
 		if(isCanceled()) return;
 
+		// Import metadata fields as global attributes. 
+		for(const auto& m : structure.info)
+			state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
+
 		const gemmi::Model& model = structure.first_model();
 
 		// Count total number of atoms.
@@ -139,21 +143,37 @@ void mmCIFImporter::FrameLoader::loadFile()
 		setParticleCount(natoms);
 		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
+		PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
+
+		// Give these particle properties new titles, which are displayed in the GUI under the file source.
+		atomNameProperty.buffer()->setTitle(tr("Atom names"));
+		residueTypeProperty.buffer()->setTitle(tr("Residue types"));
+
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
+		int* atomNameIter = atomNameProperty.begin();
+		int* residueTypeIter = residueTypeProperty.begin();
 
 		// Transfer atomic data to OVITO data structures.
 		bool hasOccupancy = false;
 		for(const gemmi::Chain& chain : model.chains) {
 			for(const gemmi::Residue& residue : chain.residues) {
 				if(isCanceled()) return;
+				int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
 				for(const gemmi::Atom& atom : residue.atoms) {
 					// Atomic position.
 					*posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
-					// Atomic type.
+					// Chemical type.
 					*typeIter++ = atom.element.ordinal();
 					addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+
+					// Atom name.
+					*atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
+
+					// Residue type.
+					*residueTypeIter++ = residueTypeId;
 
 					// Check for presence of occupancy values.
 					if(atom.occ != 1) hasOccupancy = true;
@@ -180,6 +200,11 @@ void mmCIFImporter::FrameLoader::loadFile()
 		// depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
 		// why we sort them now.
 		typeProperty.buffer()->sortElementTypesById();
+		atomNameProperty.buffer()->sortElementTypesByName();
+		residueTypeProperty.buffer()->sortElementTypesByName();
+		typeProperty.reset();
+		atomNameProperty.reset();
+		residueTypeProperty.reset();
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {
@@ -228,6 +253,12 @@ void mmCIFImporter::FrameLoader::loadFile()
 		throw Exception(tr("mmCIF file reader error: %1").arg(e.what()));
 	}
 
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
+		
 	// Call base implementation to finalize the loaded particle data.
 	ParticleImporter::FrameLoader::loadFile();
 }

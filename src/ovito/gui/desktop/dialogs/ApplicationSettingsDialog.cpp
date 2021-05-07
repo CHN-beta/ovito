@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -122,7 +122,7 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-	MainWindow::openHelpTopic(QStringLiteral("application_settings.html"));
+	MainWindow::openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 
 }	// End of namespace

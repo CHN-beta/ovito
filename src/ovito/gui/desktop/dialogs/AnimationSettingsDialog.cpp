@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -153,7 +153,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 
 	// Implement Help button.
 	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		MainWindow::openHelpTopic(QStringLiteral("animation.animation_settings_dialog.html"));
+		MainWindow::openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
 	});
 
 	layout1->addWidget(buttonBox);

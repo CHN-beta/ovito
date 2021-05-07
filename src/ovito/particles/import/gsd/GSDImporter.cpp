@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -360,6 +360,7 @@ void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shape
 	ParticleType* mutableType = typeProperty->makeMutable(existingType);
 	mutableType->setShapeMesh(shapeObject);
 	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
+	mutableType->setRadius(1.0);
 }
 
 /******************************************************************************

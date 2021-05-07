@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,12 +36,6 @@ RenderCommandPage::RenderCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 {
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(2,2,2,2);
-
-	QToolBar* toolbar = new QToolBar(this);
-	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
-	toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-	layout->addWidget(toolbar);
-	toolbar->addAction(mainWindow->actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT));
 
 	// Create the properties panel.
 	propertiesPanel = new PropertiesPanel(this, mainWindow);

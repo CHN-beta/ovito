@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,8 +104,10 @@ public:
 	PipelineStatus globalStatus() const;
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
+	/// \param time The current animation time.
 	/// \param modApp The ModifierApplication object that has been created for this modifier.
-	virtual void initializeModifier(ModifierApplication* modApp) {}
+	/// \param executionContext Indicates whether the modifier has been created by the user in the GUI or by a script.
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) {}
 
 	/// \brief Decides whether a preliminary viewport update is performed after the modifier has been
 	///        evaluated but before the entire pipeline evaluation is complete.

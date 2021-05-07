@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -233,7 +233,7 @@ public Q_SLOTS:
 	/// Sets whether the animation is played back in a loop in the interactive viewports.
     void setLoopPlaybackSlot(bool loop) { setLoopPlayback(loop); }
 
-	/// Recalculates the length of the animation interval to accomodate all loaded source animations
+	/// Recalculates the length of the animation interval to accommodate all loaded source animations
 	/// in the scene.
 	void adjustAnimationInterval();
 
@@ -277,7 +277,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
 	/// \brief Saves the class' contents to an output stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from an input stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
@@ -312,7 +312,7 @@ private:
 	/// Specifies the number of frames to skip when playing back the animation in the interactive viewports.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackEveryNthFrame, setPlaybackEveryNthFrame);
 
-	/// Controls whether the animation interval is automatically adjusted to accomodate all loaded
+	/// Controls whether the animation interval is automatically adjusted to accommodate all loaded
 	/// source animations in the scene.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustInterval, setAutoAdjustInterval);
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,6 +48,12 @@ public:
 	/// Returns the list model that encapsulates the list of overlays of the active viewport.
 	OverlayListModel* overlayListModel() const { return _overlayListModel; }
 
+	/// Loads the layout of the widgets from the settings store.
+	void restoreLayout();
+
+	/// Saves the layout of the widgets to the settings store.
+	void saveLayout();
+
 protected Q_SLOTS:
 
 	/// This is called whenever the current viewport configuration of current dataset has been replaced by a new one.
@@ -64,9 +70,6 @@ protected Q_SLOTS:
 
 	/// This called when the user double clicks an item in the list.
 	void onLayerDoubleClicked(const QModelIndex& index);
-
-	/// Handles the ACTION_VIEWPORT_LAYER_TOGGLE_STATE command, which toggles the enabled/disable state of the selected layer.
-	void onLayerToggleState(bool newState);
 
 	/// Action handler moving the selected layer up in the stack.
 	void onLayerMoveUp();
@@ -109,8 +112,8 @@ private:
 	/// The GUI action that moves the currently selected viewport layer down in the stack.
 	QAction* _moveLayerDownAction;
 
-	/// The GUI action that turns the currently selected viewport layer on or off.
-	QAction* _toggleLayerStateAction;
+	/// The splitter widget separating the layer list and the properties panel.
+	QSplitter* _splitter;	
 };
 
 }	// End of namespace

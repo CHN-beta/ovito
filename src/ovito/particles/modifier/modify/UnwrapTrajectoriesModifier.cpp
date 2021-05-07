@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -227,7 +227,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	// Check if periodic cell boundary crossing have been precomputed or not.
 	if(time > unwrappedUpToTime()) {
 		if(Application::instance()->executionContext() == ExecutionContext::Interactive)
-			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Please press 'Update' to unwrap the particle trajectories now.")));
+			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
 		else
 			throwException(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
 		return;
@@ -461,7 +461,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ModifierApplication::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

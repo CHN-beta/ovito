@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,8 +44,8 @@
 #include <QSurface>
 #include <QWindow>
 #include <QScreen>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	#include <QOpenGLVersionFunctionsFactory>
+#ifdef OVITO_DEBUG
+	#include <QOpenGLDebugLogger>
 #endif
 
 namespace Ovito {
@@ -67,8 +67,36 @@ QByteArray OpenGLSceneRenderer::_openGLSLVersion;
 /// The current surface format used by the OpenGL implementation.
 QSurfaceFormat OpenGLSceneRenderer::_openglSurfaceFormat;
 
-/// Indicates whether the OpenGL implementation supports geometry shader programs.
-bool OpenGLSceneRenderer::_openglSupportsGeomShaders = false;
+/// The list of extensions supported by the OpenGL implementation.
+QSet<QByteArray> OpenGLSceneRenderer::_openglExtensions;
+
+/******************************************************************************
+* Is called by OVITO to query the class for any information that should be 
+* included in the application's system report.
+******************************************************************************/
+void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, DataSetContainer& container) const
+{
+	if(this == &OpenGLSceneRenderer::OOClass()) {
+		OpenGLSceneRenderer::determineOpenGLInfo();
+
+		stream << "======= OpenGL info =======" << "\n";
+		const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
+		stream << "Version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
+		stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+		stream << "Alpha: " << format.hasAlpha() << "\n";
+		stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
+		stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+		stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+		stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
+		stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
+		stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
+		stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
+		stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+		stream << "Supported extensions:\n";
+		for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
+			stream << extension << "\n";
+	}
+}
 
 /******************************************************************************
 * Determines the capabilities of the current OpenGL implementation.
@@ -83,7 +111,6 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	QOffscreenSurface offscreenSurface;
 	std::unique_ptr<QWindow> window;
 	if(QOpenGLContext::currentContext() == nullptr) {
-		tempContext.setFormat(getDefaultSurfaceFormat());
 		if(!tempContext.create())
 			throw Exception(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
 								"Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
@@ -112,79 +139,8 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	_openGLRenderer = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_RENDERER));
 	_openGLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_VERSION));
 	_openGLSLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
-	_openglSupportsGeomShaders = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
 	_openglSurfaceFormat = QOpenGLContext::currentContext()->format();
-}
-
-/******************************************************************************
-* Returns whether all viewport windows should share one GL context or not.
-******************************************************************************/
-bool OpenGLSceneRenderer::contextSharingEnabled(bool forceDefaultSetting)
-{
-#if 0
-	if(!forceDefaultSetting) {
-		// The user can override the use of multiple GL contexts.
-		QVariant userSetting = QSettings().value("display/share_opengl_context");
-		if(userSetting.isValid())
-			return userSetting.toBool();
-	}
-#endif
-
-	// By default, all viewports of a main window use the same GL context.
-	return true;
-}
-
-/******************************************************************************
-* Determines whether OpenGL geometry shader programs should be used or not.
-******************************************************************************/
-bool OpenGLSceneRenderer::geometryShadersEnabled(bool forceDefaultSetting)
-{
-#ifdef Q_OS_WASM
-	// Completely disable support for geometry shaders on WebAssembly platform for now. 
-	return false;
-#endif
-
-#if 0
-	if(!forceDefaultSetting) {
-		// The user can override the use of geometry shaders.
-		QVariant userSetting = QSettings().value("display/use_geometry_shaders");
-		if(userSetting.isValid())
-			return userSetting.toBool() && geometryShadersSupported();
-	}
-#endif
-
-	if(Application::instance()->guiMode())
-		return geometryShadersSupported();
-	else if(QOpenGLContext::currentContext())
-		return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
-	else
-		return false;
-}
-
-/******************************************************************************
-* Returns the default OpenGL surface format requested by OVITO when creating
-* OpenGL contexts.
-******************************************************************************/
-QSurfaceFormat OpenGLSceneRenderer::getDefaultSurfaceFormat()
-{
-	QSurfaceFormat format;
-#ifndef Q_OS_WASM
-	if(!QCoreApplication::testAttribute(Qt::AA_UseSoftwareOpenGL)) {
-		format.setDepthBufferSize(24);
-		format.setStencilBufferSize(1);
-#ifdef Q_OS_MACOS
-		// macOS only supports core profile contexts.
-		format.setMajorVersion(3);
-		format.setMinorVersion(2);
-		format.setProfile(QSurfaceFormat::CoreProfile);
-#endif
-	}
-#else
-	// When running in a web browser, try to request a context that supports OpenGL ES 2.0 (WebGL 1).
-	format.setMajorVersion(2);
-	format.setMinorVersion(0);
-#endif
-	return format;
+	_openglExtensions = tempContext.extensions();
 }
 
 /******************************************************************************
@@ -227,33 +183,34 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     OVITO_REPORT_OPENGL_ERRORS(this);
 	_glformat = _glcontext->format();
 
-#ifndef Q_OS_WASM
-	if(!glcontext()->isOpenGLES()) {
-		// Obtain a functions object that allows to call OpenGL 3.0 functions in a platform-independent way.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-		_glFunctions30 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_0>(_glcontext);
-#else
-		_glFunctions30 = _glcontext->versionFunctions<QOpenGLFunctions_3_0>();
-		if(!_glFunctions30 || !_glFunctions30->initializeOpenGLFunctions())
-			_glFunctions30 = nullptr;
-#endif
+	// Get the OpenGL version.
+	_glversion = QT_VERSION_CHECK(_glformat.majorVersion(), _glformat.minorVersion(), 0);
 
-		// Obtain a functions object that allows to call OpenGL 3.2 core functions in a platform-independent way.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-		_glFunctions32 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_2_Core>(_glcontext);
-#else
-		_glFunctions32 = _glcontext->versionFunctions<QOpenGLFunctions_3_2_Core>();
-		if(!_glFunctions32 || !_glFunctions32->initializeOpenGLFunctions())
-			_glFunctions32 = nullptr;
-#endif
+#ifdef OVITO_DEBUG
+//	_glversion = QT_VERSION_CHECK(4, 1, 0);
+//	_glversion = QT_VERSION_CHECK(3, 2, 0);
+//	_glversion = QT_VERSION_CHECK(3, 1, 0);
+//	_glversion = QT_VERSION_CHECK(2, 1, 0);
 
-		if(!_glFunctions30 && !_glFunctions32)
-			throwException(tr("Could not resolve OpenGL functions. Invalid OpenGL context."));
+	// Initialize debug logger.
+	if(_glformat.testOption(QSurfaceFormat::DebugContext)) {
+		QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>();
+		if(!logger) {
+			logger = new QOpenGLDebugLogger(this);
+			connect(logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& debugMessage) {
+				qDebug() << debugMessage;
+			});
+		}
+		logger->initialize();
+		logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
+		logger->enableMessages();
 	}
 #endif
 
-	// Determine whether its okay to use geometry shaders.
-	_useGeometryShaders = geometryShadersEnabled() && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
+	// Get optional function pointers.
+	glMultiDrawArrays = reinterpret_cast<void (APIENTRY *)(GLenum, const GLint*, const GLsizei*, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArrays"));
+	glMultiDrawArraysIndirect = reinterpret_cast<void (APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
+	OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in OpenGL 2.0+.
 
 	// Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
 	if(glformat().majorVersion() >= 3) {
@@ -262,6 +219,9 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 		OVITO_CHECK_OPENGL(this, _vertexArrayObject->bind());
 	}
     OVITO_REPORT_OPENGL_ERRORS(this);
+
+	// Make sure we have a valid frame set for the resource manager during this render pass.
+	OVITO_ASSERT(_currentResourceFrame != 0);
 
 	// Reset OpenGL state.
 	initializeGLState();
@@ -289,10 +249,19 @@ void OpenGLSceneRenderer::initializeGLState()
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 	setClearColor(ColorA(0, 0, 0, 0));
 
-	// Set up default viewport rectangle.
     if(viewport() && viewport()->window()) {
-    	QSize vpSize = viewport()->window()->viewportWindowDeviceSize();
-    	setRenderingViewport(0, 0, vpSize.width(), vpSize.height());
+		
+		// Set up OpenGL render viewport to cover the entire window by default.
+    	QSize vpSize = viewport()->windowSize();
+    	setRenderingViewport(QRect(QPoint(0,0), vpSize));
+
+		// When rendering an interactive viewport, use viewport background color to clear frame buffer.
+		if(isInteractive()) {
+			if(!viewport()->renderPreviewMode())
+				setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
+			else if(renderSettings())
+				setClearColor(renderSettings()->backgroundColor());
+		}
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
@@ -300,16 +269,22 @@ void OpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OpenGLSceneRenderer::endFrame(bool renderSuccessful)
+void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
 {
 	if(QOpenGLContext::currentContext()) {
 	    initializeOpenGLFunctions();
 	    OVITO_REPORT_OPENGL_ERRORS(this);
 	}
+#ifdef OVITO_DEBUG
+	// Stop debug logger.
+	if(QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>()) {
+		logger->stopLogging();
+	}
+#endif
 	_vertexArrayObject.reset();
 	_glcontext = nullptr;
 
-	SceneRenderer::endFrame(renderSuccessful);
+	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
 }
 
 /******************************************************************************
@@ -332,7 +307,7 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
 	if(renderScene(operation.subOperation())) {
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
-		// Call subclass to render additional content that is only visible in the interactive viewports.
+		// Render additional content that is only visible in the interactive viewports.
 		renderInteractiveContent();
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
@@ -397,9 +372,7 @@ const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
 std::shared_ptr<LinePrimitive> OpenGLSceneRenderer::createLinePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLLinePrimitive>(this);
+	return std::make_shared<OpenGLLinePrimitive>();
 }
 
 /******************************************************************************
@@ -418,12 +391,10 @@ void OpenGLSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& prim
 * Requests a new particle geometry buffer from the renderer.
 ******************************************************************************/
 std::shared_ptr<ParticlePrimitive> OpenGLSceneRenderer::createParticlePrimitive(
-		ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality, ParticlePrimitive::ParticleShape shape)
+		ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLParticlePrimitive>(this, shadingMode, renderingQuality, shape);
+	return std::make_shared<OpenGLParticlePrimitive>(shape, shadingMode, renderingQuality);
 }
 
 /******************************************************************************
@@ -448,9 +419,7 @@ void OpenGLSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitiv
 std::shared_ptr<TextPrimitive> OpenGLSceneRenderer::createTextPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLTextPrimitive>(this);
+	return std::make_shared<OpenGLTextPrimitive>();
 }
 
 /******************************************************************************
@@ -471,9 +440,7 @@ void OpenGLSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primi
 std::shared_ptr<ImagePrimitive> OpenGLSceneRenderer::createImagePrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLImagePrimitive>(this);
+	return std::make_shared<OpenGLImagePrimitive>();
 }
 
 /******************************************************************************
@@ -497,9 +464,7 @@ std::shared_ptr<CylinderPrimitive> OpenGLSceneRenderer::createCylinderPrimitive(
 		CylinderPrimitive::RenderingQuality renderingQuality)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLCylinderPrimitive>(this, shape, shadingMode, renderingQuality);
+	return std::make_shared<OpenGLCylinderPrimitive>(shape, shadingMode, renderingQuality);
 }
 
 /******************************************************************************
@@ -524,9 +489,7 @@ void OpenGLSceneRenderer::renderCylinders(const std::shared_ptr<CylinderPrimitiv
 std::shared_ptr<MarkerPrimitive> OpenGLSceneRenderer::createMarkerPrimitive(MarkerPrimitive::MarkerShape shape)
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLMarkerPrimitive>(this, shape);
+	return std::make_shared<OpenGLMarkerPrimitive>(shape);
 }
 
 /******************************************************************************
@@ -547,9 +510,7 @@ void OpenGLSceneRenderer::renderMarkers(const std::shared_ptr<MarkerPrimitive>& 
 std::shared_ptr<MeshPrimitive> OpenGLSceneRenderer::createMeshPrimitive()
 {
 	OVITO_ASSERT(!isBoundingBoxPass());
-	OVITO_ASSERT(glcontext() != nullptr);
-	OVITO_ASSERT(QOpenGLContext::currentContext() == glcontext());
-	return std::make_shared<OpenGLMeshPrimitive>(this);
+	return std::make_shared<OpenGLMeshPrimitive>();
 }
 
 /******************************************************************************
@@ -573,9 +534,10 @@ void OpenGLSceneRenderer::renderMesh(const std::shared_ptr<MeshPrimitive>& primi
 ******************************************************************************/
 QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
 {
-	QOpenGLContextGroup* contextGroup = glcontext()->shareGroup();
-	OVITO_ASSERT(contextGroup == QOpenGLContextGroup::currentContextGroup());
+	QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
+	OVITO_ASSERT(contextGroup);
 
+	OVITO_ASSERT(QThread::currentThread() == contextGroup->thread());
 	OVITO_ASSERT(QOpenGLShaderProgram::hasOpenGLShaderPrograms());
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
@@ -586,7 +548,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 		return program.take();
 
 	// The program's source code hasn't been compiled so far. Do it now and cache the shader program.
-	program.reset(new QOpenGLShaderProgram(contextGroup));
+	program.reset(new QOpenGLShaderProgram());
 	program->setObjectName(id);
 
 	// Load and compile vertex shader source.
@@ -597,9 +559,12 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 
 	// Load and compile geometry shader source.
 	if(!geometryShaderFile.isEmpty()) {
-		OVITO_ASSERT(useGeometryShaders());
 		loadShader(program.data(), QOpenGLShader::Geometry, geometryShaderFile);
 	}
+
+	// Make the shader program a child object of the GL context group.
+	program->setParent(contextGroup);
+	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(id));
 
 	// Compile the shader program.
 	if(!program->link()) {
@@ -622,35 +587,130 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
-	if(!glcontext()->isOpenGLES()) {
-
+	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
-		if(shaderType == QOpenGLShader::Geometry || (glformat().majorVersion() >= 3 && glformat().minorVersion() >= 2) || glformat().majorVersion() > 3)
+		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0))
 			shaderSource.append("#version 150\n");
-		else
+		else if(_glversion >= QT_VERSION_CHECK(3, 1, 0))
+			shaderSource.append("#version 140\n");
+		else if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
 			shaderSource.append("#version 130\n");
-
-		// Inject utilities code file, which is shared by all shaders.
-		QFile utilitiesSourceFile(QStringLiteral(":/openglrenderer/glsl/utilities.glsl"));
-		if(!utilitiesSourceFile.open(QFile::ReadOnly))
-			throw Exception(QString("Unable to open shader source file %1.").arg(utilitiesSourceFile.fileName()));
-		shaderSource.append(utilitiesSourceFile.readAll());
+		else
+			shaderSource.append("#version 120\n");
 	}
 	else {
 		// Using OpenGL ES context.
-
 		// Inject GLSL version directive into shader source. 
 		if(glformat().majorVersion() >= 3)
 			shaderSource.append("#version 300 es\n");
-
 	}
+
+	if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
+		// This is needed to emulate the special shader variables 'gl_VertexID' and 'gl_InstanceID' in GLSL 1.20:
+		if(shaderType == QOpenGLShader::Vertex) {
+			// Note: Data type 'float' is used for the vertex attribute, because some OpenGL implementation have poor support for integer
+			// vertex attributes.
+			shaderSource.append("attribute float vertexID;\n");
+			shaderSource.append("uniform int vertices_per_instance;\n");
+		}
+	}
+	else if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+		// This is needed to compute the special shader variable 'gl_VertexID' when instanced arrays are not supported:
+		if(shaderType == QOpenGLShader::Vertex) {
+			shaderSource.append("uniform int vertices_per_instance;\n");
+		}
+	}
+
+	// Helper function that appends a source code line to the buffer after preprocessing ist.
+	auto preprocessShaderLine = [&](QByteArray& line) {
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
+			// Automatically back-port shader source code to make it compatible with OpenGL 2.1 (GLSL 1.20):
+			if(shaderType == QOpenGLShader::Vertex) {
+				if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
+				else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
+				else if(line.startsWith("flat out vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
+				else if(line.startsWith("noperspective out ")) return;
+				else if(line.contains("calculate_view_ray(vec2(")) return;
+				else if(line.contains("flat_normal_fs")) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+				else {
+					line.replace("gl_VertexID", "int(mod(vertexID+0.5, vertices_per_instance))");
+					line.replace("gl_InstanceID", "(int(vertexID) / vertices_per_instance)");
+					line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
+					line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(objectID / 256.0, 256.0))");
+					line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(objectID / 65536.0, 256.0))");
+					line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(objectID / 16777216.0, 256.0))");
+					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
+				}
+			}
+			else if(shaderType == QOpenGLShader::Fragment) {
+				if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
+				else if(line.startsWith("flat in vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
+				else if(line.startsWith("noperspective in ")) return;
+				else if(line.startsWith("out ")) return;
+				else if(line.contains("vec3 ray_dir_norm =")) {
+					line = 
+						"vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
+						"vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
+						"vec4 _far = _near + inverse_projection_matrix[2];\n"
+						"vec3 ray_origin = _near.xyz / _near.w;\n"
+						"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n";
+				}
+				else {
+					line.replace("fragColor", "gl_FragColor");
+					line.replace("texture(", "texture2D(");
+					line.replace("shadeSurfaceColor(flat_normal_fs", "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))");
+					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+				}
+			}
+		}
+		else {
+			// Automatically back-port shader source code to make it compatible with OpenGL 3.0 - 3.2:
+			if(shaderType == QOpenGLShader::Vertex) {
+				if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
+					line.replace("gl_VertexID", "(gl_VertexID % vertices_per_instance)");
+					line.replace("gl_InstanceID", "(gl_VertexID / vertices_per_instance)");
+				}
+				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
+					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
+			}
+			else if(shaderType == QOpenGLShader::Fragment) { 
+				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
+					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+			}
+		}
+
+		shaderSource.append(line);	
+	};
 
 	// Load actual shader source code.
 	QFile shaderSourceFile(filename);
 	if(!shaderSourceFile.open(QFile::ReadOnly))
 		throw Exception(QString("Unable to open shader source file %1.").arg(filename));
-	shaderSource.append(shaderSourceFile.readAll());
+
+	// Parse each line of the shader file and process #include directives.
+	while(!shaderSourceFile.atEnd()) {
+		QByteArray line = shaderSourceFile.readLine();
+		if(line.startsWith("#include")) {
+			// Resolve relative file paths.
+			QFileInfo includeFile(QFileInfo(shaderSourceFile).dir(), QString::fromUtf8(line.mid(8).replace('\"', "").trimmed()));
+
+			// Load the secondary shader file and insert it into the source of the primary shader.
+			QFile secondarySourceFile(includeFile.filePath());
+			if(!secondarySourceFile.open(QFile::ReadOnly))
+				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFile.filePath()).arg(filename));
+			while(!secondarySourceFile.atEnd()) {
+				line = secondarySourceFile.readLine();
+				preprocessShaderLine(line);
+			}
+			shaderSource.append('\n');
+		}
+		else {
+			preprocessShaderLine(line);
+		}
+	}
 
 	// Load and compile vertex shader source.
 	if(!program->addShaderFromSourceCode(shaderType, shaderSource)) {
@@ -665,67 +725,6 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 }
 
 /******************************************************************************
-* Renders a 2d polyline in the viewport.
-******************************************************************************/
-void OpenGLSceneRenderer::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
-{
-	if(isBoundingBoxPass())
-		return;
-
-	makeContextCurrent();
-
-	// Load OpenGL shader.
-	QOpenGLShaderProgram* shader = loadShaderProgram("line", ":/openglrenderer/glsl/lines/line.vs", ":/openglrenderer/glsl/lines/line.fs");
-	if(!shader->bind())
-		throwException(tr("Failed to bind OpenGL shader."));
-
-	bool wasDepthTestEnabled = this->glIsEnabled(GL_DEPTH_TEST);
-	OVITO_CHECK_OPENGL(this, this->glDisable(GL_DEPTH_TEST));
-
-	GLint vc[4];
-	this->glGetIntegerv(GL_VIEWPORT, vc);
-	QMatrix4x4 tm;
-	tm.ortho(vc[0], vc[0] + vc[2], vc[1] + vc[3], vc[1], -1, 1);
-	OVITO_CHECK_OPENGL(this, shader->setUniformValue("modelview_projection_matrix", tm));
-
-	OpenGLBuffer<Point_2<float>> vertexBuffer;
-	OpenGLBuffer<ColorAT<float>> colorBuffer;
-	vertexBuffer.create(QOpenGLBuffer::StaticDraw, count);
-	vertexBuffer.fill(points);
-	vertexBuffer.bind(this, shader, "position", GL_FLOAT, 0, 2);
-	colorBuffer.create(QOpenGLBuffer::StaticDraw, count);
-	colorBuffer.fillConstant(color);
-	OVITO_CHECK_OPENGL(this, colorBuffer.bindColors(this, shader, 4));
-
-	OVITO_CHECK_OPENGL(this, glDrawArrays(closed ? GL_LINE_LOOP : GL_LINE_STRIP, 0, count));
-
-	vertexBuffer.detach(this, shader, "position");
-	colorBuffer.detachColors(this, shader);
-	shader->release();
-	if(wasDepthTestEnabled) 
-		OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
-}
-
-/******************************************************************************
-* Returns the line rendering width to use in object picking mode.
-******************************************************************************/
-FloatType OpenGLSceneRenderer::defaultLinePickingWidth()
-{
-	return FloatType(6) * devicePixelRatio();
-}
-
-/******************************************************************************
-* Returns the device pixel ratio of the output device we are rendering to.
-******************************************************************************/
-qreal OpenGLSceneRenderer::devicePixelRatio() const
-{
-	if(glcontext() && glcontext()->screen())
-		return glcontext()->screen()->devicePixelRatio();
-	else
-		return SceneRenderer::devicePixelRatio();
-}
-
-/******************************************************************************
 * Sets the frame buffer background color.
 ******************************************************************************/
 void OpenGLSceneRenderer::setClearColor(const ColorA& color)
@@ -734,11 +733,12 @@ void OpenGLSceneRenderer::setClearColor(const ColorA& color)
 }
 
 /******************************************************************************
-* Sets the rendering region in the frame buffer.
+* Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
 ******************************************************************************/
-void OpenGLSceneRenderer::setRenderingViewport(int x, int y, int width, int height)
+void OpenGLSceneRenderer::setRenderingViewport(const QRect& viewportRect)
 {
-	OVITO_CHECK_OPENGL(this, this->glViewport(x, y, width, height));
+	SceneRenderer::setRenderingViewport(viewportRect);
+	OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect.x(), viewportRect.y(), viewportRect.width(), viewportRect.height()));
 }
 
 /******************************************************************************

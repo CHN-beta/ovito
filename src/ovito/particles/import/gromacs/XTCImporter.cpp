@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -121,7 +121,7 @@ void XTCImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 
 	// Open XTC file for reading.
 	XTCFile file;
-	file.open(fileHandle().localFilePath().toUtf8().constData());
+	file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle().localFilePath())).constData());
 
 	Frame frame(fileHandle());
 	while(!file.eof() && !isCanceled()) {
@@ -149,7 +149,7 @@ void XTCImporter::FrameLoader::loadFile()
 
 	// Open XTC file for reading.
 	XTCFile file;
-	file.open(fileHandle().localFilePath().toUtf8().constData());
+	file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle().localFilePath())).constData());
 
 	// Seek to byte offset of requested trajectory frame.
 	if(frame().byteOffset != 0)
@@ -165,6 +165,7 @@ void XTCImporter::FrameLoader::loadFile()
 	std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
 		return static_cast<Point3>(p * 10.0f);
 	});
+	posProperty.reset();
 
 	// Convert cell vectors from nanometers to angstroms.
 	simulationCell()->setCellMatrix(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));

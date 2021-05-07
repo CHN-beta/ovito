@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,13 +119,21 @@ void XYZImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 		frames.push_back(frame);
 
 		// Skip comment line.
-		stream.readLine();
+		const char* commentLine = stream.readLine();
+		// Detect .exyz file format written by OpenBabel.
+		bool isOpenBabelEXYZ = (std::strstr(commentLine, "%PBC") != nullptr);
 
 		// Skip atom lines.
 		for(unsigned long long i = 0; i < numParticlesLong; i++) {
 			stream.readLine();
 			if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
 				return;
+		}
+
+		// Skip simulation cell section if this is a .exyz file written by OpenBabel.
+		if(isOpenBabelEXYZ) {
+			for(int i = 0; i < 6; i++)
+				stream.readLine();
 		}
 	}
 }
@@ -234,10 +242,13 @@ void XYZImporter::FrameLoader::loadFile()
 	setProgressMaximum(numParticlesLong);
 
 	// Extract some useful information from the comment line.
-	stream.readLine();
+	const char* commentLine_cstr = stream.readLine();
 	bool hasSimulationCell = false;
 	int movieMode = -1;
 
+	// Detect .exyz file format written by OpenBabel.
+	bool isOpenBabelEXYZ = (std::strstr(commentLine_cstr, "%PBC") != nullptr);
+	
 	simulationCell()->setPbcFlags(false, false, false);
 	Vector3 cellOrigin = Vector3::Zero();
 	Vector3 cellVector1 = Vector3::Zero();
@@ -426,6 +437,28 @@ void XYZImporter::FrameLoader::loadFile()
 	columnParser.sortElementTypes();
 	columnParser.reset();
 
+	// If this is a .exyz file written by OpenBabel, parse the simulation cell section that follows the atom lines.
+	if(isOpenBabelEXYZ) {
+		AffineTransformation cell = AffineTransformation::Zero();
+		// Skip empty line.
+		stream.readLine();
+		// Parse 1st cell vector.
+		if(sscanf(stream.readLine(), "Vector1 " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,0), &cell(1,0), &cell(2,0)) < 3)
+			throw Exception(tr("Parsing error in line %1 of EXYZ file. Invalid simulation cell vector: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+		// Parse 2nd cell vector.
+		if(sscanf(stream.readLine(), "Vector2 " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,1), &cell(1,1), &cell(2,1)) < 3)
+			throw Exception(tr("Parsing error in line %1 of EXYZ file. Invalid simulation cell vector: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+		// Parse 3rd cell vector.
+		if(sscanf(stream.readLine(), "Vector3 " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,2), &cell(1,2), &cell(2,2)) < 3)
+			throw Exception(tr("Parsing error in line %1 of EXYZ file. Invalid simulation cell vector: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+		// Parse cell origin.
+		if(sscanf(stream.readLine(), "Offset " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0,3), &cell(1,3), &cell(2,3)) < 3)
+			throw Exception(tr("Parsing error in line %1 of EXYZ file. Invalid simulation cell origin: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+		simulationCell()->setCellMatrix(cell);
+		simulationCell()->setPbcFlags(true, true, true);
+		hasSimulationCell = true;
+	}
+
 	PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
 	if(posProperty && numParticlesLong != 0) {
 		Box3 boundingBox;
@@ -567,11 +600,12 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 			for(size_t i = 0; i < 5 && !stream.eof(); i++) {
 				stream.readLine();
 				fileExcerpt += stream.lineString();
+				if(i == 0)
+					detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
 			}
 			if(!stream.eof()) 
 				fileExcerpt += QStringLiteral("...\n");
 
-			detectedColumnMapping.resize(FileImporter::splitString(stream.lineString()).size());
 			detectedColumnMapping.setFileExcerpt(fileExcerpt);
 
 			// If there is no preset column mapping, and if the XYZ file has exactly 4 columns, assume
@@ -591,7 +625,7 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 /******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
-void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	ParticleImporter::saveToStream(stream, excludeRecomputableData);
 

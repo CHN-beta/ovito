@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -84,7 +84,7 @@ public:
 	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(ModifierApplication* modApp) override;
+	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
 protected:
 
@@ -272,7 +272,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, sourceProperty2, setSourceProperty2);
 	/// Controls the cutoff radius for the FFT grid.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fftGridSpacing, setFFTGridSpacing);
-	/// Controls if a windowing function should be applied in nonperiodic directions.
+	/// Controls if a windowing function should be applied in non-periodic directions.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, applyWindow, setApplyWindow, PROPERTY_FIELD_MEMORIZE);
 	/// Controls whether the real-space correlation should be computed by direct summation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, doComputeNeighCorrelation, setComputeNeighCorrelation, PROPERTY_FIELD_MEMORIZE);

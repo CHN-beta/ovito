@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -158,6 +158,8 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 ******************************************************************************/
 PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath)
 {
+	OVITO_ASSERT(isSafeToModify());
+
 	if(getOOMetaClass().isValidStandardPropertyId(typeId) == false) {
 		if(typeId == PropertyObject::GenericSelectionProperty)
 			throwException(tr("Creating selections is not supported for %1.").arg(getOOMetaClass().propertyClassDisplayName()));
@@ -169,9 +171,17 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 
 	// Check if property already exists in the output.
 	if(const PropertyObject* existingProperty = getProperty(typeId)) {
-		PropertyObject* newProperty = makeMutable(existingProperty);
-		OVITO_ASSERT(newProperty->isSafeToModify());
-		OVITO_ASSERT(newProperty->size() == elementCount());
+		OVITO_ASSERT(existingProperty->size() == elementCount());
+		if(existingProperty->isSafeToModify())
+			return const_cast<PropertyObject*>(existingProperty);
+		if(initializeMemory)
+			return makeMutable(existingProperty);
+
+		// If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
+		// the existing ElementType list to save time.	
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, false, executionContext, containerPath);
+		newProperty->setElementTypes(existingProperty->elementTypes());
+		replaceReferencesTo(existingProperty, newProperty);
 		return newProperty;
 	}
 	else {
@@ -188,6 +198,8 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 ******************************************************************************/
 PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames)
 {
+	OVITO_ASSERT(isSafeToModify());
+
 	// Check if property already exists in the output.
 	const PropertyObject* existingProperty = getProperty(name);
 
@@ -220,6 +232,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 const PropertyObject* PropertyContainer::createProperty(const PropertyObject* property)
 {
 	OVITO_CHECK_POINTER(property);
+	OVITO_ASSERT(isSafeToModify());
 	OVITO_ASSERT(property->type() == 0 || getOOMetaClass().isValidStandardPropertyId(property->type()));
 
 	// Length of first property array determines number of data elements in the container.
@@ -361,7 +374,7 @@ void PropertyContainer::verifyIntegrity() const
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void PropertyContainer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void PropertyContainer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	DataObject::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x01);

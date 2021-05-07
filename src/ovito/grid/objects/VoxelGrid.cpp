@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,6 +42,7 @@ void VoxelGrid::OOMetaClass::initialize()
 	// Enable automatic conversion of a VoxelPropertyReference to a generic PropertyReference and vice versa.
 	QMetaType::registerConverter<VoxelPropertyReference, PropertyReference>();
 	QMetaType::registerConverter<PropertyReference, VoxelPropertyReference>();
+	QMetaType::registerComparators<VoxelPropertyReference>();
 
 	setPropertyClassDisplayName(tr("Voxel grid"));
 	setElementDescriptionName(QStringLiteral("voxels"));
@@ -118,7 +119,7 @@ void VoxelGrid::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void VoxelGrid::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	PropertyContainer::saveToStream(stream, excludeRecomputableData);
 
@@ -157,7 +158,8 @@ void VoxelGrid::verifyIntegrity() const
 
 	size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
 	if(elementCount() != expectedElementCount)
-		throwException(tr("Property arrays in voxel grid object have wrong length. Array length %1 does not match the number of grid elements %2.").arg(elementCount()).arg(expectedElementCount));
+		throwException(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the number of voxel grid cells (%2) for grid shape %3x%4x%5.")
+			.arg(elementCount()).arg(expectedElementCount).arg(shape()[0]).arg(shape()[1]).arg(shape()[2]));
 
 	if(!domain())
 		throwException(tr("Voxel grid has no simulation cell assigned."));

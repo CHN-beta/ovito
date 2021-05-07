@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(SmoothTrajectoryModifier, SmoothTrajectoryModifierEditor
 ******************************************************************************/
 void SmoothTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Smooth trajectory"), rolloutParams, "particles.modifiers.smooth_trajectory.html");
+	QWidget* rollout = createRollout(tr("Smooth trajectory"), rolloutParams, "manual:particles.modifiers.smooth_trajectory");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);

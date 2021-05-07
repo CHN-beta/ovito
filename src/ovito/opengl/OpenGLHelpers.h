@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 Alexander Stukowski
+//  Copyright 2013 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,8 +28,8 @@
 namespace Ovito {
 
 // The minimum OpenGL version required by Ovito:
-#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR 			3
-#define OVITO_OPENGL_MINIMUM_VERSION_MINOR			0
+#define OVITO_OPENGL_MINIMUM_VERSION_MAJOR 			2
+#define OVITO_OPENGL_MINIMUM_VERSION_MINOR			1
 
 // OpenGL debugging macro:
 #ifdef OVITO_DEBUG

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 Alexander Stukowski
+//  Copyright 2019 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,7 +85,7 @@ private:
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

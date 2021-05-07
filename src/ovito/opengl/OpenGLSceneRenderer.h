@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,10 +26,9 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "OpenGLHelpers.h"
+#include "OpenGLResourceManager.h"
 
-#include <QOpenGLFunctions>
-#include <QOpenGLFunctions_3_0>
-#include <QOpenGLFunctions_3_2_Core>
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
@@ -41,15 +40,31 @@ namespace Ovito {
  * \brief An OpenGL-based scene renderer. This serves as base class for both the interactive renderer used
  *        by the viewports and the standard output renderer.
  */
-class OVITO_OPENGLRENDERER_EXPORT OpenGLSceneRenderer : public SceneRenderer, protected QOpenGLFunctions
+class OVITO_OPENGLRENDERER_EXPORT OpenGLSceneRenderer : public SceneRenderer, public QOpenGLExtraFunctions
 {
+public:
+
+	/// Defines a metaclass specialization for this renderer class.
+	class OVITO_OPENGLRENDERER_EXPORT OOMetaClass : public SceneRenderer::OOMetaClass
+	{
+	public:
+		/// Inherit standard constructor from base meta class.
+		using SceneRenderer::OOMetaClass::OOMetaClass;
+
+		/// Is called by OVITO to query the class for any information that should be included in the application's system report.
+		virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const override;
+	};
+
 	Q_OBJECT
-	OVITO_CLASS(OpenGLSceneRenderer)
+	OVITO_CLASS_META(OpenGLSceneRenderer, OOMetaClass)
 
 public:
 
 	/// Default constructor.
 	explicit OpenGLSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) {}
+
+	/// This may be called on a renderer before startRender() to control its supersampling level.
+	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
@@ -58,7 +73,7 @@ public:
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderSuccessful) override;
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
 
 	/// Requests a new line geometry buffer from the renderer.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
@@ -68,9 +83,9 @@ public:
 
 	/// Requests a new particle geometry buffer from the renderer.
 	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
+			ParticlePrimitive::ParticleShape shape,
 			ParticlePrimitive::ShadingMode shadingMode,
-			ParticlePrimitive::RenderingQuality renderingQuality, 
-			ParticlePrimitive::ParticleShape shape) override;
+			ParticlePrimitive::RenderingQuality renderingQuality) override;
 
 	/// Renders the particles stored in the given primitive buffer.
 	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
@@ -110,17 +125,11 @@ public:
 	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
 	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
 
-	/// Renders a 2d polyline in the viewport.
-	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed);
-
 	/// Returns the OpenGL context this renderer uses.
 	QOpenGLContext* glcontext() const { return _glcontext; }
 
 	/// Returns the surface format of the current OpenGL context.
 	const QSurfaceFormat& glformat() const { return _glformat; }
-
-	/// Indicates whether it is okay to use GLSL geometry shaders.
-	bool useGeometryShaders() const { return _useGeometryShaders; }
 
 	/// Translates an OpenGL error code to a human-readable message string.
 	static const char* openglErrorString(GLenum errorCode);
@@ -129,14 +138,8 @@ public:
 	QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
-	/// This is an internal method used by the PickingSceneRenderer class to implement the picking mechanism.
-	virtual quint32 registerSubObjectIDs(quint32 subObjectCount) { return 0; }
-
-	/// Returns the line rendering width to use in object picking mode.
-	virtual FloatType defaultLinePickingWidth() override;
-
-	/// Returns the default OpenGL surface format requested by OVITO when creating OpenGL contexts.
-	static QSurfaceFormat getDefaultSurfaceFormat();
+	/// This is an internal method used by the PickingOpenGLSceneRenderer class to implement the picking mechanism.
+	virtual quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {}) { return 1; }
 
 	/// Binds the default vertex array object again in case another VAO was bound in between.
 	/// This method should be called before calling an OpenGL rendering function.
@@ -148,8 +151,8 @@ public:
 	/// Sets the frame buffer background color.
 	void setClearColor(const ColorA& color);
 
-	/// Sets the rendering region in the frame buffer.
-	void setRenderingViewport(int x, int y, int width, int height);
+	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	virtual void setRenderingViewport(const QRect& viewportRect) override;
 
 	/// Clears the frame buffer contents.
 	void clearFrameBuffer(bool clearDepthBuffer = true, bool clearStencilBuffer = true);
@@ -160,20 +163,20 @@ public:
 	/// Activates the special highlight rendering mode.
 	virtual void setHighlightMode(int pass) override;
 
-	/// Returns the device pixel ratio of the output device we are rendering to.
-	virtual qreal devicePixelRatio() const override;
-
 	/// Reports OpenGL error status codes.
 	void checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine);
 
-	/// Determines whether all viewport windows should share one GL context or not.
-	static bool contextSharingEnabled(bool forceDefaultSetting = false);
+	/// Returns the monotonically increasing identifier of the current frame being rendered.
+	OpenGLResourceManager::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
 
-	/// Determines whether OpenGL geometry shader programs should be used or not.
-	static bool geometryShadersEnabled(bool forceDefaultSetting = false);
+	/// Sets monotonically increasing identifier of the current frame being rendered.
+	void setCurrentResourceFrame(OpenGLResourceManager::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
 
-	/// Determines whether OpenGL geometry shader programs are supported by the hardware.
-	static bool geometryShadersSupported() { return _openglSupportsGeomShaders; }
+	/// Returns the OpenGL context version encoded as an integer.
+	quint32 glversion() const { return _glversion; }
+
+	/// Indicates whether OpenGL geometry shaders are supported.
+	bool useGeometryShaders() const { return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
 
 	/// Returns the vendor name of the OpenGL implementation in use.
 	static const QByteArray& openGLVendor() { return _openGLVendor; }
@@ -190,18 +193,24 @@ public:
 	/// Returns the current surface format used by the OpenGL implementation.
 	static const QSurfaceFormat& openglSurfaceFormat() { return _openglSurfaceFormat; }
 
+	/// Returns the list of extensions supported by the OpenGL implementation.
+	static const QSet<QByteArray>& openglExtensions() { return _openglExtensions; }
+
 	/// Determines the capabilities of the current OpenGL implementation.
 	static void determineOpenGLInfo();
 
 protected:
 
-	/// \brief Loads and compiles a GLSL shader and adds it to the given program object.
+	/// Loads and compiles a GLSL shader and adds it to the given program object.
 	void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename);
 
 	/// Makes the renderer's GL context current.
 	void makeContextCurrent();
 
-	/// Puts the GL context into its default initial state before rendering a frame begins.
+	/// Returns the supersampling level.
+	int antialiasingLevel() const { return _antialiasingLevel; }
+
+	/// Puts the GL context into its default initial state before rendering of a frame begins.
 	virtual void initializeGLState();
 
 	/// This is called during rendering whenever the rendering process has been temporarily
@@ -211,41 +220,6 @@ protected:
 		if(!isBoundingBoxPass())
 			rebindVAO();
 	}
-
-	/// Returns the supersampling level to use.
-	virtual int antialiasingLevelInternal() { return 1; }
-
-#ifndef Q_OS_WASM
-
-	/// The OpenGL glPointParameterf() function.
-	void glPointSize(GLfloat size) {
-		if(_glFunctions32) _glFunctions32->glPointSize(size);
-		else if(_glFunctions30) _glFunctions30->glPointSize(size);
-	}
-
-	/// The OpenGL glPointParameterf() function.
-	void glPointParameterf(GLenum pname, GLfloat param) {
-		if(_glFunctions32) _glFunctions32->glPointParameterf(pname, param);
-		else if(_glFunctions30) _glFunctions30->glPointParameterf(pname, param);
-	}
-
-	/// The OpenGL glPointParameterfv() function.
-	void glPointParameterfv(GLenum pname, const GLfloat* params) {
-		if(_glFunctions32) _glFunctions32->glPointParameterfv(pname, params);
-		else if(_glFunctions30) _glFunctions30->glPointParameterfv(pname, params);
-	}
-
-	/// The OpenGL glMultiDrawArrays() function.
-	void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) {
-		if(_glFunctions32) _glFunctions32->glMultiDrawArrays(mode, first, count, drawcount);
-		else if(_glFunctions30) _glFunctions30->glMultiDrawArrays(mode, first, count, drawcount);
-	}
-
-	void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
-		if(_glFunctions30) _glFunctions30->glTexEnvf(target, pname, param);
-	}
-
-#endif
 
 private:
 
@@ -258,15 +232,11 @@ private:
 	/// The surface used by the GL context.
 	QSurface* _glsurface = nullptr;
 
-#ifndef Q_OS_WASM
+	/// Pointer to the glMultiDrawArrays() function. Requires OpenGL 2.0.
+	void (APIENTRY *glMultiDrawArrays)(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) = nullptr;
 
-	/// The OpenGL 3.0 functions object.
-	QOpenGLFunctions_3_0* _glFunctions30 = nullptr;
-
-	/// The OpenGL 3.2 core profile functions object.
-	QOpenGLFunctions_3_2_Core* _glFunctions32 = nullptr;
-
-#endif	
+	/// Pointer to the optional glMultiDrawArraysIndirect() function. Requires OpenGL 4.3.
+	void (APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
 	/// The OpenGL vertex array object that is required by OpenGL 3.2 core profile.
 	QScopedPointer<QOpenGLVertexArrayObject> _vertexArrayObject;
@@ -274,8 +244,14 @@ private:
 	/// The OpenGL surface format.
 	QSurfaceFormat _glformat;
 
-	/// Indicates whether it is okay to use GLSL geometry shaders.
-	bool _useGeometryShaders = false;
+	/// The OpenGL version of the context encoded as an integer.
+	quint32 _glversion;
+
+	/// Controls the number of sub-pixels to render.
+	int _antialiasingLevel = 1;
+
+	/// The monotonically increasing identifier of the current frame being rendered.
+	OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
 	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
@@ -301,8 +277,8 @@ private:
 	/// The current surface format used by the OpenGL implementation.
 	static QSurfaceFormat _openglSurfaceFormat;
 
-	/// Indicates whether the current OpenGL implementation supports geometry shader programs.
-	static bool _openglSupportsGeomShaders;
+	/// The list of extensions supported by the OpenGL implementation.
+	static QSet<QByteArray> _openglExtensions;
 
 	friend class OpenGLMeshPrimitive;
 	friend class OpenGLCylinderPrimitive;
@@ -311,7 +287,7 @@ private:
 	friend class OpenGLTextPrimitive;
 	friend class OpenGLParticlePrimitive;
 	friend class OpenGLMarkerPrimitive;
-	template<typename T> friend class OpenGLBuffer;
+	friend class OpenGLShaderHelper;
 };
 
 }	// End of namespace

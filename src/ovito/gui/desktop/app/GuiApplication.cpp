@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/ApplicationService.h>
 #include "GuiApplication.h"
@@ -86,14 +85,17 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 	// OVITO prefers the "C" locale over the system's default locale.
 	QLocale::setDefault(QLocale::c());
 
+	// Verify that the OpenGLSceneRenderer class has registered the right default surface format.
+	OVITO_ASSERT(QSurfaceFormat::defaultFormat().depthBufferSize() == 24 && QSurfaceFormat::defaultFormat().stencilBufferSize() == 1);
+
 	if(headlessMode()) {
 		StandaloneApplication::createQtApplication(argc, argv);
 	}
 	else {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		// Enable high-resolution toolbar icons on hi-dpi screens.
-		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+		QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(Q_OS_MAC)
 		QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
@@ -106,11 +108,10 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 #endif
 
 		new QApplication(argc, argv);
-	}
 
-	// Set the global default OpenGL surface format.
-	// This will let Qt use core profile contexts.
-	QSurfaceFormat::setDefaultFormat(OpenGLSceneRenderer::getDefaultSurfaceFormat());
+		// Verify that a global sharing OpenGL context has been created by the Qt application as requested.
+		OVITO_ASSERT(QOpenGLContext::globalShareContext() != nullptr);
+	}
 
 	// Process events sent to the Qt application by the OS.
 	QCoreApplication::instance()->installEventFilter(this);
@@ -149,12 +150,14 @@ bool GuiApplication::startupApplication()
 		QGuiApplication::setQuitOnLastWindowClosed(true);
 
 		// Show the main window.
+		mainWin->setUpdatesEnabled(false);
 #ifndef OVITO_DEBUG
 		mainWin->showMaximized();
 #else
 		mainWin->show();
 #endif
 		mainWin->restoreLayout();
+		mainWin->setUpdatesEnabled(true);
 
 #ifdef OVITO_EXPIRATION_DATE
 		QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);

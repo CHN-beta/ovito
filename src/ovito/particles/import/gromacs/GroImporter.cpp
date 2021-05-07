@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,8 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "GroImporter.h"
+
+#include <3rdparty/gemmi/elem.hpp>
 
 namespace Ovito { namespace Particles {
 
@@ -70,6 +72,11 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 		int i1, i2;
 		char s1[6], s2[6];
 		if(sscanf(stream.readLine(), "%5i%5s%5s%5i", &i1, s1, s2, &i2) != 4 || i1 < 1 || i2 < 1 || qstrlen(stream.line()) < 20)
+			return false;
+
+		// The following extra check is necessary to avoid mistaking an XDATCAR file, which stores the simulation cell 
+		// vectors in lines 3-5, for a GRO file (see test case 'POSCAR/XDATCAR.testcase'):
+		if(s1[0] == '.' || s2[0] == '.')
 			return false;
 
 		// Parse atomic xyz coordinates.
@@ -195,11 +202,16 @@ void GroImporter::FrameLoader::loadFile()
 
 	// Create particle properties.
 	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64, 1, 0, false);
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
 	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, true, executionContext());
 	PropertyAccess<Vector3> velocityProperty;
+
+	// Give these particle properties new titles, which are displayed in the GUI under the file source.
+	atomNameProperty.buffer()->setTitle(tr("Atom names"));
+	residueTypeProperty.buffer()->setTitle(tr("Residue types"));
 
 	// Parse list of atoms.
 	int atomBaseNumber = 0;
@@ -253,6 +265,7 @@ void GroImporter::FrameLoader::loadFile()
 				throw Exception(tr("Parsing error in line %1 of Gromacs file. Unexpected end of line.").arg(stream.lineNumber()));
 			if(*token > ' ')
 				break;
+			*atomNameStart = *token;
 		}
 		char* atomNameEnd = atomNameStart;
 		for(; token != token_end; token++, atomNameEnd++) {
@@ -262,6 +275,7 @@ void GroImporter::FrameLoader::loadFile()
 				break;
 			*atomNameEnd = *token;
 		}
+		*atomNameEnd = '\0';
 		token = token_end;
 
 		// Parse atom number (5 characters).
@@ -281,10 +295,41 @@ void GroImporter::FrameLoader::loadFile()
 		token = token_end;
 		size_t atomIndex = atomNumber - 1;
 
+		// Guess chemical element from atom name.
+		// The algorithm has been adopted from the OpenBabel Gromacs reader code.
+		gemmi::Element element(gemmi::El::X);
+		if(atomNameStart[0] == 'C') {
+			if(atomNameStart[1] == 'a') element = gemmi::Element(gemmi::El::Ca);
+			else if(atomNameStart[1] == 'l') element = gemmi::Element(gemmi::El::Cl);
+			else if(atomNameStart[1] == 'o') element = gemmi::Element(gemmi::El::Co);
+			else if(atomNameStart[1] == 'r') element = gemmi::Element(gemmi::El::Cr);
+			else if(atomNameStart[1] == 'u') element = gemmi::Element(gemmi::El::Cu);
+			else element = gemmi::Element(gemmi::El::C);
+		}
+		else if(atomNameStart[0] == 'N') {
+			if(atomNameStart[1] == 'a') element = gemmi::Element(gemmi::El::Na);
+			else if(atomNameStart[1] == 'b') element = gemmi::Element(gemmi::El::Nb);
+			else if(atomNameStart[1] == 'e') element = gemmi::Element(gemmi::El::Ne);
+			else if(atomNameStart[1] == 'i') element = gemmi::Element(gemmi::El::Ni);
+			else element = gemmi::Element(gemmi::El::N);
+		}
+		else {
+			const char singleLetterName[2] = { atomNameStart[0], '\0' };
+			element = gemmi::Element(singleLetterName);
+		}
+		addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), element.ordinal(), QLatin1String(element.name()));
+
 		// Store parsed value in property arrays.
 		identifierProperty.set(atomIndex, atomNumber);
-		typeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), QLatin1String(atomNameStart, atomNameEnd))->numericId());
-		residueTypeProperty.set(atomIndex, addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residueNameStart, residueNameEnd))->numericId());
+		typeProperty.set(atomIndex, element.ordinal());
+		atomNameProperty.set(atomIndex, 
+			(residueNameStart != residueNameEnd) ?
+			addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atomNameStart, atomNameEnd))->numericId()
+			: 0);
+		residueTypeProperty.set(atomIndex, 
+			(residueNameStart != residueNameEnd) ? 
+			addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residueNameStart, residueNameEnd))->numericId()
+			: 0);
 		residueNumberProperty.set(atomIndex, residueNumber);
 
 		// Parse atomic xyz coordinates.
@@ -344,7 +389,8 @@ void GroImporter::FrameLoader::loadFile()
 	// Since we created particle types on the go while reading the particles, the type ordering
 	// depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
 	// why we sort them now.
-	typeProperty.buffer()->sortElementTypesByName();
+	typeProperty.buffer()->sortElementTypesById();
+	atomNameProperty.buffer()->sortElementTypesByName();
 	residueTypeProperty.buffer()->sortElementTypesByName();
 
 	// Release property accessors.
@@ -352,6 +398,7 @@ void GroImporter::FrameLoader::loadFile()
 	residueTypeProperty.reset();
 	residueNumberProperty.reset();
 	typeProperty.reset();
+	atomNameProperty.reset();
 	identifierProperty.reset();
 	velocityProperty.reset();
 
@@ -372,6 +419,12 @@ void GroImporter::FrameLoader::loadFile()
 	// Detect if there are more simulation frames following in the file.
 	if(!stream.eof())
 		signalAdditionalFrames();
+
+	// Generate ad-hoc bonds between atoms based on their van der Waals radii.
+	if(_generateBonds)
+		generateBonds();
+	else
+		setBondCount(0);
 
 	if(commentLine.isEmpty())
 		state().setStatus(tr("%1 atoms").arg(numParticles));

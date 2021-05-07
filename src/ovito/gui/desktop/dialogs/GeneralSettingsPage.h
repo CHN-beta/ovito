@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,6 +55,8 @@ private:
 
 	QCheckBox* _useQtFileDialog;
 	QCheckBox* _sortModifiersByCategory;
+	QButtonGroup* _graphicsSystem;
+	QComboBox* _vulkanDevices;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 	QCheckBox* _enableUsageStatistics;
@@ -62,5 +64,3 @@ private:
 };
 
 }	// End of namespace
-
-

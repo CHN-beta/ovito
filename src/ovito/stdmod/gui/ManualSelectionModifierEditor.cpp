@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,6 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
-#include <ovito/gui/base/rendering/ViewportSceneRenderer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "ManualSelectionModifierEditor.h"
@@ -158,8 +157,7 @@ public:
 	/// Lets the input mode render its 2d overlay content in a viewport.
 	virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) override {
 		if(isActive() && vp == vp->dataset()->viewportConfig()->activeViewport() && _fence.size() >= 2) {
-			if(ViewportSceneRenderer* vpRenderer = dynamic_object_cast<ViewportSceneRenderer>(renderer))
-				vpRenderer->render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
+			renderer->render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
 		}
 	}
 
@@ -170,7 +168,7 @@ protected:
 		ViewportInputMode::activated(temporary);
 		ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
 		if(mod && mod->subject()) {
-#ifndef Q_OS_MACX
+#ifndef Q_OS_MACOS
 			inputManager()->mainWindow()->showStatusBarMessage(
 					tr("Draw a fence around a group of %1 to select. Use CONTROL or ALT keys to extend or reduce existing selection set.")
 					.arg(mod->subject().dataClass()->elementDescriptionName()));
@@ -202,7 +200,7 @@ private:
 ******************************************************************************/
 void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Manual selection"), rolloutParams, "particles.modifiers.manual_selection.html");
+	QWidget* rollout = createRollout(tr("Manual selection"), rolloutParams, "manual:particles.modifiers.manual_selection");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

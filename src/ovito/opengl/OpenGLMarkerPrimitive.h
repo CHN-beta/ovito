@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,10 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
-#include "OpenGLBuffer.h"
 
 namespace Ovito {
+
+class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
 
 /**
  * \brief This class is responsible for rendering marker primitives using OpenGL.
@@ -36,19 +37,11 @@ class OpenGLMarkerPrimitive : public MarkerPrimitive
 {
 public:
 
-	/// Constructor.
-	OpenGLMarkerPrimitive(OpenGLSceneRenderer* renderer, MarkerShape shape);
+	/// Inherit constructor from base class.
+	using MarkerPrimitive::MarkerPrimitive;
 
 	/// \brief Renders the geometry.
 	void render(OpenGLSceneRenderer* renderer);
-
-private:
-
-	/// The internal OpenGL vertex buffer that stores the marker positions.
-	OpenGLBuffer<Point_3<float>> _positionsBuffer;
-
-	/// The OpenGL shader program that is used to render the markers.
-	QOpenGLShaderProgram* _shader = nullptr;
 };
 
 }	// End of namespace

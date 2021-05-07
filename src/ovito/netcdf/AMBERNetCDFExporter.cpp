@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -310,7 +310,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 	cell_angles[1] = qRadiansToDegrees(acos(cosbeta));
 	cell_angles[2] = qRadiansToDegrees(acos(cosgamma));
 
-	// AMBER convention says that nonperiodic boundaries should have 'cell_lengths' set to zero.
+	// AMBER convention says that non-periodic boundaries should have 'cell_lengths' set to zero.
 	if(!simulationCell->pbcX()) cell_lengths[0] = 0;
 	if(!simulationCell->pbcY()) cell_lengths[1] = 0;
 	if(!simulationCell->pbcZ()) cell_lengths[2] = 0;

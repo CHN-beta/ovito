@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -181,9 +181,10 @@ public:
 
 	/// \brief Checks whether this object is directly or indirectly referenced by some other object.
 	/// \param obj The object that might hold a reference to \c this object.
+	/// \param onlyStrongReferences If true, ignores reference fields that have been marked as weak and don't propagate messages. 
 	/// \return \c true if \a obj has a direct or indirect reference to this object;
 	///         \c false if \a obj does not depend on this object.
-	virtual bool isReferencedBy(const RefMaker* obj) const override;
+	virtual bool isReferencedBy(const RefMaker* obj, bool onlyStrongReferences = true) const override;
 
 	/// \brief Visits all immediate dependents that reference this target object
 	///        and invokes the given function for every dependent encountered.

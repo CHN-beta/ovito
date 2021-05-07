@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ private:
 		ParticleInputColumnMapping detectColumnMapping(size_t movieFrame = 0);
 
         /// Map dimensions from NetCDF file to internal representation.
-        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t *startp, size_t *countp);
+        bool detectDims(int movieFrame, int particleCount, int nDims, int *dimIds, int& nDimsDetected, size_t& componentCount, size_t& particleCountDim, size_t *startp, size_t *countp);
 
 		bool _ncIsOpen = false;
 		int _ncid = -1;
@@ -154,7 +154,7 @@ private:
 protected:
 
 	/// \brief Saves the class' contents to the given stream.
-	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) override;
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
 	/// \brief Loads the class' contents from the given stream.
 	virtual void loadFromStream(ObjectLoadStream& stream) override;

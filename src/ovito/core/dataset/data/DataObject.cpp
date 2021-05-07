@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,7 +85,7 @@ DataObject::DataObject(DataSet* dataset) : RefTarget(dataset)
 /******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
-void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData)
+void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
 	RefTarget::saveToStream(stream, excludeRecomputableData);
 	stream.beginChunk(0x02);

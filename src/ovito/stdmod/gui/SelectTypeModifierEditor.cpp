@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
 ******************************************************************************/
 void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-	QWidget* rollout = createRollout(tr("Select type"), rolloutParams, "particles.modifiers.select_particle_type.html");
+	QWidget* rollout = createRollout(tr("Select type"), rolloutParams, "manual:particles.modifiers.select_particle_type");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -53,26 +53,49 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SelectTypeModifier::sourceProperty), nullptr);
 	layout->addWidget(new QLabel(tr("Property:")));
 	layout->addWidget(_sourcePropertyUI->comboBox());
-	connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
+
+	// Show only typed properties that have some element types attached to them.
+	_sourcePropertyUI->setPropertyFilter(&isValidInputProperty);
+
+	class TableWidget : public QTableView {
+	public:
+		using QTableView::QTableView;
+		virtual QSize sizeHint() const { return QSize(256, 400); }
+	};
+	_elementTypesBox = new TableWidget();
+	ViewModel* model = new ViewModel(this);
+	_elementTypesBox->setModel(model);
+	_elementTypesBox->setShowGrid(false);
+	_elementTypesBox->setSelectionBehavior(QAbstractItemView::SelectRows);
+	_elementTypesBox->setCornerButtonEnabled(false);
+	_elementTypesBox->verticalHeader()->hide();
+	_elementTypesBox->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+	_elementTypesBox->setSelectionMode(QAbstractItemView::SingleSelection);
+	_elementTypesBox->setWordWrap(false);
+	_elementTypesBox->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+	_elementTypesBox->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+	_elementTypesBox->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+	_elementTypesBox->verticalHeader()->setDefaultSectionSize(_elementTypesBox->verticalHeader()->minimumSectionSize());
+	layout->addWidget(new QLabel(tr("Types:"), rollout));
+	layout->addWidget(_elementTypesBox);
+
+	// Doubel clicking a row toggles the selection state.
+	connect(_elementTypesBox, &QTableView::doubleClicked, model, [model](const QModelIndex& index) {
+		QVariant value  = model->data(index.siblingAtColumn(0), Qt::CheckStateRole);
+		model->setData(index.siblingAtColumn(0), (value.toInt() == Qt::Unchecked) ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);
+	});
+
+	connect(this, &PropertiesEditor::contentsChanged, this, [this,model](RefTarget* editObject) {
 		SelectTypeModifier* modifier = static_object_cast<SelectTypeModifier>(editObject);
 		if(modifier)
 			_sourcePropertyUI->setContainerRef(modifier->subject());
 		else
 			_sourcePropertyUI->setContainerRef({});
-		updateElementTypeList();
+		QModelIndexList selection = _elementTypesBox->selectionModel()->selectedRows();
+		model->refresh();
+		if(!selection.empty())
+			_elementTypesBox->selectRow(selection.front().row());
 	});
-	// Show only typed properties that have some element types attached to them.
-	_sourcePropertyUI->setPropertyFilter(&isValidInputProperty);
-
-	class MyListWidget : public QListWidget {
-	public:
-		MyListWidget() : QListWidget() {}
-		virtual QSize sizeHint() const { return QSize(256, 192); }
-	};
-	_elementTypesBox = new MyListWidget();
-	_elementTypesBox->setSelectionMode(QAbstractItemView::ExtendedSelection);
-	layout->addWidget(new QLabel(tr("Types:"), rollout));
-	layout->addWidget(_elementTypesBox);
 
 	// Status label.
 	layout->addSpacing(12);
@@ -80,78 +103,114 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 }
 
 /******************************************************************************
-* Updates the contents of the list box.
+* Returns the data stored under the given role for the given RefTarget.
 ******************************************************************************/
-void SelectTypeModifierEditor::updateElementTypeList()
+QVariant SelectTypeModifierEditor::ViewModel::data(const QModelIndex& index, int role) const
 {
-	// Temporarily disable notification signals and display updates for the types list box.
-	// Will be enabled again at the end of the function.
-	disconnect(_elementTypesBox, &QListWidget::itemChanged, this, &SelectTypeModifierEditor::onElementTypeSelected);
-	_elementTypesBox->setUpdatesEnabled(false);
-	_elementTypesBox->clear();
-
-	SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editObject());
-	if(!mod || !mod->subject() || mod->sourceProperty().isNull() || mod->sourceProperty().containerClass() != mod->subject().dataClass()) {
-		_elementTypesBox->setEnabled(false);
+	if(index.isValid() && index.row() < _elementTypes.size()) {
+		if(role == Qt::DisplayRole) {
+			if(index.column() == 0)
+				return _elementTypes[index.row()]->nameOrNumericId();
+			else if(index.column() == 1)
+				return _elementTypes[index.row()]->numericId();
+		}
+		else if(role == Qt::DecorationRole) {
+			if(index.column() == 0)
+				return (QColor)_elementTypes[index.row()]->color();
+		}
+		else if(role == Qt::CheckStateRole) {
+			if(index.column() == 0) {
+				if(SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editor()->editObject())) {
+					const QSet<int>& selectedTypeIDs = mod->selectedTypeIDs();
+					return selectedTypeIDs.contains(_elementTypes[index.row()]->numericId()) ? Qt::Checked : Qt::Unchecked;
+				}
+			}
+		}
 	}
-	else {
-		_elementTypesBox->setEnabled(true);
+	return {};
+}
+
+/******************************************************************************
+* Returns the header data under the given role for the given RefTarget.
+******************************************************************************/
+QVariant SelectTypeModifierEditor::ViewModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+	if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+		if(section == 0)
+			return tr("Name");
+		else if(section == 1)
+			return tr("Id");
+	}
+	return {};
+}
+
+/******************************************************************************
+* Returns the item flags for the given index.
+******************************************************************************/
+Qt::ItemFlags SelectTypeModifierEditor::ViewModel::flags(const QModelIndex& index) const
+{
+	if(index.column() == 0)
+		return QAbstractTableModel::flags(index) | Qt::ItemIsUserCheckable;
+	return QAbstractTableModel::flags(index);
+}
+
+/******************************************************************************
+* Sets the role data for the item at index to value.
+******************************************************************************/
+bool SelectTypeModifierEditor::ViewModel::setData(const QModelIndex& index, const QVariant& value, int role)
+{
+	if(index.isValid() && index.row() < _elementTypes.size()) {
+		if(role == Qt::CheckStateRole && index.column() == 0) {
+			if(SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editor()->editObject())) {
+				QSet<int> types = mod->selectedTypeIDs();
+				if(value.toInt() == Qt::Checked)
+					types.insert(_elementTypes[index.row()]->numericId());
+				else
+					types.remove(_elementTypes[index.row()]->numericId());
+				editor()->undoableTransaction(tr("Select type"), [&]() {
+					mod->setSelectedTypeIDs(std::move(types));
+				});
+				return true;
+			}
+		}
+	}
+	return QAbstractItemModel::setData(index, value, role);
+}
+
+/******************************************************************************
+* Updates the contents of the model.
+******************************************************************************/
+void SelectTypeModifierEditor::ViewModel::refresh()
+{
+	beginResetModel();
+	_elementTypes.clear();
+
+	SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editor()->editObject());
+	if(mod && mod->subject() && !mod->sourceProperty().isNull() && mod->sourceProperty().containerClass() == mod->subject().dataClass()) {
 
 		// Populate types list based on the selected input property.
-		for(ModifierApplication* modApp : modifierApplications()) {
-			const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		for(ModifierApplication* modApp : editor()->modifierApplications()) {
+			const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(modApp->dataset()->animationSettings()->time());
 			if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
 				if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
 					for(const ElementType* type : inputProperty->elementTypes()) {
 						if(!type) continue;
 
-						// Make sure we don't add two items with the same type ID.
-						bool duplicate = false;
-						for(int i = 0; i < _elementTypesBox->count(); i++) {
-							if(_elementTypesBox->item(i)->data(Qt::UserRole).toInt() == type->numericId()) {
-								duplicate = true;
-								break;
-							}
+						// Make sure we don't add the same element type twice.
+						if(boost::algorithm::any_of(_elementTypes, [&](const ElementType* existingType) {
+							return (existingType->numericId() == type->numericId() && existingType->name() == type->name());
+						})) {
+							continue;
 						}
-						if(duplicate) continue;
 
-						// Add a new list item for the element type.
-						QListWidgetItem* item = new QListWidgetItem(type->nameOrNumericId(), _elementTypesBox);
-						item->setData(Qt::UserRole, type->numericId());
-						item->setData(Qt::DecorationRole, (QColor)type->color());
-						if(mod->selectedTypeIDs().contains(type->numericId()))
-							item->setCheckState(Qt::Checked);
-						else
-							item->setCheckState(Qt::Unchecked);
-						item->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable | Qt::ItemNeverHasChildren));
+						_elementTypes.push_back(type);
 					}
 				}
 			}
 		}
 	}
 
-	// Re-enable updates.
-	connect(_elementTypesBox, &QListWidget::itemChanged, this, &SelectTypeModifierEditor::onElementTypeSelected);
-	_elementTypesBox->setUpdatesEnabled(true);
-}
-
-/******************************************************************************
-* This is called when the user has selected another element type.
-******************************************************************************/
-void SelectTypeModifierEditor::onElementTypeSelected(QListWidgetItem* item)
-{
-	SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editObject());
-	if(!mod) return;
-
-	QSet<int> types = mod->selectedTypeIDs();
-	if(item->checkState() == Qt::Checked)
-		types.insert(item->data(Qt::UserRole).toInt());
-	else
-		types.remove(item->data(Qt::UserRole).toInt());
-
-	undoableTransaction(tr("Select type"), [mod, &types]() {
-		mod->setSelectedTypeIDs(std::move(types));
-	});
+	endResetModel();
 }
 
 }	// End of namespace

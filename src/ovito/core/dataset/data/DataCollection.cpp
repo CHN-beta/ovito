@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -272,8 +272,8 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
 ******************************************************************************/
 ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
+	ConstDataObjectPath result;
 	if(!pathString.isEmpty()) {
-		ConstDataObjectPath result;
 		// Perform a recursive path lookup of the requested object.
 		for(const DataObject* obj : objects()) {
 			result.push_back(obj);
@@ -281,16 +281,14 @@ ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& obj
 				break;
 			result.pop_back();
 		}
-		return result;
 	}
 	else {
 		// Without any path, perform a recursive search for the first object of the given type.
 		std::vector<ConstDataObjectPath> paths = getObjectsRecursive(objectClass);
 		if(!paths.empty())
-			return paths.front();
-		else
-			return {};
+			result = paths.front();
 	}
+	return result;
 }
 
 /******************************************************************************

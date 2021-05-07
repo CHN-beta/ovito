@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2020 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -175,11 +175,14 @@ void SimulationCellVis::renderWireframe(TimePoint time, const SimulationCellObje
 
 	const AffineTransformation oldTM = renderer->worldTransform();
 	AffineTransformation cellMatrix = cell->cellMatrix();
-	if(cell->is2D()) cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.	
+	if(cell->is2D()) 
+		cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.	
 	renderer->setWorldTransform(oldTM * cellMatrix);
-	renderer->beginPickObject(contextNode);
+	if(renderer->isPicking())
+		renderer->beginPickObject(contextNode);
 	renderer->renderLines(renderer->isPicking() ? wireframePrimitives.linesPicking : wireframePrimitives.linesRendering);
-	renderer->endPickObject();
+	if(renderer->isPicking())
+		renderer->endPickObject();
 	renderer->setWorldTransform(oldTM);
 }
 
@@ -261,7 +264,7 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 		visCache.edges->setPositions(basePoints.take(), headPoints.take());
 
 		// Render spheres in the corners of the simulation box.
-		visCache.corners  = renderer->createParticlePrimitive(ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
+		visCache.corners  = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::HighQuality);
 		visCache.corners->setPositions(corners.take());
 		visCache.corners->setUniformRadius(cellLineWidth());
 		visCache.corners->setUniformColor(cellColor());

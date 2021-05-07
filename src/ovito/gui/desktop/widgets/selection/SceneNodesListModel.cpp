@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 Alexander Stukowski
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,8 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
+#include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "SceneNodesListModel.h"
@@ -32,17 +34,32 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the model.
 ******************************************************************************/
-SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, QWidget* parent) : QAbstractListModel(parent),
-		_datasetContainer(datasetContainer)
+SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent) : QAbstractListModel(parent),
+	_datasetContainer(datasetContainer),
+	_pipelineSceneNodeIcon(":/guibase/actions/edit/pipeline_icon.svg")
 {
-	// Listen for changes of the data set.
+	// React to the dataset being replaced.
 	connect(&datasetContainer, &DataSetContainer::dataSetChanged, this, &SceneNodesListModel::onDataSetChanged);
 
-	// Listen for events of the root node.
+	// Listen for scene node selection changes.
+	connect(&datasetContainer, &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
+	connect(this, &SceneNodesListModel::modelReset, this, &SceneNodesListModel::onSceneSelectionChanged);
+
+	// Listen for signals from the root scene node.
 	connect(&_rootNodeListener, &RefTargetListener<RootSceneNode>::notificationEvent, this, &SceneNodesListModel::onRootNodeNotificationEvent);
 
 	// Listen for events of the other scene nodes.
 	connect(&_nodeListener, &VectorRefTargetListener<SceneNode>::notificationEvent, this, &SceneNodesListModel::onNodeNotificationEvent);
+
+	_sectionHeaderBackgroundBrush = QBrush(Qt::lightGray, Qt::Dense4Pattern);
+	_sectionHeaderForegroundBrush = QBrush(Qt::blue);
+
+	for(QAction* action : actionManager->actions()) {
+		if(action->objectName().startsWith("NewPipeline."))
+			_pipelineActions.push_back(action);
+	}
+	_pipelineActions.push_back(nullptr); // Separator
+	_pipelineActions.push_back(actionManager->getAction(ACTION_EDIT_CLONE_PIPELINE));
 }
 
 /******************************************************************************
@@ -50,7 +67,7 @@ SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, QWi
 ******************************************************************************/
 int SceneNodesListModel::rowCount(const QModelIndex& parent) const
 {
-	return _nodeListener.targets().size() + 1;
+	return firstActionIndex() + _pipelineActions.size();
 }
 
 /******************************************************************************
@@ -60,14 +77,63 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
 {
 	if(role == Qt::DisplayRole) {
 		if(index.row() == 0)
-			return tr("Pipelines:");
-		return QVariant::fromValue(_nodeListener.targets()[index.row() - 1]->objectTitle());
+			return tr("Existing pipelines:");
+		
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size())
+			return _nodeListener.targets()[pipelineIndex]->objectTitle();
+		else if(pipelineIndex == 0)
+			return tr("‹None›");
+
+		int actionIndex = index.row() - firstActionIndex();
+		if(actionIndex == -1)
+			return tr("Create pipeline with data source:");
+		if(actionIndex >= 0 && actionIndex < _pipelineActions.size()) {
+			if(_pipelineActions[actionIndex] == nullptr)
+				return {}; // Separator
+			else if(actionIndex == _pipelineActions.size() - 1)
+				return tr("Clone current pipeline...");
+			else if(_pipelineActions[actionIndex] != nullptr)
+				return _pipelineActions[actionIndex]->text();
+		}
 	}
 	else if(role == Qt::UserRole) {
-		if(index.row() != 0)
-			return QVariant::fromValue(_nodeListener.targets()[index.row() - 1]);
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size())
+			return QVariant::fromValue(static_cast<QObject*>(sceneNodes()[pipelineIndex]));
+
+		int actionIndex = index.row() - firstActionIndex();
+		if(actionIndex >= 0 && actionIndex < _pipelineActions.size())
+			return QVariant::fromValue(_pipelineActions[actionIndex]);
 	}
-	return QVariant();
+	else if(role == Qt::DecorationRole) {
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		if(pipelineIndex >= 0 && pipelineIndex < (sceneNodes().empty() ? 1 : sceneNodes().size()))
+			return _pipelineSceneNodeIcon;
+
+		int actionIndex = index.row() - firstActionIndex();
+		if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && _pipelineActions[actionIndex] != nullptr)
+			return _pipelineActions[actionIndex]->icon();
+	}
+	else if(role == Qt::SizeHintRole) {
+		int actionIndex = index.row() - firstActionIndex();
+		if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && !_pipelineActions[actionIndex])
+			return QSize(0, 2);	// Action separator line
+	}
+	else {
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		int actionIndex = index.row() - firstActionIndex();
+		if(pipelineIndex == -1 || actionIndex == -1 || (actionIndex >= 0 && !_pipelineActions[actionIndex])) {
+			if(role == Qt::TextAlignmentRole)
+				return Qt::AlignCenter;
+			else if(role == Qt::BackgroundRole)
+				return _sectionHeaderBackgroundBrush;
+			else if(role == Qt::ForegroundRole)
+				return _sectionHeaderForegroundBrush;
+		}
+	}
+
+	return {};
 }
 
 /******************************************************************************
@@ -75,9 +141,17 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags SceneNodesListModel::flags(const QModelIndex& index) const
 {
-	if(index.row() == 0)
-		return Qt::NoItemFlags | Qt::ItemNeverHasChildren;
-
+	if(index.isValid()) {
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		int actionIndex = index.row() - firstActionIndex();
+		if(pipelineIndex == -1)
+			return Qt::NoItemFlags; // Item: Existing pipelines
+		if(pipelineIndex >= 0 && pipelineIndex < (sceneNodes().empty() ? 1 : sceneNodes().size()))
+			return QAbstractListModel::flags(index);
+		if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && _pipelineActions[actionIndex])
+			return (_pipelineActions[actionIndex]->isEnabled() ? (Qt::ItemIsSelectable | Qt::ItemIsEnabled) : Qt::NoItemFlags);
+		return Qt::NoItemFlags; // Separator item
+	}
 	return QAbstractListModel::flags(index);
 }
 
@@ -100,6 +174,21 @@ void SceneNodesListModel::onDataSetChanged(DataSet* newDataSet)
 }
 
 /******************************************************************************
+* This is called whenever the node selection has changed.
+******************************************************************************/
+void SceneNodesListModel::onSceneSelectionChanged()
+{
+	SelectionSet* selection = _datasetContainer.currentSet() ? _datasetContainer.currentSet()->selection() : nullptr;
+	if(!selection || selection->nodes().empty()) {
+		Q_EMIT selectionChangeRequested(1);
+	}
+	else {
+		int index = sceneNodes().indexOf(selection->nodes().front().get());
+		Q_EMIT selectionChangeRequested(index + 1);
+	}
+}
+
+/******************************************************************************
 * This handles reference events generated by the root node.
 ******************************************************************************/
 void SceneNodesListModel::onRootNodeNotificationEvent(const ReferenceEvent& event)
@@ -117,12 +206,23 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 		const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
 		if(refEvent.field() == &PROPERTY_FIELD(SceneNode::children)) {
 			if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {
-				beginInsertRows(QModelIndex(), _nodeListener.targets().size() + 1, _nodeListener.targets().size() + 1);
-				_nodeListener.push_back(node);
-				endInsertRows();
-				// Add all child nodes too.
+				
+				// Extend the list model by one entry.
+				if(sceneNodes().empty()) {
+					_nodeListener.push_back(node);
+					Q_EMIT dataChanged(createIndex(0, 0, node), createIndex(0, 0, node));
+				}
+				else {
+					beginInsertRows(QModelIndex(), sceneNodes().size(), sceneNodes().size());
+					_nodeListener.push_back(node);
+					endInsertRows();					
+				}
+
+				// Add the children of the node too.
 				node->visitChildren([this](SceneNode* node) -> bool {
-					beginInsertRows(QModelIndex(), _nodeListener.targets().size() + 1, _nodeListener.targets().size() + 1);
+					// Extend the list model by one entry.
+					OVITO_ASSERT(!sceneNodes().empty());
+					beginInsertRows(QModelIndex(), sceneNodes().size(), sceneNodes().size());
 					_nodeListener.push_back(node);
 					endInsertRows();
 					return true;
@@ -139,10 +239,61 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 
 	// If a node is being renamed, let the model emit an update signal.
 	if(event.type() == ReferenceEvent::TitleChanged) {
-		int index = _nodeListener.targets().indexOf(static_cast<SceneNode*>(source));
+		int index = sceneNodes().indexOf(static_object_cast<SceneNode>(source));
 		if(index >= 0) {
 			QModelIndex modelIndex = createIndex(index + 1, 0, source);
-			dataChanged(modelIndex, modelIndex);
+			Q_EMIT dataChanged(modelIndex, modelIndex);
+		}
+	}
+}
+
+/******************************************************************************
+* This slot executes the action associated with the given list item.
+******************************************************************************/
+void SceneNodesListModel::activateItem(int index)
+{
+	// Change scene node selection when a scene node has been selected in the combobox.
+	int pipelineIndex = index - firstSceneNodeIndex();
+	if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+		SceneNode* node = sceneNodes()[pipelineIndex];
+		if(_datasetContainer.currentSet() && node) {
+			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Select pipeline"), [&]() {
+				_datasetContainer.currentSet()->selection()->setNode(node);
+			});
+		}
+		return;
+	}
+
+	// This resets the current item of the combobox back to the selected scene node.
+	onSceneSelectionChanged();
+
+	int actionIndex = index - firstActionIndex();
+	if(actionIndex >= 0 && actionIndex < _pipelineActions.size()) {
+		if(QAction* action = _pipelineActions[actionIndex])
+			action->trigger();
+	}
+}
+
+/******************************************************************************
+* Performs a deletion action on an item.
+******************************************************************************/
+void SceneNodesListModel::deleteItem(int index)
+{
+	// Change scene node selection when a scene node has been selected in the combobox.
+	int pipelineIndex = index - firstSceneNodeIndex();
+	if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+		SceneNode* node = sceneNodes()[pipelineIndex];
+		if(_datasetContainer.currentSet() && node) {
+			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete pipeline"), [&]() {
+				bool wasSelected = node->isSelected();
+				node->deleteNode();
+
+				// Automatically select one of the remaining nodes.
+				DataSet* dataset = _datasetContainer.currentSet();
+				if(wasSelected && dataset->sceneRoot()->children().isEmpty() == false)
+					dataset->selection()->setNode(dataset->sceneRoot()->children().front());
+
+			});
 		}
 	}
 }
