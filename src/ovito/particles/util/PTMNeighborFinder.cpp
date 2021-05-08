@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,9 +42,9 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 * Prepares the neighbor finder.
 ******************************************************************************/
 bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
-								ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray,
-								ConstPropertyAccess<Quaternion> orientationsArray,
-								ConstPropertyAccess<qlonglong> correspondencesArray,
+								ConstPropertyAccessAndRef<PTMAlgorithm::StructureType> structuresArray,
+								ConstPropertyAccessAndRef<Quaternion> orientationsArray,
+								ConstPropertyAccessAndRef<qlonglong> correspondencesArray,
 								Task* task)
 {
 	// Initialize the internal NearestNeighborFinder.
@@ -117,11 +117,13 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::option
 		}
 
 		if(scaledTemplate == nullptr) {
-			n.scaledVector = Vector_3<double>(0, 0, 0);
+			n.scaledVector.setZero();
 		}
 		else {
 			const int8_t* q = scaledTemplate[i + 1];
-			n.scaledVector = Vector_3<double>(q[0], q[1], q[2]);
+			n.scaledVector.x() = q[0];
+			n.scaledVector.y() = q[1];
+			n.scaledVector.z() = q[2];
 		}
 
 		if(_finder._all_properties && _structureType != PTMAlgorithm::OTHER) {
