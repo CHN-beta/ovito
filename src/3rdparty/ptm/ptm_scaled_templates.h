@@ -156,6 +156,30 @@ const int8_t ptm_scaled_template_fcc[PTM_NUM_POINTS_FCC][3] = {
            {   0,    1,   -1},
            {   1,    0,   -1},};
 
+const int8_t ptm_scaled_template_graphene[PTM_NUM_POINTS_GRAPHENE][3] = {
+           {   0,    0,    0},
+           {   1,    2,    0},
+           {   1,   -1,    0},
+           {  -2,   -1,    0},
+           {   0,    3,    0},
+           {   3,    3,    0},
+           {   3,    0,    0},
+           {   0,   -3,    0},
+           {  -3,   -3,    0},
+           {  -3,    0,    0},};
+
+const int8_t ptm_scaled_template_graphene_alt1[PTM_NUM_POINTS_GRAPHENE][3] = {
+           {   0,    0,    0},
+           {  -1,    1,    0},
+           {   2,    1,    0},
+           {  -1,   -2,    0},
+           {  -3,    0,    0},
+           {   0,    3,    0},
+           {   3,    3,    0},
+           {   3,    0,    0},
+           {   0,   -3,    0},
+           {  -3,   -3,    0},};
+
 const int8_t ptm_scaled_template_hcp[PTM_NUM_POINTS_HCP][3] = {
            {   0,    0,    0},
            {   0,   -6,    0},

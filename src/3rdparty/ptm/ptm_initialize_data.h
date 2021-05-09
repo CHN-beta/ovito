@@ -124,7 +124,7 @@ const refdata_t structure_hcp = {	PTM_MATCH_HCP,				//.type
 					NULL,					//.penrose_alt2
 					NULL,					//.penrose_alt3
 					ptm_scaled_template_hcp,		//.scaled
-					NULL,				//.scaled_alt1
+					ptm_scaled_template_hcp_alt1,				//.scaled_alt1
 					NULL,				//.scaled_alt2
 					NULL,				//.scaled_alt3
 					NUM_HEX_MAPPINGS,			//.num_mappings
@@ -258,8 +258,8 @@ const refdata_t structure_graphene = {	PTM_MATCH_GRAPHENE,			//.type
 					penrose_graphene_alt1,			//.penrose_alt1
 					NULL,					//.penrose_alt2
 					NULL,					//.penrose_alt3
-					NULL,       		//.scaled
-					NULL,				//.scaled_alt1
+					ptm_scaled_template_graphene,       		//.scaled
+					ptm_scaled_template_graphene_alt1,				//.scaled_alt1
 					NULL,				//.scaled_alt2
 					NULL,				//.scaled_alt3
 					-1,					//.num_mappings

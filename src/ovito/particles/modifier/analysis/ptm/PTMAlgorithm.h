@@ -152,8 +152,7 @@ public:
 	static const int8_t (*get_scaled_template(StructureType structureType, int templateIndex))[3]
 	{
 		if (structureType == OTHER
-            || structureType == ICO         // ICO structure does not form a lattice
-            || structureType == GRAPHENE) { // Graphene is not supported yet (little use for miller indices)
+            || structureType == ICO) {  // ICO structure does not form a lattice
 			return nullptr;
 		}
 
