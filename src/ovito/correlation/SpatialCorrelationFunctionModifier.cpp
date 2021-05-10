@@ -343,8 +343,10 @@ std::vector<std::complex<FloatType>> SpatialCorrelationFunctionModifier::Correla
 	std::vector<std::complex<FloatType>> cData(nX * nY * nZ);
 	OVITO_STATIC_ASSERT(sizeof(kiss_fft_cpx) == sizeof(std::complex<FloatType>));
 
-	// Perform FFT calculation.
-	kiss_fftnd(kiss, in.data(), reinterpret_cast<kiss_fft_cpx*>(cData.data()));
+	if(!isCanceled()) {
+		// Perform FFT calculation.
+		kiss_fftnd(kiss, in.data(), reinterpret_cast<kiss_fft_cpx*>(cData.data()));
+	}
 	kiss_fft_free(kiss);
 
 	return cData;
@@ -360,7 +362,9 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 	OVITO_STATIC_ASSERT(sizeof(kiss_fft_cpx) == sizeof(std::complex<FloatType>));
 
 	// Perform FFT calculation.
-	kiss_fftnd(kiss, reinterpret_cast<const kiss_fft_cpx*>(cData.data()), out.data());
+	if(!isCanceled()) {
+		kiss_fftnd(kiss, reinterpret_cast<const kiss_fft_cpx*>(cData.data()), out.data());
+	}
 	kiss_fft_free(kiss);
 
 	// Convert complex values to real values.
@@ -386,6 +390,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	int nX = std::max(1, (int)(cellMatrix.column(0).length() / fftGridSpacing()));
 	int nY = std::max(1, (int)(cellMatrix.column(1).length() / fftGridSpacing()));
 	int nZ = std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing()));
+	size_t ntotal = (size_t)nX * (size_t)nY * (size_t)nZ;
+	if(ntotal * 2 * sizeof(FloatType) > (size_t)std::numeric_limits<int>::max())
+		throw Exception(tr("FFT grid spacing is too fine for this simulation cell volume. The maximum number of FFT grid cells has been exceeded (%1 x %2 x %3 = %4 cells, limit is %5).").arg(nX).arg(nY).arg(nZ).arg(ntotal).arg(std::numeric_limits<int>::max() / (2*sizeof(FloatType))));
 
 	// Map all quantities onto a spatial grid.
 	std::vector<FloatType> gridProperty1 = mapToSpatialGrid(sourceProperty1().get(),
