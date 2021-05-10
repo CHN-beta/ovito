@@ -30,7 +30,7 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.4.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.5.
 The following commands have been used to build them::
 
   # Build platform: CentOS 6.9
