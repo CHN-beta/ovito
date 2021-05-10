@@ -66,6 +66,10 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 	BooleanParameterUI* partialRdfPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
 	layout->addWidget(partialRdfPUI->checkBox());
 
+	// Only selected particles.
+	BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
+	layout->addWidget(onlySelectedPUI->checkBox());
+
 	_rdfPlot = new DataTablePlotWidget();
 	_rdfPlot->setMinimumHeight(200);
 	_rdfPlot->setMaximumHeight(200);

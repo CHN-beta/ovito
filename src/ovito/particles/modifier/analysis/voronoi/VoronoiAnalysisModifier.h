@@ -129,7 +129,7 @@ private:
 
 		const SimulationCellObject* simCell() const { return _simCell; }
 		const ConstPropertyPtr& positions() const { return _positions; }
-		const ConstPropertyPtr selection() const { return _selection; }
+		const ConstPropertyPtr& selection() const { return _selection; }
 
 	private:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,9 +37,11 @@ IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, computePartialRDF);
+DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, onlySelected);
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, computePartialRDF, "Compute partial RDFs");
+SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, onlySelected, "Use only selected particles");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, cutoff, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, IntegerParameterUnit, 4, 100000);
 
@@ -49,7 +51,8 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 CoordinationAnalysisModifier::CoordinationAnalysisModifier(DataSet* dataset) : AsynchronousModifier(dataset),
 	_cutoff(3.2),
 	_numberOfBins(200),
-	_computePartialRDF(false)
+	_computePartialRDF(false),
+	_onlySelected(false)
 {
 }
 
@@ -73,6 +76,9 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 
 	// Get simulation cell.
 	const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+
+	// Get selection particle property.
+	const PropertyObject* selectionProperty = onlySelected() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// The number of sampling intervals for the radial distribution function.
 	int rdfSampleCount = std::max(numberOfBins(), 4);
@@ -104,7 +110,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CoordinationAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, inputCell,
+	return std::make_shared<CoordinationAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, selectionProperty, inputCell,
 		cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
 }
 
@@ -115,14 +121,15 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 {
 	setProgressText(tr("Coordination analysis"));
 
-	// Prepare the neighbor list service.
+	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), {}, this))
+	if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection(), this))
 		return;
 
 	size_t particleCount = positions()->size();
 	PropertyAccess<int> coordinationData(coordinationNumbers());
 	ConstPropertyAccess<int> particleTypeData(particleTypes());
+	ConstPropertyAccess<int> selectionData(selection());
 	setProgressValue(0);
 	setProgressMaximum(particleCount);
 
@@ -137,25 +144,27 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 		for(size_t i = startIndex, endIndex = startIndex + chunkSize; i < endIndex; ) {
 			int& coordination = coordinationData[i];
 			OVITO_ASSERT(coordination == 0);
+			if(!selectionData || selectionData[i]) {
 
-			size_t typeIndex1 = _computePartialRdfs ? uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[i])) : 0;
-			if(typeIndex1 < typeCount) {
-				for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
-					coordination++;
-					if(_computePartialRdfs) {
-						size_t typeIndex2 = uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[neighQuery.current()]));
-						if(typeIndex2 < typeCount) {
-							size_t lowerIndex = std::min(typeIndex1, typeIndex2);
-							size_t upperIndex = std::max(typeIndex1, typeIndex2);
-							size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
-							OVITO_ASSERT(rdfIndex < rdfCount);
-							size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
-							threadLocalRDF[rdfIndex + std::min(rdfBin, binCount - 1) * rdfCount]++;
+				size_t typeIndex1 = _computePartialRdfs ? uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[i])) : 0;
+				if(typeIndex1 < typeCount) {
+					for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
+						coordination++;
+						if(_computePartialRdfs) {
+							size_t typeIndex2 = uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[neighQuery.current()]));
+							if(typeIndex2 < typeCount) {
+								size_t lowerIndex = std::min(typeIndex1, typeIndex2);
+								size_t upperIndex = std::max(typeIndex1, typeIndex2);
+								size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
+								OVITO_ASSERT(rdfIndex < rdfCount);
+								size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+								threadLocalRDF[rdfIndex + std::min(rdfBin, binCount - 1) * rdfCount]++;
+							}
 						}
-					}
-					else {
-						size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
-						threadLocalRDF[std::min(rdfBin, binCount - 1)]++;
+						else {
+							size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+							threadLocalRDF[std::min(rdfBin, binCount - 1)]++;
+						}
 					}
 				}
 			}
@@ -189,6 +198,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 		else {
 			prefactor *= FLOATTYPE_PI * type1Count / cell()->volume2D() * type2Count;
 		}
+		if(prefactor == 0.0) return;
 		FloatType r1 = 0;
 		size_t cmpntCount = rdfY()->componentCount();
 		OVITO_ASSERT(component < cmpntCount);
@@ -202,12 +212,16 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 	};
 
 	if(!_computePartialRdfs) {
+		if(selectionData)
+			particleCount -= std::count(selectionData.begin(), selectionData.end(), 0);
 		normalizeRDF(particleCount, particleCount);
 	}
 	else {
 		// Count particle type occurrences.
 		std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
+		const int* sel = selectionData ? selectionData.begin() : nullptr;
 		for(int t : particleTypeData) {
+			if(sel && !(*sel++)) continue; 
 			size_t typeIndex = uniqueTypeIds().index_of(uniqueTypeIds().find(t));
 			if(typeIndex < particleCounts.size())
 				particleCounts[typeIndex]++;
@@ -224,8 +238,11 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 	}
 
 	// Release data that is no longer needed.
+	particleTypeData.reset();
+	selectionData.reset();
 	_positions.reset();
 	_particleTypes.reset();
+	_selection.reset();
 }
 
 /******************************************************************************

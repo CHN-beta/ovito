@@ -7,12 +7,11 @@ Coordination analysis
   :width: 30%
   :align: right
 
-This modifier performs two computations:
+This modifier computes two kinds of output:
 
-Coordination number
-  It counts the number of neighbors of each particle that are within
-  a given cutoff distance around its current position. This neighbor count, the so-called *coordination number* of the particle,
-  will be stored in the ``Coordination`` output property by the modifier. This output property is available
+Coordination numbers
+  For each particle, it counts the number of other particles within a given cutoff distance. This neighbor count, the so-called *coordination number* of the particle,
+  is stored in the ``Coordination`` output property by the modifier. The computed coordination numbers are available
   to subsequent modifiers in the OVITO data pipeline. For example, you could select all particles having a certain minimum number of neighbors using
   the :ref:`particles.modifiers.expression_select` modifier or visualize the computed coordination numbers using the
   :ref:`particles.modifiers.color_coding` modifier.
@@ -21,7 +20,7 @@ Radial pair distribution function
   The modifier also computes the radial pair distribution function (radial PDF, or simply RDF) for the particle system.
   The radial pair distribution function :math:`g(r)` measures the probability of finding a particle at distance :math:`r`
   given that there is a particle at position :math:`r=0`; it is essentially a histogram of pair-wise particle distances. The pair distribution function is
-  normalized by the average number density of particles (i.e. the total number of particles in the simulation cell divided by its volume).
+  normalized by the average number density of particles (i.e. the total number of particles divided by the simulation cell volume).
   See the `Wikipedia article <https://en.wikipedia.org/wiki/Radial_distribution_function>`__ for more information on this distribution function.
 
 Element-wise RDFs
@@ -44,13 +43,21 @@ Here, :math:`c_{\alpha}` and :math:`c_{\beta}` denote the concentrations of the 
 species in the system and the factor 2 in the mixed term appears due to :math:`g_{\alpha \beta}(r)` and
 :math:`g_{\beta \alpha}(r)` being identical.
 
+Only selected particles
+"""""""""""""""""""""""
+
+The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected particles.
+This is useful if you want to calculate the RDF only for a specific part of a system. If this option is enabled, unselected particles
+will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero, 
+they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF.
+
 Time-averaged RDF
 """""""""""""""""
 
 Note that the modifier calculates the instantaneous RDF for the current
-simulation frame only and outputs it as a :ref:`data table <scene_objects.data_table>` that varies with simulation time. 
-Subsequently, you can use the :ref:`particles.modifiers.time_averaging` modifier of OVITO to reduce all per-frame 
-RDFs to one mean RDF, averaging over all frames of the loaded trajectory.
+simulation frame only and outputs it as a :ref:`data table <scene_objects.data_table>`, which varies with simulation time. 
+Subsequently, you can use the :ref:`particles.modifiers.time_averaging` modifier of OVITO to aggregate all per-frame 
+RDFs into one mean RDF, averaging the distribution over all frames of the loaded trajectory.
 
 Bond length distribution
 """"""""""""""""""""""""

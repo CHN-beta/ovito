@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,10 +82,11 @@ private:
 	public:
 
 		/// Constructor.
-		CoordinationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		CoordinationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
 				FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
 			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
+			_selection(std::move(selection)),
 			_simCell(simCell),
 			_cutoff(cutoff),
 			_computePartialRdfs(particleTypes),
@@ -125,6 +126,9 @@ private:
 		/// Returns the property storage that contains the input particle types.
 		const ConstPropertyPtr& particleTypes() const { return _particleTypes; }
 
+		/// Returns the property storage that contains the input particle selection states.
+		const ConstPropertyPtr& selection() const { return _selection; }
+
 		/// Returns the simulation cell data.
 		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
@@ -142,6 +146,7 @@ private:
 		boost::container::flat_map<int,QString> _uniqueTypeIds;
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleTypes;
+		ConstPropertyPtr _selection;
 		const PropertyPtr _coordinationNumbers;
 		PropertyPtr _rdfY;
 		ParticleOrderingFingerprint _inputFingerprint;
@@ -157,6 +162,9 @@ private:
 
 	/// Controls the computation of partials RDFs.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, computePartialRDF, setComputePartialRDF, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls whether the modifier acts only on currently selected particles.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
 };
 
 }	// End of namespace
