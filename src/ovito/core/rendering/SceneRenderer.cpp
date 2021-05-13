@@ -401,8 +401,13 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 		TimeInterval interval;
 		setWorldTransform(pipeline->getWorldTransform(time(), interval));
 
-		// Render modifier.
-		mod->renderModifierVisual(time(), pipeline, modApp, this, renderOverlay);
+		try {
+			// Render modifier.
+			mod->renderModifierVisual(time(), pipeline, modApp, this, renderOverlay);
+		}
+		catch(const Exception& ex) {
+			ex.logError();
+		}
 
 		// Traverse up the pipeline.
 		modApp = dynamic_object_cast<ModifierApplication>(modApp->input());

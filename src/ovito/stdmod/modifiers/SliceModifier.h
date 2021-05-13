@@ -107,15 +107,15 @@ public:
 	void setSlabWidth(FloatType newWidth) { if(widthController()) widthController()->setCurrentFloatValue(newWidth); }
 
 	/// Returns the slicing plane and the slab width.
-	std::tuple<Plane3, FloatType> slicingPlane(TimePoint time, TimeInterval& validityInterval);
+	std::tuple<Plane3, FloatType> slicingPlane(TimePoint time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
 protected:
 
 	/// This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
 
-	/// \brief Renders the modifier's visual representation and computes its bounding box.
-	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer);
+	/// Renders the modifier's visual representation and computes its bounding box.
+	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
 
 	/// Renders the plane in the viewport.
 	void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
@@ -143,6 +143,9 @@ protected:
 
 	/// Enables the visualization of the cutting plane.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
+
+	/// Controls whether the plane is specified in reduced cell coordinates.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
 
 	/// The vis element for plane.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);

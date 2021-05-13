@@ -109,9 +109,13 @@ Generate neighbor bonds
   A bond is generated for every Voronoi face whose area is larger than the face area threshold and which has at least three edges
   longer than the specified edge length threshold.
 
-  Note that bonds in periodic simulation cells are computed using the minimum image convention,
-  which requires that the cell is at least twice as large in each periodic direction as the
-  longest neighbor bond. In cases where the cell is shorter, the computed bonds may be incorrect.
+  .. caution:: 
+  
+    Bonds in periodic simulation cells are computed using the minimum image convention,
+    which requires that the cell is at least twice as large in each periodic direction as the
+    longest neighbor bond. In cases where the cell is shorter, the generated bonds may be incorrect!
+    You can work around this limitation by applying a :ref:`particles.modifiers.show_periodic_images` 
+    modifier to small periodic simulation cells.
 
 Use particle radii
   Lets the modifier compute the poly-disperse Voronoi tessellation, which takes into account the radii of particles.

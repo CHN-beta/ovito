@@ -54,7 +54,7 @@ PipelineStatus DislocationSliceModifierDelegate::apply(Modifier* modifier, Pipel
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity());
+	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
 
 	for(const DataObject* obj : state.data()->objects()) {
 		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {

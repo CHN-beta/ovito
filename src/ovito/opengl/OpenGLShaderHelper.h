@@ -76,7 +76,10 @@ public:
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM().linear().inverse().transposed()))));
+		Matrix3 normalTM;
+		if(!_renderer->modelViewTM().linear().inverse(normalTM))
+			normalTM.setIdentity();
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(normalTM.transposed()))));
 
 		// Get current viewport rectangle.
 	    const QRect& vpRect = _renderer->renderingViewport();

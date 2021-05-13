@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,6 +39,7 @@
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "SliceModifierEditor.h"
 
@@ -60,14 +61,25 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
 
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(0,0,0,0);
+
+	BooleanRadioButtonParameterUI* reducedCoordinatesPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SliceModifier::reducedCoordinates));
+	reducedCoordinatesPUI->buttonFalse()->setText(tr("Cartesian"));
+	reducedCoordinatesPUI->buttonTrue()->setText(tr("Reduced cell coordinates"));
+	sublayout->addWidget(reducedCoordinatesPUI->buttonFalse(), 1);
+	sublayout->addWidget(reducedCoordinatesPUI->buttonTrue(), 1);
+	layout->addLayout(sublayout);
+	connect(reducedCoordinatesPUI, &BooleanRadioButtonParameterUI::valueEntered, this, &SliceModifierEditor::onCoordinateTypeChanged);
+
 	QGridLayout* gridlayout = new QGridLayout();
 	gridlayout->setContentsMargins(0,0,0,0);
 	gridlayout->setColumnStretch(1, 1);
 
 	// Distance parameter.
 	FloatParameterUI* distancePUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::distanceController));
-	gridlayout->addWidget(distancePUI->label(), 0, 0);
-	gridlayout->addLayout(distancePUI->createFieldLayout(), 0, 1);
+	gridlayout->addWidget(distancePUI->label(), 2, 0);
+	gridlayout->addLayout(distancePUI->createFieldLayout(), 2, 1);
 
 	// Normal parameter.
 	static const QString axesNames[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
@@ -78,14 +90,14 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 		normalPUI->label()->setText(QStringLiteral("<a href=\"%1\">%2</a>").arg(i).arg(normalPUI->label()->text()));
 		normalPUI->label()->setToolTip(tr("Click here to align plane normal with %1 axis").arg(axesNames[i]));
 		connect(normalPUI->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onXYZNormal);
-		gridlayout->addWidget(normalPUI->label(), i+1, 0);
-		gridlayout->addLayout(normalPUI->createFieldLayout(), i+1, 1);
+		gridlayout->addWidget(normalPUI->label(), i + 3, 0);
+		gridlayout->addLayout(normalPUI->createFieldLayout(), i + 3, 1);
 	}
 
 	// Slice width parameter.
 	FloatParameterUI* widthPUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::widthController));
-	gridlayout->addWidget(widthPUI->label(), 4, 0);
-	gridlayout->addLayout(widthPUI->createFieldLayout(), 4, 1);
+	gridlayout->addWidget(widthPUI->label(), 6, 0);
+	gridlayout->addLayout(widthPUI->createFieldLayout(), 6, 1);
 
 	layout->addLayout(gridlayout);
 	layout->addSpacing(8);
@@ -107,15 +119,15 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	layout->addWidget(visualizePlanePUI->checkBox());
 
 	layout->addSpacing(8);
-	QPushButton* centerPlaneBtn = new QPushButton(tr("Move plane to simulation box center"), rollout);
+	QPushButton* centerPlaneBtn = new QPushButton(tr("Center in simulation cell"), rollout);
 	connect(centerPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onCenterOfBox);
 	layout->addWidget(centerPlaneBtn);
 
 	// Add buttons for view alignment functions.
-	QPushButton* alignViewToPlaneBtn = new QPushButton(tr("Align view direction to plane normal"), rollout);
+	QPushButton* alignViewToPlaneBtn = new QPushButton(tr("Align view to plane"), rollout);
 	connect(alignViewToPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onAlignViewToPlane);
 	layout->addWidget(alignViewToPlaneBtn);
-	QPushButton* alignPlaneToViewBtn = new QPushButton(tr("Align plane normal to view direction"), rollout);
+	QPushButton* alignPlaneToViewBtn = new QPushButton(tr("Align plane to view"), rollout);
 	connect(alignPlaneToViewBtn, &QPushButton::clicked, this, &SliceModifierEditor::onAlignPlaneToView);
 	layout->addWidget(alignPlaneToViewBtn);
 
@@ -141,6 +153,36 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 
 	ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
 	layout->addWidget(delegatesPUI->listWidget());
+}
+
+/******************************************************************************
+* Is called when the user switches between Cartesian and reduced cell coordinates.
+******************************************************************************/
+void SliceModifierEditor::onCoordinateTypeChanged()
+{
+	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
+	if(!mod) return;
+
+	const PipelineFlowState& input = getModifierInput();
+	const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
+	if(!cell) return;
+
+	// Get the plane info.
+	Plane3 plane;
+	TimeInterval validityInterval;
+	if(mod->normalController())
+		mod->normalController()->getVector3Value(mod->dataset()->animationSettings()->time(), plane.normal, validityInterval);
+	if(mod->distanceController())
+		plane.dist = mod->distanceController()->getFloatValue(mod->dataset()->animationSettings()->time(), validityInterval);
+
+	// Automatically convert current plane equation to/from reduced coordinates.
+	if(mod->reducedCoordinates())
+		plane = cell->reciprocalCellMatrix() * plane;
+	else
+		plane = cell->cellMatrix() * plane;
+
+	mod->setNormal(plane.normal);
+	mod->setDistance(plane.dist);
 }
 
 /******************************************************************************
@@ -174,22 +216,36 @@ void SliceModifierEditor::onAlignPlaneToView()
 	// Get the object to world transformation for the currently selected object.
 	PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode());
 	if(!node) return;
-	const AffineTransformation& nodeTM = node->getWorldTransform(dataset()->animationSettings()->time(), interval);
+	TimePoint time = dataset()->animationSettings()->time();
+	const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
 
-	// Get the base point of the current slicing plane in local coordinates.
-	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
-	if(!mod) return;
-	Plane3 oldPlaneLocal = std::get<Plane3>(mod->slicingPlane(dataset()->animationSettings()->time(), interval));
-	Point3 basePoint = Point3::Origin() + oldPlaneLocal.normal * oldPlaneLocal.dist;
+	undoableTransaction(tr("Align plane to view"), [&]() {
 
-	// Get the orientation of the projection plane of the current viewport.
-	Vector3 dirWorld = -vp->cameraDirection();
-	Plane3 newPlaneLocal(basePoint, nodeTM.inverse() * dirWorld);
-	if(std::abs(newPlaneLocal.normal.x()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.x() = 0;
-	if(std::abs(newPlaneLocal.normal.y()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.y() = 0;
-	if(std::abs(newPlaneLocal.normal.z()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.z() = 0;
+		// Get the base point of the current slicing plane in local coordinates.
+		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
+		if(!mod) return;
 
-	undoableTransaction(tr("Align plane to view"), [mod, &newPlaneLocal]() {
+		const PipelineFlowState& input = getModifierInput();
+
+		Plane3 oldPlaneLocal = std::get<Plane3>(mod->slicingPlane(time, interval, input));
+		Point3 basePoint = Point3::Origin() + oldPlaneLocal.normal * oldPlaneLocal.dist;
+
+		// Get the orientation of the projection plane of the current viewport.
+		Vector3 dirWorld = -vp->cameraDirection();
+		Plane3 newPlaneLocal(basePoint, nodeTM.inverse() * dirWorld);
+
+		// Convert to reduced cell coordinates if requested.
+		if(mod->reducedCoordinates()) {
+			if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+				newPlaneLocal = cell->inverseMatrix() * newPlaneLocal;
+			}
+		}
+
+		// Perform rounding of almost axis-aligned normal vectors.
+		if(std::abs(newPlaneLocal.normal.x()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.x() = 0;
+		if(std::abs(newPlaneLocal.normal.y()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.y() = 0;
+		if(std::abs(newPlaneLocal.normal.z()) < FLOATTYPE_EPSILON) newPlaneLocal.normal.z() = 0;
+
 		mod->setNormal(newPlaneLocal.normal.normalized());
 		mod->setDistance(newPlaneLocal.dist);
 	});
@@ -200,43 +256,49 @@ void SliceModifierEditor::onAlignPlaneToView()
 ******************************************************************************/
 void SliceModifierEditor::onAlignViewToPlane()
 {
-	TimeInterval interval;
+	try {
+		TimeInterval interval;
 
-	Viewport* vp = dataset()->viewportConfig()->activeViewport();
-	if(!vp) return;
+		Viewport* vp = dataset()->viewportConfig()->activeViewport();
+		if(!vp) return;
 
-	// Get the object to world transformation for the currently selected object
-	PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode());
-	if(!node) return;
-	const AffineTransformation& nodeTM = node->getWorldTransform(dataset()->animationSettings()->time(), interval);
+		// Get the object to world transformation for the currently selected object
+		PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode());
+		if(!node) return;
+		TimePoint time = dataset()->animationSettings()->time();
+		const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
 
-	// Transform the current slicing plane to the world coordinate system.
-	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
-	if(!mod) return;
-	Plane3 planeLocal = std::get<Plane3>(mod->slicingPlane(dataset()->animationSettings()->time(), interval));
-	Plane3 planeWorld = nodeTM * planeLocal;
+		// Transform the current slicing plane to the world coordinate system.
+		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
+		if(!mod) return;
+		Plane3 planeLocal = std::get<Plane3>(mod->slicingPlane(time, interval, mod->someModifierApplication()->evaluateInputSynchronous(time)));
+		Plane3 planeWorld = nodeTM * planeLocal;
 
-	// Calculate the intersection point of the current viewing direction with the current slicing plane.
-	Ray3 viewportRay(vp->cameraPosition(), vp->cameraDirection());
-	FloatType t = planeWorld.intersectionT(viewportRay);
-	Point3 intersectionPoint;
-	if(t != FLOATTYPE_MAX)
-		intersectionPoint = viewportRay.point(t);
-	else
-		intersectionPoint = Point3::Origin() + nodeTM.translation();
+		// Calculate the intersection point of the current viewing direction with the current slicing plane.
+		Ray3 viewportRay(vp->cameraPosition(), vp->cameraDirection());
+		FloatType t = planeWorld.intersectionT(viewportRay);
+		Point3 intersectionPoint;
+		if(t != FLOATTYPE_MAX)
+			intersectionPoint = viewportRay.point(t);
+		else
+			intersectionPoint = Point3::Origin() + nodeTM.translation();
 
-	if(vp->isPerspectiveProjection()) {
-		FloatType distance = (vp->cameraPosition() - intersectionPoint).length();
-		vp->setViewType(Viewport::VIEW_PERSPECTIVE);
-		vp->setCameraDirection(-planeWorld.normal);
-		vp->setCameraPosition(intersectionPoint + planeWorld.normal * distance);
+		if(vp->isPerspectiveProjection()) {
+			FloatType distance = (vp->cameraPosition() - intersectionPoint).length();
+			vp->setViewType(Viewport::VIEW_PERSPECTIVE);
+			vp->setCameraDirection(-planeWorld.normal);
+			vp->setCameraPosition(intersectionPoint + planeWorld.normal * distance);
+		}
+		else {
+			vp->setViewType(Viewport::VIEW_ORTHO);
+			vp->setCameraDirection(-planeWorld.normal);
+		}
+
+		vp->zoomToSelectionExtents();
 	}
-	else {
-		vp->setViewType(Viewport::VIEW_ORTHO);
-		vp->setCameraDirection(-planeWorld.normal);
+	catch(const Exception& ex) {
+		ex.reportError();
 	}
-
-	vp->zoomToSelectionExtents();
 }
 
 /******************************************************************************
@@ -252,7 +314,11 @@ void SliceModifierEditor::onCenterOfBox()
 	const PipelineFlowState& input = getModifierInput();
 	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 
-		Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+		Point3 centerPoint;
+		if(!mod->reducedCoordinates())
+			centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+		else
+			centerPoint = Point3(0.5, 0.5, 0.5);
 		FloatType centerDistance = mod->normal().safelyNormalized().dot(centerPoint - Point3::Origin());
 
 		undoableTransaction(tr("Set plane position"), [mod, centerDistance]() {
@@ -361,7 +427,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 		if(worldPlane.normal.equals(Vector3::Zero(), FLOATTYPE_EPSILON))
 			mod->throwException(tr("Cannot set the new slicing plane. The three selected points are colinear."));
 
-		// Get the object to world transformation for the currently selected node.
+		// Get the object-to-world transformation for the currently selected object.
 		ModifierApplication* modApp = mod->someModifierApplication();
 		if(!modApp) return;
 		QSet<PipelineSceneNode*> nodes = modApp->pipelines(true);
@@ -372,6 +438,14 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 
 		// Transform new plane from world to object space.
 		Plane3 localPlane = nodeTM.inverse() * worldPlane;
+
+		// Convert to reduced cell coordinates if requested.
+		if(mod->reducedCoordinates()) {
+			const PipelineFlowState& input = modApp->evaluateInputSynchronous(mod->dataset()->animationSettings()->time());
+			if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+				localPlane = cell->inverseMatrix() * localPlane;
+			}
+		}
 
 		// Flip new plane orientation if necessary to align it with old orientation.
 		if(localPlane.normal.dot(mod->normal()) < 0)

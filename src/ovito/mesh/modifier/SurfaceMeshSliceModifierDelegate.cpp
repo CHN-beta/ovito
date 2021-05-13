@@ -43,7 +43,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity());
+	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
 	sliceWidth /= 2;
 	bool invert = mod->inverse();
 

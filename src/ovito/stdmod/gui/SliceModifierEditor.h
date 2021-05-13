@@ -65,6 +65,9 @@ protected Q_SLOTS:
 	/// Moves the plane to the center of the simulation box.
 	void onCenterOfBox();
 
+	/// Is called when the user switches between Cartesian and reduced cell coordinates.
+	void onCoordinateTypeChanged();
+
 private:
 
 	PickPlanePointsInputMode* _pickPlanePointsInputMode;

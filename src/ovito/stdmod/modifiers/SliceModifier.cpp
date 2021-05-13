@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,6 +47,7 @@ DEFINE_PROPERTY_FIELD(SliceModifier, createSelection);
 DEFINE_PROPERTY_FIELD(SliceModifier, inverse);
 DEFINE_PROPERTY_FIELD(SliceModifier, applyToSelection);
 DEFINE_PROPERTY_FIELD(SliceModifier, enablePlaneVisualization);
+DEFINE_PROPERTY_FIELD(SliceModifier, reducedCoordinates);
 DEFINE_REFERENCE_FIELD(SliceModifier, planeVis);
 SET_PROPERTY_FIELD_LABEL(SliceModifier, normalController, "Normal");
 SET_PROPERTY_FIELD_LABEL(SliceModifier, distanceController, "Distance");
@@ -55,6 +56,7 @@ SET_PROPERTY_FIELD_LABEL(SliceModifier, createSelection, "Create selection (do n
 SET_PROPERTY_FIELD_LABEL(SliceModifier, inverse, "Reverse orientation");
 SET_PROPERTY_FIELD_LABEL(SliceModifier, applyToSelection, "Apply to selection only");
 SET_PROPERTY_FIELD_LABEL(SliceModifier, enablePlaneVisualization, "Visualize plane");
+SET_PROPERTY_FIELD_LABEL(SliceModifier, reducedCoordinates, "Reduced cell coordinates");
 SET_PROPERTY_FIELD_LABEL(SliceModifier, planeVis, "Plane");
 SET_PROPERTY_FIELD_UNITS(SliceModifier, normalController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS(SliceModifier, distanceController, WorldParameterUnit);
@@ -67,7 +69,8 @@ SliceModifier::SliceModifier(DataSet* dataset) : MultiDelegatingModifier(dataset
 	_createSelection(false),
 	_inverse(false),
 	_applyToSelection(false),
-	_enablePlaneVisualization(false)
+	_enablePlaneVisualization(false),
+	_reducedCoordinates(false)
 {
 }
 
@@ -109,7 +112,7 @@ TimeInterval SliceModifier::validityInterval(const PipelineEvaluationRequest& re
 /******************************************************************************
 * Returns the slicing plane and the slab width.
 ******************************************************************************/
-std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeInterval& validityInterval)
+std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeInterval& validityInterval, const PipelineFlowState& state)
 {
 	Plane3 plane;
 
@@ -127,6 +130,15 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeIn
 	if(inverse())
 		plane = -plane;
 
+	if(reducedCoordinates()) {
+		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+			plane = cell->cellMatrix() * plane;
+		}
+		else {
+			throwException(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
+		}
+	}
+
 	FloatType slabWidth = 0;
 	if(widthController())
 		slabWidth = widthController()->getFloatValue(time, validityInterval);
@@ -140,14 +152,15 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeIn
 void SliceModifier::renderModifierVisual(TimePoint time, PipelineSceneNode* contextNode, ModifierApplication* modApp, SceneRenderer* renderer, bool renderOverlay)
 {
 	if(!renderOverlay && isObjectBeingEdited() && renderer->isInteractive() && !renderer->isPicking()) {
-		renderVisual(time, contextNode, renderer);
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(time);
+		renderVisual(time, contextNode, renderer, state);
 	}
 }
 
 /******************************************************************************
 * Renders the modifier's visual representation and computes its bounding box.
 ******************************************************************************/
-void SliceModifier::renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer)
+void SliceModifier::renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state)
 {
 	TimeInterval interval;
 
@@ -158,9 +171,11 @@ void SliceModifier::renderVisual(TimePoint time, PipelineSceneNode* contextNode,
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType slabWidth;
-	std::tie(plane, slabWidth) = slicingPlane(time, interval);
+	std::tie(plane, slabWidth) = slicingPlane(time, interval, state);
+	if(plane.normal.isZero())
+		return;
 
-	ColorA color(0.8f, 0.3f, 0.3f);
+	ColorA color(0.8, 0.3, 0.3);
 	if(slabWidth <= 0) {
 		renderPlane(renderer, plane, bb, color);
 	}
@@ -282,7 +297,9 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 		Plane3 plane;
 		FloatType slabWidth;
 		TimeInterval interval;
-		std::tie(plane, slabWidth) = slicingPlane(time, interval);
+		std::tie(plane, slabWidth) = slicingPlane(time, interval, state);
+		if(plane.normal.isZero())
+			return;
 
 		// Compute intersection polygon of slicing plane with simulation cell.
 		const SimulationCellObject* cellObj = state.expectObject<SimulationCellObject>();
@@ -311,7 +328,9 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
 			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
 			if(vertices.size() < 3) return;
-			std::sort(vertices.begin()+1, vertices.end(), [&](const Point3& a, const Point3& b) {
+			vertices.erase(std::remove(vertices.begin() + 1, vertices.end(), vertices.front()), vertices.end());
+			if(vertices.size() < 3) return;
+			std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
 				return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;
 			});
 			int baseVertexCount = mesh->vertexCount();

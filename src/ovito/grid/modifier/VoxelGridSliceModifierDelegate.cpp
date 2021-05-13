@@ -75,7 +75,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity());
+	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
 	sliceWidth /= 2;
 	bool invert = mod->inverse();
 	int numPlanes = 0;

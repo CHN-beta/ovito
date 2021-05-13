@@ -583,13 +583,16 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
                 if(!renderer->isPicking()) {
                     // Pass normal transformation matrix to vertex shader as a push constant.
-                    Matrix_3<float> normal_matrix = Matrix_3<float>(renderer->modelViewTM().linear().inverse().transposed());
-                    normal_matrix.column(0).normalize();
-                    normal_matrix.column(1).normalize();
-                    normal_matrix.column(2).normalize();
+                    Matrix3 normal_matrix;
+                    if(renderer->modelViewTM().linear().inverse(normal_matrix)) {
+                        normal_matrix.column(0).normalize();
+                        normal_matrix.column(1).normalize();
+                        normal_matrix.column(2).normalize();
+                    }
+                    else normal_matrix.setIdentity();
                     // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
                     // Better use a mat4 to be safe:
-                    Matrix_4<float> normal_matrix4(normal_matrix);
+                    Matrix_4<float> normal_matrix4(Matrix_3<float>(normal_matrix).transposed());
                     renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
                 }
                 else {
@@ -630,13 +633,16 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
             if(!renderer->isPicking()) {
                 // Pass normal transformation matrix to vertex shader as a push constant.
-                Matrix_3<float> normal_matrix = Matrix_3<float>(renderer->modelViewTM().linear().inverse().transposed());
-                normal_matrix.column(0).normalize();
-                normal_matrix.column(1).normalize();
-                normal_matrix.column(2).normalize();
+                Matrix3 normal_matrix;
+                if(renderer->modelViewTM().linear().inverse(normal_matrix)) {
+                    normal_matrix.column(0).normalize();
+                    normal_matrix.column(1).normalize();
+                    normal_matrix.column(2).normalize();
+                }
+                else normal_matrix.setIdentity();
                 // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
                 // Better use a mat4 to be safe:
-                Matrix_4<float> normal_matrix4(normal_matrix);
+                Matrix_4<float> normal_matrix4(Matrix_3<float>(normal_matrix).transposed());
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
             }
             else {
