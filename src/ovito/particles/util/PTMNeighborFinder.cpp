@@ -247,6 +247,9 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 	}
 	FloatType scale = numerator / denominator;
 
+    // calculate interatomic distance
+    _interatomicDistance = _list[1].idealVector.length() / scale;
+
 	// calculate RMSD
 	_rmsd = 0;
 	for(int i = 0; i < centered.size(); i++) {
