@@ -29,22 +29,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <cstring>
 
 
-static double calculate_interatomic_distance(int type, double scale) {
-	assert(type >= 1 && type <= 8);
-
-	// these values should be equal to norm(template[1])
-	double c[9] = {0,
-		       1,
-		       1,
-		       (7. - 3.5 * sqrt(3)),
-		       1,
-		       1,
-		       sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
-		       sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
-		       -3. / 11 + 6 * sqrt(3) / 11};
-	return c[type] / scale;
-}
-
 static double calculate_lattice_constant(int type,
 					 double interatomic_distance) {
 	assert(type >= 1 && type <= 8);
@@ -288,7 +272,7 @@ static void output_data(ptm::result_t *res, ptm_atomicenv_t* env,
 			}
 		}
 
-		double interatomic_distance = calculate_interatomic_distance(ref->type, res->scale);
+		double interatomic_distance = ptm::vector_norm((double*)ref->points[1]) / res->scale;
 		double lattice_constant = calculate_lattice_constant(ref->type, interatomic_distance);
 
 		result->interatomic_distance = interatomic_distance;
