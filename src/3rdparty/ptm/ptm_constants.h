@@ -102,7 +102,6 @@ typedef struct
 	double U[9];
 	double P[9];
 	double interatomic_distance;
-	double lattice_constant;
 	int32_t best_template_index;
 	const double (*best_template)[3];
 } ptm_result_t;

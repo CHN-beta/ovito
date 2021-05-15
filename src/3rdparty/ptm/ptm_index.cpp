@@ -29,14 +29,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <cstring>
 
 
-static double calculate_lattice_constant(int type,
-					 double interatomic_distance) {
-	assert(type >= 1 && type <= 8);
-	double c[9] = {0, 2 / sqrt(2), 2 / sqrt(2), 2. / sqrt(3), 2 / sqrt(2),
-		       1, 4 / sqrt(3), 4 / sqrt(3), sqrt(3)};
-	return c[type] * interatomic_distance;
-}
-
 static int rotate_into_fundamental_zone(int type,
 					bool output_conventional_orientation,
 					double *q) {
@@ -272,11 +264,7 @@ static void output_data(ptm::result_t *res, ptm_atomicenv_t* env,
 			}
 		}
 
-		double interatomic_distance = ptm::vector_norm((double*)ref->points[1]) / res->scale;
-		double lattice_constant = calculate_lattice_constant(ref->type, interatomic_distance);
-
-		result->interatomic_distance = interatomic_distance;
-		result->lattice_constant = lattice_constant;
+		result->interatomic_distance = ptm::vector_norm((double*)ref->points[1]) / res->scale;
 		result->rmsd = res->rmsd;
 		result->scale = res->scale;
 		memcpy(result->orientation, res->q, 4 * sizeof(double));
