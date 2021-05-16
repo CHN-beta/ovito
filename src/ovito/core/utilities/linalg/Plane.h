@@ -228,10 +228,17 @@ public:
 template<typename T>
 inline Plane_3<T> operator*(const AffineTransformationT<T>& tm, const Plane_3<T>& plane) {
 	Plane_3<T> p2;
-	Matrix_3<T> normalTM = tm.linear().inverse().transposed();
-	p2.normal = (normalTM * plane.normal).safelyNormalized();
-	Point_3<T> base = tm * (typename Point_3<T>::Origin() + plane.normal * plane.dist);
-	p2.dist = p2.normal.dot(base - typename Point_3<T>::Origin());
+	Matrix_3<T> inv_tm; 
+	if(tm.linear().inverse(inv_tm)) {
+		Matrix_3<T> normalTM = inv_tm.transposed();
+		p2.normal = (normalTM * plane.normal).safelyNormalized();
+		Point_3<T> base = tm * (typename Point_3<T>::Origin() + plane.normal * plane.dist);
+		p2.dist = p2.normal.dot(base - typename Point_3<T>::Origin());
+	}
+	else {
+		p2.normal.setZero();
+		p2.dist = 0;
+	}
 	return p2;
 }
 

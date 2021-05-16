@@ -121,8 +121,6 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeIn
 
 	if(plane.normal == Vector3::Zero())
 		plane.normal = Vector3(0,0,1);
-	else
-		plane.normal.normalize();
 
 	if(distanceController())
 		plane.dist = distanceController()->getFloatValue(time, validityInterval);
@@ -132,11 +130,15 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(TimePoint time, TimeIn
 
 	if(reducedCoordinates()) {
 		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+			plane.normal /= plane.normal.squaredLength();
 			plane = cell->cellMatrix() * plane;
 		}
 		else {
 			throwException(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
 		}
+	}
+	else {
+		plane.normal.normalize();
 	}
 
 	FloatType slabWidth = 0;
@@ -312,7 +314,7 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 			auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
 				Ray3 edge(Point3::Origin() + b, d);
 				FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-				if(t >= 0 && t <= 1)
+				if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
 					vertices.push_back(edge.point(t));
 			};
 			planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
@@ -328,7 +330,8 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
 			planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
 			if(vertices.size() < 3) return;
-			vertices.erase(std::remove(vertices.begin() + 1, vertices.end(), vertices.front()), vertices.end());
+			vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(), 
+				[p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
 			if(vertices.size() < 3) return;
 			std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
 				return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;

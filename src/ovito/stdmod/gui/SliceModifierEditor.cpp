@@ -64,13 +64,13 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	QHBoxLayout* sublayout = new QHBoxLayout();
 	sublayout->setContentsMargins(0,0,0,0);
 
-	BooleanRadioButtonParameterUI* reducedCoordinatesPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SliceModifier::reducedCoordinates));
-	reducedCoordinatesPUI->buttonFalse()->setText(tr("Cartesian"));
-	reducedCoordinatesPUI->buttonTrue()->setText(tr("Reduced cell coordinates"));
-	sublayout->addWidget(reducedCoordinatesPUI->buttonFalse(), 1);
-	sublayout->addWidget(reducedCoordinatesPUI->buttonTrue(), 1);
+	_reducedCoordinatesPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SliceModifier::reducedCoordinates));
+	_reducedCoordinatesPUI->buttonFalse()->setText(tr("Cartesian coordinates"));
+	_reducedCoordinatesPUI->buttonTrue()->setText(tr("Miller indices"));
+	sublayout->addWidget(_reducedCoordinatesPUI->buttonFalse(), 1);
+	sublayout->addWidget(_reducedCoordinatesPUI->buttonTrue(), 1);
 	layout->addLayout(sublayout);
-	connect(reducedCoordinatesPUI, &BooleanRadioButtonParameterUI::valueEntered, this, &SliceModifierEditor::onCoordinateTypeChanged);
+	connect(_reducedCoordinatesPUI, &BooleanRadioButtonParameterUI::valueEntered, this, &SliceModifierEditor::onCoordinateTypeChanged);
 
 	QGridLayout* gridlayout = new QGridLayout();
 	gridlayout->setContentsMargins(0,0,0,0);
@@ -82,17 +82,16 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	gridlayout->addLayout(distancePUI->createFieldLayout(), 2, 1);
 
 	// Normal parameter.
-	static const QString axesNames[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
 	for(int i = 0; i < 3; i++) {
-		Vector3ParameterUI* normalPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(SliceModifier::normalController), i);
-		normalPUI->label()->setTextFormat(Qt::RichText);
-		normalPUI->label()->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-		normalPUI->label()->setText(QStringLiteral("<a href=\"%1\">%2</a>").arg(i).arg(normalPUI->label()->text()));
-		normalPUI->label()->setToolTip(tr("Click here to align plane normal with %1 axis").arg(axesNames[i]));
-		connect(normalPUI->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onXYZNormal);
-		gridlayout->addWidget(normalPUI->label(), i + 3, 0);
-		gridlayout->addLayout(normalPUI->createFieldLayout(), i + 3, 1);
+		_normalPUI[i] = new Vector3ParameterUI(this, PROPERTY_FIELD(SliceModifier::normalController), i);
+		_normalPUI[i]->label()->setTextFormat(Qt::RichText);
+		_normalPUI[i]->label()->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+		connect(_normalPUI[i]->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onAlignNormalWidthAxis);
+		gridlayout->addWidget(_normalPUI[i]->label(), i + 3, 0);
+		gridlayout->addLayout(_normalPUI[i]->createFieldLayout(), i + 3, 1);
 	}
+	connect(_reducedCoordinatesPUI->buttonFalse(), &QAbstractButton::toggled, this, &SliceModifierEditor::updateCoordinateLabels);
+	updateCoordinateLabels();
 
 	// Slice width parameter.
 	FloatParameterUI* widthPUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::widthController));
@@ -156,6 +155,23 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 }
 
 /******************************************************************************
+* Is called when the selected type of plane normal coordinates have changed.
+******************************************************************************/
+void SliceModifierEditor::updateCoordinateLabels()
+{
+	static const QString cartesianAxesNames[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
+	static const QString millerAxesNames[3] = { QStringLiteral("h"), QStringLiteral("k"), QStringLiteral("l") };
+
+	for(int i = 0; i < 3; i++) {
+		const QString& axisName = 
+			_reducedCoordinatesPUI->buttonFalse()->isChecked() ? 
+			cartesianAxesNames[i] : millerAxesNames[i];
+		_normalPUI[i]->label()->setText(QStringLiteral("<a href=\"%1\">Normal (%2)</a>").arg(i).arg(axisName));
+		_normalPUI[i]->label()->setToolTip(tr("Click here to align plane normal with %1 axis").arg(axisName));
+	}
+}
+
+/******************************************************************************
 * Is called when the user switches between Cartesian and reduced cell coordinates.
 ******************************************************************************/
 void SliceModifierEditor::onCoordinateTypeChanged()
@@ -176,19 +192,25 @@ void SliceModifierEditor::onCoordinateTypeChanged()
 		plane.dist = mod->distanceController()->getFloatValue(mod->dataset()->animationSettings()->time(), validityInterval);
 
 	// Automatically convert current plane equation to/from reduced coordinates.
-	if(mod->reducedCoordinates())
+	if(mod->reducedCoordinates()) {
+		plane.normal.normalizeSafely();
 		plane = cell->reciprocalCellMatrix() * plane;
-	else
+	}
+	else {
+		FloatType lengthSq = plane.normal.squaredLength();
+		if(lengthSq != 0)
+			plane.normal /= lengthSq;
 		plane = cell->cellMatrix() * plane;
+	}
 
 	mod->setNormal(plane.normal);
 	mod->setDistance(plane.dist);
 }
 
 /******************************************************************************
-* Aligns the normal of the slicing plane with the X, Y, or Z axis.
+* Aligns the normal of the slicing plane with one of the coordinate axes.
 ******************************************************************************/
-void SliceModifierEditor::onXYZNormal(const QString& link)
+void SliceModifierEditor::onAlignNormalWidthAxis(const QString& link)
 {
 	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 	if(!mod) return;
@@ -314,12 +336,17 @@ void SliceModifierEditor::onCenterOfBox()
 	const PipelineFlowState& input = getModifierInput();
 	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 
-		Point3 centerPoint;
-		if(!mod->reducedCoordinates())
-			centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
-		else
-			centerPoint = Point3(0.5, 0.5, 0.5);
-		FloatType centerDistance = mod->normal().safelyNormalized().dot(centerPoint - Point3::Origin());
+		FloatType centerDistance;
+		if(!mod->reducedCoordinates()) {
+			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+			centerDistance = mod->normal().safelyNormalized().dot(centerPoint - Point3::Origin());
+		}
+		else {
+			if(!mod->normal().isZero())
+				centerDistance = mod->normal().dot(Vector3(0.5, 0.5, 0.5));
+			else
+				centerDistance = mod->distance();
+		}
 
 		undoableTransaction(tr("Set plane position"), [mod, centerDistance]() {
 			mod->setDistance(centerDistance);
@@ -446,12 +473,14 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 				localPlane = cell->inverseMatrix() * localPlane;
 			}
 		}
+		else {
+			localPlane.normalizePlane();
+		}
 
 		// Flip new plane orientation if necessary to align it with old orientation.
 		if(localPlane.normal.dot(mod->normal()) < 0)
 			localPlane = -localPlane;
 
-		localPlane.normalizePlane();
 		UndoableTransaction::handleExceptions(mod->dataset()->undoStack(), tr("Align plane to points"), [mod, &localPlane]() {
 			mod->setNormal(localPlane.normal);
 			mod->setDistance(localPlane.dist);

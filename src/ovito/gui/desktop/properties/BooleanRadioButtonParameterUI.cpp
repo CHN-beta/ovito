@@ -142,16 +142,25 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 		undoableTransaction(tr("Change parameter"), [this]() {
 			int id = buttonGroup()->checkedId();
 			if(id != -1) {
+				QVariant oldval;
 				if(propertyName()) {
-					if(!editObject()->setProperty(propertyName(), (bool)id)) {
-						OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-					}
+					oldval = editObject()->property(propertyName());
 				}
 				else if(propertyField()) {
-					editor()->changePropertyFieldValue(*propertyField(), (bool)id);
+					oldval = editObject()->getPropertyFieldValue(*propertyField());
+				}
+				if((bool)id != oldval.toBool()) {
+					if(propertyName()) {
+						if(!editObject()->setProperty(propertyName(), (bool)id)) {
+							OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
+						}
+					}
+					else if(propertyField()) {
+						editor()->changePropertyFieldValue(*propertyField(), (bool)id);
+					}
+					Q_EMIT valueEntered();
 				}
 			}
-			Q_EMIT valueEntered();
 		});
 	}
 }

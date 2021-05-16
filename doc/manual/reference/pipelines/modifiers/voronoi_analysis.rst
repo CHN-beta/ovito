@@ -107,15 +107,7 @@ Edge length threshold
 Generate neighbor bonds
   If this option is enabled, the modifier generates :ref:`bonds <scene_objects.bonds>` between neighboring particles that share a Voronoi face.
   A bond is generated for every Voronoi face whose area is larger than the face area threshold and which has at least three edges
-  longer than the specified edge length threshold.
-
-  .. caution:: 
-  
-    Bonds in periodic simulation cells are computed using the minimum image convention,
-    which requires that the cell is at least twice as large in each periodic direction as the
-    longest neighbor bond. In cases where the cell is shorter, the generated bonds may be incorrect!
-    You can work around this limitation by applying a :ref:`particles.modifiers.show_periodic_images` 
-    modifier to small periodic simulation cells.
+  longer than the edge length threshold.
 
 Use particle radii
   Lets the modifier compute the poly-disperse Voronoi tessellation, which takes into account the radii of particles.

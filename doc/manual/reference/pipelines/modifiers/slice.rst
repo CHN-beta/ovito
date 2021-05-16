@@ -29,26 +29,29 @@ Alternatively, the modifier can cut out a slab of a given thickness from the str
 Parameters
 """"""""""
 
-Cartesian / reduced cell coordinates
-  Selects whether the `Distance` and `Normal` parameters are specified in 
-  Cartesian space (i.e. global simulation coordinate system) or in reduced simulation cell space. The latter allows you to specify
-  the cutting plane's orientation in terms of the reciprocal cell vectors (Miller indices) and relative to the cell's origin. 
+Cartesian coordinates / Miller indices
+  Selects whether the `Distance` and `Normal` parameters are specified in terms of
+  the global Cartesian coordinate system or in `reciprocal cell space <https://en.wikipedia.org/wiki/Miller_index>`__. 
 
 Distance
-  The (signed) distance of the cutting plane from the coordinate origin
-  measured parallel to the plane normal. If `Cartesian` mode is active,
-  the origin is the point (0,0,0) of the gloabl simulation coordinate system.
-  In `Reduced cell coordinates`, the origin is the corner of the simulation cell. 
+  The (signed) distance of the cutting plane from the origin measured parallel to the plane normal. 
+  In `Cartesian` mode, the origin is the point (0,0,0) of the global simulation coordinate system
+  and the distance is specified in simulation units of length. In `Miller index` mode, the
+  plane's distance is measured from the origin of the simulation cell and specified in terms of the interplanar spacing :math:`d_{\mathrm{hkl}}`,
+  which depends on the entered Miller indices. 
 
-Normal (X,Y,Z)
+Normal
   The three components of the plane's normal vector, which defines the orientation of the plane. 
   This vector does not have to be a unit vector. Note that you can click on the blue labels
-  next to each input field to reset the vector to point along the corresponding coordinate axis.
+  next to each input field to reset the vector to point along the corresponding axis.
+  In `Cartesian` mode, the normal vector is specified in Cartesion coordinates of the global simulation coordinate system.
+  In `Miller index` mode, the normal vector must be specified `in terms of the reciprocal lattice vectors <https://en.wikipedia.org/wiki/Miller_index>`__ (inverse 
+  simulation cell matrix).
 
 Slab width
   Specifies the width of the slab to cut out from the input structure.
   If this value is zero (the default), everything on one side of the
-  cutting plane is deleted. If `slab width` is set to a positive value, 
+  cutting plane is deleted. If `slab width` is set to a positive value (measured in simulation units of length), 
   a slice of the given thickness is cut out.
 
 Reverse orientation

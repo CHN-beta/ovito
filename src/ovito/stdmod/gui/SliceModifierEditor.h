@@ -59,8 +59,8 @@ protected Q_SLOTS:
 	/// Aligns the current viewing direction to the slicing plane.
 	void onAlignViewToPlane();
 
-	/// Aligns the normal of the slicing plane with the X, Y, or Z axis.
-	void onXYZNormal(const QString& link);
+	/// Aligns the normal of the slicing plane with one of the coordinate axes.
+	void onAlignNormalWidthAxis(const QString& link);
 
 	/// Moves the plane to the center of the simulation box.
 	void onCenterOfBox();
@@ -68,10 +68,15 @@ protected Q_SLOTS:
 	/// Is called when the user switches between Cartesian and reduced cell coordinates.
 	void onCoordinateTypeChanged();
 
+	/// Is called when the selected type of plane normal coordinates have changed.
+	void updateCoordinateLabels();
+
 private:
 
 	PickPlanePointsInputMode* _pickPlanePointsInputMode;
 	ViewportModeAction* _pickPlanePointsInputModeAction;
+	BooleanRadioButtonParameterUI* _reducedCoordinatesPUI;
+	Vector3ParameterUI* _normalPUI[3];
 };
 
 /******************************************************************************
