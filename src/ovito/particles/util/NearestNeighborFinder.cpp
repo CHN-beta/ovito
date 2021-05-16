@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,10 +57,16 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 	planeNormals[1] = simCell->cellNormalVector(1);
 	planeNormals[2] = simCell->cellNormalVector(2);
 
+	// For small simulation cells it cannot hurt much to consider more periodic images.
+	// At the very least, consider one periodic image in each direction though (when cell is orthogonal),
+	// and two periodic images if cell is shared.
+	int nimages = 200 / qBound<size_t>(50, posProperty.size(), 200);
+	if(nimages < 2 && !simCell->isAxisAligned()) nimages = 2;
+
 	// Create list of periodic image shift vectors.
-	int nx = simCell->hasPbc(0) ? 1 : 0;
-	int ny = simCell->hasPbc(1) ? 1 : 0;
-	int nz = simCell->hasPbc(2) ? 1 : 0;
+	int nx = simCell->hasPbc(0) ? nimages : 0;
+	int ny = simCell->hasPbc(1) ? nimages : 0;
+	int nz = simCell->hasPbc(2) ? nimages : 0;
 	for(int iz = -nz; iz <= nz; iz++) {
 		for(int iy = -ny; iy <= ny; iy++) {
 			for(int ix = -nx; ix <= nx; ix++) {
@@ -68,7 +74,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 			}
 		}
 	}
-	// Sort PBC images by distance from the master image.
+	// Sort PBC images by distance from the primary image.
 	std::sort(pbcImages.begin(), pbcImages.end(), [](const Vector3& a, const Vector3& b) {
 		return a.squaredLength() < b.squaredLength();
 	});

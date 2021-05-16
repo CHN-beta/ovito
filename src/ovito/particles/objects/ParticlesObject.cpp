@@ -506,15 +506,21 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
 		if(type == ColorProperty) {
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				OVITO_ASSERT(particles->elementCount() == particleCount);
 				ConstPropertyPtr property = particles->inputParticleColors();
-				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				OVITO_ASSERT(property);
+				OVITO_ASSERT(property->size() == particleCount);
+				OVITO_ASSERT(property->type() == ColorProperty);
 				return std::move(property).makeMutable();
 			}
 		}
 		else if(type == RadiusProperty) {
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath.back())) {
+				OVITO_ASSERT(particles->elementCount() == particleCount);
 				ConstPropertyPtr property = particles->inputParticleRadii();
-				OVITO_ASSERT(property && property->size() == particleCount && property->type() == ColorProperty);
+				OVITO_ASSERT(property);
+				OVITO_ASSERT(property->size() == particleCount);
+				OVITO_ASSERT(property->type() == RadiusProperty);
 				return std::move(property).makeMutable();
 			}
 		}

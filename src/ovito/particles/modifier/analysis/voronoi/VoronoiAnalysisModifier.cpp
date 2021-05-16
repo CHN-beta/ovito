@@ -305,6 +305,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 						faceOrder++;
 					v.ed[i][j] = -1 - k;
 					int l = v.cycle_up(v.ed[i][v.nu[i]+j], k);
+					Vector3 normal = Vector3::Zero();
+					Vector3 face_vertex0(v.pts[3*i], v.pts[3*i+1], v.pts[3*i+2]); // Coordinates of one vertex of the current face.
 					do {
 						int m = v.ed[k][l];
 						if(_polyhedraMesh) {
@@ -318,9 +320,11 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 								faceOrder++;
 						}
 						else faceOrder++;
-						if(faceAreaThreshold != 0 || _polyhedraMesh) {
+						if(faceAreaThreshold != 0 || _polyhedraMesh || _computeBonds) {
 							Vector3 w(v.pts[3*m] - v.pts[3*i], v.pts[3*m+1] - v.pts[3*i+1], v.pts[3*m+2] - v.pts[3*i+2]);
-							area += d.cross(w).length() / 8;
+							Vector3 n = d.cross(w);
+							normal += n;
+							area += n.length() / 8;
 							d = w;
 						}
 						v.ed[k][l] = -1 - m;
@@ -337,13 +341,18 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 						faceOrder--;
 						if(maxFaceOrders() && faceOrder < FaceOrderStorageLimit)
 							localVoronoiIndex[faceOrder]++;
-						if(_computeBonds && neighbor_id >= 0 && neighbor_id != index) {
+						if(_computeBonds && neighbor_id >= 0 && normal != Vector3::Zero()) {
 							OVITO_ASSERT(neighbor_id < _positions->size());
+							FloatType dot = face_vertex0.dot(normal);
+							normal *= std::abs(dot) / normal.squaredLength();
 							Vector3 delta = positionsArray[index] - positionsArray[neighbor_id];
+							Vector3 diff = delta - normal;
 							Vector3I pbcShift = Vector3I::Zero();
 							for(size_t dim = 0; dim < 3; dim++) {
-								if(_simCell->hasPbc(dim))
-									pbcShift[dim] = (int)std::floor(_simCell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+								if(_simCell->hasPbc(dim)) {
+									pbcShift[dim] = (int)std::round(_simCell->inverseMatrix().prodrow(diff, dim));
+									OVITO_ASSERT(std::abs((FloatType)pbcShift[dim] - _simCell->inverseMatrix().prodrow(diff, dim)) <= 1e-9);
+								}
 							}
 							Bond bond = { index, (size_t)neighbor_id, pbcShift };
 							if(!bond.isOdd()) {

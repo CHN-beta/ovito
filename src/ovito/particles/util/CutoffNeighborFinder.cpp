@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -103,25 +103,26 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		FloatType distSq = p.squaredLength();
 		for(size_t dim = 0; dim < 3; dim++) {
 			// Compute shortest distance from point to edge.
-			FloatType t = -p.dot(binCell.column(dim)) / binCell.column(dim).squaredLength();
-			if(t > 0 && t < 1)
+			FloatType t = p.dot(binCell.column(dim)) / binCell.column(dim).squaredLength();
+			if(t > 0.0 && t < 1.0)
 				distSq = std::min(distSq, (p - t * binCell.column(dim)).squaredLength());
 			// Compute shortest distance from point to cell face.
-			const Vector3& u = binCell.column((dim+1)%3);
-			const Vector3& v = binCell.column((dim+2)%3);
 			const Vector3& n = planeNormals[dim];
-			OVITO_ASSERT(std::abs(n.squaredLength() - 1.0) < FLOATTYPE_EPSILON);
 			t = n.dot(p);
-			Vector3 p0 = p - t * n;
-			FloatType a = u.dot(v)*p0.dot(v) - v.squaredLength()*p0.dot(u);
-			FloatType b = u.dot(v)*p0.dot(u) - u.squaredLength()*p0.dot(v);
-			FloatType denom = u.dot(v);
-			denom *= denom;
-			denom -= u.squaredLength()*v.squaredLength();
-			a /= denom;
-			b /= denom;
-			if(a > 0 && b > 0 && a < 1 && b < 1)
-				distSq = std::min(distSq, t*t);
+			if(t*t < distSq) {
+				Vector3 p0 = p - t * n;
+				const Vector3& u = binCell.column((dim+1)%3);
+				const Vector3& v = binCell.column((dim+2)%3);
+				FloatType a = u.dot(v)*p0.dot(v) - v.squaredLength()*p0.dot(u);
+				FloatType b = u.dot(v)*p0.dot(u) - u.squaredLength()*p0.dot(v);
+				FloatType denom = u.dot(v);
+				denom *= denom;
+				denom -= u.squaredLength()*v.squaredLength();
+				a /= denom;
+				b /= denom;
+				if(a > 0 && b > 0 && a < 1 && b < 1)
+					distSq = t*t;
+			}
 		}
 		return distSq;
 	};
@@ -136,10 +137,10 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		for(int ix = -stencilRadiusX; ix <= stencilRadiusX; ix++) {
 			for(int iy = -stencilRadiusY; iy <= stencilRadiusY; iy++) {
 				for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
-					if(promise && promise->isCanceled())
-						return false;
 					if(std::abs(ix) < stencilRadius && std::abs(iy) < stencilRadius && std::abs(iz) < stencilRadius)
 						continue;
+					if(promise && promise->isCanceled())
+						return false;
 					FloatType shortestDistance = FLOATTYPE_MAX;
 					for(int dx = -1; dx <= 1; dx++) {
 						for(int dy = -1; dy <= 1; dy++) {
