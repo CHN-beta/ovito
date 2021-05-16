@@ -45,6 +45,10 @@ void main()
 	// Compute line direction vector.
 	vec2 delta = normalize(proj_to.xy / proj_to.w - proj_from.xy / proj_from.w) * line_thickness;
 
+	// Correct direction vector if one vertex is behind the viewer the other one in front.
+	if(proj_to.w * proj_from.w < 0.0)
+		delta = -delta;
+
 	// Take into account aspect ratio of viewport:
 	delta.y *= inverse_viewport_size.x / inverse_viewport_size.y;
 
