@@ -29,7 +29,7 @@ Alternatively, the modifier can cut out a slab of a given thickness from the str
 Parameters
 """"""""""
 
-Cartesian coordinates / Miller indices
+Cartesian coordinates / Miller indices |ovito-pro|
   Selects whether the `Distance` and `Normal` parameters are specified in terms of
   the global Cartesian coordinate system or in `reciprocal cell space <https://en.wikipedia.org/wiki/Miller_index>`__. 
 
@@ -44,7 +44,7 @@ Normal
   The three components of the plane's normal vector, which defines the orientation of the plane. 
   This vector does not have to be a unit vector. Note that you can click on the blue labels
   next to each input field to reset the vector to point along the corresponding axis.
-  In `Cartesian` mode, the normal vector is specified in Cartesion coordinates of the global simulation coordinate system.
+  In `Cartesian` mode, the normal vector is specified in Cartesian coordinates of the global simulation coordinate system.
   In `Miller index` mode, the normal vector must be specified `in terms of the reciprocal lattice vectors <https://en.wikipedia.org/wiki/Miller_index>`__ (inverse 
   simulation cell matrix).
 

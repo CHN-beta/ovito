@@ -475,36 +475,37 @@ void MainWindow::openHelpTopic(const QString& helpTopicId)
 		QFile inventoryFile(helpDir.absoluteFilePath("objects.txt"));
 		if(!inventoryFile.open(QIODevice::ReadOnly | QIODevice::Text))
 			qWarning() << "WARNING: Could not open Intersphinx inventory file to resolve help topic reference:" << inventoryFile.fileName() << inventoryFile.errorString();			
-		QTextStream stream(&inventoryFile);
-		// Skip file until to the line "std:label":
-		while(!stream.atEnd()) {
-			QString line = stream.readLine();
-			if(line.startsWith("std:label"))
-				break;
-		}
-		// Now parse the link target list.
-		QString searchString = QChar('\t') + helpTopicId.midRef(7) + QChar(' ');
-		while(!stream.atEnd()) {
-			QString line = stream.readLine();
-			if(line.startsWith(searchString)) {
-				int startIndex = line.lastIndexOf(QChar(' '));
-				QString filePath = line.mid(startIndex + 1).trimmed();
-				QString anchor;
-				int anchorIndex = filePath.indexOf(QChar('#'));
-				if(anchorIndex >= 0) {
-					anchor = filePath.mid(anchorIndex + 1);
-					filePath.truncate(anchorIndex);
-				}
-				url = QUrl::fromLocalFile(helpDir.absoluteFilePath(filePath));
-				url.setFragment(anchor);
-				break;
+		else {
+			QTextStream stream(&inventoryFile);
+			// Skip file until to the line "std:label":
+			while(!stream.atEnd()) {
+				QString line = stream.readLine();
+				if(line.startsWith("std:label"))
+					break;
 			}
+			// Now parse the link target list.
+			QString searchString = QChar('\t') + helpTopicId.midRef(7) + QChar(' ');
+			while(!stream.atEnd()) {
+				QString line = stream.readLine();
+				if(line.startsWith(searchString)) {
+					int startIndex = line.lastIndexOf(QChar(' '));
+					QString filePath = line.mid(startIndex + 1).trimmed();
+					QString anchor;
+					int anchorIndex = filePath.indexOf(QChar('#'));
+					if(anchorIndex >= 0) {
+						anchor = filePath.mid(anchorIndex + 1);
+						filePath.truncate(anchorIndex);
+					}
+					url = QUrl::fromLocalFile(helpDir.absoluteFilePath(filePath));
+					url.setFragment(anchor);
+					break;
+				}
+			}
+			OVITO_ASSERT(!url.isEmpty());
 		}
-		OVITO_ASSERT(!url.isEmpty());
 	}
-	else {
-		OVITO_ASSERT(helpTopicId.isEmpty());
-		
+	
+	if(url.isEmpty()) {
 		// If no help topic has been specified, open the main index page of the user manual.
 		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
 	}

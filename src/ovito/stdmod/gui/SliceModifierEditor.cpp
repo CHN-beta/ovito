@@ -71,6 +71,11 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	sublayout->addWidget(_reducedCoordinatesPUI->buttonTrue(), 1);
 	layout->addLayout(sublayout);
 	connect(_reducedCoordinatesPUI, &BooleanRadioButtonParameterUI::valueEntered, this, &SliceModifierEditor::onCoordinateTypeChanged);
+#ifdef OVITO_BUILD_BASIC
+	_reducedCoordinatesPUI->setEnabled(false);
+	_reducedCoordinatesPUI->buttonFalse()->setText(tr("Cartesian"));
+	_reducedCoordinatesPUI->buttonTrue()->setText(_reducedCoordinatesPUI->buttonTrue()->text() + tr(" (OVITO Pro)"));
+#endif
 
 	QGridLayout* gridlayout = new QGridLayout();
 	gridlayout->setContentsMargins(0,0,0,0);
