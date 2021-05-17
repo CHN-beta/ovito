@@ -77,6 +77,7 @@ private:
 	ViewportModeAction* _pickPlanePointsInputModeAction;
 	BooleanRadioButtonParameterUI* _reducedCoordinatesPUI;
 	Vector3ParameterUI* _normalPUI[3];
+	FloatParameterUI* _distancePUI;
 };
 
 /******************************************************************************

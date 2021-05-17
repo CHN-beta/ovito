@@ -82,9 +82,9 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	gridlayout->setColumnStretch(1, 1);
 
 	// Distance parameter.
-	FloatParameterUI* distancePUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::distanceController));
-	gridlayout->addWidget(distancePUI->label(), 2, 0);
-	gridlayout->addLayout(distancePUI->createFieldLayout(), 2, 1);
+	_distancePUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::distanceController));
+	gridlayout->addWidget(_distancePUI->label(), 2, 0);
+	gridlayout->addLayout(_distancePUI->createFieldLayout(), 2, 1);
 
 	// Normal parameter.
 	for(int i = 0; i < 3; i++) {
@@ -174,6 +174,10 @@ void SliceModifierEditor::updateCoordinateLabels()
 		_normalPUI[i]->label()->setText(QStringLiteral("<a href=\"%1\">Normal (%2)</a>").arg(i).arg(axisName));
 		_normalPUI[i]->label()->setToolTip(tr("Click here to align plane normal with %1 axis").arg(axisName));
 	}
+
+	_distancePUI->label()->setText(_reducedCoordinatesPUI->buttonFalse()->isChecked()
+		? tr("Distance:")
+		: tr("<html>Distance [d<sub>hkl</sub>]:</html>"));
 }
 
 /******************************************************************************
