@@ -24,6 +24,7 @@ conda
 CPython
 crosshair
 crystallite
+Darmstadt
 dataset
 datasets
 Delaunay
@@ -65,6 +66,7 @@ Ingo
 inhomogeneous
 interatomic
 interfacial
+interplanar
 interstitials
 iso
 Iso
@@ -171,6 +173,7 @@ superquadric
 supersampling
 Tachyon
 Taubin
+Technische
 tetrahedra
 tetrahedra
 th
@@ -184,6 +187,7 @@ unchecking
 undeformed
 undercoordinated
 unitless
+Universität
 unselected
 vectorial
 vide

@@ -60,11 +60,7 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(Modifier* mo
 
 		// Determine transformation matrix.
 		AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
-		AffineTransformation tm;
-		if(mod->relativeMode())
-			tm = mod->transformationTM();
-		else
-			tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
+		const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 		if(mod->selectionOnly()) {
 			if(ConstPropertyAccess<int> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
@@ -126,15 +122,11 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
 {
 	// Determine transformation matrix.
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
-	AffineTransformation tm;
-	if(mod->relativeMode())
-		tm = mod->transformationTM();
-	else
-		tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
 
 	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
 		for(const PropertyObject* inputProperty : inputParticles->properties()) {
 			if(isTransformableProperty(inputProperty)) {
+				const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 				// Make sure we can safely modify the particles object and the vector property.
 				ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();

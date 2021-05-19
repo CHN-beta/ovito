@@ -67,7 +67,7 @@ It must accept at least the following two parameters:
 
 The :py:class:`~ovito.data.DataCollection` passed into the function by the pipeline system will initially be empty (when the function is 
 run for the first time) and your code should populate it with new data objects, typically by appending them to the :py:attr:`DataCollection.objects <ovito.data.DataCollection.objects>` list
-or by assiging them directly to specific storage fields such as the :py:attr:`~ovito.data.DataCollection.cell` field as in the example above.
+or by assigning them directly to specific storage fields such as the :py:attr:`~ovito.data.DataCollection.cell` field as in the example above.
 
 However, there is one important caveat to prepare for: The system may run your ``create()`` function multiple times, and on subsequent invocations
 the :py:class:`~ovito.data.DataCollection` won't be empty anymore. It will contain the data objects from a previous invocation. That's because the pipeline system
@@ -77,7 +77,7 @@ for example the colors and radii of particles types or the settings of :ref:`vis
 That is an aspect your ``create()`` function needs to be prepared for. It must re-use any existing data objects in the data collection instead
 of recreating them during each execution, in order to preserve the adjustments the user makes to these objects in the GUI. In the code example above, 
 the function first checks if the data collection already contains an existing :py:class:`~ovito.data.SimulationCell` and creates a new one only if 
-this is not the case. The same kind of existance check should be performed when creating a particles, bonds, particle types, etc.::
+this is not the case. The same kind of existence check should be performed when creating a particles, bonds, particle types, etc.::
 
     # Create the Particles data object only if it does not already exists from a previous run:
     if not data.particles: 

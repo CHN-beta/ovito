@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/properties/AffineTransformationParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "AffineTransformationModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -103,9 +104,21 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
 			connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, lineEdit, &QLineEdit::setEnabled);
 		}
 	}
-	layout->addWidget(new QLabel(tr("Translation:")), 4, 0, 1, 8);
 
-	relativeModeUI->buttonFalse()->setText(tr("Transform to target box:"));
+	QHBoxLayout* hboxsublayout = new QHBoxLayout();
+	hboxsublayout->setContentsMargins(0,4,0,0);
+	hboxsublayout->setSpacing(4);
+
+	hboxsublayout->addWidget(new QLabel(tr("Translation:")));
+	layout->addLayout(hboxsublayout, 4, 0, 1, 8);
+
+	BooleanParameterUI* translationReducedCoordinatesUI = new BooleanParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::translationReducedCoordinates));
+	connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, translationReducedCoordinatesUI, &BooleanParameterUI::setEnabled);
+	translationReducedCoordinatesUI->checkBox()->setText(tr("In reduced cell coordinates"));
+	hboxsublayout->addWidget(translationReducedCoordinatesUI->checkBox(), 1, Qt::AlignRight | Qt::AlignVCenter);
+	connect(translationReducedCoordinatesUI, &BooleanParameterUI::valueEntered, this, &AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged);
+
+	relativeModeUI->buttonFalse()->setText(tr("Transform to target cell:"));
 	topLayout->addWidget(relativeModeUI->buttonFalse());
 
     layout = new QGridLayout();
@@ -239,6 +252,35 @@ void AffineTransformationModifierEditor::onSpinnerDragAbort()
 }
 
 /******************************************************************************
+* Is called when the user switches between Cartesian and reduced cell coordinates for the translation vector.
+******************************************************************************/
+void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
+{
+	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(editObject());
+	if(!mod) return;
+
+	const PipelineFlowState& input = getModifierInput();
+	const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
+	if(!cell) return;
+
+	// Automatically convert translation vector to/from reduced cell coordinates.
+	AffineTransformation tm = mod->transformationTM();
+	if(mod->translationReducedCoordinates()) {
+		AffineTransformation inv;
+		if((tm * cell->matrix()).inverse(inv))
+			tm.translation() = inv * tm.translation();
+	}
+	else {
+		tm.translation() = tm * (cell->matrix() * tm.translation());
+	}
+	for(size_t dim = 0; dim < 3; dim++)
+		if(std::abs(tm.translation()[dim]) < FLOATTYPE_EPSILON) 
+			tm.translation()[dim] = 0;
+
+	mod->setTransformationTM(tm);
+}
+
+/******************************************************************************
 * Is called when the user presses the 'Enter rotation' button.
 * Displays a dialog box, which lets the user enter a rotation axis and angle.
 * Computes the rotation matrix from these parameters.
@@ -251,137 +293,145 @@ void AffineTransformationModifierEditor::onEnterRotation()
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 	dataset()->undoStack().beginCompoundOperation(tr("Set transformation matrix"));
 
-	QDialog dlg(container()->window());
-	dlg.setWindowTitle(tr("Enter rotation"));
-	QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
+	try {
+		QDialog dlg(container()->window());
+		dlg.setWindowTitle(tr("Enter rotation axis and angle"));
+		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
 
-	QGridLayout* layout = new QGridLayout();
-	layout->setContentsMargins(0,0,0,0);
-	layout->addWidget(new QLabel(tr("Rotation axis:")), 0, 0, 1, 8);
-	layout->setColumnStretch(0, 1);
-	layout->setColumnStretch(3, 1);
-	layout->setColumnStretch(6, 1);
-	layout->setColumnMinimumWidth(2, 4);
-	layout->setColumnMinimumWidth(5, 4);
-	layout->setVerticalSpacing(2);
-	layout->setHorizontalSpacing(0);
-	QLineEdit* axisEditX = new QLineEdit();
-	QLineEdit* axisEditY = new QLineEdit();
-	QLineEdit* axisEditZ = new QLineEdit();
-	SpinnerWidget* axisSpinnerX = new SpinnerWidget();
-	SpinnerWidget* axisSpinnerY = new SpinnerWidget();
-	SpinnerWidget* axisSpinnerZ = new SpinnerWidget();
-	axisSpinnerX->setTextBox(axisEditX);
-	axisSpinnerY->setTextBox(axisEditY);
-	axisSpinnerZ->setTextBox(axisEditZ);
-	axisSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
-	axisSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
-	axisSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
-	layout->addWidget(axisEditX, 1, 0);
-	layout->addWidget(axisSpinnerX, 1, 1);
-	layout->addWidget(axisEditY, 1, 3);
-	layout->addWidget(axisSpinnerY, 1, 4);
-	layout->addWidget(axisEditZ, 1, 6);
-	layout->addWidget(axisSpinnerZ, 1, 7);
-	layout->addWidget(new QLabel(tr("Angle:")), 2, 0, 1, 8);
-	QLineEdit* angleEdit = new QLineEdit();
-	SpinnerWidget* angleSpinner = new SpinnerWidget();
-	angleSpinner->setTextBox(angleEdit);
-	angleSpinner->setUnit(mod->dataset()->unitsManager().angleUnit());
-	layout->addWidget(angleEdit, 3, 0);
-	layout->addWidget(angleSpinner, 3, 1);
-	layout->addWidget(new QLabel(tr("Center of rotation:")), 4, 0, 1, 8);
-	QLineEdit* centerEditX = new QLineEdit();
-	QLineEdit* centerEditY = new QLineEdit();
-	QLineEdit* centerEditZ = new QLineEdit();
-	SpinnerWidget* centerSpinnerX = new SpinnerWidget();
-	SpinnerWidget* centerSpinnerY = new SpinnerWidget();
-	SpinnerWidget* centerSpinnerZ = new SpinnerWidget();
-	centerSpinnerX->setTextBox(centerEditX);
-	centerSpinnerY->setTextBox(centerEditY);
-	centerSpinnerZ->setTextBox(centerEditZ);
-	centerSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
-	centerSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
-	centerSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
-	layout->addWidget(centerEditX, 5, 0);
-	layout->addWidget(centerSpinnerX, 5, 1);
-	layout->addWidget(centerEditY, 5, 3);
-	layout->addWidget(centerSpinnerY, 5, 4);
-	layout->addWidget(centerEditZ, 5, 6);
-	layout->addWidget(centerSpinnerZ, 5, 7);
-	mainLayout->addLayout(layout);
+		QGridLayout* layout = new QGridLayout();
+		layout->setContentsMargins(0,0,0,0);
+		layout->addWidget(new QLabel(tr("Rotation axis:")), 0, 0, 1, 8);
+		layout->setColumnStretch(0, 1);
+		layout->setColumnStretch(3, 1);
+		layout->setColumnStretch(6, 1);
+		layout->setColumnMinimumWidth(2, 4);
+		layout->setColumnMinimumWidth(5, 4);
+		layout->setVerticalSpacing(2);
+		layout->setHorizontalSpacing(0);
+		QLineEdit* axisEditX = new QLineEdit();
+		QLineEdit* axisEditY = new QLineEdit();
+		QLineEdit* axisEditZ = new QLineEdit();
+		SpinnerWidget* axisSpinnerX = new SpinnerWidget();
+		SpinnerWidget* axisSpinnerY = new SpinnerWidget();
+		SpinnerWidget* axisSpinnerZ = new SpinnerWidget();
+		axisSpinnerX->setTextBox(axisEditX);
+		axisSpinnerY->setTextBox(axisEditY);
+		axisSpinnerZ->setTextBox(axisEditZ);
+		axisSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
+		axisSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
+		axisSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
+		layout->addWidget(axisEditX, 1, 0);
+		layout->addWidget(axisSpinnerX, 1, 1);
+		layout->addWidget(axisEditY, 1, 3);
+		layout->addWidget(axisSpinnerY, 1, 4);
+		layout->addWidget(axisEditZ, 1, 6);
+		layout->addWidget(axisSpinnerZ, 1, 7);
+		layout->addWidget(new QLabel(tr("Angle:")), 2, 0, 1, 8);
+		QLineEdit* angleEdit = new QLineEdit();
+		SpinnerWidget* angleSpinner = new SpinnerWidget();
+		angleSpinner->setTextBox(angleEdit);
+		angleSpinner->setUnit(mod->dataset()->unitsManager().angleUnit());
+		layout->addWidget(angleEdit, 3, 0);
+		layout->addWidget(angleSpinner, 3, 1);
+		layout->addWidget(new QLabel(tr("Center of rotation:")), 4, 0, 1, 8);
+		QLineEdit* centerEditX = new QLineEdit();
+		QLineEdit* centerEditY = new QLineEdit();
+		QLineEdit* centerEditZ = new QLineEdit();
+		SpinnerWidget* centerSpinnerX = new SpinnerWidget();
+		SpinnerWidget* centerSpinnerY = new SpinnerWidget();
+		SpinnerWidget* centerSpinnerZ = new SpinnerWidget();
+		centerSpinnerX->setTextBox(centerEditX);
+		centerSpinnerY->setTextBox(centerEditY);
+		centerSpinnerZ->setTextBox(centerEditZ);
+		centerSpinnerX->setUnit(mod->dataset()->unitsManager().worldUnit());
+		centerSpinnerY->setUnit(mod->dataset()->unitsManager().worldUnit());
+		centerSpinnerZ->setUnit(mod->dataset()->unitsManager().worldUnit());
+		layout->addWidget(centerEditX, 5, 0);
+		layout->addWidget(centerSpinnerX, 5, 1);
+		layout->addWidget(centerEditY, 5, 3);
+		layout->addWidget(centerSpinnerY, 5, 4);
+		layout->addWidget(centerEditZ, 5, 6);
+		layout->addWidget(centerSpinnerZ, 5, 7);
+		mainLayout->addLayout(layout);
 
-	// Decompose current transformation matrix into axis-angle form.
-	Rotation rot(mod->transformationTM());
-	angleSpinner->setFloatValue(rot.angle());
-	axisSpinnerX->setFloatValue(rot.axis().x());
-	axisSpinnerY->setFloatValue(rot.axis().y());
-	axisSpinnerZ->setFloatValue(rot.axis().z());
-	Matrix3 r = mod->transformationTM().linear();
-	r(0,0) -= 1;
-	r(1,1) -= 1;
-	r(2,2) -= 1;
-	Plane3 p1, p2;
-	size_t i = 0;
-	for(i = 0; i < 3; i++)
-		if(!r.row(i).isZero()) {
-			p1 = Plane3(r.row(i), -mod->transformationTM()(i, 3));
-			i++;
-			break;
+		// Decompose current transformation matrix into axis-angle form.
+		const AffineTransformation tm = mod->effectiveAffineTransformation(getModifierInput());
+		Rotation rot(tm);
+		angleSpinner->setFloatValue(rot.angle());
+		axisSpinnerX->setFloatValue(rot.axis().x());
+		axisSpinnerY->setFloatValue(rot.axis().y());
+		axisSpinnerZ->setFloatValue(rot.axis().z());
+		Matrix3 r = tm.linear();
+		r(0,0) -= 1;
+		r(1,1) -= 1;
+		r(2,2) -= 1;
+		Plane3 p1, p2;
+		size_t i = 0;
+		for(i = 0; i < 3; i++)
+			if(!r.row(i).isZero()) {
+				p1 = Plane3(r.row(i), -tm(i, 3));
+				i++;
+				break;
+			}
+		for(; i < 3; i++)
+			if(!r.row(i).isZero()) {
+				p2 = Plane3(r.row(i), -tm(i, 3));
+				break;
+			}
+		if(i != 3) {
+			p1.normalizePlane();
+			p2.normalizePlane();
+			FloatType d = p1.normal.dot(p2.normal);
+			FloatType denom = (FloatType(1) - d*d);
+			if(std::abs(denom) > FLOATTYPE_EPSILON) {
+				FloatType c1 = (p1.dist  - p2.dist * d) / denom;
+				FloatType c2 = (p2.dist  - p1.dist * d) / denom;
+				Vector3 center = c1 * p1.normal + c2 * p2.normal;
+				centerSpinnerX->setFloatValue(center.x());
+				centerSpinnerY->setFloatValue(center.y());
+				centerSpinnerZ->setFloatValue(center.z());
+			}
 		}
-	for(; i < 3; i++)
-		if(!r.row(i).isZero()) {
-			p2 = Plane3(r.row(i), -mod->transformationTM()(i, 3));
-			break;
-		}
-	if(i != 3) {
-		p1.normalizePlane();
-		p2.normalizePlane();
-		FloatType d = p1.normal.dot(p2.normal);
-		FloatType denom = (FloatType(1) - d*d);
-		if(std::abs(denom) > FLOATTYPE_EPSILON) {
-			FloatType c1 = (p1.dist  - p2.dist * d) / denom;
-			FloatType c2 = (p2.dist  - p1.dist * d) / denom;
-			Vector3 center = c1 * p1.normal + c2 * p2.normal;
+		else {
+			const Point3 center = dataset()->viewportConfig()->orbitCenter();
 			centerSpinnerX->setFloatValue(center.x());
 			centerSpinnerY->setFloatValue(center.y());
 			centerSpinnerZ->setFloatValue(center.z());
 		}
-	}
-	else {
-		const Point3 center = dataset()->viewportConfig()->orbitCenter();
-		centerSpinnerX->setFloatValue(center.x());
-		centerSpinnerY->setFloatValue(center.y());
-		centerSpinnerZ->setFloatValue(center.z());
-	}
 
-	auto updateMatrix = [mod, angleSpinner, axisSpinnerX, axisSpinnerY, axisSpinnerZ, centerSpinnerX, centerSpinnerY, centerSpinnerZ]() {
-		Vector3 axis(axisSpinnerX->floatValue(), axisSpinnerY->floatValue(), axisSpinnerZ->floatValue());
-		if(axis == Vector3::Zero()) axis = Vector3(0,0,1);
-		Vector3 center(centerSpinnerX->floatValue(), centerSpinnerY->floatValue(), centerSpinnerZ->floatValue());
-		Rotation rot(axis, angleSpinner->floatValue());
-		AffineTransformation tm = AffineTransformation::translation(center) * AffineTransformation::rotation(rot) * AffineTransformation::translation(-center);
-		mod->dataset()->undoStack().resetCurrentCompoundOperation();
-		mod->setTransformationTM(tm);
-	};
+		auto updateMatrix = [mod, angleSpinner, axisSpinnerX, axisSpinnerY, axisSpinnerZ, centerSpinnerX, centerSpinnerY, centerSpinnerZ]() {
+			Vector3 axis(axisSpinnerX->floatValue(), axisSpinnerY->floatValue(), axisSpinnerZ->floatValue());
+			if(axis == Vector3::Zero()) axis = Vector3(0,0,1);
+			Vector3 center(centerSpinnerX->floatValue(), centerSpinnerY->floatValue(), centerSpinnerZ->floatValue());
+			Rotation rot(axis, angleSpinner->floatValue());
+			AffineTransformation tm = AffineTransformation::translation(center) * AffineTransformation::rotation(rot) * AffineTransformation::translation(-center);
+			mod->dataset()->undoStack().resetCurrentCompoundOperation();
+			mod->setTranslationReducedCoordinates(false);
+			mod->setTransformationTM(tm);
+		};
 
-	connect(angleSpinner, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(axisSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(axisSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(axisSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(centerSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(centerSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-	connect(centerSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(angleSpinner, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(axisSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(axisSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(axisSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(centerSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(centerSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+		connect(centerSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
 
-	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-	mainLayout->addWidget(buttonBox);
-	if(dlg.exec() == QDialog::Accepted) {
-		dataset()->undoStack().endCompoundOperation();
+		QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+		connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+		connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+		mainLayout->addWidget(buttonBox);
+		if(dlg.exec() == QDialog::Accepted) {
+			dataset()->undoStack().endCompoundOperation();
+		}
+		else {
+			dataset()->undoStack().endCompoundOperation(false);
+		}
 	}
-	else {
+	catch(const Exception& ex) {
 		dataset()->undoStack().endCompoundOperation(false);
+		ex.reportError();
 	}
 }
 

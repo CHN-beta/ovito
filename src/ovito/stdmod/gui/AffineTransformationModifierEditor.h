@@ -63,6 +63,9 @@ private Q_SLOTS:
 	/// This method updates the displayed matrix values.
 	void updateUI();
 
+	/// Is called when the user switches between Cartesian and reduced cell coordinates for the translation vector.
+	void onReducedCoordinatesOptionChanged();
+
 	/// Is called when the user presses the 'Enter rotation' button.
 	void onEnterRotation();
 

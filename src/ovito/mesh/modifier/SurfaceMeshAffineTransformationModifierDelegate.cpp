@@ -38,15 +38,11 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 {
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
 
-	AffineTransformation tm;
-	if(mod->relativeMode())
-		tm = mod->transformationTM();
-	else
-		tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
-
 	for(const DataObject* obj : state.data()->objects()) {
 		// Process SurfaceMesh objects.
 		if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
+			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+			
 			// Make sure the input mesh data structure is valid. 
 			existingSurface->verifyMeshIntegrity();
 			// Create a copy of the SurfaceMesh.
@@ -80,6 +76,8 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 		}
 		// Process TriangleMesh objects.
 		else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
+			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+
 			// Create a copy of the TriMeshObject.
 			TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
 			const TriMeshPtr& mesh = newMeshObj->modifiableMesh();

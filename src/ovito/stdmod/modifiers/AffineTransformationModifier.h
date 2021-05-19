@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,6 +118,12 @@ public:
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 
+	/// Returns the effective affine transformation matrix to be applied to points.
+	/// It depends on the linear matrix, the translation vector, relative/target cell mode, and 
+	/// whether the translation is specified in terms of reduced cell coordinates.
+	/// Thus, the affine transformation may depend on the current simulation cell shape.
+	AffineTransformation effectiveAffineTransformation(const PipelineFlowState& state) const;
+
 protected:
 
 	/// This property fields stores the transformation matrix (used in 'relative' mode).
@@ -132,6 +138,9 @@ protected:
 	/// This controls whether a relative transformation is applied to the simulation box or
 	/// the absolute cell geometry has been specified.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, relativeMode, setRelativeMode);
+
+	/// Controls whether the translation vector is specified in reduced cell coordinated.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, translationReducedCoordinates, setTranslationReducedCoordinates);
 };
 
 }	// End of namespace

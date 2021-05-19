@@ -21,7 +21,7 @@ In order to run an IMD simulation it is necessary to have a molecular dynamics p
 To date, the following simulation codes are available:
 
   * `LAMMPS <https://lammps.sandia.gov/doc/fix_imd.html>`__
-  * `HOOMD <https://hoomd-blue.readthedocs.io/en/stable/module-hoomd-analyze.html#hoomd.analyze.imd>`__
+  * `HOOMD-blue <https://hoomd-blue.readthedocs.io/en/stable/module-hoomd-analyze.html#hoomd.analyze.imd>`__
   * `NAMD <http://www.ks.uiuc.edu/Research/namd/>`__
 
 Follow the links to learn more about how to set up an IMD simulation in the molecular dynamics program.

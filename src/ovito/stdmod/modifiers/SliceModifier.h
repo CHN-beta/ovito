@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -144,7 +144,7 @@ protected:
 	/// Enables the visualization of the cutting plane.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
 
-	/// Controls whether the plane is specified in reduced cell coordinates.
+	/// Controls whether the plane is specified in reduced cell coordinates (Miller indices).
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
 
 	/// The vis element for plane.

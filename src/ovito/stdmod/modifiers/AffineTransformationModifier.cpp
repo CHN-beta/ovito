@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,10 +35,12 @@ DEFINE_PROPERTY_FIELD(AffineTransformationModifier, transformationTM);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, selectionOnly);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, targetCell);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, relativeMode);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, translationReducedCoordinates);
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, transformationTM, "Transformation");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, selectionOnly, "Transform selected elements only");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, targetCell, "Target cell shape");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, relativeMode, "Relative transformation");
+SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, translationReducedCoordinates, "Relative transformation");
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifierDelegate);
 IMPLEMENT_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
@@ -50,7 +52,8 @@ AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : M
 	_selectionOnly(false),
 	_transformationTM(AffineTransformation::Identity()),
 	_targetCell(AffineTransformation::Zero()),
-	_relativeMode(true)
+	_relativeMode(true),
+	_translationReducedCoordinates(false)
 {
 }
 
@@ -99,6 +102,28 @@ void AffineTransformationModifier::evaluateSynchronous(TimePoint time, ModifierA
 }
 
 /******************************************************************************
+* Returns the effective affine transformation matrix to be applied to points.
+* It depends on the linear matrix, the translation vector, relative/target cell mode, and 
+* whether the translation is specified in terms of reduced cell coordinates.
+* Thus, the affine transformation may depend on the current simulation cell shape.
+******************************************************************************/
+AffineTransformation AffineTransformationModifier::effectiveAffineTransformation(const PipelineFlowState& state) const
+{
+	AffineTransformation tm;
+	if(relativeMode()) {
+		tm = transformationTM();
+		if(translationReducedCoordinates()) {
+			tm.translation() = tm * (state.expectObject<SimulationCellObject>()->matrix() * tm.translation());
+		}	
+	}
+	else {
+		tm = targetCell() * state.expectObject<SimulationCellObject>()->inverseMatrix();
+	}
+
+	return tm;
+}
+
+/******************************************************************************
 * Asks the metaclass which data objects in the given input data collection the
 * modifier delegate can operate on.
 ******************************************************************************/
@@ -117,12 +142,7 @@ QVector<DataObjectReference> SimulationCellAffineTransformationModifierDelegate:
 PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
-
-	AffineTransformation tm;
-	if(mod->relativeMode())
-		tm = mod->transformationTM();
-	else
-		tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
+	const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 	// Transform the SimulationCellObject.
 	if(const SimulationCellObject* inputCell = state.getObject<SimulationCellObject>()) {

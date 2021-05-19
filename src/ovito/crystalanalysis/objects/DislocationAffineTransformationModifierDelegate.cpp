@@ -52,14 +52,9 @@ PipelineStatus DislocationAffineTransformationModifierDelegate::apply(Modifier* 
 	if(mod->selectionOnly())
 		return PipelineStatus::Success;
 
-	AffineTransformation tm;
-	if(mod->relativeMode())
-		tm = mod->transformationTM();
-	else
-		tm = mod->targetCell() * state.expectObject<SimulationCellObject>()->cellMatrix().inverse();
-
 	for(const DataObject* obj : state.data()->objects()) {
 		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 			DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
 
 			// Apply transformation to the vertices of the dislocation lines.
