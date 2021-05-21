@@ -176,26 +176,30 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 	}
 	if(isCanceled())
 		return;
-		
+
+	// Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
+	bool transposeOrientations = false;
+	if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
+		for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty)) {
+    		// Roundness = 2.0 / Blockiness
+			if(v.x() != 0) v.x() = FloatType(2) / v.x();
+			if(v.y() != 0) v.y() = FloatType(2) / v.y();
+		}
+		transposeOrientations = true;
+		if(isCanceled())
+			return;
+	}
+
 	// Convert 3x3 'Tensor' property into particle orientation.
 	if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
 		if(tensorProperty->dataType() == PropertyObject::Float && tensorProperty->componentCount() == 9) {
 			PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, false, executionContext());
 			Quaternion* q = orientations.begin();
 			for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty)) {
-				*q++ = Quaternion(tensor/*.transposed()*/);
+				*q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor);
 			}
-		}
-	}
-	if(isCanceled())
-		return;
-
-	// Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
-	if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-		for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty)) {
-    		// Roundness = 2.0 / Blockiness
-			if(v.x() != 0) v.x() = FloatType(2) / v.x();
-			if(v.y() != 0) v.y() = FloatType(2) / v.y();
+			if(isCanceled())
+				return;
 		}
 	}
 

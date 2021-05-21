@@ -59,7 +59,6 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 
 				// Create editable proxy objects for the data objects in the generated collection.
 				if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
-					OVITO_ASSERT(state.data()->isSafeToModify());
 					_updatingEditableProxies = true;
 					ConstDataObjectPath dataPath = { state.data() };
 					state.data()->updateEditableProxies(state, dataPath);

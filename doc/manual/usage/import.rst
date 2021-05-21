@@ -1,7 +1,7 @@
 .. _usage.import:
 
-Importing data
-==============
+Data import
+===========
 
 .. figure:: /images/scene_objects/file_wildcard_pattern.*
    :figwidth: 30%
@@ -13,52 +13,51 @@ To load a simulation file from your local computer, select :guilabel:`Load File`
 OVITO detects the format of the file automatically (see :ref:`list of supported formats <file_formats.input>`).
 Compressed text-based files with a :file:`.gz` suffix can be read directly by OVITO.
 
-The imported dataset will appear in the viewports as a new three-dimensional object
-and also as an entry in the "Data source" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`, as indicated in the screenshot on the right.
+The imported dataset will be visible in the 3d viewports as a visual object
+and also appears under the `Data source` section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot on the right).
 
-If you select this item in the list, the :ref:`External File <scene_objects.file_source>` panel appears below the pipeline editor.
-The tool buttons at the top of that panel let you reload
-the imported input file in case it has been changed or rewritten outside of OVITO, or you can pick a different file as data source of the :ref:`data pipeline <usage.modification_pipeline>`.
-Switching the data source file can be useful if you have set up a data analysis pipeline and now would like to apply it to a different simulation dataset.
+The :ref:`External file <scene_objects.file_source>` panel is displayed below the pipeline editor.
+It contains tool buttons for reloading the imported data file in case it was changed outside of OVITO, or for picking a different file as 
+source of the :ref:`data pipeline <usage.modification_pipeline>`. Switching the imported file is useful when you have set up a 
+complex data analysis pipeline and would like to reuse it on a different simulation dataset.
 
 .. _usage.import.command_line:
 
-Command line
-------------
+Command line usage
+------------------
 
-When launching OVITO from a terminal, you can directly specify a file to load. This works for local and remote files::
+If you launch OVITO from the terminal, you can directly specify the file(s) to load. This works both for local and :ref:`remote files <usage.import.remote>`::
 
   ovito /path/filename
   ovito sftp://hostname/path/filename
   ovito https://www.website.org/path/filename
 
-You can import several files at once by specifying multiple filenames on the command line. 
-If they all have the same file format, they will be concatenated into a sequence forming an animatable trajectory.
+Importing several files at once by specifying multiple path is possible. 
+If they all have the same data format, they will be concatenated into an animatable trajectory.
 If they have different formats, OVITO will detect whether they represent a pair of topology/trajectory files (see next section).
-If not, they will be inserted as several independent objects into the scene. 
+Otherwise, they will be inserted as :ref:`separate objects into the scene <usage.import.multiple_datasets>`. 
 
 .. _usage.import.sequence:
 
 Simulation trajectories
 -----------------------
 
-OVITO can load trajectories consisting of a series of simulation snapshots.
-Various scenarios are supported by the software:
+OVITO can load simulation trajectories consisting of a series of snapshots. Various cases are supported by the software:
 
-A series of snapshot files:
+A series of separate files:
   By default, whenever you import a new simulation file, OVITO tries to detect if the file is part of a numbered sequence of files
-  with similar names in the same directory. To this end, the last number (if any) in the filename you've picked is replaced with the wildcard
-  character ``*`` to generate a search pattern, which will subsequently be used to look in the directory for more files belonging to the sequence.
-  For instance, if you imported a file named :file:`anim1c_5000.dump`, OVITO will generate the search pattern
+  with similar names in the same directory. To this end, the last numeric character sequence (if any) in the filename you picked is replaced with the wildcard
+  character ``*`` to generate a search pattern, which will subsequently be used to look up more files in the same directory belonging to the trajectory sequence.
+  For instance, if you opened a file named :file:`anim1c_5000.dump`, OVITO will automatically generate the search pattern
   :file:`anim1c_*.dump` to find more snapshots (e.g. :file:`anim1c_0.dump`, :file:`anim1c_1000.dump`, :file:`anim1c_2000.dump`, etc). It is possible to
   manually override the generated file pattern in the input field highlighted in the screenshot or to turn off the 
-  automatic search by deactivating the :guilabel:`auto-generate` option.
+  automatic discovery of file sequences by unchecking the :guilabel:`auto-generate` box.
 
 One file containing all trajectory frames:
   OVITO automatically detects whether the imported file contains more than one simulation frame and loads all of them as an animation sequence.
   For some file types, e.g. XYZ and LAMMPS dump, this is indicated by the :guilabel:`Contains multiple timesteps`
   checkbox highlighted in the screenshot. Note that OVITO typically keeps only the data of a single frame in memory at a time.
-  Subsequent frames are loaded into memory only when needed, for example if you play back the animation or move the time slider.
+  Subsequent frames are loaded into memory only as needed, for example if you play back the animation or move the time slider.
 
 A pair of topology and trajectory files:
   Some MD simulation codes use separate files for the topology and the trajectory of a molecular structure. The topology file contains the static definition of
@@ -79,42 +78,8 @@ A pair of topology and trajectory files:
   will be inserted into the data pipeline to load the time-dependent atomic positions
   from the trajectory file (e.g. a LAMMPS *dump* file). This modifier merges both pieces of information -the static topology and the dynamic trajectory data- into a single animated dataset.
 
-OVITO will display a timeline and a time slider at the bottom of main window if a simulation sequence with more than one frame
-was loaded. Learn more about OVITO's animation functions in :ref:`this section <usage.animation>` of the manual.
-
-.. _usage.import.remote:
-
-Remote data access
-==================
-
-OVITO comes with built-in SSH and HTTP(S) clients for accessing files on remote machines. This feature can save you from having to transfer
-files stored in remote locations, for example on HPC clusters, to your local desktop computer first.
-To open a file located on a remote host, select :menuselection:`File --> Load Remote File` from the menu.
-
-The current version of OVITO does not provide a way to browse directories on remote machines. You have to directly specify
-the full path to the remote file as an URL of the form::
-
-  sftp://user@hostname/path/filename
-
-In this URL, replace :command:`user` with the SSH login name for your remote machine,
-:command:`hostname` with the host name of the remote machine,
-and :command:`/path/filename` with the full path to the simulation file to load.
-Similarly, you can let OVITO retrieve a data file from a web server by specifying an URL of the form::
-
-  https://www.website.org/path/filename
-
-When connecting to the remote machine, OVITO will ask for the login password or the passphrase for the private key to be used for authentication.
-Once established, the SSH connection is kept alive until the program session ends. OVITO creates a temporary copy of the remote file on the local computer before
-loading the data into memory to speed up subsequent accesses to all simulation frames. The local data copies are cached until you close OVITO or
-until you hit the :guilabel:`Reload` button in the :ref:`External File <scene_objects.file_source>` panel.
-
-.. note::
-
-  If it exists, OVITO will parse the :file:`~/.ssh/config` `configuration file <https://www.ssh.com/ssh/config>`_ in your home directory to 
-  configure the SSH connection.  
-
-  When running OVITO from the terminal, you can set the environment variable ``OVITO_SSH_LOG=1`` to activate log output
-  for the built-in SSH client and diagnose possible connection problems.
+OVITO will display a timeline and a time slider below the viewports if a simulation sequence with more than one frame
+has been loaded. See the section :ref:`usage.animation` to learn more about OVITO's advanced animation capabilities.
 
 .. _usage.import.multiple_datasets:
 

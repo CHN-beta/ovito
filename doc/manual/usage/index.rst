@@ -1,15 +1,15 @@
-=====
-Usage
-=====
+===========
+Basic usage
+===========
 
 .. toctree::
   :maxdepth: 1
   :includehidden:
 
-  import_particles
+  import
   viewports
-  particle_properties
-  modification_pipeline
+  data_model
+  pipeline
   rendering
   miscellaneous
-  export_particles
+  export

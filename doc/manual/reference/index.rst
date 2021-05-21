@@ -1,6 +1,6 @@
-=========
-Reference
-=========
+=================
+Reference section
+=================
   
 .. toctree::
   :maxdepth: 2

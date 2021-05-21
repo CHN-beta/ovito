@@ -14,4 +14,5 @@ Advanced topics
   aspherical_particles
   animation
   clone_pipeline
+  remote_file_access
   code_generation
