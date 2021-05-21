@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -179,7 +179,10 @@ void GSDImporter::FrameLoader::loadFile()
 	{
 		// Read particle positions.
 		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-		gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
+		if(gsd.hasChunk("particles/position", frameNumber))
+			gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
+		else
+			posProperty.take()->fill<Point3>(Point3::Origin());
 		if(isCanceled()) return;
 	}
 
@@ -193,7 +196,7 @@ void GSDImporter::FrameLoader::loadFile()
 		if(gsd.hasChunk("particles/typeid", frameNumber))
 			gsd.readIntArray("particles/typeid", frameNumber, typeProperty.begin(), numParticles);
 		else
-			typeProperty.take()->fill(0);
+			typeProperty.take()->fill<int>(0);
 		if(isCanceled()) return;
 	}
 
@@ -206,16 +209,24 @@ void GSDImporter::FrameLoader::loadFile()
 		}
 	}
 
-	readOptionalProperty(gsd, "particles/mass", frameNumber, ParticlesObject::MassProperty, particles());
-	readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles());
-	readOptionalProperty(gsd, "particles/velocity", frameNumber, ParticlesObject::VelocityProperty, particles());
-	readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles());
-	if(PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles())) {
+	// Default property values specified by the HOOMD GSD schema (see https://gsd.readthedocs.io/en/stable/schema-hoomd.html#data-chunks):
+	const FloatType defaultMass = 1.0;
+	const FloatType defaultCharge = 0.0;
+	const Vector3 defaultVelocity = Vector3::Zero();
+	const Vector3I defaultImage = Vector3I::Zero();
+	const FloatType defaultDiameter = 1.0;
+	const Quaternion defaultQuaternion = Quaternion(1,0,0,0);
+
+	readOptionalProperty(gsd, "particles/mass", frameNumber, ParticlesObject::MassProperty, particles(), &defaultMass, sizeof(defaultMass));
+	readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles(), &defaultCharge, sizeof(defaultCharge));
+	readOptionalProperty(gsd, "particles/velocity", frameNumber, ParticlesObject::VelocityProperty, particles(), &defaultVelocity, sizeof(defaultVelocity));
+	readOptionalProperty(gsd, "particles/image", frameNumber, ParticlesObject::PeriodicImageProperty, particles(), &defaultImage, sizeof(defaultImage));
+	if(PropertyAccess<FloatType> radiusProperty = readOptionalProperty(gsd, "particles/diameter", frameNumber, ParticlesObject::RadiusProperty, particles(), &defaultDiameter, sizeof(defaultDiameter))) {
 		// Convert particle diameters to radii.
 		for(FloatType& r : radiusProperty)
 			r /= 2;
 	}
-	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles())) {
+	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &defaultQuaternion, sizeof(defaultQuaternion))) {
 		// Convert quaternion representation from GSD format to OVITO's internal format.
 		// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
 		for(Quaternion& q : orientationProperty)
@@ -227,7 +238,7 @@ void GSDImporter::FrameLoader::loadFile()
 	const char* chunkName = gsd.findMatchingChunkName("log/particles/", nullptr);
 	while(chunkName) {
 		if(isCanceled()) return;
-		readOptionalProperty(gsd, chunkName, frameNumber, ParticlesObject::UserProperty, particles());
+		readOptionalProperty(gsd, chunkName, frameNumber, ParticlesObject::UserProperty, particles(), nullptr, 0);
 		chunkName = gsd.findMatchingChunkName("log/particles/", chunkName);
 	}
 
@@ -284,7 +295,7 @@ void GSDImporter::FrameLoader::loadFile()
 				gsd.readIntArray("bonds/typeid", frameNumber, bondTypeProperty.begin(), numBonds);
 			}
 			else {
-				bondTypeProperty.take()->fill(0);
+				bondTypeProperty.take()->fill<int>(0);
 			}
 			if(isCanceled()) return;
 		}
@@ -293,7 +304,7 @@ void GSDImporter::FrameLoader::loadFile()
 		const char* chunkName = gsd.findMatchingChunkName("log/bonds/", nullptr);
 		while(chunkName) {
 			if(isCanceled()) return;
-			readOptionalProperty(gsd, chunkName, frameNumber, BondsObject::UserProperty, bonds());
+			readOptionalProperty(gsd, chunkName, frameNumber, BondsObject::UserProperty, bonds(), nullptr, 0);
 			chunkName = gsd.findMatchingChunkName("log/bonds/", chunkName);
 		}
 	}
@@ -310,7 +321,7 @@ void GSDImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Reads the values of a particle or bond property from the GSD file.
 ******************************************************************************/
-PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container)
+PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize)
 {
 	PropertyObject* prop = nullptr;
 	if(gsd.hasChunk(chunkName, frameNumber)) {
@@ -332,6 +343,29 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
 			gsd.readIntArray(chunkName, frameNumber, PropertyAccess<qlonglong,true>(prop).begin(), container->elementCount(), prop->componentCount());
 		else
 			throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
+	}
+	else if(defaultValue != nullptr && gsd.findMatchingChunkName(chunkName, nullptr) != nullptr) {
+		// If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
+		// fill the property array with the default value for that chunk as specified by the HOOMD standard. 
+		if(propertyType != PropertyObject::GenericUserProperty) {
+			prop = container->createProperty(propertyType, false, executionContext());
+		}
+		else {
+			QString propertyName(chunkName);
+			int slashPos = propertyName.lastIndexOf(QChar('/'));
+			if(slashPos != -1) propertyName.remove(0, slashPos + 1);
+			std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
+			prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second, 0, false);
+		}
+		OVITO_ASSERT(prop->stride() == defaultValueSize);
+		if(prop->stride() == defaultValueSize) {
+			prop->prepareWriteAccess();
+			uint8_t* dest = prop->buffer();
+			for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
+				std::memcpy(dest, defaultValue, defaultValueSize);
+			}
+			prop->finishWriteAccess();			
+		}
 	}
 	return prop;
 }

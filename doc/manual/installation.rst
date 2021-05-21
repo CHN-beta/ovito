@@ -95,3 +95,4 @@ preinstalled on fresh Linux systems. **Solution:** Install the required librarie
   # On CentOS/RHEL systems:
   sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
+Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.

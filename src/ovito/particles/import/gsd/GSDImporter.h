@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -119,7 +119,7 @@ private:
 		virtual void loadFile() override;
 
 		/// Reads the values of a particle or bond property from the GSD file.
-		PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container);
+		PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize);
 
 		/// Parse the JSON string containing a particle shape definition.
 		void parseParticleShape(int typeId, const QByteArray& shapeSpecString);
