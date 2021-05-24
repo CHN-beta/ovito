@@ -84,7 +84,7 @@ has been loaded. See the section :ref:`usage.animation` to learn more about OVIT
 .. _usage.import.multiple_datasets:
 
 Visualizing multiple datasets
-=============================
+-----------------------------
 
 .. figure:: /images/usage/importexport/datasets_side_by_side.*
    :figwidth: 40%
@@ -92,16 +92,16 @@ Visualizing multiple datasets
 
    Side-by-side visualization example
 
-OVITO has the capability to manage several objects in the same three-dimensional scene.
-This enables you to import and visualize several datasets together in a single picture as shown in the example on the right.
-You can also visualize a dataset in several different ways, either side by side or superimposed on each other,
-using :ref:`branched data pipelines <clone_pipeline>`, which dynamically duplicate the imported data and process each copy in a 
-slightly different way.
+OVITO allows you to insert several objects or datasets into the same three-dimensional scene.
+You can import and visualize multiple datasets together in one picture as shown in the example on the right.
+You can also visualize the same dataset in several different ways, either side by side or superimposing different 
+visualization modes. The :ref:`branched data pipelines <clone_pipeline>` feature of OVITO 
+lets you dynamically duplicate the imported dataset and process each clone in a different way.
 
-The simplest way to visualize multiple datasets in one picture is to invoke the
-:menuselection:`File --> Load File` function from the menu several times to import all datasets into the same scene.
-When importing the second dataset, OVITO will ask you whether to replace the already loaded dataset or not.
-Pick the :guilabel:`Add to scene` option here in order to insert it as an additional object into the existing scene.
+The simplest way to include multiple datasets in one picture is to invoke the
+:menuselection:`File --> Load File` menu function several times and import all datasets into the current scene.
+When you import the second dataset, OVITO will ask whether to replace the already loaded dataset or not.
+Select the :guilabel:`Add to scene` option in order to insert the subsequent datasets as additional objects into the scene.
 
 .. figure:: /images/usage/importexport/pipeline_selector.*
    :figwidth: 60%
@@ -109,39 +109,32 @@ Pick the :guilabel:`Add to scene` option here in order to insert it as an additi
 
    The pipeline selector widget in OVITO's toolbar
 
-The *pipeline selector* widget, located in the toolbar of the window (see screenshot), lists all datasets and other objects 
+The *pipeline selector* widget, located in the top toolbar (see screenshot), lists all datasets and other objects 
 that are part of the current scene. Each imported dataset is associated with its own data pipeline. Thus, you can apply different modifiers
-to each dataset. The data pipeline of the currently selected dataset is the one being displayed and edited in the
-:ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` in the panel on the right.
+to each of them. The data pipeline of the currently selected dataset is the one being displayed and edited in the
+:ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` in the command panel on the right.
 
 .. _usage.import.positioning_objects:
 
-Positioning datasets in the scene
----------------------------------
+Positioning objects in the scene
+--------------------------------
 
-OVITO places imported datasets in a default position relative
-to the scene's global coordinate system. Thus, when loading the second dataset into the same scene,
-it will appear superimposed in the same spatial location as the first dataset, which may not be what you want.
+OVITO places all imported datasets in the same standard position in the scene's global coordinate system. 
+Thus, multiple datasets it will at first appear superimposed in the same spatial location, which may not be what you want.
 
-In order to correct this, you can move the individual objects around in the scene and arrange them as needed
-for your visualization. In the example picture at the top of this page the second dataset has been translated along the x-axis
-to place it next to the first dataset. To do this, use the *Translate* mode, which
-is found in the top toolbar above the viewports:
+In order to change this, you can move individual objects around and arrange them in the scene as needed. 
+In the :ref:`example picture above <usage.import.multiple_datasets>` the second dataset was translated along the x-axis
+to place it next to the first dataset. Moving entire datasets is done using the *Translate* tool, which is found in the top 
+toolbar of OVITO:
 
 .. image:: /images/usage/importexport/translate_tool.*
-   :width: 40%
+   :width: 35%
 
 .. image:: /images/usage/importexport/translate_tool_numeric_fields.*
-   :width: 40%
+   :width: 35%
 
-While the *Translate* mode is active, you can move objects around in the viewports
-using the mouse. Alternatively, you can enter the desired position of the selected object numerically using the
-input fields displayed in the status bar while the *Translate* mode is selected.
-
-Cloning pipelines
------------------
-
-Instead of importing several data files into OVITO, you can also duplicate a dataset within OVITO in order
-to visualize the same data in different ways, for example by applying different sets of modifiers to each replica
-of the dataset. See the :ref:`Clone Pipeline <clone_pipeline>` function for more information.
-
+While the *Translate* input mode is active, you can drag objects around in the viewports
+using the mouse. Alternatively, you can enter the desired XYZ position of the active object into the
+input fields appearing in the status bar. If you want to move only some parts of a dataset instead of the whole dataset, 
+for example a group of selected particles, you can do that by inserting the :ref:`particles.modifiers.affine_transformation` modifier into 
+the :ref:`data pipeline <usage.modification_pipeline>`.

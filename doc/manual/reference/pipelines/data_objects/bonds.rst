@@ -33,6 +33,28 @@ between nearest neighbor particles. Furthermore, general tool modifiers such as 
 :ref:`particles.modifiers.expression_select`, :ref:`particles.modifiers.assign_color`
 and :ref:`particles.modifiers.delete_selected_particles` are available to manipulate bonds and their properties.
 
+.. _usage.bond_properties.special:
+
+Special bond properties
+-----------------------
+
+Certain bond properties play a special role in OVITO, because their values control the visual
+appearance of the bonds as well as other aspects. The following table lists these properties and describes their respective functions:
+
+========================= ========================== =======================================================================================
+Bond property             Data type (components)     Description
+========================= ========================== =======================================================================================
+``Topology``              Integer (A, B)             This bond property is always present and holds the indices of the two particles 
+                                                     connected by a bond.
+``Bond Type``             Integer                    Stores the type identifier of each bond. The bond type determines the display color 
+                                                     if the ``Color`` property is not present.
+``Color``                 Real (R, G, B)             If present, this property controls the display color of individual bonds. 
+                                                     Red, green and blue components are in the range [0,1].
+``Transparency``          Real                       A value in the range [0,1] controlling the bonds's transparency. 
+                                                     If not present, bonds are rendered fully opaque.
+``Selection``             Integer                    Stores the current selection state of bonds (1 for selected bonds; 0 otherwise).
+========================= ========================== =======================================================================================
+
 .. seealso::
   
   :py:class:`ovito.data.Bonds` (Python API)

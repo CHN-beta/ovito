@@ -26,7 +26,13 @@ OVITO can read the following file formats:
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read varying bond topology and 
       per-bond quantities from such files generated in reactive molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
-       
+
+  * - ReaxFF bonds
+    - File format written by the LAMMPS `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 
+      OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read the bond topology, bond order and 
+      atomic charges dumped during ReaxFF molecular dynamics simulations.  
+    - :ref:`bonds <scene_objects.bonds>`
+
   * - XYZ 
     - Simple column-based text format for particle data, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__. 
       OVITO can read the `extended XYZ format <https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz>`__, 

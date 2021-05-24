@@ -151,7 +151,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	particles->verifyIntegrity();
 
-	if(ConstPropertyAccess<Point3> trajectoryPosProperty = trajectoryParticles->getProperty(ParticlesObject::PositionProperty)) {
+	if(trajectoryParticles->elementCount() != 0) {
 
 		// Build particle-to-particle index map.
 		std::vector<size_t> indexToIndexMap(particles->elementCount());
@@ -203,7 +203,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		}
 		else {
 			// Topology dataset and trajectory data must contain the same number of particles.
-			if(trajectoryPosProperty.size() != particles->elementCount()) {
+			if(trajectoryParticles->elementCount() != particles->elementCount()) {
 				throwException(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
 			}
 
@@ -280,7 +280,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			}
 		}
 	}
-	else if(const BondsObject* trajectoryBonds = trajectoryParticles->bonds()) {
+	
+	if(const BondsObject* trajectoryBonds = trajectoryParticles->bonds()) {
 		trajectoryBonds->verifyIntegrity();
 
 		// Create a mutable copy of the particles object.
@@ -334,9 +335,6 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		else {
 			throwException(tr("Neither the trajectory nor the topology dataset contain bond connectivity information."));
 		}
-	}
-	else {
-		throwException(tr("Trajectory dataset does not contain any particle positions."));
 	}
 
 	// Merge global attributes of topology and trajectory datasets.

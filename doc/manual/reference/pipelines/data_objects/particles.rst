@@ -17,6 +17,30 @@ new particle properties to the set, e.g., to store the results of a computation 
 You can open the :ref:`data inspector <data_inspector>` panel of OVITO to view all particle properties that currently 
 exist in the output of the data pipeline. 
 
+.. _usage.particle_properties.special:
+
+Special particle properties
+---------------------------
+
+Certain particle properties play a special role in OVITO, because their values control the visual
+appearance of the particles as well as other aspects. The following table lists these properties and describes their respective functions:
+
+========================= ========================== =======================================================================================
+Particle property         Data type (components)     Description
+========================= ========================== =======================================================================================
+``Position``              Real (X, Y, Z)             The particle coordinates. For 2-dim. systems, the Z-component will be 0.
+``Color``                 Real (R, G, B)             If present, this property controls the display color of particles. 
+                                                     Red, green and blue components are in the range [0,1].
+``Radius``                Real                       If present, this property controls the display size of particles.
+``Particle Type``         Integer                    Stores the type identifier of each particle. This also determines the 
+                                                     display size and color  if the ``Radius`` or ``Color`` property are not present.
+``Particle Identifier``   Integer                    Stores the unique ID of each particle. This information will be used by some 
+                                                     modifiers to track particles over time even if the storage order changes.
+``Transparency``          Real                       A value in the range [0,1] controlling the particle's transparency. 
+                                                     If not present, particles are rendered fully opaque.
+``Selection``             Integer                    Stores the current selection state of particles (1 for selected particles; 0 otherwise).
+========================= ========================== =======================================================================================
+
 .. _scene_objects.particle_types:
 
 Typed properties

@@ -40,7 +40,6 @@ bool FHIAimsImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
 	// Open input file.
 	CompressedTextReader stream(file);
-	activateCLocale();
 
 	// Look for 'atom' or 'atom_frac' keywords.
 	// They must appear within the first 100 lines of the file.

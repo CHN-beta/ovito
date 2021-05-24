@@ -1,32 +1,34 @@
 
 .. _usage.modification_pipeline:        
   
-Data pipeline
-=============
+Pipeline concept
+================
 
-The key workflow concept of OVITO is the so-called *data pipeline* or modification pipeline.
-A pipeline is a user-defined sequence of data manipulation operations (called *modifiers*) that get
-applied to the loaded simulation data one after another. The output of this processing sequence is displayed on screen by the program:
+The workflow in OVITO is based on a *data pipeline* concept. What it means is that you define a sequence of operations
+(called `modifiers`) in OVITO that get applied to the imported simulation dataset one after the other.
+The output of this processing pipeline is displayed on the screen by the program:
 
 .. image:: /images/usage/pipeline/pipeline_example.*
    :width: 100%
 
-OVITO offers an extensive set of modifier functions to choose from (see
-:ref:`reference <particles.modifiers>` section), each performing specific
-tasks like selection, coloring, data analysis or filtering.
-By combining these basic building blocks and arranging them in a pipeline,
-you can visualize and analyze the simulation data in very flexible ways.
+OVITO offers an extensive set of modifier functions to choose from (see :ref:`reference section <particles.modifiers>`), 
+each performing a specific task like selecting, coloring, analzying, or filtering particle structures.
+By combining these basic building blocks and arranging them in a pipeline sequence, you can visualize or analyze the simulation 
+dataset in exactly the way you need it.
 
-One of its key advantages is that the data pipeline lets you retroactively change, delete or amend the
-applied operations as needed. The program keeps around an unmodified copy of the pipeline's input data, and whenever you
-change the setup of the pipeline in some way, OVITO recomputes the output of the pipeline and updates the display to reflect
-the changes. This happens automatically and, for simple computations, in real-time.
-You can find similar types of non-destructive workflows in modern photo editing and 3D modeling programs, for example.
-In OVITO this approach provides you with a great deal of flexibility while developing and exploring new data analysis and
-visualization solutions. And the pipeline architecture offers another important advantage:
-Once you have figured out the right modification steps for your problem, you can apply
-the processing pipeline to as many other input datasets as you like in a batch-processing manner.
+A key advantage of this approach is that the data pipeline lets you retroactively change, delete or amend the
+applied operations if needed. No modifications you make to the dataset are permanent. You always have the possibility to
+adjust individual operations later on, remove them again from the pipeline, or insert additional operations at any point.
 
+The program keeps around an unmodified copy of the pipeline's input data in memory, and whenever you
+change the pipeline in some way, OVITO recomputes the output of the pipeline and updates the display to reflect
+your changes. This happens automatically and almost in real-time.
+
+Similar types of "non-destructive" workflow concepts can be found in modern photo editing and 3D modeling programs, for example.
+In OVITO this approach provides you with a great deal of flexibility while designing and exploring new data analysis and
+visualization setups. And the pipeline architecture offers another important advantage: Once you have figured out the right 
+modification steps to solve your specific analysis problem, you can apply the same processing pipeline to as many other input 
+datasets as you like and batch-process a whole set of simulation trajectories.
 
 .. _usage.modification_pipeline.pipeline_listbox:
 
