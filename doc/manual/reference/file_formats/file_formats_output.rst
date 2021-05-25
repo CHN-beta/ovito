@@ -15,8 +15,12 @@ OVITO can export data to the following file formats:
 
   * - LAMMPS data 
     - File format read by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.  
-    - :ref:`particles <scene_objects.particles>`, :ref:`Bonds <scene_objects.bonds>`, angles, dihedrals, impropers
-                        
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
+
+  * - LAMMPS dump
+    - Trajectory format used by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.  
+    - :ref:`particles <scene_objects.particles>`
+
   * - XYZ 
     - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__ and
       `here <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`__.  
@@ -39,13 +43,13 @@ OVITO can export data to the following file formats:
     - :ref:`particles <scene_objects.particles>` 
                     
   * - GSD/HOOMD 
-    - Binary format for molecular dynamics data used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
+    - Binary molecular dynamics format used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
       See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.  
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, global attributes 
-            
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, :ref:`global attributes <usage.global_attributes>` 
+
   * - Table of values 
     - A simple tabular text file with scalar quantities computed by OVITO's data pipeline.  
-    - global attributes          
+    - :ref:`global attributes <usage.global_attributes>`
             
   * - VTK 
     - Generic text-based data format used by the ParaView software.  
@@ -53,7 +57,7 @@ OVITO can export data to the following file formats:
             
   * - POV-Ray scene 
     - Exports the entire scene to a file that can be rendered with `POV-Ray <http://www.povray.org/>`__.  
-    - any 
+    - :ref:`any <scene_objects>`
                     
   * - Crystal Analysis (.ca) 
     - Format that can store dislocation lines extracted from an atomistic crystal model by the :ref:`particles.modifiers.dislocation_analysis` modifier.

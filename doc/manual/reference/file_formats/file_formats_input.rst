@@ -84,9 +84,9 @@ OVITO can read the following file formats:
     - :ref:`particles <scene_objects.particles>`
   
   * - GSD/HOOMD 
-    - Binary format for molecular dynamics data used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
+    - Binary molecular dynamics format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
       See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.  
-    - :ref:`particles <scene_objects.particles>`          
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
 
   * - CASTEP       
     - File format used by the `CASTEP <http://www.castep.org>`__ *ab initio* code. OVITO can read the |castep formats|_.
@@ -135,12 +135,12 @@ OVITO can read the following file formats:
   * - VTM (VTK MultiBlock) 
     - XML-based file format used by the *Visualization Toolkit* (VTK) and the software *ParaView*. VTK multiblock data files are meta-files that point to a list of VTK XML files,
       which will all be loaded by OVITO as a single data collection.  
-    - any 
+    - :ref:`any <scene_objects>` 
                 
   * - PVD (ParaView data file) 
     - XML-based file format used by the software *ParaView*, which describes a trajectory formed by a sequence of individual data files.
       The file format is described `here <https://www.paraview.org/Wiki/ParaView/Data_formats#PVD_File_Format>`__.  
-    - any 
+    - :ref:`any <scene_objects>` 
                    
   * - OBJ 
     - Common text-based format for storing triangle mesh geometry (see `here <https://en.wikipedia.org/wiki/Wavefront_.obj_file>`__).  
