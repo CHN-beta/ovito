@@ -52,21 +52,22 @@ Varying bond connectivity
 The LAMMPS code supports reactive molecular dynamics simulations, in which the bond topology
 dynamically changes during the course of the simulation as `bonds break <https://lammps.sandia.gov/doc/fix_bond_break.html>`__ 
 or `newly form <https://lammps.sandia.gov/doc/fix_bond_react.html>`__. 
-The changing bond topology of such a simulation can be dumped to an output file using the `dump local <https://lammps.sandia.gov/doc/dump.html>`__
+The changing bond connectivity in such simulations can be dumped to an output file using the `dump local <https://lammps.sandia.gov/doc/dump.html>`__
 command of LAMMPS in combination with the `compute property/local <https://lammps.sandia.gov/doc/compute_property_local.html>`__ command,
-see the example below.
+see the example below. In simulations using the ReaxFF potential, the `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command
+may be used to write the bonds list (including bond orders) to a text-based output file in regular time intervals.
 
-OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` files 
-and overwrite any static connectivity from the initial LAMMPS data file with it. Typically, you will use two instances of the 
-*Load trajectory* modifier in the same pipeline, as shown on the side, to load both the time-varying atomic coordinates and the time-varying bond information  
-from such a reactive MD simulation.
+OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reax/c/bonds` files and merge it with the molecular dataset.
+The loaded list of bonds will replace any static connectivity that may be present in the initial LAMMPS data file. Typically, you will use two instances of the 
+*Load trajectory* modifier in the same pipeline, as shown on the side, to load the atomic trajectories as well as the time-varying bond information  
+from a reactive MD simulation.
 
 .. image:: /images/modifiers/load_trajectory_varying_bonds.png
   :width: 40%
   :align: right
 
 LAMMPS is able to output the changing bond topology in regular time intervals and also additional per-bond quantities such 
-as the bond lengths, bond forces or bond energies. Take for example the following LAMMPS commands, which dump 
+as the bond lengths, bond forces or bond energies. Consider, for example, the following LAMMPS commands, which dump 
 the current bond list to an output file in regular timestep intervals::
 
   compute 1 all property/local btype batom1 batom2
@@ -105,6 +106,10 @@ bond topology previously loaded from the LAMMPS *data* file.
 In contrast, if the dump local file doesn't contain the two topology columns, then OVITO assumes that 
 the file stores auxiliary bond property values and simply adds them to the existing bonds. In this case, 
 the number of entries in the dump local file must exactly match the number of existing bonds in OVITO.
+
+File written by the `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command
+have a different format, which is fixed. OVITO maps the contained information automatically to the right 
+bond and particle properties.  
 
 .. seealso::
 
