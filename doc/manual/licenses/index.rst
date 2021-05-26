@@ -1,8 +1,8 @@
 .. _credits:
 
-==============================
+============================
 Software license information
-==============================
+============================
 
 *OVITO Basic* in binary form is published by the software vendor `OVITO GmbH, Germany <https://www.ovito.org>`__ under the terms of the `MIT License <https://gitlab.com/stuko/ovito/-/blob/master/LICENSE.MIT.txt>`__. 
 Program packages are built from source code available under the terms of the :ref:`GNU General Public License (v3) <appendix.GPL>` and the 
@@ -157,6 +157,10 @@ Third-party software
 
   * - `Vulkan Memory Allocator <https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator>`__
     - :ref:`license <appendix.license.vma>`
+    - 
+
+  * - `LAMMPS <https://lammps.sandia.gov/>`__
+    - LGPL v3
     - 
 
 .. toctree::

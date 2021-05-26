@@ -6,7 +6,7 @@ Build instructions for PySide2
 The OVITO package includes a distribution of the PySide2 module and Shiboken2 module licensed under the GNU Lesser General Public License (LGPLv3).
 In accordance with the requirements of this license, this page provides instructions on how to obtain or rebuild compatible versions of these binary modules from source.
 
-windows
+Windows
 """""""
 
 OVITO Pro for Windows ships with a copy of the official PySide2 module (version 5.15.0) from 
