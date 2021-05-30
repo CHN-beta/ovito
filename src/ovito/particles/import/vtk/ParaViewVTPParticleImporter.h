@@ -91,7 +91,7 @@ private:
 		virtual void loadFile() override;
 
 		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent);
+		PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
 
 		/// Helper method that loads the shape of a particle type from an external geometry file.
 		void loadParticleShape(ParticleType* particleType);
@@ -121,10 +121,10 @@ public:
 	Q_INVOKABLE ParticlesParaViewVTMFileFilter() = default;
 
 	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<std::pair<QStringList, QUrl>>& blockDatasets) override;
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets) override;
 
 	/// Is called before parsing of a dataset reference in a multi-block VTM file begins.
-	virtual void configureImporter(const QStringList& blockPath, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
+	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
 
 private:
 

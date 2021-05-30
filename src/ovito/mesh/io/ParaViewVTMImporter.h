@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,24 @@
 namespace Ovito { namespace Mesh {
 
 /**
+ * \brief Describes a single data file referenced by a VTM file. 
+ */
+struct OVITO_MESH_EXPORT ParaViewVTMBlockInfo
+{
+	/// The path to the block in the hierarchy of nested data blocks within the VTM file.
+	QStringList blockPath;
+
+	/// The URL of the referenced data file.
+	QUrl location;
+
+	/// The index of this partial dataset which is part of a multi-block structure.
+	int multiBlockIndex = 0;
+
+	/// The total number of partial datasets.
+	int multiBlockCount = 1;
+};
+
+/**
  * \brief Abstract base class for filters that can customize the loading of VTM files. 
  */
 class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
@@ -41,13 +59,13 @@ class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
 public:
 
 	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<std::pair<QStringList, QUrl>>& blockDatasets) {}
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets) {}
 
 	/// \brief Is called for every dataset referenced in a multi-block VTM file.
-	virtual Future<> loadDataset(const QStringList& blockPath, const FileHandle& referencedFile, const FileSourceImporter::LoadOperationRequest& loadRequest) { return {}; }
+	virtual Future<> loadDataset(const ParaViewVTMBlockInfo& blockInfo, const FileHandle& referencedFile, const FileSourceImporter::LoadOperationRequest& loadRequest) { return {}; }
 
 	/// \brief Is called before parsing of a dataset reference in a multi-block VTM file begins.
-	virtual void configureImporter(const QStringList& blockPath, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) {}
+	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) {}
 
 	/// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
 	virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) {}
@@ -93,7 +111,7 @@ public:
 private:
 
 	/// Parses the given VTM file and returns the list of referenced data files.
-	static std::vector<std::pair<QStringList, QUrl>> loadVTMFile(const FileHandle& fileHandle);
+	static std::vector<ParaViewVTMBlockInfo> loadVTMFile(const FileHandle& fileHandle);
 };
 
 }	// End of namespace

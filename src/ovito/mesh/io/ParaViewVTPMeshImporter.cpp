@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
 
 	// Create the destination mesh object.
-	QString meshIdentifier = dataBlockPrefix();
+	QString meshIdentifier = loadRequest().dataBlockPrefix;
 	SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
 	if(!meshObj) {
 		meshObj = state().createObject<SurfaceMesh>(dataSource(), executionContext());
@@ -83,12 +83,15 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			vis->setSmoothShading(true);
 		}
 		if(!meshIdentifier.isEmpty()) {
-			meshObj->setTitle(QStringLiteral("%1: %2").arg(meshObj->objectTitle()).arg(meshIdentifier));
-			if(vis) vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(meshIdentifier));
+			meshObj->setTitle(tr("Mesh: %1").arg(meshIdentifier));
+			if(vis) vis->setTitle(tr("Mesh: %1").arg(meshIdentifier));
 		}
 	}
 	SurfaceMeshAccess mesh(meshObj);
-	mesh.clearMesh();
+
+	// Reset mesh or append data to existing mesh.
+	if(!loadRequest().appendData)
+		mesh.clearMesh();
 
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -103,6 +106,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	size_t numberOfPolys = 0;
 	size_t numberOfCells = 0;
 	SurfaceMeshAccess::vertex_index vertexBaseIndex = SurfaceMeshAccess::InvalidIndex;
+	SurfaceMeshAccess::face_index faceBaseIndex = SurfaceMeshAccess::InvalidIndex;
 	std::vector<PropertyPtr> cellDataArrays;
 
 	// Parse the elements of the XML file.
@@ -171,6 +175,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				xml.raiseError(tr("Connectivity data array has wrong data layout, size or name."));
 				break;
 			}
+			faceBaseIndex = mesh.faceCount();
 
 			// Parse child <DataArray> element containing the offset information.
 			if(!xml.readNextStartElement())
@@ -184,8 +189,12 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				break;
 			}
 
+			// Shift vertex indices in the array by base vertex offset.
+			PropertyAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
+			if(vertexBaseIndex != 0)
+				for(SurfaceMeshAccess::vertex_index& idx : vertexIndices) idx += vertexBaseIndex;
+
 			// Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
-			ConstPropertyAccess<SurfaceMeshAccess::vertex_index> vertexIndices(connectivityArray);
 			int previousOffset = 0;
 			for(int offset : ConstPropertyAccess<int>(offsetsArray)) {
 				if(offset < previousOffset + 3 || offset > vertexIndices.size()) {
@@ -231,18 +240,45 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	if(isCanceled())
 		return;
 
-	// Add cell data arrays to mesh.
+	// Add cell data arrays to the mesh.
 	if(numberOfPolys == numberOfCells) {
 		for(auto& property : cellDataArrays) {
-			mesh.addFaceProperty(std::move(property));
+			OVITO_ASSERT(property->size() == numberOfCells);
+			// If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then 
+			// the loaded property arrays can simply be added to the mesh faces.
+			// Otherwise, if we are loading subsequent parts of the split mesh, 
+			// then the loaded property values must be copied into the correct subrange of the existing
+			// face properties.
+			if(!loadRequest().appendData) {
+				OVITO_ASSERT(property->size() == mesh.faceCount());
+				OVITO_ASSERT(faceBaseIndex == 0);
+				mesh.addFaceProperty(std::move(property));
+			}
+			else {
+				PropertyObject* existingProperty = property->type() != SurfaceMeshFaces::UserProperty 
+					? mesh.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type())) 
+					: mesh.mutableFaceProperty(property->name());
+				if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
+					existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
+				}
+			}
 		}
 	}
 
 	// Report number of vertices and faces to the user.
-	state().setStatus(
-		tr("Number of mesh vertices: %1\nNumber of mesh faces: %2")
-		.arg(mesh.vertexCount())
-		.arg(mesh.faceCount()));
+	if(meshIdentifier.isEmpty()) {
+		state().setStatus(
+			tr("Number of mesh vertices: %1\nNumber of mesh faces: %2")
+			.arg(mesh.vertexCount())
+			.arg(mesh.faceCount()));
+	}
+	else {
+		state().setStatus(
+			tr("Mesh %1: %2 vertices / %3 faces")
+			.arg(meshIdentifier)
+			.arg(mesh.vertexCount())
+			.arg(mesh.faceCount()));
+	}
 
 	// Call base implementation.
 	StandardFrameLoader::loadFile();

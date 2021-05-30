@@ -151,6 +151,76 @@ public:
 
 // Base class that allows read access to the data elements of the underlying DataBuffer.
 template<typename T, class PointerType, bool Writable = false>
+class ReadOnlyDataBufferSubrangeAccessBase : public DataBufferAccessBase<PointerType, Writable>
+{
+public:
+
+	using iterator = const T*;
+	using const_iterator = const T*;
+
+	/// Returns the number of elements in the data array.
+	size_t size() const { 
+		OVITO_ASSERT(this->_buffer);
+		return this->_endIndex - this->_beginIndex; 
+	}
+
+	/// Returns the value of the i-th element from the array.
+	const T& get(size_t i) const {
+		OVITO_ASSERT(i < this->size());
+		return *(this->cbegin() + i);
+	}
+
+	/// Indexed access to the elements of the array.
+	const T& operator[](size_t i) const {
+		return this->get(i);
+	}
+
+	/// Returns a range of const iterators over the elements stored in this array.
+	boost::iterator_range<const T*> crange() const {
+		return boost::make_iterator_range(cbegin(), cend());
+	}
+
+	/// Returns a pointer to the first element of the data array.
+	const T* begin() const {
+		return cbegin();
+	}
+
+	/// Returns a pointer pointing to the end of the data array.
+	const T* end() const {
+		return cend();
+	}
+
+	/// Returns a pointer to the first element of the data array.
+	const T* cbegin() const {
+		OVITO_ASSERT(this->_buffer);
+		OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
+		OVITO_ASSERT(this->stride() == sizeof(T));
+		return reinterpret_cast<const T*>(this->_buffer->cbuffer()) + _beginIndex;
+	}
+
+	/// Returns a pointer pointing to the end of the data array.
+	const T* cend() const {
+		return cbegin() + this->size();
+	}
+
+	/// Constructor that inherits the DataBuffer from another access object and takes an index sub-range.
+	ReadOnlyDataBufferSubrangeAccessBase(DataBufferAccessBase<PointerType, Writable>&& other, size_t beginIndex, size_t endIndex) : DataBufferAccessBase<PointerType, Writable>(std::move(other)), 
+		_beginIndex(beginIndex), _endIndex(endIndex) {
+		OVITO_ASSERT(this->_buffer);
+		OVITO_ASSERT(this->_buffer->stride() == sizeof(T));
+		OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
+		OVITO_ASSERT(beginIndex <= endIndex);
+		OVITO_ASSERT(endIndex <= this->_buffer->size());
+	}
+
+protected:
+
+	size_t _beginIndex;
+	size_t _endIndex;
+};
+
+// Base class that allows read access to the data elements of the underlying DataBuffer.
+template<typename T, class PointerType, bool Writable = false>
 class ReadOnlyDataBufferAccessBase : public DataBufferAccessBase<PointerType, Writable>
 {
 public:
@@ -172,6 +242,11 @@ public:
 	/// Returns a range of const iterators over the elements stored in this array.
 	boost::iterator_range<const T*> crange() const {
 		return boost::make_iterator_range(cbegin(), cend());
+	}
+
+	/// Turns this array accessor into an accessor for a subrange of elements.
+	ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, Writable> csubrange(size_t beginIndex, size_t endIndex) && {
+		return ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, Writable>(std::move(*this), beginIndex, endIndex);
 	}
 
 	/// Returns a pointer to the first element of the data array.
@@ -299,6 +374,55 @@ protected:
 
 // Base class that allows read/write access to the data elements of the underlying DataBuffer.
 template<typename T, class PointerType>
+class ReadWriteDataBufferSubrangeAccessBase : public ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, true>
+{
+public:
+
+	using iterator = T*;
+	using const_iterator = T*;
+
+	/// Sets the value of the i-th element in the array.
+	void set(size_t i, const T& v) {
+		OVITO_ASSERT(i < this->size());
+		*(this->begin() + i) = v;
+	}
+
+	/// Indexed access to the elements of the array.
+	T& operator[](size_t i) {
+		OVITO_ASSERT(i < this->size());
+		return *(this->begin() + i);
+	}
+
+	/// Indexed access to the elements of the array.
+	const T& operator[](size_t i) const {
+		OVITO_ASSERT(i < this->size());
+		return *(this->cbegin() + i);
+	}
+
+	/// Returns a pointer to the first element of the data array.
+	T* begin() const {
+		OVITO_ASSERT(this->_buffer);
+		return reinterpret_cast<T*>(this->_buffer->buffer()) + _beginIndex;
+	}
+
+	/// Returns a pointer pointing to the end of the data array.
+	T* end() const {
+		return this->begin() + this->size();
+	}
+
+	/// Returns a range of iterators over the elements stored in this array.
+	boost::iterator_range<T*> range() {
+		return boost::make_iterator_range(begin(), end());
+	}
+
+protected:
+
+	// Inherit constructors from base class.
+	using ReadOnlyDataBufferSubrangeAccessBase<T, PointerType, true>::ReadOnlyDataBufferSubrangeAccessBase;
+};
+
+// Base class that allows read/write access to the data elements of the underlying DataBuffer.
+template<typename T, class PointerType>
 class ReadWriteDataBufferAccessBase : public ReadOnlyDataBufferAccessBase<T, PointerType, true>
 {
 public:
@@ -338,6 +462,11 @@ public:
 	/// Returns a range of iterators over the elements stored in this array.
 	boost::iterator_range<T*> range() {
 		return boost::make_iterator_range(begin(), end());
+	}
+
+	/// Returns a subrange of elements.
+	ReadWriteDataBufferSubrangeAccessBase<T, PointerType> subrange(size_t beginIndex, size_t endIndex) && {
+		return ReadWriteDataBufferSubrangeAccessBase<T, PointerType>(std::move(*this), beginIndex, endIndex);
 	}
 
 	/// Appends a new element to the end of the data array.

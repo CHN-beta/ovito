@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,7 +78,7 @@ auto for_each(WorkingState&& inputState, InputRange&& inputRange, Executor&& exe
 				if(!isCanceled() && !task->isCanceled()) {
 					OVITO_ASSERT(_future.isValid());
 					_future.result();
-					_future.reset();
+					OVITO_ASSERT(!_future.isValid());
 					go();
 				}
 				else cancel();

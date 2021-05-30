@@ -511,6 +511,21 @@ public:
         return _faces.getProperty(ptype);
     }
 
+    /// Returns a user face property (or null if the property is not defined).
+    const PropertyObject* faceProperty(const QString& name) const {
+        return _faces.getProperty(name);
+    }
+
+    /// Returns one of the standard face properties (or null if the property is not defined).
+    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype) {
+        return mutableFaces().getMutableProperty(ptype);
+    }
+
+    /// Returns a user face property (or null if the property is not defined).
+    PropertyObject* mutableFaceProperty(const QString& name) {
+        return mutableFaces().getMutableProperty(name);
+    }
+
     /// Returns one of the standard region properties (or null if the property is not defined).
     const PropertyObject* regionProperty(SurfaceMeshRegions::Type ptype) const {
         return _regions.getProperty(ptype);

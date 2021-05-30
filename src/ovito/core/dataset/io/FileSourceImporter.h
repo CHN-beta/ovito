@@ -111,6 +111,11 @@ public:
 		/// prefix to be prepended to the identifiers of data objects loaded by the file reader.
 		QString dataBlockPrefix;
 
+		/// Indicates that the file reader should append the loaded data to existing data objects
+		/// instead of replacing their contents. This is used for multi-block datasets that 
+		/// consist of several files.
+		bool appendData = false;
+
 		/// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 
 		bool isNewlyImportedFile = true;
 
@@ -129,13 +134,13 @@ public:
 		FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
 
 		/// Returns the global dataset this frame loader belongs to.
-		DataSet* dataset() const { return _loadRequest.dataset; }
+		DataSet* dataset() const { return loadRequest().dataset; }
 
 		/// Returns the source file information.
-		const Frame& frame() const { return _loadRequest.frame; }
+		const Frame& frame() const { return loadRequest().frame; }
 
 		/// Returns the local handle to the input data file.
-		const FileHandle& fileHandle() const { return _loadRequest.fileHandle; }
+		const FileHandle& fileHandle() const { return loadRequest().fileHandle; }
 
 		/// Returns a reference to the pipeline state that receives the loaded file data. 
 		PipelineFlowState& state() { return _loadRequest.state; }
@@ -144,11 +149,10 @@ public:
 		PipelineObject* dataSource() const { return _loadRequest.dataSource; }
 
 		/// Returns type of execution context (interactive/scripting) in which the frame loading was triggered.
-		ExecutionContext executionContext() const { return _loadRequest.executionContext; }
+		ExecutionContext executionContext() const { return loadRequest().executionContext; }
 
-		/// If a loaded data collection consists of sub-collections, the string returned by this method specifies the 
-		/// prefix to be prepended to the identifiers of data objects loaded by the current file reader.
-		const QString& dataBlockPrefix() const { return _loadRequest.dataBlockPrefix; }
+		/// Returns a data structure describing the current load operation.
+		const LoadOperationRequest& loadRequest() const { return _loadRequest; }
 
 		/// File parser implementations call this method to indicate that the input file contains
 		/// additional frames stored back to back with the currently loaded one.

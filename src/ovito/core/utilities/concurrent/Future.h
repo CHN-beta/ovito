@@ -297,7 +297,7 @@ public:
 	/// Move constructor taking the promise state pointer from a r-value Promise.
 	Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
 
-	void firstTupleElement(std::false_type) {}
+	void firstTupleElement(std::false_type) { task()->throwPossibleException(); reset(); }
 	auto firstTupleElement(std::true_type) { return std::get<0>(results()); }
 
 	template<typename... R2> friend class Future;

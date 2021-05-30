@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ bool ParaViewVTMImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 /******************************************************************************
 * Parses the given VTM file and returns the list of referenced data files.
 ******************************************************************************/
-std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const FileHandle& fileHandle)
+std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHandle& fileHandle)
 {
 	// Initialize XML reader and open input file.
 	std::unique_ptr<QIODevice> device = fileHandle.createIODevice();
@@ -72,9 +72,11 @@ std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const
 	QXmlStreamReader xml(device.get());
 
 	// The list of <DataSet> elements found in the file.
-	std::vector<std::pair<QStringList, QUrl>> datasetList;
+	std::vector<ParaViewVTMBlockInfo> datasetList;
 	// The current branch in the block hierarchy.
 	QStringList blockBranch;
+	// The current index within a multi-block piece.
+	int multiBlockIndex = 0;
 
 	// Parse the elements of the XML file.
 	while(!xml.atEnd()) {
@@ -87,6 +89,17 @@ std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const
 				// Do nothing. Parse child elements.
 			}
 			else if(xml.name().compare(QStringLiteral("Block")) == 0) {
+				// This is the start of a new block.
+				multiBlockIndex = 0;
+
+				// Get value of 'name' attribute.
+				blockBranch.push_back(xml.attributes().value("name").toString());
+
+				// Continue by parsing child elements.
+			}
+			else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
+				// This is the start of a new piece.
+				multiBlockIndex = 0;
 
 				// Get value of 'name' attribute.
 				blockBranch.push_back(xml.attributes().value("name").toString());
@@ -100,10 +113,26 @@ std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const
 				if(!file.isEmpty()) {
 					// The current path in the block hierarchy:
 					QStringList path = blockBranch;
-					path.append(xml.attributes().value("name").toString());
 
-					// Resolve file path and record URL, which will be loaded later.
-					datasetList.emplace_back(std::move(path), fileHandle.sourceUrl().resolved(QUrl(file)));
+					auto name = xml.attributes().value("name");
+					if(!name.isEmpty())
+						path.append(name.toString());
+
+					// Resolve file path and record the URL, which will be loaded later.
+					datasetList.push_back({ std::move(path), fileHandle.sourceUrl().resolved(QUrl(file)), multiBlockIndex });
+
+					// If this dataset is part of a piece, update the total number of partial datasets that form the piece.
+					if(multiBlockIndex >= 1) {
+						std::for_each(datasetList.end() - (multiBlockIndex+1), datasetList.end(), [&](ParaViewVTMBlockInfo& blockInfo) {
+							blockInfo.multiBlockCount = multiBlockIndex + 1;
+						});
+					}
+
+					// Increment index if this dataset is part of a piece-wise block.
+					if(!name.isEmpty())
+						multiBlockIndex = 0;
+					else
+						multiBlockIndex++;
 				}
 
 				xml.skipCurrentElement();
@@ -113,7 +142,8 @@ std::vector<std::pair<QStringList, QUrl>> ParaViewVTMImporter::loadVTMFile(const
 			}
 		}
 		if(xml.tokenType() == QXmlStreamReader::EndElement) {
-			if(xml.name().compare(QStringLiteral("Block")) == 0) {
+			if(xml.name().compare(QStringLiteral("Block")) == 0 || xml.name().compare(QStringLiteral("Piece")) == 0) {
+				multiBlockIndex = 0;
 				blockBranch.pop_back();
 			}
 			else if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
@@ -141,8 +171,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	struct ExtendedLoadRequest : public LoadOperationRequest {
 		/// Constructor.
 		ExtendedLoadRequest(const LoadOperationRequest& other) : LoadOperationRequest(other) {}
-		/// The multi-block hierarchy path of the current dataset being loaded.
-		QStringList blockPath;
+		/// The multi-block record of the current dataset being loaded.
+		ParaViewVTMBlockInfo blockInfo;
 		/// Plugin filters processing the datasets referenced by the VTM file.
 		std::vector<OORef<ParaViewVTMFileFilter>> filters;
 	};
@@ -159,33 +189,34 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	}
 
 	// Load the VTM file, which contains the list of referenced data files.
-	std::vector<std::pair<QStringList, QUrl>> blockDatasets = loadVTMFile(request.fileHandle);
+	std::vector<ParaViewVTMBlockInfo> blockDatasets = loadVTMFile(request.fileHandle);
 
 	// Create filter objects.
 	static const QVector<OvitoClassPtr> filterClassList = PluginManager::instance().listClasses(ParaViewVTMFileFilter::OOClass());
 	for(OvitoClassPtr clazz : filterClassList) {
 		modifiedRequest.filters.push_back(static_object_cast<ParaViewVTMFileFilter>(clazz->createInstance()));
 
-		// Let the plugin filter objects preprocess the multi-block structure before the referenced data files bget loaded.
+		// Let the plugin filter objects preprocess the multi-block structure before the referenced data files get loaded.
 		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets);
 	}
 
 	// Load each dataset referenced by the VTM file. 
-	Future<ExtendedLoadRequest> future = for_each(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(), [](const std::pair<QStringList, QUrl>& blockDataset, ExtendedLoadRequest& request) {
+	Future<ExtendedLoadRequest> future = for_each(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
 		// Set up the load request submitted to the FileSourceImporter.
-		request.dataBlockPrefix = blockDataset.first.back();
-		request.blockPath = blockDataset.first;
+		request.dataBlockPrefix = blockInfo.blockPath.back();
+		request.blockInfo = blockInfo;
+		request.appendData = (blockInfo.multiBlockIndex != 0); // Append data (instead of replace) when loading subsequent partial blocks of a multi-block dataset.
 
 		// Retrieve the data file.
-		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockDataset.second).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockInfo.location).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
 			try {
 				// Obtain a handle to the referenced data file.
 				const FileHandle& file = fileFuture.result();
 
 				// Give plugin filter objects the possibility to override the loading of the data file.
 				for(const auto& filter : request.filters) {
-					Future<> future = filter->loadDataset(request.blockPath, file, request);
+					Future<> future = filter->loadDataset(request.blockInfo, file, request);
 					if(future.isValid())
 						return future;
 				}
@@ -210,7 +241,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 
 				// Give plugin filter objects the possibility to pass additional information to the specific FileSourceImporter.
 				for(const auto& filter : request.filters)
-					filter->configureImporter(request.blockPath, request, importer);
+					filter->configureImporter(request.blockInfo, request, importer);
 
 				// Parse the referenced file.
 				// Note: We need to keep the FileSourceImporter object while the asynchronous parsing process is 
@@ -222,8 +253,11 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 						// Concatenate status strings for the data blocks loaded so far.
 						QString statusString = lastStatus.text();
 						if(!request.state.status().text().isEmpty()) {
-							if(!statusString.isEmpty() && !statusString.endsWith(QChar('\n'))) statusString += QChar('\n');
-							statusString += request.state.status().text();
+							// Append only the status text of the last partial dataset when loading a split block.
+							if(request.blockInfo.multiBlockIndex == request.blockInfo.multiBlockCount - 1) {
+								if(!statusString.isEmpty() && !statusString.endsWith(QChar('\n'))) statusString += QChar('\n');
+								statusString += request.state.status().text();
+							}
 						}
 
 						// Also calculate a combined status code.
@@ -233,7 +267,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 						request.state.setStatus(PipelineStatus(statusType, std::move(statusString)));
 					}
 					catch(Exception& ex) {
-						ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset %1: %2").arg(request.dataBlockPrefix).arg(filename));
+						ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset '%1': %2").arg(request.dataBlockPrefix).arg(filename));
 						throw ex;
 					}
 				});

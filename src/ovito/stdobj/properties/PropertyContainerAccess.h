@@ -91,6 +91,30 @@ public:
 		return container()->getProperty(type);
 	}
 
+	/// Looks up a user-defined property in the container.
+	const PropertyObject* getProperty(const QString& name) const {
+		OVITO_ASSERT(container());
+		return container()->getProperty(name);
+	}
+
+	/// Returns one of the standard properties from the container.
+	PropertyObject* getMutableProperty(int type) {
+		OVITO_ASSERT(container());
+		PropertyObject* property = mutableContainer()->getMutableProperty(type);
+		if(property)
+			updateMutablePropertyPointer(property);
+		return property;
+	}
+
+	/// Returns a user property from the container.
+	PropertyObject* getMutableProperty(const QString& name) {
+		OVITO_ASSERT(container());
+		PropertyObject* property = mutableContainer()->getMutableProperty(name);
+		if(property)
+			updateMutablePropertyPointer(property);
+		return property;
+	}
+
     /// Creates a new standard property in the container.
     PropertyObject* createProperty(int ptype, bool initializeMemory, ExecutionContext executionContext) {
 		// Write current element count back to container before allocating a new property array.

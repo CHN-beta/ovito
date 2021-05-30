@@ -109,6 +109,14 @@ public:
 			return nullptr;
 	}
 
+	/// Looks up a user-defined property with the given name and makes it mutable if necessary.
+	PropertyObject* getMutableProperty(const QString& name) {
+		if(const PropertyObject* p = getProperty(name))
+			return makeMutable(p);
+		else
+			return nullptr;
+	}
+
 	/// Returns the given standard property.
 	/// If it does not exist, an exception is thrown.
 	const PropertyObject* expectProperty(int typeId) const;

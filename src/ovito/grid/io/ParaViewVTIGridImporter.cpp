@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 	setProgressText(tr("Reading ParaView VTI ImageData file %1").arg(fileHandle().toString()));
 
 	// Create the destination voxel grid.
-	QString gridIdentifier = dataBlockPrefix();
+	QString gridIdentifier = loadRequest().dataBlockPrefix;
 	VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
 	if(!gridObj) {
 		gridObj = state().createObject<VoxelGrid>(dataSource(), executionContext());
@@ -231,8 +231,11 @@ PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataA
 /******************************************************************************
 * Reads a <DataArray> element and stores it in the given OVITO property.
 ******************************************************************************/
-void ParaViewVTIGridImporter::parseVTKDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml)
+void ParaViewVTIGridImporter::parseVTKDataArray(PropertyObject* property, size_t beginIndex, size_t endIndex, int vectorComponent, QXmlStreamReader& xml)
 {
+	OVITO_ASSERT(beginIndex <= endIndex);
+	OVITO_ASSERT(endIndex <= property->size());
+
 	// Check value of the 'format' attribute.
 	QString format = xml.attributes().value("format").toString();
 	if(format.isEmpty()) {
@@ -271,7 +274,7 @@ void ParaViewVTIGridImporter::parseVTKDataArray(PropertyObject* property, int ve
 	// Parse the contents of the XML element and convert binary data from base64 encoding.
 	QString text = xml.readElementText();
 	QByteArray byteArray = QByteArray::fromBase64(text.toLatin1());
-	qint64 expectedBytes = property->size() * dataTypeSize * (vectorComponent == -1 ? property->componentCount() : 1);
+	qint64 expectedBytes = (endIndex - beginIndex) * dataTypeSize * (vectorComponent == -1 ? property->componentCount() : 1);
 	// Note: Decoded binary data is prepended with array size information.
 	if(byteArray.size() != expectedBytes + sizeof(qint64)) {
 		xml.raiseError(tr("Data array size mismatch: Expected %1 bytes of base64 encoded data, but XML element contains %2 bytes.")
@@ -289,24 +292,24 @@ void ParaViewVTIGridImporter::parseVTKDataArray(PropertyObject* property, int ve
 
 	auto copyValuesToProperty = [&](auto srcData) {
 		const auto begin = srcData;
-		const auto end = begin + property->size() * (vectorComponent == -1 ? property->componentCount() : 1);
+		const auto end = begin + (endIndex - beginIndex) * (vectorComponent == -1 ? property->componentCount() : 1);
 		if(property->dataType() == PropertyObject::Float) {
 			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<FloatType, true>(property).begin());
+				std::copy(begin, end, std::next(PropertyAccess<FloatType, true>(property).begin(), beginIndex * property->componentCount()));
 			else
-				std::copy(begin, end, std::begin(PropertyAccess<FloatType, true>(property).componentRange(vectorComponent)));
+				std::copy(begin, end, std::next(std::begin(PropertyAccess<FloatType, true>(property).componentRange(vectorComponent)), beginIndex));
 		}
 		else if(property->dataType() == PropertyObject::Int) {
 			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<int, true>(property).begin());
+				std::copy(begin, end, std::next(PropertyAccess<int, true>(property).begin(), beginIndex * property->componentCount()));
 			else
-				std::copy(begin, end, std::begin(PropertyAccess<int, true>(property).componentRange(vectorComponent)));
+				std::copy(begin, end, std::next(std::begin(PropertyAccess<int, true>(property).componentRange(vectorComponent)), beginIndex));
 		}
 		else if(property->dataType() == PropertyObject::Int64) {
 			if(vectorComponent == -1)
-				std::copy(begin, end, PropertyAccess<qlonglong, true>(property).begin());
+				std::copy(begin, end, std::next(PropertyAccess<qlonglong, true>(property).begin(), beginIndex * property->componentCount()));
 			else
-				std::copy(begin, end, std::begin(PropertyAccess<qlonglong, true>(property).componentRange(vectorComponent)));
+				std::copy(begin, end, std::next(std::begin(PropertyAccess<qlonglong, true>(property).componentRange(vectorComponent)), beginIndex));
 		}
 	};
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,7 +70,12 @@ public:
 	}
 
 	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO property.
-	static void parseVTKDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml);
+	static void parseVTKDataArray(PropertyObject* property, size_t beginIndex, size_t endIndex, int vectorComponent, QXmlStreamReader& xml);
+
+	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO property.
+	static void parseVTKDataArray(PropertyObject* property, int vectorComponent, QXmlStreamReader& xml) {
+		parseVTKDataArray(property, 0, property->size(), vectorComponent, xml);
+	}
 
 private:
 
