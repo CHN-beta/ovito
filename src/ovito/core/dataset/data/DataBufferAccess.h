@@ -195,7 +195,7 @@ public:
 		OVITO_ASSERT(this->_buffer);
 		OVITO_ASSERT(this->_buffer->dataType() == DataBufferPrimitiveType<T>::value);
 		OVITO_ASSERT(this->stride() == sizeof(T));
-		return reinterpret_cast<const T*>(this->_buffer->cbuffer()) + _beginIndex;
+		return reinterpret_cast<const T*>(this->_buffer->cbuffer()) + this->_beginIndex;
 	}
 
 	/// Returns a pointer pointing to the end of the data array.
@@ -402,7 +402,7 @@ public:
 	/// Returns a pointer to the first element of the data array.
 	T* begin() const {
 		OVITO_ASSERT(this->_buffer);
-		return reinterpret_cast<T*>(this->_buffer->buffer()) + _beginIndex;
+		return reinterpret_cast<T*>(this->_buffer->buffer()) + this->_beginIndex;
 	}
 
 	/// Returns a pointer pointing to the end of the data array.
