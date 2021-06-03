@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,21 +77,42 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 		settings.beginGroup(LAMMPSDataImporter::OOClass().plugin()->pluginId());
 		settings.beginGroup(LAMMPSDataImporter::OOClass().name());
 
-		int currentIndex = -1;
-		for(int i = 0; i < itemList.size(); i++)
-			if(dataImporter->atomStyle() == styleList[itemList[i]])
-				currentIndex = i;
-		if(currentIndex == -1)
-			currentIndex = itemList.indexOf(settings.value("DefaultAtomStyle").toString());
-		if(currentIndex == -1)
-			currentIndex = itemList.indexOf("atomic");
+		QString currentItem;
+		for(int i = 0; i < itemList.size(); i++) {
+			if(dataImporter->atomStyle() == styleList[itemList[i]]) {
+				currentItem = itemList[i];
+				break;
+			}
+		}
+		if(currentItem.isEmpty())
+			currentItem = settings.value("DefaultAtomStyle").toString();
+		if(currentItem.isEmpty())
+			currentItem = QStringLiteral("atomic");
 
-		bool ok;
-		QString selectedItem = QInputDialog::getItem(parent, tr("LAMMPS data file"), tr("Please select the LAMMPS atom style used by the data file:"), itemList, currentIndex, false, &ok);
-		if(!ok) return false;
-
-		settings.setValue("DefaultAtomStyle", selectedItem);
-		dataImporter->setAtomStyle(styleList[selectedItem]);
+		QInputDialog dlg(parent);
+		dlg.setLabelText((dataImporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Unknown) ? 
+				tr("<html><p>Please select the LAMMPS <i>atom style</i> for this LAMMPS data file. "
+				"OVITO could not detect it automatically, because the file does not "
+				"contain a <a href=\"https://docs.lammps.org/read_data.html#format-of-the-body-of-a-data-file\">style hint</a> in its <i>Atoms</i> section.</p>"
+				"<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or " 
+				"check the value of the <i>atom_style</i> command in your LAMMPS input script.</p>"
+				"<p>LAMMPS atom style:</p></html>") :
+				tr("LAMMPS atom style:"));
+		dlg.setWindowTitle(tr("LAMMPS data file"));
+		dlg.setComboBoxEditable(false);
+		dlg.setComboBoxItems(itemList);
+		dlg.setInputMode(QInputDialog::TextInput);
+		dlg.setTextValue(currentItem);
+		if(QLabel* label = dlg.findChild<QLabel*>()) {
+			label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+			label->setOpenExternalLinks(true);
+			label->setWordWrap(true);
+		}
+		if(dlg.exec() != QDialog::Accepted)
+			return false;
+		currentItem = dlg.textValue();
+		settings.setValue("DefaultAtomStyle", currentItem);
+		dataImporter->setAtomStyle(styleList[currentItem]);
 	}
 	else {
 		dataImporter->setAtomStyle(detectedAtomStyle);
