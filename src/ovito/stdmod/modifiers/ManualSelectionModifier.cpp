@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -144,6 +144,17 @@ void ManualSelectionModifier::clearSelection(ModifierApplication* modApp, const 
 	if(subject()) {
 		const PropertyContainer* container = state.expectLeafObject(subject());
 		getSelectionSet(modApp, true)->clearSelection(container);
+	}
+}
+
+/******************************************************************************
+* Inverts the selection state of all elements.
+******************************************************************************/
+void ManualSelectionModifier::invertSelection(ModifierApplication* modApp, const PipelineFlowState& state)
+{
+	if(subject()) {
+		const PropertyContainer* container = state.expectLeafObject(subject());
+		getSelectionSet(modApp, true)->invertSelection(container);
 	}
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,6 +66,9 @@ public:
 
 	/// Clears the selection set.
 	void clearSelection(const PropertyContainer* container);
+
+	/// Inverts the selection state of all elements.
+	void invertSelection(const PropertyContainer* container);
 
 	/// Selects all elements in the given container.
 	void selectAll(const PropertyContainer* container);

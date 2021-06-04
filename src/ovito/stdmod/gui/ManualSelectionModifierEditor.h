@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,6 +64,9 @@ protected Q_SLOTS:
 
 	/// Clears the selection.
 	void clearSelection();
+
+	/// Inverts the selection.
+	void invertSelection();
 };
 
 }	// End of namespace

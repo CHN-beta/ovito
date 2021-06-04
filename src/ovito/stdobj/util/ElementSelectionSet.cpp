@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -319,6 +319,35 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
 	}
 	notifyTargetChanged();
 }
+
+/******************************************************************************
+* Inverts the selection state of all elements.
+******************************************************************************/
+void ElementSelectionSet::invertSelection(const PropertyContainer* container)
+{
+	// Make a backup of the old selection state so it may be restored.
+	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
+
+	// Obtain access to the unique identifiers of the data elements (if present).
+	ConstPropertyAccess<qlonglong> identifierProperty;
+	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
+		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
+
+	if(identifierProperty) {
+		_selection.clear();
+		for(auto id : identifierProperty) {
+			if(!_selectedIdentifiers.remove(id))
+				_selectedIdentifiers.insert(id);
+		}
+	}
+	else {
+		_selection.resize(container->elementCount(), false);
+		_selection.flip();
+		_selectedIdentifiers.clear();
+	}
+	notifyTargetChanged();
+}
+
 
 /******************************************************************************
 * Copies the stored selection set into the given output selection property.

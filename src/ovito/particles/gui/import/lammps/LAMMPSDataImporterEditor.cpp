@@ -91,7 +91,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 
 		QInputDialog dlg(parent);
 		dlg.setLabelText((dataImporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Unknown) ? 
-				tr("<html><p>Please select the LAMMPS <i>atom style</i> for this LAMMPS data file. "
+				tr("<html><p>Please select the right <b>atom style</b> for this LAMMPS data file. "
 				"OVITO could not detect it automatically, because the file does not "
 				"contain a <a href=\"https://docs.lammps.org/read_data.html#format-of-the-body-of-a-data-file\">style hint</a> in its <i>Atoms</i> section.</p>"
 				"<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or " 

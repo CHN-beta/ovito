@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -252,11 +252,15 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 	connect(selectAllBtn, &QPushButton::clicked, this, &ManualSelectionModifierEditor::selectAll);
 	sublayout->addWidget(selectAllBtn);
 
+	QPushButton* invertSelectionBtn = new QPushButton(tr("Invert selection"));
+	connect(invertSelectionBtn, &QPushButton::clicked, this, &ManualSelectionModifierEditor::invertSelection);
+	sublayout->addWidget(invertSelectionBtn);
+
 	QPushButton* clearSelectionBtn = new QPushButton(tr("Clear selection"));
 	connect(clearSelectionBtn, &QPushButton::clicked, this, &ManualSelectionModifierEditor::clearSelection);
 	sublayout->addWidget(clearSelectionBtn);
 
-	QPushButton* resetSelectionBtn = new QPushButton(tr("Reset selection"));
+	QPushButton* resetSelectionBtn = new QPushButton(tr("Reset selection to initial state"));
 	connect(resetSelectionBtn, &QPushButton::clicked, this, &ManualSelectionModifierEditor::resetSelection);
 	sublayout->addWidget(resetSelectionBtn);
 
@@ -306,6 +310,21 @@ void ManualSelectionModifierEditor::clearSelection()
 	undoableTransaction(tr("Clear selection"), [this,mod]() {
 		for(ModifierApplication* modApp : modifierApplications()) {
 			mod->clearSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+		}
+	});
+}
+
+/******************************************************************************
+* Inverts the selection.
+******************************************************************************/
+void ManualSelectionModifierEditor::invertSelection()
+{
+	ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
+	if(!mod) return;
+
+	undoableTransaction(tr("Invert selection"), [this,mod]() {
+		for(ModifierApplication* modApp : modifierApplications()) {
+			mod->invertSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
 		}
 	});
 }

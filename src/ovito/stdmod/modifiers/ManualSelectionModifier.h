@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,9 @@ public:
 
 	/// Deselects all elements.
 	void clearSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+
+	/// Inverts the selection state of all elements.
+	void invertSelection(ModifierApplication* modApp, const PipelineFlowState& state);
 
 	/// Toggles the selection state of a single element.
 	void toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex);
