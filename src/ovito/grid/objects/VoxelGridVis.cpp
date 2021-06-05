@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,6 +39,8 @@ SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, highlightGridLines, "Highlight grid lines");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Interpolate colors");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoxelGridVis, transparencyController, PercentParameterUnit, 0, 1);
+
+IMPLEMENT_OVITO_CLASS(VoxelGridPickInfo);
 
 /******************************************************************************
 * Constructor.
@@ -114,6 +116,7 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	// The values stored in the vis cache.
 	struct CacheValue {
 		std::shared_ptr<MeshPrimitive> volumeFaces;
+        OORef<ObjectPickInfo> pickInfo;
 	};
 
 	FloatType transp = 0;
@@ -130,6 +133,7 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 	// Check if we already have valid rendering primitives that are up to date.
 	if(!primitives.volumeFaces) {
 		primitives.volumeFaces = renderer->createMeshPrimitive();
+		primitives.pickInfo = new VoxelGridPickInfo(this, gridObj);
 		if(gridObj->domain()) {
 			TriMesh mesh;
 			if(colorArray) {
@@ -142,7 +146,7 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 			std::array<bool, 3> pbcFlags = gridObj->domain()->pbcFlags();
 
 			// Helper function that creates the mesh vertices and faces for one side of the grid volume.
-			auto createFacesForSide = [&](size_t dim1, size_t dim2, int dim3, bool oppositeSide) {
+			auto createFacesForSide = [&](size_t dim1, size_t dim2, size_t dim3, bool oppositeSide) {
 
 				// Number of grid lines between voxels:
 				int nx = gridDims[dim1] + 1;
@@ -372,9 +376,100 @@ void VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& 
 		}
 	}
 
-	renderer->beginPickObject(contextNode);
+	renderer->beginPickObject(contextNode, primitives.pickInfo);
 	renderer->renderMesh(primitives.volumeFaces);
 	renderer->endPickObject();
+}
+
+/******************************************************************************
+* Returns a human-readable string describing the picked object,
+* which will be displayed in the status bar by OVITO.
+******************************************************************************/
+QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+{
+    QString str = voxelGrid()->objectTitle();
+
+	if(voxelGrid()->domain()) {
+
+		// The number of triangles the mesh contains per voxel grid cell face.
+		size_t trianglesPerCell = (visElement()->interpolateColors() && voxelGrid()->getProperty(VoxelGrid::ColorProperty)) ? 8 : 2;
+
+		auto locateFaceOnSide = [&](size_t dim1, size_t dim2, size_t dim3, bool oppositeSide) -> boost::optional<std::array<size_t, 3>> {
+			const VoxelGrid::GridDimensions& gridDims = voxelGrid()->shape();
+			size_t ntri = gridDims[dim1] * gridDims[dim2] * trianglesPerCell;
+			if(subobjectId < ntri) {
+				std::array<size_t, 3> coords;
+				coords[dim1] = (subobjectId / trianglesPerCell) % gridDims[dim1];
+				coords[dim2] = (subobjectId / trianglesPerCell) / gridDims[dim1];
+				coords[dim3] = oppositeSide ? (gridDims[dim3] - 1) : 0;
+				return coords;
+			}
+			subobjectId -= ntri;
+			return boost::none;
+		};
+
+		// Determine the grid cell the mouse cursor is pointing at.
+		auto coords = locateFaceOnSide(0, 1, 2, false);
+		if(!coords && !voxelGrid()->domain()->is2D()) {
+			coords = locateFaceOnSide(0, 1, 2, true);
+			if(!coords) coords = locateFaceOnSide(1, 2, 0, false);
+			if(!coords) coords = locateFaceOnSide(1, 2, 0, true);
+			if(!coords) coords = locateFaceOnSide(2, 0, 1, false);
+			if(!coords) coords = locateFaceOnSide(2, 0, 1, true);
+		}
+		OVITO_ASSERT(coords);
+
+		// Retrieve the property values of the grid cell.
+		if(coords) {
+			if(!str.isEmpty()) str += QStringLiteral("<sep>");
+			str += tr("Cell ");
+			if(voxelGrid()->domain()->is2D() && voxelGrid()->shape()[2] <= 1)
+				str += QStringLiteral("(%1, %2)").arg((*coords)[0]).arg((*coords)[1]);
+			else
+				str += QStringLiteral("(%1, %2, %3)").arg((*coords)[0]).arg((*coords)[1]).arg((*coords)[2]);
+			size_t cellIndex = voxelGrid()->voxelIndex((*coords)[0], (*coords)[1], (*coords)[2]);
+			for(const PropertyObject* property : voxelGrid()->properties()) {
+				if(cellIndex >= property->size()) continue;
+				if(property->type() == VoxelGrid::ColorProperty) continue;
+				str += QStringLiteral("<sep>");
+				str += QStringLiteral("<key>");
+				str += property->name();
+				str += QStringLiteral(":</key> ");
+				if(property->dataType() == PropertyObject::Int) {
+					ConstPropertyAccess<int, true> data(property);
+					for(size_t component = 0; component < data.componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(cellIndex, component));
+						if(property->elementTypes().empty() == false) {
+							if(const ElementType* ptype = property->elementType(data.get(cellIndex, component))) {
+								if(!ptype->name().isEmpty())
+									str += QStringLiteral(" (%1)").arg(ptype->name());
+							}
+						}
+					}
+				}
+				else if(property->dataType() == PropertyObject::Int64) {
+					ConstPropertyAccess<qlonglong, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(cellIndex, component));
+					}
+				}
+				else if(property->dataType() == PropertyObject::Float) {
+					ConstPropertyAccess<FloatType, true> data(property);
+					for(size_t component = 0; component < property->componentCount(); component++) {
+						if(component != 0) str += QStringLiteral(", ");
+						str += QString::number(data.get(cellIndex, component));
+					}
+				}
+				else {
+					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : QStringLiteral("unknown"));
+				}
+			}
+		}
+	}
+
+    return str;
 }
 
 }	// End of namespace

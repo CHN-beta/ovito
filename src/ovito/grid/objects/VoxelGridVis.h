@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 
 
 #include <ovito/grid/Grid.h>
+#include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
@@ -71,6 +72,39 @@ private:
 
 	/// Controls whether the voxel face colors should be interpolated.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, interpolateColors, setInterpolateColors);
+};
+
+/**
+ * \brief This data structure is attached to the geometry rendered by the VoxelGridVis 
+ * in the viewports. It facilitates the picking of grid cells with the mouse.
+ */
+class VoxelGridPickInfo : public ObjectPickInfo
+{
+	Q_OBJECT
+	OVITO_CLASS(VoxelGridPickInfo)
+
+public:
+
+	/// Constructor.
+	VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid) :
+		_visElement(visElement), _voxelGrid(voxelGrid) {}
+
+	/// Returns the data object.
+	const DataOORef<const VoxelGrid>& voxelGrid() const { return _voxelGrid; }
+
+	/// Returns the vis element that rendered the voxel grid.
+	const VoxelGridVis* visElement() const { return _visElement; }
+
+	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+
+private:
+
+	/// The data object holding the original grid data.
+	DataOORef<const VoxelGrid> _voxelGrid;
+
+	/// The vis element that rendered the voxel grid.
+	OORef<VoxelGridVis> _visElement;
 };
 
 }	// End of namespace
