@@ -65,10 +65,10 @@
   <title>Varying bond connectivity</title>
     <para>
       The LAMMPS code supports reactive molecular dynamics simulations, in which the bond topology
-      dynamically changes during the course of the simulation as <link xlink:href="https://lammps.sandia.gov/doc/fix_bond_break.html">bonds break</link> 
-      or <link xlink:href="https://lammps.sandia.gov/doc/fix_bond_react.html">newly form</link>. 
-      The changing bond topology of such a simulation can be dumped to an output file using the <link xlink:href="https://lammps.sandia.gov/doc/dump.html"><literal>dump local</literal></link>
-      command of LAMMPS in combination with the <link xlink:href="https://lammps.sandia.gov/doc/compute_property_local.html"><literal>compute property/local</literal></link> command,
+      dynamically changes during the course of the simulation as <link xlink:href="https://docs.lammps.org/fix_bond_break.html">bonds break</link> 
+      or <link xlink:href="https://docs.lammps.org/fix_bond_react.html">newly form</link>. 
+      The changing bond topology of such a simulation can be dumped to an output file using the <link xlink:href="https://docs.lammps.org/dump.html"><literal>dump local</literal></link>
+      command of LAMMPS in combination with the <link xlink:href="https://docs.lammps.org/compute_property_local.html"><literal>compute property/local</literal></link> command,
       see the example below.
     </para>
     <para>

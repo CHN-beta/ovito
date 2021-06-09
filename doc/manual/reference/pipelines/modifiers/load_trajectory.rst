@@ -50,11 +50,11 @@ Varying bond connectivity
 """""""""""""""""""""""""
 
 The LAMMPS code supports reactive molecular dynamics simulations, in which the bond topology
-dynamically changes during the course of the simulation as `bonds break <https://lammps.sandia.gov/doc/fix_bond_break.html>`__ 
-or `newly form <https://lammps.sandia.gov/doc/fix_bond_react.html>`__. 
-The changing bond connectivity in such simulations can be dumped to an output file using the `dump local <https://lammps.sandia.gov/doc/dump.html>`__
-command of LAMMPS in combination with the `compute property/local <https://lammps.sandia.gov/doc/compute_property_local.html>`__ command,
-see the example below. In simulations using the ReaxFF potential, the `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command
+dynamically changes during the course of the simulation as `bonds break <https://docs.lammps.org/fix_bond_break.html>`__ 
+or `newly form <https://docs.lammps.org/fix_bond_react.html>`__. 
+The changing bond connectivity in such simulations can be dumped to an output file using the `dump local <https://docs.lammps.org/dump.html>`__
+command of LAMMPS in combination with the `compute property/local <https://docs.lammps.org/compute_property_local.html>`__ command,
+see the example below. In simulations using the ReaxFF potential, the `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command
 may be used to write the bonds list (including bond orders) to a text-based output file in regular time intervals.
 
 OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reax/c/bonds` files and merge it with the molecular dataset.
@@ -107,7 +107,7 @@ In contrast, if the dump local file doesn't contain the two topology columns, th
 the file stores auxiliary bond property values and simply adds them to the existing bonds. In this case, 
 the number of entries in the dump local file must exactly match the number of existing bonds in OVITO.
 
-File written by the `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command
+File written by the `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command
 have a different format, which is fixed. OVITO maps the contained information automatically to the right 
 bond and particle properties.  
 

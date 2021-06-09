@@ -67,7 +67,7 @@ The data table is accessible in the :ref:`data inspector panel <data_inspector.d
 .. image:: /images/modifiers/cluster_analysis_table.png
   :width: 100%
 
-The calculation of the radius of gyration and the gyration tensor in OVITO follows the `compute gyration <https://lammps.sandia.gov/doc/compute_gyration.html>`__ command 
+The calculation of the radius of gyration and the gyration tensor in OVITO follows the `compute gyration <https://docs.lammps.org/compute_gyration.html>`__ command 
 of the LAMMPS simulation code. It takes into account the individual particle masses (if present) or the masses of the particle types (if set).
 
 Unwrapping of particle coordinates

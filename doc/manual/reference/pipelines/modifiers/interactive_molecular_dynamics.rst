@@ -20,7 +20,7 @@ live trajectory data received from the running molecular dynamics program, which
 In order to run an IMD simulation it is necessary to have a molecular dynamics program that supports the IMD communication protocol. 
 To date, the following simulation codes are available:
 
-  * `LAMMPS <https://lammps.sandia.gov/doc/fix_imd.html>`__
+  * `LAMMPS <https://docs.lammps.org/fix_imd.html>`__
   * `HOOMD-blue <https://hoomd-blue.readthedocs.io/en/stable/module-hoomd-analyze.html#hoomd.analyze.imd>`__
   * `NAMD <http://www.ks.uiuc.edu/Research/namd/>`__
 

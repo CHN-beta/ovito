@@ -37,17 +37,17 @@
 
             <row>
               <entry>LAMMPS&#xA0;data</entry>
-              <entry><para>File format used by the <link xlink:href="http://lammps.sandia.gov/doc/read_data.html">LAMMPS</link> molecular dynamics code.</para></entry>
+              <entry><para>File format used by the <link xlink:href="https://docs.lammps.org/read_data.html">LAMMPS</link> molecular dynamics code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.bonds">bonds</link>, angles, dihedrals, impropers</entry>
             </row>
             <row>
               <entry>LAMMPS&#xA0;dump</entry>
-              <entry><para>File format used by the <link xlink:href="http://lammps.sandia.gov">LAMMPS</link> molecular dynamics code. OVITO supports both text-based and binary dump files.</para></entry>
+              <entry><para>File format used by the <link xlink:href="https://www.lammps.org/">LAMMPS</link> molecular dynamics code. OVITO supports both text-based and binary dump files.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
               <entry>LAMMPS&#xA0;dump&#xA0;local</entry>
-              <entry><para>File format written by the <link xlink:href="https://lammps.sandia.gov/doc/dump.html">dump local</link> command of LAMMPS. OVITO's <link linkend="particles.modifiers.load_trajectory">Load trajectory</link> modifier can read varying bond topology and 
+              <entry><para>File format written by the <link xlink:href="https://docs.lammps.org/dump.html">dump local</link> command of LAMMPS. OVITO's <link linkend="particles.modifiers.load_trajectory">Load trajectory</link> modifier can read varying bond topology and 
                 per-bond quantities from such files generated in reactive molecular dynamics simulations.</para></entry>
               <entry><link linkend="scene_objects.bonds">bonds</link></entry>
             </row>
@@ -82,7 +82,7 @@
             </row>
             <row>
               <entry>NetCDF</entry>
-              <entry><para>Binary format for molecular dynamics data following the <link xlink:href="http://ambermd.org/netcdf/nctraj.pdf">AMBER format convention</link>. NetCDF files are produced by the LAMMPS <link xlink:href="http://lammps.sandia.gov/doc/dump_netcdf.html">dump netcdf</link> command.</para></entry>
+              <entry><para>Binary format for molecular dynamics data following the <link xlink:href="http://ambermd.org/netcdf/nctraj.pdf">AMBER format convention</link>. NetCDF files are produced by the LAMMPS <link xlink:href="https://docs.lammps.org/dump_netcdf.html">dump netcdf</link> command.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
@@ -231,12 +231,12 @@
 
             <row>
               <entry>LAMMPS&#xA0;dump</entry>
-              <entry><para>Text-based file format produced and read by the <link xlink:href="http://lammps.sandia.gov">LAMMPS</link> molecular dynamics code.</para></entry>
+              <entry><para>Text-based file format produced and read by the <link xlink:href="https://www.lammps.org/">LAMMPS</link> molecular dynamics code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
               <entry>LAMMPS&#xA0;data</entry>
-              <entry><para>File format read by the <link xlink:href="http://lammps.sandia.gov">LAMMPS</link> molecular dynamics code.</para></entry>
+              <entry><para>File format read by the <link xlink:href="https://www.lammps.org/">LAMMPS</link> molecular dynamics code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.bonds">bonds</link>, angles, dihedrals, impropers</entry>
             </row>
             <row>

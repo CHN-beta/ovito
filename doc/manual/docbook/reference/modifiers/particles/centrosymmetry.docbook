@@ -64,7 +64,7 @@
       <varlistentry><term>Conventional CSP</term>
       <listitem>
       <para>
-      This mode implements the same <link xlink:href="http://lammps.sandia.gov/doc/compute_centro_atom.html">algorithm as LAMMPS</link> to calculate the centrosymmetry parameter.
+      This mode implements the same <link xlink:href="https://docs.lammps.org/compute_centro_atom.html">algorithm as LAMMPS</link> to calculate the centrosymmetry parameter.
       Weights are calculated between all <emphasis>N (N - 1) / 2</emphasis> pairs of neighbor atoms, and the CSP is calculated as the summation of the <emphasis>N / 2</emphasis> smallest weights.
       </para>
       </listitem>

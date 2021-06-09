@@ -14,11 +14,11 @@ OVITO can export data to the following file formats:
     - Data type(s) 
 
   * - LAMMPS data 
-    - File format read by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.  
+    - File format read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.  
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
 
   * - LAMMPS dump
-    - Trajectory format used by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.  
+    - Trajectory format used by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.  
     - :ref:`particles <scene_objects.particles>`
 
   * - XYZ 

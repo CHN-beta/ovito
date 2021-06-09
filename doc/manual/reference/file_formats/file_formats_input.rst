@@ -14,21 +14,21 @@ OVITO can read the following file formats:
     - Data type(s)
   
   * - LAMMPS data
-    - File format used by the `LAMMPS <http://lammps.sandia.gov/doc/read_data.html>`__ molecular dynamics code.
+    - File format used by the `LAMMPS <https://docs.lammps.org/read_data.html>`__ molecular dynamics code.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
   
   * - LAMMPS dump
-    - File format used by the `LAMMPS <http://lammps.sandia.gov>`__  LAMMPS molecular dynamics code. OVITO supports both text-based and binary dump files.
+    - File format used by the `LAMMPS <https://www.lammps.org/>`__  LAMMPS molecular dynamics code. OVITO supports both text-based and binary dump files.
     - :ref:`particles <scene_objects.particles>`
 
   * - LAMMPS dump local
-    - File format written by the `dump local <https://lammps.sandia.gov/doc/dump.html>`__ command of LAMMPS. 
+    - File format written by the `dump local <https://docs.lammps.org/dump.html>`__ command of LAMMPS. 
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read varying bond topology and 
       per-bond quantities from such files generated in reactive molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
 
   * - ReaxFF bonds
-    - File format written by the LAMMPS `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 
+    - File format written by the LAMMPS `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read the bond topology, bond order and 
       atomic charges dumped during ReaxFF molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
@@ -58,7 +58,7 @@ OVITO can read the following file formats:
 
   * - NetCDF 
     - Binary format for molecular dynamics data following the `AMBER format convention <http://ambermd.org/netcdf/nctraj.pdf>`__. NetCDF files are produced by 
-      the LAMMPS `dump netcdf <http://lammps.sandia.gov/doc/dump_netcdf.html>`__ command.  
+      the LAMMPS `dump netcdf <https://docs.lammps.org/dump_netcdf.html>`__ command.  
     - :ref:`particles <scene_objects.particles>`
              
   * - CIF          

@@ -159,7 +159,7 @@ Third-party software
     - :ref:`license <appendix.license.vma>`
     - 
 
-  * - `LAMMPS <https://lammps.sandia.gov/>`__
+  * - `LAMMPS <https://www.lammps.org//>`__
     - LGPL v3
     - 
 

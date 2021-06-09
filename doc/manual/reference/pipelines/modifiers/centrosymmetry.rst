@@ -45,7 +45,7 @@ CSP algorithms
 The modifier supports two modes of operation:
 
 Conventional CSP
-  This mode uses the same `algorithm as LAMMPS <http://lammps.sandia.gov/doc/compute_centro_atom.html>`__ for calculating the centrosymmetry parameter.
+  This mode uses the same `algorithm as LAMMPS <https://docs.lammps.org/compute_centro_atom.html>`__ for calculating the centrosymmetry parameter.
   Weights are calculated between all :math:`N (N - 1) / 2` pairs of neighbor atoms, and the CSP is calculated as the summation of the :math:`N / 2` lowest weights.
 
 Minimum-weight matching CSP

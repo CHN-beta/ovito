@@ -54,12 +54,12 @@
           <tbody>
             <row>
               <entry>LAMMPS&#xA0;dump</entry>
-              <entry><para>Text-based file format produced and read by the <link xlink:href="http://lammps.sandia.gov">LAMMPS</link> molecular dynamics code.</para></entry>
+              <entry><para>Text-based file format produced and read by the <link xlink:href="https://www.lammps.org/">LAMMPS</link> molecular dynamics code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link></entry>
             </row>
             <row>
               <entry>LAMMPS&#xA0;data</entry>
-              <entry><para>File format read by the <link xlink:href="http://lammps.sandia.gov">LAMMPS</link> molecular dynamics code.</para></entry>
+              <entry><para>File format read by the <link xlink:href="https://www.lammps.org/">LAMMPS</link> molecular dynamics code.</para></entry>
               <entry><link linkend="scene_objects.particles">particles</link>, <link linkend="scene_objects.bonds">bonds</link>, angles, dihedrals, impropers</entry>
             </row>
             <row>

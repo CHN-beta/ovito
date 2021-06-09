@@ -41,10 +41,10 @@ Supported output file formats
     - Description 
     - Exported data
   * - LAMMPS dump
-    - Text-based file format produced and read by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.
+    - Text-based file format produced and read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.
     - :ref:`particles <scene_objects.particles>`
   * - LAMMPS data
-    - File format read by the `LAMMPS <http://lammps.sandia.gov>`__ molecular dynamics code.
+    - File format read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
   * - XYZ
     - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__.
