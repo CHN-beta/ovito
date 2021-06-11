@@ -190,7 +190,12 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 	bool transposeOrientations = false;
 	if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
 		for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
-    		// Roundness = 2.0 / Blockiness
+			// Blockiness1: "north-south" blockiness
+			// Blockiness2: "east-west" blockiness
+			// Roundness.x: "east-west" roundness
+			// Roundness.y: "north-south" roundness
+			std::swap(v.x(), v.y());
+    		// Roundness = 2.0 / Blockiness:
 			if(v.x() != 0) v.x() = FloatType(2) / v.x();
 			if(v.y() != 0) v.y() = FloatType(2) / v.y();
 		}
