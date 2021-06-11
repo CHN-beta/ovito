@@ -20,6 +20,7 @@ OVITO User Manual
   introduction
   installation
   usage/index
+  tutorials/index
   advanced_topics/index
   reference/index
   ovito_pro
