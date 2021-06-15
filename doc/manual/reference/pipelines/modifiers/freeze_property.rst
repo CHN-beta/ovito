@@ -78,7 +78,7 @@ the difference between the particle property ``Potential Energy`` (which is time
 Example 3
 """""""""
 
-Another typical application for this modifier is described in :ref:`this tutorial <howto.marker_particles>`.
+Another typical application for this modifier is described in the tutorial :ref:`tutorials.marker_particles`.
 
 .. seealso::
   

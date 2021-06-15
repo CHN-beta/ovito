@@ -14,6 +14,8 @@ Tutorials
 .. - Analyze a bulk metalic glass simulation
 .. - Visualize a LAMMPS simulations with separate topology/trajectory/bond files
 .. - Creating a turntable animation
-.. - Creating good renderings of a simulation model
+.. - Creating good-looking renderings of a simulation model (OSPRay)
 .. - Visualize internal motion using marker marker
-.. - Visualize particle resident time distribution
+.. - Visualize particle resident time distribution (spatial binning, time averaging)
+.. - Calculate diffusion constant (Python script)
+.. - Python script modifier: Warren-Cowley-SRO
