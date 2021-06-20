@@ -272,7 +272,7 @@ void ParaViewVTIGridImporter::parseVTKDataArray(PropertyObject* property, size_t
 	}
 
 	// Parse the contents of the XML element and convert binary data from base64 encoding.
-	QString text = xml.readElementText();
+	QString text = xml.readElementText(QXmlStreamReader::SkipChildElements);
 	QByteArray byteArray = QByteArray::fromBase64(text.toLatin1());
 	qint64 expectedBytes = (endIndex - beginIndex) * dataTypeSize * (vectorComponent == -1 ? property->componentCount() : 1);
 	// Note: Decoded binary data is prepended with array size information.

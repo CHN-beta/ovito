@@ -337,7 +337,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 	QString name = xml.attributes().value("Name").toString();
 
 	// Parse the contents of the XML element and convert binary data from base64 encoding.
-	QString text = xml.readElementText();
+	QString text = xml.readElementText(QXmlStreamReader::SkipChildElements);
 	QByteArray byteArray = QByteArray::fromBase64(text.toLatin1());
 
 	// Note: Decoded binary data is prepended with array size information.
