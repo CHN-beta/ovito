@@ -317,7 +317,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 	// If so, their PBC flags need to be updated. 
 	if(outputParticles->bonds()) {
 		if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
-			if(cell->hasPbc()) {
+			if(cell->hasPbcCorrected()) {
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 					ConstPropertyAccess<Point3> positions(_coordinates);
 					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
@@ -329,7 +329,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 							if(index1 < positions.size() && index2 < positions.size()) {
 								Vector3 delta = cell->absoluteToReduced(positions[index1] - positions[index2]);
 								for(size_t dim = 0; dim < 3; dim++) {
-									if(cell->hasPbc(dim))
+									if(cell->hasPbcCorrected(dim))
 										periodicImageProperty[bondIndex][dim] = (int)std::round(delta[dim]);
 								}
 							}

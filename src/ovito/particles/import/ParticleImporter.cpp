@@ -243,12 +243,12 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 
 	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, executionContext());
 
-	if(!hasSimulationCell() || !simulationCell()->hasPbc()) {
+	if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
 		bondPeriodicImageProperty.take()->fill(Vector3I::Zero());
 	}
 	else {
 		const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
-		const std::array<bool,3> pbcFlags = simulationCell()->pbcFlags();
+		const std::array<bool,3> pbcFlags = simulationCell()->pbcFlagsCorrected();
 		for(size_t bondIndex = 0; bondIndex < bondTopologyProperty.size(); bondIndex++) {
 			size_t index1 = bondTopologyProperty[bondIndex][0];
 			size_t index2 = bondTopologyProperty[bondIndex][1];

@@ -39,16 +39,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 
 	simCell = cellData;
 
-	// Automatically disable PBCs in Z direction for 2D systems.
-	if(simCell->is2D()) {
-		OVITO_ASSERT(!simCell->matrix().column(2).isZero());
-		OVITO_ASSERT(simCell->hasPbc(2) == false);
-//		simCell.setPbcFlags(simCell.hasPbc(0), simCell.hasPbc(1), false);
-//		AffineTransformation matrix = simCell.matrix();
-//		matrix.column(2) = Vector3(0, 0, 0.01f);
-//		simCell.setMatrix(matrix);
-	}
-
+	OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
 	if(simCell->volume3D() <= FLOATTYPE_EPSILON)
 		throw Exception("Simulation cell is degenerate.");
 
@@ -56,6 +47,9 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 	planeNormals[0] = simCell->cellNormalVector(0);
 	planeNormals[1] = simCell->cellNormalVector(1);
 	planeNormals[2] = simCell->cellNormalVector(2);
+	OVITO_ASSERT(planeNormals[0] != Vector3::Zero());
+	OVITO_ASSERT(planeNormals[1] != Vector3::Zero());
+	OVITO_ASSERT(planeNormals[2] != Vector3::Zero());
 
 	// For small simulation cells it cannot hurt much to consider more periodic images.
 	// At the very least, consider one periodic image in each direction though (when cell is orthogonal),
@@ -64,9 +58,9 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 	if(nimages < 2 && !simCell->isAxisAligned()) nimages = 2;
 
 	// Create list of periodic image shift vectors.
-	int nx = simCell->hasPbc(0) ? nimages : 0;
-	int ny = simCell->hasPbc(1) ? nimages : 0;
-	int nz = simCell->hasPbc(2) ? nimages : 0;
+	int nx = simCell->hasPbcCorrected(0) ? nimages : 0;
+	int ny = simCell->hasPbcCorrected(1) ? nimages : 0;
+	int nz = simCell->hasPbcCorrected(2) ? nimages : 0;
 	for(int iz = -nz; iz <= nz; iz++) {
 		for(int iy = -ny; iy <= ny; iy++) {
 			for(int ix = -nx; ix <= nx; ix++) {
@@ -81,18 +75,18 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 
 	// Compute bounding box of all particles (only for non-periodic directions).
 	Box3 boundingBox(Point3(0,0,0), Point3(1,1,1));
-	if(simCell->hasPbc(0) == false || simCell->hasPbc(1) == false || simCell->hasPbc(2) == false) {
+	if(simCell->hasPbcCorrected(0) == false || simCell->hasPbcCorrected(1) == false || simCell->hasPbcCorrected(2) == false) {
 		for(const Point3& p : posProperty) {
 			Point3 reducedp = simCell->absoluteToReduced(p);
-			if(simCell->hasPbc(0) == false) {
+			if(simCell->hasPbcCorrected(0) == false) {
 				if(reducedp.x() < boundingBox.minc.x()) boundingBox.minc.x() = reducedp.x();
 				else if(reducedp.x() > boundingBox.maxc.x()) boundingBox.maxc.x() = reducedp.x();
 			}
-			if(simCell->hasPbc(1) == false) {
+			if(simCell->hasPbcCorrected(1) == false) {
 				if(reducedp.y() < boundingBox.minc.y()) boundingBox.minc.y() = reducedp.y();
 				else if(reducedp.y() > boundingBox.maxc.y()) boundingBox.maxc.y() = reducedp.y();
 			}
-			if(simCell->hasPbc(2) == false) {
+			if(simCell->hasPbcCorrected(2) == false) {
 				if(reducedp.z() < boundingBox.minc.z()) boundingBox.minc.z() = reducedp.z();
 				else if(reducedp.z() > boundingBox.maxc.z()) boundingBox.maxc.z() = reducedp.z();
 			}
@@ -128,7 +122,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 		// Wrap atomic positions back into simulation box.
 		Point3 rp = simCell->absoluteToReduced(a.pos);
 		for(size_t k = 0; k < 3; k++) {
-			if(simCell->hasPbc(k)) {
+			if(simCell->hasPbcCorrected(k)) {
 				if(FloatType s = std::floor(rp[k])) {
 					rp[k] -= s;
 					a.pos -= s * simCell->matrix().column(k);

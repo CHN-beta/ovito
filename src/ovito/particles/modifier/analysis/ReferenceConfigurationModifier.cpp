@@ -265,7 +265,7 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 	}
 
 	if(affineMapping != NO_MAPPING) {
-		if(std::abs(cell()->matrix().determinant()) < FLOATTYPE_EPSILON || std::abs(refCell()->matrix().determinant()) < FLOATTYPE_EPSILON)
+		if(cell()->volume3D() < FLOATTYPE_EPSILON || refCell()->volume3D() < FLOATTYPE_EPSILON)
 			throw Exception(tr("Simulation cell is degenerate in either the deformed or the reference configuration."));
 	}
 

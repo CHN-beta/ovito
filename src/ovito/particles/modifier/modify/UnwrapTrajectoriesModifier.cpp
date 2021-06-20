@@ -380,7 +380,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
 	if(!cell)
 		throwException(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
-	if(!cell->hasPbc())
+	if(!cell->hasPbcCorrected())
 		throwException(tr("No periodic boundary conditions set for the simulation cell."));
 	AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
 
@@ -441,7 +441,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		if(!result.second) {
 			Vector3 delta = result.first->second - rp;
 			for(size_t dim = 0; dim < 3; dim++) {
-				if(cell->hasPbc(dim)) {
+				if(cell->hasPbcCorrected(dim)) {
 					int shift = (int)std::round(delta[dim]);
 					if(shift != 0) {
 						// Create a new record when particle has crossed a periodic cell boundary.

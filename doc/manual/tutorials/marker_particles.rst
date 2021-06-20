@@ -160,5 +160,13 @@ Finally, press the button :guilabel:`Render active viewport` to start the render
   - Adjust the display radius of the particles in the :ref:`visual_elements.particles` visual element to a value of **1.0**.
   - Activate :menuselection:`Preview Mode` in the :ref:`viewport menu <usage.viewports.menu>` to check the visible viewport region before rendering the video.
 
-If you encounter any problems with this tutorial, please drop us an email at support@ovito.org and help us improve 
+Download tutorial solution
+""""""""""""""""""""""""""
+
+In case you would like to skip right to the end of this tutorial or verify your own solution, an OVITO session state file is available.
+Download the state file `shear.ovito <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.ovito>`__
+and save it in the same folder as the trajectory file :file:`shear.dump`. Use the :menuselection:`File --> Load Session State` 
+menu function to load it in OVITO. 
+
+If you encounter any problems with this tutorial, please drop us an email at support@ovito.org to help us improve 
 the instructions.

@@ -33,6 +33,9 @@ Cartesian coordinates / Miller indices |ovito-pro|
   Selects whether the `Distance` and `Normal` parameters are specified in terms of
   the global Cartesian coordinate system or in `reciprocal cell space <https://en.wikipedia.org/wiki/Miller_index>`__. 
 
+  Note: Miller indices are specified in terms of the periodic lattice established by the three simulation cell vectors only,
+  not the physical lattice possibly formed by atoms/particles within the simulation cell, which may be different.
+
 Distance
   The (signed) distance of the cutting plane from the origin measured parallel to the plane normal. 
   In `Cartesian` mode, the origin is the point (0,0,0) of the global simulation coordinate system

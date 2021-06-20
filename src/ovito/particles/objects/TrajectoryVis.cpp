@@ -224,7 +224,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 	Point3 rp1 = simulationCell->absoluteToReduced(v1);
 	Vector3 shiftVector = Vector3::Zero();
 	for(size_t dim = 0; dim < 3; dim++) {
-		if(simulationCell->hasPbc(dim)) {
+		if(simulationCell->hasPbcCorrected(dim)) {
 			while(rp1[dim] >= 1) { rp1[dim] -= 1; shiftVector[dim] -= 1; }
 			while(rp1[dim] < 0) { rp1[dim] += 1; shiftVector[dim] += 1; }
 		}
@@ -237,7 +237,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 		FloatType crossDir;
 		smallestT = FLOATTYPE_MAX;
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(simulationCell->hasPbc(dim) && !clippedDimensions[dim]) {
+			if(simulationCell->hasPbcCorrected(dim) && !clippedDimensions[dim]) {
 				int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
 				if(d == 0) continue;
 				FloatType t;

@@ -125,11 +125,22 @@ public:
 		return {{ pbcX(), pbcY(), pbcZ() }};
 	}
 
+	/// \brief Returns the periodic boundary flags in all three spatial directions.
+	std::array<bool,3> pbcFlagsCorrected() const {
+		return {{ pbcX(), pbcY(), pbcZ() && !is2D() }};
+	}
+
 	/// Returns whether the simulation cell has periodic boundary conditions applied in the given direction.
 	bool hasPbc(size_t dim) const { OVITO_ASSERT(dim < 3); return dim == 0 ? pbcX() : (dim == 1 ? pbcY() : pbcZ()); }
 
+	/// Returns whether the simulation cell has periodic boundary conditions applied in the given direction.
+	bool hasPbcCorrected(size_t dim) const { OVITO_ASSERT(dim < 3); return dim == 0 ? pbcX() : (dim == 1 ? pbcY() : (pbcZ() && !is2D())); }
+
 	/// Returns whether the simulation cell has periodic boundary conditions applied in at least one direction.
 	bool hasPbc() const { return pbcX() || pbcY() || pbcZ(); }
+
+	/// Returns whether the simulation cell has periodic boundary conditions applied in at least one direction.
+	bool hasPbcCorrected() const { return pbcX() || pbcY() || (pbcZ() && !is2D()); }
 
 	/// \brief Returns the first edge vector of the cell.
 	const Vector3& cellVector1() const { return cellMatrix().column(0); }
@@ -172,7 +183,7 @@ public:
 	Point3 wrapPoint(const Point3& p) const {
 		Point3 pout = p;
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(hasPbc(dim)) {
+			if(hasPbcCorrected(dim)) {
 				if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(p, dim)))
 					pout -= s * cellMatrix().column(dim);
 			}
@@ -184,7 +195,7 @@ public:
 	Vector3 wrapVector(const Vector3& v) const {
 		Vector3 vout = v;
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(hasPbc(dim)) {
+			if(hasPbcCorrected(dim)) {
 				if(FloatType s = std::floor(reciprocalCellMatrix().prodrow(v, dim) + FloatType(0.5)))
 					vout -= s * cellMatrix().column(dim);
 			}
@@ -194,7 +205,9 @@ public:
 
 	/// Calculates the normal vector of the given simulation cell side.
 	Vector3 cellNormalVector(size_t dim) const {
-		Vector3 normal = cellMatrix().column((dim+1)%3).cross(cellMatrix().column((dim+2)%3));
+		size_t dim1 = (dim + 1) % 3;
+		size_t dim2 = (dim + 2) % 3;
+		Vector3 normal = cellMatrix().column(dim1).cross(cellMatrix().column(dim2));
 		// Flip normal if necessary.
 		if(normal.dot(cellMatrix().column(dim)) < 0)
 			return normal / (-normal.length());
@@ -205,7 +218,7 @@ public:
 	/// Tests if a vector so long that it would be wrapped at a periodic boundary when using the minimum image convention.
 	bool isWrappedVector(const Vector3& v) const {
 		for(size_t dim = 0; dim < 3; dim++) {
-			if(hasPbc(dim)) {
+			if(hasPbcCorrected(dim)) {
 				if(std::abs(reciprocalCellMatrix().prodrow(v, dim)) >= FloatType(0.5))
 					return true;
 			}

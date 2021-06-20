@@ -252,12 +252,12 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 	if(_periodicImageBondProperty && _periodicImageBondProperty->size() == bondTopology()->size()) {
 		OVITO_ASSERT(_unwrappedPositions);
 
-		if(!cell() || !cell()->hasPbc()) {
+		if(!cell() || !cell()->hasPbcCorrected()) {
 			// No wrapping of bonds needed if simulation cell is non-periodic.
 			_periodicImageBondProperty.reset(); 
 		}
 		else {
-			const std::array<bool, 3> pbcFlags = cell()->pbcFlags();
+			const std::array<bool, 3> pbcFlags = cell()->pbcFlagsCorrected();
 
 			// If any particles have been unwrapped by the modifier, update the PBC vectors
 			// of the incident bonds accordingly.

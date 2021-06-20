@@ -42,16 +42,8 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 
 	simCell = cell;
 
-	// Automatically disable PBCs in Z direction for 2D systems.
-	if(simCell->is2D()) {
-		OVITO_ASSERT(!simCell->matrix().column(2).isZero());
-		OVITO_ASSERT(simCell->hasPbc(2) == false);
-//		simCell.setPbcFlags(simCell.hasPbc(0), simCell.hasPbc(1), false);
-//		AffineTransformation matrix = simCell.matrix();
-//		matrix.column(2) = Vector3(0, 0, 0.01f);
-//		simCell.setMatrix(matrix);
-	}
-	if(simCell->volume3D() <= FLOATTYPE_EPSILON)
+	OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
+	if((simCell->is2D() ? simCell->volume2D() : simCell->volume3D()) <= FLOATTYPE_EPSILON)
 		throw Exception("Invalid input: Simulation cell is degenerate.");
 
 	AffineTransformation binCell;
@@ -62,6 +54,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	const double binCountLimit = 128*128*128;
 	for(size_t i = 0; i < 3; i++) {
 		planeNormals[i] = simCell->cellNormalVector(i);
+		OVITO_ASSERT(planeNormals[i] != Vector3::Zero());
 		FloatType x = std::abs(simCell->matrix().column(i).dot(planeNormals[i]) / _cutoffRadius);
 		binDim[i] = std::max((int)floor(std::min(x, FloatType(binCountLimit))), 1);
 	}
@@ -92,7 +85,8 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	for(size_t i = 0; i < 3; i++) {
 		binCell.column(i) = simCell->matrix().column(i) / binDim[i];
 	}
-	reciprocalBinCell = binCell.inverse();
+	if(!binCell.inverse(reciprocalBinCell))
+		throw Exception("Invalid input: Simulation cell is degenerate.");
 
 	// Generate stencil.
 
@@ -131,9 +125,9 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		size_t oldCount = stencil.size();
 		if(oldCount > 100*100)
 			throw Exception("Neighbor cutoff radius is too large compared to the simulation cell size.");
-		int stencilRadiusX = simCell->hasPbc(0) ? stencilRadius : std::min(stencilRadius, binDim[0] - 1);
-		int stencilRadiusY = simCell->hasPbc(1) ? stencilRadius : std::min(stencilRadius, binDim[1] - 1);
-		int stencilRadiusZ = simCell->hasPbc(2) ? stencilRadius : std::min(stencilRadius, binDim[2] - 1);
+		int stencilRadiusX = simCell->hasPbcCorrected(0) ? stencilRadius : std::min(stencilRadius, binDim[0] - 1);
+		int stencilRadiusY = simCell->hasPbcCorrected(1) ? stencilRadius : std::min(stencilRadius, binDim[1] - 1);
+		int stencilRadiusZ = simCell->hasPbcCorrected(2) ? stencilRadius : std::min(stencilRadius, binDim[2] - 1);
 		for(int ix = -stencilRadiusX; ix <= stencilRadiusX; ix++) {
 			for(int iy = -stencilRadiusY; iy <= stencilRadiusY; iy++) {
 				for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
@@ -160,7 +154,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 			break;
 	}
 
-	// An 3d array of cubic bins.
+	// An 3d array of bins.
 	// Each bin is a linked list of particles.
 	bins.resize(binCount, nullptr);
 
@@ -179,13 +173,13 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 		if(selectionProperty && !selectionProperty[pindex])
 			continue;
 
-		// Determine the bin the atom is located in.
+		// Determine the bin the particle is located in.
 		Point3 rp = reciprocalBinCell * (*p);
 
 		Point3I binLocation;
 		for(size_t k = 0; k < 3; k++) {
 			binLocation[k] = (int)floor(rp[k]);
-			if(simCell->hasPbc(k)) {
+			if(simCell->hasPbcCorrected(k)) {
 				if(binLocation[k] < 0 || binLocation[k] >= binDim[k]) {
 					int shift;
 					if(binLocation[k] < 0)
@@ -283,7 +277,7 @@ void CutoffNeighborFinder::Query::next()
 			bool skipBin = false;
 			for(size_t k = 0; k < 3; k++) {
 				_currentBin[k] = _centerBin[k] + (*_stencilIter)[k];
-				if(!_builder.simCell->hasPbc(k)) {
+				if(!_builder.simCell->hasPbcCorrected(k)) {
 					if(_currentBin[k] < 0 || _currentBin[k] >= _builder.binDim[k]) {
 						skipBin = true;
 						break;

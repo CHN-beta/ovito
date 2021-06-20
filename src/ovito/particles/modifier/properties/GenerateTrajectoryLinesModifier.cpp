@@ -296,7 +296,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 			return false;
 
 		// Unwrap trajectory vertices at periodic boundaries of the simulation cell.
-		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbc()) {
+		if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbcCorrected()) {
 			operation.setProgressText(tr("Unwrapping trajectory lines"));
 			operation.setProgressMaximum(trajPosProperty.size() - 1);
 			Point3* pos = trajPosProperty.begin();
@@ -312,7 +312,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 						const Point3& p1 = pos[0];
 						Point3 p2 = pos[1];
 						for(size_t dim = 0; dim < 3; dim++) {
-							if(cell1->hasPbc(dim)) {
+							if(cell1->hasPbcCorrected(dim)) {
 								FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
 								FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
 								FloatType delta = reduced2 - reduced1;

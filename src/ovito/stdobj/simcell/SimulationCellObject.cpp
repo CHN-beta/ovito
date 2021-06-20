@@ -87,6 +87,15 @@ void SimulationCellObject::propertyChanged(const PropertyFieldDescriptor& field)
 {
 	if(field == PROPERTY_FIELD(cellMatrix) || field == PROPERTY_FIELD(is2D)) {
 		invalidateReciprocalCellMatrix();
+
+		// Ensure that a 2D cell has always a finite extent along Z.
+		if(is2D() && (cellMatrix()(0,2) != 0.0 || cellMatrix()(1,2) != 0.0 || cellMatrix()(2,2) == 0.0)) {
+			AffineTransformation m = cellMatrix();
+			m(0,2) = 0.0;
+			m(1,2) = 0.0;
+			if(m(2,2) == 0.0) m(2,2) = 1.0;
+			setCellMatrix(m);
+		}
 	}
 	DataObject::propertyChanged(field);
 }
