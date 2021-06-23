@@ -28,6 +28,9 @@
 
 #include <QLoggingCategory>
 #include <QSurfaceFormat>
+#ifndef Q_OS_WASM
+	#include <QNetworkProxyFactory>
+#endif
 
 // Called from Application::initialize() to register the embedded Qt resource files
 // when running a statically linked executable. Following the Qt documentation, this
@@ -353,8 +356,12 @@ void Application::reportError(const Exception& exception, bool /*blocking*/)
 ******************************************************************************/
 QNetworkAccessManager* Application::networkAccessManager()
 {
-	if(!_networkAccessManager)
+	if(!_networkAccessManager) {
+		if(qEnvironmentVariableIsSet("OVITO_ENABLE_SYSTEM_PROXY")) {
+			QNetworkProxyFactory::setUseSystemConfiguration(true);
+		}
 		_networkAccessManager = new QNetworkAccessManager(this);
+	}
 	return _networkAccessManager;
 }
 #endif
