@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(FileSourcePlaybackRateEditor);
 void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create another rollout for animation control.
-	QWidget* rollout = createRollout(tr("Animation"), rolloutParams, "data_sources.html#scene_objects.file_source.configure_playback");
+	QWidget* rollout = createRollout(tr("Animation"), rolloutParams, "manual:scene_objects.file_source.configure_playback");
 
 	// Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

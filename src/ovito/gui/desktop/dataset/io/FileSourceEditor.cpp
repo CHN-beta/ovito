@@ -167,7 +167,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 		connect(editPlaybackBtn, &QPushButton::clicked, this, [&]() {
 			if(!editObject()) return;
 			ModalPropertiesEditorDialog(editObject(), new FileSourcePlaybackRateEditor(), container(), 
-				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:data_sources").exec();
+				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
 			updateInformationLabel();
 		});
 		

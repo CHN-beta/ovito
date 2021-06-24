@@ -518,9 +518,11 @@ void MainWindow::openHelpTopic(const QString& helpTopicId)
 		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
 	}
 
-	// Workaround for limtation of the Microsoft Edge browser:
-	// Edge drops any # fragment in the local URL to be opened, thus making it difficult to reference sub-topics within a HTML help page.
-	// Solution is to generate a temporary HTML file, which redirects to the actual help page including the # fragment.
+	// Workaround for a limitation of the Microsoft Edge browser:
+	// The browser drops any # fragment in local URLs to be opened, thus making it difficult to reference sub-topics within a HTML help page.
+	// Solution is to generate a temporary HTML file which redirects to the actual help page including the # fragment.
+	// See also https://forums.madcapsoftware.com/viewtopic.php?f=9&t=28376#p130613
+	// and https://stackoverflow.com/questions/26305322/shellexecute-fails-for-local-html-or-file-urls
 #ifdef Q_OS_WIN
 	if(url.isLocalFile() && url.hasFragment()) {
 		static QTemporaryFile* temporaryHtmlFile = nullptr;
