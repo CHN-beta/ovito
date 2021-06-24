@@ -518,6 +518,24 @@ void MainWindow::openHelpTopic(const QString& helpTopicId)
 		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
 	}
 
+	// Workaround for limtation of the Microsoft Edge browser:
+	// Edge drops any # fragment in the local URL to be opened, thus making it difficult to reference sub-topics within a HTML help page.
+	// Solution is to generate a temporary HTML file, which redirects to the actual help page including the # fragment.
+#ifdef Q_OS_WIN
+	if(url.isLocalFile() && url.hasFragment()) {
+		static QTemporaryFile* temporaryHtmlFile = nullptr;
+		if(temporaryHtmlFile) delete temporaryHtmlFile;
+		temporaryHtmlFile = new QTemporaryFile(QDir::temp().absoluteFilePath(QStringLiteral("ovito-help-XXXXXX.html")), qApp);
+		if(temporaryHtmlFile->open()) {
+			// Write a small HTML file that just contains a redirect directive to the actual help page including the # fragment.
+			QTextStream(temporaryHtmlFile) << QStringLiteral("<html><meta http-equiv=Refresh content=\"0; url=%1\"><body></body></html>").arg(url.toString(QUrl::FullyEncoded));
+			temporaryHtmlFile->close();
+			// Let the web brwoser ppen the redirect page instead of the original help page. 
+			url = QUrl::fromLocalFile(temporaryHtmlFile->fileName());
+		}
+	}
+#endif
+
 	// Use the local web browser to display the help page.
 	if(!QDesktopServices::openUrl(url)) {
 		Exception(tr("Could not launch web browser to display manual. The requested URL is:\n%1").arg(url.toDisplayString())).reportError();
