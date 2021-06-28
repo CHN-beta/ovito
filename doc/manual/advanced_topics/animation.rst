@@ -13,6 +13,7 @@ animation system in more detail.
   :width: 45%
   :align: right
 
+.. _usage.animation.frames:
  
 Animation frames vs. simulation frames
 --------------------------------------

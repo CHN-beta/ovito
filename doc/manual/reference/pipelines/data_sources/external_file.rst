@@ -96,17 +96,17 @@ Configure trajectory playback
   :align: right
      
 This dialog lets you control how the snapshots from the loaded simulation trajectory 
-are mapped to OVITO's animation timeline. You can change the default 1/1 mapping to 
-either a 1/n mapping, in which case each trajectory frame is replicated and rendered n
-times, or to a n/1 mapping, in which case only every n-th 
+are mapped to OVITO's animation timeline. You can change the default 1:1 mapping to 
+either a 1:n mapping, in which case each trajectory frame is replicated and rendered n
+times, or to a n:1 mapping, in which case only every n-th 
 trajectory frame will be rendered.
  
-A 1/n mapping is useful if you want to stretch a simulation trajectory consisting of only relatively few
+A 1:n mapping is useful if you want to stretch a simulation trajectory consisting of only relatively few
 snapshots and render a longer movie. OVITO provides the :ref:`particles.modifiers.smooth_trajectory` modifier,
 which can be applied to compute new intermediate frames by interpolating the particle positions of successive 
 frames in the input trajectory.
    
-A n/1 mapping is useful if the loaded simulation trajectory consists of excessively many snapshots
+A n:1 mapping is useful if the loaded simulation trajectory consists of excessively many snapshots
 and you want to render a short movie showing the whole trajectory but having fewer frames. 
 
 See also the :ref:`advanced animations <usage.animation>` section for further information.

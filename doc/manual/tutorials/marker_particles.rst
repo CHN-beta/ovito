@@ -11,7 +11,10 @@ Visualize the motion of marker particles
 In this step-by-step tutorial you will create an animation from an MD simulation of a simple shearing experiment
 as shown on the right. You will learn how to highlight a group of atoms,
 initially located in a narrow region, with a marker color to visualize the atomic motion 
-in the interior of the crystal during the course of the simulation. 
+in the interior of the crystal during the course of the simulation.
+
+In particular you will learn more about the purpose of the :ref:`particles.modifiers.freeze_property` modifier in OVITO,
+which helps you preserve the initial selection state of a group of particles. 
 
 Step 1: Load simulation trajectory
 """"""""""""""""""""""""""""""""""
