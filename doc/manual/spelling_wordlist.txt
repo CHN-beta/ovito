@@ -2,6 +2,7 @@ accessor
 acentrosymmetric
 Ackland
 adaptively
+Adri
 affine
 animatable
 antisite
@@ -35,6 +36,7 @@ dimensionality
 discretized
 discriminable
 disorientations
+Duin
 Edelsbrunner
 equisized
 equispaced
@@ -189,6 +191,7 @@ undercoordinated
 unitless
 Universität
 unselected
+van
 vectorial
 vide
 viewport
@@ -198,6 +201,7 @@ von
 Voronoi
 voxel
 voxels
+Vulkan
 Waals
 Wigner
 Wilkie

@@ -1,21 +1,21 @@
 .. _tutorials.turntable_animation:
 
-Create a turntable animation of a model
-=======================================
+Turntable animation of a model
+==============================
 
 .. image:: /images/tutorials/turntable_animation/turntable.gif
    :width: 36%
    :align: right
 
 This step-by-step tutorial teaches you how to create an animated movie like the one on the right.
-It visualizes the simulated model from all sides, slowly rotating it by 360 degrees around its center of mass.
+It visualizes the simulated model from all sides, slowly rotating it by 360° around its center of mass.
 
 Step 1: Load simulation file
 """"""""""""""""""""""""""""
 
 Start by downloading the simulation file 
 `C60_impact.nc <https://gitlab.com/stuko/ovito/-/blob/master/tests/files/NetCDF/C60_impact.nc>`__
-for this tutorial to your computer. The file contains a short MD trajectory of a C:sub:`60` molecule striking a surface. Use the :menuselection:`File --> Load File` function
+for this tutorial to your computer. The file contains a short MD trajectory of a C\ :sub:`60` molecule striking a surface. Use the :menuselection:`File --> Load File` function
 to open the file :file:`C60_impact.nc` in OVITO.
 
 Step 2: Extract a static snapshot
@@ -26,7 +26,7 @@ create an animation in which the only camera is moving around a single, static s
 one particular frame from the loaded trajectory.
 
 In the :ref:`External file <scene_objects.file_source>` panel, press the `Playback ratio` :guilabel:`Change...` button to open the 
-`Configure Trajectory Playback` dialog. Switch to mode :guilabel:`Static frame` and select the simulation frame for which 
+:ref:`Configure Trajectory Playback <scene_objects.file_source.configure_playback>` dialog. Switch to mode :guilabel:`Static frame` and select the simulation frame for which 
 you would like to create a turntable animation.
 
 The timeline of OVITO no longer shows the original series of trajectory frames now - as if you had loaded a data file containing just single simulation snapshot.
@@ -39,7 +39,7 @@ Step 3: Adjust center of rotation
   :alt: Rotate tool
 
 OVITO animation capabilities only allow you to move the virtual camera on straight paths through the three-dimensional scene. Thus,
-revolving the camera on a cicular orbit around an object requires a different approach. Instead of 
+revolving the camera on a circular orbit around an object requires a different approach. Instead of 
 animating the camera itself, we are going to actually rotate the simulation model while keeping the camera fixed.
 
 You can adjust the rotation of the whole model, relative to the global scene coordinate system, using the `Rotate` tool |rotate-tool-button| found in the main toolbar of OVITO.
@@ -48,7 +48,7 @@ adjust the current `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`__
 For a turntable animation we will have to vary the third Euler angle (Z), which specifies the object's rotation around the z-axis.
 
 .. figure:: /images/tutorials/turntable_animation/euler_angles_input_fields.jpg
-   :width: 60%
+   :width: 65%
    :align: left
 
    Numeric input fields for the Euler angles
@@ -61,13 +61,16 @@ While playing with the value of the z-angle, you will notice, however, that the 
 That's because the `Rotate` tool always uses the object's coordinate origin and not its center of mass as pivot point. 
 The simulation box in this example happens to be positioned such that its 
 corner is at :math:`(0,0,0)`, the origin of the simulation coordinate system (you can inspect the cell info :ref:`here <scene_objects.simulation_cell>`). 
-Thus, in order to change the effective center of rotation, we'll first have to translate the model to center it on the coodinate system origin. 
+Thus, in order to change the effective center of rotation, we'll first have to translate the model to center it on the coordinate system origin. 
 This can be accomplished by applying the :ref:`particles.modifiers.affine_transformation` modifier. 
+
+.. image:: /images/tutorials/turntable_animation/pivot_point_illustration.png
+   :width: 58%
 
 Open the :guilabel:`Add modification...` drop-down list and select `Affine transformation` from the `Modification` section.
 The newly inserted modifier appears as a new item in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 Activate the option :guilabel:`In reduced cell coordinates` as shown in the screenshot and enter the values :math:`(-0.5, -0.5, 0)` into the
-fields for the translation vector. This shifts the simulation box including all atoms such that the pivot point :math:(0,0,0)
+fields for the translation vector. This shifts the simulation box including all atoms such that the pivot point :math:`(0,0,0)`
 is now located in the center.
 
 Step 4: Set animation length
@@ -108,7 +111,7 @@ to create a smooth transition.
 
 For animating one complete rotation of the dataset, i.e. revolving once by 360 degrees around the z-axis, two animation keys
 are required: A first one at the start of the animation interval (frame 0) and a second one at the end of the interval (frame 100).
-The first key brings the object into its standard orientation (zero degrees), while the second key specifies a full 360-degree turn.
+The first key brings the object into its standard orientation (zero degrees), while the second key specifies a full 360° turn.
 Note that, visually, the start and end orientations are indistinguishable, but OVITO keeps track of how many revolutions an object
 has performed.
 
@@ -125,7 +128,7 @@ Further information
 """""""""""""""""""
 
 Like the object rotation in this tutorial, many other parameters can be animated as well in OVITO using the same keyframe-based mechanism;
-for example, the position and orientation of a :ref:`particles.modifiers.slice` plane, the isolevel parameter
+for example, the position and orientation of a :ref:`particles.modifiers.slice` plane, the iso-level parameter
 of the :ref:`particles.modifiers.create_isosurface` modifier, or the transparency parameter of the :ref:`visual_elements.surface_mesh`
 visual element. Animatable parameters are recognizable by the small :guilabel:`A` button next to the parameter's input field.
 

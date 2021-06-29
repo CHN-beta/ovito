@@ -12,7 +12,7 @@ The output of this processing pipeline is displayed on the screen by the program
    :width: 100%
 
 OVITO offers an extensive set of modifier functions to choose from (see :ref:`reference section <particles.modifiers>`), 
-each performing a specific task like selecting, coloring, analzying, or filtering particle structures.
+each performing a specific task like selecting, coloring, analyzing, or filtering particle structures.
 By combining these basic building blocks and arranging them in a pipeline sequence, you can visualize or analyze the simulation 
 dataset in exactly the way you need it.
 

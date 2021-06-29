@@ -19,7 +19,7 @@ either explicitly or as a result of computations performed by the program.
 This general property concept is employed for other types of data elements as well, not only particles. 
 For instance, the :ref:`interatomic bonds <scene_objects.bonds>` may be associated with *bond properties*, e.g. bond type or color. 
 Keep in mind that, while the following introduction focuses mainly on particles and their properties,
-the same priciples apply also to other classes of data elements.
+the same principles apply also to other classes of data elements.
 
 What's a particle property?
 ---------------------------
