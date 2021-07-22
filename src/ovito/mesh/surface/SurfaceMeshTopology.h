@@ -276,9 +276,10 @@ public:
 
     /// Links two opposite half-edges together.
     void linkOppositeEdges(edge_index edge1, edge_index edge2) {
-        OVITO_ASSERT(!hasOppositeEdge(edge1) && !hasOppositeEdge(edge2));
         OVITO_ASSERT(vertex1(edge1) == vertex2(edge2));
         OVITO_ASSERT(vertex2(edge1) == vertex1(edge2));
+        OVITO_ASSERT(!hasOppositeEdge(edge1));
+        OVITO_ASSERT(!hasOppositeEdge(edge2));
         _oppositeEdges[edge1] = edge2;
         _oppositeEdges[edge2] = edge1;
     }

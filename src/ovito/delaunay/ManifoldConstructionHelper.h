@@ -705,7 +705,6 @@ private:
 				if(_createRegions && _tessellation.getUserField(adjacentCell) == SurfaceMeshAccess::InvalidIndex) {
 
 					// Build face vertex list.
-					std::reverse(std::begin(vertexHandles), std::end(vertexHandles));
 					std::array<size_t,3> reverseVertexIndices;
 					for(int v = 0; v < 3; v++) {
 						vertexHandles[v] = _tessellation.cellVertex(adjacentCell, DelaunayTessellation::cellFacetVertexIndex(mirrorFacet.second, _flipOrientation ? v : (2-v)));
@@ -742,7 +741,7 @@ private:
 		return !task.isCanceled();
 	}
 
-	SurfaceMeshAccess::face_index findAdjacentFace(DelaunayTessellation::CellHandle cell, int f, int e)
+	SurfaceMeshAccess::face_index findAdjacentFace(DelaunayTessellation::CellHandle cell, int f, int e, bool reverse = false)
 	{
 		int vertexIndex1, vertexIndex2;
 		if(!_flipOrientation) {
@@ -757,17 +756,30 @@ private:
 		DelaunayTessellation::FacetCirculator circulator = circulator_start;
 		OVITO_ASSERT((*circulator).first == cell);
 		OVITO_ASSERT((*circulator).second == f);
-		--circulator;
-		OVITO_ASSERT(circulator != circulator_start);
 		int region = _tessellation.getUserField(cell);
-		do {
-			// Look for the first cell while going around the edge that belongs to a different region.
-			if(_tessellation.getUserField((*circulator).first) != region)
-				break;
+		if(!reverse) {
+			--circulator;
+			OVITO_ASSERT(circulator != circulator_start);
+			do {
+				// Look for the first cell while going around the edge that belongs to a different region.
+				if(_tessellation.getUserField((*circulator).first) != region)
+					break;
+				--circulator;
+			}
+			while(circulator != circulator_start);
+			OVITO_ASSERT(circulator != circulator_start);
+		}
+		else {
+			++circulator;
+			OVITO_ASSERT(circulator != circulator_start);
+			for(;;) {
+				// Look for the first cell while going around the edge in reverse direction that belongs to the same region.
+				if(_tessellation.getUserField((*circulator).first) == region)
+					break;
+				++circulator;
+			}
 			--circulator;
 		}
-		while(circulator != circulator_start);
-		OVITO_ASSERT(circulator != circulator_start);
 
 		// Get the current adjacent cell, which is part of the same region as the first tet.
 		std::pair<DelaunayTessellation::CellHandle,int> mirrorFacet = _tessellation.mirrorFacet(*circulator);
@@ -824,10 +836,12 @@ private:
 
 					// Link adjacent facets in opposite manifold if it is bounding an empty region.
 					if(_tessellation.getUserField(oppositeFacet.first) == SurfaceMeshAccess::InvalidIndex) {
+						OVITO_ASSERT(_mesh.faceRegion(outerFacet) == SurfaceMeshAccess::InvalidIndex);
 						SurfaceMeshAccess::edge_index edge = _mesh.firstFaceEdge(outerFacet);
 						for(int e = 0; e < 3; e++, edge = _mesh.nextFaceEdge(edge)) {
 							if(_mesh.hasOppositeEdge(edge)) continue;
-							SurfaceMeshAccess::face_index adjacentFace = findAdjacentFace(oppositeFacet.first, oppositeFacet.second, e);
+							SurfaceMeshAccess::face_index adjacentFace = findAdjacentFace(oppositeFacet.first, oppositeFacet.second, e, true);
+							OVITO_ASSERT(_mesh.faceRegion(adjacentFace) == SurfaceMeshAccess::InvalidIndex);
 							SurfaceMeshAccess::edge_index oppositeEdge = _mesh.findEdge(adjacentFace, _mesh.vertex2(edge), _mesh.vertex1(edge));
 							if(oppositeEdge == SurfaceMeshAccess::InvalidIndex)
 								throw Exception("Cannot construct mesh for this input dataset. Opposite half-edge (2) not found.");
