@@ -82,6 +82,8 @@ public:
 		AtomStyle_Tri,
 		AtomStyle_Wavepacket,
 		AtomStyle_Hybrid,
+
+		AtomStyle_COUNT, // End-of-list marker
 	};
 	Q_ENUM(LAMMPSAtomStyle);
 
@@ -96,11 +98,26 @@ public:
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
 		activateCLocale();
-		return std::make_shared<FrameLoader>(request, sortParticles(), atomStyle());
+		return std::make_shared<FrameLoader>(request, sortParticles(), atomStyle(), atomSubStyles());
 	}
 
+	struct LAMMPSAtomStyleHints {
+		LAMMPSAtomStyle atomStyle = AtomStyle_Unknown; 
+		std::vector<LAMMPSAtomStyle> atomSubStyles;
+		int atomDataColumnCount = 0;
+	};
+
 	/// Inspects the header of the given file and returns the detected LAMMPS atom style.
-	Future<LAMMPSAtomStyle> inspectFileHeader(const Frame& frame);
+	Future<LAMMPSAtomStyleHints> inspectFileHeader(const Frame& frame);
+
+	/// Returns the name string of the given LAMMPS atom style.  
+	static QString atomStyleName(LAMMPSAtomStyle atomStyle);
+
+	/// Parses a hint string for the LAMMPS atom style.
+	static LAMMPSAtomStyle parseAtomStyleHint(const QString& atomStyleHint);
+
+	/// Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
+	static ParticleInputColumnMapping createColumnMapping(LAMMPSAtomStyle atomStyle, const std::vector<LAMMPSAtomStyle>& atomSubStyles, int dataColumnCount = 0);
 
 private:
 
@@ -110,9 +127,9 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, bool sortParticles, LAMMPSAtomStyle atomStyle = AtomStyle_Unknown)
+		FrameLoader(const LoadOperationRequest& request, bool sortParticles, LAMMPSAtomStyle atomStyle, std::vector<LAMMPSAtomStyle> atomSubStyles)
 			: ParticleImporter::FrameLoader(request),
-				_atomStyle(atomStyle),
+				_atomStyleHints{atomStyle, std::move(atomSubStyles)},
 				_sortParticles(sortParticles) {}
 
 	private:
@@ -120,26 +137,20 @@ private:
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
 
-		/// The LAMMPS atom style to assume.
-		LAMMPSAtomStyle _atomStyle;
-
-		/// The LAMMPS atom sub-styles if the atom style is "hybrid".
-		std::vector<LAMMPSAtomStyle> _atomSubStyles;
+		/// The LAMMPS atom style of the file.
+		LAMMPSAtomStyleHints _atomStyleHints;
 
 		bool _sortParticles;
 	};
 
 	/// Detects or verifies the LAMMPS atom style used by the data file.
-	static bool detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyle& atomStyle, std::vector<LAMMPSAtomStyle>& atomSubStyles);
-
-	/// Parses a hint string for the LAMMPS atom style.
-	static LAMMPSAtomStyle parseAtomStyleHint(const QString& atomStyleHint);
-
-	/// Sets up the mapping of data file columns to internal particle properties based on the selected LAMMPS atom style.
-	static ParticleInputColumnMapping createColumnMapping(LAMMPSAtomStyle atomStyle, bool includeImageFlags);
+	static void detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyleHints& atomStyleHints);
 
 	/// The LAMMPS atom style used by the data format.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(LAMMPSAtomStyle, atomStyle, setAtomStyle);
+
+	/// The list of sub-styles if the hybrid atom style is used.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSAtomStyle>, atomSubStyles, setAtomSubStyles);
 };
 
 }	// End of namespace

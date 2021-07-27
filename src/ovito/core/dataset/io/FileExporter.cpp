@@ -52,7 +52,7 @@ SET_PROPERTY_FIELD_LABEL(FileExporter, wildcardFilename, "Wildcard filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, startFrame, "Start frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, endFrame, "End frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, everyNthFrame, "Every Nth frame");
-SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Output precision");
+SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Numeric output precision");
 SET_PROPERTY_FIELD_LABEL(FileExporter, ignorePipelineErrors, "Ignore pipeline errors");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerParameterUnit, 1, std::numeric_limits<FloatType>::max_digits10);
 

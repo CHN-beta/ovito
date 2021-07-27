@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/particles/objects/ParticleType.h>
+#include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
@@ -33,9 +34,11 @@ namespace Ovito { namespace Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataExporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomStyle);
+DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomSubStyles);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, omitMassesSection);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, ignoreParticleIdentifiers);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomStyle, "Atom style");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomSubStyles, "Atom sub-styles");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' section");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore particle identifiers");
 
@@ -45,19 +48,21 @@ SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore 
 bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
 {
 	// Get the particle data to be exported.
-	const ParticlesObject* particles = state.expectObject<ParticlesObject>();
-	particles->verifyIntegrity();
-	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-	ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
-	ConstPropertyAccess<qlonglong> identifierProperty = !ignoreParticleIdentifiers() ? particles->getProperty(ParticlesObject::IdentifierProperty) : nullptr;
-	ConstPropertyAccess<Vector3I> periodicImageProperty = particles->getProperty(ParticlesObject::PeriodicImageProperty);
+	const ParticlesObject* originalParticles = state.expectObject<ParticlesObject>();
+	originalParticles->verifyIntegrity();
+
+	// Create a modifiable copy of the particles object, because we
+	// typically have to make some modifications before writing the data to the output file.
+	DataOORef<ParticlesObject> particles = DataOORef<ParticlesObject>::makeCopy(originalParticles);
+
+	// Discard the existing particle IDs if requested by the user.
+	if(ignoreParticleIdentifiers()) {
+		if(const PropertyObject* property = particles->getProperty(ParticlesObject::IdentifierProperty))
+			particles->removeProperty(property);
+	}
+
 	const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
 	ConstPropertyAccess<int> particleTypeArray(particleTypeProperty);
-	ConstPropertyAccess<FloatType> chargeProperty = particles->getProperty(ParticlesObject::ChargeProperty);
-	ConstPropertyAccess<FloatType> radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-	ConstPropertyAccess<FloatType> massProperty = particles->getProperty(ParticlesObject::MassProperty);
-	ConstPropertyAccess<qlonglong> moleculeProperty = particles->getProperty(ParticlesObject::MoleculeProperty);
-	ConstPropertyAccess<Vector3> dipoleOrientationProperty = particles->getProperty(ParticlesObject::DipoleOrientationProperty);
 
 	// Get the bond data to be exported.
 	const BondsObject* bonds = particles->bonds();
@@ -91,13 +96,75 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
 	if(!simulationCell)
 		throwException(tr("No simulation cell defined. Cannot write LAMMPS file."));
-
 	const AffineTransformation& simCell = simulationCell->cellMatrix();
+
+	// Set up output columns for the Atoms section.
+	TypedOutputColumnMapping<ParticlesObject> outputColumnMapping;
+	for(const InputColumnInfo& col : LAMMPSDataImporter::createColumnMapping(atomStyle(), atomSubStyles())) {
+		outputColumnMapping.push_back(col.property);
+		OVITO_ASSERT(col.property.type() != ParticlesObject::UserProperty || col.property.vectorComponent() == 0);
+		const PropertyObject* property = col.property.findInContainer(particles);
+		if(!property) {
+			// If the property does not exist, implicitly create it and fill it with default values.
+			if(col.property.type() != ParticlesObject::IdentifierProperty) {				
+				if(col.property.type() == ParticlesObject::RadiusProperty) {
+					particles->createProperty(particles->inputParticleRadii());
+				}
+				else if(col.property.type() == ParticlesObject::MassProperty) {
+					particles->createProperty(particles->inputParticleMasses());
+				}
+				else {
+					PropertyObject* newProperty = nullptr;
+					if(col.property.type() != ParticlesObject::UserProperty)
+						newProperty = particles->createProperty(col.property.type(), true, ExecutionContext::Scripting);
+					else
+						newProperty = particles->createProperty(col.property.name(), PropertyObject::Float, 1, 0, true);
+					OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
+					if(newProperty->type() == ParticlesObject::TypeProperty) {
+						// Assume particle type 1 by default.
+						newProperty->fill<int>(1);
+					}
+					else if(newProperty->type() == ParticlesObject::MoleculeProperty) {
+						// Assume molecule identifier 1 by default.
+						newProperty->fill<qlonglong>(1);
+					}
+					else if(newProperty->type() == ParticlesObject::UserProperty && newProperty->name() == QStringLiteral("Density")) {
+						OVITO_ASSERT(col.columnName == "density");
+						// When exporting the "Density" property, compute its values from the particles masses and radii.
+						ConstPropertyAccessAndRef<FloatType> radii = particles->inputParticleRadii();
+						ConstPropertyAccessAndRef<FloatType> masses = particles->inputParticleMasses();
+						auto radius = radii.cbegin();
+						auto mass = masses.cbegin();
+						for(FloatType& density : PropertyAccess<FloatType>(newProperty)) {
+							FloatType r = *radius++;
+							density = (r > 0) ? (*mass / (r*r*r * (FLOATTYPE_PI * FloatType(4.0/3.0)))) : FloatType(0);
+							++mass;
+						}
+						OVITO_ASSERT(radius == radii.cend());
+						OVITO_ASSERT(mass == masses.cend());
+					}
+				}
+			}
+		}
+		else {
+			if(property->type() == ParticlesObject::RadiusProperty) {
+				OVITO_ASSERT(col.columnName == "diameter");
+				// Write particle diameters instead of radii to the output file.
+				for(FloatType& r : PropertyAccess<FloatType>(particles->makeMutable(property)))
+					r *= 2;
+			}
+		}
+	}
+
+	// The periodic image flags are optional and appear as trailing three columns if present.
+	if(const PropertyObject* periodicImageProperty = particles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+		outputColumnMapping.emplace_back(periodicImageProperty, 0);
+		outputColumnMapping.emplace_back(periodicImageProperty, 1);
+		outputColumnMapping.emplace_back(periodicImageProperty, 2);
+	}
 
 	// Transform triclinic cell to LAMMPS canonical format.
 	Vector3 a,b,c;
-	AffineTransformation transformation;
-	bool transformCoordinates;
 	if(simCell.column(0).x() < 0 || simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || 
 			simCell.column(1).y() < 0 || simCell.column(1).z() != 0 || simCell.column(2).z() < 0) {
 		a.x() = simCell.column(0).length();
@@ -108,14 +175,24 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		c.x() = simCell.column(2).dot(simCell.column(0)) / a.x();
 		c.y() = (simCell.column(1).dot(simCell.column(2)) - b.x()*c.x()) / b.y();
 		c.z() = sqrt(simCell.column(2).squaredLength() - c.x()*c.x() - c.y()*c.y());
-		transformCoordinates = true;
-		transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
+		AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
+
+		// Apply the transformation to the particle coordinates.
+		for(Point3& p : PropertyAccess<Point3>(particles->expectMutableProperty(ParticlesObject::PositionProperty))) {
+			p = transformation * p;
+		}
+
+		// Apply the transformation to the particle velocity vectors.
+		if(PropertyAccess<Vector3> velocities = particles->getMutableProperty(ParticlesObject::VelocityProperty)) {
+			for(Vector3& v : velocities) {
+				v = transformation * v;
+			}
+		}
 	}
 	else {
 		a = simCell.column(0);
 		b = simCell.column(1);
 		c = simCell.column(2);
-		transformCoordinates = false;
 	}
 
 	FloatType xlo = simCell.translation().x();
@@ -128,7 +205,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	FloatType xz = c.x();
 	FloatType yz = c.y();
 
-	// Decide if we want to export bonds/angles/dihedrals/impropers.
+	// Decide whether to export bonds/angles/dihedrals/impropers.
 	bool writeBonds     = bondTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
 	bool writeAngles    = angleTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
 	bool writeDihedrals = dihedralTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
@@ -193,6 +270,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	textStream() << "\n";
 
 	// Write "Masses" section.
+	// Exception: User has requested to omit Masses section or LAMMPS atom style is 'sphere'.
+	// In the latter case, the per-particle masses will be written to the Atoms section.
 	if(!omitMassesSection() && particleTypeProperty && particleTypeProperty->elementTypes().size() > 0 && atomStyle() != LAMMPSDataImporter::AtomStyle_Sphere) {
 		// Write the "Masses" section only if there is at least one atom type with a non-zero mass.
 		bool hasNonzeroMass = boost::algorithm::any_of(particleTypeProperty->elementTypes(), [](const ElementType* type) {
@@ -217,6 +296,11 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		}
 	}
 
+	// Look up the particle velocity vectors.
+	ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+	// Look up the particle identifiers.
+	ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+
 	qlonglong totalProgressCount = particles->elementCount();
 	if(velocityProperty) totalProgressCount += particles->elementCount();
 	if(writeBonds) totalProgressCount += bonds->elementCount();
@@ -225,77 +309,20 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeImpropers) totalProgressCount += impropers->elementCount();
 
 	// Write "Atoms" section.
-	textStream() << "Atoms";
-	switch(atomStyle()) {
-		case LAMMPSDataImporter::AtomStyle_Atomic: textStream() << "  # atomic"; break;
-		case LAMMPSDataImporter::AtomStyle_Angle: textStream() << "  # angle"; break;
-		case LAMMPSDataImporter::AtomStyle_Bond: textStream() << "  # bond"; break;
-		case LAMMPSDataImporter::AtomStyle_Molecular: textStream() << "  # molecular"; break;
-		case LAMMPSDataImporter::AtomStyle_Full: textStream() << "  # full"; break;
-		case LAMMPSDataImporter::AtomStyle_Charge: textStream() << "  # charge"; break;
-		case LAMMPSDataImporter::AtomStyle_Dipole: textStream() << "  # dipole"; break;
-		case LAMMPSDataImporter::AtomStyle_Sphere: textStream() << "  # sphere"; break;
-		default: break; // Do nothing
+	textStream() << "Atoms  # " << LAMMPSDataImporter::atomStyleName(atomStyle());
+	if(atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid) {
+		for(const LAMMPSDataImporter::LAMMPSAtomStyle substyle : atomSubStyles())
+			textStream() << " " << LAMMPSDataImporter::atomStyleName(substyle);
 	}
 	textStream() << "\n\n";
 
 	operation.setProgressMaximum(totalProgressCount);
 	qlonglong currentProgress = 0;
-	for(size_t i = 0; i < posProperty.size(); i++) {
-		// atom-ID
-		textStream() << (identifierProperty ? identifierProperty[i] : (i+1));
-		if(atomStyle() == LAMMPSDataImporter::AtomStyle_Bond || atomStyle() == LAMMPSDataImporter::AtomStyle_Molecular || atomStyle() == LAMMPSDataImporter::AtomStyle_Full || atomStyle() == LAMMPSDataImporter::AtomStyle_Angle) {
-			textStream() << ' ';
-			// molecule-ID
-			textStream() << (moleculeProperty ? moleculeProperty[i] : 1);
-		}
-		textStream() << ' ';
-		// atom-type
-		textStream() << (particleTypeArray ? particleTypeArray[i] : 1);
-		if(atomStyle() == LAMMPSDataImporter::AtomStyle_Charge || atomStyle() == LAMMPSDataImporter::AtomStyle_Dipole || atomStyle() == LAMMPSDataImporter::AtomStyle_Full) {
-			textStream() << ' ';
-			// charge
-			textStream() << (chargeProperty ? chargeProperty[i] : 0);
-		}
-		else if(atomStyle() == LAMMPSDataImporter::AtomStyle_Sphere) {
-			// diameter
-			FloatType radius = (radiusProperty ? radiusProperty[i] : 0);
-			textStream() << ' ' << (radius * 2);
-			// density
-			FloatType density = (massProperty ? massProperty[i] : 0);
-			if(radius > 0) density /= pow(radius, 3) * (FLOATTYPE_PI * FloatType(4) / FloatType(3));
-			textStream() << ' ' << density;
-		}
-		// x y z
-		const Point3& pos = posProperty[i];
-		if(!transformCoordinates) {
-			for(size_t k = 0; k < 3; k++)
-				textStream() << ' ' << pos[k];
-		}
-		else {
-			for(size_t k = 0; k < 3; k++)
-				textStream() << ' ' << transformation.prodrow(pos, k);
-		}
-		if(atomStyle() == LAMMPSDataImporter::AtomStyle_Dipole) {
-			// mux muy muz
-			if(dipoleOrientationProperty) {
-				textStream() << ' ' << dipoleOrientationProperty[i][0]
-							 << ' ' << dipoleOrientationProperty[i][1]
-							 << ' ' << dipoleOrientationProperty[i][2];
-			}
-			else {
-				textStream() << " 0 0 0";
-			}
-		}
-		if(periodicImageProperty) {
-			// pbc images
-			const Vector3I& pbc = periodicImageProperty[i];
-			for(size_t k = 0; k < 3; k++) {
-				textStream() << ' ' << pbc[k];
-			}
-		}
-		textStream() << '\n';
 
+	size_t atomsCount = particles->elementCount();
+	PropertyOutputWriter columnWriter(outputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
+	for(size_t i = 0; i < atomsCount; i++) {
+		columnWriter.writeElement(i, textStream());
 		if(!operation.setProgressValueIntermittent(currentProgress++))
 			return false;
 	}
@@ -306,14 +333,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		const Vector3* v = velocityProperty.cbegin();
 		for(size_t i = 0; i < velocityProperty.size(); i++, ++v) {
 			textStream() << (identifierProperty ? identifierProperty[i] : (i+1));
-			if(!transformCoordinates) {
-				for(size_t k = 0; k < 3; k++)
-					textStream() << ' ' << (*v)[k];
-			}
-			else {
-				for(size_t k = 0; k < 3; k++)
-					textStream() << ' ' << transformation.prodrow(*v, k);
-			}
+			for(size_t k = 0; k < 3; k++)
+				textStream() << ' ' << (*v)[k];
 			textStream() << '\n';
 
 			if(!operation.setProgressValueIntermittent(currentProgress++))

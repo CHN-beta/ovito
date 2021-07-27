@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,8 +66,11 @@ protected:
 
 private:
 
-	/// Selects the kind of data file to write.
+	/// Selects the kind of LAMMPS data file to write.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LAMMPSDataImporter::LAMMPSAtomStyle, atomStyle, setAtomStyle, PROPERTY_FIELD_MEMORIZE);
+
+	/// The list of sub-styles if the hybrid atom style is used.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSDataImporter::LAMMPSAtomStyle>, atomSubStyles, setAtomSubStyles);
 
 	/// Flag that allows the user to suppress the "Masses" file section.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, omitMassesSection, setOmitMassesSection);

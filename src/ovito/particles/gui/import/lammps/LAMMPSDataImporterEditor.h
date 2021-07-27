@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,36 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
+/**
+ * This dialog box lets the user choose a LAMMPS atom style.
+ */
+class LAMMPSAtomStyleDialog : public QDialog
+{
+	Q_OBJECT
+
+public:
+
+	/// Constructor.
+	LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parentWindow = nullptr);
+
+private Q_SLOTS:
+
+	/// Updates the displayed list of file data columns.
+	void updateColumnList();
+
+	/// Saves the values entered by the user and closes the dialog.
+	void onOk();
+
+private:
+
+	LAMMPSDataImporter::LAMMPSAtomStyleHints& _atomStyleHints;
+	QComboBox* _atomStyleList;
+	QLabel* _subStylesLabel;
+	std::array<QComboBox*,3> _subStyleLists;
+	QLineEdit* _columnListField;
+	QLabel* _columnMismatchLabel;
+	QDialogButtonBox* _buttonBox;
+};
+
 }	// End of namespace
 }	// End of namespace
-
-

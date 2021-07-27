@@ -431,7 +431,7 @@ void ParticlesObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bond
 }
 
 /******************************************************************************
-* Returns a vector with the input particle colors.
+* Returns a property array with the input particle colors.
 ******************************************************************************/
 ConstPropertyPtr ParticlesObject::inputParticleColors() const
 {
@@ -448,7 +448,7 @@ ConstPropertyPtr ParticlesObject::inputParticleColors() const
 }
 
 /******************************************************************************
-* Returns a vector with the input bond colors.
+* Returns a property array with the input bond colors.
 ******************************************************************************/
 ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProperty) const
 {
@@ -472,14 +472,14 @@ ConstPropertyPtr ParticlesObject::inputBondColors(bool ignoreExistingColorProper
 
 		// If no vis element is available, create an array filled with the default bond color.
 		PropertyPtr colors = BondsObject::OOClass().createStandardProperty(dataset(), bonds()->elementCount(), BondsObject::ColorProperty, false, ExecutionContext::Scripting);
-		colors->fill(Color(1,1,1));
+		colors->fill<Color>(Color(1,1,1));
 		return colors;
     }
 	return {};
 }
 
 /******************************************************************************
-* Returns a vector with the input particle radii.
+* Returns a property array with the input particle radii.
 ******************************************************************************/
 ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 {
@@ -492,8 +492,46 @@ ConstPropertyPtr ParticlesObject::inputParticleRadii() const
 
 	// Return uniform default radius for all particles.
 	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::RadiusProperty, false, ExecutionContext::Scripting);
-	buffer->fill(FloatType(1));
+	buffer->fill<FloatType>(1);
 	return buffer;
+}
+
+/******************************************************************************
+* Returns a property array with the input particle masses.
+******************************************************************************/
+ConstPropertyPtr ParticlesObject::inputParticleMasses() const
+{
+	// Take masses directly from the 'Mass' property if available.
+	if(const PropertyObject* massProperty = getProperty(ParticlesObject::MassProperty))
+		return massProperty;
+
+	if(const PropertyObject* typeProperty = getProperty(ParticlesObject::TypeProperty)) {
+		// Assign masses based on particle types.
+		// Build a lookup map for particle type masses.
+		std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
+
+		// Skip the following loop if all per-type masses are zero. In this case, simply use the default mass for all particles.
+		if(boost::algorithm::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
+
+			// Allocate output array.
+			PropertyAccessAndRef<FloatType> massProperty = ParticlesObject::OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::MassProperty, false, ExecutionContext::Scripting);
+
+			// Fill output array using lookup table.
+			ConstPropertyAccess<int> typeData(typeProperty);
+			boost::transform(typeData, massProperty.begin(), [&](int t) {
+				auto it = massMap.find(t);
+				if(it != massMap.end())
+					return it->second;
+				else
+					return 0.0;
+			});
+
+			return massProperty.take();
+		}
+	}
+
+	// Return uniform default mass 0 for all particles.
+	return OOClass().createStandardProperty(dataset(), elementCount(), ParticlesObject::MassProperty, true, ExecutionContext::Scripting);
 }
 
 /******************************************************************************

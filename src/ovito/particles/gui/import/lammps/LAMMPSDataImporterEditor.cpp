@@ -40,83 +40,44 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 	LAMMPSDataImporter* dataImporter = static_object_cast<LAMMPSDataImporter>(importer);
 
 	// Inspect the data file and try to detect the LAMMPS atom style.
-	Future<LAMMPSDataImporter::LAMMPSAtomStyle> inspectFuture = dataImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
+	Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> inspectFuture = dataImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
 		return false;
-	LAMMPSDataImporter::LAMMPSAtomStyle detectedAtomStyle = inspectFuture.result();
+	LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = inspectFuture.result();
 
 	// Show dialog to ask user for the right LAMMPS atom style if it could not be detected.
-	if(detectedAtomStyle == LAMMPSDataImporter::AtomStyle_Unknown) {
-
-		QMap<QString, LAMMPSDataImporter::LAMMPSAtomStyle> styleList = {
-				{ QStringLiteral("angle"), LAMMPSDataImporter::AtomStyle_Angle },
-				{ QStringLiteral("atomic"), LAMMPSDataImporter::AtomStyle_Atomic },
-				{ QStringLiteral("body"), LAMMPSDataImporter::AtomStyle_Body },
-				{ QStringLiteral("bond"), LAMMPSDataImporter::AtomStyle_Bond },
-				{ QStringLiteral("charge"), LAMMPSDataImporter::AtomStyle_Charge },
-				{ QStringLiteral("dipole"), LAMMPSDataImporter::AtomStyle_Dipole },
-				{ QStringLiteral("dpd"), LAMMPSDataImporter::AtomStyle_DPD },
-				{ QStringLiteral("edpd"), LAMMPSDataImporter::AtomStyle_EDPD },
-				{ QStringLiteral("mdpd"), LAMMPSDataImporter::AtomStyle_MDPD },
-				{ QStringLiteral("electron"), LAMMPSDataImporter::AtomStyle_Electron },
-				{ QStringLiteral("ellipsoid"), LAMMPSDataImporter::AtomStyle_Ellipsoid },
-				{ QStringLiteral("full"), LAMMPSDataImporter::AtomStyle_Full },
-				{ QStringLiteral("line"), LAMMPSDataImporter::AtomStyle_Line },
-				{ QStringLiteral("meso"), LAMMPSDataImporter::AtomStyle_Meso },
-				{ QStringLiteral("molecular"), LAMMPSDataImporter::AtomStyle_Molecular },
-				{ QStringLiteral("peri"), LAMMPSDataImporter::AtomStyle_Peri },
-				{ QStringLiteral("smd"), LAMMPSDataImporter::AtomStyle_SMD },
-				{ QStringLiteral("sphere"), LAMMPSDataImporter::AtomStyle_Sphere },
-				{ QStringLiteral("template"), LAMMPSDataImporter::AtomStyle_Template },
-				{ QStringLiteral("tri"), LAMMPSDataImporter::AtomStyle_Tri },
-				{ QStringLiteral("wavepacket"), LAMMPSDataImporter::AtomStyle_Wavepacket }
-		};
-		QStringList itemList = styleList.keys();
+	if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown || (detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid && detectedAtomStyleHints.atomSubStyles.empty())) {
 
 		QSettings settings;
 		settings.beginGroup(LAMMPSDataImporter::OOClass().plugin()->pluginId());
 		settings.beginGroup(LAMMPSDataImporter::OOClass().name());
 
-		QString currentItem;
-		for(int i = 0; i < itemList.size(); i++) {
-			if(dataImporter->atomStyle() == styleList[itemList[i]]) {
-				currentItem = itemList[i];
-				break;
+		if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown)
+			detectedAtomStyleHints.atomStyle = LAMMPSDataImporter::parseAtomStyleHint(settings.value("DefaultAtomStyle").toString());
+		if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown)
+			detectedAtomStyleHints.atomStyle = LAMMPSDataImporter::AtomStyle_Atomic;
+		if(detectedAtomStyleHints.atomSubStyles.empty()) {
+			for(const auto& substyleName : settings.value("DefaultAtomSubStyles").toStringList()) {
+				auto substyle = LAMMPSDataImporter::parseAtomStyleHint(substyleName);
+				if(substyle != LAMMPSDataImporter::AtomStyle_Unknown)
+					detectedAtomStyleHints.atomSubStyles.push_back(substyle);
 			}
 		}
-		if(currentItem.isEmpty())
-			currentItem = settings.value("DefaultAtomStyle").toString();
-		if(currentItem.isEmpty())
-			currentItem = QStringLiteral("atomic");
 
-		QInputDialog dlg(parent);
-		dlg.setLabelText((dataImporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Unknown) ? 
-				tr("<html><p>Please select the right <b>atom style</b> for this LAMMPS data file. "
-				"OVITO could not detect it automatically, because the file does not "
-				"contain a <a href=\"https://docs.lammps.org/read_data.html#format-of-the-body-of-a-data-file\">style hint</a> in its <i>Atoms</i> section.</p>"
-				"<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or " 
-				"check the value of the <i>atom_style</i> command in your LAMMPS input script.</p>"
-				"<p>LAMMPS atom style:</p></html>") :
-				tr("LAMMPS atom style:"));
-		dlg.setWindowTitle(tr("LAMMPS data file"));
-		dlg.setComboBoxEditable(false);
-		dlg.setComboBoxItems(itemList);
-		dlg.setInputMode(QInputDialog::TextInput);
-		dlg.setTextValue(currentItem);
-		if(QLabel* label = dlg.findChild<QLabel*>()) {
-			label->setTextInteractionFlags(Qt::TextBrowserInteraction);
-			label->setOpenExternalLinks(true);
-			label->setWordWrap(true);
-		}
+		LAMMPSAtomStyleDialog dlg(detectedAtomStyleHints, parent);
 		if(dlg.exec() != QDialog::Accepted)
 			return false;
-		currentItem = dlg.textValue();
-		settings.setValue("DefaultAtomStyle", currentItem);
-		dataImporter->setAtomStyle(styleList[currentItem]);
+
+		settings.setValue("DefaultAtomStyle", LAMMPSDataImporter::atomStyleName(detectedAtomStyleHints.atomStyle));
+		if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid) {
+			QStringList names;
+			for(const auto& substyle : detectedAtomStyleHints.atomSubStyles)
+				names.push_back(LAMMPSDataImporter::atomStyleName(substyle));
+			settings.setValue("DefaultAtomSubStyles", names);
+		}
 	}
-	else {
-		dataImporter->setAtomStyle(detectedAtomStyle);
-	}
+	dataImporter->setAtomStyle(detectedAtomStyleHints.atomStyle);
+	dataImporter->setAtomSubStyles(std::move(detectedAtomStyleHints.atomSubStyles));
 
 	return true;
 }
@@ -142,6 +103,155 @@ void LAMMPSDataImporterEditor::createUI(const RolloutInsertionParameters& rollou
 	// Sort particles
 	BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
 	sublayout->addWidget(sortParticlesUI->checkBox());
+}
+
+/******************************************************************************
+* The constructor of the LAMMPSAtomStyleDialog.
+******************************************************************************/
+LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyleHints& atomStyleHints, QWidget* parent) : QDialog(parent), _atomStyleHints(atomStyleHints)
+{
+	setWindowTitle(tr("LAMMPS Data File Import"));
+
+	QVBoxLayout* layout1 = new QVBoxLayout(this);
+	layout1->setSpacing(2);
+	layout1->addStrut(400);
+
+	QLabel* label = new QLabel(
+				(_atomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Unknown) ? 
+				tr("<html><p>Please select the right <b>atom style</b> for this LAMMPS data file. "
+				"OVITO could not detect it automatically, because the file does not "
+				"contain a <a href=\"https://docs.lammps.org/read_data.html#format-of-the-body-of-a-data-file\">style hint</a> in its <i>Atoms</i> section.</p>"
+				"<p>If you don't know what the correct atom style is, see the <a href=\"https://docs.lammps.org/atom_style.html\">LAMMPS documentation</a> or " 
+				"check the value of the <i>atom_style</i> command in your LAMMPS input script.</p>"
+				"<p>LAMMPS atom style:</p></html>") :
+				tr("LAMMPS atom style:"), this);
+	label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+	label->setOpenExternalLinks(true);
+	label->setWordWrap(true);
+	layout1->addWidget(label);
+
+	_atomStyleList = new QComboBox(this);
+	_atomStyleList->setEditable(false);
+	for(int i = 1; i < LAMMPSDataImporter::AtomStyle_COUNT; i++) {
+		LAMMPSDataImporter::LAMMPSAtomStyle atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(i);
+		_atomStyleList->addItem(LAMMPSDataImporter::atomStyleName(atomStyle), QVariant::fromValue(i));
+		if(_atomStyleHints.atomDataColumnCount != 0 && atomStyle != LAMMPSDataImporter::AtomStyle_Hybrid) {
+			ParticleInputColumnMapping mapping = LAMMPSDataImporter::createColumnMapping(atomStyle, {}, _atomStyleHints.atomDataColumnCount);
+			if(mapping.size() != _atomStyleHints.atomDataColumnCount)
+				static_cast<QStandardItemModel*>(_atomStyleList->model())->item(i - 1)->setFlags(Qt::ItemIsSelectable | Qt::ItemNeverHasChildren);
+		}
+	}
+	_atomStyleList->model()->sort(0);
+	int styleIndex = _atomStyleList->findData(QVariant::fromValue(static_cast<int>(_atomStyleHints.atomStyle)));
+	if(styleIndex >= 0)
+		_atomStyleList->setCurrentIndex(styleIndex);
+	layout1->addWidget(_atomStyleList);
+	connect(_atomStyleList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
+
+	_subStylesLabel = new QLabel(tr("Sub-styles:"), this);
+	_subStylesLabel->setWordWrap(true);
+	layout1->addWidget(_subStylesLabel);
+	QHBoxLayout* sublayout = new QHBoxLayout();
+	sublayout->setContentsMargins(0,0,0,0);
+	sublayout->setSpacing(6);
+	auto iter = _atomStyleHints.atomSubStyles.cbegin();
+	for(QComboBox*& substyleList : _subStyleLists) {
+		substyleList = new QComboBox(this);
+		substyleList->setEditable(false);
+		for(int i = 1; i < LAMMPSDataImporter::AtomStyle_COUNT; i++) {
+			LAMMPSDataImporter::LAMMPSAtomStyle atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(i);
+			if(atomStyle != LAMMPSDataImporter::AtomStyle_Hybrid)
+				substyleList->addItem(LAMMPSDataImporter::atomStyleName(atomStyle), QVariant::fromValue(i));
+		}
+		substyleList->model()->sort(0);
+		substyleList->insertItem(0, QString());
+		substyleList->setCurrentIndex(0);
+		if(iter != _atomStyleHints.atomSubStyles.cend()) {
+			int styleIndex = substyleList->findData(QVariant::fromValue(static_cast<int>(*iter)));
+			if(styleIndex >= 0)
+				substyleList->setCurrentIndex(styleIndex);
+			++iter;
+		}
+		sublayout->addWidget(substyleList, 1);
+		connect(substyleList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
+	}
+	layout1->addLayout(sublayout);
+
+	label = new QLabel(tr("<html><p>For the selected atom style the column order is:</p></html>"), this);
+	label->setWordWrap(true);
+	layout1->addSpacing(16);
+	layout1->addWidget(label);
+
+	_columnListField = new QLineEdit(this);
+	_columnListField->setReadOnly(true);
+	_columnMismatchLabel = new QLabel();
+	_columnMismatchLabel->setWordWrap(true);
+	layout1->addWidget(_columnListField);
+	layout1->addWidget(_columnMismatchLabel);
+
+	_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+	connect(_buttonBox, &QDialogButtonBox::accepted, this, &LAMMPSAtomStyleDialog::onOk);
+	connect(_buttonBox, &QDialogButtonBox::rejected, this, &LAMMPSAtomStyleDialog::reject);
+
+	updateColumnList();
+
+	layout1->addStretch(1);
+	layout1->addSpacing(20);
+	layout1->addWidget(_buttonBox);
+}
+
+/******************************************************************************
+* Updates the displayed list of file data columns.
+******************************************************************************/
+void LAMMPSAtomStyleDialog::updateColumnList()
+{
+	LAMMPSDataImporter::LAMMPSAtomStyle atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(_atomStyleList->currentData().toInt());
+
+	_subStylesLabel->setVisible(atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid);
+	std::vector<LAMMPSDataImporter::LAMMPSAtomStyle> hybridSubstyles;
+	for(QComboBox* substyleList : _subStyleLists) {
+		substyleList->setVisible(atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid);
+		LAMMPSDataImporter::LAMMPSAtomStyle substyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(substyleList->currentData().toInt());
+		if(substyle != LAMMPSDataImporter::AtomStyle_Unknown)
+			hybridSubstyles.push_back(substyle);
+	}
+
+	ParticleInputColumnMapping mapping = LAMMPSDataImporter::createColumnMapping(atomStyle, hybridSubstyles, _atomStyleHints.atomDataColumnCount);
+	QString text;
+	for(const InputColumnInfo& column : mapping) {
+		if(!text.isEmpty())
+			text += QStringLiteral(" ");
+		text += column.columnName;
+	}
+	_columnListField->setText(std::move(text));
+
+	if(mapping.size() != _atomStyleHints.atomDataColumnCount && _atomStyleHints.atomDataColumnCount != 0) {
+		_columnMismatchLabel->setText(tr("<html><p style=\"color: red\">This does not match the actual number of columns in the data file, which is %1.</p></html>").arg(_atomStyleHints.atomDataColumnCount));
+		_columnMismatchLabel->show();
+		_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+	}
+	else {
+		_columnMismatchLabel->hide();
+		_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+	}
+}
+
+/******************************************************************************
+* Saves the values entered by the user and closes the dialog.
+******************************************************************************/
+void LAMMPSAtomStyleDialog::onOk()
+{
+	_atomStyleHints.atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(_atomStyleList->currentData().toInt());
+	_atomStyleHints.atomSubStyles.clear();
+	if(_atomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid) {
+		for(QComboBox* substyleList : _subStyleLists) {
+			LAMMPSDataImporter::LAMMPSAtomStyle substyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(substyleList->currentData().toInt());
+			if(substyle != LAMMPSDataImporter::AtomStyle_Unknown)
+				_atomStyleHints.atomSubStyles.push_back(substyle);
+		}
+	}
+
+	accept();
 }
 
 }	// End of namespace
