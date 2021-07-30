@@ -179,6 +179,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     	else if(line.find("ellipsoids") != string::npos) {}
     	else if(line.find("lines") != string::npos) {}
     	else if(line.find("bodies") != string::npos) {}
+    	else if(line.find("crossterms") != string::npos) {}
     	else break;
 	}
 
@@ -541,7 +542,12 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			}
 		}
 		else if(keyword.isEmpty() == false) {
-			throw Exception(tr("Unknown or unsupported keyword in line %1 of LAMMPS data file: %2.").arg(stream.lineNumber()-1).arg(QString::fromLocal8Bit(keyword)));
+			// Try to skip unknown sections.
+			while(!stream.eof()) {
+				const char* line = stream.readLineTrimLeft();
+				if(line[0] == '\0')
+					break;
+			}
 		}
 		else break;
 
