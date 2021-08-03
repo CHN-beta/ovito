@@ -44,7 +44,7 @@
 namespace Ovito {
         class MainWindow;
         class WasmDataSetContainer;		
-        class OpenGLViewportWindow;
+        class QuickViewportWindow;
 }
 
 #endif

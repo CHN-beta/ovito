@@ -311,7 +311,7 @@ Control {
 	onTrimExtraZerosChanged: updateUi()
 	onShowGroupSeparatorChanged: updateUi()
 	onEffectiveLocaleChanged: updateUi()
-	Keys.onPressed: handleKeyEvent(event)
+	Keys.onPressed: (event) => { handleKeyEvent(event) }
 
 	Connections {
 		target: control.spinBoxItem ? control.spinBoxItem.up : null
@@ -376,7 +376,7 @@ Control {
 		z: control.contentItem.z + 1
 		acceptedButtons: Qt.NoButton
 		enabled: control.wheelEnabled
-		onWheel: {
+		onWheel: function (wheel) {
 			var delta = (wheel.angleDelta.y === 0.0 ? -wheel.angleDelta.x : wheel.angleDelta.y) / 120;
 			if (wheel.inverted)
 				delta *= -1;

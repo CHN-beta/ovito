@@ -2,10 +2,11 @@ import QtQuick 2.12
 import QtQuick.Controls 2.5
 import org.ovito 1.0
 
-CustomComboBox {
+ComboBox {
 	id: control
 	textRole: "title"
 	model: mainWindow.modifierListModel
+	flat: false
 
 	// Item delegate:
 	delegate: ItemDelegate {

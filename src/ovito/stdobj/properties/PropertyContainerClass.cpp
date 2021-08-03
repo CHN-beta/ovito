@@ -36,10 +36,12 @@ void PropertyContainerClass::initialize()
 {
 	DataObject::OOMetaClass::initialize();
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	if(this == &PropertyContainer::OOClass()) {
 		QMetaType::registerComparators<PropertyContainerReference>();
 		QMetaType::registerComparators<PropertyDataObjectReference>();
 	}
+#endif
 }
 
 /******************************************************************************

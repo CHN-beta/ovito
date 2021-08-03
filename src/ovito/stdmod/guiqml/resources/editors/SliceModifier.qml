@@ -9,7 +9,7 @@ Ui.RolloutPanel {
 	ColumnLayout {
 		anchors.fill: parent
 
-		Ui.GroupBox {
+		GroupBox {
 			title: qsTr("Plane")
 			Layout.fillWidth: true
 			GridLayout {
@@ -51,7 +51,7 @@ Ui.RolloutPanel {
 			}
 		}
 
-		Ui.GroupBox {
+		GroupBox {
 			title: qsTr("Options")
 			Layout.fillWidth: true
 			ColumnLayout {

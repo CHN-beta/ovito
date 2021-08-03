@@ -65,7 +65,7 @@ void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjection
 	QSize size = vpWindow->viewportWindowDeviceSize();
 	QOpenGLFramebufferObjectFormat framebufferFormat;
 	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-	_framebufferObject.reset(new QOpenGLFramebufferObject(size.width(), size.height(), framebufferFormat));
+	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size.width(), size.height(), framebufferFormat);
 
 	// Clear OpenGL error state.
 	while(context->functions()->glGetError() != GL_NO_ERROR);

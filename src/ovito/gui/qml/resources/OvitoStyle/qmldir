@@ -1,0 +1,6 @@
+module OvitoStyle
+
+CheckBox 2.15 CheckBox.qml
+ComboBox 2.15 ComboBox.qml
+GroupBox 2.15 GroupBox.qml
+SpinBox 2.15 SpinBox.qml

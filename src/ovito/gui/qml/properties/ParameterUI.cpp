@@ -119,7 +119,7 @@ QVariant ParameterUI::getCurrentValue() const
 			}
 			else {
 				QVariant v = editObject()->getPropertyFieldValue(*propertyField());
-				if(v.type() == QVariant::Color) {
+				if(v.canConvert<QColor>()) {
 					QColor c = v.value<QColor>();
 					return QVariant::fromValue(QVector3D(c.redF(), c.greenF(), c.blueF()));
 				}
@@ -164,7 +164,7 @@ void ParameterUI::setCurrentValue(const QVariant& val)
 					}
 				}
 				else {
-					if(val.type() == QVariant::Vector3D) {
+					if(val.canConvert<QVector3D>()) {
 						editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(Color(val.value<QVector3D>())));
 					}
 					else {

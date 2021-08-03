@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -40,7 +40,7 @@ IF(OVITO_BUILD_GUI)
 		# The user interface is implemented using Qt Qml and Quick when running inside a web browser.
 		LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Qml QmlModels QmlWorkerScript Quick QuickControls2 QuickTemplates2 Svg)
 		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QuickControls2Impl)
+			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QuickControls2Impl QuickLayouts)
 		ENDIF()
 			# Additionally, when building for the desktop platform, we need the QtWidgets module.
 		IF(NOT EMSCRIPTEN)

@@ -11,7 +11,7 @@ ColumnLayout {
 
 		// When the user selects a modifier from the list box, insert that modifier into the pipeline
 		// and reset the selection back to the first item ("Add modification...").
-		onActivated: {
+		onActivated: function (index) {
 			mainWindow.modifierListModel.insertModifierByIndex(index)
 			currentIndex = 0;
 		}

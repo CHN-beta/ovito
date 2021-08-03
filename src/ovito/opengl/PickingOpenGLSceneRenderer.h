@@ -97,7 +97,7 @@ protected:
 private:
 
 	/// The OpenGL framebuffer.
-	QScopedPointer<QOpenGLFramebufferObject> _framebufferObject;
+	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
 	/// The next available object ID.
 	ObjectRecord _currentObject;

@@ -24,7 +24,7 @@
 #include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/gui/qml/mainwin/ViewportsPanel.h>
 #include <ovito/gui/qml/dataset/WasmFileManager.h>
-#include <ovito/gui/qml/viewport/OpenGLViewportWindow.h>
+#include <ovito/gui/qml/viewport/QuickViewportWindow.h>
 #include <ovito/gui/qml/properties/ParameterUI.h>
 #include <ovito/gui/qml/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
@@ -36,6 +36,7 @@
 
 #ifndef Q_OS_WASM
 	#include <QApplication>
+	#include <QQuickStyle>
 #endif
 
 #if QT_FEATURE_static > 0
@@ -80,10 +81,6 @@ void WasmApplication::registerCommandLineParameters(QCommandLineParser& parser)
 ******************************************************************************/
 void WasmApplication::createQtApplication(int& argc, char** argv)
 {
-	// Specify the default OpenGL surface format.
-	// When running in a web brwoser, try to obtain a WebGL 2.0 context if supported by the web browser.
-	QSurfaceFormat::setDefaultFormat(OpenGLSceneRenderer::getDefaultSurfaceFormat());
-
 #ifdef Q_OS_WASM
 
 	// Let the base class create a QtGui application object.
@@ -109,7 +106,7 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 	QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
 #endif
 
-	// Create a QtWidget application object.
+	// Create an application object.
 	new QApplication(argc, argv);
 
 #endif
@@ -123,7 +120,7 @@ bool WasmApplication::startupApplication()
 	// Make the C++ classes available as a Qt Quick items in QML. 
 	qmlRegisterType<MainWindow>("org.ovito", 1, 0, "MainWindow");
 	qmlRegisterType<ViewportsPanel>("org.ovito", 1, 0, "ViewportsPanel");
-	qmlRegisterType<OpenGLViewportWindow>("org.ovito", 1, 0, "OpenGLViewportWindow");
+	qmlRegisterType<QuickViewportWindow>("org.ovito", 1, 0, "QuickViewportWindow");
 	qmlRegisterUncreatableType<Viewport>("org.ovito", 1, 0, "Viewport", tr("Viewports cannot be created from QML."));
 	qmlRegisterSingletonType<ViewportSettings>("org.ovito", 1, 0, "ViewportSettings", [](QQmlEngine* eng, QJSEngine*) -> QObject* {
 		eng->setObjectOwnership(&ViewportSettings::getSettings(), QQmlEngine::CppOwnership);
@@ -131,12 +128,18 @@ bool WasmApplication::startupApplication()
 	});
 	qmlRegisterUncreatableType<ModifierListModel>("org.ovito", 1, 0, "ModifierListModel", tr("ModifierListModel cannot be created from QML."));
 	qmlRegisterUncreatableType<PipelineListModel>("org.ovito", 1, 0, "PipelineListModel", tr("PipelineListModel cannot be created from QML."));
+	qmlRegisterUncreatableType<PipelineListItem>("org.ovito", 1, 0, "PipelineListItem", tr("PipelineListItem cannot be created from QML."));
 	qmlRegisterUncreatableType<RefTarget>("org.ovito", 1, 0, "RefTarget", tr("RefTarget cannot be created from QML."));
 	qmlRegisterType<ParameterUI>("org.ovito", 1, 0, "ParameterUI");
 	qmlRegisterType<ModifierDelegateParameterUI>("org.ovito", 1, 0, "ModifierDelegateParameterUI");
 
+	// Select our own Qt Quick style (located in the resources/OvitoStyle/ directory).
+	// Fallback will be the "Basic" style.
+	QQuickStyle::setStyle("OvitoStyle");
+
 	// Initialize the Qml engine.
 	_qmlEngine = new QQmlApplicationEngine(this);
+	_qmlEngine->addImportPath(QStringLiteral("qrc:/gui/"));
 	// Pass Qt version to QML code:
 	_qmlEngine->rootContext()->setContextProperty("QT_VERSION", QT_VERSION);
 	_qmlEngine->load(QUrl(QStringLiteral("qrc:/gui/main.qml")));

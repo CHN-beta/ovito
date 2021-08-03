@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,8 +24,8 @@
 
 
 #include <ovito/gui/qml/GUI.h>
-#include <ovito/gui/base/rendering/PickingSceneRenderer.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 
 namespace Ovito {
@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief The internal render window asosciated with the Viewport class.
  */
-class OVITO_GUI_EXPORT OpenGLViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
+class OVITO_GUI_EXPORT QuickViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
 {
 	Q_OBJECT
 	Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced);
@@ -41,13 +41,19 @@ class OVITO_GUI_EXPORT OpenGLViewportWindow : public QQuickFramebufferObject, pu
 public:
 
 	/// Constructor.
-	OpenGLViewportWindow();
+	QuickViewportWindow();
 	
+	/// Destructor.
+	virtual ~QuickViewportWindow();
+
 	/// Associates this window with a viewport.
 	void setViewport(Viewport* vp);
 
 	/// Returns the input manager handling mouse events of the viewport (if any).
 	ViewportInputManager* inputManager() const;
+
+	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
+	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
 	/// Creates the renderer used to render into the FBO.
 	virtual QQuickFramebufferObject::Renderer* createRenderer() const override;
@@ -90,7 +96,7 @@ public:
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
 	/// Returns the renderer generating an offscreen image of the scene used for object picking.
-	PickingSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
+	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
 
 	/// \brief Displays the context menu for the viewport.
 	/// \param pos The position in where the context menu should be displayed.
@@ -117,7 +123,12 @@ private:
 	public:
 
 		/// Constructor.
-		explicit Renderer(OpenGLViewportWindow* vpwin) : _vpwin(vpwin) {}
+		explicit Renderer(QuickViewportWindow* vpwin) : _vpwin(vpwin) {}
+
+		/// Destructor.
+		~Renderer() {
+			_vpwin->releaseResources();
+		}
 
 		virtual QOpenGLFramebufferObject* createFramebufferObject(const QSize& size) override {
 	        QOpenGLFramebufferObjectFormat format;
@@ -132,8 +143,11 @@ private:
 	
 	private:
 		/// Pointer to the viewport window to which this renderer belongs.
-		OpenGLViewportWindow* _vpwin;
+		QuickViewportWindow* _vpwin;
 	};
+
+	/// Releases the renderer resources held by the viewport's surface and picking renderers. 
+	void releaseResources();
 
 	/// Renders the contents of the viewport window.
 	void renderViewport();
@@ -167,10 +181,10 @@ private:
 	OORef<OpenGLSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
-	OORef<PickingSceneRenderer> _pickingRenderer;
+	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
 };
 
 }	// End of namespace
 
-QML_DECLARE_TYPE(Ovito::OpenGLViewportWindow);
+QML_DECLARE_TYPE(Ovito::QuickViewportWindow);
 QML_DECLARE_TYPE(Ovito::Viewport);

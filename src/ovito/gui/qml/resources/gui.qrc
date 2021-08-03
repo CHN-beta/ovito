@@ -1,7 +1,4 @@
 <RCC>
-    <qresource prefix="/Core">
-    </qresource>
-
     <qresource prefix="/gui">
         <file>main.qml</file>
         <file>ui/qmldir</file>
@@ -12,13 +9,10 @@
         <file>ui/ColorParameter.qml</file>
         <file>ui/ColorPicker.qml</file>
         <file>ui/ColorPickerPopup.qml</file>
-        <file>ui/CustomCheckBox.qml</file>
-        <file>ui/CustomComboBox.qml</file>
         <file>ui/CustomRadioButton.qml</file>
         <file>ui/CommandPanel.qml</file>
         <file>ui/ErrorDialog.qml</file>
         <file>ui/FloatParameter.qml</file>
-        <file>ui/GroupBox.qml</file>
         <file>ui/ImportDialog.qml</file>
         <file>ui/IntegerParameter.qml</file>
         <file>ui/IntegerRadioButtonParameter.qml</file>
@@ -27,6 +21,7 @@
         <file>ui/PipelineEditor.qml</file>
         <file>ui/PipelineTab.qml</file>
         <file>ui/PropertiesEditor.qml</file>
+        <file>ui/QuickViewportWindow.qml</file>
         <file>ui/StatusBar.qml</file>
         <file>ui/RolloutPanel.qml</file>
         <file>ui/Spinner.qml</file>
@@ -34,9 +29,16 @@
         <file>ui/ToolBar.qml</file>
         <file>ui/VariantComboBoxParameter.qml</file>
         <file>ui/Vector3Parameter.qml</file>
-        <file>ui/ViewportWindow.qml</file>
 
-        <file>ui/arrow_down.svg</file>
+        <file>OvitoStyle/qmldir</file>
+        <file>OvitoStyle/CheckBox.qml</file>
+        <file>OvitoStyle/ComboBox.qml</file>
+        <file>OvitoStyle/GroupBox.qml</file>
+        <file>OvitoStyle/SpinBox.qml</file>
+
+        <file>OvitoStyle/images/check.png</file>
+        <file>OvitoStyle/images/check@2x.png</file>
+        <file>OvitoStyle/images/arrow_down.svg</file>
 
         <file>command_panel/tab_modify.bw.svg</file>
         <file>command_panel/tab_overlays.bw.svg</file>

@@ -214,7 +214,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 
 	// Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
 	if(glformat().majorVersion() >= 3) {
-		_vertexArrayObject.reset(new QOpenGLVertexArrayObject());
+		_vertexArrayObject = std::make_unique<QOpenGLVertexArrayObject>();
 		OVITO_CHECK_OPENGL(this, _vertexArrayObject->create());
 		OVITO_CHECK_OPENGL(this, _vertexArrayObject->bind());
 	}
@@ -543,23 +543,23 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
 	// Each OpenGL shader is only created once per OpenGL context group.
-	QScopedPointer<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(id));
+	std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(id));
 	if(program)
-		return program.take();
+		return program.release();
 
 	// The program's source code hasn't been compiled so far. Do it now and cache the shader program.
-	program.reset(new QOpenGLShaderProgram());
+	program = std::make_unique<QOpenGLShaderProgram>();
 	program->setObjectName(id);
 
 	// Load and compile vertex shader source.
-	loadShader(program.data(), QOpenGLShader::Vertex, vertexShaderFile);
+	loadShader(program.get(), QOpenGLShader::Vertex, vertexShaderFile);
 
 	// Load and compile fragment shader source.
-	loadShader(program.data(), QOpenGLShader::Fragment, fragmentShaderFile);
+	loadShader(program.get(), QOpenGLShader::Fragment, fragmentShaderFile);
 
 	// Load and compile geometry shader source.
 	if(!geometryShaderFile.isEmpty()) {
-		loadShader(program.data(), QOpenGLShader::Geometry, geometryShaderFile);
+		loadShader(program.get(), QOpenGLShader::Geometry, geometryShaderFile);
 	}
 
 	// Make the shader program a child object of the GL context group.
@@ -575,7 +575,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 
 	OVITO_REPORT_OPENGL_ERRORS(this);
 
-	return program.take();
+	return program.release();
 }
 
 /******************************************************************************

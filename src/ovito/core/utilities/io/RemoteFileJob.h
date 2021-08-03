@@ -172,7 +172,7 @@ private:
 #endif
 
     /// The local copy of the file.
-    QScopedPointer<QTemporaryFile> _localFile;
+    std::unique_ptr<QTemporaryFile> _localFile;
 
 	/// The memory-mapped destination file.
 	uchar* _fileMapping = nullptr;

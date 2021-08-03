@@ -10,7 +10,7 @@ Ui.RolloutPanel {
 	ColumnLayout {
 		anchors.fill: parent
 
-		Ui.GroupBox {
+		GroupBox {
 			title: qsTr("Dimensionality")
 			Layout.fillWidth: true
 			RowLayout {
@@ -28,7 +28,7 @@ Ui.RolloutPanel {
 			}
 		}
 
-		Ui.GroupBox {
+		GroupBox {
 			title: qsTr("Periodic boundary conditions")
 			Layout.fillWidth: true
 			RowLayout {

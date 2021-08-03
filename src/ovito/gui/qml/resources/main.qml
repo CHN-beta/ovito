@@ -1,6 +1,6 @@
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 
 // Items in this module are defined in C++ code.
 import org.ovito 1.0
@@ -21,11 +21,6 @@ ApplicationWindow {
 		id: aboutDialog
 	}
 
-//	header: Ui.ToolBar {
-//		id: toolBar
-//		objectName: "toolBar"
-//	}
-
 	RowLayout {
 		anchors.fill: parent
 		spacing: 0
@@ -43,7 +38,7 @@ ApplicationWindow {
 				id: mainWindow
 				Layout.fillWidth: true
 				Layout.fillHeight: true
-				
+
 				ViewportsPanel {
 					id: viewportsPanel
 					anchors.fill: parent
@@ -58,7 +53,7 @@ ApplicationWindow {
 					objectName: "statusBar"
 				}
 
-				onError: {
+				onError: function (message) {
 					errorDialog.text = message
 					errorDialog.open()
 				}

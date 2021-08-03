@@ -79,7 +79,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 		return false;
 
 	// Create a OpenGL context for rendering to an offscreen buffer.
-	_offscreenContext.reset(new QOpenGLContext());
+	_offscreenContext = std::make_unique<QOpenGLContext>();
 	// The context should share its resources with the one of the viewport renderers (only when operating in the same thread).
 	if(QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
 		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
@@ -125,7 +125,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	// Create OpenGL framebuffer.
 	QOpenGLFramebufferObjectFormat framebufferFormat;
 	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-	_framebufferObject.reset(new QOpenGLFramebufferObject(_framebufferSize, framebufferFormat));
+	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(_framebufferSize, framebufferFormat);
 	if(!_framebufferObject->isValid())
 		throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
@@ -236,7 +236,7 @@ void OffscreenOpenGLSceneRenderer::endRender()
 
 	// Release OpenGL resources.
 	QOpenGLFramebufferObject::bindDefault();
-	if(_offscreenContext && _offscreenContext.data() == QOpenGLContext::currentContext())
+	if(_offscreenContext && _offscreenContext.get() == QOpenGLContext::currentContext())
 		_offscreenContext->doneCurrent();
 	_framebufferObject.reset();
 	_offscreenContext.reset();

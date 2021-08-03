@@ -425,15 +425,15 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-			QScopedPointer<VideoEncoder> videoEncoderPtr;
+			std::unique_ptr<VideoEncoder> videoEncoderPtr;
 			// Initialize video encoder.
 			if(settings->saveToFile() && settings->imageInfo().isMovie()) {
 
 				if(settings->imageFilename().isEmpty())
 					throwException(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
 
-				videoEncoderPtr.reset(new VideoEncoder());
-				videoEncoder = videoEncoderPtr.data();
+				videoEncoderPtr = std::make_unique<VideoEncoder>();
+				videoEncoder = videoEncoderPtr.get();
 				int ticksPerFrame = std::max(1, (settings->framesPerSecond() > 0) ? (TICKS_PER_SECOND / settings->framesPerSecond()) : animationSettings()->ticksPerFrame());
 				videoEncoder->openFile(settings->imageFilename(), settings->outputImageWidth(), settings->outputImageHeight(), ticksPerFrame);
 			}

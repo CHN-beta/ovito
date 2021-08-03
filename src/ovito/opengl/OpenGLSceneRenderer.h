@@ -239,7 +239,7 @@ private:
 	void (APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
 	/// The OpenGL vertex array object that is required by OpenGL 3.2 core profile.
-	QScopedPointer<QOpenGLVertexArrayObject> _vertexArrayObject;
+	std::unique_ptr<QOpenGLVertexArrayObject> _vertexArrayObject;
 
 	/// The OpenGL surface format.
 	QSurfaceFormat _glformat;

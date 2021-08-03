@@ -79,10 +79,10 @@ private:
 	QOffscreenSurface* _offscreenSurface = nullptr;
 
 	/// The temporary OpenGL rendering context.
-	QScopedPointer<QOpenGLContext> _offscreenContext;
+	std::unique_ptr<QOpenGLContext> _offscreenContext;
 
 	/// The OpenGL framebuffer.
-	QScopedPointer<QOpenGLFramebufferObject> _framebufferObject;
+	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
 	/// The resolution of the offscreen framebuffer.
 	QSize _framebufferSize;

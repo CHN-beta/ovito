@@ -57,7 +57,7 @@ public:
 	virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
 
 	/// Returns the text currently displayed in the window's status bar.
-	const QString& statusBarText() const { return _statusBarText; }
+	const QString& statusBarText() const { return _statusBarTextMarkup; }
 
 public Q_SLOTS:
 
@@ -89,6 +89,9 @@ private:
 
 	/// The text string displayed in the window's status bar.
 	QString _statusBarText;
+
+	/// The markup text displayed in the window's status bar.
+	QString _statusBarTextMarkup;
 
 	/// Used for timed display of status bar texts.
 	QTimer _statusBarTimer;

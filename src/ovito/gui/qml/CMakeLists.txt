@@ -30,7 +30,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/ViewportsPanel.cpp
 		properties/ParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
-		viewport/OpenGLViewportWindow.cpp
+		viewport/QuickViewportWindow.cpp
 		resources/gui.qrc
 	PLUGIN_DEPENDENCIES
 		OpenGLRenderer

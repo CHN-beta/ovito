@@ -94,6 +94,9 @@
 #include <QtMath>
 #include <QBuffer>
 #include <QRegularExpression>
+#include <QPair>
+#include <QVariant>
+#include <QMap>
 #ifndef OVITO_DISABLE_THREADING
     #include <QException>
 #endif

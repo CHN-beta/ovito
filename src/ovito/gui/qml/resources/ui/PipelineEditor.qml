@@ -33,12 +33,12 @@ ScrollView {
 				height: itemInfo.height
 				hoverEnabled: true
 				onClicked: { 
-					if(type <= 3) 
+					if(type < PipelineListItem.VisualElementsHeader) 
 						ListView.view.currentIndex = index; 
 				}
 				states: State {
 					name: "HOVERING"
-					when: (containsMouse && type == 1)
+					when: (containsMouse && type == PipelineListItem.Modifier)
 					PropertyChanges { target: deleteButton; opacity: 0.85 }
 				}
 				transitions: Transition {
@@ -47,13 +47,13 @@ ScrollView {
 				}			
 				Rectangle { 
 					id: itemInfo
-					height: (type >= 4) ? textItem.implicitHeight : Math.max(textItem.implicitHeight, checkboxItem.implicitHeight)
+					height: (type >= PipelineListItem.VisualElementsHeader) ? textItem.implicitHeight : Math.max(textItem.implicitHeight, checkboxItem.implicitHeight)
 					width: parent.width
-					color: (type >= 4) ? "lightgray" : "#00000000"; 
+					color: (type >= PipelineListItem.VisualElementsHeader) ? "lightgray" : "#00000000"; 
 					CheckBox {
 						id: checkboxItem
-						visible: (type <= 1)
-						checked: ischecked
+						visible: (type <= PipelineListItem.Modifier)
+						checked: model.ischecked
 						anchors.verticalCenter: parent.verticalCenter
 						anchors.left: parent.left
 						onToggled: {
@@ -81,11 +81,11 @@ ScrollView {
 					Text {
 						id: textItem
 						text: title
-						horizontalAlignment: (type < 4) ? Text.AlignLeft : Text.AlignHCenter
+						horizontalAlignment: (type < PipelineListItem.VisualElementsHeader) ? Text.AlignLeft : Text.AlignHCenter
 						anchors.verticalCenter: parent.verticalCenter
-						anchors.left: (type <= 1) ? checkboxItem.right : parent.left
+						anchors.left: (type <= PipelineListItem.Modifier) ? checkboxItem.right : parent.left
 						anchors.right: parent.right
-						anchors.leftMargin: (type <= 1) ? 0 : 6
+						anchors.leftMargin: (type <= PipelineListItem.Modifier) ? 0 : 6
 					}
 					Image {
 						id: deleteButton
@@ -97,7 +97,7 @@ ScrollView {
 						MouseArea {
 							anchors.fill: parent
 							onClicked: { 
-								listView.model.deleteModifier(index)
+								listView.model.deleteItemIndex(index)
 							}
 						}
 					}

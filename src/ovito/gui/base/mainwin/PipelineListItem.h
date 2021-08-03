@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * An item managed by the PipelineListModel representing a data source, data object, modifier application or vis element.
  */
-class PipelineListItem : public RefMaker
+class OVITO_GUIBASE_EXPORT PipelineListItem : public RefMaker
 {
 	Q_OBJECT
 	OVITO_CLASS(PipelineListItem)
@@ -52,6 +52,7 @@ public:
 		DataSourceHeader,
 		PipelineBranch
 	};
+	Q_ENUMS(PipelineItemType);
 
 public:
 

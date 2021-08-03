@@ -30,7 +30,7 @@ ToolBar {
 			}
 			*/
 			ToolSeparator {
-				contentItem.visible: fileRow.y === editRow.y
+				contentItem.visible: fileRow.y == editRow.y
 			}
 		}
 

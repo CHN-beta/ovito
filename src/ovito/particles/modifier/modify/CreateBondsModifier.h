@@ -33,10 +33,19 @@
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
 /// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be 
 /// solved in a different way in the future.
-template<> inline bool qMapLessThanKey<QPair<QVariant, QVariant>>(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2)
-{
-	return key1.first.toString() < key2.first.toString() || (!(key2.first.toString() < key1.first.toString()) && key1.second.toString() < key2.second.toString());
-}
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	inline bool operator<(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2)
+	{
+		return key1.first.toString() < key2.first.toString() || (!(key2.first.toString() < key1.first.toString()) && key1.second.toString() < key2.second.toString());
+	}
+#else
+	QT_BEGIN_NAMESPACE
+	template<> inline bool qMapLessThanKey<QPair<QVariant, QVariant>>(const QPair<QVariant, QVariant>& key1, const QPair<QVariant, QVariant>& key2)
+	{
+		return key1.first.toString() < key2.first.toString() || (!(key2.first.toString() < key1.first.toString()) && key1.second.toString() < key2.second.toString());
+	}
+	QT_END_NAMESPACE
+#endif
 
 namespace Ovito { namespace Particles {
 

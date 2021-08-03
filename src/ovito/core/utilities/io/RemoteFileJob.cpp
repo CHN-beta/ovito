@@ -333,7 +333,7 @@ void DownloadRemoteFileJob::shutdown(bool success)
 	RemoteFileJob::shutdown(success);
 
 	// Hand downloaded file over to FileManager cache.
-	Application::instance()->fileManager()->fileFetched(url(), _localFile.take());
+	Application::instance()->fileManager()->fileFetched(url(), _localFile.release());
 }
 
 #ifdef OVITO_SSH_CLIENT
@@ -351,7 +351,7 @@ void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
 
 	// Create the destination file.
 	try {
-		_localFile.reset(new QTemporaryFile());
+		_localFile = std::make_unique<QTemporaryFile>();
 		if(!_localFile->open() || !_localFile->resize(fileSize))
 			throw Exception(tr("Failed to create temporary file: %1").arg(_localFile->errorString()));
 
@@ -421,7 +421,7 @@ void DownloadRemoteFileJob::storeReceivedData()
 	try {
 		// Create the destination file and open it for writing.
 		if(!_localFile) {
-			_localFile.reset(new QTemporaryFile());
+			_localFile = std::make_unique<QTemporaryFile>();
 			if(!_localFile->open())
 				throw Exception(tr("Failed to create temporary file: %1").arg(_localFile->errorString()));
 		}

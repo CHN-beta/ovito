@@ -194,6 +194,9 @@ public Q_SLOTS:
 	/// Deletes the pipeline objects that are currently selected in the list.
 	void deleteSelectedItems() { deleteItems(selectedItems()); }
 
+	/// Deletes the pipeline objects that are currently selected in the list.
+	void deleteItemIndex(int index) { deleteItems({item(index)}); }
+
 	/// Moves the selected modifier up one position in the stack.
 	void moveModifierUp();
 
