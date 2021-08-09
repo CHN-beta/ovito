@@ -26,6 +26,7 @@
 // Inputs:
 in vec3 position;
 in float radius;
+uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -33,14 +34,6 @@ out vec2 uv_fs;
 
 void main()
 {
-	// Const array of vertex positions for the quad triangle strip.
-	const vec2 quad[4] = vec2[4](
-        vec2(-1.0, -1.0),
-        vec2( 1.0, -1.0),
-        vec2(-1.0,  1.0),
-        vec2( 1.0,  1.0)
-	);
-
     // The index of the quad corner.
     int corner = gl_VertexID;
 
@@ -51,11 +44,11 @@ void main()
     float viewspace_radius = radius * length(modelview_matrix[0]);
 
 	// Project corner vertex.
-    gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(quad[corner] * viewspace_radius, 0.0, 0.0));
+    gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(unit_quad_triangle_strip[corner] * viewspace_radius, 0.0, 0.0));
 
     // Compute color from object ID.
     color_fs = pickingModeColor(gl_InstanceID);
 
     // Pass UV quad coordinates to fragment shader.
-    uv_fs = quad[corner];
+    uv_fs = unit_quad_triangle_strip[corner];
 }

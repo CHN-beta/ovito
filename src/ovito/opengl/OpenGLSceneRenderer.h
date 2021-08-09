@@ -233,10 +233,10 @@ private:
 	QSurface* _glsurface = nullptr;
 
 	/// Pointer to the glMultiDrawArrays() function. Requires OpenGL 2.0.
-	void (APIENTRY *glMultiDrawArrays)(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) = nullptr;
+	void (QOPENGLF_APIENTRY *glMultiDrawArrays)(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount) = nullptr;
 
 	/// Pointer to the optional glMultiDrawArraysIndirect() function. Requires OpenGL 4.3.
-	void (APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
+	void (QOPENGLF_APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
 	/// The OpenGL vertex array object that is required by OpenGL 3.2 core profile.
 	std::unique_ptr<QOpenGLVertexArrayObject> _vertexArrayObject;

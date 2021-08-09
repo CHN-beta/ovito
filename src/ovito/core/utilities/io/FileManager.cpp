@@ -124,10 +124,11 @@ Future<QStringList> FileManager::listDirectoryContents(TaskManager& taskManager,
 		ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url, taskManager);
 		return job->future();
 #else
-		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version fo OVITO was built without support for the sftp:// protocol and can open local files only."), taskManager.datasetContainer()));
+		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only."), taskManager.datasetContainer()));
 #endif
 	}
 	else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
+#ifndef Q_OS_WASM
 		QUrl normalizedUrl = normalizeUrl(url);
 		QMutexLocker lock(&mutex());
 
@@ -140,6 +141,9 @@ Future<QStringList> FileManager::listDirectoryContents(TaskManager& taskManager,
                 fileList.push_back(cacheEntry.fileName());
         }
         return std::move(fileList);
+#else
+		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the http:// protocol and can open local files only."), taskManager.datasetContainer()));
+#endif
 	}
 	else {
 		return Future<QStringList>::createFailed(Exception(tr("Directory listings for URL scheme '%1' not supported. The program can only look for files in sftp:// locations and in local directories.").arg(url.scheme()), taskManager.datasetContainer()));

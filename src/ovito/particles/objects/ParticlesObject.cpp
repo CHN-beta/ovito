@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,6 +34,14 @@
 #include "BondsVis.h"
 #include "VectorVis.h"
 #include "ParticleBondMap.h"
+
+#if QT_FEATURE_static > 0
+	// This no-op helper function is called by the QML/Gui module 
+	// to make sure the Particles plugin and its dependencies 
+	// get linked into the static WASM executable and are not eliminated
+	// by the linker.
+	void ovito_static_plugin_Particles() {}
+#endif
 
 namespace Ovito { namespace Particles {
 

@@ -96,6 +96,7 @@ void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), executionContext);
 
 	if(executionContext == ExecutionContext::Interactive) {
+#ifndef OVITO_DISABLE_QSETTINGS
 		// Load the default gradient type set by the user.
 		QSettings settings;
 		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
@@ -111,6 +112,7 @@ void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 			}
 			catch(...) {}
 		}
+	#endif
 
 		// In the graphical program environment, we let the modifier clear the selection by default
 		// in order to make the newly assigned colors visible.

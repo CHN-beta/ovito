@@ -47,5 +47,5 @@
         <file>samples/test.data</file>
         <file>samples/animation.dump</file>
         <file>samples/trajectory.xyz</file>
-    </qresource>
+    </qresource>  
 </RCC>

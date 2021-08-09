@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -59,7 +59,6 @@ SET(SourceFiles
 	modifier/selection/ExpandSelectionModifier.cpp
 	modifier/properties/SmoothTrajectoryModifier.cpp
 	modifier/properties/GenerateTrajectoryLinesModifier.cpp
-	modifier/properties/InteractiveMolecularDynamicsModifier.cpp
 	import/ParticleImporter.cpp
 	import/lammps/LAMMPSTextDumpImporter.cpp
 	import/lammps/LAMMPSBinaryDumpImporter.cpp
@@ -114,6 +113,12 @@ IF(OVITO_BUILD_PLUGIN_STDMOD)
 		modifier/properties/BondsComputePropertyModifierDelegate.cpp
 		modifier/selection/ParticlesExpressionSelectionModifierDelegate.cpp
 		modifier/modify/ParticlesCombineDatasetsModifierDelegate.cpp
+	)
+ENDIF()
+
+IF(NOT EMSCRIPTEN)
+	LIST(APPEND SourceFiles
+		modifier/properties/InteractiveMolecularDynamicsModifier.cpp
 	)
 ENDIF()
 

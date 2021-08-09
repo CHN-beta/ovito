@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,27 +31,32 @@
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/ApplicationService.h>
 #include "WasmApplication.h"
 
 #ifndef Q_OS_WASM
 	#include <QApplication>
-	#include <QQuickStyle>
 #endif
+#include <QQuickStyle>
 
 #if QT_FEATURE_static > 0
 	#include <QtPlugin>
-	// Explicitly import Qt plugins (needed for CMake builds)
+	// Explicitly import Qt static plugins:
+	Q_IMPORT_PLUGIN(QtQmlPlugin)       		// QtQml
+	Q_IMPORT_PLUGIN(QtQmlModelsPlugin)      // QtQml.Models
 	Q_IMPORT_PLUGIN(QtQuick2Plugin)       	// QtQuick
-	Q_IMPORT_PLUGIN(QtQuick2WindowPlugin) 	// QtQuick.Window
+	Q_IMPORT_PLUGIN(QtQuickControls2Plugin) // QtQuick.Controls
+	Q_IMPORT_PLUGIN(QtQuickControls2ImplPlugin)  // QtQuick.Controls.impl
+	Q_IMPORT_PLUGIN(QtQuickControls2BasicStylePlugin) // QtQuick.Controls.Basic
 	Q_IMPORT_PLUGIN(QtQuickLayoutsPlugin) 	// QtQuick.Layouts
 	Q_IMPORT_PLUGIN(QtQuickTemplates2Plugin)// QtQuick.Templates
-	Q_IMPORT_PLUGIN(QtQuickControls2Plugin) // QtQuick.Controls2
+	Q_IMPORT_PLUGIN(QtQuick_WindowPlugin) 	// QtQuick.Window
 	Q_IMPORT_PLUGIN(QSvgIconPlugin) 		// SVG icon engine plugin
-	#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-		Q_IMPORT_PLUGIN(QSvgPlugin)
-		Q_IMPORT_PLUGIN(QWasmIntegrationPlugin)
-	#endif
+	
+	// Make sure the Particle module gets linked into the static executable
+	// by calling a function that is defined in the module.
+	extern void ovito_static_plugin_Particles();
 #endif
 
 namespace Ovito {
@@ -117,6 +122,12 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 ******************************************************************************/
 bool WasmApplication::startupApplication()
 {
+#if QT_FEATURE_static > 0
+	// Make sure the Particle module gets linked into the static executable
+	// by calling a function that is defined in the module.
+	ovito_static_plugin_Particles();
+#endif
+
 	// Make the C++ classes available as a Qt Quick items in QML. 
 	qmlRegisterType<MainWindow>("org.ovito", 1, 0, "MainWindow");
 	qmlRegisterType<ViewportsPanel>("org.ovito", 1, 0, "ViewportsPanel");
@@ -143,6 +154,7 @@ bool WasmApplication::startupApplication()
 	// Pass Qt version to QML code:
 	_qmlEngine->rootContext()->setContextProperty("QT_VERSION", QT_VERSION);
 	_qmlEngine->load(QUrl(QStringLiteral("qrc:/gui/main.qml")));
+
 	if(_qmlEngine->rootObjects().empty())
 		return false;
 

@@ -660,6 +660,7 @@ void RefMaker::initializeObject(ExecutionContext executionContext)
 						target->initializeObject(executionContext);
 
 						if(executionContext == ExecutionContext::Interactive) {
+#ifndef OVITO_DISABLE_QSETTINGS
 							// If it's a controller type, load default controller value.
 							if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
 								QSettings settings;
@@ -678,6 +679,7 @@ void RefMaker::initializeObject(ExecutionContext executionContext)
 									}
 								}
 							}
+#endif
 						}
 					}
 				}

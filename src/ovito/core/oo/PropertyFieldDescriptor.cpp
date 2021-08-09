@@ -109,6 +109,7 @@ QString PropertyFieldDescriptor::displayName() const
 void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 {
 	OVITO_CHECK_OBJECT_POINTER(object);
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	settings.beginGroup(object->getOOClass().plugin()->pluginId());
 	settings.beginGroup(object->getOOClass().name());
@@ -118,6 +119,7 @@ void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 	if(getQVariantTypeId(v) == QMetaType::Float)
 		v = QVariant::fromValue((double)v.toFloat());
 	settings.setValue(identifier(), v);
+#endif
 }
 
 /******************************************************************************
@@ -126,6 +128,7 @@ void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 bool PropertyFieldDescriptor::loadDefaultValue(RefMaker* object) const
 {
 	OVITO_CHECK_OBJECT_POINTER(object);
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	settings.beginGroup(object->getOOClass().plugin()->pluginId());
 	settings.beginGroup(object->getOOClass().name());
@@ -135,6 +138,7 @@ bool PropertyFieldDescriptor::loadDefaultValue(RefMaker* object) const
 		object->setPropertyFieldValue(*this, v);
 		return true;
 	}
+#endif
 	return false;
 }
 

@@ -36,6 +36,7 @@ void FileColumnParticleExporter::initializeObject(ExecutionContext executionCont
 {
 	ParticleExporter::initializeObject(executionContext);
 
+#ifndef OVITO_DISABLE_QSETTINGS
 	if(executionContext == ExecutionContext::Interactive) {
 		// Restore last output column mapping.
 		QSettings settings;
@@ -52,6 +53,7 @@ void FileColumnParticleExporter::initializeObject(ExecutionContext executionCont
 		}
 		settings.endGroup();
 	}
+#endif
 }
 
 }	// End of namespace

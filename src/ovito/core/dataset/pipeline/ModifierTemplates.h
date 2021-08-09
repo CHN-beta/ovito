@@ -84,12 +84,7 @@ public:
 	/// \brief Returns the serialized modifier data for the given template.
 	QByteArray templateData(const QString& templateName);
 
-	/// \brief Writes in-memory template list to the given settings store.
-	void commit() {
-		QSettings settings;
-		commit(settings);
-	}
-
+#ifndef OVITO_DISABLE_QSETTINGS
 	/// \brief Writes in-memory template list to the given settings store.
 	void commit(QSettings& settings);
 
@@ -97,13 +92,24 @@ public:
 	int load(QSettings& settings);
 
 	/// \brief Reloads the in-memory template list from the given settings store.
-	void restore() {
+	void restore(QSettings& settings);
+#endif
+
+	/// \brief Writes in-memory template list to the given settings store.
+	void commit() {
+#ifndef OVITO_DISABLE_QSETTINGS
 		QSettings settings;
-		restore(settings);
+		commit(settings);
+#endif
 	}
 
 	/// \brief Reloads the in-memory template list from the given settings store.
-	void restore(QSettings& settings);
+	void restore() {
+#ifndef OVITO_DISABLE_QSETTINGS
+		QSettings settings;
+		restore(settings);
+#endif
+	}
 
 private:
 

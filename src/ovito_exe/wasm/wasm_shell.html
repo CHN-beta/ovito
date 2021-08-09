@@ -18,7 +18,7 @@
     <figure style="overflow:visible;" id="qtspinner">
       <center style="margin-top:1.5em; line-height:150%">
         <img src="ovito_logo.png"; width=128; height=128; style="display:block"> </img>
-        <strong>OVITO Web Demo</strong>
+        <strong>OVITO Web</strong>
         <div id="qtstatus"></div>
         <noscript>JavaScript is disabled. Please enable JavaScript to use this application.</noscript>
       </center>
@@ -44,9 +44,9 @@
                   canvas.style.display = 'none';
               },
               showExit: function() {
-                  status.innerHTML = "Application exit";
+                  status.innerHTML = "Application has exited. To restart it, please reload web page.";
                   if (qtLoader.exitCode !== undefined)
-                      status.innerHTML += " with code " + qtLoader.exitCode;
+                      status.innerHTML += " Exit code: " + qtLoader.exitCode;
                   if (qtLoader.exitText !== undefined)
                       status.innerHTML += " (" + qtLoader.exitText + ")";
                   spinner.style.display = 'block';
@@ -56,6 +56,9 @@
                   spinner.style.display = 'none';
                   canvas.style.display = 'block';
               },
+              environment: {
+                'QML_IMPORT_TRACE' : '0'
+              }
           });
           qtLoader.loadEmscriptenModule("@APPNAME@");
       }

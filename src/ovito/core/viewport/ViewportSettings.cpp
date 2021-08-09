@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,10 +52,12 @@ ViewportSettings& ViewportSettings::getSettings()
 	static bool settingsLoaded = false;
 
 	if(!settingsLoaded) {
+#ifndef OVITO_DISABLE_QSETTINGS
 		QSettings settingsStore;
 		settingsStore.beginGroup("core/viewport/");
 		_currentViewportSettings->load(settingsStore);
-		settingsStore.endGroup();
+		settingsStore.endGroup();	
+#endif
 		settingsLoaded = true;
 	}
 	return *_currentViewportSettings;
@@ -146,6 +148,7 @@ Matrix3 ViewportSettings::coordinateSystemOrientation() const
 	}
 }
 
+#ifndef OVITO_DISABLE_QSETTINGS
 /******************************************************************************
 * Loads the settings from the given settings store.
 ******************************************************************************/
@@ -173,18 +176,22 @@ void ViewportSettings::load(QSettings& store)
 	}
 	store.endGroup();
 }
+#endif
 
 /******************************************************************************
 * Saves the settings to the default application settings store.
 ******************************************************************************/
 void ViewportSettings::save() const
 {
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settingsStore;
 	settingsStore.beginGroup("core/viewport/");
 	save(settingsStore);
 	settingsStore.endGroup();
+#endif
 }
 
+#ifndef OVITO_DISABLE_QSETTINGS
 /******************************************************************************
 * Saves the settings to the given settings store.
 ******************************************************************************/
@@ -208,5 +215,6 @@ void ViewportSettings::save(QSettings& store) const
 	}
 	store.endGroup();
 }
+#endif
 
 }	// End of namespace

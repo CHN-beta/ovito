@@ -96,6 +96,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 	// settings from the settings store.
 	if(executionContext == ExecutionContext::Interactive) {
 
+#ifndef OVITO_DISABLE_QSETTINGS
 		// Use the type's name, property type and container class to look up the 
 		// default color saved by the user.
 		QVariant v = QSettings().value(getElementSettingsKey(property, QStringLiteral("color"), typeName));
@@ -122,6 +123,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 			if(v.isValid() && getQVariantTypeId(v) == QMetaType::QColor)
 				return v.value<Color>();
 		}
+#endif
 	}
 
 	// Otherwise fall back to a hard-coded default colors provided by the property container class.
@@ -133,6 +135,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 ******************************************************************************/
 void ElementType::setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color)
 {
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
 
@@ -142,6 +145,7 @@ void ElementType::setDefaultColor(const PropertyReference& property, const QStri
 	else {
 		settings.remove(settingsKey);
 	}
+#endif
 }
 
 /******************************************************************************

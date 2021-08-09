@@ -127,7 +127,7 @@ private:
 
 		/// Destructor.
 		~Renderer() {
-			_vpwin->releaseResources();
+			_vpwin->releaseRenderingResources();
 		}
 
 		virtual QOpenGLFramebufferObject* createFramebufferObject(const QSize& size) override {
@@ -147,7 +147,7 @@ private:
 	};
 
 	/// Releases the renderer resources held by the viewport's surface and picking renderers. 
-	void releaseResources();
+	void releaseRenderingResources();
 
 	/// Renders the contents of the viewport window.
 	void renderViewport();

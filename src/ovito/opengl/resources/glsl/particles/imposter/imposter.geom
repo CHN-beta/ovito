@@ -29,6 +29,7 @@ layout(triangle_strip, max_vertices=4) out;
 in vec4 position_gs[1];
 in float radius_gs[1];
 in vec4 color_gs[1];
+uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -37,14 +38,6 @@ flat out vec2 radius_and_eyez_fs;
 
 void main()
 {
-	// Const array of vertex positions for the quad triangle strip.
-	const vec2 quad[4] = vec2[4](
-        vec2(-1.0, -1.0),
-        vec2( 1.0, -1.0),
-        vec2(-1.0,  1.0),
-        vec2( 1.0,  1.0)
-	);
-
     for(int corner = 0; corner < 4; corner++) 
     {
         // Transform particle center to view space.
@@ -54,13 +47,13 @@ void main()
         radius_and_eyez_fs.x = radius_gs[0] * length(modelview_matrix[0]);
 
         // Project corner vertex.
-        gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(quad[corner] * radius_and_eyez_fs.x, 0.0, 0.0));
+        gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(unit_quad_triangle_strip[corner] * radius_and_eyez_fs.x, 0.0, 0.0));
 
         // Forward particle color to fragment shader.
         color_fs = color_gs[0];
 
         // Pass UV quad coordinates to fragment shader.
-        uv_fs = quad[corner];
+        uv_fs = unit_quad_triangle_strip[corner];
 
         // Pass particle z-position in view space to fragment shader.
         radius_and_eyez_fs.y = eye_position.z;

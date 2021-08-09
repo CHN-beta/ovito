@@ -27,6 +27,7 @@
 in vec3 base;
 in vec3 head;
 in float radius;
+uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -39,24 +40,6 @@ noperspective out vec3 ray_dir;
 
 void main()
 {
-	// Const array of vertex positions for the box triangle strip.
-	const vec3 box[14] = vec3[14](
-        vec3( 1.0,  1.0,  1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  0.0),
-        vec3( 1.0, -1.0,  0.0),
-        vec3(-1.0, -1.0,  0.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3( 1.0,  1.0,  0.0),
-        vec3(-1.0,  1.0,  0.0),
-        vec3(-1.0, -1.0,  0.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0)
-	);
-
     // The index of the box corner.
     int corner = gl_VertexID;
 
@@ -80,7 +63,7 @@ void main()
     }
 
 	// Apply model-view-projection matrix to box vertex position.
-    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * box[corner]), 1.0);
+    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
 
     // Compute color from object ID.
     color_fs = pickingModeColor(gl_InstanceID);

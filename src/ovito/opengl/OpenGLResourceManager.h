@@ -47,7 +47,7 @@ public:
     OpenGLResourceManager() = default;
 
     /// Create an OpenGL texture object for a QImage.
-    QOpenGLTexture* uploadImage(const QImage& image, ResourceFrameHandle resourceFrame);
+    QOpenGLTexture* uploadImage(const QImage& image, ResourceFrameHandle resourceFrame, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
 };
 
 }	// End of namespace

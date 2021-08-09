@@ -32,7 +32,9 @@
 #endif
 #include "RemoteFileJob.h"
 
-#include <QNetworkReply>
+#ifndef Q_OS_WASM
+	#include <QNetworkReply>
+#endif
 
 namespace Ovito {
 
@@ -127,14 +129,14 @@ void RemoteFileJob::start()
 	else {
 #endif
 		// Handle http(s) URLs.
-
+#ifndef Q_OS_WASM
 		_promise.setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
 		QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
 		_networkReply = networkAccessManager->get(QNetworkRequest(_url));
 
 		connect(_networkReply, &QNetworkReply::downloadProgress, this, &RemoteFileJob::networkReplyDownloadProgress);
 		connect(_networkReply, &QNetworkReply::finished, this, &RemoteFileJob::networkReplyFinished);
-
+#endif
 #ifdef OVITO_SSH_CLIENT
 	}
 #endif
@@ -152,13 +154,14 @@ void RemoteFileJob::shutdown(bool success)
 		_connection = nullptr;
 	}
 #endif
+#ifndef Q_OS_WASM
 	if(_networkReply) {
 		disconnect(_networkReply, nullptr, this, nullptr);
 		_networkReply->abort();
 		_networkReply->deleteLater();
 		_networkReply = nullptr;
 	}
-
+#endif
 	_promise.setFinished();
 
 	// Update the counter of active jobs.
@@ -224,8 +227,8 @@ void RemoteFileJob::connectionCanceled()
 ******************************************************************************/
 void RemoteFileJob::networkReplyFinished()
 {
+#ifndef Q_OS_WASM
 	if(_networkReply->error() == QNetworkReply::NoError) {
-
 		shutdown(true);
 	}
 	else {
@@ -235,6 +238,7 @@ void RemoteFileJob::networkReplyFinished()
 
 		shutdown(false);
 	}
+#endif
 }
 
 #ifdef OVITO_SSH_CLIENT
@@ -415,6 +419,7 @@ void DownloadRemoteFileJob::networkReplyDownloadProgress(qint64 bytesReceived, q
 ******************************************************************************/
 void DownloadRemoteFileJob::storeReceivedData()
 {
+#ifndef Q_OS_WASM
 	if(!_networkReply)
 		return;
 
@@ -437,6 +442,7 @@ void DownloadRemoteFileJob::storeReceivedData()
 		_promise.captureException();
 		shutdown(false);
 	}
+#endif
 }
 
 #ifdef OVITO_SSH_CLIENT

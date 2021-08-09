@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -35,13 +35,18 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	SET(optional_plugin_dependencies ${ARG_OPTIONAL_PLUGIN_DEPENDENCIES})
 	SET(precompiled_headers ${ARG_PRECOMPILED_HEADERS})
 
-	# Create the library target for the plugin.
+	# Determine the type of library target to build.
+	SET(plugin_library_type "")
 	IF(BUILD_SHARED_LIBS AND ${ARG_HAS_NO_EXPORTS})
 		# Define the library as a module if it doesn't export any symbols.
-		ADD_LIBRARY(${target_name} MODULE ${plugin_sources})
-	ELSE()
-		ADD_LIBRARY(${target_name} ${plugin_sources})
+		SET(plugin_library_type "MODULE")
+	ELSEIF(NOT BUILD_SHARED_LIBS AND EMSCRIPTEN)
+		# When building a static executable for WASM, create a CMake object library for each plugin.
+		SET(plugin_library_type "OBJECT")
 	ENDIF()
+
+	# Create the library target for the plugin.
+	ADD_LIBRARY(${target_name} ${plugin_library_type} ${plugin_sources})
 
     # Set default include directory.
     TARGET_INCLUDE_DIRECTORIES(${target_name} PUBLIC

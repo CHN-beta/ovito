@@ -117,6 +117,8 @@ bool WasmDataSetContainer::importFile(const QUrl& url, const FileImporterClass* 
 			for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 				fileFormatList += QStringLiteral("<li>%1</li>").arg(importerClass->fileFilterDescription().toHtmlEscaped());
 			}
+			if(fileFormatList.isEmpty())
+				fileFormatList = tr("(none)");
 			currentSet()->throwException(tr("<p>Could not detect the format of the imported file. This version of OVITO supports the following formats:</p><p><ul>%1</ul></p>").arg(fileFormatList));
 		}
 	}

@@ -208,9 +208,11 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 #endif
 
 	// Get optional function pointers.
-	glMultiDrawArrays = reinterpret_cast<void (APIENTRY *)(GLenum, const GLint*, const GLsizei*, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArrays"));
-	glMultiDrawArraysIndirect = reinterpret_cast<void (APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
-	OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in OpenGL 2.0+.
+	glMultiDrawArrays = reinterpret_cast<void (QOPENGLF_APIENTRY *)(GLenum, const GLint*, const GLsizei*, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArrays"));
+	glMultiDrawArraysIndirect = reinterpret_cast<void (QOPENGLF_APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(_glcontext->getProcAddress("glMultiDrawArraysIndirect"));
+#ifndef Q_OS_WASM
+	OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
+#endif
 
 	// Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
 	if(glformat().majorVersion() >= 3) {
@@ -584,10 +586,11 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename)
 {
 	QByteArray shaderSource;
+	bool isGLES = QOpenGLContext::currentContext();
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
-	if(!QOpenGLContext::currentContext()->isOpenGLES()) {
+	if(!isGLES) {
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
 		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0))
@@ -602,8 +605,33 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	else {
 		// Using OpenGL ES context.
 		// Inject GLSL version directive into shader source. 
-		if(glformat().majorVersion() >= 3)
+		if(glformat().majorVersion() >= 3) {
 			shaderSource.append("#version 300 es\n");
+		}
+		else {
+			shaderSource.append("precision highp float;\n");
+
+			if(shaderType == QOpenGLShader::Fragment) {
+				// OpenGL ES 2.0 has no built-in support for gl_FragDepth. 
+				// Need to request EXT_frag_depth extension in such a case.
+				shaderSource.append("#extension GL_EXT_frag_depth : enable\n");
+				// Computation of local normal vectors in fragment shaders requires GLSL 
+				// derivative functions dFdx, dFdy.
+				shaderSource.append("#extension GL_OES_standard_derivatives : enable\n");
+			}
+
+			// Provide replacements of some missing GLSL functions in OpenGL ES Shading Language. 
+			shaderSource.append("mat3 transpose(in mat3 tm) {\n");
+			shaderSource.append("    vec3 i0 = tm[0];\n");
+			shaderSource.append("    vec3 i1 = tm[1];\n");
+			shaderSource.append("    vec3 i2 = tm[2];\n");
+			shaderSource.append("    mat3 out_tm = mat3(\n");
+			shaderSource.append("         vec3(i0.x, i1.x, i2.x),\n");
+			shaderSource.append("         vec3(i0.y, i1.y, i2.y),\n");
+			shaderSource.append("         vec3(i0.z, i1.z, i2.z));\n");
+			shaderSource.append("    return out_tm;\n");
+			shaderSource.append("}\n");
+		}
 	}
 
 	if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
@@ -622,47 +650,73 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		}
 	}
 
-	// Helper function that appends a source code line to the buffer after preprocessing ist.
+	// Helper function that appends a source code line to the buffer after preprocessing it.
 	auto preprocessShaderLine = [&](QByteArray& line) {
 		if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
 			// Automatically back-port shader source code to make it compatible with OpenGL 2.1 (GLSL 1.20):
 			if(shaderType == QOpenGLShader::Vertex) {
 				if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
 				else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
-				else if(line.startsWith("flat out vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat out vec3 flat_normal_fs")) {
+					if(!isGLES) return;
+					line = QByteArrayLiteral("varying vec3 tex_coords;\n");
+				}
 				else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
 				else if(line.startsWith("noperspective out ")) return;
 				else if(line.contains("calculate_view_ray(vec2(")) return;
-				else if(line.contains("flat_normal_fs")) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+				else if(line.contains("flat_normal_fs")) {
+					if(!isGLES) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+					else line = "tex_coords = (inverse_projection_matrix * gl_Position).xyz;\n";
+				}
 				else {
-					line.replace("gl_VertexID", "int(mod(vertexID+0.5, vertices_per_instance))");
+					line.replace("gl_VertexID", "int(mod(vertexID+0.5, float(vertices_per_instance)))");
 					line.replace("gl_InstanceID", "(int(vertexID) / vertices_per_instance)");
-					line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
-					line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(objectID / 256.0, 256.0))");
-					line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(objectID / 65536.0, 256.0))");
-					line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(objectID / 16777216.0, 256.0))");
+					if(!isGLES) {
+						line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
+						line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(objectID / 256.0, 256.0))");
+						line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(objectID / 65536.0, 256.0))");
+						line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(objectID / 16777216.0, 256.0))");
+					}
+					else {
+						line.replace("float(objectID & 0xFF)", "floor(mod(float(objectID), 256.0))");
+						line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(float(objectID) / 256.0, 256.0))");
+						line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(float(objectID) / 65536.0, 256.0))");
+						line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(float(objectID) / 16777216.0, 256.0))");
+					}
 					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
 				}
 			}
 			else if(shaderType == QOpenGLShader::Fragment) {
 				if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
-				else if(line.startsWith("flat in vec3 flat_normal_fs")) return;
+				else if(line.startsWith("flat in vec3 flat_normal_fs")) {
+					if(!isGLES) return;
+					line = QByteArrayLiteral("varying vec3 tex_coords;\n");
+				}
 				else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
 				else if(line.startsWith("noperspective in ")) return;
 				else if(line.startsWith("out ")) return;
 				else if(line.contains("vec3 ray_dir_norm =")) {
-					line = 
+					line = QByteArrayLiteral(
 						"vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
 						"vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
 						"vec4 _far = _near + inverse_projection_matrix[2];\n"
 						"vec3 ray_origin = _near.xyz / _near.w;\n"
-						"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n";
+						"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n");
 				}
 				else {
 					line.replace("fragColor", "gl_FragColor");
 					line.replace("texture(", "texture2D(");
-					line.replace("shadeSurfaceColor(flat_normal_fs", "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))");
+					line.replace("shadeSurfaceColor(flat_normal_fs", 
+						!isGLES ? "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))"
+						: "shadeSurfaceColor(normalize(cross(dFdx(tex_coords), dFdy(tex_coords)))");
 					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+					if(isGLES) {
+						if(line.contains("gl_FragDepth")) {
+							line.replace("gl_FragDepth", "gl_FragDepthEXT");
+							line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
+							line.append(QByteArrayLiteral("#endif\n"));
+						}
+					}
 				}
 			}
 		}

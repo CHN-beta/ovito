@@ -3,7 +3,7 @@
 
 # Activate Embind C/C++ bindings
 # https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html
-add_link_options(--bind) 
+add_link_options("--bind") 
 
 # Activate WebGL 2 (in addition to WebGL 1)
 # https://emscripten.org/docs/porting/multimedia_and_graphics/OpenGL-support.html#webgl-friendly-subset-of-opengl-es-2-0-3-0
@@ -29,6 +29,7 @@ add_link_options("SHELL:-s ALLOW_MEMORY_GROWTH=1")
 # Enable C++ exception catching
 # https://emscripten.org/docs/optimizing/Optimizing-Code.html#c-exceptions
 add_link_options("SHELL:-s DISABLE_EXCEPTION_CATCHING=0")
+add_compile_options("SHELL:-s DISABLE_EXCEPTION_CATCHING=0")
 
 # Activate zlib port
 # https://emscripten.org/docs/compiling/Building-Projects.html

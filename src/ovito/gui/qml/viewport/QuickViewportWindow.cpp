@@ -58,7 +58,7 @@ QuickViewportWindow::QuickViewportWindow() : ViewportWindowInterface(nullptr, nu
 ******************************************************************************/
 QuickViewportWindow::~QuickViewportWindow() 
 {
-	releaseResources();
+	releaseRenderingResources();
 }
 
 /******************************************************************************
@@ -66,7 +66,7 @@ QuickViewportWindow::~QuickViewportWindow()
 ******************************************************************************/
 void QuickViewportWindow::setViewport(Viewport* vp)
 {
-	releaseResources();
+	releaseRenderingResources();
 	ViewportWindowInterface::setViewport(vp);
 
 	// Create the viewport renderer.
@@ -83,7 +83,7 @@ void QuickViewportWindow::setViewport(Viewport* vp)
 /******************************************************************************
 * Releases the renderer resources held by the viewport's surface and picking renderers. 
 ******************************************************************************/
-void QuickViewportWindow::releaseResources()
+void QuickViewportWindow::releaseRenderingResources()
 {
 	// Release any OpenGL resources held by the viewport renderers.
 	if(_viewportRenderer && _viewportRenderer->currentResourceFrame()) {

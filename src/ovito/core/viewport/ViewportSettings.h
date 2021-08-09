@@ -125,11 +125,13 @@ public:
 		}
 	}
 
+#ifndef OVITO_DISABLE_QSETTINGS
 	/// Loads the settings from the given settings store.
 	void load(QSettings& store);
 
 	/// Saves the settings to the given settings store.
 	void save(QSettings& store) const;
+#endif
 
 	/// Saves the settings to the default application settings store.
 	void save() const;

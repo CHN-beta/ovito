@@ -1,6 +1,6 @@
-import QtQuick 2.3
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
+import QtQuick 6.0
+import QtQuick.Controls 6.0
+import QtQuick.Layouts 6.0
 
 RowLayout {
 	property var anim: mainWindow.datasetContainer.currentSet ? mainWindow.datasetContainer.currentSet.animationSettings : null

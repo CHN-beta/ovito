@@ -94,8 +94,10 @@ protected:
 	Ovito::Ssh::SshConnection* _connection = nullptr;
 #endif
 
+#ifndef Q_OS_WASM
 	/// The Qt network request reply.
 	QNetworkReply* _networkReply = nullptr;
+#endif
 
     /// The associated asynchronous task of the job.
     PromiseBase& _promise;

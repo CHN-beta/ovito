@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Templates as T
 import QtQuick.Controls.impl
-import QtQuick.Controls.Fusion
-import QtQuick.Controls.Fusion.impl
+//import QtQuick.Controls.Fusion
+//import QtQuick.Controls.Fusion.impl
 
 T.SpinBox {
     id: control
@@ -53,7 +53,7 @@ T.SpinBox {
         clip: true
         topPadding: -2
         leftPadding: -2
-        color: control.up.pressed ? Fusion.buttonColor(control.palette, false, true, true) : "transparent"
+        color: control.up.pressed ? control.palette.mid : "transparent"
 
         ColorImage {
             scale: -1
@@ -77,7 +77,7 @@ T.SpinBox {
         clip: true
         topPadding: -2
         leftPadding: -2
-        color: control.down.pressed ? Fusion.buttonColor(control.palette, false, true, true) : "transparent"
+        color: control.down.pressed ? control.palette.mid : "transparent"
 
         ColorImage {
             width: parent.width
@@ -95,14 +95,14 @@ T.SpinBox {
 
         radius: 2
         color: control.palette.base
-        border.color: control.activeFocus ? Fusion.highlightedOutline(control.palette) : Fusion.outline(control.palette)
+        border.color: control.activeFocus ? control.palette.midlight : control.palette.mid
 
         Rectangle {
             x: 2
             y: 1
             width: parent.width - 4
             height: 1
-            color: Fusion.topShadow
+            color: control.palette.dark
         }
 
         Rectangle {
@@ -113,6 +113,7 @@ T.SpinBox {
             height: parent.height - 2
 
             radius: 2
+/*
             gradient: Gradient {
                 GradientStop {
                     position: 0
@@ -123,12 +124,12 @@ T.SpinBox {
                     color: Fusion.gradientStop(Fusion.buttonColor(control.palette, control.visualFocus, false, control.up.hovered || control.down.hovered))
                 }
             }
-
+*/
             Rectangle {
                 x: control.mirrored ? parent.width - 1 : 0
                 height: parent.height
                 width: 1
-                color: Fusion.outline(control.palette)
+                color: control.palette.mid
             }
         }
 
@@ -137,7 +138,7 @@ T.SpinBox {
             width: parent.width - 2
             height: parent.height - 2
             color: "transparent"
-            border.color: Color.transparent(Fusion.highlightedOutline(control.palette), 40 / 255)
+            border.color: Color.transparent(control.palette.midlight, 40 / 255)
             visible: control.activeFocus
             radius: 1.7
         }

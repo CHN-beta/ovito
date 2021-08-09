@@ -27,6 +27,107 @@
 namespace Ovito {
 
 /******************************************************************************
+* Loads a shader program.
+******************************************************************************/
+void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile) 
+{
+    if(_shader)
+        _shader->release();
+
+    // Prepend this to paths when loading GLSL shaders from the resource file.
+    QString prefix = QStringLiteral(":/openglrenderer/glsl/");
+
+    // Compile the shader program.
+    _shader = _renderer->loadShaderProgram(id, 
+        prefix + vertexShaderFile, 
+        prefix + fragmentShaderFile, 
+        !geometryShaderFile.isEmpty() ? prefix + geometryShaderFile : QString());
+    OVITO_REPORT_OPENGL_ERRORS(_renderer);
+
+    // Are we using a geometry shader?
+    _usingGeometryShader = !geometryShaderFile.isEmpty();
+
+    // Bind the OpenGL shader program.
+    if(!_shader->bind())
+        _renderer->throwException(QStringLiteral("Failed to bind OpenGL shader '%1'.").arg(id));
+    OVITO_REPORT_OPENGL_ERRORS(_renderer);
+
+    // Set shader uniforms.
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix * _renderer->modelViewTM())));
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
+    Matrix3 normalTM;
+    if(!_renderer->modelViewTM().linear().inverse(normalTM))
+        normalTM.setIdentity();
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(normalTM.transposed()))));
+
+    // Set up uniform constant data arrays.
+    int unitCubeTriangleStripUniform = _shader->uniformLocation("unit_cube_triangle_strip");
+    if(unitCubeTriangleStripUniform >= 0) {
+        // Const array of vertex positions for the cube triangle strip.
+        static constexpr QVector3D cubeVerts[14] = {
+			{ 1,  1,  1},
+			{ 1, -1,  1},
+			{ 1,  1, -1},
+			{ 1, -1, -1},
+			{-1, -1, -1},
+			{ 1, -1,  1},
+			{-1, -1,  1},
+			{ 1,  1,  1},
+			{-1,  1,  1},
+			{ 1,  1, -1},
+			{-1,  1, -1},
+			{-1, -1, -1},
+			{-1,  1,  1},
+			{-1, -1,  1},
+		};
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeTriangleStripUniform, cubeVerts, 14));
+    }
+    int unitCubeStripNormalsUniform = _shader->uniformLocation("unit_cube_strip_normals");
+    if(unitCubeStripNormalsUniform >= 0) {
+        // Const array of normal vectors for the cube triangle strip.
+        static constexpr QVector3D normals[14] = {
+            { 1,  0,  0},
+            { 1,  0,  0},
+            { 1,  0,  0},
+            { 1,  0,  0},
+            { 0,  0, -1},
+            { 0, -1,  0},
+            { 0, -1,  0},
+            { 0,  0,  1},
+            { 0,  0,  1},
+            { 0,  1,  0},
+            { 0,  1,  0},
+            { 0,  0, -1},
+            {-1,  0,  0},
+            {-1,  0,  0}
+        };
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeStripNormalsUniform, normals, 14));
+    }
+    int unitQuadTriangleStripUniform = _shader->uniformLocation("unit_quad_triangle_strip");
+    if(unitQuadTriangleStripUniform >= 0) {
+        // Const array of vertex positions for the quad triangle strip.
+        static constexpr QVector2D quadVerts[4] = {
+            {-1, -1},
+            { 1, -1},
+            {-1,  1},
+            { 1,  1}
+		};
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitQuadTriangleStripUniform, quadVerts, 4));
+    }
+
+    // Get current viewport rectangle.
+    const QRect& vpRect = _renderer->renderingViewport();
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)vpRect.left(), (float)vpRect.top()));
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)vpRect.width(), 2.0f / (float)vpRect.height()));
+
+    // Need to render only the front-facing sides of the geometry.
+    OVITO_CHECK_OPENGL(_renderer, _renderer->glCullFace(GL_BACK));
+    OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_CULL_FACE));
+}
+
+/******************************************************************************
 * Uploads some data to a new OpenGL buffer object.
 ******************************************************************************/
 QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc)
@@ -72,11 +173,18 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 	// Allocate the buffer memory.
     bufferObject.allocate(bufferSize);
 	
+#ifndef Q_OS_WASM
     // Fill the buffer with data.
     void* p = bufferObject.map(QOpenGLBuffer::WriteOnly);
     if(p == nullptr)
         throw Exception(QStringLiteral("Failed to map memory of newly created OpenGL buffer object of size %1 bytes.").arg(bufferSize));
-        
+#else
+    // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
+    // Need to emulate the map() method by providing a temporary memory buffer on the host. 
+    std::unique_ptr<char[]> stagingBuffer = std::make_unique<char[]>(bufferSize);
+    void* p = stagingBuffer.get();
+#endif
+
     // Call the user-supplied function that fills the buffer with data to be uploaded to GPU memory.
     std::move(fillMemoryFunc)(p);
 
@@ -104,7 +212,11 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
         }
     }
 
+#ifndef Q_OS_WASM
 	bufferObject.unmap();
+#else
+    bufferObject.write(0, stagingBuffer.get(), bufferSize);
+#endif
 	bufferObject.release();
 	OVITO_ASSERT(bufferObject.isCreated());
 
@@ -160,6 +272,30 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
 }
 
 /******************************************************************************
+* Binds an OpenGL buffer to a vertex attribute of the shader.
+******************************************************************************/
+void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) 
+{
+    OVITO_ASSERT(verticesPerInstance() > 0);
+    OVITO_ASSERT(instanceCount() > 0);
+    OVITO_ASSERT(attrIndex >= 0);
+    OVITO_REPORT_OPENGL_ERRORS(_renderer);
+    OVITO_ASSERT(buffer.isCreated());
+    if(!buffer.bind()) {
+        qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName();
+        _renderer->throwException(QStringLiteral("Failed to bind OpenGL vertex buffer for shader '%1'.").arg(_shader->objectName()));
+    }
+    OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
+    OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
+    // Does the OpenGL context support instanced arrays (requires OpenGL 3.3+)?
+    if(inputRate == PerInstance && !usingGeometryShader() && _renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
+        OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 1));
+        _instanceAttributes.push_back(attrIndex);
+    }
+    buffer.release();
+}
+
+/******************************************************************************
 * Issues a regular drawing command.
 ******************************************************************************/
 void OpenGLShaderHelper::drawArrays(GLenum mode)
@@ -188,6 +324,7 @@ void OpenGLShaderHelper::drawArrays(GLenum mode)
     }
 }
 
+#ifdef QT_OPENGL_4
 /******************************************************************************
 * Issues a drawing command with an ordering of the instances.
 ******************************************************************************/
@@ -234,6 +371,7 @@ void OpenGLShaderHelper::drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& in
     // Done.
     indirectBuffer.release();
 }
+#endif
 
 /******************************************************************************
 * Renders the primtives using a geometry shader in a specified order.
@@ -281,11 +419,19 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
             if(!buf.first.create() || !buf.first.bind())
                 throw Exception(QStringLiteral("Failed to create OpenGL buffer object."));
             OVITO_CHECK_OPENGL(_renderer, buf.first.allocate(buf.second * sizeof(float)));
+#ifndef Q_OS_WASM
             void* p = buf.first.map(QOpenGLBuffer::WriteOnly);
             if(p == nullptr)
                 throw Exception(QStringLiteral("Failed to map memory of newly created OpenGL vertexID buffer of size %1 bytes.").arg(buf.second * sizeof(float)));
             std::iota(reinterpret_cast<float*>(p), reinterpret_cast<float*>(p) + buf.second, 0);
             OVITO_CHECK_OPENGL(_renderer, buf.first.unmap());
+#else
+            // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
+            // Need to emulate the map() method by providing a temporary memory buffer on the host. 
+            std::vector<float> stagingBuffer(buf.second);
+            std::iota(stagingBuffer.begin(), stagingBuffer.end(), 0);
+            OVITO_CHECK_OPENGL(_renderer, buf.first.write(0, stagingBuffer.data(), buf.second * sizeof(float)));
+#endif
         }
         else {
             OVITO_CHECK_OPENGL(_renderer, buf.first.bind());
@@ -306,7 +452,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
 ******************************************************************************/
 void OpenGLShaderHelper::drawArraysOpenGL2(GLenum mode)
 {
-    // Makes the gl_VertexID and gl_InstanceID special variables available in  older OpenGL implementations.
+    // Makes the gl_VertexID and gl_InstanceID special variables available in older OpenGL implementations.
     setupVertexAndInstanceIDOpenGL2();
 
     if(instanceCount() == 1) {

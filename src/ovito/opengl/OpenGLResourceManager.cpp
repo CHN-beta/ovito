@@ -41,7 +41,7 @@ OpenGLResourceManager* OpenGLResourceManager::instance()
 /******************************************************************************
 * Create an OpenGL texture object for a QImage.
 ******************************************************************************/
-QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame)
+QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, ResourceFrameHandle resourceFrame, QOpenGLTexture::MipMapGeneration genMipMaps)
 {
 	OVITO_ASSERT(!image.isNull());
 
@@ -51,7 +51,10 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 
 	// Create the texture object.
     if(!texture) {
-		texture = std::make_unique<QOpenGLTexture>(image, QOpenGLTexture::DontGenerateMipMaps);
+		texture = std::make_unique<QOpenGLTexture>(image, genMipMaps);
+		if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
+			texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+		}
 	}
 
 	return texture.get();

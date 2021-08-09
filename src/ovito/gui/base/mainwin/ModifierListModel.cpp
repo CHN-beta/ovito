@@ -617,8 +617,12 @@ void ModifierListModel::setUseCategories(bool on)
 ******************************************************************************/
 bool ModifierListModel::useCategoriesGlobal()
 {
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	return settings.value("modifiers/sort_by_category", true).toBool();
+#else
+	return true;
+#endif
 }
 
 /******************************************************************************
@@ -626,13 +630,15 @@ bool ModifierListModel::useCategoriesGlobal()
 ******************************************************************************/
 void ModifierListModel::setUseCategoriesGlobal(bool on)
 {
-	if(on != useCategoriesGlobal()) {
+#ifndef OVITO_DISABLE_QSETTINGS
+	if(on != useCategoriesGlobal()) {		
 		QSettings settings;
 		settings.setValue("modifiers/sort_by_category", on);
 	}
 
 	for(ModifierListModel* model : _allModels)
 		model->setUseCategories(on);
+#endif
 }
 
 }	// End of namespace

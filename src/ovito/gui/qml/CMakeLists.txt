@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -43,6 +43,32 @@ OVITO_STANDARD_PLUGIN(Gui
 	PRECOMPILED_HEADERS 
 		GUI.h
 )
+
+IF(EMSCRIPTEN)
+	FILE(GLOB _controls_basic_qml_files LIST_DIRECTORIES FALSE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/*.qml")
+	QT_ADD_RESOURCES(Gui PackedQmlDirFiles
+		PREFIX "/qt-project.org/imports"
+		BASE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml"
+		FILES 
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/impl/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/qmldir"
+			${_controls_basic_qml_files}
+		)
+
+	FILE(GLOB _controls_basic_image_files LIST_DIRECTORIES FALSE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/basic/images/*.png")
+	QT_ADD_RESOURCES(Gui PackedQmlBasicImageFiles
+		PREFIX "/qt-project.org/imports/QtQuick/Controls/Basic/"
+		BASE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/basic"
+		FILES ${_controls_basic_image_files})
+
+	QT_ADD_RESOURCES(Gui PackedQmlFusionImageFiles
+		PREFIX "/qt-project.org/imports/QtQuick/Controls/Fusion/"
+		BASE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/fusion"
+		FILES "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/fusion/images/arrow.png")
+ENDIF()
 
 IF(NOT EMSCRIPTEN)
 	TARGET_LINK_LIBRARIES(Gui PRIVATE ${OVITO_QT_MAJOR_VERSION}::Widgets)

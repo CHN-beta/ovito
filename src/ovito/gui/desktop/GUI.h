@@ -33,7 +33,6 @@
 * QT Library
 ******************************************************************************/
 #include <QApplication>
-#include <QSettings>
 #include <QMenuBar>
 #include <QMenu>
 #include <QResource>

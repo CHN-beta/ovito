@@ -55,10 +55,12 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 	// Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
 	OvitoClassPtr rendererClass = {};
 
+#ifndef OVITO_DISABLE_QSETTINGS
 	// Did user select Vulkan as the standard graphics interface?
 	QSettings applicationSettings;
 	if(applicationSettings.value("rendering/selected_graphics_api").toString() == "Vulkan")
 		rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
+#endif
 
 	// In headless mode, OpenGL is not available (it requires a windowing system). Try Vulkan instead, which supports headless operation.
 	if(Application::instance()->headlessMode() && !rendererClass)

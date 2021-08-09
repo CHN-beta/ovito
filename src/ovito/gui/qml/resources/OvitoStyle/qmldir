@@ -1,6 +1,7 @@
 module OvitoStyle
+import QtQuick.Controls.Basic auto
 
-CheckBox 2.15 CheckBox.qml
-ComboBox 2.15 ComboBox.qml
-GroupBox 2.15 GroupBox.qml
-SpinBox 2.15 SpinBox.qml
+CheckBox 6.0 CheckBox.qml
+ComboBox 6.0 ComboBox.qml
+GroupBox 6.0 GroupBox.qml
+SpinBox 6.0 SpinBox.qml

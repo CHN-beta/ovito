@@ -1,5 +1,5 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 6.0
+import QtQuick.Controls 6.0
 
 // Items in this module are defined in C++ code.
 import org.ovito 1.0

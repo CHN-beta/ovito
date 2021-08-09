@@ -141,9 +141,13 @@ QByteArray ModifierTemplates::templateData(const QString& templateName)
 	auto iter = _templateData.find(templateName);
 	if(iter != _templateData.end())
 		return iter->second;
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	settings.beginGroup(modTemplateStoreGroup);
 	QByteArray buffer = settings.value(templateName).toByteArray();
+#else
+	QByteArray buffer;
+#endif
 	if(buffer.isEmpty())
 		throw Exception(tr("Modifier template with the name '%1' does not exist in the settings store.").arg(templateName));
 	_templateData.insert(std::make_pair(templateName, buffer));
@@ -160,9 +164,13 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 	QVector<OORef<Modifier>> modifierSet;
 	try {
 		UndoSuspender noUndo(dataset->undoStack());
+#ifndef OVITO_DISABLE_QSETTINGS
 		QSettings settings;
 		settings.beginGroup(modTemplateStoreGroup);
 		QByteArray buffer = settings.value(templateName).toByteArray();
+#else
+		QByteArray buffer;
+#endif
 		if(buffer.isEmpty())
 			throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
 		QDataStream dstream(buffer);
@@ -183,6 +191,7 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 	return modifierSet;
 }
 
+#ifndef OVITO_DISABLE_QSETTINGS
 /******************************************************************************
 * Writes in-memory template list to the given settings store.
 ******************************************************************************/
@@ -228,5 +237,6 @@ void ModifierTemplates::restore(QSettings& settings)
 	_templateNames = settings.childKeys();
 	endResetModel();
 }
+#endif
 
 }	// End of namespace

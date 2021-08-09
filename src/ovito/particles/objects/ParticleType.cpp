@@ -323,6 +323,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 	// settings from the settings store.
 	if(executionContext == ExecutionContext::Interactive && typeClass != ParticlesObject::UserProperty) {
 
+#ifndef OVITO_DISABLE_QSETTINGS
 		// Use the type's name, property type and container class to look up the 
 		// default radius saved by the user.
 		const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
@@ -338,6 +339,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 			if(v.isValid() && v.canConvert<FloatType>())
 				return v.value<FloatType>();
 		}
+#endif
 	}
 
 	if(typeClass == ParticlesObject::TypeProperty) {
@@ -367,6 +369,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	if(typeClass == ParticlesObject::UserProperty)
 		return;
 
+#ifndef OVITO_DISABLE_QSETTINGS
 	QSettings settings;
 	const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
 		(radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
@@ -375,6 +378,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
 		settings.remove(settingsKey);
+#endif
 }
 
 /******************************************************************************

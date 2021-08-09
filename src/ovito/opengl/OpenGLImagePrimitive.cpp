@@ -37,14 +37,18 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
 	if(image().isNull() || renderer->isPicking() || windowRect().isEmpty())
 		return;
 
-	// Activate the OpenGL shader program.
-	OpenGLShaderHelper shader(renderer);
+    // Temporarily disable depth testing.
+    bool wasDepthTestEnabled = renderer->glIsEnabled(GL_DEPTH_TEST);
+    OVITO_CHECK_OPENGL(renderer, renderer->glDisable(GL_DEPTH_TEST));
+
+    // Activate the OpenGL shader program.
+    OpenGLShaderHelper shader(renderer);
     shader.load("image", "image/image.vert", "image/image.frag");
 
-	shader.setVerticesPerInstance(4);
-	shader.setInstanceCount(1);
+    shader.setVerticesPerInstance(4);
+    shader.setInstanceCount(1);
 
-    // Generate an OpenGL texture with the image.
+    // Turn the image into an OpenGL texture.
     QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(image(), renderer->currentResourceFrame());
     texture->bind();
 
@@ -67,9 +71,7 @@ void OpenGLImagePrimitive::render(OpenGLSceneRenderer* renderer)
     // Pass the image rectangle to the shader as a uniform.
     shader.setUniformValue("image_rect", image_rect);
 
-    // Temporarily enable alpha blending and disable depth testing.
-    bool wasDepthTestEnabled = renderer->glIsEnabled(GL_DEPTH_TEST);
-    OVITO_CHECK_OPENGL(renderer, renderer->glDisable(GL_DEPTH_TEST));
+    // Temporarily enable alpha blending.
     shader.enableBlending();
 
     // Draw a quad with 4 vertices.

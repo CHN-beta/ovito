@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -30,6 +30,7 @@ CMAKE_POLICY(SET CMP0042 NEW) 	# Set MACOSX_RPATH target property to TRUE by def
 CMAKE_POLICY(SET CMP0007 NEW)   # Let LIST command not ignore empty elements.
 IF(NOT CMAKE_VERSION VERSION_LESS "3.17")
 	CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
+	CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
 ENDIF()
 IF(NOT CMAKE_VERSION VERSION_LESS "3.3")
 	CMAKE_POLICY(SET CMP0063 NEW)   # Honor visibility properties for all target types.

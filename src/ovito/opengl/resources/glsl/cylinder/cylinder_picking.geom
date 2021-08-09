@@ -30,6 +30,7 @@ in vec3 base_gs[1];
 in vec3 head_gs[1];
 in float radius_gs[1];
 in vec4 color_gs[1];
+uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -42,24 +43,6 @@ noperspective out vec3 ray_dir;
 
 void main()
 {
-	// Const array of vertex positions for the box triangle strip.
-	const vec3 box[14] = vec3[14](
-        vec3( 1.0,  1.0,  1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  0.0),
-        vec3( 1.0, -1.0,  0.0),
-        vec3(-1.0, -1.0,  0.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3( 1.0,  1.0,  0.0),
-        vec3(-1.0,  1.0,  0.0),
-        vec3(-1.0, -1.0,  0.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0)
-	);
-
     // Set up an axis tripod that is aligned with the cylinder.
     mat3 orientation_tm;
     orientation_tm[2] = head_gs[0] - base_gs[0];
@@ -84,7 +67,7 @@ void main()
     for(int corner = 0; corner < 14; corner++) 
     {
         // Apply model-view-projection matrix to box vertex position.
-        gl_Position = modelview_projection_matrix * vec4(base_gs[0] + (orientation_tm * box[corner]), 1.0);
+        gl_Position = modelview_projection_matrix * vec4(base_gs[0] + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
 
         // Forward cylinder color to fragment shader.
         color_fs = color_gs[0];

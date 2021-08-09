@@ -30,6 +30,7 @@ in vec3 position_gs[1];
 in float radius_gs[1];
 in vec4 color_gs[1];
 in mat4 shape_orientation_gs[1];
+uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -41,24 +42,6 @@ noperspective out vec3 ray_dir;
 
 void main()
 {
-	// Const array of vertex positions for the unit cube triangle strip.
-	const vec3 cube[14] = vec3[14](
-        vec3( 1.0,  1.0,  1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0, -1.0),
-        vec3( 1.0, -1.0, -1.0),
-        vec3(-1.0, -1.0, -1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3( 1.0,  1.0, -1.0),
-        vec3(-1.0,  1.0, -1.0),
-        vec3(-1.0, -1.0, -1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0)
-	);
-
     // Compute particle center position in view space.
     vec3 particle_view_pos = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
 
@@ -69,7 +52,7 @@ void main()
     for(int corner = 0; corner < 14; corner++) 
     {
         // Compute rotated and scaled unit cube corner coordinates.
-        vec4 scaled_corner = vec4(position_gs[0], 1.0) + (shape_orientation_gs[0] * vec4(cube[corner], 0.0));
+        vec4 scaled_corner = vec4(position_gs[0], 1.0) + (shape_orientation_gs[0] * vec4(unit_cube_triangle_strip[corner], 0.0));
 
         // Apply model-view-projection matrix to particle position displaced by the cube vertex position.
         gl_Position = modelview_projection_matrix * scaled_corner;

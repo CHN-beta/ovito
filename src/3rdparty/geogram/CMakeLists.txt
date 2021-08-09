@@ -34,7 +34,7 @@ ENDIF()
 # Enable Geogram's support for 64-bit indices.
 TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GARGANTUA=1")
 
-IF(NOT WIN32 AND NOT APPLE)
+IF(NOT WIN32 AND NOT APPLE AND NOT EMSCRIPTEN)
 	# Disable atomics, because OVITO doesn't make use of Geogram's multi-threading support.
 	TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_USE_DUMMY_ATOMICS=1")
 ENDIF()

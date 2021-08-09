@@ -21,13 +21,17 @@
 #######################################################################################
 
 # Find ffmpeg libraries for video encoding support.
-FIND_PACKAGE(FFMPEG)
+IF(NOT EMSCRIPTEN)
+	FIND_PACKAGE(FFMPEG)
+ENDIF()
 
 # Find the zlib library, needed for reading/writing compressed data files.
-FIND_PACKAGE(ZLIB)
+IF(NOT EMSCRIPTEN)
+	FIND_PACKAGE(ZLIB)
+ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
-IF(NOT OVITO_BUILD_CONDA)
+IF(NOT OVITO_BUILD_CONDA AND NOT EMSCRIPTEN)
 	FIND_PACKAGE(Libssh)
 ENDIF()
 
@@ -152,7 +156,7 @@ ELSE()
 ENDIF()
 
 # Make use of the zlib library provided by Emscripten.
-IF(NOT ZLIB_FOUND AND EMSCRIPTEN)
+IF(EMSCRIPTEN)
 	MESSAGE("Using Emscripten port of zlib library.")
 	ADD_LIBRARY(ZLIB::ZLIB INTERFACE IMPORTED)
 	TARGET_COMPILE_OPTIONS(ZLIB::ZLIB INTERFACE "SHELL:-s USE_ZLIB=1")
@@ -248,6 +252,9 @@ ENDIF()
 IF(OVITO_BUILD_CONDA)
 	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_CONDA")
 ENDIF()
+IF(EMSCRIPTEN)
+	TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_DISABLE_QSETTINGS")
+ENDIF()
 
 # Inject program release version into the source code.
 SET_PROPERTY(SOURCE app/Application.cpp app/StandaloneApplication.cpp
@@ -267,7 +274,7 @@ IF(OVITO_CLANG_TIDY_CMD)
 ENDIF()
 
 # Install ffmpeg video encoding libraries.
-IF(FFMPEG_FOUND)
+IF(FFMPEG_FOUND AND NOT EMSCRIPTEN)
 	FOREACH(lib ${FFMPEG_LIBRARIES})
 		GET_FILENAME_COMPONENT(base_name "${lib}" NAME_WE)
 		GET_FILENAME_COMPONENT(lib_path "${lib}" PATH)
@@ -288,7 +295,7 @@ IF(FFMPEG_FOUND)
 	ENDFOREACH()
 ENDIF()
 
-IF(ZLIB_FOUND)
+IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
 	IF(WIN32 AND NOT OVITO_BUILD_CONDA)
 		# Deploy the zlib DLL.
 		GET_TARGET_PROPERTY(ZLIB_LIBRARY_LOCATION ZLIB::ZLIB LOCATION)
@@ -298,7 +305,7 @@ IF(ZLIB_FOUND)
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(Libssh_FOUND)
+IF(Libssh_FOUND AND NOT EMSCRIPTEN)
 	IF(WIN32 AND NOT OVITO_BUILD_CONDA)
 		LIST(GET LIBSSH_LIBRARIES 0 LIBSSH_FIRST_LIBRARY)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_FIRST_LIBRARY}" PATH)

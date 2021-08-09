@@ -59,7 +59,6 @@
 ******************************************************************************/
 #include <QCoreApplication>
 #include <QStringList>
-#include <QSettings>
 #include <QUrl>
 #include <QPointer>
 #include <QFileInfo>
@@ -97,6 +96,9 @@
 #include <QPair>
 #include <QVariant>
 #include <QMap>
+#ifndef OVITO_DISABLE_QSETTINGS
+    #include <QSettings>
+#endif
 #ifndef OVITO_DISABLE_THREADING
     #include <QException>
 #endif

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -42,9 +42,20 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
 # The executable depends on the gui module.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
 IF(NOT OVITO_QML_GUI)
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE 
+		${OVITO_QT_MAJOR_VERSION}::Core 
+		${OVITO_QT_MAJOR_VERSION}::Gui)
 ELSE()
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui ${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 ${OVITO_QT_MAJOR_VERSION}::Svg)
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE 
+		${OVITO_QT_MAJOR_VERSION}::Core 
+		${OVITO_QT_MAJOR_VERSION}::Gui 
+		${OVITO_QT_MAJOR_VERSION}::Qml 
+		${OVITO_QT_MAJOR_VERSION}::Quick 
+		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
+		${OVITO_QT_MAJOR_VERSION}::QuickControls2Impl 
+		${OVITO_QT_MAJOR_VERSION}::QuickLayouts
+		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 
+		${OVITO_QT_MAJOR_VERSION}::Svg)
 ENDIF()
 
 # Put the executable into the right directory.
@@ -64,43 +75,23 @@ ELSEIF(WIN32)
 	ENDIF()
 ENDIF()
 
+# Set name of executable.
+SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
+
 # Copy in HTML/JS launch files.
 IF(EMSCRIPTEN)
-	CONFIGURE_FILE("${_qt5Core_install_prefix}/plugins/platforms/qtloader.js" "${OVITO_BINARY_DIRECTORY}/qtloader.js" COPYONLY)
+	GET_TARGET_PROPERTY(APPNAME Ovito OUTPUT_NAME)
+	CONFIGURE_FILE("${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/plugins/platforms/qtloader.js" "${OVITO_BINARY_DIRECTORY}/qtloader.js" COPYONLY)
 	CONFIGURE_FILE("wasm/wasm_shell.html" "${OVITO_BINARY_DIRECTORY}/wasm_shell.html")
 	CONFIGURE_FILE("wasm/index.html" "${OVITO_BINARY_DIRECTORY}/index.html" COPYONLY)
 	CONFIGURE_FILE("../ovito/gui/base/resources/mainwin/window_icon_256.png" "${OVITO_BINARY_DIRECTORY}/ovito_logo.png" COPYONLY)
 ENDIF()
-
-# Set name of executable.
-SET_TARGET_PROPERTIES(Ovito PROPERTIES OUTPUT_NAME "ovito")
 
 # Under Linux, Qt's Xcb platform plugin will dynamically load the DBus Qt module.
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
 IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
 	TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::DBus)
-ENDIF()
-
-IF(EMSCRIPTEN)
-	# Link to missing Qt libraries (the order does matter).
-	TARGET_LINK_LIBRARIES(Ovito PRIVATE
-		"${_qt5Core_install_prefix}/qml/QtQuick.2/libqtquick2plugin.a"      # QtQuick2Plugin
-		"${_qt5Core_install_prefix}/qml/QtQuick/Window.2/libwindowplugin.a" # QtQuick2WindowPlugin
-		"${_qt5Core_install_prefix}/qml/QtQuick/Layouts/libqquicklayoutsplugin.a" # QtQuick2LayoutsPlugin
-		"${_qt5Core_install_prefix}/qml/QtQuick/Controls.2/libqtquickcontrols2plugin.a" # QtQuickControls2Plugin
-		"${_qt5Core_install_prefix}/qml/QtQuick/Templates.2/libqtquicktemplates2plugin.a" # QtQuickTemplates2Plugin
-		"${_qt5Core_install_prefix}/plugins/iconengines/libqsvgicon.a"		# SVG Icon engine plugin
-		"${_qt5Core_install_prefix}/plugins/imageformats/libqsvg.a"			# SVG image format plugin
-		"${_qt5Core_install_prefix}/plugins/platforms/libqwasm.a"       	# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5QuickControls2.a" 			# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5QuickTemplates2.a" 			# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5Quick.a"						# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5EventDispatcherSupport.a"		# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5FontDatabaseSupport.a"		# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libqtfreetype.a"					# No longer needed in Qt 5.14
-		"${_qt5Core_install_prefix}/lib/libQt5Svg.a"						# No longer needed in Qt 5.14
-	)
 ENDIF()
 
 SET_TARGET_PROPERTIES(Ovito PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
@@ -121,10 +112,12 @@ FOREACH(plugin ${OVITO_PLUGIN_LIST})
 	IF(BUILD_SHARED_LIBS)
 		ADD_DEPENDENCIES(Ovito ${plugin})
 	ELSE()
-		# When generating a static executable that contains all plugins, make sure
+		# When generating a static executable containing all plugins, make sure
 		# the linker doesn't remove apparently unreferenced symbols. They are needed to
 		# have the plugin classes register themselves.
-		IF(UNIX)
+		IF(EMSCRIPTEN)
+			TARGET_LINK_LIBRARIES(Ovito PRIVATE ${plugin})
+		ELSEIF(UNIX)
 			TARGET_LINK_LIBRARIES(Ovito PRIVATE -Wl,--whole-archive ${plugin} -Wl,--no-whole-archive)
 		ELSE()
 			TARGET_LINK_LIBRARIES(Ovito PRIVATE ${plugin})
@@ -134,6 +127,29 @@ FOREACH(plugin ${OVITO_PLUGIN_LIST})
 		ENDIF()
 	ENDIF()
 ENDFOREACH()
+
+IF(EMSCRIPTEN)
+	# Link to missing Qt libraries (the order does matter).
+	TARGET_LINK_LIBRARIES(Ovito PRIVATE
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/libqmlplugin.a"      			# QtQml
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/Models/libmodelsplugin.a"     # QtQml.Models
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/libqtquick2plugin.a"        # QtQuick
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/libqtquickcontrols2plugin.a" # QtQuick.Controls
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/impl/libqtquickcontrols2implplugin.a" # QtQuick.Controls.impl
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/libqtquickcontrols2basicstyleplugin.a" # QtQuick.Controls.Basic
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Layouts/libqquicklayoutsplugin.a" # QtQuick.Layouts
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/libqtquicktemplates2plugin.a" # QtQuick.Templates
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/libquickwindow.a" # QtQuick.Window
+#		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/plugins/iconengines/libqsvgicon.a"		# SVG Icon engine plugin
+#		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/plugins/imageformats/libqsvg.a"			# SVG image format plugin
+	)
+	# When built without exception support, Qt6 passes DISABLE_EXCEPTION_CATCHING=1 to the Emscripten linker (see QtWasmHelpers.cmake).
+	# However, OVITO requires exception support in its own code. The following commands patch the INTERFACE_LINK_OPTIONS property
+	# of the Qt platform module to override the linker flag value. 
+	get_target_property(_opt_old Qt6::Platform INTERFACE_LINK_OPTIONS)
+	string(REPLACE "DISABLE_EXCEPTION_CATCHING=1" "DISABLE_EXCEPTION_CATCHING=0" _opt_new "${_opt_old}")
+	set_target_properties(Qt6::Platform PROPERTIES INTERFACE_LINK_OPTIONS "${_opt_new}")
+ENDIF()
 
 # Install fonts required by 'minimal' platform plugin on Linux
 IF(UNIX AND NOT APPLE AND NOT OVITO_BUILD_CONDA)

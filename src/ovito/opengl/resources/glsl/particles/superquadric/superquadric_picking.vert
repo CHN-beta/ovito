@@ -27,6 +27,7 @@
 in vec3 position;
 in mat4 shape_orientation;
 in vec2 roundness;
+uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -38,29 +39,11 @@ flat out vec2 particle_exponents_fs;
 
 void main()
 {
-	// Const array of vertex positions for the unit cube triangle strip.
-	const vec3 cube[14] = vec3[14](
-        vec3( 1.0,  1.0,  1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0, -1.0),
-        vec3( 1.0, -1.0, -1.0),
-        vec3(-1.0, -1.0, -1.0),
-        vec3( 1.0, -1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0),
-        vec3( 1.0,  1.0,  1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3( 1.0,  1.0, -1.0),
-        vec3(-1.0,  1.0, -1.0),
-        vec3(-1.0, -1.0, -1.0),
-        vec3(-1.0,  1.0,  1.0),
-        vec3(-1.0, -1.0,  1.0)
-	);
-
     // The index of the box corner.
     int corner = gl_VertexID;
 
     // Compute rotated and scaled unit cube corner coordinates.
-    vec4 scaled_corner = vec4(position, 1.0) + (shape_orientation * vec4(cube[corner], 0.0));
+    vec4 scaled_corner = vec4(position, 1.0) + (shape_orientation * vec4(unit_cube_triangle_strip[corner], 0.0));
 
 	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
     gl_Position = modelview_projection_matrix * scaled_corner;

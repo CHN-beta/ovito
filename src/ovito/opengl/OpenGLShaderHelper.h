@@ -27,6 +27,12 @@
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLResourceManager.h"
 
+#ifndef Q_OS_WASM
+	#ifndef QT_OPENGL_4
+		#error "Expected OpenGL 4.x function definitions to be available."
+	#endif
+#endif
+
 namespace Ovito {
 
 /**
@@ -49,47 +55,7 @@ public:
 	QOpenGLShaderProgram& shaderObject() const { return *_shader; }
 
 	/// Loads a shader program.
-	void load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString()) {
-		if(_shader)
-			_shader->release();
-
-		// Prepend this to paths when loading GLSL shaders from the resource file.
-		QString prefix = QStringLiteral(":/openglrenderer/glsl/");
-
-		// Compile the shader program.
-		_shader = _renderer->loadShaderProgram(id, 
-			prefix + vertexShaderFile, 
-			prefix + fragmentShaderFile, 
-			!geometryShaderFile.isEmpty() ? prefix + geometryShaderFile : QString());
-		OVITO_REPORT_OPENGL_ERRORS(_renderer);
-
-		// Are we using a geometry shader?
-		_usingGeometryShader = !geometryShaderFile.isEmpty();
-
-		// Bind the OpenGL shader program.
-		if(!_shader->bind())
-			_renderer->throwException(QStringLiteral("Failed to bind OpenGL shader '%1'.").arg(id));
-		OVITO_REPORT_OPENGL_ERRORS(_renderer);
-
-		// Set shader uniforms.
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix * _renderer->modelViewTM())));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
-		Matrix3 normalTM;
-		if(!_renderer->modelViewTM().linear().inverse(normalTM))
-			normalTM.setIdentity();
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(normalTM.transposed()))));
-
-		// Get current viewport rectangle.
-	    const QRect& vpRect = _renderer->renderingViewport();
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)vpRect.left(), (float)vpRect.top()));
-		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)vpRect.width(), 2.0f / (float)vpRect.height()));
-	
-		// Need to render only the front-facing sides of the geometry.
-		OVITO_CHECK_OPENGL(_renderer, _renderer->glCullFace(GL_BACK));
-		OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_CULL_FACE));
-	}
+	void load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
 	/// Destructor.
 	~OpenGLShaderHelper() {
@@ -122,25 +88,7 @@ public:
 	}
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
-	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) {
-		OVITO_ASSERT(verticesPerInstance() > 0);
-		OVITO_ASSERT(instanceCount() > 0);
-		OVITO_ASSERT(attrIndex >= 0);
-		OVITO_REPORT_OPENGL_ERRORS(_renderer);
-		OVITO_ASSERT(buffer.isCreated());
-		if(!buffer.bind()) {
-			qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName();
-			_renderer->throwException(QStringLiteral("Failed to bind OpenGL vertex buffer for shader '%1'.").arg(_shader->objectName()));
-		}
-		OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
-		OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
-		// Does the OpenGL context support instanced arrays (requires OpenGL 3.3+)?
-		if(inputRate == PerInstance && !usingGeometryShader() && _renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
-			OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 1));
-			_instanceAttributes.push_back(attrIndex);
-		}
-		buffer.release();
-	}
+	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate);
 
 	/// Passes the base object ID to the shader in picking mode.
 	void setPickingBaseId(GLint baseId) {
@@ -238,12 +186,14 @@ public:
 			RendererResourceKey<IndexBufferKeyTag, std::decay_t<KeyType>> indexBufferKey{ std::forward<KeyType>(cacheKey) };
 			drawArraysOrderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
 		}
+#ifdef QT_OPENGL_4
 		else if(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0) && _renderer->glMultiDrawArraysIndirect != nullptr) {
 			// On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
 
 			// Look up the indirect drawing buffer from the cache and call implementation.
 			drawArraysOrderedOpenGL4(mode, OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
 		}
+#endif
 		else {
 			// On older contexts, use glMultiDrawArrays() to render the instances in a prescribed order.
 
@@ -257,8 +207,10 @@ private:
 	/// Uploads some data to a new OpenGL buffer object.
 	QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*)>&& fillMemoryFunc);
 
+#ifdef QT_OPENGL_4
 	/// Issues a drawing command with an ordering of the instances.
 	void drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<std::vector<uint32_t>()>&& computeOrderingFunc);
+#endif
 
 	/// Implemention of the drawArrays() method for OpenGL 2.x.
 	void drawArraysOpenGL2(GLenum mode);

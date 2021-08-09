@@ -78,11 +78,13 @@ void AttributeFileExporter::initializeObject(ExecutionContext executionContext)
 		if(dataset()->animationSettings()->animationInterval().duration() != 0)
 			setExportAnimation(true);
 
+#ifndef OVITO_DISABLE_QSETTINGS
 		// Restore last output column mapping.
 		QSettings settings;
 		settings.beginGroup("exporter/attributes/");
 		setAttributesToExport(settings.value("attrlist", QVariant::fromValue(QStringList())).toStringList());
 		settings.endGroup();
+#endif
 	}
 
 	FileExporter::initializeObject(executionContext);

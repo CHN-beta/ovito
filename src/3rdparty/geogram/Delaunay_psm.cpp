@@ -6375,6 +6375,21 @@ namespace GEO {
 
 #define GEO_USE_PTHREAD_MANAGER
 
+#ifdef GEO_OS_EMSCRIPTEN
+    #ifndef FE_DIVBYZERO
+        #define FE_DIVBYZERO 0x04
+    #endif
+    #ifndef FE_OVERFLOW 
+        #define FE_OVERFLOW  0x08
+    #endif
+    #ifndef FE_UNDERFLOW        
+        #define FE_UNDERFLOW 0x10
+    #endif
+    #ifndef FE_INVALID
+        #define FE_INVALID   0x01
+    #endif
+#endif
+
 // Suppresses a warning with CLANG when sigaction is used.
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
