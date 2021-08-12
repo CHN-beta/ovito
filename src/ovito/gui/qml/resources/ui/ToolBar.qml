@@ -1,5 +1,5 @@
-import QtQuick 6.0
-import QtQuick.Controls 6.0
+import QtQuick
+import QtQuick.Controls
 
 ToolBar {
 	leftPadding: 8
@@ -19,16 +19,6 @@ ToolBar {
 				ToolTip.delay: 500
 				onClicked: mainWindow.importDataFile()
 			}
-			/*
-			ToolButton {
-				id: importRemoteFileButton
-				icon.source: "qrc:/guibase/actions/file/file_import_remote.bw.svg"
-				ToolTip.text: qsTr("Import remote file")
-				ToolTip.visible: hovered
-				ToolTip.delay: 500
-				display: AbstractButton.IconOnly
-			}
-			*/
 			ToolSeparator {
 				contentItem.visible: fileRow.y == editRow.y
 			}
@@ -92,6 +82,15 @@ ToolBar {
 
 		Row {
 			id: aboutRow
+			ToolButton {
+				id: systemReportButton
+				icon.source: "qrc:/guibase/actions/file/opengl_info.bw.svg"
+				ToolTip.text: qsTr("System Report")
+				ToolTip.visible: hovered
+				ToolTip.delay: 500
+				display: AbstractButton.IconOnly
+				onClicked: systemReportDialog.open()
+			}
 			ToolButton {
 				id: aboutButton
 				icon.source: "qrc:/guibase/actions/file/about.bw.svg"

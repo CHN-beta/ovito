@@ -1,5 +1,5 @@
-import QtQuick 6.0
-import QtQuick.Controls 6.0
+import QtQuick
+import QtQuick.Controls
 
 Dialog {
 	id: dialog
@@ -7,7 +7,6 @@ Dialog {
 	anchors.centerIn: parent
 	standardButtons: Dialog.Ok
 	contentWidth: 0.5 * parent.width
-//	title: "Error"
 	property string text;
 
 	Text {

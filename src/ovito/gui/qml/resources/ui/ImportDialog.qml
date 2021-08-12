@@ -1,4 +1,4 @@
-import QtQuick.Dialogs 6.0
+import QtQuick.Dialogs
 
 FileDialog {
 	id: dialog

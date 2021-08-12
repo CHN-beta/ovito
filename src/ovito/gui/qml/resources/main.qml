@@ -1,13 +1,11 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-
-// Items in this module are defined in C++ code.
-import org.ovito 1.0
-
+import org.ovito
 import "ui" as Ui
 
 ApplicationWindow {
+	id: rootWindow
     visible: true
 	width: 800
 	height: 600
@@ -20,6 +18,10 @@ ApplicationWindow {
 	Ui.AboutDialog {
 		id: aboutDialog
 	}
+
+	Ui.SystemReportDialog {
+		id: systemReportDialog
+	}		
 
 	RowLayout {
 		anchors.fill: parent

@@ -93,7 +93,11 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 		stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
 		stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
 		stream << "Supported extensions:\n";
+		QStringList extensionList;
 		for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
+			extensionList << extension;
+		extensionList.sort();
+		for(const QString& extension : extensionList)
 			stream << extension << "\n";
 	}
 }
@@ -258,7 +262,7 @@ void OpenGLSceneRenderer::initializeGLState()
     	setRenderingViewport(QRect(QPoint(0,0), vpSize));
 
 		// When rendering an interactive viewport, use viewport background color to clear frame buffer.
-		if(isInteractive()) {
+		if(isInteractive() && !isPicking()) {
 			if(!viewport()->renderPreviewMode())
 				setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
 			else if(renderSettings())

@@ -21,8 +21,52 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/app/Application.h>
+#include <ovito/core/app/PluginManager.h>
 #include "MainWindowInterface.h"
 
+#include <QOperatingSystemVersion>
+
 namespace Ovito {
+
+/******************************************************************************
+* Queries the system's information and graphics capabilities.
+******************************************************************************/
+QString MainWindowInterface::generateSystemReport()
+{
+	QString text;
+	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
+	stream << "======= System info =======\n";
+	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
+	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
+#if defined(Q_OS_LINUX)
+	// Get 'uname' output.
+	QProcess unameProcess;
+	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
+	unameProcess.waitForFinished();
+	QByteArray unameOutput = unameProcess.readAllStandardOutput();
+	unameOutput.replace('\n', ' ');
+	stream << "uname output: " << unameOutput << "\n";
+	// Get 'lsb_release' output.
+	QProcess lsbProcess;
+	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
+	lsbProcess.waitForFinished();
+	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
+	lsbOutput.replace('\n', ' ');
+	stream << "LSB output: " << lsbOutput << "\n";
+#endif
+	stream << "Processor architecture: " << (QT_POINTER_SIZE*8) << "-bit" << "\n";
+	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
+	stream << "Qt framework version: " << QT_VERSION_STR << "\n";
+	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+	// Let the plugin class add their information to their system report.
+	for(Plugin* plugin : PluginManager::instance().plugins()) {
+		for(OvitoClassPtr clazz : plugin->classes()) {
+			clazz->querySystemInformation(stream, datasetContainer());
+		}
+	}
+	return text;
+}
 
 }	// End of namespace

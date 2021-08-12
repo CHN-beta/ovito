@@ -36,8 +36,6 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-#include <QOperatingSystemVersion>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -98,44 +96,12 @@ void WidgetActionManager::on_HelpSystemInfo_triggered()
 	QVBoxLayout* layout = new QVBoxLayout(&dlg);
 	QTextEdit* textEdit = new QTextEdit(&dlg);
 	textEdit->setReadOnly(true);
-	QString text;
-	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
-	stream << "======= System info =======\n";
-	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
-	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
-#if defined(Q_OS_LINUX)
-	// Get 'uname' output.
-	QProcess unameProcess;
-	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
-	unameProcess.waitForFinished();
-	QByteArray unameOutput = unameProcess.readAllStandardOutput();
-	unameOutput.replace('\n', ' ');
-	stream << "uname output: " << unameOutput << "\n";
-	// Get 'lsb_release' output.
-	QProcess lsbProcess;
-	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
-	lsbProcess.waitForFinished();
-	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
-	lsbOutput.replace('\n', ' ');
-	stream << "LSB output: " << lsbOutput << "\n";
-#endif
-	stream << "Processor architecture: " << (QT_POINTER_SIZE*8) << "-bit" << "\n";
-	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
-	stream << "Qt framework version: " << QT_VERSION_STR << "\n";
-	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
-	// Let the plugin class add their information to their system report.
-	for(Plugin* plugin : PluginManager::instance().plugins()) {
-		for(OvitoClassPtr clazz : plugin->classes()) {
-			clazz->querySystemInformation(stream, mainWindow()->datasetContainer());
-		}
-	}
-	textEdit->setPlainText(text);
+	textEdit->setPlainText(mainWindow()->generateSystemReport());
 	textEdit->setMinimumSize(QSize(600, 400));
 	layout->addWidget(textEdit);
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, &dlg);
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
-	connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [text]() { QApplication::clipboard()->setText(text); });
+	connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() { QApplication::clipboard()->setText(textEdit->toPlainText()); });
 	layout->addWidget(buttonBox);
 	dlg.exec();
 }

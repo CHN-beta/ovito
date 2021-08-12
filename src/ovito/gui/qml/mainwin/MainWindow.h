@@ -41,6 +41,7 @@ class OVITO_GUI_EXPORT MainWindow : public QQuickItem, public MainWindowInterfac
 	Q_PROPERTY(QString statusBarText READ statusBarText WRITE showStatusBarMessage NOTIFY statusBarTextChanged);
 	Q_PROPERTY(Ovito::ModifierListModel* modifierListModel MEMBER _modifierListModel CONSTANT);
 	Q_PROPERTY(Ovito::PipelineListModel* pipelineListModel MEMBER _pipelineListModel CONSTANT);
+	Q_PROPERTY(QString systemReport READ generateSystemReport CONSTANT);
 
 public:
 

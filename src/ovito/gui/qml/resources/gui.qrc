@@ -26,6 +26,7 @@
         <file>ui/RolloutPanel.qml</file>
         <file>ui/Spinner.qml</file>
         <file>ui/SubobjectEditor.qml</file>
+        <file>ui/SystemReportDialog.qml</file>
         <file>ui/ToolBar.qml</file>
         <file>ui/VariantComboBoxParameter.qml</file>
         <file>ui/Vector3Parameter.qml</file>

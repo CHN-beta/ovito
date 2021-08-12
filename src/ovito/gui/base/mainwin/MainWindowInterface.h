@@ -64,6 +64,9 @@ public:
 	/// Returns the window's action manager.
 	ActionManager* actionManager() const { return _actionManager; }
 
+	/// Queries the system's information and graphics capabilities.
+	QString generateSystemReport();
+
 protected:
 
 	/// Assigns an ActionManager to this window.

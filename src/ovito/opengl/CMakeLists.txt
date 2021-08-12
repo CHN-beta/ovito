@@ -35,6 +35,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLSceneRenderer.cpp
 		OffscreenOpenGLSceneRenderer.cpp
 		PickingOpenGLSceneRenderer.cpp
+		OpenGLDepthTextureBlitter.cpp
 		resources/opengl.qrc
 )
 

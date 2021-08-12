@@ -1,5 +1,5 @@
-import QtQuick 6.0
-import org.ovito 1.0
+import QtQuick
+import org.ovito
 
 ColorPicker {
 	id: control

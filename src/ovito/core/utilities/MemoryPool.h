@@ -65,7 +65,7 @@ public:
 	template<class... Args>
 	inline T* construct(Args&&... args) {
 		T* p = malloc();
-		_alloc.construct(p, std::forward<Args>(args)...);
+		std::allocator_traits<std::allocator<T>>::construct(_alloc, p, std::forward<Args>(args)...);
 		return p;
 	}
 
@@ -78,7 +78,7 @@ public:
 			if(i+1 == _pages.end())
 				pend = p + _lastPageNumber;
 			for(; p != pend; ++p)
-				_alloc.destroy(p);
+				std::allocator_traits<std::allocator<T>>::destroy(_alloc, p);
 			if(!keepPageReserved || i != _pages.cbegin()) {
 				_alloc.deallocate(*i, _pageSize);
 			}

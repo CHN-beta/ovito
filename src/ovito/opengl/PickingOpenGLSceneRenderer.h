@@ -99,6 +99,12 @@ private:
 	/// The OpenGL framebuffer.
 	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
+	/// The color and depth texture used for the offscreen framebuffer on GLES platforms.
+	GLuint _framebufferTexturesGLES[2] = { 0, 0 };
+
+	/// The OpenGL framebuffer object used for offscreen rendering on GLES platforms.
+	GLuint _framebufferObjectGLES = 0;
+
 	/// The next available object ID.
 	ObjectRecord _currentObject;
 

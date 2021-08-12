@@ -1,6 +1,6 @@
-import QtQuick 6.0
-import QtQuick.Controls 6.0
-import org.ovito 1.0
+import QtQuick
+import QtQuick.Controls
+import org.ovito
 
 Column {
 	spacing: 2
