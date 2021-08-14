@@ -147,6 +147,8 @@ IF(EMSCRIPTEN)
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/libqtquickcontrols2plugin.a" # QtQuick.Controls
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/impl/libqtquickcontrols2implplugin.a" # QtQuick.Controls.impl
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/libqtquickcontrols2basicstyleplugin.a" # QtQuick.Controls.Basic
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/libqtquickcontrols2universalstyleplugin.a" # QtQuick.Controls.Universal
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/impl/libqtquickcontrols2universalstyleimplplugin.a" # QtQuick.Controls.Universal.impl
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Layouts/libqquicklayoutsplugin.a" # QtQuick.Layouts
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/libqtquicktemplates2plugin.a" # QtQuick.Templates
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/libquickwindow.a" # QtQuick.Window

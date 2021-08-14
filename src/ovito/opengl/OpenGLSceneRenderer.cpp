@@ -590,7 +590,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename)
 {
 	QByteArray shaderSource;
-	bool isGLES = QOpenGLContext::currentContext();
+	bool isGLES = QOpenGLContext::currentContext()->isOpenGLES();
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.

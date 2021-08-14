@@ -57,7 +57,9 @@
                   canvas.style.display = 'block';
               },
               environment: {
-                'QML_IMPORT_TRACE' : '0'
+                  'QML_IMPORT_TRACE' : '0',
+                  'QT_QUICK_CONTROLS_STYLE' : 'Universal',
+                  'QT_QUICK_CONTROLS_UNIVERSAL_THEME' : 'Dark'
               }
           });
           qtLoader.loadEmscriptenModule("@APPNAME@");

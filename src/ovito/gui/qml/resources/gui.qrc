@@ -18,6 +18,7 @@
         <file>ui/IntegerRadioButtonParameter.qml</file>
         <file>ui/ModifierDelegateParameter.qml</file>        
         <file>ui/ModifierListBox.qml</file>        
+        <file>ui/ParameterLabel.qml</file>
         <file>ui/PipelineEditor.qml</file>
         <file>ui/PipelineTab.qml</file>
         <file>ui/PropertiesEditor.qml</file>
@@ -36,10 +37,16 @@
         <file>OvitoStyle/ComboBox.qml</file>
         <file>OvitoStyle/GroupBox.qml</file>
         <file>OvitoStyle/SpinBox.qml</file>
+        <file>OvitoStyle/ToolBar.qml</file>
+        <file>OvitoStyle/ToolButton.qml</file>
 
         <file>OvitoStyle/images/check.png</file>
         <file>OvitoStyle/images/check@2x.png</file>
         <file>OvitoStyle/images/arrow_down.svg</file>
+        <file>OvitoStyle/images/arrow.png</file>
+        <file>OvitoStyle/images/arrow@2x.png</file>
+        <file>OvitoStyle/images/arrow@3x.png</file>
+        <file>OvitoStyle/images/arrow@4x.png</file>
 
         <file>command_panel/tab_modify.bw.svg</file>
         <file>command_panel/tab_overlays.bw.svg</file>

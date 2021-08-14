@@ -13,16 +13,16 @@ Ui.RolloutPanel {
 
 		Ui.BooleanCheckBoxParameter { 
 			propertyField: "renderCellEnabled"
-			Layout.columnSpan: 2
+			Layout.column: 1
 		}
 
-		Label { text: qsTr("Line width:") }
+		Ui.ParameterLabel { propertyField: "cellLineWidth" }
 		Ui.FloatParameter {
 			propertyField: "cellLineWidth"
 			Layout.fillWidth: true
 		}
 
-		Label { text: qsTr("Line color:") }
+		Ui.ParameterLabel { propertyField: "cellColor" }
 		Ui.ColorParameter {
 			propertyField: "cellColor"
 			Layout.fillWidth: true

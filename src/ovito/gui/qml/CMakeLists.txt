@@ -46,6 +46,8 @@ OVITO_STANDARD_PLUGIN(Gui
 
 IF(EMSCRIPTEN)
 	FILE(GLOB _controls_basic_qml_files LIST_DIRECTORIES FALSE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/*.qml")
+	FILE(GLOB _controls_universal_qml_files LIST_DIRECTORIES FALSE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/*.qml")
+	FILE(GLOB _controls_universal_impl_qml_files LIST_DIRECTORIES FALSE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/impl/*.qml")
 	QT_ADD_RESOURCES(Gui PackedQmlDirFiles
 		PREFIX "/qt-project.org/imports"
 		BASE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml"
@@ -58,9 +60,13 @@ IF(EMSCRIPTEN)
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/impl/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/impl/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/impl/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/qmldir"
 			${_controls_basic_qml_files}
+			${_controls_universal_qml_files}
+			${_controls_universal_impl_qml_files}
 		)
 
 	FILE(GLOB _controls_basic_image_files LIST_DIRECTORIES FALSE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/basic/images/*.png")
@@ -68,11 +74,12 @@ IF(EMSCRIPTEN)
 		PREFIX "/qt-project.org/imports/QtQuick/Controls/Basic/"
 		BASE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/basic"
 		FILES ${_controls_basic_image_files})
-
-	QT_ADD_RESOURCES(Gui PackedQmlFusionImageFiles
-		PREFIX "/qt-project.org/imports/QtQuick/Controls/Fusion/"
-		BASE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/fusion"
-		FILES "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/fusion/images/arrow.png")
+	
+	FILE(GLOB _controls_universal_image_files LIST_DIRECTORIES FALSE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/universal/images/*.png")
+	QT_ADD_RESOURCES(Gui PackedQmlMaterialImageFiles
+		PREFIX "/qt-project.org/imports/QtQuick/Controls/Universal/"
+		BASE "C:/Qt/6.2.0/Src/qtquickcontrols2/src/quickcontrols2/universal"
+		FILES ${_controls_universal_image_files})
 ENDIF()
 
 IF(NOT EMSCRIPTEN)

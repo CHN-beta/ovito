@@ -60,7 +60,7 @@ T.ComboBox {
             visible: control.enabled && control.editable && !control.flat
             border.width: parent && parent.activeFocus ? 2 : 1
             border.color: parent && parent.activeFocus ? control.palette.highlight : control.palette.button
-            color: control.palette.base
+            color: control.palette.midlight // Customized
         }
     }
 
@@ -68,7 +68,7 @@ T.ComboBox {
         implicitWidth: 140
         implicitHeight: 32 // Customized
 
-        color: control.down ? control.palette.mid : control.palette.midlight
+        color: control.down ? control.palette.mid : control.palette.midlight // Customized
         border.color: control.palette.highlight
         border.width: !control.editable && control.visualFocus ? 2 : 0
         visible: !control.flat || control.down
@@ -88,6 +88,7 @@ T.ComboBox {
             currentIndex: control.highlightedIndex
             highlightMoveDuration: 0
 
+/*
             Rectangle {
                 z: 10
                 width: parent.width
@@ -95,12 +96,12 @@ T.ComboBox {
                 color: "transparent"
                 border.color: control.palette.mid
             }
-
+*/
             T.ScrollIndicator.vertical: C.ScrollIndicator { }
         }
 
         background: Rectangle {
-			color: control.palette.window
+			color: control.palette.base // Customized
         }
     }
 }

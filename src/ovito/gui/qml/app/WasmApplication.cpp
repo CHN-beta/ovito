@@ -55,6 +55,8 @@
 		Q_IMPORT_PLUGIN(QtQuickControls2Plugin) // QtQuick.Controls
 		Q_IMPORT_PLUGIN(QtQuickControls2ImplPlugin)  // QtQuick.Controls.impl
 		Q_IMPORT_PLUGIN(QtQuickControls2BasicStylePlugin) // QtQuick.Controls.Basic
+		Q_IMPORT_PLUGIN(QtQuickControls2UniversalStylePlugin) // QtQuick.Controls.Universal
+		Q_IMPORT_PLUGIN(QtQuickControls2UniversalStyleImplPlugin) // QtQuick.Controls.Universal.impl
 		Q_IMPORT_PLUGIN(QtQuickLayoutsPlugin) 	// QtQuick.Layouts
 		Q_IMPORT_PLUGIN(QtQuickTemplates2Plugin)// QtQuick.Templates
 		Q_IMPORT_PLUGIN(QtQuick_WindowPlugin) 	// QtQuick.Window
@@ -153,7 +155,6 @@ bool WasmApplication::startupApplication()
 	qmlRegisterType<ModifierDelegateParameterUI>("org.ovito", 1, 0, "ModifierDelegateParameterUI");
 
 	// Select our own Qt Quick style (located in the resources/OvitoStyle/ directory).
-	// Fallback will be the "Basic" style.
 	QQuickStyle::setStyle("OvitoStyle");
 
 	// Initialize the Qml engine.
