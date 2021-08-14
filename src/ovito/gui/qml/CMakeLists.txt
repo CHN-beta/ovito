@@ -50,7 +50,12 @@ IF(EMSCRIPTEN)
 		PREFIX "/qt-project.org/imports"
 		BASE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml"
 		FILES 
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/Models/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/WorkerScript/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/impl/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/impl/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/qmldir"

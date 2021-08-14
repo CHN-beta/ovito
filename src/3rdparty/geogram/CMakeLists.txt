@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -64,7 +64,13 @@ ENDIF()
 # Geogram requires pthread lib on Linux platform.
 SET(THREADS_PREFER_PTHREAD_FLAG ON)
 FIND_PACKAGE(Threads REQUIRED)
-TARGET_LINK_LIBRARIES(geogram Threads::Threads)
+TARGET_LINK_LIBRARIES(geogram PUBLIC Threads::Threads)
+
+IF(EMSCRIPTEN)
+	# Adopt the Emscript compiler flags from Qt's platform target.
+	# That's because all libraries linked into the static WASM module need be built with the same flags.
+	TARGET_LINK_LIBRARIES(geogram PRIVATE Qt::Platform)
+ENDIF()
 
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(geogram PROPERTIES OUTPUT_NAME "ovito_geogram")

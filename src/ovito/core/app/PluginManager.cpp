@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,9 @@
 #include <ovito/core/Core.h>
 #include "PluginManager.h"
 
-#include <QLibrary>
+#ifndef OVITO_BUILD_MONOLITHIC
+	#include <QLibrary>
+#endif
 
 namespace Ovito {
 

@@ -43,7 +43,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 	promise.setProgressMaximum(0);
 
 	// Initialize the Geogram library.
-	GEO::initialize();
+	GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
 	GEO::set_assert_mode(GEO::ASSERT_ABORT);
 
 	// Make the magnitude of the randomly perturbed particle positions dependent on the size of the system.

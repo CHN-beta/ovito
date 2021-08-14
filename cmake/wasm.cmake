@@ -35,5 +35,15 @@ add_compile_options("SHELL:-s DISABLE_EXCEPTION_CATCHING=0")
 # https://emscripten.org/docs/compiling/Building-Projects.html
 add_link_options("SHELL:-s USE_ZLIB=1")
 
+# Activate Pthreads support
+# https://emscripten.org/docs/porting/pthreads.html#compiling-with-pthreads-enabled
+IF(NOT OVITO_DISABLE_THREADING)
+    add_compile_options("SHELL:-s USE_PTHREADS=1")
+    add_link_options("SHELL:-s USE_PTHREADS=1")
+    add_link_options("SHELL:-s LLD_REPORT_UNDEFINED=1")
+    add_compile_options("-pthread")
+    add_link_options("-pthread")
+ENDIF()
+
 # Also search for packages beneath filesystem root (in addition to /emsdk_portable/sdk/system)
 list(APPEND CMAKE_FIND_ROOT_PATH "/")

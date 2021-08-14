@@ -59,6 +59,12 @@ TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE VoroPlusPlus)
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(PolyhedralTemplateMatching INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
+IF(EMSCRIPTEN)
+	# Adopt the Emscript compiler flags from Qt's platform target.
+	# That's because all libraries linked into the static WASM module need be built with the same flags.
+	TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE Qt::Platform)
+ENDIF()
+
 IF(MSVC)
 	# Suppress warning on conversion from size_t to int, possible loss of data.
 	TARGET_COMPILE_OPTIONS(PolyhedralTemplateMatching PRIVATE "/wd4267" "/wd4244")

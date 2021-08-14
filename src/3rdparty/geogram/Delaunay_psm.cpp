@@ -6766,8 +6766,8 @@ namespace GEO {
             sigaction(SIGFPE, &sa, &old_sa);
 
             // Install unexpected and uncaught c++ exception handlers
-            std::set_unexpected(unexpected_handler);
-            std::set_terminate(terminate_handler);
+//            std::set_unexpected(unexpected_handler); NOTE Disabled, because these are not available on WebAssembly/Emscripten platform.
+//            std::set_terminate(terminate_handler);
 
             // Install memory allocation handler
             std::set_new_handler(memory_exhausted_handler);
@@ -8658,7 +8658,8 @@ namespace GEO {
     ) {
 	geo_assert(dimension == 3); // Only implemented for 3D.	
 	geo_argused(sorted_indices); // Accessed through b and e.
-        std::random_shuffle(b,e);
+//        std::random_shuffle(b,e);
+    std::shuffle(b, e, std::mt19937{1});
 	PeriodicVertexMesh3d M(nb_vertices, vertices, stride, period);
 	HilbertSort3d<Hilbert_vcmp_periodic, PeriodicVertexMesh3d>(
 	    M, b, e

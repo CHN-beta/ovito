@@ -45,6 +45,8 @@ IF(OVITO_BUILD_GUI)
 		# Additionally, when building for the desktop platform, we need the QtWidgets module.
 		IF(NOT EMSCRIPTEN)
 			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS Widgets)
+		ENDIF()
+		IF(NOT OVITO_DISABLE_THREADING)
 			LIST(APPEND OVITO_REQUIRED_QT_COMPONENTS QmlWorkerScript)
 		ENDIF()
 	ENDIF()

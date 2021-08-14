@@ -40,19 +40,26 @@
 #endif
 #include <QQuickStyle>
 
-#if QT_FEATURE_static > 0
+#if QT_CONFIG(static)
 	#include <QtPlugin>
-	// Explicitly import Qt static plugins:
-	Q_IMPORT_PLUGIN(QtQmlPlugin)       		// QtQml
-	Q_IMPORT_PLUGIN(QtQmlModelsPlugin)      // QtQml.Models
-	Q_IMPORT_PLUGIN(QtQuick2Plugin)       	// QtQuick
-	Q_IMPORT_PLUGIN(QtQuickControls2Plugin) // QtQuick.Controls
-	Q_IMPORT_PLUGIN(QtQuickControls2ImplPlugin)  // QtQuick.Controls.impl
-	Q_IMPORT_PLUGIN(QtQuickControls2BasicStylePlugin) // QtQuick.Controls.Basic
-	Q_IMPORT_PLUGIN(QtQuickLayoutsPlugin) 	// QtQuick.Layouts
-	Q_IMPORT_PLUGIN(QtQuickTemplates2Plugin)// QtQuick.Templates
-	Q_IMPORT_PLUGIN(QtQuick_WindowPlugin) 	// QtQuick.Window
-	Q_IMPORT_PLUGIN(QSvgIconPlugin) 		// SVG icon engine plugin
+	#include <QPluginLoader>
+
+	static void import_qt_plugins() {
+		// Explicitly import Qt static plugins:
+		Q_IMPORT_PLUGIN(QtQmlPlugin)       		// QtQml
+#ifndef OVITO_DISABLE_THREADING
+		Q_IMPORT_PLUGIN(QtQmlWorkerScriptPlugin)  // QtQml.WorkerScript
+#endif
+		Q_IMPORT_PLUGIN(QtQmlModelsPlugin)      // QtQml.Models
+		Q_IMPORT_PLUGIN(QtQuick2Plugin)       	// QtQuick
+		Q_IMPORT_PLUGIN(QtQuickControls2Plugin) // QtQuick.Controls
+		Q_IMPORT_PLUGIN(QtQuickControls2ImplPlugin)  // QtQuick.Controls.impl
+		Q_IMPORT_PLUGIN(QtQuickControls2BasicStylePlugin) // QtQuick.Controls.Basic
+		Q_IMPORT_PLUGIN(QtQuickLayoutsPlugin) 	// QtQuick.Layouts
+		Q_IMPORT_PLUGIN(QtQuickTemplates2Plugin)// QtQuick.Templates
+		Q_IMPORT_PLUGIN(QtQuick_WindowPlugin) 	// QtQuick.Window
+		Q_IMPORT_PLUGIN(QSvgIconPlugin) 		// SVG icon engine plugin
+	}
 	
 	// Make sure the Particle module gets linked into the static executable
 	// by calling a function that is defined in the module.
@@ -122,7 +129,8 @@ void WasmApplication::createQtApplication(int& argc, char** argv)
 ******************************************************************************/
 bool WasmApplication::startupApplication()
 {
-#if QT_FEATURE_static > 0
+#if QT_CONFIG(static)
+	import_qt_plugins();
 	// Make sure the Particle module gets linked into the static executable
 	// by calling a function that is defined in the module.
 	ovito_static_plugin_Particles();

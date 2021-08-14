@@ -34,7 +34,11 @@ ELSE()
 ENDIF()
 
 # Builds the main executable of the application.
-ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES})
+IF(NOT EMSCRIPTEN)
+	ADD_EXECUTABLE(Ovito ${OVITO_WIN32_EXECUTABLE} Main.cpp ${WINDOWS_RESOURCES})
+ELSE()
+	QT_ADD_EXECUTABLE(Ovito Main.cpp ${WINDOWS_RESOURCES})
+ENDIF()
 
 # The executable depends on the core module, of course.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
@@ -56,6 +60,9 @@ ELSE()
 		${OVITO_QT_MAJOR_VERSION}::QuickLayouts
 		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 
 		${OVITO_QT_MAJOR_VERSION}::Svg)
+	IF(NOT OVITO_DISABLE_THREADING)
+		TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::QmlWorkerScript) 
+	ENDIF()
 ENDIF()
 
 # Put the executable into the right directory.
@@ -130,6 +137,9 @@ ENDFOREACH()
 
 IF(EMSCRIPTEN)
 	# Link to missing Qt libraries (the order does matter).
+	IF(NOT OVITO_DISABLE_THREADING)
+		TARGET_LINK_LIBRARIES(Ovito PRIVATE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/WorkerScript/libworkerscriptplugin.a") # QtQml.WorkerScript
+	ENDIF()
 	TARGET_LINK_LIBRARIES(Ovito PRIVATE
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/libqmlplugin.a"      			# QtQml
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQml/Models/libmodelsplugin.a"     # QtQml.Models

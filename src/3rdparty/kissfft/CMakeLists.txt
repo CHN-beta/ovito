@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -48,6 +48,12 @@ SET_TARGET_PROPERTIES(kissfft PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYTHON_PACKAGE)
 	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
 	SET_PROPERTY(TARGET kissfft PROPERTY POSITION_INDEPENDENT_CODE ON)
+ENDIF()
+
+IF(EMSCRIPTEN)
+	# Adopt the Emscript compiler flags from Qt's platform target.
+	# That's because all libraries linked into the static WASM module need be built with the same flags.
+	TARGET_LINK_LIBRARIES(kissft PRIVATE Qt::Platform)
 ENDIF()
 
 # Export this target.
