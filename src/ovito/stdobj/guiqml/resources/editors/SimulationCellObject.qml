@@ -1,11 +1,12 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 
 import "qrc:/gui/ui" as Ui
 
 Ui.RolloutPanel {
 	title: qsTr("Simulation cell")
+	helpTopicId: "manual:scene_objects.simulation_cell"
 	
 	ColumnLayout {
 		anchors.fill: parent

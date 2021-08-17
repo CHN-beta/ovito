@@ -6,6 +6,8 @@ import QtQuick.Controls.Universal
 T.SpinBox {
     id: control
 
+	property alias placeholderText: textField.placeholderText
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentItem.implicitWidth + 2 * padding +
                             Math.max(up.implicitIndicatorWidth,
@@ -28,7 +30,8 @@ T.SpinBox {
         top: Math.max(control.from, control.to)
     }
 
-    contentItem: TextInput {
+    contentItem: TextField {
+        id: textField
         z: 2
         text: control.displayText
 
@@ -37,6 +40,12 @@ T.SpinBox {
         selectionColor: control.palette.highlight
         selectedTextColor: control.palette.highlightedText
         verticalAlignment: Qt.AlignVCenter
+
+        padding: 0
+        topPadding: 0
+        rightPadding: 0
+        bottomPadding: 0
+        background: null
 
         readOnly: !control.editable
         validator: control.validator

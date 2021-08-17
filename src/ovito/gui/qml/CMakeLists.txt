@@ -29,6 +29,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		mainwin/MainWindow.cpp
 		mainwin/ViewportsPanel.cpp
 		properties/ParameterUI.cpp
+		properties/RefTargetListParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
 		viewport/QuickViewportWindow.cpp
 		resources/gui.qrc

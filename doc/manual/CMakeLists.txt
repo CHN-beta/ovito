@@ -85,7 +85,7 @@ IF(OVITO_BUILD_GUI)
 
 		# Extract the link targets from the Intersphinx inventory file and write them to a text file.
 		# The file will be used by the OVITO application to open the correct HTML page corresponding to 
-		# a help topic ID. See MainWindow::openHelpTopic() method for further information.
+		# a help topic ID. See MainWindowInterface::openHelpTopic() method for further information.
 		COMMAND "${CMAKE_COMMAND}" -E env DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib "${Python3_EXECUTABLE}"
 			-m sphinx.ext.intersphinx "${OVITO_SHARE_DIRECTORY}/doc/manual/html/objects.inv"
 			> "${OVITO_SHARE_DIRECTORY}/doc/manual/html/objects.txt"

@@ -133,7 +133,7 @@ void PropertyContainerParameterUI::updateUI()
 			}
 		}
 
-		static QIcon warningIcon(QStringLiteral(":/gui/mainwin/status/status_warning.png"));
+		static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
 		if(selectedIndex < 0) {
 			if(selectedPropertyContainer) {
 				// Add a place-holder item if the selected container does not exist anymore.

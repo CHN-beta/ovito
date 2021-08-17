@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 import org.ovito
 
 ScrollView {

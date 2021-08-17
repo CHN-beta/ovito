@@ -58,8 +58,8 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 
 	_textLabel->setText(status.text());
 
-	const static QPixmap statusWarningIcon(":/gui/mainwin/status/status_warning.png");
-	const static QPixmap statusErrorIcon(":/gui/mainwin/status/status_error.png");
+	const static QPixmap statusWarningIcon(":/guibase/mainwin/status/status_warning.png");
+	const static QPixmap statusErrorIcon(":/guibase/mainwin/status/status_error.png");
 
 	if(status.type() == PipelineStatus::Warning)
 		_iconLabel->setPixmap(statusWarningIcon);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/core/oo/RefMaker.h>
 #include <ovito/core/oo/RefTarget.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 
 namespace Ovito {
 
@@ -35,16 +36,18 @@ namespace Ovito {
 class ParameterUI : public RefMaker, public QQmlPropertyValueSource
 {
 	Q_OBJECT
+	OVITO_CLASS(ParameterUI)
+
 	Q_INTERFACES(QQmlPropertyValueSource)
     Q_PROPERTY(Ovito::RefTarget* editObject READ editObject WRITE setEditObject NOTIFY editObjectReplaced)
-	Q_PROPERTY(QString propertyName READ propertyName WRITE setPropertyName);
-	Q_PROPERTY(QVariant propertyValue READ getCurrentValue WRITE setCurrentValue);
-	Q_PROPERTY(QStringList editorComponentList READ editorComponentList NOTIFY editObjectReplaced);
-	Q_PROPERTY(QStringList subobjectFieldList READ subobjectFieldList NOTIFY editObjectReplaced);
-	Q_PROPERTY(FloatType minParameterValue READ minParameterValue NOTIFY editObjectReplaced);
-	Q_PROPERTY(FloatType maxParameterValue READ maxParameterValue NOTIFY editObjectReplaced);
-	Q_PROPERTY(QString propertyDisplayName READ propertyDisplayName NOTIFY editObjectReplaced);
-	OVITO_CLASS(ParameterUI)
+	Q_PROPERTY(QString propertyName READ propertyName WRITE setPropertyName)
+	Q_PROPERTY(QVariant propertyValue READ getCurrentValue WRITE setCurrentValue)
+	Q_PROPERTY(QStringList editorComponentList READ editorComponentList NOTIFY editObjectReplaced)
+	Q_PROPERTY(QStringList subobjectFieldList READ subobjectFieldList NOTIFY editObjectReplaced)
+	Q_PROPERTY(FloatType minParameterValue READ minParameterValue NOTIFY editObjectReplaced)
+	Q_PROPERTY(FloatType maxParameterValue READ maxParameterValue NOTIFY editObjectReplaced)
+	Q_PROPERTY(QString propertyDisplayName READ propertyDisplayName NOTIFY editObjectReplaced)
+    Q_PROPERTY(Ovito::ParameterUnit* parameterUnit READ parameterUnit NOTIFY editObjectReplaced)
 
 public:
 
@@ -98,6 +101,9 @@ public:
 
 	/// Returns the UI display name of the parameter.
 	QString propertyDisplayName() const;
+
+	/// Returns the units object for this parameter (if it is a numerical parameter).
+	ParameterUnit* parameterUnit() const;
 
 Q_SIGNALS:
 

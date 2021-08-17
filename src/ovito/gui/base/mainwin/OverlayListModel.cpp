@@ -31,10 +31,10 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 OverlayListModel::OverlayListModel(QObject* parent) : QAbstractListModel(parent),
-	_statusInfoIcon(":/gui/mainwin/status/status_info.png"),
-	_statusWarningIcon(":/gui/mainwin/status/status_warning.png"),
-	_statusErrorIcon(":/gui/mainwin/status/status_error.png"),
-	_statusNoneIcon(":/gui/mainwin/status/status_none.png")
+	_statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
+	_statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
+	_statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
+	_statusNoneIcon(":/guibase/mainwin/status/status_none.png")
 {
 	_selectionModel = new QItemSelectionModel(this);
 	connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &OverlayListModel::selectedItemChanged);

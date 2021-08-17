@@ -17,6 +17,7 @@ SpinBox {
 		id: parameterUI
 		editObject: propertyEditor.editObject
 	}
+	parameterUnit: parameterUI.parameterUnit
 
 	onValueModified: { parameterUI.propertyValue = value; }
 }

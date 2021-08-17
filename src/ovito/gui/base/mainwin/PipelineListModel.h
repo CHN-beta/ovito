@@ -47,7 +47,9 @@ public:
 		TitleRole = Qt::UserRole + 1,
 		ItemTypeRole,
 		CheckedRole,
-		IsCollapsedRole
+		IsCollapsedRole,
+		DecorationRole,
+		ToolTipRole
 	};
 
 	/// Constructor.

@@ -5,6 +5,8 @@ AbstractButton {
     id: control
     property alias color: rect.color
 
+    Universal.theme: activeFocus ? Universal.Light : undefined
+
 	signal colorModified()   //< interactive change only, NOT emitted if \e color property is set directly)
 
     contentItem: Rectangle {
@@ -12,10 +14,12 @@ AbstractButton {
         implicitWidth: 64
         implicitHeight: 32
 
-        border.width: 1
-        border.color: control.down ? "#404040" : "#a0a0a0"
+        border.width: 2
+        border.color: !control.enabled ? control.Universal.baseLowColor :
+                       control.activeFocus ? control.Universal.accent :
+                       control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
     }
-/*
+
     onClicked: {
         colorPickerPopup.setColor(color);
         popup.open();
@@ -42,5 +46,4 @@ AbstractButton {
             }
         }
     }
-*/
 }

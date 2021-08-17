@@ -572,7 +572,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 	}
 
 	if(maxFaceOrders()) {
-		size_t componentCount = std::min(_maxFaceOrder.load(), FaceOrderStorageLimit);
+		size_t componentCount = qBound(1, _maxFaceOrder.load(), FaceOrderStorageLimit);
 		_voronoiIndices = ParticlesObject::OOClass().createUserProperty(_positions->dataset(), _positions->size(), PropertyObject::Int, componentCount, 0, QStringLiteral("Voronoi Index"), true);
 		PropertyAccess<int,true> voronoiIndicesArray(_voronoiIndices);
 		auto indexData = voronoiBuffer.cbegin();

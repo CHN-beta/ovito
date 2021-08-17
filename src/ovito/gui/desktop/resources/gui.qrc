@@ -9,13 +9,6 @@
 	<file>mainwin/command_panel/tab_render.bw.svg</file>
 	<file>mainwin/command_panel/tab_overlays.bw.svg</file>
 	<file>mainwin/command_panel/tab_utilities.bw.svg</file>
-	<file>mainwin/status/status_error.png</file>
-	<file>mainwin/status/status_error@2x.png</file>
-	<file>mainwin/status/status_info.png</file>
-	<file>mainwin/status/status_warning.png</file>
-	<file>mainwin/status/status_warning@2x.png</file>
-	<file>mainwin/status/status_none.png</file>
-	<file>mainwin/status/status_pending.gif</file>
 	<file>mainwin/process-stop-16.png</file>
 	<file>mainwin/process-stop-16@2x.png</file>
 	<file>mainwin/process-stop-22.png</file>

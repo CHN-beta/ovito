@@ -1,6 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 
+// Items in this module are defined in C++ code.
+import org.ovito
+
 Control {
 	id: control
 	implicitHeight: 32
@@ -31,6 +34,10 @@ Control {
 	property int buttonRepeatDelay: 300       //!< Milliseconds to delay before held +/- button repeat is activated.
 	property int buttonRepeatInterval: 100    //!< +/- button repeat interval while held (in milliseconds).
 
+	property ParameterUnit parameterUnit
+	property double standardValue: 0.0
+	property alias placeholderText: spinBox.placeholderText
+
 	readonly property string cleanText: getCleanText(displayText)                            //!< Holds the text of the spin box excluding any prefix, suffix, or leading or trailing whitespace.
 	readonly property bool acceptableInput: textInputItem && textInputItem.acceptableInput   //!< Indicates if input is valid (it would be nicer if the validator would expose an "isValid" prop/method!).
 	readonly property real topValue: Math.max(from, to)                                      //!< The effective maximum value
@@ -44,8 +51,8 @@ Control {
 
 	//! Default numeric validator, strictly enforces \p notation type, does not allow for custom \p inputMask with non-numeric components.
 	readonly property QtObject doubleValidator: DoubleValidator {
-		top: control.topValue
-		bottom: control.botValue
+		top: parameterUnit ? parameterUnit.nativeToUser(control.topValue) : control.topValue
+		bottom: parameterUnit ? parameterUnit.nativeToUser(control.botValue) : control.botValue
 		decimals: Math.max(control.decimals, 0)
 		notation: control.notation
 		locale: control.effectiveLocale.name
@@ -69,13 +76,14 @@ Control {
 
 	// The spin box itself... it's really only here for its buttons and overall formatting, we ignore its actual value/etc.
 	contentItem: SpinBox {
+		id: spinBox
 		width: control.availableWidth
 		height: control.availableHeight
 		editable: control.editable
 		inputMethodHints: control.inputMethodHints
 		validator: control.validator
 		from: -(Math.pow(2, 31) - 1); to: Math.pow(2, 31) - 1;  // prevent interference with our real from/to values
-		// wrap property is set below as a Binding in case SpinBox version is < 2.3 (Qt 5.10).
+		wrap: control.wrap
 	}
 
 	// Public function API
@@ -133,6 +141,12 @@ Control {
 	//! Reimplimented from SpinBox
 	function textFromValue(value, locale)
 	{
+		if (value == standardValue && placeholderText)
+			return "";
+
+		if (parameterUnit)
+			return parameterUnit.formatValue(parameterUnit.nativeToUser(value));
+
 		if (!locale)
 			locale = effectiveLocale;
 
@@ -158,6 +172,12 @@ Control {
 	//! Reimplimented from SpinBox
 	function valueFromText(text, locale)
 	{
+		if (text == "" && placeholderText)
+			return standardValue;
+
+		if (parameterUnit)
+			return parameterUnit.userToNative(parameterUnit.parseString(text, parameterUnit.nativeToUser(value)));
+
 		if (!locale)
 			locale = effectiveLocale;
 		// strip prefix/suffix, or custom pre-processor
@@ -330,14 +350,6 @@ Control {
 			if (!control.textInputItem.activeFocus)
 				control.updateValueFromText();
 		}
-	}
-
-	// We use a binding here just in case the resident SpinBox is older than v2.3
-	Binding {
-		target: control.spinBoxItem
-		when: control.spinBoxItem && typeof control.spinBoxItem.wrap !== "undefined"
-		property: "wrap"
-		value: control.wrap
 	}
 
 	Binding {

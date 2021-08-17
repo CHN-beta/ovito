@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -47,6 +47,20 @@ OVITO_STANDARD_PLUGIN(GuiBase
 # Starting with Qt6, teh QAction class is part of the QtGui module.
 IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
 	TARGET_LINK_LIBRARIES(GuiBase PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
+ENDIF()
+
+IF(NOT EMSCRIPTEN)
+	# Compute the relative path where the documentation files get installed relative to the executable. 
+	FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
+	TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
+ELSE()
+	# Download the documentation inventory file before creating the resource file.
+	FILE(DOWNLOAD https://docs.ovito.org/objects.txt "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
+	# Link the manual inventory file into the executable.
+	QT_ADD_RESOURCES(GuiBase PackagedManual
+		PREFIX "/doc/manual/"
+		BASE "${CMAKE_CURRENT_BINARY_DIR}"
+		FILES "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
 ENDIF()
 
 # Compute the relative path where the Python extension scripts get installed relative to the executable. 

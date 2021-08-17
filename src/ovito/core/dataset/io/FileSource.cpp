@@ -656,10 +656,14 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
 		// Inform animation system that global time line length probably changed.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
+	else if(field == PROPERTY_FIELD(sourceUrls)) {
+		Q_EMIT currentFileChanged();
+	}
 	else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
 		// The active frame is part of the source's UI title.	
 		if(numberOfFiles() > 1)
 			notifyDependents(ReferenceEvent::TitleChanged);
+		Q_EMIT currentFileChanged();
 	}
 	BasePipelineSource::propertyChanged(field);
 }
@@ -712,6 +716,45 @@ void FileSource::generateWildcardFilePattern()
 			}	
 		}
 	}
+}
+
+/******************************************************************************
+* Returns the name of the file loaded by the file source for the current animation frame.
+* The filename is displayed in the UI panel of the file source. 
+******************************************************************************/
+QString FileSource::currentFileName() const
+{
+	if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
+		const FileSourceImporter::Frame& frameInfo = frames()[dataCollectionFrame()];
+		if(frameInfo.sourceFile.isLocalFile()) {
+			return QFileInfo(frameInfo.sourceFile.toLocalFile()).fileName();
+		}
+		else {
+			return QFileInfo(frameInfo.sourceFile.path()).fileName();
+		}
+	}
+	return {};
+}
+
+/******************************************************************************
+* Returns the directory path from which the current animation frame was loaded.
+* The path is displayed in the UI panel of the FileSource. 
+******************************************************************************/
+QString FileSource::currentDirectoryPath() const
+{
+	if(!sourceUrls().empty()) {
+		if(sourceUrls().front().isLocalFile()) {
+			QFileInfo fileInfo(sourceUrls().front().toLocalFile());
+			return fileInfo.dir().path();
+		}
+		else {
+			QFileInfo fileInfo(sourceUrls().front().path());
+			QUrl url = sourceUrls().front();
+			url.setPath(fileInfo.path());
+			return url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded);
+		}
+	}
+	return {};
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 import org.ovito
 
 ScrollView {
@@ -9,11 +9,15 @@ ScrollView {
 
 	clip: true
 
+	// Avoid horizontal scrollbar:
+	ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
 	ListView {	
 		id: listView
 		focus: true
 		highlightMoveDuration: 0
 		highlightMoveVelocity: -1
+		highlight: Rectangle { color: "lightsteelblue"; }
 
 		// Keep the selected index of the model and the ListView in sync without creating a binding loop.
 		onCurrentIndexChanged: model.selectedIndex = currentIndex;
@@ -26,10 +30,8 @@ ScrollView {
 			id: itemDelegate
 			MouseArea {
 				id: mouseArea
-				anchors { 
-					left: parent ? parent.left : undefined; 
-					right: parent ? parent.right : undefined; 
-				}
+				anchors.left: parent ? parent.left : undefined; 
+				anchors.right: parent ? parent.right : undefined; 
 				height: itemInfo.height
 				hoverEnabled: true
 				onClicked: { 
@@ -50,6 +52,8 @@ ScrollView {
 					height: (type >= PipelineListItem.VisualElementsHeader) ? textItem.implicitHeight : Math.max(textItem.implicitHeight, checkboxItem.implicitHeight)
 					width: parent.width
 					color: (type >= PipelineListItem.VisualElementsHeader) ? "lightgray" : "#00000000"; 
+
+					// Enabled/disabled checkbox.
 					CheckBox {
 						id: checkboxItem
 						visible: (type <= PipelineListItem.Modifier)
@@ -78,15 +82,23 @@ ScrollView {
 							}
 						}
 					}
-					Text {
+
+					// Item text
+					IconLabel {
 						id: textItem
 						text: title
-						horizontalAlignment: (type < PipelineListItem.VisualElementsHeader) ? Text.AlignLeft : Text.AlignHCenter
+						icon.source: decoration
+						icon.width: 22
+						icon.height: 22
+						spacing: 2
+						alignment: (type < PipelineListItem.VisualElementsHeader) ? Qt.AlignLeft : Qt.AlignHCenter
 						anchors.verticalCenter: parent.verticalCenter
 						anchors.left: (type <= PipelineListItem.Modifier) ? checkboxItem.right : parent.left
 						anchors.right: parent.right
-						anchors.leftMargin: (type <= PipelineListItem.Modifier) ? 0 : 6
+						anchors.leftMargin: (type <= PipelineListItem.Modifier) ? -6 : 6
 					}
+
+					// Delete item button
 					Image {
 						id: deleteButton
 						anchors.verticalCenter: parent.verticalCenter
@@ -101,10 +113,13 @@ ScrollView {
 							}
 						}
 					}
+
+					ToolTip.text: tooltip
+					ToolTip.visible: tooltip ? mouseArea.containsMouse : false
+					ToolTip.delay: 500
 				}
 			}
 		}
 		delegate: itemDelegate
-		highlight: Rectangle { color: "lightsteelblue"; }
 	}
 }

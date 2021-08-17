@@ -11,6 +11,7 @@
         <file>ui/ColorPickerPopup.qml</file>
         <file>ui/CustomRadioButton.qml</file>
         <file>ui/CommandPanel.qml</file>
+        <file>ui/EmbeddedPropertiesEditor.qml</file>
         <file>ui/ErrorDialog.qml</file>
         <file>ui/FloatParameter.qml</file>
         <file>ui/ImportDialog.qml</file>
@@ -24,8 +25,10 @@
         <file>ui/PropertiesEditor.qml</file>
         <file>ui/QuickViewportWindow.qml</file>
         <file>ui/StatusBar.qml</file>
+        <file>ui/RefTargetListParameter.qml</file>
         <file>ui/RolloutPanel.qml</file>
         <file>ui/Spinner.qml</file>
+        <file>ui/StringParameter.qml</file>
         <file>ui/SubobjectEditor.qml</file>
         <file>ui/SystemReportDialog.qml</file>
         <file>ui/ToolBar.qml</file>
@@ -55,5 +58,9 @@
         <file>samples/test.data</file>
         <file>samples/animation.dump</file>
         <file>samples/trajectory.xyz</file>
+    </qresource>  
+
+    <qresource prefix="/Core">
+        <file>editors/FileSource.qml</file>
     </qresource>  
 </RCC>

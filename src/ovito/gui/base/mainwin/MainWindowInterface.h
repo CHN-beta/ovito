@@ -67,6 +67,9 @@ public:
 	/// Queries the system's information and graphics capabilities.
 	QString generateSystemReport();
 
+	/// \brief Shows the online manual and opens the given help page.
+	static void openHelpTopic(const QString& page);
+
 protected:
 
 	/// Assigns an ActionManager to this window.

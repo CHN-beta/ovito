@@ -26,11 +26,14 @@
 #include <ovito/gui/qml/dataset/WasmFileManager.h>
 #include <ovito/gui/qml/viewport/QuickViewportWindow.h>
 #include <ovito/gui/qml/properties/ParameterUI.h>
+#include <ovito/gui/qml/properties/RefTargetListParameterUI.h>
 #include <ovito/gui/qml/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/ApplicationService.h>
 #include "WasmApplication.h"
@@ -151,7 +154,10 @@ bool WasmApplication::startupApplication()
 	qmlRegisterUncreatableType<PipelineListModel>("org.ovito", 1, 0, "PipelineListModel", tr("PipelineListModel cannot be created from QML."));
 	qmlRegisterUncreatableType<PipelineListItem>("org.ovito", 1, 0, "PipelineListItem", tr("PipelineListItem cannot be created from QML."));
 	qmlRegisterUncreatableType<RefTarget>("org.ovito", 1, 0, "RefTarget", tr("RefTarget cannot be created from QML."));
+	qmlRegisterUncreatableType<FileSource>("org.ovito", 1, 0, "FileSource", tr("FileSource cannot be created from QML."));
+	qmlRegisterUncreatableType<ParameterUnit>("org.ovito", 1, 0, "ParameterUnit", tr("ParameterUnit cannot be created from QML."));
 	qmlRegisterType<ParameterUI>("org.ovito", 1, 0, "ParameterUI");
+	qmlRegisterType<RefTargetListParameterUI>("org.ovito", 1, 0, "RefTargetListParameterUI");
 	qmlRegisterType<ModifierDelegateParameterUI>("org.ovito", 1, 0, "ModifierDelegateParameterUI");
 
 	// Select our own Qt Quick style (located in the resources/OvitoStyle/ directory).

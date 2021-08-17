@@ -12,7 +12,7 @@ T.GroupBox {
 
     spacing: 4 // Customized
     padding: 4 // Customized
-    topPadding: padding + (implicitLabelWidth > 0 ? implicitLabelHeight + spacing : 0)
+    topPadding: padding + (implicitLabelWidth > 0 && label.visible ? implicitLabelHeight + spacing : 0)
 
     label: Text {
         x: control.leftPadding

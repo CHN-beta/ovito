@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 
 import "qrc:/gui/ui" as Ui
 
@@ -9,6 +9,7 @@ Column {
 
 	Ui.RolloutPanel {
 		title: qsTr("Create bonds")
+		helpTopicId: "manual:particles.modifiers.create_bonds"
 		anchors.left: parent.left
 		anchors.right: parent.right
 		

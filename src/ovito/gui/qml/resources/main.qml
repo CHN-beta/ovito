@@ -21,20 +21,23 @@ ApplicationWindow {
 
 	Ui.SystemReportDialog {
 		id: systemReportDialog
-	}		
+	}
 
-	RowLayout {
+	header: Ui.ToolBar {
+		id: toolBar
+		objectName: "toolBar"
+		Layout.fillWidth: true
+	}
+
+	SplitView {
 		anchors.fill: parent
-		spacing: 0
+		orientation: Qt.Horizontal
 
 		ColumnLayout {
 			spacing: 0
-
-			Ui.ToolBar {
-				id: toolBar
-				objectName: "toolBar"
-				Layout.fillWidth: true
-			}
+			SplitView.fillWidth: true
+			SplitView.fillHeight: true
+			SplitView.minimumWidth: 50
 
 			MainWindow {
 				id: mainWindow
@@ -78,8 +81,9 @@ ApplicationWindow {
 
 		Ui.CommandPanel {
 			id: commandPanel
-			Layout.preferredWidth: 320
-			Layout.fillHeight: true
+			SplitView.preferredWidth: 320
+			SplitView.fillWidth: false
+			SplitView.fillHeight: true
 		}
 	}
 }

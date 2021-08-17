@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 
 ColumnLayout {
 	spacing: 0
@@ -17,27 +17,29 @@ ColumnLayout {
 		}
 	}
 
-	// Pipeline editor:
-	PipelineEditor {
-		id: pipelineEditor
+	SplitView {
+		orientation: Qt.Vertical
 		Layout.fillWidth: true
 		Layout.fillHeight: true
-		Layout.preferredHeight: 100
-		model: mainWindow.pipelineListModel
 
-		// Request a viewport update whenever a new item in the pipeline editor is selected, 
-		// because the currently selected modifier may be rendering gizmos in the viewports. 
-		onSelectedObjectChanged: {
-			if(viewportsPanel.viewportConfiguration)
-				viewportsPanel.viewportConfiguration.updateViewports();
+		// Pipeline editor:
+		PipelineEditor {
+			id: pipelineEditor
+			Layout.preferredHeight: 100
+			model: mainWindow.pipelineListModel
+
+			// Request a viewport update whenever a new item in the pipeline editor is selected, 
+			// because the currently selected modifier may be rendering gizmos in the viewports. 
+			onSelectedObjectChanged: {
+				if(viewportsPanel.viewportConfiguration)
+					viewportsPanel.viewportConfiguration.updateViewports();
+			}
 		}
-	}
-	
-	// Properties editor panel:
-	PropertiesEditor {
-		Layout.fillWidth: true
-		Layout.fillHeight: true
-		Layout.preferredHeight: 160
-		editObject: pipelineEditor.selectedObject
+		
+		// Properties editor panel:
+		PropertiesEditor {
+			SplitView.preferredHeight: 160
+			editObject: pipelineEditor.selectedObject
+		}
 	}
 }

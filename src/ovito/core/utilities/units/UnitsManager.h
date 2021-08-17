@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,13 +49,13 @@ public:
 	/// \param nativeValue The value in internal units to be converted.
 	/// \return The value as converted to the user units.
 	/// \sa userToNative()
-	virtual FloatType nativeToUser(FloatType nativeValue) = 0;
+	Q_INVOKABLE virtual FloatType nativeToUser(FloatType nativeValue) = 0;
 
 	/// \brief Converts a value from user units to the native units used internally.
 	/// \param userValue The value to be converted back to internal units.
 	/// \return The converted value.
 	/// \sa nativeToUser()
-	virtual FloatType userToNative(FloatType userValue) = 0;
+	Q_INVOKABLE virtual FloatType userToNative(FloatType userValue) = 0;
 
 	/// \brief Converts the given string to a value.
 	/// \param valueString This is a string representation of a value as it might have
@@ -65,11 +65,18 @@ public:
 	/// \sa formatValue()
 	virtual FloatType parseString(const QString& valueString) = 0;
 
+	/// \brief Converts the given string to a numeric value, or returns the input value if string format is invalid.
+	/// \return The parsed value in user units.
+	Q_INVOKABLE FloatType parseString(const QString& valueString, FloatType defaultValue) {
+		try { return parseString(valueString); }
+		catch(const Exception&) { return defaultValue; }
+	}
+
 	/// \brief Converts a numeric value to a string.
 	/// \param value The value to be converted. This is in user units.
 	/// \return The string representation of the value. This can be converted back using parseString().
 	/// \sa parseString()
-	virtual QString formatValue(FloatType value) = 0;
+	Q_INVOKABLE virtual QString formatValue(FloatType value) = 0;
 
 	/// \brief Returns positive the step size used by spinner widgets for this parameter unit type.
 	/// \param currentValue The current value of the spinner in native units. This can be used to make the step size value dependent.
@@ -77,12 +84,12 @@ public:
 	/// \return The numeric step size used by SpinnerWidget for this parameter type. This is in native units.
 	///
 	/// The default implementation just returns 1.
-	virtual FloatType stepSize(FloatType currentValue, bool upDirection) { return 1; }
+	Q_INVOKABLE virtual FloatType stepSize(FloatType currentValue, bool upDirection) { return 1; }
 
 	/// \brief Given an arbitrary value, which is potentially invalid, rounds it to the closest valid value.
 	///
 	/// The default implementation does no rounding and simply returns the unmodified value.
-	virtual FloatType roundValue(FloatType value) { return value; }
+	Q_INVOKABLE virtual FloatType roundValue(FloatType value) { return value; }
 
 	/// \brief Returns the DataSet this parameter unit belongs to.
 	DataSet* dataset() const { return _dataset; }
@@ -206,7 +213,6 @@ public:
 	virtual FloatType roundValue(FloatType value) override {
 		return std::floor(value + FloatType(0.5));
 	}
-
 };
 
 /*
@@ -403,5 +409,3 @@ private:
 };
 
 }	// End of namespace
-
-

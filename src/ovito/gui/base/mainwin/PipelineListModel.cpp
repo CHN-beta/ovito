@@ -41,11 +41,11 @@ namespace Ovito {
 ******************************************************************************/
 PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QObject* parent) : QAbstractListModel(parent),
 	_datasetContainer(datasetContainer),
-	_statusInfoIcon(":/gui/mainwin/status/status_info.png"),
-	_statusWarningIcon(":/gui/mainwin/status/status_warning.png"),
-	_statusErrorIcon(":/gui/mainwin/status/status_error.png"),
-	_statusNoneIcon(":/gui/mainwin/status/status_none.png"),
-	_statusPendingIcon(":/gui/mainwin/status/status_pending.gif"),
+	_statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
+	_statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
+	_statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
+	_statusNoneIcon(":/guibase/mainwin/status/status_none.png"),
+	_statusPendingIcon(":/guibase/mainwin/status/status_pending.gif"),
 	_sectionHeaderFont(QGuiApplication::font()),
 	_modifierGroupCollapsed(":/guibase/actions/modify/modifier_group_collapsed.svg"),
 	_modifierGroupExpanded(":/guibase/actions/modify/modifier_group_expanded.svg")
@@ -508,15 +508,18 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 {
 	OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
 
-	// While the items of the model are out of date, do not return any data and wait until the items list is rebuilt.
-	if(_listRefreshPending)
-		return {};
-
 	PipelineListItem* item = this->item(index.row());
 
-	// While the item is being updated, do not access any model data, because it may be in an inconsistent state.
-	if(item->isUpdatePending())
+	// While the item or the model as a whole are being updated, do not access any model data, because it may be in an inconsistent state.
+	if(_listRefreshPending || item->isUpdatePending()) {
+		if(role == Qt::DisplayRole || role == TitleRole || role == Qt::EditRole)
+			return QString();
+		if(role == CheckedRole)
+			return false;
+		if(role == PipelineListModel::DecorationRole || role == PipelineListModel::ToolTipRole)
+			return QString();
 		return {};
+	}
 
 	if(role == Qt::DisplayRole || role == TitleRole) {
 		// Indent modifiers that are part of a group.
@@ -543,6 +546,7 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 			return static_object_cast<ModifierGroup>(item->object())->isCollapsed();
 	}
 	else if(role == Qt::DecorationRole) {
+		// This role is only used by the QWidgets GUI.
 		if(item->itemType() == PipelineListItem::ModifierGroup) {
 			if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
 				return _modifierGroupExpanded;
@@ -563,7 +567,30 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 			}
 		}
 	}
-	else if(role == Qt::ToolTipRole) {
+	else if(role == PipelineListModel::DecorationRole) {
+		// This role is only used by the QML GUI.
+		if(item->itemType() == PipelineListItem::ModifierGroup) {
+			if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
+				return QStringLiteral("qrc:/guibase/actions/modify/modifier_group_expanded.svg");
+		}
+//		if(item->isObjectActive()) {
+//			const_cast<QMovie&>(_statusPendingIcon).start();
+//			return QVariant::fromValue(_statusPendingIcon.currentPixmap());
+//		}
+		if(item->itemType() == PipelineListItem::ModifierGroup) {
+			if(item->status().type() == PipelineStatus::Success)
+				return QStringLiteral("qrc:/guibase/actions/modify/modifier_group_collapsed.svg");
+		}
+		if(item->isObjectItem()) {
+			switch(item->status().type()) {
+			case PipelineStatus::Warning: return QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png");
+			case PipelineStatus::Error: return QStringLiteral("qrc:/guibase/mainwin/status/status_error.png");
+			default: return QStringLiteral("qrc:/guibase/mainwin/status/status_none.png");
+			}
+		}
+		return QString();
+	}
+	else if(role == Qt::ToolTipRole || role == PipelineListModel::ToolTipRole) {
 		return QVariant::fromValue(item->status().text());
 	}
 	else if(role == Qt::CheckStateRole || role == CheckedRole) {
@@ -705,11 +732,13 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
 ******************************************************************************/
 QHash<int, QByteArray> PipelineListModel::roleNames() const
 {
-	QHash<int, QByteArray> roles;
-	roles[TitleRole] = "title";
-	roles[ItemTypeRole] = "type";
-	roles[CheckedRole] = "ischecked";
-	return roles;
+	return { 
+		{ TitleRole, "title" },
+		{ ItemTypeRole, "type" },
+		{ CheckedRole, "ischecked" },
+		{ DecorationRole, "decoration" },
+		{ ToolTipRole, "tooltip" }
+	};
 }
 
 /******************************************************************************

@@ -169,7 +169,7 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Modifier
 		}
 
 		// Select the right item in the list box.
-		static QIcon warningIcon(QStringLiteral(":/gui/mainwin/status/status_warning.png"));
+		static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
 		if(delegate) {
 			if(indexToBeSelected < 0) {
 				if(delegate && inputDataObject) {

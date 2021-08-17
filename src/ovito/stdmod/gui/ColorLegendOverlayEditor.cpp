@@ -225,7 +225,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 			if(index >= 0)
 				_sourcesComboBox->setCurrentIndex(index);
 			else {
-				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
+				_sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
 				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
 			}
 			_label1PUI->setEnabled(true);
@@ -237,17 +237,17 @@ void ColorLegendOverlayEditor::updateSourcesList()
 			if(index >= 0)
 				_sourcesComboBox->setCurrentIndex(index);
 			else {
-				_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrString());
+				_sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrString());
 				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
 			}
 		}
 		else {
-			_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
+			_sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
 			_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
 		}
 	}
 	if(_sourcesComboBox->count() == 0)
-		_sourcesComboBox->addItem(QIcon(":/gui/mainwin/status/status_warning.png"), tr("<none>"));
+		_sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
 }
 
 /******************************************************************************

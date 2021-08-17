@@ -38,6 +38,10 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 	Q_OBJECT
 	OVITO_CLASS(ElementType)
 
+	Q_PROPERTY(int numericId READ numericId CONSTANT)
+	Q_PROPERTY(QString name READ name CONSTANT)
+	Q_PROPERTY(QColor color READ color CONSTANT)
+
 public:
 
 	/// \brief Constructs a new type.

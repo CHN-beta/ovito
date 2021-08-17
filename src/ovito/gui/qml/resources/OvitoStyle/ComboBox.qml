@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls.impl
 import QtQuick.Templates as T
 import QtQuick.Controls.Basic as C
+import QtQuick.Controls.Universal
 
 T.ComboBox {
     id: control
@@ -11,6 +12,8 @@ T.ComboBox {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding,
                              implicitIndicatorHeight + topPadding + bottomPadding)
+
+    Universal.theme: activeFocus ? Universal.Light : undefined
 
     leftPadding: padding + (!control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
     rightPadding: padding + (control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
@@ -59,7 +62,7 @@ T.ComboBox {
         background: Rectangle {
             visible: control.enabled && control.editable && !control.flat
             border.width: parent && parent.activeFocus ? 2 : 1
-            border.color: parent && parent.activeFocus ? control.palette.highlight : control.palette.button
+            border.color: parent && parent.activeFocus ? control.Universal.accent : control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
             color: control.palette.midlight // Customized
         }
     }
@@ -69,7 +72,9 @@ T.ComboBox {
         implicitHeight: 32 // Customized
 
         color: control.down ? control.palette.mid : control.palette.midlight // Customized
-        border.color: control.palette.highlight
+        border.color: !control.enabled ? control.Universal.baseLowColor :
+                       control.activeFocus ? control.Universal.accent :
+                       control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
         border.width: !control.editable && control.visualFocus ? 2 : 0
         visible: !control.flat || control.down
     }

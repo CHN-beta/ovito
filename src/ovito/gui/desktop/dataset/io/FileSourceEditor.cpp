@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ SET_OVITO_OBJECT_EDITOR(FileSource, FileSourceEditor);
 void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("External file"), rolloutParams, "data_sources");
+	QWidget* rollout = createRollout(tr("External file"), rolloutParams, "manual:scene_objects.file_source");
 
 	// Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -413,36 +413,13 @@ void FileSourceEditor::updateInformationLabel()
 
 	QString wildcardPattern;
 	if(!fileSource->sourceUrls().empty()) {
-		if(fileSource->sourceUrls().front().isLocalFile()) {
-			QFileInfo fileInfo(fileSource->sourceUrls().front().toLocalFile());
-			_sourcePathLabel->setText(fileInfo.dir().path());
-			wildcardPattern = fileInfo.fileName();
-		}
-		else {
-			QFileInfo fileInfo(fileSource->sourceUrls().front().path());
-			QUrl url = fileSource->sourceUrls().front();
-			url.setPath(fileInfo.path());
-			_sourcePathLabel->setText(url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded));
-			wildcardPattern = fileInfo.fileName();
-		}
+		wildcardPattern = fileSource->sourceUrls().front().fileName();
 	}
-
 	_wildcardPatternTextbox->setText(wildcardPattern);
 	_wildcardPatternTextbox->setEnabled(true);
 
-	int frameIndex = fileSource->dataCollectionFrame();
-	if(frameIndex >= 0 && frameIndex < fileSource->frames().size()) {
-		const FileSourceImporter::Frame& frameInfo = fileSource->frames()[frameIndex];
-		if(frameInfo.sourceFile.isLocalFile()) {
-			_filenameLabel->setText(QFileInfo(frameInfo.sourceFile.toLocalFile()).fileName());
-		}
-		else {
-			_filenameLabel->setText(QFileInfo(frameInfo.sourceFile.path()).fileName());
-		}
-	}
-	else {
-		_filenameLabel->setText(QString());
-	}
+	_sourcePathLabel->setText(fileSource->currentDirectoryPath());
+	_filenameLabel->setText(fileSource->currentFileName());
 
 	if(_timeSeriesLabel) {
 		if(!fileSource->frames().empty())
@@ -459,7 +436,7 @@ void FileSourceEditor::updateInformationLabel()
 	}
 
 	if(_framesListBox) {
-		_framesListBox->setCurrentIndex(frameIndex);
+		_framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
 	}
 
 	_statusLabel->setStatus(fileSource->status());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,6 +92,17 @@ void ParameterUI::updatePropertyField()
 }
 
 /******************************************************************************
+* Returns the units object for this parameter (if it is a numerical parameter).
+******************************************************************************/
+ParameterUnit* ParameterUI::parameterUnit() const 
+{
+	if(editObject() && propertyField() && propertyField()->numericalParameterInfo()) {
+		return editObject()->dataset()->unitsManager().getUnit(propertyField()->numericalParameterInfo()->unitType);
+	}
+	return nullptr;
+}
+
+/******************************************************************************
 * Obtains the current value of the parameter from the C++ object.
 ******************************************************************************/
 QVariant ParameterUI::getCurrentValue() const
@@ -119,7 +130,7 @@ QVariant ParameterUI::getCurrentValue() const
 			}
 			else {
 				QVariant v = editObject()->getPropertyFieldValue(*propertyField());
-				if(v.canConvert<QColor>()) {
+				if(v.canConvert<QColor>() && v.metaType().id() != QMetaType::QString) {
 					QColor c = v.value<QColor>();
 					return QVariant::fromValue(QVector3D(c.redF(), c.greenF(), c.blueF()));
 				}

@@ -98,9 +98,6 @@ public:
 	/// Returns the layout manager for the status bar area of the main window.
 	QHBoxLayout* statusBarLayout() const { return _statusBarLayout; }
 
-	/// \brief Shows the online manual and opens the given help page.
-	static void openHelpTopic(const QString& page);
-
 	/// Returns the page of the command panel that is currently visible.
 	CommandPanelPage currentCommandPanelPage() const;
 

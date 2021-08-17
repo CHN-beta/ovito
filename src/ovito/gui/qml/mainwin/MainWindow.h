@@ -75,6 +75,11 @@ public Q_SLOTS:
 		showStatusBarMessage(QString()); 
 	}
 
+	/// Shows the online manual and opens the given help page.
+	void openHelpTopic(const QString& page) {
+		MainWindowInterface::openHelpTopic(page);
+	}
+
 Q_SIGNALS:
 
 	/// This signal is emitted to display an error message to the user.

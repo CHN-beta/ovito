@@ -121,8 +121,8 @@ Item {
                         pickerCursor.y = Math.max(0, Math.min(height, mouse.y));
                     }
                 }
-                onPositionChanged: handleMouse(mouse)
-                onPressed: handleMouse(mouse)
+                onPositionChanged: (mouse) => handleMouse(mouse)
+                onPressed: (mouse) => handleMouse(mouse)
             }
         }
     }
@@ -225,8 +225,8 @@ Item {
                         pickerCursor.y = Math.max(0, Math.min(height, mouse.y));
                     }
                 }
-                onPositionChanged: handleMouse(mouse)
-                onPressed: handleMouse(mouse)
+                onPositionChanged: (mouse) => handleMouse(mouse)
+                onPressed: (mouse) => handleMouse(mouse)
             }
         }
     }

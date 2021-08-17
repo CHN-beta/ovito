@@ -7,6 +7,7 @@ Page {
 	
 	header: TabBar {
 		id: bar
+		visible: false
 		TabButton {
 			text: qsTr("Pipeline")
 			icon.source: "qrc:/gui/command_panel/tab_modify.bw.svg"

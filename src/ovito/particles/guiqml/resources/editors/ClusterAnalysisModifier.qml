@@ -1,11 +1,12 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 
 import "qrc:/gui/ui" as Ui
 
 Ui.RolloutPanel {
 	title: qsTr("Cluster analysis")
+	helpTopicId: "manual:particles.modifiers.cluster_analysis"
 	
 	ColumnLayout {
 		anchors.fill: parent

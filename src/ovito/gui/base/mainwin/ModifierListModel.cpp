@@ -347,11 +347,11 @@ int ModifierListModel::rowCount(const QModelIndex& parent) const
 ******************************************************************************/
 QHash<int, QByteArray> ModifierListModel::roleNames() const
 {
-	QHash<int, QByteArray> roles;
-	roles[Qt::DisplayRole] = "title";
-	roles[Qt::UserRole] = "isheader";
-	roles[Qt::FontRole] = "font";
-	return roles;
+	return { 
+		{ Qt::DisplayRole, "title" },
+		{ Qt::UserRole, "isheader" },
+		{ Qt::FontRole, "font" }
+	};
 }
 
 /******************************************************************************

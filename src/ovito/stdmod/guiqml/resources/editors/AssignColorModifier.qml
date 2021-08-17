@@ -1,11 +1,12 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts 6.0
+import QtQuick.Layouts
 
 import "qrc:/gui/ui" as Ui
 
 Ui.RolloutPanel {
 	title: qsTr("Assign color")
+	helpTopicId: "manual:particles.modifiers.assign_color"
 
 	GridLayout {
 		anchors.fill: parent

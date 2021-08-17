@@ -151,7 +151,7 @@ void PropertyReferenceParameterUI::updateUI()
 
 			// Select the right item in the list box.
 			int selIndex = _comboBox->propertyIndex(pref);
-			static QIcon warningIcon(QStringLiteral(":/gui/mainwin/status/status_warning.png"));
+			static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
 			if(selIndex < 0) {
 				if(!pref.isNull() && pref.containerClass() == containerRef().dataClass()) {
 					// Add a place-holder item if the selected property does not exist anymore.
