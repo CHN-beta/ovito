@@ -17,5 +17,10 @@ Ui.RolloutPanel {
 			propertyField: "numNeighbors"
 			Layout.fillWidth: true 
 		}
+
+		Ui.ObjectStatusWidget {
+			Layout.fillWidth: true
+			Layout.columnSpan: 2
+		}		
 	}
 }

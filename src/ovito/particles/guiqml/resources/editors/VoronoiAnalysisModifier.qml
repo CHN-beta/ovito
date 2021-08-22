@@ -62,5 +62,10 @@ Ui.RolloutPanel {
 			propertyField: "onlySelected"
 			Layout.columnSpan: 2
 		}
+
+		Ui.ObjectStatusWidget {
+			Layout.fillWidth: true
+			Layout.columnSpan: 2
+		}
 	}
 }

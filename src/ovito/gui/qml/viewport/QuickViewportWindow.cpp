@@ -159,6 +159,17 @@ void QuickViewportWindow::mousePressEvent(QMouseEvent* event)
 {
 	viewport()->dataset()->viewportConfig()->setActiveViewport(viewport());
 
+	if(event->buttons() != Qt::NoButton && !_mouseGrabWorkaround.isActive()) {
+		if(!_mouseGrabWorkaround.container()) {
+			QQuickItem* container = static_cast<MainWindow*>(mainWindow());
+			while(QQuickItem* parent = container->parentItem())
+				container = parent;
+			_mouseGrabWorkaround.setContainer(container);
+		}
+		_mouseGrabWorkaround.setActive(true, this);
+		setKeepMouseGrab(true);
+	}
+
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
 			try {
@@ -177,6 +188,11 @@ void QuickViewportWindow::mousePressEvent(QMouseEvent* event)
 ******************************************************************************/
 void QuickViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
+	if(event->buttons() == Qt::NoButton && _mouseGrabWorkaround.isActive()) {
+		_mouseGrabWorkaround.setActive(false, this);
+		setKeepMouseGrab(false);
+	}
+
 	if(inputManager()) {
 		if(ViewportInputMode* mode = inputManager()->activeMode()) {
 			try {

@@ -28,8 +28,10 @@ OVITO_STANDARD_PLUGIN(Gui
 		dataset/WasmFileManager.cpp
 		mainwin/MainWindow.cpp
 		mainwin/ViewportsPanel.cpp
+		mainwin/MouseGrabWorkaround.cpp
 		properties/ParameterUI.cpp
 		properties/RefTargetListParameterUI.cpp
+		properties/DataObjectReferenceParameterUI.cpp
 		properties/ModifierDelegateParameterUI.cpp
 		viewport/QuickViewportWindow.cpp
 		resources/gui.qrc
@@ -41,9 +43,21 @@ OVITO_STANDARD_PLUGIN(Gui
 		${OVITO_QT_MAJOR_VERSION}::Quick 
 		${OVITO_QT_MAJOR_VERSION}::QuickControls2 
 		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2
+		${OVITO_QT_MAJOR_VERSION}::LabsQmlModels
 	PRECOMPILED_HEADERS 
 		GUI.h
 )
+
+#QT6_ADD_QML_MODULE(
+#	Gui
+#	VERSION 1.0
+#	URI "org.ovito"
+#)
+# Workaround for QTBUG-93443: Add directory containing QML class headers to include path.
+#TARGET_INCLUDE_DIRECTORIES(Gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/app")
+#TARGET_INCLUDE_DIRECTORIES(Gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/properties")
+#TARGET_INCLUDE_DIRECTORIES(Gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/mainwin")
+#TARGET_INCLUDE_DIRECTORIES(Gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/viewport")
 
 IF(EMSCRIPTEN)
 	FILE(GLOB _controls_basic_qml_files LIST_DIRECTORIES FALSE "${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Basic/*.qml")
@@ -65,6 +79,7 @@ IF(EMSCRIPTEN)
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Controls/Universal/impl/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/qmldir"
 			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/qmldir"
+			"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/Qt/labs/qmlmodels/qmldir"
 			${_controls_basic_qml_files}
 			${_controls_universal_qml_files}
 			${_controls_universal_impl_qml_files}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,11 +37,13 @@ namespace Ovito {
 class OVITO_GUI_EXPORT MainWindow : public QQuickItem, public MainWindowInterface
 {
 	Q_OBJECT
-	Q_PROPERTY(Ovito::WasmDataSetContainer* datasetContainer READ datasetContainer CONSTANT);
-	Q_PROPERTY(QString statusBarText READ statusBarText WRITE showStatusBarMessage NOTIFY statusBarTextChanged);
-	Q_PROPERTY(Ovito::ModifierListModel* modifierListModel MEMBER _modifierListModel CONSTANT);
-	Q_PROPERTY(Ovito::PipelineListModel* pipelineListModel MEMBER _pipelineListModel CONSTANT);
-	Q_PROPERTY(QString systemReport READ generateSystemReport CONSTANT);
+	QML_ELEMENT
+
+	Q_PROPERTY(Ovito::WasmDataSetContainer* datasetContainer READ datasetContainer CONSTANT)
+	Q_PROPERTY(QString statusBarText READ statusBarText WRITE showStatusBarMessage NOTIFY statusBarTextChanged)
+	Q_PROPERTY(Ovito::ModifierListModel* modifierListModel MEMBER _modifierListModel CONSTANT)
+	Q_PROPERTY(Ovito::PipelineListModel* pipelineListModel MEMBER _pipelineListModel CONSTANT)
+	Q_PROPERTY(QString systemReport READ generateSystemReport CONSTANT)
 
 public:
 
@@ -59,6 +61,9 @@ public:
 
 	/// Returns the text currently displayed in the window's status bar.
 	const QString& statusBarText() const { return _statusBarTextMarkup; }
+
+	/// Executes the user-provided function and records all actions on the undo stack.
+	Q_INVOKABLE void undoableOperation(const QString& actionDescription, const QJSValue& callbackFunction);
 
 public Q_SLOTS:
 

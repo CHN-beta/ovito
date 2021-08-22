@@ -75,6 +75,10 @@ public:
 	OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
 	Q_OBJECT
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChanged)
+#endif
+
 protected:
 
 	/// \brief Constructor.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,6 +51,16 @@ public:
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+
+#ifdef OVITO_QML_GUI
+	/// This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract the list of element types
+	/// from the input pipeline output state. 
+	Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
+
+	/// Toggles the selection state for the given element types.
+	/// This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
+	Q_INVOKABLE void setElementTypeSelectionState(int elementTypeId, const QString& elementTypeName, bool selectionState);
+#endif
 
 protected:
 

@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/qml/mainwin/MouseGrabWorkaround.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -36,7 +37,9 @@ namespace Ovito {
 class OVITO_GUI_EXPORT QuickViewportWindow : public QQuickFramebufferObject, public ViewportWindowInterface
 {
 	Q_OBJECT
-	Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced);
+	QML_ELEMENT
+	
+	Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced)
 
 public:
 
@@ -182,6 +185,9 @@ private:
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
 	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+
+	/// A helper object used on the Wasm platform to work around a mouse grabbing issue.
+	MouseGrabWorkaround _mouseGrabWorkaround;
 };
 
 }	// End of namespace

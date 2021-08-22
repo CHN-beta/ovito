@@ -91,7 +91,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 		_normalPUI[i] = new Vector3ParameterUI(this, PROPERTY_FIELD(SliceModifier::normalController), i);
 		_normalPUI[i]->label()->setTextFormat(Qt::RichText);
 		_normalPUI[i]->label()->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-		connect(_normalPUI[i]->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onAlignNormalWidthAxis);
+		connect(_normalPUI[i]->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onAlignNormalWithAxis);
 		gridlayout->addWidget(_normalPUI[i]->label(), i + 3, 0);
 		gridlayout->addLayout(_normalPUI[i]->createFieldLayout(), i + 3, 1);
 	}
@@ -219,7 +219,7 @@ void SliceModifierEditor::onCoordinateTypeChanged()
 /******************************************************************************
 * Aligns the normal of the slicing plane with one of the coordinate axes.
 ******************************************************************************/
-void SliceModifierEditor::onAlignNormalWidthAxis(const QString& link)
+void SliceModifierEditor::onAlignNormalWithAxis(const QString& link)
 {
 	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 	if(!mod) return;
@@ -337,28 +337,9 @@ void SliceModifierEditor::onAlignViewToPlane()
 ******************************************************************************/
 void SliceModifierEditor::onCenterOfBox()
 {
-	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
-	if(!mod) return;
-
-	// Get the simulation cell from the input object to center the slicing plane in
-	// the center of the simulation cell.
-	const PipelineFlowState& input = getModifierInput();
-	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
-
-		FloatType centerDistance;
-		if(!mod->reducedCoordinates()) {
-			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
-			centerDistance = mod->normal().safelyNormalized().dot(centerPoint - Point3::Origin());
-		}
-		else {
-			if(!mod->normal().isZero())
-				centerDistance = mod->normal().dot(Vector3(0.5, 0.5, 0.5));
-			else
-				centerDistance = mod->distance();
-		}
-
-		undoableTransaction(tr("Set plane position"), [mod, centerDistance]() {
-			mod->setDistance(centerDistance);
+	if(SliceModifier* mod = static_object_cast<SliceModifier>(editObject())) {
+		undoableTransaction(tr("Center plane in box"), [&]() {
+			mod->centerPlaneInSimulationCell(modifierApplication());
 		});
 	}
 }

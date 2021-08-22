@@ -26,6 +26,7 @@ ColumnLayout {
 		PipelineEditor {
 			id: pipelineEditor
 			Layout.preferredHeight: 100
+			SplitView.minimumHeight: 30
 			model: mainWindow.pipelineListModel
 
 			// Request a viewport update whenever a new item in the pipeline editor is selected, 
@@ -39,6 +40,7 @@ ColumnLayout {
 		// Properties editor panel:
 		PropertiesEditor {
 			SplitView.preferredHeight: 160
+			SplitView.minimumHeight: 30
 			editObject: pipelineEditor.selectedObject
 		}
 	}

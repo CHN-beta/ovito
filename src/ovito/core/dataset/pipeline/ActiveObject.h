@@ -38,6 +38,10 @@ class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 	Q_OBJECT
 	OVITO_CLASS(ActiveObject)
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(PipelineStatus status READ status NOTIFY objectStatusChanged)
+#endif
+
 protected:
 
 	/// \brief Constructor.
@@ -62,10 +66,23 @@ public:
 	/// \brief Returns true if at least one computation task associated with this object is currently active. 
 	bool isObjectActive() const { return _isInActivateState; }
 
+Q_SIGNALS:
+
+#ifdef OVITO_QML_GUI
+	/// This signal is emitted whenever the status of this object changes.
+	/// The signal is used in the QML GUI to update the status display.
+	void objectStatusChanged();
+#endif
+
 protected:
 
 	/// Is called when the value of a non-animatable property field of this RefMaker has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+
+#ifdef OVITO_QML_GUI
+	/// Sends an event to all dependents of this RefTarget.
+	virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
+#endif
 
 	/// Increments the internal task counter and notifies the UI that this object is currently active.
 	void incrementNumberOfActiveTasks();

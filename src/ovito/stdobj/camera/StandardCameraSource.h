@@ -70,8 +70,8 @@ public:
 
 public:
 
-	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
-	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
+	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera)
+	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective)
 
 private:
 

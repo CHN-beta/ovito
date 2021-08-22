@@ -88,9 +88,9 @@ public:
 
 public:
 
-    Q_PROPERTY(Ovito::RefTarget* editObject READ editObject);
-	Q_PROPERTY(bool isEnabled READ isEnabled WRITE setEnabled);
-	Q_PROPERTY(bool isDisabled READ isDisabled WRITE setDisabled);
+    Q_PROPERTY(Ovito::RefTarget* editObject READ editObject)
+	Q_PROPERTY(bool isEnabled READ isEnabled WRITE setEnabled)
+	Q_PROPERTY(bool isDisabled READ isDisabled WRITE setDisabled)
 
 Q_SIGNALS:
 
@@ -201,8 +201,8 @@ public:
 
 public:
 
-	Q_PROPERTY(const char* propertyName READ propertyName);
-	Q_PROPERTY(Ovito::RefTarget* parameterObject READ parameterObject);
+	Q_PROPERTY(const char* propertyName READ propertyName)
+	Q_PROPERTY(Ovito::RefTarget* parameterObject READ parameterObject)
 
 protected Q_SLOTS:
 

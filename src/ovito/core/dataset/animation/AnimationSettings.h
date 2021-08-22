@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,13 +62,16 @@ namespace Ovito {
 class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 {
 	Q_OBJECT
-	OVITO_CLASS(AnimationSettings);
-	Q_PROPERTY(int time READ time WRITE setTime NOTIFY timeChanged);
-	Q_PROPERTY(int currentFrame READ currentFrame WRITE setCurrentFrame NOTIFY timeChanged);
-	Q_PROPERTY(bool singleFrame READ isSingleFrame NOTIFY intervalChanged);
-	Q_PROPERTY(int firstFrame READ firstFrame WRITE setFirstFrame NOTIFY intervalChanged);
-	Q_PROPERTY(int lastFrame READ lastFrame WRITE setLastFrame NOTIFY intervalChanged);
-	Q_PROPERTY(bool playbackActive READ isPlaybackActive WRITE setAnimationPlayback NOTIFY playbackChanged);
+	OVITO_CLASS(AnimationSettings)
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(int time READ time WRITE setTime NOTIFY timeChanged)
+	Q_PROPERTY(int currentFrame READ currentFrame WRITE setCurrentFrame NOTIFY timeChanged)
+	Q_PROPERTY(bool singleFrame READ isSingleFrame NOTIFY intervalChanged)
+	Q_PROPERTY(int firstFrame READ firstFrame WRITE setFirstFrame NOTIFY intervalChanged)
+	Q_PROPERTY(int lastFrame READ lastFrame WRITE setLastFrame NOTIFY intervalChanged)
+	Q_PROPERTY(bool playbackActive READ isPlaybackActive WRITE setAnimationPlayback NOTIFY playbackChanged)
+#endif
 
 public:
 

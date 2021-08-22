@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -19,3 +19,43 @@
 //  governing rights and limitations.
 //
 ////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include <ovito/gui/qml/GUI.h>
+
+namespace Ovito {
+
+/**
+ * \brief Helper object for working around a mouse grabbing issue on the WebAssembly platform.
+ */
+class MouseGrabWorkaround : public QObject
+{
+	Q_OBJECT
+	QML_ELEMENT
+
+	Q_PROPERTY(QQuickItem* container READ container WRITE setContainer)
+
+public:
+
+	/// Constructor.
+	using QObject::QObject;
+
+	QQuickItem* container() const { return _container; }
+	void setContainer(QQuickItem* container) { _container = container; }
+
+	/// Actives the workaround, which means receiving mouse events will be disabled for all Qt Quick items. 
+	Q_INVOKABLE void setActive(bool active, QQuickItem* activeItem);
+	bool isActive() const { return _isActive; }
+
+private:
+
+	void disableMouseEventHandling(QQuickItem* item, QQuickItem* activeItem);
+	
+	bool _isActive = false;
+	QQuickItem* _container = nullptr;
+
+	std::vector<std::pair<QPointer<QQuickItem>, Qt::MouseButtons>> _savedState;
+};
+
+}	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/RefTargetListener.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/scene/SceneNode.h>
+#include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include "PipelineListItem.h"
 
 namespace Ovito {
@@ -38,8 +38,11 @@ namespace Ovito {
 class OVITO_GUIBASE_EXPORT PipelineListModel : public QAbstractListModel
 {
 	Q_OBJECT
-	Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject NOTIFY selectedItemChanged);
-	Q_PROPERTY(int selectedIndex READ selectedIndex WRITE setSelectedIndex NOTIFY selectedItemChanged);
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject NOTIFY selectedItemChanged)
+	Q_PROPERTY(int selectedIndex READ selectedIndex WRITE setSelectedIndex NOTIFY selectedItemChanged)
+#endif
 
 public:
 
@@ -56,7 +59,7 @@ public:
 	PipelineListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QObject* parent);
 
 	/// Returns the number of list items.
-	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return _items.size(); }
+	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return (int)_items.size(); }
 
 	/// Returns the data associated with a list entry.
 	virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
@@ -76,7 +79,7 @@ public:
 	/// Discards all list items.
 	void clear() {
 		if(_items.empty()) return;
-		beginRemoveRows(QModelIndex(), 0, _items.size() - 1);
+		beginRemoveRows(QModelIndex(), 0, (int)_items.size() - 1);
 		_items.clear();
 		_selectedPipeline.setTarget(nullptr);
 		endRemoveRows();

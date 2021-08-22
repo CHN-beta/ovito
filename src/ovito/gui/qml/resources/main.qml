@@ -76,12 +76,13 @@ ApplicationWindow {
 						objectName: "animationBar"
 					}
 				}
-			}			
+			}
 		}
 
 		Ui.CommandPanel {
 			id: commandPanel
 			SplitView.preferredWidth: 320
+			SplitView.minimumWidth: 100
 			SplitView.fillWidth: false
 			SplitView.fillHeight: true
 		}

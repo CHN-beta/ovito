@@ -64,8 +64,10 @@
               },
               environment: {
                   'QML_IMPORT_TRACE' : '0',
+                  'QT_DEBUG_PLUGINS' : '0',
                   'QT_QUICK_CONTROLS_STYLE' : 'Universal',
-                  'QT_QUICK_CONTROLS_UNIVERSAL_THEME' : 'Dark'
+                  'QT_QUICK_CONTROLS_UNIVERSAL_THEME' : 'Dark',
+                  'QT_LOGGING_RULES' : ''
               }
           });
           qtLoader.loadEmscriptenModule("@APPNAME@");

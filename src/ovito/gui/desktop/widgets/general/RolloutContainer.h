@@ -159,7 +159,7 @@ public:
 	/// Returns the preferred height for this widget, given a width.
 	virtual int heightForWidth(int w) const override;
 
-	Q_PROPERTY(int visiblePercentage READ visiblePercentage WRITE setVisiblePercentage);
+	Q_PROPERTY(int visiblePercentage READ visiblePercentage WRITE setVisiblePercentage)
 
 public Q_SLOTS:
 

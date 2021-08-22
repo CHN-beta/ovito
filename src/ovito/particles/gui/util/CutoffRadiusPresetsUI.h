@@ -72,7 +72,7 @@ public:
 
 public:
 
-	Q_PROPERTY(QComboBox comboBox READ comboBox);
+	Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 protected Q_SLOTS:
 

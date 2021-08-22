@@ -59,7 +59,7 @@ public:
 
 public:
 
-    Q_PROPERTY(Ovito::Particles::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
+    Q_PROPERTY(Ovito::Particles::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 private:
 

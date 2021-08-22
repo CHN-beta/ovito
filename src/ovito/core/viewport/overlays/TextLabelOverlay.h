@@ -39,7 +39,9 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 {
 	Q_OBJECT
 	OVITO_CLASS(TextLabelOverlay)
-	Q_CLASSINFO("DisplayName", "Text label");
+	Q_CLASSINFO("DisplayName", "Text label")
+
+	Q_PROPERTY(Ovito::PipelineSceneNode* sourceNode READ sourceNode WRITE setSourceNode)
 
 public:
 
@@ -73,10 +75,6 @@ public:
 		setOffsetX(offsetX() + delta.x());
 		setOffsetY(offsetY() + delta.y());
 	}
-
-public:
-
-	Q_PROPERTY(Ovito::PipelineSceneNode* sourceNode READ sourceNode WRITE setSourceNode);
 
 private:
 

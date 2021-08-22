@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 
 namespace Ovito {
@@ -34,7 +35,9 @@ namespace Ovito {
 class ViewportsPanel : public QQuickItem
 {
 	Q_OBJECT
-	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfiguration NOTIFY viewportConfigurationReplaced);
+	QML_ELEMENT
+
+	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfiguration NOTIFY viewportConfigurationReplaced)
 
 public:
 

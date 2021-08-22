@@ -89,10 +89,10 @@ public:
 
 public:
 
-	Q_PROPERTY(SpinnerWidget spinner READ spinner);
-	Q_PROPERTY(QLineEdit textBox READ textBox);
-	Q_PROPERTY(QLabel label READ label);
-	Q_PROPERTY(QAbstractButton animateButton READ animateButton);
+	Q_PROPERTY(SpinnerWidget spinner READ spinner)
+	Q_PROPERTY(QLineEdit textBox READ textBox)
+	Q_PROPERTY(QLabel label READ label)
+	Q_PROPERTY(QAbstractButton animateButton READ animateButton)
 
 public Q_SLOTS:
 

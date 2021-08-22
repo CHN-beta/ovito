@@ -55,9 +55,12 @@ class OVITO_CORE_EXPORT DataSet : public RefTarget
 {
 	Q_OBJECT
 	OVITO_CLASS(DataSet)
-	Q_PROPERTY(Ovito::AnimationSettings* animationSettings READ animationSettings WRITE setAnimationSettings NOTIFY animationSettingsReplaced);
-	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced);
-	Q_PROPERTY(Ovito::UndoStack* undoStack READ undoStackPtr CONSTANT);
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::AnimationSettings* animationSettings READ animationSettings WRITE setAnimationSettings NOTIFY animationSettingsReplaced)
+	Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
+	Q_PROPERTY(Ovito::UndoStack* undoStack READ undoStackPtr CONSTANT)
+#endif
 
 public:
 

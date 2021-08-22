@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,9 @@ class OVITO_CORE_EXPORT RefTarget : public RefMaker
 	Q_OBJECT
 	OVITO_CLASS(RefTarget)
 
+#ifdef OVITO_QML_GUI
 	Q_PROPERTY(QString objectTitle READ objectTitle NOTIFY objectTitleChanged)
+#endif
 
 protected:
 
@@ -150,8 +152,10 @@ Q_SIGNALS:
 	/// This Qt signal is used to communicate with the dependents of this RefTarget.
 	void objectEvent(RefTarget* sender, const ReferenceEvent& event);
 
+#ifdef OVITO_QML_GUI
 	/// This Qt signal is emitted whenever the value returned by the objectTitle() method changes.
 	void objectTitleChanged();
+#endif
 
 public:
 

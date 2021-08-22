@@ -39,8 +39,8 @@ void ParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTar
 		if(oldTarget) oldTarget->unsetObjectEditingFlag();
 		if(newTarget) newTarget->setObjectEditingFlag();
 		updatePropertyField();
-		updateUI();
 		Q_EMIT editObjectReplaced();
+		updateUI();
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -53,6 +53,7 @@ bool ParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
 		// The edited object has changed -> update value shown in UI.
 		updateUI();
+		Q_EMIT editObjectModified();
 	}
 
 #if 0

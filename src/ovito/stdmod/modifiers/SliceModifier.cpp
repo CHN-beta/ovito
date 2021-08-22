@@ -362,5 +362,33 @@ void SliceModifier::evaluateSynchronous(TimePoint time, ModifierApplication* mod
 	}
 }
 
+/******************************************************************************
+* Moves the plane along its current normal vector to position in the center of the simulation cell. 
+******************************************************************************/
+void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp)
+{
+	if(!modApp) return;
+
+	// Get the simulation cell from the input object to center the slicing plane in
+	// the center of the simulation cell.
+	const PipelineFlowState& input = modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+	if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+
+		FloatType centerDistance;
+		if(!reducedCoordinates()) {
+			Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
+			centerDistance = normal().safelyNormalized().dot(centerPoint - Point3::Origin());
+		}
+		else {
+			if(!normal().isZero())
+				centerDistance = normal().dot(Vector3(0.5, 0.5, 0.5));
+			else
+				centerDistance = distance();
+		}
+
+		setDistance(centerDistance);
+	}
+}
+
 }	// End of namespace
 }	// End of namespace

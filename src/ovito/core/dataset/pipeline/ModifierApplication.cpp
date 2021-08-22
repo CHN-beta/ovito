@@ -99,29 +99,37 @@ TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationReque
 ******************************************************************************/
 bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled && (source == modifier() || source == modifierGroup())) {
-		// If modifier provides animation frames, the animation interval might change when the
-		// modifier gets enabled/disabled.
-		if(!isBeingLoaded())
-			notifyDependents(ReferenceEvent::AnimationFramesChanged);
+	if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
+		if(source == modifier() || source == modifierGroup()) {
+			// If modifier provides animation frames, the animation interval might change when the
+			// modifier gets enabled/disabled.
+			if(!isBeingLoaded())
+				notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-		if(!modifierAndGroupEnabled()) {
-			// Ignore modifier's status if it is currently disabled.
-			if(!modifierGroup() || modifierGroup()->isEnabled())
-				setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier is currently turned off.")));
-			else
-				setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier group is currently turned off.")));
-			// Also clear pipeline cache in order to reduce memory footprint when modifier is disabled.
-			pipelineCache().invalidate(TimeInterval::empty(), true);
+			if(!modifierAndGroupEnabled()) {
+				// Ignore modifier's status if it is currently disabled.
+				if(!modifierGroup() || modifierGroup()->isEnabled())
+					setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier is currently turned off.")));
+				else
+					setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier group is currently turned off.")));
+				// Also clear pipeline cache in order to reduce memory footprint when modifier is disabled.
+				pipelineCache().invalidate(TimeInterval::empty(), true);
+			}
+
+			// Manually generate target changed event when modifier group is being enabled/disabled.
+			// That's because events from the group are not automatically propagated.
+			if(source == modifierGroup())
+				notifyTargetChanged();
+
+			// Propagate enabled/disabled notification events from the modifier or the modifier group.
+			return true;
 		}
-
-		// Manually generate target changed event when modifier group is being enabled/disabled.
-		// That's because events from the group are not automatically propagated.
-		if(source == modifierGroup())
-			notifyTargetChanged();
-
-		// Propagate enabled/disabled notification events from the modifier or the modifier group.
-		return true;
+		else if(source == input()) {
+			// Inform modifier that the input state has changed if the immediately following input stage was disabled.
+			// This is necessary, because we don't receive a PreliminaryStateAvailable signal in this case.
+ 			if(modifier())
+				modifier()->notifyDependents(ReferenceEvent::ModifierInputChanged);
+		}
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged && source == modifier()) {
 		return true;
@@ -160,6 +168,12 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 		if(modifier())
 			modifier()->notifyDependents(ReferenceEvent::ModifierInputChanged);
 	}
+#ifdef OVITO_QML_GUI
+	else if(event.type() == ReferenceEvent::ModifierInputChanged && source == modifier()) {
+		// Inform the QML GUI that the modifier's input has changed.
+		Q_EMIT modifierInputChanged();
+	}
+#endif
 	return CachingPipelineObject::referenceEvent(source, event);
 }
 
@@ -224,6 +238,12 @@ void ModifierApplication::notifyDependentsImpl(const ReferenceEvent& event)
 		// Invalidate cached results when this modifier application or the modifier changes.
 		pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
 	}
+#ifdef OVITO_QML_GUI
+	else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
+		// Inform the QML GUI that the modifier's results are available.
+		Q_EMIT modifierResultsComplete();
+	}
+#endif
 	CachingPipelineObject::notifyDependentsImpl(event);
 }
 

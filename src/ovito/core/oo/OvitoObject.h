@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,8 +57,9 @@ namespace Ovito {
 class OVITO_CORE_EXPORT OvitoObject : public QObject
 {
 	Q_OBJECT
-	Q_PROPERTY(QString className READ className CONSTANT);
-	Q_PROPERTY(QString pluginId READ pluginId CONSTANT);
+
+	Q_PROPERTY(QString className READ className CONSTANT)
+	Q_PROPERTY(QString pluginId READ pluginId CONSTANT)
 
 public:
 

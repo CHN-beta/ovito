@@ -23,10 +23,12 @@
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/gui/qml/mainwin/MainWindow.h>
 #include <ovito/gui/qml/mainwin/ViewportsPanel.h>
+#include <ovito/gui/qml/mainwin/MouseGrabWorkaround.h>
 #include <ovito/gui/qml/dataset/WasmFileManager.h>
 #include <ovito/gui/qml/viewport/QuickViewportWindow.h>
 #include <ovito/gui/qml/properties/ParameterUI.h>
 #include <ovito/gui/qml/properties/RefTargetListParameterUI.h>
+#include <ovito/gui/qml/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/qml/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
@@ -63,6 +65,7 @@
 		Q_IMPORT_PLUGIN(QtQuickLayoutsPlugin) 	// QtQuick.Layouts
 		Q_IMPORT_PLUGIN(QtQuickTemplates2Plugin)// QtQuick.Templates
 		Q_IMPORT_PLUGIN(QtQuick_WindowPlugin) 	// QtQuick.Window
+		Q_IMPORT_PLUGIN(QtQmlLabsModelsPlugin) 	// Qt.labs.qmlmodels
 		Q_IMPORT_PLUGIN(QSvgIconPlugin) 		// SVG icon engine plugin
 	}
 	
@@ -141,24 +144,32 @@ bool WasmApplication::startupApplication()
 	ovito_static_plugin_Particles();
 #endif
 
-	// Make the C++ classes available as a Qt Quick items in QML. 
+	// Make these C++ classes available as a Qt Quick items in QML. 
 	qmlRegisterType<MainWindow>("org.ovito", 1, 0, "MainWindow");
 	qmlRegisterType<ViewportsPanel>("org.ovito", 1, 0, "ViewportsPanel");
 	qmlRegisterType<QuickViewportWindow>("org.ovito", 1, 0, "QuickViewportWindow");
-	qmlRegisterUncreatableType<Viewport>("org.ovito", 1, 0, "Viewport", tr("Viewports cannot be created from QML."));
-	qmlRegisterSingletonType<ViewportSettings>("org.ovito", 1, 0, "ViewportSettings", [](QQmlEngine* eng, QJSEngine*) -> QObject* {
-		eng->setObjectOwnership(&ViewportSettings::getSettings(), QQmlEngine::CppOwnership);
-		return &ViewportSettings::getSettings();
-	});
-	qmlRegisterUncreatableType<ModifierListModel>("org.ovito", 1, 0, "ModifierListModel", tr("ModifierListModel cannot be created from QML."));
-	qmlRegisterUncreatableType<PipelineListModel>("org.ovito", 1, 0, "PipelineListModel", tr("PipelineListModel cannot be created from QML."));
-	qmlRegisterUncreatableType<PipelineListItem>("org.ovito", 1, 0, "PipelineListItem", tr("PipelineListItem cannot be created from QML."));
-	qmlRegisterUncreatableType<RefTarget>("org.ovito", 1, 0, "RefTarget", tr("RefTarget cannot be created from QML."));
-	qmlRegisterUncreatableType<FileSource>("org.ovito", 1, 0, "FileSource", tr("FileSource cannot be created from QML."));
-	qmlRegisterUncreatableType<ParameterUnit>("org.ovito", 1, 0, "ParameterUnit", tr("ParameterUnit cannot be created from QML."));
+	qmlRegisterUncreatableType<Viewport>("org.ovito", 1, 0, "Viewport", {});
+	qmlRegisterUncreatableType<ViewportSettings>("org.ovito", 1, 0, "ViewportSettings", {});
+	qmlRegisterUncreatableType<ModifierListModel>("org.ovito", 1, 0, "ModifierListModel", {});
+	qmlRegisterUncreatableType<PipelineListModel>("org.ovito", 1, 0, "PipelineListModel", {});
+	qmlRegisterUncreatableType<PipelineListItem>("org.ovito", 1, 0, "PipelineListItem", {});
+	qmlRegisterUncreatableType<RefTarget>("org.ovito", 1, 0, "RefTarget", {});
+	qmlRegisterUncreatableType<FileSource>("org.ovito", 1, 0, "FileSource", {});
+	qmlRegisterUncreatableType<ParameterUnit>("org.ovito", 1, 0, "ParameterUnit", {});
 	qmlRegisterType<ParameterUI>("org.ovito", 1, 0, "ParameterUI");
 	qmlRegisterType<RefTargetListParameterUI>("org.ovito", 1, 0, "RefTargetListParameterUI");
+	qmlRegisterType<DataObjectReferenceParameterUI>("org.ovito", 1, 0, "DataObjectReferenceParameterUI");
 	qmlRegisterType<ModifierDelegateParameterUI>("org.ovito", 1, 0, "ModifierDelegateParameterUI");
+	qmlRegisterType<MouseGrabWorkaround>("org.ovito", 1, 0, "MouseGrabWorkaround");
+
+	// Make the C++ ViewportSettings class available as a singleton in QML. 
+	qmlRegisterSingletonInstance("org.ovito", 1, 0, "ViewportSettings", &ViewportSettings::getSettings());
+
+#ifdef OVITO_DEBUG
+	// A common cause of bugs in QML applications is accidentally overwriting bindings with static values from JavaScript statements. 
+	// To help tracking down problems of this kind, the QML engine is able to emit messages whenever a binding is lost due to imperative assignments.
+	QLoggingCategory::setFilterRules(QStringLiteral("qt.qml.binding.removal.info=true"));
+#endif
 
 	// Select our own Qt Quick style (located in the resources/OvitoStyle/ directory).
 	QQuickStyle::setStyle("OvitoStyle");

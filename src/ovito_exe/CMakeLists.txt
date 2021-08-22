@@ -59,6 +59,7 @@ ELSE()
 		${OVITO_QT_MAJOR_VERSION}::QuickControls2Impl 
 		${OVITO_QT_MAJOR_VERSION}::QuickLayouts
 		${OVITO_QT_MAJOR_VERSION}::QuickTemplates2 
+		${OVITO_QT_MAJOR_VERSION}::LabsQmlModels
 		${OVITO_QT_MAJOR_VERSION}::Svg)
 	IF(NOT OVITO_DISABLE_THREADING)
 		TARGET_LINK_LIBRARIES(Ovito PRIVATE ${OVITO_QT_MAJOR_VERSION}::QmlWorkerScript) 
@@ -152,6 +153,7 @@ IF(EMSCRIPTEN)
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Layouts/libqquicklayoutsplugin.a" # QtQuick.Layouts
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Templates/libqtquicktemplates2plugin.a" # QtQuick.Templates
 		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/QtQuick/Window/libquickwindow.a" # QtQuick.Window
+		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/qml/Qt/labs/qmlmodels/liblabsmodelsplugin.a" # Qt.labs.qmlmodels
 #		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/plugins/iconengines/libqsvgicon.a"		# SVG Icon engine plugin
 #		"${QT_TOOLCHAIN_RELOCATABLE_INSTALL_PREFIX}/plugins/imageformats/libqsvg.a"			# SVG image format plugin
 	)

@@ -7,7 +7,7 @@ Spinner {
 
 	from: Math.max(parameterUI.minParameterValue, -(Math.pow(2, 31) - 1))
 	to: Math.min(parameterUI.maxParameterValue, Math.pow(2, 31) - 1)
-	decimals: 100
+	decimals: 12
 
 	property alias propertyField: parameterUI.propertyName
 
@@ -17,7 +17,5 @@ Spinner {
 	}
 	parameterUnit: parameterUI.parameterUnit
 
-	onValueModified: { 
-		parameterUI.propertyValue = value; 
-	}
+	onValueModified: parameterUI.propertyValue = value;
 }

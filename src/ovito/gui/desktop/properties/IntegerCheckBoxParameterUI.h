@@ -85,7 +85,7 @@ public:
 
 public:
 
-	Q_PROPERTY(QCheckBox checkBox READ checkBox);
+	Q_PROPERTY(QCheckBox checkBox READ checkBox)
 
 public Q_SLOTS:
 

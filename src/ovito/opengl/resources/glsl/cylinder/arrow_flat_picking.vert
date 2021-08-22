@@ -44,9 +44,10 @@ void main()
 		view_dir = view_dir_eye_pos - base;
 
 	// Build local coordinate system in object space.
-    mat2x3 uv_tm;
+    mat3 uv_tm;
 	uv_tm[0] = head - base;
     uv_tm[1] = normalize(cross(view_dir, uv_tm[0])) * radius;
+    uv_tm[2] = vec3(0);
 
     vec2 vpos;
     float arrowHeadRadius = 2.5;
@@ -68,7 +69,7 @@ void main()
     }
 
 	// Project corner vertex.
-    gl_Position = modelview_projection_matrix * vec4(base + uv_tm * vpos, 1.0);
+    gl_Position = modelview_projection_matrix * vec4(base + uv_tm * vec3(vpos, 0.0), 1.0);
 
     // Compute color from object ID.
     color_fs = pickingModeColor(gl_InstanceID);

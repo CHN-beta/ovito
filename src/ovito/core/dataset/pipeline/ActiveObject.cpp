@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,6 +63,20 @@ void ActiveObject::propertyChanged(const PropertyFieldDescriptor& field)
 
     RefTarget::propertyChanged(field);
 }
+
+#ifdef OVITO_QML_GUI
+/******************************************************************************
+* Sends an event to all dependents of this RefTarget.
+******************************************************************************/
+void ActiveObject::notifyDependentsImpl(const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::ObjectStatusChanged) {
+		// Inform the QML GUI that the object's status has changed.
+		Q_EMIT objectStatusChanged();
+	}
+	RefTarget::notifyDependentsImpl(event);
+}
+#endif
 
 /******************************************************************************
 * Increments the internal task counter and notifies the UI that this 

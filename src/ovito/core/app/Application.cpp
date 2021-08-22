@@ -204,7 +204,7 @@ bool Application::initialize()
 	std::setlocale(LC_ALL, "C");
 
 	// Suppress console messages "qt.network.ssl: QSslSocket: cannot resolve ..."
-	qputenv("QT_LOGGING_RULES", "qt.network.ssl.warning=false");
+	QLoggingCategory::setFilterRules(QStringLiteral("qt.network.ssl.warning=false"));
 
 	// Register our floating-point data type with the Qt type system.
 	qRegisterMetaType<FloatType>("FloatType");

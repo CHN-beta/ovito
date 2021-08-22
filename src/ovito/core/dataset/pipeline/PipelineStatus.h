@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,13 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT PipelineStatus
 {
+	Q_GADGET
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(QString text READ text)
+	Q_PROPERTY(int type READ type)
+#endif
+
 public:
 
 	enum StatusType {
@@ -39,6 +46,7 @@ public:
 		Warning,		//< Indicates that a modifier has issued a warning.
 		Error			//< Indicates that the evaluation failed.
 	};
+	Q_ENUMS(StatusType);
 
 	/// Default constructor that creates a status object with status StatusType::Success and an empty info text.
 	PipelineStatus() = default;
@@ -77,8 +85,8 @@ private:
 	/// A human-readable string describing the status.
 	QString _text;
 
-	friend SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s);
-	friend LoadStream& operator>>(LoadStream& stream, PipelineStatus& s);
+	friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s);
+	friend OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, PipelineStatus& s);
 };
 
 /// \brief Writes a status object to a file stream.
@@ -86,43 +94,17 @@ private:
 /// \param s The status to write to the output stream \a stream.
 /// \return The output stream \a stream.
 /// \relates PipelineStatus
-inline SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s)
-{
-	stream.beginChunk(0x02);
-	stream << s._type;
-	stream << s._text;
-	stream.endChunk();
-	return stream;
-}
+OVITO_CORE_EXPORT extern SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s);
 
 /// \brief Reads a status object from a binary input stream.
 /// \param stream The input stream.
 /// \param s Reference to a variable where the parsed data will be stored.
 /// \return The input stream \a stream.
 /// \relates PipelineStatus
-inline LoadStream& operator>>(LoadStream& stream, PipelineStatus& s)
-{
-	quint32 version = stream.expectChunkRange(0x0, 0x02);
-	stream >> s._type;
-	stream >> s._text;
-	if(version <= 0x01)
-		stream >> s._text;
-	stream.closeChunk();
-	return stream;
-}
+OVITO_CORE_EXPORT extern LoadStream& operator>>(LoadStream& stream, PipelineStatus& s);
 
 /// \brief Writes a status object to the log stream.
 /// \relates PipelineStatus
-inline QDebug operator<<(QDebug debug, const PipelineStatus& s)
-{
-	switch(s.type()) {
-	case PipelineStatus::Success: debug << "Success"; break;
-	case PipelineStatus::Warning: debug << "Warning"; break;
-	case PipelineStatus::Error: debug << "Error"; break;
-	}
-	if(s.text().isEmpty() == false)
-		debug << s.text();
-	return debug;
-}
+OVITO_CORE_EXPORT extern QDebug operator<<(QDebug debug, const PipelineStatus& s);
 
 }	// End of namespace

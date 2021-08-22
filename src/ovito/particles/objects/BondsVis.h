@@ -71,8 +71,8 @@ public:
 
 public:
 
-    Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
-    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality);
+    Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality)
 
 protected:
 

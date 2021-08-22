@@ -39,6 +39,13 @@ class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 	Q_OBJECT
 	OVITO_CLASS(ParticleType)
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(FloatType radius READ radius WRITE setRadius NOTIFY propertyValueChanged)
+	Q_PROPERTY(FloatType vdwRadius READ vdwRadius WRITE setVdwRadius NOTIFY propertyValueChanged)
+	Q_PROPERTY(Ovito::Particles::ParticlesVis::ParticleShape shape READ shape WRITE setShape NOTIFY propertyValueChanged)
+	Q_PROPERTY(FloatType mass READ mass WRITE setMass NOTIFY propertyValueChanged)
+#endif
+
 public:
 
 	enum PredefinedParticleType {

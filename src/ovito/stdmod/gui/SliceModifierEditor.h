@@ -60,7 +60,7 @@ protected Q_SLOTS:
 	void onAlignViewToPlane();
 
 	/// Aligns the normal of the slicing plane with one of the coordinate axes.
-	void onAlignNormalWidthAxis(const QString& link);
+	void onAlignNormalWithAxis(const QString& link);
 
 	/// Moves the plane to the center of the simulation box.
 	void onCenterOfBox();

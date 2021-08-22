@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Templates as T
 import QtQuick.Controls.impl
+import QtQuick.Controls.Universal
 
 T.CheckBox {
     id: control
@@ -11,38 +12,15 @@ T.CheckBox {
                              implicitContentHeight + topPadding + bottomPadding,
                              implicitIndicatorHeight + topPadding + bottomPadding)
 
-    padding: 6
-    spacing: 6
+    padding: 4 // Customized
+    spacing: 6 // Customized
 
-    // keep in sync with CheckDelegate.qml (shared CheckIndicator.qml was removed for performance reasons)
-    indicator: Rectangle {
-        implicitWidth: 18 // Customized
-        implicitHeight: 18 // Customized
+    property bool useSystemFocusVisuals: true
 
+    indicator: CheckIndicator {
         x: control.text ? (control.mirrored ? control.width - width - control.rightPadding : control.leftPadding) : control.leftPadding + (control.availableWidth - width) / 2
         y: control.topPadding + (control.availableHeight - height) / 2
-
-        color: control.down ? control.palette.light : control.palette.base
-        border.width: control.visualFocus ? 2 : 1
-        border.color: control.visualFocus ? control.palette.highlight : control.palette.mid
-
-        ColorImage {
-            x: (parent.width - width) / 2
-            y: (parent.height - height) / 2
-            defaultColor: "#353637"
-            color: control.palette.text
-            source: "qrc:/gui/OvitoStyle/images/check.png" // Customized
-            visible: control.checkState === Qt.Checked
-        }
-
-        Rectangle {
-            x: (parent.width - width) / 2
-            y: (parent.height - height) / 2
-            width: 16
-            height: 3
-            color: control.palette.text
-            visible: control.checkState === Qt.PartiallyChecked
-        }
+        control: control
     }
 
     contentItem: Text {
@@ -55,6 +33,6 @@ T.CheckBox {
         verticalAlignment: Text.AlignVCenter
 
         opacity: enabled ? 1.0 : 0.2
-        color: control.palette.windowText
+        color: control.Universal.foreground
     }
 }

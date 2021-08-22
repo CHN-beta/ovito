@@ -140,7 +140,11 @@ protected:
 	/// \note When this method is overridden in sub-classes then the base implementation of this method
 	///       should always be called from the new implementation to allow the base classes to handle
 	///       messages for their specific property fields.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) {}
+	virtual void propertyChanged(const PropertyFieldDescriptor& field) {
+#ifdef OVITO_QML_GUI
+		Q_EMIT propertyValueChanged();
+#endif
+	}
 
 	/// \brief Stops observing a RefTarget object.
 	/// \param target All references hold by the RefMaker to the this target are cleared.
@@ -216,6 +220,13 @@ private Q_SLOTS:
 
 	/// This Qt slot receives signals from the target objects referenced by this object.
 	void receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event);
+
+Q_SIGNALS:
+
+#ifdef OVITO_QML_GUI
+	/// This Qt signal is emitted whenever the value of a property field changes.
+	void propertyValueChanged();
+#endif
 
 public:
 

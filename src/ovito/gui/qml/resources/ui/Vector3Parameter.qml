@@ -12,7 +12,10 @@ Spinner {
 	property vector3d vectorValue
 	property int vectorComponent: 0
 
-	value: (vectorComponent == 0) ? vectorValue.x : ((vectorComponent == 1) ? vectorValue.y : vectorValue.z)
+	// First time initialization of the spinner's value.
+	Component.onCompleted: value = (vectorComponent == 0) ? vectorValue.x : ((vectorComponent == 1) ? vectorValue.y : vectorValue.z)
+	
+	// This signal handler is called when the program changes the parameter value.
 	onVectorValueChanged: value = (vectorComponent == 0) ? vectorValue.x : ((vectorComponent == 1) ? vectorValue.y : vectorValue.z)
 
 	ParameterUI on vectorValue {
@@ -20,6 +23,7 @@ Spinner {
 		editObject: propertyEditor.editObject
 	}
 
+	// This signal handler is called when the user enters a different value:
 	onValueModified: { 
 		var newVec = vectorValue;
 		if(vectorComponent == 0) newVec.x = value;

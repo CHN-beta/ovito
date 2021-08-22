@@ -4,17 +4,18 @@ import QtQuick.Controls
 AbstractButton {
     id: control
     property alias color: rect.color
+    property bool flat: false
 
     Universal.theme: activeFocus ? Universal.Light : undefined
 
-	signal colorModified()   //< interactive change only, NOT emitted if \e color property is set directly)
+	signal colorModified(color: color)   //< interactive change only, NOT emitted if \e color property is set directly)
 
     contentItem: Rectangle {
         id: rect
         implicitWidth: 64
         implicitHeight: 32
 
-        border.width: 2
+        border.width: control.flat ? 0 : 2
         border.color: !control.enabled ? control.Universal.baseLowColor :
                        control.activeFocus ? control.Universal.accent :
                        control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
@@ -40,8 +41,9 @@ AbstractButton {
             id: colorPickerPopup
             onColorValueChanged: {
                 if(popup.opened) {
-                    control.color = colorValue;
-                    colorModified();
+                    // Note: We only submit a change signal. We do NOT update the color displayed by the color picker widget.
+                    // This is the responsibility of the widget owner.
+                    colorModified(colorValue);
                 }
             }
         }

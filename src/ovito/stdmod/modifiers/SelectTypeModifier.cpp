@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -161,6 +161,58 @@ void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication
 
 	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
 }
+
+#ifdef OVITO_QML_GUI
+/******************************************************************************
+* This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract 
+* the list of element types from the input pipeline output state. 
+******************************************************************************/
+QVariantList SelectTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
+{
+	QVariantList list;
+	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+		// Populate types list based on the selected input property.
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		if(const PropertyContainer* container = state.getLeafObject(subject())) {
+			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+				for(const ElementType* type : inputProperty->elementTypes()) {
+					if(!type) continue;
+					list.push_back(QVariantMap({
+						{"checked", selectedTypeIDs().contains(type->numericId()) || selectedTypeNames().contains(type->name())}, 
+						{"id", type->numericId()}, 
+						{"name", type->nameOrNumericId()}, 
+						{"color", (QColor)type->color()}}));
+				}
+			}
+		}
+	}
+	return list;
+}
+
+/******************************************************************************
+* Toggles the selection state for the given element types.
+* This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
+******************************************************************************/
+void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const QString& elementTypeName, bool selectionState)
+{
+	if(selectionState) {
+		QSet<int> newSelectionSet = selectedTypeIDs();
+		newSelectionSet.insert(elementTypeId);
+		setSelectedTypeIDs(std::move(newSelectionSet));
+	}
+	else {
+		QSet<int> newSelectionSet = selectedTypeIDs();
+		if(newSelectionSet.remove(elementTypeId)) {
+			setSelectedTypeIDs(std::move(newSelectionSet));
+		}
+		else {
+			QSet<QString> newNamedSelectionSet = selectedTypeNames();
+			newNamedSelectionSet.remove(elementTypeName);
+			setSelectedTypeNames(std::move(newNamedSelectionSet));
+		}
+	}
+}
+#endif
 
 }	// End of namespace
 }	// End of namespace

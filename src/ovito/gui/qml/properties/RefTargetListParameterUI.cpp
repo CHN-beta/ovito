@@ -34,7 +34,6 @@ DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 ******************************************************************************/
 void RefTargetListParameterUI::onSelectionChanged()
 {
-//	openSubEditor();
 }
 
 /******************************************************************************
@@ -42,10 +41,6 @@ void RefTargetListParameterUI::onSelectionChanged()
 ******************************************************************************/
 void RefTargetListParameterUI::onEditObjectReplaced()
 {
-	// Get the currently selected index.
-//	QModelIndexList selection = _viewWidget->selectionModel()->selectedRows();
-//	int selectionIndex = !selection.empty() ? selection.front().row() : 0;
-
 	_targets.clear(this, PROPERTY_FIELD(targets));
 	_targetToRow.clear();
 	_rowToTarget.clear();
@@ -64,12 +59,6 @@ void RefTargetListParameterUI::onEditObjectReplaced()
 
 	if(_model)
 		_model->resetList();
-
-//	selectionIndex = std::min(selectionIndex, _model->rowCount() - 1);
-//	if(selectionIndex >= 0)
-//		_viewWidget->selectionModel()->select(_model->index(selectionIndex, 0), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-//	else
-//		_viewWidget->selectionModel()->clear();
 }
 
 /******************************************************************************
@@ -83,40 +72,6 @@ RefTarget* RefTargetListParameterUI::objectAtIndex(int index) const
 	OVITO_CHECK_OBJECT_POINTER(targets()[targetIndex]);
 	QJSEngine::setObjectOwnership(targets()[targetIndex], QJSEngine::CppOwnership);
 	return targets()[targetIndex];
-}
-
-/******************************************************************************
-* Returns the RefTarget that is currently selected in the UI.
-******************************************************************************/
-RefTarget* RefTargetListParameterUI::selectedObject() const
-{
-//	if(!_viewWidget) return nullptr;
-//	QModelIndexList selection = _viewWidget->selectionModel()->selectedRows();
-//	if(selection.empty()) return nullptr;
-//	return objectAtIndex(selection.front().row());
-	return nullptr;
-}
-
-/******************************************************************************
-* Selects the given sub-object in the list.
-******************************************************************************/
-int RefTargetListParameterUI::setSelectedObject(RefTarget* selObj)
-{
-#if 0
-	if(!_viewWidget) return -1;
-	OVITO_ASSERT(_targetToRow.size() == targets().size());
-	if(selObj != nullptr) {
-		for(int i = 0; i< targets().size(); i++) {
-			if(targets()[i] == selObj) {
-				int rowIndex = _targetToRow[i];
-				_viewWidget->selectionModel()->select(_model->index(rowIndex, 0), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-				return rowIndex;
-			}
-		}
-	}
-	_viewWidget->selectionModel()->clear();
-#endif
-	return -1;
 }
 
 /******************************************************************************
@@ -165,7 +120,6 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 		}
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			OVITO_ASSERT(false);
 			if(refevent.field() == propertyField()) {
 				int rowIndex = _targetToRow[refevent.index()];
 				if(refevent.oldTarget())
@@ -260,29 +214,6 @@ QVariant RefTargetListParameterUI::ListViewModel::data(const QModelIndex& index,
 }
 
 /******************************************************************************
-* Returns the header data under the given role for the given RefTarget.
-* Calls the RefTargetListParameterUI::getHeaderData() virtual method to obtain
-* the data from the parameter UI.
-******************************************************************************/
-QVariant RefTargetListParameterUI::ListViewModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-	if(orientation == Qt::Vertical) {
-
-		if(section >= owner()->_rowToTarget.size())
-			return QVariant();
-
-		int targetIndex = owner()->_rowToTarget[section];
-		OVITO_ASSERT(targetIndex < owner()->targets().size());
-
-		RefTarget* t = owner()->targets()[targetIndex];
-		return owner()->getVerticalHeaderData(t, section, role);
-	}
-	else {
-		return owner()->getHorizontalHeaderData(section, role);
-	}
-}
-
-/******************************************************************************
 * Returns the item flags for the given index.
 ******************************************************************************/
 Qt::ItemFlags RefTargetListParameterUI::ListViewModel::flags(const QModelIndex& index) const
@@ -298,21 +229,6 @@ Qt::ItemFlags RefTargetListParameterUI::ListViewModel::flags(const QModelIndex& 
 }
 
 /******************************************************************************
-* Sets the role data for the item at index to value.
-******************************************************************************/
-bool RefTargetListParameterUI::ListViewModel::setData(const QModelIndex& index, const QVariant& value, int role)
-{
-	if(!index.isValid() || index.row() >= owner()->_rowToTarget.size())
-		return QAbstractItemModel::setData(index, value, role);
-
-	int targetIndex = owner()->_rowToTarget[index.row()];
-	OVITO_ASSERT(targetIndex < owner()->targets().size());
-
-	RefTarget* t = owner()->targets()[targetIndex];
-	return owner()->setItemData(t, index, value, role);
-}
-
-/******************************************************************************
 * Returns the data stored under the given role for the given RefTarget.
 ******************************************************************************/
 QVariant RefTargetListParameterUI::getItemData(RefTarget* target, const QModelIndex& index, int role)
@@ -322,28 +238,6 @@ QVariant RefTargetListParameterUI::getItemData(RefTarget* target, const QModelIn
 			return QVariant::fromValue(static_cast<QObject*>(target));
 //			return target->objectTitle();
 		}
-	}
-	return {};
-}
-
-/******************************************************************************
-* Returns the header data under the given role.
-******************************************************************************/
-QVariant RefTargetListParameterUI::getVerticalHeaderData(RefTarget* target, int index, int role)
-{
-	if(role == Qt::DisplayRole) {
-		return QVariant(index);
-	}
-	return {};
-}
-
-/******************************************************************************
-* Returns the header data under the given role.
-******************************************************************************/
-QVariant RefTargetListParameterUI::getHorizontalHeaderData(int index, int role)
-{
-	if(role == Qt::DisplayRole) {
-		return QVariant(index);
 	}
 	return {};
 }

@@ -33,7 +33,7 @@ T.SpinBox {
     contentItem: TextField {
         id: textField
         z: 2
-        text: control.displayText
+//        text: control.displayText
 
         font: control.font
         color: control.palette.text

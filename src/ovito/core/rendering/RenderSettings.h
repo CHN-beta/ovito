@@ -41,6 +41,8 @@ class OVITO_CORE_EXPORT RenderSettings : public RefTarget
 	Q_OBJECT
 	OVITO_CLASS(RenderSettings)
 
+	Q_PROPERTY(QString imageFilename READ imageFilename WRITE setImageFilename)
+
 public:
 
 	/// This enumeration specifies the animation range that should be rendered.
@@ -74,10 +76,6 @@ public:
 	const QString& imageFilename() const { return imageInfo().filename(); }
 	/// Sets the output filename of the rendered image.
 	void setImageFilename(const QString& filename);
-
-public:
-
-	Q_PROPERTY(QString imageFilename READ imageFilename WRITE setImageFilename);
 
 private:
 

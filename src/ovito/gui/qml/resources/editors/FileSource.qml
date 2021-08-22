@@ -80,5 +80,11 @@ Ui.RolloutPanel {
 			}
 		}
 */
+
+		Text { text: "Status:" }
+		Ui.ObjectStatusWidget {
+			Layout.fillWidth: true
+			Layout.columnSpan: 2
+		}
 	}
 }

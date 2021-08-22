@@ -33,9 +33,10 @@ namespace Ovito {
 /**
  * \brief QML parameter modifier for exposing C++ object parameters.
  */
-class ParameterUI : public RefMaker, public QQmlPropertyValueSource
+class OVITO_GUI_EXPORT ParameterUI : public RefMaker, public QQmlPropertyValueSource
 {
 	Q_OBJECT
+	QML_ELEMENT
 	OVITO_CLASS(ParameterUI)
 
 	Q_INTERFACES(QQmlPropertyValueSource)
@@ -109,6 +110,9 @@ Q_SIGNALS:
 
 	/// This signal is emitted whenever the edit object of this parameter UI is replaced.
 	void editObjectReplaced();
+
+	/// This signal is emitted whenever the edit object of this parameter UI changes.
+	void editObjectModified();
 
 protected:
 

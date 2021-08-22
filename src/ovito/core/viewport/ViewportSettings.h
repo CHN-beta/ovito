@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,10 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ViewportSettings : public QObject
 {
 	Q_OBJECT
-	Q_PROPERTY(bool constrainCameraRotation READ constrainCameraRotation WRITE setConstrainCameraRotation NOTIFY settingsChanged);
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(bool constrainCameraRotation READ constrainCameraRotation WRITE setConstrainCameraRotation NOTIFY settingsChanged)
+#endif
 
 public:
 

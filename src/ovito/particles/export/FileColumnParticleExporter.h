@@ -58,7 +58,7 @@ public:
 
 public:
 
-	Q_PROPERTY(Ovito::Particles::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping);
+	Q_PROPERTY(Ovito::Particles::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
 
 private:
 

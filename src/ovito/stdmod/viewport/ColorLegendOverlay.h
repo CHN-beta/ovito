@@ -68,7 +68,7 @@ public:
 
 public:
 
-	Q_PROPERTY(Ovito::StdMod::ColorCodingModifier* modifier READ modifier WRITE setModifier);
+	Q_PROPERTY(Ovito::StdMod::ColorCodingModifier* modifier READ modifier WRITE setModifier)
 
 private:
 

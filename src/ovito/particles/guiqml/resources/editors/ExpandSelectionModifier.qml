@@ -73,5 +73,10 @@ Ui.RolloutPanel {
 			propertyField: "numberOfIterations"
 			Layout.fillWidth: true 
 		}
+		
+		Ui.ObjectStatusWidget {
+			Layout.fillWidth: true
+			Layout.columnSpan: 2
+		}
 	}
 }

@@ -17,10 +17,40 @@ Column {
 			anchors.fill: parent
 			columns: 2
 
-			Label { text: qsTr("Cutoff radius:"); }
-			Ui.FloatParameter { 
-				propertyField: "uniformCutoff"
+			GroupBox {
+				title: qsTr("Mode:")
+				Layout.columnSpan: 2
 				Layout.fillWidth: true 
+
+				ColumnLayout {
+					anchors.fill: parent
+
+					Ui.IntegerRadioButtonParameter { 
+						id: modeUniformCutoff
+						propertyField: "cutoffMode"
+						value: 0 // CreateBondsModifier::UniformCutoff
+						text: qsTr("Uniform cutoff:")
+					}
+					Ui.FloatParameter {
+						propertyField: "uniformCutoff"
+						Layout.fillWidth: true
+						Layout.leftMargin: 30
+						enabled: modeUniformCutoff.checked
+					}
+
+					Ui.IntegerRadioButtonParameter { 
+						id: modeTypeRadiusCutoff
+						propertyField: "cutoffMode"
+						value: 2 // CreateBondsModifier::TypeRadiusCutoff
+						text: qsTr("Van der Waals radii:")
+					}
+					Ui.BooleanCheckBoxParameter {
+						propertyField: "skipHydrogenHydrogenBonds"
+						Layout.fillWidth: true
+						Layout.leftMargin: 30
+						enabled: modeTypeRadiusCutoff.checked
+					}
+				}
 			}
 
 			Label { text: qsTr("Lower cutoff:"); }
@@ -33,6 +63,11 @@ Column {
 				propertyField: "onlyIntraMoleculeBonds"
 				Layout.columnSpan: 2
 			}
+
+			Ui.ObjectStatusWidget {
+				Layout.columnSpan: 2
+				Layout.fillWidth: true
+			}				
 		}
 	}
 

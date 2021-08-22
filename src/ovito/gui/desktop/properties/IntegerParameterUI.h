@@ -69,8 +69,8 @@ public:
 
 public:
 
-	Q_PROPERTY(int minValue READ minValue WRITE setMinValue);
-	Q_PROPERTY(int maxValue READ maxValue WRITE setMaxValue);
+	Q_PROPERTY(int minValue READ minValue WRITE setMinValue)
+	Q_PROPERTY(int maxValue READ maxValue WRITE setMaxValue)
 };
 
 }	// End of namespace

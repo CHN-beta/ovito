@@ -24,6 +24,9 @@
 
 
 #include <ovito/gui/qml/GUI.h>
+#include <ovito/gui/base/mainwin/PipelineListItem.h>
+#include <ovito/gui/base/mainwin/PipelineListModel.h>
+#include <ovito/gui/base/mainwin/ModifierListModel.h>
 #include <ovito/core/app/ApplicationService.h>
 #include <ovito/core/app/StandaloneApplication.h>
 
@@ -78,5 +81,25 @@ private:
 	/// The global Qml engine.
 	QQmlApplicationEngine* _qmlEngine = nullptr;
 };
+
+#if 0
+// Registration of classes from the Core and GuiBase modules as QML types.
+// See https://doc.qt.io/qt-6/qtqml-cppintegration-definetypes.html
+#define OVITO_REGISTER_FOREIGN_QML_TYPE(name) \
+	struct name##_ForeignQMLType \
+	{ \
+		Q_GADGET \
+		QML_FOREIGN(name) \
+		QML_NAMED_ELEMENT(name) \
+		QML_UNCREATABLE("") \
+	};
+OVITO_REGISTER_FOREIGN_QML_TYPE(RefTarget)
+OVITO_REGISTER_FOREIGN_QML_TYPE(Viewport)
+OVITO_REGISTER_FOREIGN_QML_TYPE(ViewportSettings)
+OVITO_REGISTER_FOREIGN_QML_TYPE(ParameterUnit)
+OVITO_REGISTER_FOREIGN_QML_TYPE(PipelineListItem)
+OVITO_REGISTER_FOREIGN_QML_TYPE(PipelineListModel)
+OVITO_REGISTER_FOREIGN_QML_TYPE(ModifierListModel)
+#endif
 
 }	// End of namespace

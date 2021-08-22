@@ -77,8 +77,8 @@ public:
 
 public:
 
-	Q_PROPERTY(QLineEdit lineEdit READ lineEdit);
-	Q_PROPERTY(QWidget textBox READ textBox);
+	Q_PROPERTY(QLineEdit lineEdit READ lineEdit)
+	Q_PROPERTY(QWidget textBox READ textBox)
 
 public Q_SLOTS:
 

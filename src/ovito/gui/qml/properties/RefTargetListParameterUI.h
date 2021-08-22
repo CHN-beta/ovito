@@ -34,8 +34,9 @@ namespace Ovito {
 class RefTargetListParameterUI : public ParameterUI
 {
 	Q_OBJECT
+	QML_ELEMENT
 	OVITO_CLASS(RefTargetListParameterUI)
-    Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject)
+	
     Q_PROPERTY(QAbstractTableModel* model READ model CONSTANT)
 
 public:
@@ -50,12 +51,6 @@ public:
 
 	/// Returns a RefTarget from the list.
 	Q_INVOKABLE RefTarget* objectAtIndex(int index) const;
-
-	/// Returns the RefTarget that is currently selected in the UI.
-	RefTarget* selectedObject() const;
-
-	/// Selects the given sub-object in the list.
-	int setSelectedObject(RefTarget* selObj);
 
 	/// Informs the parameter UI that the given columns of all items have changed.
 	void updateColumns(int columnStartIndex, int columnEndIndex) { _model->updateColumns(columnStartIndex, columnEndIndex); }
@@ -83,19 +78,13 @@ protected:
 		/// Returns the data stored under the given role for the item referred to by the index.
 		virtual QVariant data(const QModelIndex &index, int role) const override;
 
-		/// Returns the data for the given role and section in the header with the specified orientation.
-		virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
-
 		/// Returns the item flags for the given index.
 		virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
-
-		/// Sets the role data for the item at index to value.
-		virtual bool setData(const QModelIndex& index, const QVariant& value, int role) override;
 
 		/// Returns the model's role names.
 		virtual QHash<int, QByteArray> roleNames() const override {
 			return { 
-				{ Qt::DisplayRole, "display" } 
+				{ Qt::DisplayRole, "reftarget" } 
 			};
 		}
 
@@ -146,24 +135,11 @@ protected:
 	/// for the Qt::DisplayRole.
 	virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role);
 
-	/// Sets the role data for the item at index to value.
-	virtual bool setItemData(RefTarget* target, const QModelIndex& index, const QVariant& value, int role) { return false; }
-
 	/// Returns the model/view item flags for the given entry.
 	virtual Qt::ItemFlags getItemFlags(RefTarget* target, const QModelIndex& index) { return Qt::ItemFlags(Qt::ItemIsSelectable) | Qt::ItemIsEnabled; }
 
 	/// Returns the number of columns for the table view. The default is 1.
 	virtual int tableColumnCount() { return 1; }
-
-	/// Returns the header data under the given role for the given RefTarget.
-	/// This method is part of the data model used by the list widget and can be overriden
-	/// by sub-classes.
-	virtual QVariant getHorizontalHeaderData(int index, int role);
-
-	/// Returns the header data under the given role for the given RefTarget.
-	/// This method is part of the data model used by the list widget and can be overriden
-	/// by sub-classes.
-	virtual QVariant getVerticalHeaderData(RefTarget* target, int index, int role);
 
 	/// The internal model used for the list view widget.
 	ListViewModel* _model = nullptr;

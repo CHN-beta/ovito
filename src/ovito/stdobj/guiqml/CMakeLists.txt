@@ -24,7 +24,8 @@
 OVITO_STANDARD_PLUGIN(StdObjGui
 	SOURCES
 		resources/stdobjgui.qrc
-		StdObjGui.cpp
+		StdObjGuiRegistrationService.cpp
+		PropertyReferenceParameterUI.cpp
 	PLUGIN_DEPENDENCIES 
 		StdObj
 	GUI_PLUGIN

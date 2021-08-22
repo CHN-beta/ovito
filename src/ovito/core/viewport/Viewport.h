@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,10 +42,12 @@ class OVITO_CORE_EXPORT Viewport : public RefTarget
 	Q_OBJECT
 	OVITO_CLASS(Viewport)
 
-	Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged);
-	Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged);
-	Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged);
-	Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged);
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged)
+	Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged)
+	Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged)
+	Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged)
+#endif
 
 public:
 

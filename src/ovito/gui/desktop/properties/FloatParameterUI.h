@@ -69,8 +69,8 @@ public:
 
 public:
 
-	Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue);
-	Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue);
+	Q_PROPERTY(FloatType minValue READ minValue WRITE setMinValue)
+	Q_PROPERTY(FloatType maxValue READ maxValue WRITE setMaxValue)
 };
 
 }	// End of namespace

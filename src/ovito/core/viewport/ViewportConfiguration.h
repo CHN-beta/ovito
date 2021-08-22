@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,8 +38,10 @@ class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 	Q_OBJECT
 	OVITO_CLASS(ViewportConfiguration)
 
-	Q_PROPERTY(Ovito::Viewport* activeViewport READ activeViewport WRITE setActiveViewport NOTIFY activeViewportChanged);
-	Q_PROPERTY(Ovito::Viewport* maximizedViewport READ maximizedViewport WRITE setMaximizedViewport NOTIFY maximizedViewportChanged);
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::Viewport* activeViewport READ activeViewport WRITE setActiveViewport NOTIFY activeViewportChanged)
+	Q_PROPERTY(Ovito::Viewport* maximizedViewport READ maximizedViewport WRITE setMaximizedViewport NOTIFY maximizedViewportChanged)
+#endif
 
 public:
 

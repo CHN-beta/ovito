@@ -38,9 +38,12 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 	Q_OBJECT
 	OVITO_CLASS(ElementType)
 
-	Q_PROPERTY(int numericId READ numericId CONSTANT)
-	Q_PROPERTY(QString name READ name CONSTANT)
-	Q_PROPERTY(QColor color READ color CONSTANT)
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(int numericId READ numericId WRITE setNumericId NOTIFY propertyValueChanged)
+	Q_PROPERTY(QString name READ name WRITE setName NOTIFY propertyValueChanged)
+	Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY propertyValueChanged)
+	Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY propertyValueChanged)
+#endif
 
 public:
 

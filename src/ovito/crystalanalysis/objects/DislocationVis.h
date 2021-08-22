@@ -125,7 +125,7 @@ public:
 
 public:
 
-	Q_PROPERTY(Ovito::CylinderPrimitive::ShadingMode shadingMode READ shadingMode WRITE setShadingMode);
+	Q_PROPERTY(Ovito::CylinderPrimitive::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
 

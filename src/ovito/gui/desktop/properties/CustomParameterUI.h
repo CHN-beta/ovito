@@ -78,7 +78,7 @@ public:
 
 public:
 
-	Q_PROPERTY(QWidget widget READ widget);
+	Q_PROPERTY(QWidget widget READ widget)
 
 public Q_SLOTS:
 

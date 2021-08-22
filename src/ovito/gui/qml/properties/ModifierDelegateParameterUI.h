@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,9 +34,11 @@ namespace Ovito {
 class ModifierDelegateParameterUI : public ParameterUI
 {
 	Q_OBJECT
+	QML_ELEMENT
 	OVITO_CLASS(ModifierDelegateParameterUI)
-	Q_PROPERTY(QString delegateType READ delegateType WRITE setDelegateType);
-	Q_PROPERTY(QStringList delegateList READ delegateList NOTIFY delegateListChanged);
+
+	Q_PROPERTY(QString delegateType READ delegateType WRITE setDelegateType)
+	Q_PROPERTY(QStringList delegateList READ delegateList NOTIFY delegateListChanged)
 
 public:
 

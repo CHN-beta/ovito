@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,6 +93,30 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 		else {
 			_statusBarTimer.stop();
 		}
+	}
+}
+
+/******************************************************************************
+* Executes the user-provided function and records all actions on the undo stack.
+******************************************************************************/
+void MainWindow::undoableOperation(const QString& actionDescription, const QJSValue& callbackFunction)
+{
+	OVITO_ASSERT(callbackFunction.isCallable());
+
+	try {
+		UndoableTransaction transaction(datasetContainer()->currentSet()->undoStack(), actionDescription);
+		QJSValue result = callbackFunction.call();
+		if(result.isError()) {
+			throw Exception(tr("Uncaught script exception at line %1 in file %2: %3")
+				.arg(result.property("lineNumber").toInt())
+				.arg(result.property("fileName").toString())
+				.arg(result.toString()));
+		}
+		transaction.commit();
+	}
+	catch(Exception& ex) {
+		ex.setContext(this);
+		ex.reportError();
 	}
 }
 

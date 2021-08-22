@@ -109,6 +109,9 @@ public:
 	/// Returns the slicing plane and the slab width.
 	std::tuple<Plane3, FloatType> slicingPlane(TimePoint time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
+	/// Moves the plane along its current normal vector to position in the center of the simulation cell. 
+	Q_INVOKABLE void centerPlaneInSimulationCell(ModifierApplication* modApp);
+
 protected:
 
 	/// This method is called by the system when the modifier has been inserted into a data pipeline.

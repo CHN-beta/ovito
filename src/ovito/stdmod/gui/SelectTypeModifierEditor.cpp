@@ -79,7 +79,7 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 	layout->addWidget(new QLabel(tr("Types:"), rollout));
 	layout->addWidget(_elementTypesBox);
 
-	// Doubel clicking a row toggles the selection state.
+	// Double-clicking a row toggles the selection state.
 	connect(_elementTypesBox, &QTableView::doubleClicked, model, [model](const QModelIndex& index) {
 		QVariant value  = model->data(index.siblingAtColumn(0), Qt::CheckStateRole);
 		model->setData(index.siblingAtColumn(0), (value.toInt() == Qt::Unchecked) ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);

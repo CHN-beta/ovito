@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -137,6 +137,12 @@ public:
 			if(type->numericId() == id) return type;
 		return nullptr;
 	}
+
+#ifdef OVITO_QML_GUI
+	/// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts 
+	/// from the cached pipeline output state after the modifier has been evaluated. 
+	Q_INVOKABLE QVector<qlonglong> getStructureCountsFromModifierResults(ModifierApplication* modApp) const;
+#endif
 
 protected:
 

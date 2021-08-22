@@ -30,20 +30,13 @@ uniform vec3 view_dir_eye_pos; // Either camera viewing direction (parallel) or 
 in vec3 base;
 in vec3 head;
 in float radius;
+uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
 
 void main()
 {
-	// Const array of vertex positions for the quad triangle strip.
-	const vec2 quad[4] = vec2[4](
-        vec2( 0.0, -1.0),
-        vec2( 1.0, -1.0),
-        vec2( 0.0,  1.0),
-        vec2( 1.0,  1.0)
-	);
-
     // The index of the quad corner.
     int corner = gl_VertexID;
 
@@ -55,12 +48,13 @@ void main()
 		view_dir = view_dir_eye_pos - base;
 
 	// Build local coordinate system in object space.
-    mat2x3 uv_tm;
-	uv_tm[0] = head - base;
+    mat3 uv_tm;
+	uv_tm[0] = 0.5 * (head - base);
     uv_tm[1] = normalize(cross(view_dir, uv_tm[0])) * radius;
+    uv_tm[2] = vec3(0);
 
 	// Project corner vertex.
-    gl_Position = modelview_projection_matrix * vec4(base + uv_tm * quad[corner], 1.0);
+    gl_Position = modelview_projection_matrix * vec4(base + uv_tm[0] + uv_tm * vec3(unit_quad_triangle_strip[corner], 0.0), 1.0);
 
     // Compute color from object ID.
     color_fs = pickingModeColor(gl_InstanceID);

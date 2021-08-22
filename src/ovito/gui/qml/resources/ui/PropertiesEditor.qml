@@ -6,8 +6,16 @@ import org.ovito
 ScrollView {
 	id: propertyEditor
 
+	/// The object currently being edited.
 	property RefTarget editObject
+
+	/// This property is only defined for compatibility with the SubobjectEditor component.
+	readonly property RefTarget parentEditObject: null
+
+	/// The C++ helper object, which handles events from the RefTarget being edited.
 	readonly property ParameterUI parameterUI: ParameterUI { editObject: propertyEditor.editObject }
+
+	// Do display elements outside of the scroll view.
 	clip: true
 
 	Flickable {
@@ -20,7 +28,7 @@ ScrollView {
 			bottomPadding: 2
 			spacing: 2
 
-			/// Displays the editors for the current object.
+			/// Displays the editor panels for the current object.
 			Repeater {
 				id: editorList 
 				model: parameterUI.editorComponentList
@@ -50,12 +58,13 @@ ScrollView {
 	}
 
 	background: Rectangle {
-		color: "#F0F0F0"
-
+		color: propertyEditor.palette.window
+/*
 		Text {
 			anchors.centerIn: parent
 			visible: editObject != null && column.visibleChildren.length <= 2 
 			text: "UI not implemented yet for this object"
 		}
+*/
 	}
 }

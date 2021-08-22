@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,10 @@ class OVITO_CORE_EXPORT DataSetContainer : public RefMaker
 {
 	Q_OBJECT
 	OVITO_CLASS(DataSetContainer)
-	Q_PROPERTY(Ovito::DataSet* currentSet READ currentSet WRITE setCurrentSet NOTIFY dataSetChanged);
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::DataSet* currentSet READ currentSet WRITE setCurrentSet NOTIFY dataSetChanged)
+#endif
 
 public:
 

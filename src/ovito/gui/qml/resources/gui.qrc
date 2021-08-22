@@ -13,16 +13,19 @@
         <file>ui/CommandPanel.qml</file>
         <file>ui/EmbeddedPropertiesEditor.qml</file>
         <file>ui/ErrorDialog.qml</file>
+        <file>ui/DataObjectReferenceParameter.qml</file>
         <file>ui/FloatParameter.qml</file>
         <file>ui/ImportDialog.qml</file>
         <file>ui/IntegerParameter.qml</file>
         <file>ui/IntegerRadioButtonParameter.qml</file>
         <file>ui/ModifierDelegateParameter.qml</file>        
         <file>ui/ModifierListBox.qml</file>        
+        <file>ui/ObjectStatusWidget.qml</file>
         <file>ui/ParameterLabel.qml</file>
         <file>ui/PipelineEditor.qml</file>
         <file>ui/PipelineTab.qml</file>
         <file>ui/PropertiesEditor.qml</file>
+        <file>ui/PropertyReferenceParameter.qml</file>
         <file>ui/QuickViewportWindow.qml</file>
         <file>ui/StatusBar.qml</file>
         <file>ui/RefTargetListParameter.qml</file>
@@ -31,15 +34,18 @@
         <file>ui/StringParameter.qml</file>
         <file>ui/SubobjectEditor.qml</file>
         <file>ui/SystemReportDialog.qml</file>
+        <file>ui/TableViewWithHeader.qml</file>
         <file>ui/ToolBar.qml</file>
         <file>ui/VariantComboBoxParameter.qml</file>
         <file>ui/Vector3Parameter.qml</file>
 
         <file>OvitoStyle/qmldir</file>
         <file>OvitoStyle/CheckBox.qml</file>
+        <file>OvitoStyle/CheckIndicator.qml</file>
         <file>OvitoStyle/ComboBox.qml</file>
         <file>OvitoStyle/GroupBox.qml</file>
         <file>OvitoStyle/SpinBox.qml</file>
+        <file>OvitoStyle/SplitView.qml</file>
         <file>OvitoStyle/ToolBar.qml</file>
         <file>OvitoStyle/ToolButton.qml</file>
 

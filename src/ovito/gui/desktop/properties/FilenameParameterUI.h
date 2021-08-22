@@ -67,7 +67,7 @@ public:
 
 public:
 
-	Q_PROPERTY(QPushButton selectorWidget READ selectorWidget);
+	Q_PROPERTY(QPushButton selectorWidget READ selectorWidget)
 
 Q_SIGNALS:
 
