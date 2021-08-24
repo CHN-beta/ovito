@@ -24,7 +24,7 @@ Control {
 
 	contentItem: ScrollView {
 		id: scrollView
-		implicitHeight: 40
+		implicitHeight: 48
 		clip: true
 		ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 

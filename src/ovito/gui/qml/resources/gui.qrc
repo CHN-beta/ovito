@@ -32,6 +32,7 @@
         <file>ui/RolloutPanel.qml</file>
         <file>ui/Spinner.qml</file>
         <file>ui/StringParameter.qml</file>
+        <file>ui/StringTextEditParameter.qml</file>
         <file>ui/SubobjectEditor.qml</file>
         <file>ui/SystemReportDialog.qml</file>
         <file>ui/TableViewWithHeader.qml</file>
@@ -44,6 +45,7 @@
         <file>OvitoStyle/CheckIndicator.qml</file>
         <file>OvitoStyle/ComboBox.qml</file>
         <file>OvitoStyle/GroupBox.qml</file>
+        <file>OvitoStyle/MultilineTextEdit.qml</file>
         <file>OvitoStyle/SpinBox.qml</file>
         <file>OvitoStyle/SplitView.qml</file>
         <file>OvitoStyle/ToolBar.qml</file>
