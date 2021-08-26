@@ -180,6 +180,13 @@ void SshConnection::processState()
         // Enable debug log output if OVITO_SSH_LOG environment variable is set.
         if(!qEnvironmentVariableIsEmpty("OVITO_SSH_LOG")) {
             ::ssh_set_log_level(SSH_LOG_TRACE);
+            ::ssh_set_log_callback([](int priority, const char *function, const char *buffer, void *userdata) {
+                OVITO_ASSERT(buffer);
+                qInfo().noquote().nospace() << "[" 
+                    << QTime::currentTime().toString(QStringLiteral("hh:mm:ss.zzz")) << ", " 
+                    << priority << "] " 
+                    << buffer;
+            });
             int verbosity = SSH_LOG_FUNCTIONS;
             setLibsshOption(SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
         }
