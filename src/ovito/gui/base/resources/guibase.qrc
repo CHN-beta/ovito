@@ -4,8 +4,11 @@
 
 	<file>mainwin/window_icon.png</file>
 	<file>mainwin/window_icon_16.png</file>
+	<file>mainwin/window_icon_16@2x.png</file>
 	<file>mainwin/window_icon_32.png</file>
+	<file>mainwin/window_icon_32@2x.png</file>
 	<file>mainwin/window_icon_48.png</file>
+	<file>mainwin/window_icon_48@2x.png</file>
 	<file>mainwin/window_icon_128.png</file>
 	<file>mainwin/window_icon_256.png</file>
 

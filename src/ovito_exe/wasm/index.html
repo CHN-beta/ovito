@@ -4,8 +4,12 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>OVITO for Web Technology Demo</title>
+    <style>
+      html, body { padding: 0; margin : 0; overflow:hidden; height: 100vh }
+    </style>
   </head>
   <body>
+    <!--
     <div style="display: block; width: 900px; margin: auto; margin-left: auto; margin-right: auto; font-family: sans-serif;">
       <img src="ovito_logo.png" width="48" height="48" style="display: inline-block; vertical-align: middle;"></img>
       <h2 style="display: inline-block; vertical-align: middle; ">OVITO Web Technology Demo</h2>
@@ -15,11 +19,12 @@
         If you have any suggestions, comments, or would like to get involved in the development of the web-based version of OVITO,
         please <a href="https://www.ovito.org/contact/">get in touch with us</a>.
       </p>
-      <iframe 
-        title="WebAssembly Window"
-        style="width: 900px; height: 600px; border: 1px solid gray;"
-        src="wasm_shell.html">
-      </iframe>
     </div>
+    -->
+    <iframe 
+      title="WebAssembly Window"
+      style="height:100%; width:100%; border: none;"
+      src="wasm_shell.html">
+    </iframe>
   </body>
 </html>

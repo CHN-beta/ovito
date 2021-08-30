@@ -70,7 +70,12 @@
                   'QT_LOGGING_RULES' : ''
               }
           });
-          qtLoader.loadEmscriptenModule("@APPNAME@");
+          if (self.SharedArrayBuffer) {
+            qtLoader.loadEmscriptenModule("@APPNAME@");
+          }
+          else {
+            qtLoader.loadEmscriptenModule("ovito_nothreads");
+          }
       }
     </script>
     <script type="text/javascript" src="qtloader.js"></script>

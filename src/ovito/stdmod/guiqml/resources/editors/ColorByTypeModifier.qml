@@ -7,8 +7,8 @@ import org.ovito
 import "qrc:/gui/ui" as Ui
 
 Ui.RolloutPanel {
-	title: qsTr("Select type")
-	helpTopicId: "manual:particles.modifiers.select_particle_type"
+	title: qsTr("Color by type")
+	helpTopicId: "manual:particles.modifiers.color_by_type"
 
 	// Update the displayed the list of types.
 	Connections {
@@ -36,10 +36,22 @@ Ui.RolloutPanel {
 		Label { text: qsTr("Property:") }
 		Ui.PropertyReferenceParameter {
 			propertyContainer: operateOn.selectedDataObject
-			propertyField: "sourceProperty" // PROPERTY_FIELD(SelectTypeModifier::sourceProperty)
+			propertyField: "sourceProperty" // PROPERTY_FIELD(ColorByTypeModifier::sourceProperty)
 			acceptablePropertyType: PropertyReferenceParameterUI.OnlyTypedProperties
 			componentsMode: PropertyReferenceParameterUI.ShowNoComponents
 			Layout.fillWidth: true
+		}
+
+		Ui.BooleanCheckBoxParameter { 
+			id: colorOnlySelected
+			propertyField: "colorOnlySelected" // PROPERTY_FIELD(ColorByTypeModifier::colorOnlySelected)
+			Layout.columnSpan: 2
+		}
+
+		Ui.BooleanCheckBoxParameter { 
+			propertyField: "clearSelection" // PROPERTY_FIELD(ColorByTypeModifier::clearSelection)
+			Layout.columnSpan: 2
+			enabled: colorOnlySelected.checked
 		}
 
 		Label { 
@@ -55,7 +67,7 @@ Ui.RolloutPanel {
 			columnWidths: [80,20]
 
 			model: TableModel {
-				TableModelColumn { display: "name"; checkState: "checked"; decoration: "color"; }
+				TableModelColumn { display: "name"; decoration: "color"; }
 				TableModelColumn { display: "id" }
 			}
 
@@ -64,21 +76,12 @@ Ui.RolloutPanel {
 					column: 0
 					RowLayout {
 						spacing: 2
-						// Type selection state
-						CheckBox {
-							padding: 0
-							checked: model.checkState
-							onToggled: {
-								mainWindow.undoableOperation("Select type", () => {
-									propertyEditor.editObject.setElementTypeSelectionState(control.model.rows[row].id, control.model.rows[row].name, checked);
-								}); 
-							}
-						}
 						// Type color
 						Rectangle {
 							implicitWidth: 16
 							implicitHeight: 16
 							color: model.decoration
+							Layout.margins: 4
 						}
 						// Type name
 						Text { 

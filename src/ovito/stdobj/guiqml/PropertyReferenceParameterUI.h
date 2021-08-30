@@ -42,7 +42,9 @@ class PropertyReferenceParameterUI : public ParameterUI
 	Q_PROPERTY(QVariant propertyContainer READ propertyContainer WRITE setPropertyContainer)
 	Q_PROPERTY(PropertyComponentsMode componentsMode READ componentsMode WRITE setComponentsMode)
 	Q_PROPERTY(AcceptablePropertyType acceptablePropertyType READ acceptablePropertyType WRITE setAcceptablePropertyType)
+	Q_PROPERTY(PropertyParameterType propertyParameterType READ propertyParameterType WRITE setPropertyParameterType)
 	Q_PROPERTY(QAbstractItemModel* model MEMBER _model CONSTANT)
+	Q_PROPERTY(QString currentPropertyName READ currentPropertyName)
 
 public:
 
@@ -58,6 +60,12 @@ public:
 		OnlyTypedProperties
 	};
     Q_ENUM(AcceptablePropertyType);
+
+    enum PropertyParameterType {
+		InputProperty,
+		OutputProperty
+	};
+    Q_ENUM(PropertyParameterType);
 
 	/// Constructor.
 	PropertyReferenceParameterUI() : _model(new Model(this)) {
@@ -93,6 +101,23 @@ public:
 			updateUI();
 		}
 	}
+
+	/// Returns whether the list contains input or output properties.
+	PropertyParameterType propertyParameterType() const { return _propertyParameterType; }
+
+	/// Sets whether the list contains input or output properties.
+	void setPropertyParameterType(PropertyParameterType paramType) { _propertyParameterType = paramType; }
+
+	/// Returns the display name of the currently selected property.
+	QString currentPropertyName() const;
+
+	/// Updates the displayed value in the UI.
+	virtual void updateUI() override;
+
+Q_SIGNALS:
+
+	/// This signal is emitted whenever a different property becomes the currently selected property.
+	void currentPropertyNameChanged();
 
 private:
 
@@ -148,10 +173,13 @@ protected:
 	Model* _model;
 
 	/// Controls whether the model should list each component of a property separately.
-	PropertyComponentsMode _componentsMode = ShowNoComponents;
+	PropertyComponentsMode _componentsMode = ShowOnlyComponents;
 
 	/// Controls which kinds of properties the user can choose from.
 	AcceptablePropertyType _acceptablePropertyType = AllProperties;
+
+	/// Controls whether the list should contain input or output properties.
+	PropertyParameterType _propertyParameterType = InputProperty;
 };
 
 }	// End of namespace

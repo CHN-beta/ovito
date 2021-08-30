@@ -37,7 +37,7 @@ QString MainWindowInterface::generateSystemReport()
 	QString text;
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
 	stream << "======= System info =======\n";
-	stream << "Date: " << QDateTime::currentDateTime().toString() << "\n";
+	stream << "Current date: " << QDateTime::currentDateTime().toString() << "\n";
 	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #if defined(Q_OS_LINUX)
@@ -59,6 +59,9 @@ QString MainWindowInterface::generateSystemReport()
 	stream << "Processor architecture: " << (QT_POINTER_SIZE*8) << "-bit" << "\n";
 	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
 	stream << "Qt framework version: " << QT_VERSION_STR << "\n";
+#ifdef OVITO_DISABLE_THREADING
+	stream << "Multi-threading: disabled\n";
+#endif
 	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
 	// Let the plugin class add their information to their system report.
 	for(Plugin* plugin : PluginManager::instance().plugins()) {

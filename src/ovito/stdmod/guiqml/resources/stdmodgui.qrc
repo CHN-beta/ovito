@@ -2,6 +2,7 @@
     <qresource prefix="/StdMod">
         <file>editors/AssignColorModifier.qml</file>
         <file>editors/ClearSelectionModifier.qml</file>
+        <file>editors/ColorByTypeModifier.qml</file>
         <file>editors/ColorCodingModifier.qml</file>
         <file>editors/ComputePropertyModifier.qml</file>
         <file>editors/DeleteSelectedModifier.qml</file>

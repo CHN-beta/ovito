@@ -81,6 +81,7 @@ protected:
 	/// The RefTarget implementation of this virtual method generates a ReferenceEvent::ReferenceChanged notification event
 	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override {
 		notifyDependentsImpl(ReferenceFieldEvent(ReferenceEvent::ReferenceChanged, this, &field, oldTarget, newTarget, listIndex));
+		RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 	}
 
 	/// \brief Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
@@ -99,6 +100,7 @@ protected:
 	/// The RefTarget implementation of this virtual method generates a ReferenceEvent::ReferenceAdded notification event
 	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override {
 		notifyDependentsImpl(ReferenceFieldEvent(ReferenceEvent::ReferenceAdded, this, &field, nullptr, newTarget, listIndex));
+		RefMaker::referenceInserted(field, newTarget, listIndex);
 	}
 
 	/// \brief Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
@@ -117,6 +119,7 @@ protected:
 	/// The RefTarget implementation of this virtual method generates a ReferenceEvent::ReferenceRemoved notification event
 	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) override {
 		notifyDependentsImpl(ReferenceFieldEvent(ReferenceEvent::ReferenceRemoved, this, &field, oldTarget, nullptr, listIndex));
+		RefMaker::referenceRemoved(field, oldTarget, listIndex);
 	}
 
 	/// \brief Handles a notification event from a RefTarget referenced by this object.

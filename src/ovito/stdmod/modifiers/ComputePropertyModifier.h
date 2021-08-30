@@ -42,6 +42,10 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierDelegate : public ModifierDeleg
 	Q_OBJECT
 	OVITO_CLASS(ComputePropertyModifierDelegate)
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
+#endif
+
 protected:
 
 	/// Constructor.
@@ -176,6 +180,11 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 	Q_CLASSINFO("Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
 	Q_CLASSINFO("ModifierCategory", "Modification");
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(int propertyComponentCount READ propertyComponentCount WRITE setPropertyComponentCount NOTIFY propertyValueChangedSignal)
+	Q_PROPERTY(QStringList propertyComponentNames READ propertyComponentNames NOTIFY propertyValueChangedSignal)
+#endif
+
 public:
 
 	/// \brief Constructs a new instance of this class.
@@ -220,6 +229,12 @@ public:
 	/// \undoable
 	void setPropertyComponentCount(int newComponentCount);
 
+	/// Sets the number of expressions based on the selected output property.
+	Q_INVOKABLE void adjustPropertyComponentCount();
+
+	/// Returns the vector component names of the selected output property.
+	QStringList propertyComponentNames() const;
+
 protected:
 
 	/// \brief Is called when the value of a reference field of this RefMaker changes.
@@ -250,6 +265,10 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public Asynchrono
 {
 	OVITO_CLASS(ComputePropertyModifierApplication)
 	Q_OBJECT
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(QString inputVariableTable READ inputVariableTable NOTIFY objectStatusChanged)
+#endif
 
 public:
 

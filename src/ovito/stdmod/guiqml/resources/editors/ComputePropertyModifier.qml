@@ -8,6 +8,16 @@ import "qrc:/gui/ui" as Ui
 ColumnLayout {
 	spacing: 2
 
+	Connections {
+		target: propertyEditor.editObject
+		function onPropertyValueChangedSignal() { 
+			target.adjustPropertyComponentCount();
+		}
+		function onPropertyComponentNamesChanged() {
+			repeater.componentNames = target.propertyComponentNames;
+		}
+	}
+
 	Ui.RolloutPanel {
 		title: qsTr("Compute property")
 		helpTopicId: "manual:particles.modifiers.compute_property"
@@ -34,10 +44,13 @@ ColumnLayout {
 					anchors.fill: parent
 					spacing: 2
 
-//				Ui.ModifierDelegateParameter {
-//					delegateType: "ComputePropertyModifierDelegate"
-//					Layout.fillWidth: true
-//				}
+					Ui.PropertyReferenceParameter {
+						propertyContainer: propertyEditor.editObject.delegate.inputContainerRef
+						propertyField: "outputProperty" // PROPERTY_FIELD(SelectTypeModifier::outputProperty)
+						componentsMode: PropertyReferenceParameterUI.ShowNoComponents
+						propertyParameterType: PropertyReferenceParameterUI.OutputProperty
+						Layout.fillWidth: true
+					}
 
 					Ui.BooleanCheckBoxParameter { 
 						propertyField: "onlySelectedElements"
@@ -56,6 +69,7 @@ ColumnLayout {
 					Repeater {
 						id: repeater
 						property var expressions
+						property var componentNames
 						model: expressions.length
 
 						ParameterUI on expressions {
@@ -72,14 +86,26 @@ ColumnLayout {
 						}
 						onExpressionsChanged: {
 							for(var i = 0; i < repeater.count; i++) {
-								repeater.itemAt(i).text = expressions[i];
+								repeater.itemAt(i).text = (i < expressions.length) ? expressions[i] : "";
 							}
 						}
 
-						delegate: MultilineTextEdit {
+						delegate: RowLayout {
+							property alias text: editField.text
 							Layout.fillWidth: true
-							onEditingFinished: expressionParameterUI.storeExpressions()
-							Component.onCompleted: { text = repeater.expressions[modelData]; }
+							Text {
+								text: ((repeater.componentNames && modelData < repeater.componentNames.length) ? repeater.componentNames[modelData] : modelData) + ":"
+								visible: (repeater.componentNames && repeater.componentNames.length > 0) || repeater.expressions.length > 1
+								Layout.minimumWidth: 14
+								Layout.alignment: Qt.AlignTop
+								Layout.topMargin: 4
+							}
+							MultilineTextEdit {
+								id: editField
+								Layout.fillWidth: true
+								onEditingFinished: expressionParameterUI.storeExpressions()
+								Component.onCompleted: { text = repeater.expressions[modelData]; }
+							}
 						}
 					}
 				}
@@ -100,11 +126,7 @@ ColumnLayout {
 		Text {
 			anchors.fill: parent
 			wrapMode: Text.Wrap
-
-			ParameterUI on text {
-				editObject: propertyEditor.parentEditObject
-				propertyName: "inputVariableTable"
-			}
+			text: propertyEditor.parentEditObject.inputVariableTable
 		}
 	}
 }

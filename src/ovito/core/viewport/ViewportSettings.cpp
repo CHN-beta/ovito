@@ -76,7 +76,11 @@ void ViewportSettings::setSettings(const ViewportSettings& settings)
 * Default constructor.
 ******************************************************************************/
 ViewportSettings::ViewportSettings() :
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	_viewportFont(QStringList("Helvetica"))
+#else
 	_viewportFont("Helvetica")
+#endif
 {
 	restoreDefaultViewportColors();
 }

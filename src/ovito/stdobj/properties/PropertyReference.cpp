@@ -111,8 +111,9 @@ PropertyReference PropertyReference::convertToContainerClass(PropertyContainerCl
 	}
 }
 
-/// Writes a PropertyReference to an output stream.
-/// \relates PropertyReference
+/******************************************************************************
+* Writes a PropertyReference to an output stream.
+******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 {
 	stream.beginChunk(0x02);
@@ -124,8 +125,9 @@ SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 	return stream;
 }
 
-/// Reads a PropertyReference from an input stream.
-/// \relates PropertyReference
+/******************************************************************************
+* Reads a PropertyReference from an input stream.
+******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 {
 	stream.expectChunk(0x02);
@@ -139,6 +141,25 @@ LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 		r = PropertyReference();
 	stream.closeChunk();
 	return stream;
+}
+
+/******************************************************************************
+* Outputs a PropertyReference to a debug stream.
+******************************************************************************/
+QDebug operator<<(QDebug debug, const PropertyReference& r)
+{
+	if(!r.isNull()) {
+		debug.nospace() << "PropertyReference("
+			<< r.containerClass()->name()
+			<< ", "
+			<< r.name()
+			<< ", "
+			<< r.vectorComponent() << ")";
+	}
+	else {
+		debug << "PropertyReference(<null>)";
+	}
+	return debug;
 }
 
 /******************************************************************************

@@ -166,6 +166,24 @@ private:
 	friend OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, DataObjectReference& r);
 };
 
+/// Writes a DataObjectReference to a debug stream.
+/// \relates DataObjectReference
+inline OVITO_CORE_EXPORT QDebug operator<<(QDebug debug, const DataObjectReference& r)
+{
+	if(r) {
+		debug.nospace() << "DataObjectReference("
+			<< r.dataClass()->name()
+			<< ", "
+			<< r.dataPath()
+			<< ", "
+			<< r.dataTitle() << ")";
+	}
+	else {
+		debug << "DataObjectReference(<null>)";
+	}
+	return debug;
+}
+
 /// Writes a DataObjectReference to an output stream.
 /// \relates DataObjectReference
 inline OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const DataObjectReference& r)
@@ -248,6 +266,10 @@ public:
 
 	friend LoadStream& operator>>(LoadStream& stream, TypedDataObjectReference& r) {
 		return stream >> static_cast<DataObjectReference&>(r);
+	}
+
+	friend QDebug operator<<(QDebug debug, const TypedDataObjectReference& r) {
+		return debug << static_cast<const DataObjectReference&>(r);
 	}
 };
 

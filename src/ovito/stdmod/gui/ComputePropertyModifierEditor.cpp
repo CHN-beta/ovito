@@ -79,10 +79,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 	});
 	connect(outputPropertyUI, &PropertyReferenceParameterUI::valueEntered, this, [this]() {
 		if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject())) {
-			if(modifier->delegate() && modifier->outputProperty().type() != PropertyObject::GenericUserProperty)
-				modifier->setPropertyComponentCount(modifier->delegate()->inputContainerClass()->standardPropertyComponentCount(modifier->outputProperty().type()));
-			else
-				modifier->setPropertyComponentCount(1);
+			modifier->adjustPropertyComponentCount();
 		}
 	});
 

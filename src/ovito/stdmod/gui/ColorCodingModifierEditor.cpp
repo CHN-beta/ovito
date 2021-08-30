@@ -400,14 +400,10 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 ******************************************************************************/
 void ColorCodingModifierEditor::onReverseRange()
 {
-	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-
-	if(mod->startValueController() && mod->endValueController()) {
+	if(ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject())) {
 		undoableTransaction(tr("Reverse range"), [mod]() {
 			// Swap controllers for start and end value.
-			OORef<Controller> oldStartValue = mod->startValueController();
-			mod->setStartValueController(mod->endValueController());
-			mod->setEndValueController(oldStartValue);
+			mod->reverseRange();
 		});
 	}
 }

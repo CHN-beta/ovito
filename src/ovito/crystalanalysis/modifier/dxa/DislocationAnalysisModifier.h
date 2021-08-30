@@ -41,7 +41,11 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public Structur
 	Q_OBJECT
 	OVITO_CLASS(DislocationAnalysisModifier)
 	Q_CLASSINFO("DisplayName", "Dislocation analysis (DXA)");
+#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
+#else
+	Q_CLASSINFO("ModifierCategory", "-");
+#endif
 
 public:
 

@@ -19,37 +19,44 @@ Ui.RolloutPanel {
 			Layout.leftMargin: 10
 
 			Ui.IntegerRadioButtonParameter { 
-				propertyField: "neighborMode"
-				value: 0
+				propertyField: "neighborMode" // PROPERTY_FIELD(ClusterAnalysisModifier::neighborMode)
+				value: 0 // ClusterAnalysisModifier::CutoffRange
 				text: qsTr("Cutoff distance:")
 			}
 
 			Ui.FloatParameter { 
-				propertyField: "cutoff"
+				propertyField: "cutoff" // PROPERTY_FIELD(ClusterAnalysisModifier::cutoff)
 				Layout.fillWidth: true 
 			}
 
 			Ui.IntegerRadioButtonParameter { 
-				propertyField: "neighborMode"
-				value: 1
+				propertyField: "neighborMode" // PROPERTY_FIELD(ClusterAnalysisModifier::neighborMode)
+				value: 1 // ClusterAnalysisModifier::Bonding
 				text: qsTr("Bonds")
 			}
 		}
 
 		Ui.BooleanCheckBoxParameter { 
-			propertyField: "sortBySize"
+			propertyField: "sortBySize" // PROPERTY_FIELD(ClusterAnalysisModifier::sortBySize)
 		}
 		Ui.BooleanCheckBoxParameter { 
-			propertyField: "computeCentersOfMass"
+			propertyField: "computeCentersOfMass" // PROPERTY_FIELD(ClusterAnalysisModifier::computeCentersOfMass)
 		}
 		Ui.BooleanCheckBoxParameter { 
-			propertyField: "unwrapParticleCoordinates"
+			propertyField: "computeRadiusOfGyration" // PROPERTY_FIELD(ClusterAnalysisModifier::computeRadiusOfGyration)
 		}
 		Ui.BooleanCheckBoxParameter { 
-			propertyField: "colorParticlesByCluster"
+			propertyField: "unwrapParticleCoordinates" // PROPERTY_FIELD(ClusterAnalysisModifier::unwrapParticleCoordinates)
 		}
 		Ui.BooleanCheckBoxParameter { 
-			propertyField: "onlySelectedParticles"
+			propertyField: "colorParticlesByCluster" // PROPERTY_FIELD(ClusterAnalysisModifier::colorParticlesByCluster)
 		}
+		Ui.BooleanCheckBoxParameter { 
+			propertyField: "onlySelectedParticles" // PROPERTY_FIELD(ClusterAnalysisModifier::onlySelectedParticles)
+		}
+
+		Ui.ObjectStatusWidget {
+			Layout.fillWidth: true
+		}				
 	}
 }

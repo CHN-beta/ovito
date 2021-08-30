@@ -76,7 +76,7 @@ public:
 	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
-	Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChanged)
+	Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
 #endif
 
 protected:
@@ -136,6 +136,10 @@ public:
 
 	OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
 	Q_OBJECT
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
+#endif
 
 public:
 

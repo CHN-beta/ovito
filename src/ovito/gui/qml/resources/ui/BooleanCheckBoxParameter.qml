@@ -6,7 +6,6 @@ CheckBox {
 	id: control
 
 	property alias propertyField: parameterUI.propertyName
-	property bool parameterValue: false
 	text: parameterUI.propertyDisplayName
 
 	ParameterUI on checked {

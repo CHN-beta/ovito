@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,6 +61,10 @@ public:
 
 	OVITO_CLASS_META(AsynchronousDelegatingModifier, DelegatingModifierClass)
 	Q_OBJECT
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
+#endif
 
 public:
 

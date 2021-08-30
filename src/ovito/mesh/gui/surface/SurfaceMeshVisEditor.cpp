@@ -86,7 +86,7 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	sublayout->addWidget(new QLabel(tr("Transparency:")), 1, 0);
 	sublayout->addLayout(capTransparencyUI->createFieldLayout(), 1, 1);
 
-	// Show the 'Cop polygons' UI only for surface meshes which are closed.
+	// Show the 'Cap polygons' UI only for surface meshes which are closed.
 	connect(this, &PropertiesEditor::contentsReplaced, this, [this, box = capGroupUI->groupBox()](RefTarget* editObject) {
 		SurfaceMeshVis* surfaceMeshVis = static_object_cast<SurfaceMeshVis>(editObject);
 		box->setVisible(surfaceMeshVis && surfaceMeshVis->surfaceIsClosed());

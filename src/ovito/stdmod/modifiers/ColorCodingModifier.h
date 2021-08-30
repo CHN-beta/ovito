@@ -53,7 +53,7 @@ public:
 	/// \brief Converts a scalar value to a color value.
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
-	virtual Color valueToColor(FloatType t) = 0;
+	Q_INVOKABLE virtual Color valueToColor(FloatType t) = 0;
 };
 
 /**
@@ -280,9 +280,13 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 	OVITO_CLASS(ColorCodingModifierDelegate)
 	Q_OBJECT
 
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
+#endif
+
 public:
 
-	/// \brief Applies the modifier operation to the data in a pipeline flow state.
+	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
@@ -300,7 +304,7 @@ protected:
 	/// Abstract class constructor.
 	using ModifierDelegate::ModifierDelegate;
 
-	/// \brief returns the ID of the standard property that will receive the computed colors.
+	/// Returns the ID of the standard property that will receive the computed colors.
 	virtual int outputColorPropertyId() const = 0;
 };
 
@@ -328,6 +332,11 @@ public:
 	Q_CLASSINFO("Description", "Colors elements based on property values.");
 	Q_CLASSINFO("ModifierCategory", "Coloring");
 	Q_OBJECT
+
+#ifdef OVITO_QML_GUI
+	Q_PROPERTY(Ovito::StdMod::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
+	Q_PROPERTY(QString colorGradientType READ colorGradientType WRITE setColorGradientType NOTIFY referenceReplacedSignal)
+#endif
 
 public:
 
@@ -362,11 +371,22 @@ public:
 		return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
 	}
 
+#ifdef OVITO_QML_GUI
+	/// Returns the class name of the selected color gradient.
+	QString colorGradientType() const;
+
+	/// Assigns a new color gradient based on its class name.
+	void setColorGradientType(const QString& typeName, ExecutionContext executionContext = ExecutionContext::Interactive);
+#endif
+
 public Q_SLOTS:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property.
 	/// Returns true if successful.
 	bool adjustRange();
+
+	/// Swaps the minimum and maximum values to reverse the color scale.
+	void reverseRange();
 
 protected:
 

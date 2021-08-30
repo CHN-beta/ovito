@@ -134,6 +134,10 @@ extern OVITO_STDOBJ_EXPORT SaveStream& operator<<(SaveStream& stream, const Prop
 /// \relates PropertyReference
 extern OVITO_STDOBJ_EXPORT LoadStream& operator>>(LoadStream& stream, PropertyReference& r);
 
+/// Outputs a PropertyReference to a debug stream.
+/// \relates PropertyReference
+extern OVITO_STDOBJ_EXPORT QDebug operator<<(QDebug debug, const PropertyReference& r);
+
 /**
  * Encapsulates a reference to a property from a specific container class.
  */
@@ -175,6 +179,10 @@ public:
 
 	friend LoadStream& operator>>(LoadStream& stream, TypedPropertyReference& r) {
 		return stream >> static_cast<PropertyReference&>(r);
+	}
+
+	friend QDebug operator<<(QDebug debug, const TypedPropertyReference& r) {
+		return debug << static_cast<const PropertyReference&>(r);
 	}
 };
 

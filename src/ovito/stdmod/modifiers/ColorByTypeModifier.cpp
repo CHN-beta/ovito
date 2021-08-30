@@ -159,5 +159,33 @@ void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 #endif
 }
 
+
+#ifdef OVITO_QML_GUI
+/******************************************************************************
+* This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract 
+* the list of element types from the input pipeline output state. 
+******************************************************************************/
+QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
+{
+	QVariantList list;
+	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+		// Populate types list based on the selected input property.
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		if(const PropertyContainer* container = state.getLeafObject(subject())) {
+			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+				for(const ElementType* type : inputProperty->elementTypes()) {
+					if(!type) continue;
+					list.push_back(QVariantMap({
+						{"id", type->numericId()}, 
+						{"name", type->nameOrNumericId()}, 
+						{"color", (QColor)type->color()}}));
+				}
+			}
+		}
+	}
+	return list;
+}
+#endif
+
 }	// End of namespace
 }	// End of namespace

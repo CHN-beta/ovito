@@ -19,10 +19,6 @@ ApplicationWindow {
 		id: aboutDialog
 	}
 
-	Ui.SystemReportDialog {
-		id: systemReportDialog
-	}
-
 	header: Ui.ToolBar {
 		id: toolBar
 		objectName: "toolBar"

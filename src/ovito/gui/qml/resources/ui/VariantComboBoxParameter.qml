@@ -6,7 +6,6 @@ ComboBox {
 	id: control
 
 	property alias propertyField: parameterUI.propertyName
-	property bool parameterValue: false
 
 	ParameterUI on currentIndex {
 		id: parameterUI

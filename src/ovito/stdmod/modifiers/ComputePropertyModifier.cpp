@@ -96,6 +96,28 @@ void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount)
 }
 
 /******************************************************************************
+* Sets the number of expressions based on the selected output property.
+******************************************************************************/
+void ComputePropertyModifier::adjustPropertyComponentCount()
+{
+	if(delegate() && outputProperty().type() != PropertyObject::GenericUserProperty)
+		setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(outputProperty().type()));
+	else
+		setPropertyComponentCount(1);
+}
+
+/******************************************************************************
+* Returns the vector component names of the selected output property.
+******************************************************************************/
+QStringList ComputePropertyModifier::propertyComponentNames() const
+{
+	if(!outputProperty().isNull() && outputProperty().type() != PropertyObject::GenericUserProperty) {
+		return outputProperty().containerClass()->standardPropertyComponentNames(outputProperty().type());
+	}
+	return {};
+}
+
+/******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)

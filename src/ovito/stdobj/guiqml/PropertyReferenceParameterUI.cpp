@@ -47,7 +47,7 @@ void PropertyReferenceParameterUI::setPropertyContainer(const QVariant& dataObje
 ******************************************************************************/
 bool PropertyReferenceParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged) {
+	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged && propertyParameterType() == InputProperty) {
 		// The modifier's input from the pipeline has changed -> update list of available input properties.
 		updatePropertyList();
 		// The index of the selected list item may have changed. Update the index as well.
@@ -65,56 +65,90 @@ void PropertyReferenceParameterUI::updatePropertyList()
 	std::vector<QString> acceptedTexts;
 
 	if(_containerReference) {
-		if(Modifier* mod = static_object_cast<Modifier>(editObject())) {
-			for(ModifierApplication* modApp : mod->modifierApplications()) {
-				const PipelineFlowState& state = modApp->evaluateInputSynchronous(mod->dataset()->animationSettings()->time());
+		if(propertyParameterType() == InputProperty) {
+			if(Modifier* mod = static_object_cast<Modifier>(editObject())) {
+				for(ModifierApplication* modApp : mod->modifierApplications()) {
+					const PipelineFlowState& state = modApp->evaluateInputSynchronous(mod->dataset()->animationSettings()->time());
 
-				if(const PropertyContainer* container = state ? state.getLeafObject(_containerReference) : nullptr) {
-					for(const PropertyObject* property : container->properties()) {
+					if(const PropertyContainer* container = state ? state.getLeafObject(_containerReference) : nullptr) {
+						for(const PropertyObject* property : container->properties()) {
 
-						// The client can apply a filter to the displayed property list.
-						if(acceptablePropertyType() == OnlyTypedProperties && !property->isTypedProperty())
-							continue;
+							// The client can apply a filter to the displayed property list.
+							if(acceptablePropertyType() == OnlyTypedProperties && !property->isTypedProperty())
+								continue;
 
-						// Properties with a non-numeric data type cannot be used as input properties.
-						if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
-							continue;
+							// Properties with a non-numeric data type cannot be used as input properties.
+							if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
+								continue;
 
-						if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {
-							// Property without component:
-							acceptedProperties.emplace_back(&container->getOOMetaClass(), property);
-							acceptedTexts.push_back(property->name());
-						}
-						if(_componentsMode != ShowNoComponents && property->componentCount() > 1) {
-							// Components of vector property:
-							for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
-								acceptedProperties.emplace_back(&container->getOOMetaClass(), property, vectorComponent);
-								if(_componentsMode == ShowComponentsAndVectorProperties)
-									acceptedTexts.push_back(QStringLiteral("  ") + property->nameWithComponent(vectorComponent));
-								else
-									acceptedTexts.push_back(property->nameWithComponent(vectorComponent));
+							if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {
+								// Property without component:
+								acceptedProperties.emplace_back(&container->getOOMetaClass(), property);
+								acceptedTexts.push_back(property->name());
+							}
+							if(_componentsMode != ShowNoComponents && property->componentCount() > 1) {
+								// Components of vector property:
+								for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
+									acceptedProperties.emplace_back(&container->getOOMetaClass(), property, vectorComponent);
+									if(_componentsMode == ShowComponentsAndVectorProperties)
+										acceptedTexts.push_back(QStringLiteral("  ") + property->nameWithComponent(vectorComponent));
+									else
+										acceptedTexts.push_back(property->nameWithComponent(vectorComponent));
+								}
 							}
 						}
 					}
 				}
+
+				// Get the currently selected property from the modifier's parameter field.
+				QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+				OVITO_ASSERT_MSG(val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updatePropertyList()", qPrintable(QString("The property field of object class %1 is not of type <PropertyReference>.").arg(editObject()->metaObject()->className())));
+				PropertyReference selectedProperty = val.value<PropertyReference>();
+
+				// Add a placeholder item if the selected property does not exist anymore in the modifier's input.
+				if(selectedProperty && boost::find(acceptedProperties, selectedProperty) == acceptedProperties.end()) {
+					QString title;
+					selectedProperty = selectedProperty.convertToContainerClass(_containerReference.dataClass());
+					if(selectedProperty.type() != PropertyObject::GenericUserProperty)
+						title = selectedProperty.containerClass()->standardPropertyName(selectedProperty.type());
+					else
+						title = selectedProperty.name();
+					title += tr(" (not available)");
+					acceptedProperties.push_back(std::move(selectedProperty));
+					acceptedTexts.push_back(std::move(title));
+				}
 			}
+		}
+		else {
+			const PropertyContainerClass* containerClass = _containerReference.dataClass();
+			for(int typeId : containerClass->standardPropertyIds()) {
 
-			// Get the currently selected property from the modifier's parameter field.
-			QVariant val = editObject()->getPropertyFieldValue(*propertyField());
-			OVITO_ASSERT_MSG(val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updatePropertyList()", qPrintable(QString("The property field of object class %1 is not of type <PropertyReference>.").arg(editObject()->metaObject()->className())));
-			PropertyReference selectedProperty = val.value<PropertyReference>();
+				// The client can apply a filter to the displayed property list.
+				if(acceptablePropertyType() == OnlyTypedProperties && !containerClass->isTypedProperty(typeId))
+					continue;
 
-			// Add a placeholder item if the selected property does not exist anymore in the modifier's input.
-			if(selectedProperty && boost::find(acceptedProperties, selectedProperty) == acceptedProperties.end()) {
-				QString title;
-				selectedProperty = selectedProperty.convertToContainerClass(_containerReference.dataClass());
-				if(selectedProperty.type() != PropertyObject::GenericUserProperty)
-					title = selectedProperty.containerClass()->standardPropertyName(selectedProperty.type());
-				else
-					title = selectedProperty.name();
-				title += tr(" (not available)");
-				acceptedProperties.push_back(std::move(selectedProperty));
-				acceptedTexts.push_back(std::move(title));
+				int componentCount = containerClass->standardPropertyComponentCount(typeId);
+				const QStringList& componentNames = containerClass->standardPropertyComponentNames(typeId);
+				if(_componentsMode != ShowOnlyComponents || (componentCount <= 1 && componentNames.empty())) {
+					// Property without component:
+					acceptedProperties.emplace_back(containerClass, typeId);
+					acceptedTexts.push_back(containerClass->standardPropertyName(typeId));
+				}
+				if(_componentsMode != ShowNoComponents && componentCount > 1) {
+					// Components of vector property:
+					for(int vectorComponent = 0; vectorComponent < componentCount; vectorComponent++) {
+						acceptedProperties.emplace_back(containerClass, typeId, vectorComponent);
+						QString nameWithComponent = containerClass->standardPropertyName(typeId) + QChar('.');
+						if(vectorComponent < componentNames.size())
+							nameWithComponent += componentNames[vectorComponent];
+						else
+							nameWithComponent += QString::number(vectorComponent + 1);
+						if(_componentsMode == ShowComponentsAndVectorProperties)
+							acceptedTexts.push_back(QStringLiteral("  ") + nameWithComponent);
+						else
+							acceptedTexts.push_back(std::move(nameWithComponent));
+					}
+				}
 			}
 		}
 	}
@@ -148,10 +182,29 @@ QVariant PropertyReferenceParameterUI::getCurrentValue() const
 void PropertyReferenceParameterUI::setCurrentValue(const QVariant& val)
 {
 	if(_containerReference && editObject()) {
-		int index = val.toInt();
-		if(index >= 0 && index < _model->properties().size()) {
+		if(val.metaType().id() == qMetaTypeId<int>()) {
+			int index = val.toInt();
+			if(index >= 0 && index < _model->properties().size()) {
+				const PropertyReference& oldVal = editObject()->getPropertyFieldValue(*propertyField()).value<PropertyReference>();
+				const PropertyReference& newVal = _model->properties()[index];
+				if(newVal != oldVal) {
+					UndoableTransaction::handleExceptions(editObject()->dataset()->undoStack(), tr("Select property"), [&]() {
+						editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(newVal));
+					});
+				}
+			}
+		}
+		else if(val.metaType().id() == qMetaTypeId<QString>()) {
+			QString name = val.toString().simplified();
+			const PropertyContainerClass* containerClass = _containerReference.dataClass();
+			PropertyReference newVal;
+			if(!name.isEmpty()) {
+				if(int standardTypeId = containerClass->standardPropertyTypeId(name))
+					newVal = PropertyReference(containerClass, standardTypeId);
+				else
+					newVal = PropertyReference(containerClass, name);
+			}
 			const PropertyReference& oldVal = editObject()->getPropertyFieldValue(*propertyField()).value<PropertyReference>();
-			const PropertyReference& newVal = _model->properties()[index];
 			if(newVal != oldVal) {
 				UndoableTransaction::handleExceptions(editObject()->dataset()->undoStack(), tr("Select property"), [&]() {
 					editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(newVal));
@@ -159,6 +212,32 @@ void PropertyReferenceParameterUI::setCurrentValue(const QVariant& val)
 			}
 		}
 	}
+}
+
+/******************************************************************************
+* Updates the displayed value in the UI.
+******************************************************************************/
+void PropertyReferenceParameterUI::updateUI()
+{
+	ParameterUI::updateUI();
+	Q_EMIT currentPropertyNameChanged();
+}
+
+/******************************************************************************
+* Returns the display name of the currently selected property.
+******************************************************************************/
+QString PropertyReferenceParameterUI::currentPropertyName() const
+{
+	if(_containerReference && editObject()) {
+
+		// Get the currently selected property from the modifier's parameter field.
+		QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+		OVITO_ASSERT_MSG(val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::currentPropertyName()", qPrintable(QString("The property field of object class %1 is not of type <PropertyReference>.").arg(editObject()->metaObject()->className())));
+		const PropertyReference& selectedProperty = val.value<PropertyReference>();
+
+		return selectedProperty.nameWithComponent();
+	}
+	return {};
 }
 
 /******************************************************************************

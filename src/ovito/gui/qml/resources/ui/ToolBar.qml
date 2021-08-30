@@ -7,7 +7,7 @@ ToolBar {
 
 	Flow {
 		id: flow
-		width: parent.width
+		width: parent.width - infoLabel.implicitWidth
 
 		Row {
 			id: fileRow
@@ -75,22 +75,13 @@ ToolBar {
 				display: AbstractButton.IconOnly
 				onToggled: viewportsPanel.viewportConfiguration.maximizedViewport = checked ? null : viewportsPanel.viewportConfiguration.activeViewport
 			}
-			ToolSeparator {
-				contentItem.visible: viewportRow.y === aboutRow.y
-			}
+//			ToolSeparator {
+//				contentItem.visible: viewportRow.y === aboutRow.y
+//			}
 		}
-
+/*
 		Row {
 			id: aboutRow
-			ToolButton {
-				id: systemReportButton
-				icon.source: "qrc:/guibase/actions/file/opengl_info.bw.svg"
-				ToolTip.text: qsTr("System Report")
-				ToolTip.visible: hovered
-				ToolTip.delay: 500
-				display: AbstractButton.IconOnly
-				onClicked: systemReportDialog.open()
-			}
 			ToolButton {
 				id: aboutButton
 				icon.source: "qrc:/guibase/actions/file/about.bw.svg"
@@ -101,5 +92,20 @@ ToolBar {
 				onClicked: aboutDialog.open()
 			}
 		}
+*/
+	}
+
+	ItemDelegate {
+		id: infoLabel
+		anchors.right: parent.right
+		anchors.top: parent.top
+		anchors.bottom: parent.bottom
+		text: "OVITO Web (technology demo)"
+		padding: 4
+
+		icon.source: "qrc:/guibase/mainwin/window_icon_16.png"
+		icon.color: "transparent"
+
+		onClicked: aboutDialog.open()
 	}
 }

@@ -294,6 +294,50 @@ bool ColorCodingModifier::adjustRangeGlobal(Promise<>&& operation)
 }
 
 /******************************************************************************
+* Swaps the minimum and maximum values to reverse the color scale.
+******************************************************************************/
+void ColorCodingModifier::reverseRange()
+{
+	// Swap controllers for start and end value.
+	OORef<Controller> oldStartValue = startValueController();
+	setStartValueController(endValueController());
+	setEndValueController(std::move(oldStartValue));
+}
+
+#ifdef OVITO_QML_GUI
+/******************************************************************************
+* Returns the class name of the selected color gradient.
+******************************************************************************/
+QString ColorCodingModifier::colorGradientType() const 
+{
+	return colorGradient() ? colorGradient()->getOOClass().name() : QString();
+}
+
+/******************************************************************************
+* Assigns a new color gradient based on its class name.
+******************************************************************************/
+void ColorCodingModifier::setColorGradientType(const QString& typeName, ExecutionContext executionContext) 
+{
+	OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
+	if(!descriptor) {
+		qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
+		return;
+	}
+	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
+	if(gradient) {
+		setColorGradient(std::move(gradient));
+#ifndef OVITO_DISABLE_QSETTINGS
+		QSettings settings;
+		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
+		settings.beginGroup(ColorCodingModifier::OOClass().name());
+		settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
+				QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
+#endif
+	}
+}
+#endif
+
+/******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
 PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)

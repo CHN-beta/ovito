@@ -34,7 +34,6 @@
         <file>ui/StringParameter.qml</file>
         <file>ui/StringTextEditParameter.qml</file>
         <file>ui/SubobjectEditor.qml</file>
-        <file>ui/SystemReportDialog.qml</file>
         <file>ui/TableViewWithHeader.qml</file>
         <file>ui/ToolBar.qml</file>
         <file>ui/VariantComboBoxParameter.qml</file>
