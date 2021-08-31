@@ -42,11 +42,7 @@ class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceCo
 
 	Q_CLASSINFO("DisplayName", "Displacement vectors");
 	Q_CLASSINFO("Description", "Calculate the displacements of particles based on two input configurations.");
-#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-	Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

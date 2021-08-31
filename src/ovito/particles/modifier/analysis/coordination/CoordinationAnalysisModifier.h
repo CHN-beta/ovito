@@ -58,11 +58,7 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public AsynchronousM
 	Q_CLASSINFO("ClassNameAlias", "CoordinationNumberModifier");
 	Q_CLASSINFO("Description", "Determine number of neighbors and compute the radial distribution function (RDF).");
 	Q_CLASSINFO("DisplayName", "Coordination analysis");
-#ifndef OVITO_QML_GUI
 	Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-	Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

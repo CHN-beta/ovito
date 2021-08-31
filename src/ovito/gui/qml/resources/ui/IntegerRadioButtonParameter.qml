@@ -9,6 +9,7 @@ CustomRadioButton {
 	property alias propertyField: parameterUI.propertyName
 	property int parameterValue: -1
 
+	autoExclusive: false
 	checked: parameterValue == value
 
 	ParameterUI on parameterValue {
