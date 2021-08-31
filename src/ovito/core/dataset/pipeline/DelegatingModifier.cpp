@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DelegatingModifier.h"
 #include "AsynchronousDelegatingModifier.h"
 
@@ -59,6 +60,20 @@ Modifier* ModifierDelegate::modifier() const
 	});
 	return result;
 }
+
+#ifdef OVITO_QML_GUI
+/******************************************************************************
+* Asks the delegate whether it can operate on  the given input pipeline state.
+******************************************************************************/
+bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const 
+{
+	if(modApp) {
+		const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		return !getOOMetaClass().getApplicableObjects(input).empty();
+	}
+	return false;
+}
+#endif
 
 /******************************************************************************
 * Constructs the modifier object.

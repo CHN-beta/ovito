@@ -20,6 +20,7 @@ ScrollView {
 
 	Flickable {
 		contentHeight: column.childrenRect.height + column.topPadding + column.bottomPadding
+		boundsBehavior: Flickable.StopAtBounds
 
 		Column {
 			id: column

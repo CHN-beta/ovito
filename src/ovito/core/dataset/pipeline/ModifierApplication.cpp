@@ -173,6 +173,10 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 		// Inform the QML GUI that the modifier's input has changed.
 		Q_EMIT modifierInputChanged();
 	}
+	else if(event.type() == ReferenceEvent::PipelineCacheUpdated && source == input()) {
+		// Inform the QML GUI that the modifier's input has changed.
+		Q_EMIT modifierInputChanged();
+	}
 #endif
 	return CachingPipelineObject::referenceEvent(source, event);
 }

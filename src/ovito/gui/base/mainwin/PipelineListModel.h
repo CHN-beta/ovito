@@ -165,6 +165,12 @@ public:
 	/// Sets the item in the modification list that should be selected on the next list update.
 	void setNextSubObjectToSelectByTitle(const QString& title) { _nextSubObjectTitleToSelect = title; }
 
+	/// Moves a list item up one position in the stack.
+	void moveItemUp(PipelineListItem* item);
+
+	/// Moves a list item down one position in the stack.
+	void moveItemDown(PipelineListItem* item);
+
 	/// Deletes the given model items from the data pipeline.
 	void deleteItems(const QVector<PipelineListItem*>& items);
 
@@ -173,6 +179,9 @@ public:
 
 	/// Helper method that determines if the given object is part of more than one pipeline.
 	static bool isSharedObject(RefTarget* obj);
+
+	/// Executes a drag-and-drop operation within the pipeline editor.
+	Q_INVOKABLE bool performDragAndDropOperation(const QVector<int>& indexList, int row, bool dryRun);
 
 Q_SIGNALS:
 
@@ -202,17 +211,28 @@ public Q_SLOTS:
 	/// Deletes the pipeline objects that are currently selected in the list.
 	void deleteItemIndex(int index) { deleteItems({item(index)}); }
 
+	/// Moves the a modifier up one position in the stack.
+	void moveItemIndexUp(int index) { moveItemUp(item(index)); }
+
+	/// Moves the a modifier down one position in the stack.
+	void moveItemIndexDown(int index) { moveItemDown(item(index)); }
+
 	/// Moves the selected modifier up one position in the stack.
-	void moveModifierUp();
+	void moveModifierUp() { moveItemUp(selectedItem()); }
 
 	/// Moves the selected modifier down one position in the stack.
-	void moveModifierDown();
+	void moveModifierDown() { moveItemDown(selectedItem()); }
 
 	/// Replaces the selected pipeline item with an independent copy.
 	void makeElementIndependent();
 
 	/// Creates or dissolves a group of modifiers.
 	void toggleModifierGroup();
+
+	/// Enables/disables a list model item.
+	void setChecked(int index, bool checked) {
+		setData(this->index(index, 0), QVariant::fromValue(checked ? Qt::Checked : Qt::Unchecked), Qt::CheckStateRole);
+	}
 
 private Q_SLOTS:
 
@@ -233,8 +253,8 @@ private:
 	/// Replaces the a pipeline item with an independent copy.
 	PipelineObject* makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper);
 
-	/// Executes a drag-and-drop operation within the pipeline editor.
-	bool performDragAndDropOperation(const QMimeData* data, int row, bool dryRun);
+	/// Extracts the list of model indices from a drag and drop data record.
+	QVector<int> indexListFromMimeData(const QMimeData* data) const;
 
 	/// Moves a sequence of modifiers to a new position in the pipeline.
 	bool moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter);

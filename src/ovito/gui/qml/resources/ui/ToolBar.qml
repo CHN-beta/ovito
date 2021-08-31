@@ -75,13 +75,23 @@ ToolBar {
 				display: AbstractButton.IconOnly
 				onToggled: viewportsPanel.viewportConfiguration.maximizedViewport = checked ? null : viewportsPanel.viewportConfiguration.activeViewport
 			}
-//			ToolSeparator {
-//				contentItem.visible: viewportRow.y === aboutRow.y
-//			}
+			ToolSeparator {
+				contentItem.visible: viewportRow.y === aboutRow.y
+			}
 		}
-/*
+
 		Row {
 			id: aboutRow
+			ToolButton {
+				id: helpButton
+				icon.source: "qrc:/guibase/actions/file/user_manual.bw.svg"
+				ToolTip.text: qsTr("User Manual")
+				ToolTip.visible: hovered
+				ToolTip.delay: 500
+				display: AbstractButton.IconOnly
+				onClicked: mainWindow.openHelpTopic("")
+			}
+			/*
 			ToolButton {
 				id: aboutButton
 				icon.source: "qrc:/guibase/actions/file/about.bw.svg"
@@ -91,8 +101,8 @@ ToolBar {
 				display: AbstractButton.IconOnly
 				onClicked: aboutDialog.open()
 			}
+			*/
 		}
-*/
 	}
 
 	ItemDelegate {

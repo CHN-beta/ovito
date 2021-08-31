@@ -183,6 +183,22 @@ public:
 		{ (*this)[0] = tm.column(0); (*this)[1] = tm.column(1); (*this)[2] = tm.column(2); (*this)[3] = typename Vector_3<T>::Zero(); }
 #endif
 
+	/// Conversion constructor from a Qt matrix.
+#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
+	Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m)
+		: std::array<Vector_3<T>,4>{{
+			Vector_3<T>(m(0,0),m(1,0),m(2,0)),
+			Vector_3<T>(m(0,1),m(1,1),m(2,1)),
+			Vector_3<T>(m(0,2),m(1,2),m(2,2)),
+			Vector_3<T>(m(0,3),m(1,3),m(2,3))}} {}
+#else
+	AffineTransformationT(const QMatrix4x4& m)
+		{ (*this)[0] = Vector_3<T>(m(0,0),m(1,0),m(2,0));
+		  (*this)[1] = Vector_3<T>(m(0,1),m(1,1),m(2,1));
+		  (*this)[2] = Vector_3<T>(m(0,2),m(1,2),m(2,2));
+		  (*this)[3] = Vector_3<T>(m(0,3),m(1,3),m(2,3)); }
+#endif
+
 	/// \brief Casts the matrix to a matrix with another data type.
 	template<typename U>
 	Q_DECL_CONSTEXPR explicit operator AffineTransformationT<U>() const {

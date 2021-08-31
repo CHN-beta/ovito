@@ -21,6 +21,7 @@ Ui.RefTargetListParameter {
             anchors.margins: 4
             spacing: 5
             CheckBox {
+                id: checkBox
                 padding: 0
                 checked: reftarget.enabled
                 onToggled: {
@@ -30,13 +31,24 @@ Ui.RefTargetListParameter {
                 }
             }
             Text {
+                id: label
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 text: reftarget.objectTitle
                 elide: Text.ElideRight
+                color: checkBox.enabled ? palette.text : palette.disabled.text
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
             }
+        }
+
+        // Update the availability of the individual delegates whenever the pipeline input changes.
+        Connections {
+            target: propertyEditor
+            function onModifierInputChanged() {
+                checkBox.enabled = reftarget.canOperateOnInput(propertyEditor.parentEditObject);
+            }
+            Component.onCompleted: onModifierInputChanged() // First time initialization when editor is loaded.
         }
     }
 }	

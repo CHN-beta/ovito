@@ -29,15 +29,32 @@ ScrollView {
 		Component {
 			id: itemDelegate
 			MouseArea {
+				required property string title
+				required property int type
+				required property string tooltip
+				required property string decoration
+				required property bool ischecked
+				required property int index
 				id: mouseArea
-				anchors.left: parent ? parent.left : undefined; 
-				anchors.right: parent ? parent.right : undefined; 
+				anchors	{
+					left: parent ? parent.left : undefined
+					right: parent ? parent.right : undefined
+				}
 				height: itemInfo.height
 				hoverEnabled: true
+				pressAndHoldInterval: 200
+				property bool held: false
+				drag {
+					target: held ? itemInfo : undefined
+					axis: Drag.YAxis
+					threshold: 4
+				}
 				onClicked: { 
 					if(type < PipelineListItem.VisualElementsHeader) 
 						ListView.view.currentIndex = index; 
 				}
+				onPressAndHold: held = (type == PipelineListItem.Modifier)
+	            onReleased: { if(held) itemInfo.Drag.drop(); held = false }
 				states: State {
 					name: "HOVERING"
 					when: (containsMouse && type == PipelineListItem.Modifier)
@@ -50,18 +67,39 @@ ScrollView {
 				Rectangle { 
 					id: itemInfo
 					height: (type >= PipelineListItem.VisualElementsHeader) ? textItem.implicitHeight : Math.max(textItem.implicitHeight, checkboxItem.implicitHeight)
-					width: parent.width
-					color: (type >= PipelineListItem.VisualElementsHeader) ? "lightgray" : "#00000000"; 
+					anchors {
+                    	verticalCenter: parent.verticalCenter
+						left: parent.left
+						right: parent.right
+                	}
+					color: (type >= PipelineListItem.VisualElementsHeader) ? "lightgray" : (mouseArea.held ? "#88f5f5dc" : "transparent");
+					border.width: mouseArea.held ? 1 : 0;
+					border.color: "black"
+
+					Drag.active: mouseArea.held
+					Drag.source: mouseArea
+					Drag.hotSpot.x: width / 2
+                	Drag.hotSpot.y: height / 2
+
+					states: State {
+						when: mouseArea.held
+
+						ParentChange { target: itemInfo; parent: listView }
+						AnchorChanges {
+							target: itemInfo
+							anchors { horizontalCenter: undefined; verticalCenter: undefined }
+						}
+					}
 
 					// Enabled/disabled checkbox.
 					CheckBox {
 						id: checkboxItem
 						visible: (type <= PipelineListItem.Modifier)
-						checked: model.ischecked
+						checked: ischecked
 						anchors.verticalCenter: parent.verticalCenter
 						anchors.left: parent.left
 						onToggled: {
-							model.ischecked = checked;
+							listView.model.setChecked(index, checked)
 						}
 						indicator: Rectangle {
 							implicitWidth: 18
@@ -117,6 +155,36 @@ ScrollView {
 					ToolTip.text: tooltip
 					ToolTip.visible: tooltip ? mouseArea.containsMouse : false
 					ToolTip.delay: 500
+				}
+
+
+				DropArea {
+					id: dropAreaBefore
+					anchors.left: parent.left
+					anchors.right: parent.right
+					anchors.verticalCenter: parent.top
+					height: parent.height
+
+					Rectangle {
+						visible: dropAreaBefore.containsDrag
+						anchors.centerIn: parent
+						width: parent.width
+						height: Math.max(2, parent.height / 6)
+						color: "blue"
+					}
+
+					onDropped: function (drop) {
+						model.performDragAndDropOperation([drop.source.index], mouseArea.index, false)
+					}
+
+					onEntered: function (drag) {
+						if(model.performDragAndDropOperation([drag.source.index], mouseArea.index, true)) {
+							drag.accept(Qt.MoveAction)
+						}
+						else {
+							drag.accepted = false
+						}
+					}
 				}
 			}
 		}

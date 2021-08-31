@@ -593,15 +593,22 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 	else if(role == Qt::ToolTipRole || role == PipelineListModel::ToolTipRole) {
 		return QVariant::fromValue(item->status().text());
 	}
-	else if(role == Qt::CheckStateRole || role == CheckedRole) {
+	else if(role == Qt::CheckStateRole) {
 		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object()))
 			return (modApp->modifier() && modApp->modifier()->isEnabled()) ? Qt::Checked : Qt::Unchecked;
 		else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
 			if(item->itemType() != PipelineListItem::DataSource)
 				return object->isEnabled() ? Qt::Checked : Qt::Unchecked;
 		}
-		if(role == CheckedRole)
-			return false;
+	}
+	else if(role == CheckedRole) {
+		if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object()))
+			return modApp->modifier() && modApp->modifier()->isEnabled();
+		else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
+			if(item->itemType() != PipelineListItem::DataSource)
+				return object->isEnabled();
+		}
+		return false;
 	}
 	else if(role == Qt::TextAlignmentRole) {
 		if(!item->isObjectItem()) {
@@ -885,7 +892,7 @@ bool PipelineListModel::canDropMimeData(const QMimeData* data, Qt::DropAction ac
 	if(action != Qt::MoveAction)
 		return false;
 
-	return const_cast<PipelineListModel*>(this)->performDragAndDropOperation(data, row, true);
+	return const_cast<PipelineListModel*>(this)->performDragAndDropOperation(indexListFromMimeData(data), row, true);
 }
 
 /******************************************************************************
@@ -897,28 +904,38 @@ bool PipelineListModel::dropMimeData(const QMimeData* data, Qt::DropAction actio
 	if(action != Qt::MoveAction)
 		return false;
 		
-	return performDragAndDropOperation(data, row, false);
+	return performDragAndDropOperation(indexListFromMimeData(data), row, false);
+}
+
+/******************************************************************************
+* Extracts the list of model indices from a drag and drop data record.
+******************************************************************************/
+QVector<int> PipelineListModel::indexListFromMimeData(const QMimeData* data) const
+{
+    QVector<int> indexList;
+    QByteArray encodedData = data->data(mimeTypes().front());
+	if(!encodedData.isEmpty()) {
+		QDataStream stream(&encodedData, QIODevice::ReadOnly);
+		QVector<int>::size_type count;
+		stream >> count;
+		if(count != 0) {
+			indexList.resize(count);
+			for(auto& row : indexList)
+				stream >> row;
+		}
+	}
+	return indexList;
 }
 
 /******************************************************************************
 * Executes a drag-and-drop operation within the pipeline editor.
 ******************************************************************************/
-bool PipelineListModel::performDragAndDropOperation(const QMimeData* data, int row, bool dryRun)
+bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexList, int row, bool dryRun)
 {
+	if(indexList.empty())
+		return false;
 	if(row <= 0 || row >= items().size())
 		return false;
-
-    QByteArray encodedData = data->data(mimeTypes().front());
-	if(encodedData.isEmpty())
-		return false;
-    QDataStream stream(&encodedData, QIODevice::ReadOnly);
-	QVector<int>::size_type count;
-	stream >> count;
-    if(count == 0)
-    	return false;
-    QVector<int> indexList(count);
-	for(auto& row : indexList)
-		stream >> row;
 
 	// The modifier group the modapps will be placed into.
 	ModifierGroup* destinationGroup = nullptr;
@@ -986,7 +1003,8 @@ bool PipelineListModel::performDragAndDropOperation(const QMimeData* data, int r
 				return false;
 		}
 	}
-	OVITO_ASSERT(head && tail);
+	if(!head || !tail)
+		return false;
 	OVITO_ASSERT(tail->isReferencedBy(head));
 
 	if(!dryRun) {
@@ -1087,11 +1105,10 @@ bool PipelineListModel::isSharedObject(RefTarget* obj)
 }
 
 /******************************************************************************
-* Moves the selected modifier up one position in the stack.
+* Moves a list item up one position in the stack.
 ******************************************************************************/
-void PipelineListModel::moveModifierUp()
+void PipelineListModel::moveItemUp(PipelineListItem* item)
 {
-	PipelineListItem* item = selectedItem();
 	if(!item) return;
 
 	if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
@@ -1200,11 +1217,10 @@ void PipelineListModel::moveModifierUp()
 }
 
 /******************************************************************************
-* Moves the selected modifier down one position in the stack.
+* Moves a list item down one position in the stack.
 ******************************************************************************/
-void PipelineListModel::moveModifierDown()
+void PipelineListModel::moveItemDown(PipelineListItem* item)
 {
-	PipelineListItem* item = selectedItem();
 	if(!item) return;
 
 	if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {

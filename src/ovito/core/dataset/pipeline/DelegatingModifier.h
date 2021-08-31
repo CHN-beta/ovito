@@ -95,6 +95,11 @@ public:
 	/// \brief Returns the modifier owning this delegate.
 	Modifier* modifier() const;
 
+#ifdef OVITO_QML_GUI
+	/// Asks the delegate whether it can operate on  the given input pipeline state.
+	Q_INVOKABLE bool canOperateOnInput(ModifierApplication* modApp) const;
+#endif
+
 private:
 
 	/// Indicates whether this delegate is active or not.

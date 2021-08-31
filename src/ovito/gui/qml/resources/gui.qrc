@@ -18,6 +18,7 @@
         <file>ui/ImportDialog.qml</file>
         <file>ui/IntegerParameter.qml</file>
         <file>ui/IntegerRadioButtonParameter.qml</file>
+        <file>ui/MatrixParameter.qml</file>        
         <file>ui/ModifierDelegateParameter.qml</file>        
         <file>ui/ModifierListBox.qml</file>        
         <file>ui/ObjectStatusWidget.qml</file>

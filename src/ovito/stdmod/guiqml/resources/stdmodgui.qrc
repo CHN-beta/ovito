@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/StdMod">
+        <file>editors/AffineTransformationModifier.qml</file>
         <file>editors/AssignColorModifier.qml</file>
         <file>editors/ClearSelectionModifier.qml</file>
         <file>editors/ColorByTypeModifier.qml</file>

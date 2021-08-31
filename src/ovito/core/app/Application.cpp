@@ -244,6 +244,8 @@ bool Application::initialize()
 	QMetaType::registerConverter<Vector3, Color>();
 	QMetaType::registerConverter<QVector3D, Color>();
 	QMetaType::registerConverter<Color, QVector3D>(&Color::operator QVector3D);
+	QMetaType::registerConverter<AffineTransformation, QMatrix4x4>();
+	QMetaType::registerConverter<QMatrix4x4, AffineTransformation>();
 
 	// Enable OpenGL context sharing globally.
 	QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
