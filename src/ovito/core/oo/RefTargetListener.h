@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,8 +55,9 @@ Q_SIGNALS:
 
 	/// \brief This Qt signal is emitted by the listener each time it receives a notification
 	///        event from the current target.
+	/// \param source The object that sent the notification event.
 	/// \param event The notification event.
-	void notificationEvent(const ReferenceEvent& event);
+	void notificationEvent(RefTarget* source, const ReferenceEvent& event);
 
 protected:
 
@@ -190,6 +191,13 @@ public:
 	template<typename U>
 	void setTargets(U&& newTargets) { 
 		VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
+	}
+
+	/// \brief Sets the list of targets this listener should listen to.
+	/// \param newTargets The new list of targets.
+	/// \sa targets()
+	void setTargets(std::initializer_list<T*> newTargets) { 
+		VectorRefTargetListenerBase::setTargets(std::move(newTargets)); 
 	}
 
 	/// \brief Adds a new object to the list of targets this listener should listen to.

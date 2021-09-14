@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportLayout.h>
 
 namespace Ovito {
 
@@ -56,9 +57,6 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE ViewportConfiguration(DataSet* dataset);
-
-	/// Add a record for a new viewport.
-	void addViewport(const OORef<Viewport>& vp) { _viewports.push_back(this, PROPERTY_FIELD(viewports), vp); }
 
 	/// \brief Immediately repaints all viewports that have been scheduled for an update using updateViewports().
 	/// \sa updateViewports()
@@ -94,6 +92,18 @@ public:
 	/// Returns the current location around which the viewport camera orbits.
 	Point3 orbitCenter();
 
+	/// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
+	/// This method is currently used in the implementation of the Viewport.create_widget() Python method.
+	void registerViewport(Viewport* vp) { _viewports.push_back(this, PROPERTY_FIELD(viewports), vp); }
+
+	/// Determines the effective rectangles for all the viewports in the layout hierarchy.
+	std::vector<std::pair<Viewport*, QRectF>> getViewportRectangles(const QRectF& rect = QRectF(0,0,1,1), const QSizeF& borderSize = QSizeF(0,0)) const {
+		std::vector<std::pair<Viewport*, QRectF>> viewportRects;
+		if(layoutRootCell())
+			layoutRootCell()->getViewportRectangles(rect, viewportRects, borderSize);
+		return viewportRects;
+	}
+
 public Q_SLOTS:
 
 	/// \brief Sets the active viewport.
@@ -128,14 +138,6 @@ public Q_SLOTS:
 	/// call processViewportUpdates() subsequently.
 	void updateViewports();
 
-protected:
-
-	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
-
-	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
-
 Q_SIGNALS:
 
 	/// This signal is emitted when another viewport became active.
@@ -150,15 +152,35 @@ Q_SIGNALS:
 	/// This signal is emitted whenever the updating of viewports is resumed.
 	void viewportUpdateResumed();
 
+	/// This signal is sent whenver the layout of the viewports changes.
+	void viewportLayoutChanged();
+
+protected:
+
+	/// Is called when the value of a reference field of this RefMaker changes.
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
-	/// The list of viewports.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<Viewport>, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE);
+	/// Rebuilds the linear list of all viewports that are part of the current viewport layout tree. 
+	void updateListOfViewports();
 
-	/// The active viewport. May be NULL.
+	/// The list of all viewports which are automatically refreshed when the scene changes.
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_WEAK_REF);
+
+	/// The active viewport. May be null.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
-	/// The maximized viewport or NULL.
+	/// The maximized viewport if any.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
 
 	/// Controls around which point the viewport camera should orbit.
@@ -166,6 +188,9 @@ private:
 
 	/// Position of the orbiting center picked by the user.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Point3, userOrbitCenter, setUserOrbitCenter, PROPERTY_FIELD_NO_UNDO);
+
+	/// The viewport layout tree's root node.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ViewportLayoutCell>, layoutRootCell, setLayoutRootCell);
 
 	/// This counter is for suspending the viewport updates.
 	int _viewportSuspendCount = 0;
@@ -186,7 +211,8 @@ private:
  * Just create an instance of this class on the stack to suspend viewport updates
  * during the lifetime of the class instance.
  */
-class OVITO_CORE_EXPORT ViewportSuspender {
+class OVITO_CORE_EXPORT ViewportSuspender 
+{
 public:
 	ViewportSuspender(ViewportConfiguration* vpconf) noexcept : _vpconf(*vpconf) { _vpconf.suspendViewportUpdates(); }
 	ViewportSuspender(RefMaker* object) noexcept;

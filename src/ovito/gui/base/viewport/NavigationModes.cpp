@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -154,10 +154,10 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 /******************************************************************************
 * Returns the camera object associated with the given viewport.
 ******************************************************************************/
-AbstractCameraObject* NavigationMode::getViewportCamera(Viewport* vp)
+PipelineObject* NavigationMode::getViewportCamera(Viewport* vp)
 {
 	if(vp->viewNode() && vp->viewType() == Viewport::VIEW_SCENENODE) {
-		return dynamic_object_cast<AbstractCameraObject>(vp->viewNode()->pipelineSource());
+		return vp->viewNode()->pipelineSource();
 	}
 	return nullptr;
 }
@@ -221,20 +221,14 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
 		}
 	}
 	else {
-
-		FloatType oldFOV = _oldFieldOfView;
-		if(AbstractCameraObject* cameraObj = getViewportCamera(vp)) {
-			TimeInterval iv;
-			oldFOV = cameraObj->fieldOfView(vp->dataset()->animationSettings()->time(), iv);
+		if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+			FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
+			FloatType newFOV = oldFOV * (FloatType)exp(0.003 * delta.y());
+			cameraSource->setProperty("zoom", QVariant::fromValue(newFOV));
 		}
-
-		FloatType newFOV = oldFOV * (FloatType)exp(0.003 * delta.y());
-
-		if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
+		else {
+			FloatType newFOV = _oldFieldOfView * (FloatType)exp(0.003 * delta.y());
 			vp->setFieldOfView(newFOV);
-		}
-		else if(AbstractCameraObject* cameraObj = getViewportCamera(vp)) {
-			cameraObj->setFieldOfView(vp->dataset()->animationSettings()->time(), newFOV);
 		}
 	}
 }
@@ -275,10 +269,9 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps)
 				vp->viewNode()->transformationController()->translate(vp->dataset()->animationSettings()->time(), Vector3(0,0,-amount), sys);
 			}
 			else {
-				if(AbstractCameraObject* cameraObj = getViewportCamera(vp)) {
-					TimeInterval iv;
-					FloatType oldFOV = cameraObj->fieldOfView(vp->dataset()->animationSettings()->time(), iv);
-					cameraObj->setFieldOfView(vp->dataset()->animationSettings()->time(), oldFOV * exp(-steps * FloatType(1e-3)));
+				if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+					FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
+					cameraSource->setProperty("zoom", QVariant::fromValue(oldFOV * exp(-steps * FloatType(1e-3))));
 				}
 			}
 		});
@@ -294,9 +287,8 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps)
 void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
 	FloatType oldFOV = _oldFieldOfView;
-	if(AbstractCameraObject* cameraObj = getViewportCamera(vp)) {
-		TimeInterval iv;
-		oldFOV = cameraObj->fieldOfView(vp->dataset()->animationSettings()->time(), iv);
+	if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+		oldFOV = cameraSource->property(vp->isPerspectiveProjection() ? "fov" : "zoom").value<FloatType>();
 	}
 
 	FloatType newFOV;
@@ -309,11 +301,11 @@ void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
 		newFOV = oldFOV * (FloatType)exp(FloatType(6e-3) * delta.y());
 	}
 
-	if(vp->viewNode() == nullptr || vp->viewType() != Viewport::VIEW_SCENENODE) {
-		vp->setFieldOfView(newFOV);
+	if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+		cameraSource->setProperty(vp->isPerspectiveProjection() ? "fov" : "zoom", QVariant::fromValue(newFOV));
 	}
-	else if(AbstractCameraObject* cameraObj = getViewportCamera(vp)) {
-		cameraObj->setFieldOfView(vp->dataset()->animationSettings()->time(), newFOV);
+	else {
+		vp->setFieldOfView(newFOV);
 	}
 }
 

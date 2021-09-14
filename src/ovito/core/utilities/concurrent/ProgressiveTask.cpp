@@ -102,10 +102,10 @@ void ProgressiveTask::computeTotalProgress()
 		else
 			percentage = 0;
 		for(auto level = subStepsStack.crbegin(); level != subStepsStack.crend(); ++level) {
-			OVITO_ASSERT(level->first >= 0 && level->first < level->second.size());
+			OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
 			int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
 			int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
-			percentage = ((double)weightSum1 + percentage * level->second[level->first]) / (weightSum1 + weightSum2);
+			percentage = ((double)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
 		}
 		_totalProgressMaximum = 1000;
 		_totalProgressValue = qlonglong(percentage * 1000.0);
@@ -127,7 +127,7 @@ void ProgressiveTask::nextProgressSubStep()
         return;
 
 	OVITO_ASSERT(!subStepsStack.empty());
-	OVITO_ASSERT(subStepsStack.back().first < subStepsStack.back().second.size() - 1);
+	OVITO_ASSERT(subStepsStack.back().first < subStepsStack.back().second.size());
 	subStepsStack.back().first++;
     _progressMaximum = 0;
     _progressValue = 0;

@@ -46,8 +46,15 @@ File number base
       
 Output image size
   Sets the width and height of the rendered image or movie in pixels. 
-  Note that you can activate the :ref:`preview mode <usage.viewports.menu>` for the selected viewport to
-  see exactly which rectangular area of the viewport will be visible in rendered images.
+  Note that you can activate the :ref:`preview mode <usage.viewports.menu>` for an interactive viewport window to
+  see exactly which rectangular area of the viewport will be visible in the final output image.
+
+Render all viewports |ovito-pro|
+  Activate this option to generate a composed output image with multiple side-by-side views of your 3d scene. 
+  The arrangement of the views is determined by the current layout of the interactive viewport panels. 
+  Note that you can modify the number, size and layout of the viewports by dragging the vertical and horizontal lines separating
+  the viewport windows. Right-click on one of the spearator lines to open a popup menu providing further layout functions, or
+  use the :ref:`viewport menu <usage.viewports.menu>`.
 
 Save to file
   This option tells OVITO to save the rendered image or movie to disk in addition to displaying it

@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -103,7 +104,7 @@ void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 /******************************************************************************
 * Is called when the selected scene node generates a notification event.
 ******************************************************************************/
-void XFormMode::onSceneNodeEvent(const ReferenceEvent& event)
+void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TransformationChanged) {
 		if(MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow()))
@@ -176,7 +177,7 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		// Take the current mouse cursor position to make the input mode
 		// look more responsive. The cursor position recorded when the mouse event was
 		// generates may be too old.
-		_currentPoint = ViewportsPanel::viewportWidget(viewport())->mapFromGlobal(QCursor::pos());
+		_currentPoint = static_cast<WidgetViewportWindow*>(viewport()->window())->widget()->mapFromGlobal(QCursor::pos());
 
 		viewport()->dataset()->undoStack().resetCurrentCompoundOperation();
 		doXForm();

@@ -38,18 +38,21 @@ class ViewportsPanel : public QWidget
 
 public:
 
-	/// \brief Constructs the viewport panel.
+	/// Constructs the viewport panel.
 	ViewportsPanel(MainWindow* parent);
 
-	/// \brief Returns the widget that is associated with the given viewport.
-	static QWidget* viewportWidget(Viewport* vp);
+	/// Returns the widget that is associated with the given viewport.
+	QWidget* viewportWidget(Viewport* vp);
 
 	/// Handles keyboard input for the viewport windows.
 	bool onKeyShortcut(QKeyEvent* event);
 
 public Q_SLOTS:
 
-	/// \brief Performs the layout of the viewports in the panel.
+	/// Requests a relayout of the viewport windows.
+	void invalidateWindowLayout();
+
+	/// Performs the layout of the viewports in the panel.
 	void layoutViewports();
 
 	/// Destroys all viewport windows in the panel and recreates them.
@@ -57,11 +60,23 @@ public Q_SLOTS:
 
 protected:
 
-	/// \brief Renders the borders around the viewports.
+	/// Renders the borders around the viewports.
 	virtual void paintEvent(QPaintEvent* event) override;
 
 	/// Handles size event for the window.
 	virtual void resizeEvent(QResizeEvent* event) override;
+
+	/// Handles mouse input events.
+	virtual void mousePressEvent(QMouseEvent* event) override;
+
+	/// Handles mouse input events.
+	virtual void mouseMoveEvent(QMouseEvent* event) override;
+
+	/// Handles mouse input events.
+	virtual void mouseReleaseEvent(QMouseEvent* event) override;
+
+	/// Handles general events of the widget.
+	virtual bool event(QEvent* event) override;
 
 private Q_SLOTS:
 
@@ -78,9 +93,24 @@ private Q_SLOTS:
 	void onViewportModeCursorChanged(const QCursor& cursor);
 
 private:
+	
+	struct SplitterRectangle 
+	{
+		QRect area;
+		ViewportLayoutCell* cell;
+		size_t childCellIndex;
+		FloatType dragFactor;
+	};
+
+	/// Recursive helper function for laying out the viewport windows.
+	void layoutViewportsRecursive(ViewportLayoutCell* layoutCell, const QRect& rect);
+
+	/// Displays the context menu associated with a splitter handle.
+	void showSplitterContextMenu(const SplitterRectangle& splitter, const QPoint& mousePos);
 
 	QMetaObject::Connection _activeViewportChangedConnection;
 	QMetaObject::Connection _maximizedViewportChangedConnection;
+	QMetaObject::Connection _viewportLayoutChangedConnection;
 	QMetaObject::Connection _autoKeyModeChangedConnection;
 	QMetaObject::Connection _timeChangeCompleteConnection;
 	QMetaObject::Connection _activeModeCursorChangedConnection;
@@ -88,6 +118,18 @@ private:
 	OORef<ViewportConfiguration> _viewportConfig;
 	OORef<AnimationSettings> _animSettings;
 	MainWindow* _mainWindow;
+	bool _graphicsInitializationErrorOccurred = false; 
+
+	static constexpr int _splitterSize = 2;
+	static constexpr int _windowInset = 2;
+
+	bool _relayoutRequested = false;
+	std::vector<SplitterRectangle> _splitterRegions;
+	int _hoveredSplitter = -1;
+	bool _highlightSplitter = false;
+	int _draggedSplitter = -1;
+	QPoint _dragStartPos;
+	QBasicTimer _highlightSplitterTimer;
 };
 
 }	// End of namespace

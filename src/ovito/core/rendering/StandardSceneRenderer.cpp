@@ -87,21 +87,21 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
-	SceneRenderer::beginFrame(time, params, vp);
+	SceneRenderer::beginFrame(time, params, vp, viewportRect);
 
 	// Call implementation class.
-	_internalRenderer->beginFrame(time, params, vp);
+	_internalRenderer->beginFrame(time, params, vp, viewportRect);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// Delegate rendering work to implementation class.
-	if(!_internalRenderer->renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!_internalRenderer->renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
 		return false;
 
 	return true;
@@ -110,10 +110,10 @@ bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderin
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void StandardSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void StandardSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	// Call implementation class.
-	_internalRenderer->endFrame(renderingSuccessful, frameBuffer);
+	_internalRenderer->endFrame(renderingSuccessful, frameBuffer, viewportRect);
 }
 
 /******************************************************************************

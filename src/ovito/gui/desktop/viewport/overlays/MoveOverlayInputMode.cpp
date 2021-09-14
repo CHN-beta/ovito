@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
@@ -97,7 +98,7 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 			// Take the current mouse cursor position to make the input mode
 			// look more responsive. The cursor position recorded when the mouse event was
 			// generates may be too old.
-			_currentPoint = ViewportsPanel::viewportWidget(viewport())->mapFromGlobal(QCursor::pos());
+			_currentPoint = static_cast<WidgetViewportWindow*>(viewport()->window())->widget()->mapFromGlobal(QCursor::pos());
 
 			// Reset the layer's position first before moving it again below.
 			viewport()->dataset()->undoStack().resetCurrentCompoundOperation();

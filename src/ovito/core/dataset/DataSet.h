@@ -72,6 +72,10 @@ public:
 	/// \brief Destructor.
 	virtual ~DataSet();
 
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;
+
 	/// \brief Returns the path where this dataset is stored on disk.
 	/// \return The location where the dataset is stored or will be stored on disk.
 	const QString& filePath() const { return _filePath; }
@@ -123,14 +127,23 @@ public:
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
 	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-	///        output images of the scene. All rendering parameters are specified in the RenderSettings object.
-	/// \param settings A RenderSettings object that specifies output image size, animation range to render etc.
-	/// \param viewport The viewport to render. This determines the camera orientation.
+	///        output images of the scene. All rendering parameters are specified in the RenderSettings and ViewportConfiguration objects.
+	/// \param renderSettings A RenderSettings object that specifies output image size, animation range to render etc.
+	/// \param viewportConfiguration The viewport configuration to render.
 	/// \param frameBuffer The frame buffer that will receive the rendered image. When rendering an animation
 	///        sequence, the buffer will contain only the last rendered frame when the function returns.
 	/// \return true on success; false if operation has been canceled by the user.
 	/// \throw Exception on error.
-	bool renderScene(RenderSettings* settings, Viewport* viewport, FrameBuffer* frameBuffer, SynchronousOperation operation);
+	bool renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, SynchronousOperation operation);
+
+	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
+	///        output images of the scene. All rendering parameters are specified in the RenderSettings object.
+	/// \param renderSettings A RenderSettings object that specifies output image size, animation range to render etc.
+	/// \param viewportLayout The viewport layout.
+	/// \param frameBuffer The frame buffer that will receive the rendered image. 
+	/// \return true on success; false if operation has been canceled by the user.
+	/// \throw Exception on error.
+	bool renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, SynchronousOperation operation);
 
 	/// \brief Returns a future that is triggered once all data pipelines in the scene
 	///        have been completely evaluated at the current animation time.
@@ -209,10 +222,10 @@ private:
 
 	/// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.
 	bool renderFrame(TimePoint renderTime, int frameNumber, RenderSettings* settings, SceneRenderer* renderer,
-			Viewport* viewport, FrameBuffer* frameBuffer, VideoEncoder* videoEncoder, SynchronousOperation operation);
+			FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, SynchronousOperation operation);
 
 	/// Returns a viewport configuration that is used as template for new scenes.
-	OORef<ViewportConfiguration> createDefaultViewportConfiguration();
+	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ExecutionContext executionContext);
 
 	/// Requests the (re-)evaluation of all data pipelines in the current scene.
 	Q_INVOKABLE void makeSceneReady(bool forceReevaluation);

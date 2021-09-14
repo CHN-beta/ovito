@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,12 +58,6 @@ SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 ******************************************************************************/
 DataSet::DataSet(DataSet* self) : RefTarget(this), _unitsManager(this)
 {
-	setViewportConfig(createDefaultViewportConfiguration());
-	setAnimationSettings(new AnimationSettings(this));
-	setSceneRoot(new RootSceneNode(this));
-	setSelection(new SelectionSet(this));
-	setRenderSettings(new RenderSettings(this));
-
 	connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &DataSet::pipelineEvaluationFinished);
 }
 
@@ -78,6 +72,26 @@ DataSet::~DataSet()
 }
 
 /******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void DataSet::initializeObject(ExecutionContext executionContext)
+{
+	if(!viewportConfig())
+		setViewportConfig(createDefaultViewportConfiguration(executionContext));
+	if(!animationSettings())
+		setAnimationSettings(new AnimationSettings(this));
+	if(!sceneRoot())
+		setSceneRoot(new RootSceneNode(this));
+	if(!selection())
+		setSelection(new SelectionSet(this));
+	if(!renderSettings())
+		setRenderSettings(new RenderSettings(this));
+
+	RefTarget::initializeObject(executionContext);
+}
+
+/******************************************************************************
 * Returns the TaskManager responsible for this DataSet.
 ******************************************************************************/
 TaskManager& DataSet::taskManager() const
@@ -88,55 +102,70 @@ TaskManager& DataSet::taskManager() const
 /******************************************************************************
 * Returns a viewport configuration that is used as template for new scenes.
 ******************************************************************************/
-OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration()
+OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ExecutionContext executionContext)
 {
 	UndoSuspender noUndo(undoStack());
 
-	OORef<ViewportConfiguration> defaultViewportConfig = new ViewportConfiguration(this);
+	OORef<ViewportConfiguration> viewConfig = new ViewportConfiguration(this);
 
 	if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
+
+		// Create the 4 standard viewports.
 		OORef<Viewport> topView = new Viewport(this);
 		topView->setViewType(Viewport::VIEW_TOP);
-		defaultViewportConfig->addViewport(topView);
 
 		OORef<Viewport> frontView = new Viewport(this);
 		frontView->setViewType(Viewport::VIEW_FRONT);
-		defaultViewportConfig->addViewport(frontView);
 
 		OORef<Viewport> leftView = new Viewport(this);
 		leftView->setViewType(Viewport::VIEW_LEFT);
-		defaultViewportConfig->addViewport(leftView);
 
 		OORef<Viewport> perspectiveView = new Viewport(this);
 		perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
 		perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
-		defaultViewportConfig->addViewport(perspectiveView);
 
-		defaultViewportConfig->setActiveViewport(perspectiveView);
+		// Set up the 4-pane layout of the viewports.
+		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(this, executionContext);
+		rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
+		rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
+		rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
+		rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
+		viewConfig->setLayoutRootCell(std::move(rootLayoutCell));
+
+		viewConfig->setActiveViewport(perspectiveView);
 
 #ifndef Q_OS_WASM
 		Viewport::ViewType maximizedViewportType = static_cast<Viewport::ViewType>(ViewportSettings::getSettings().defaultMaximizedViewportType());
 		if(maximizedViewportType != Viewport::VIEW_NONE) {
-			for(Viewport* vp : defaultViewportConfig->viewports()) {
+			for(Viewport* vp : viewConfig->viewports()) {
 				if(vp->viewType() == maximizedViewportType) {
-					defaultViewportConfig->setActiveViewport(vp);
-					defaultViewportConfig->setMaximizedViewport(vp);
+					viewConfig->setActiveViewport(vp);
+					viewConfig->setMaximizedViewport(vp);
 					break;
 				}
 			}
-			if(!defaultViewportConfig->maximizedViewport()) {
-				defaultViewportConfig->setMaximizedViewport(defaultViewportConfig->activeViewport());
+			if(!viewConfig->maximizedViewport()) {
+				viewConfig->setMaximizedViewport(viewConfig->activeViewport());
 				if(maximizedViewportType > Viewport::VIEW_NONE && maximizedViewportType <= Viewport::VIEW_PERSPECTIVE)
-					defaultViewportConfig->maximizedViewport()->setViewType(maximizedViewportType);
+					viewConfig->maximizedViewport()->setViewType(maximizedViewportType);
 			}
 		}
-		else defaultViewportConfig->setMaximizedViewport(nullptr);
+		else viewConfig->setMaximizedViewport(nullptr);
 #else
-		defaultViewportConfig->setMaximizedViewport(defaultViewportConfig->activeViewport());
+		viewConfig->setMaximizedViewport(defaultViewportConfig->activeViewport());
 #endif
 	}
 
-	return defaultViewportConfig;
+	return viewConfig;
 }
 
 /******************************************************************************
@@ -393,95 +422,133 @@ void DataSet::pipelineEvaluationFinished()
 	makeSceneReady(false);
 }
 
+
 /******************************************************************************
-* This is the high-level rendering function, which invokes the renderer to generate one or more
-* output images of the scene. All rendering parameters are specified in the RenderSettings object.
+* This is the high-level rendering function, which invokes the renderer to 
+* generate one or more output images of the scene. 
 ******************************************************************************/
-bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuffer* frameBuffer, SynchronousOperation operation)
+bool DataSet::renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, SynchronousOperation operation)
 {
-	OVITO_CHECK_OBJECT_POINTER(settings);
-	OVITO_CHECK_OBJECT_POINTER(viewport);
+	OVITO_CHECK_OBJECT_POINTER(renderSettings);
+	OVITO_CHECK_OBJECT_POINTER(viewportConfiguration);
+
+	std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
+	if(renderSettings->renderAllViewports()) {
+		// When rendering an entire viewport layout, determine the each viewport's destination rectangle within the output frame buffer.
+		QSizeF borderSize(0,0);
+		if(renderSettings->layoutSeperatorsEnabled()) {
+			// Convert separator width from pixels to reduced units, which are relative to the framebuffer width/height.
+			borderSize.setWidth( 1.0 / renderSettings->outputImageWidth()  * renderSettings->layoutSeperatorWidth()); 
+			borderSize.setHeight(1.0 / renderSettings->outputImageHeight() * renderSettings->layoutSeperatorWidth()); 
+		}
+		viewportLayout = viewportConfiguration->getViewportRectangles(QRectF(0,0,1,1), borderSize);
+	}
+	else if(viewportConfiguration->activeViewport()) {
+		// When rendering just the active viewport, create an ad-hoc layout for the single viewport.
+		viewportLayout.push_back({ viewportConfiguration->activeViewport(), QRectF(0,0,1,1) });
+	}
+
+	return renderScene(renderSettings, viewportLayout, frameBuffer, std::move(operation));
+}
+
+/******************************************************************************
+* This is the high-level rendering function, which invokes the renderer to 
+* generate one or more output images of the scene. 
+******************************************************************************/
+bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, SynchronousOperation operation)
+{
+	OVITO_CHECK_OBJECT_POINTER(renderSettings);
 	OVITO_ASSERT(frameBuffer);
 
 	// Get the selected scene renderer.
-	SceneRenderer* renderer = settings->renderer();
+	SceneRenderer* renderer = renderSettings->renderer();
 	if(!renderer) throwException(tr("No rendering engine has been selected."));
 
 	bool notCanceled = true;
 	try {
 
 		// Resize output frame buffer.
-		if(frameBuffer->size() != QSize(settings->outputImageWidth(), settings->outputImageHeight())) {
-			frameBuffer->setSize(QSize(settings->outputImageWidth(), settings->outputImageHeight()));
+		if(frameBuffer->size() != QSize(renderSettings->outputImageWidth(), renderSettings->outputImageHeight())) {
+			frameBuffer->setSize(QSize(renderSettings->outputImageWidth(), renderSettings->outputImageHeight()));
 			frameBuffer->clear();
 		}
 
 		// Don't update viewports while rendering.
 		ViewportSuspender noVPUpdates(this);
 
+		// Determine the size of the rendering frame buffer. It must fit the largest viewport rectangle.
+		QSize largestViewportRectSize(0,0);
+		for(const std::pair<Viewport*, QRectF>& rect : viewportLayout) {
+			// Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
+			QRectF pixelRect(rect.second.x() * frameBuffer->width(), rect.second.y() * frameBuffer->height(), rect.second.width() * frameBuffer->width(), rect.second.height() * frameBuffer->height());
+			largestViewportRectSize = largestViewportRectSize.expandedTo(pixelRect.toRect().size());
+		}
+		if(largestViewportRectSize.isEmpty())
+			throwException(tr("There is no valid viewport to be rendered."));
+
 		// Initialize the renderer.
 		operation.setProgressText(tr("Initializing renderer"));
-		if(renderer->startRender(this, settings, frameBuffer->size())) {
+		if(renderer->startRender(this, renderSettings, largestViewportRectSize)) {
 
 			VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
 			std::unique_ptr<VideoEncoder> videoEncoderPtr;
 			// Initialize video encoder.
-			if(settings->saveToFile() && settings->imageInfo().isMovie()) {
+			if(renderSettings->saveToFile() && renderSettings->imageInfo().isMovie()) {
 
-				if(settings->imageFilename().isEmpty())
+				if(renderSettings->imageFilename().isEmpty())
 					throwException(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
 
 				videoEncoderPtr = std::make_unique<VideoEncoder>();
 				videoEncoder = videoEncoderPtr.get();
-				int ticksPerFrame = std::max(1, (settings->framesPerSecond() > 0) ? (TICKS_PER_SECOND / settings->framesPerSecond()) : animationSettings()->ticksPerFrame());
-				videoEncoder->openFile(settings->imageFilename(), settings->outputImageWidth(), settings->outputImageHeight(), ticksPerFrame);
+				int ticksPerFrame = std::max(1, (renderSettings->framesPerSecond() > 0) ? (TICKS_PER_SECOND / renderSettings->framesPerSecond()) : animationSettings()->ticksPerFrame());
+				videoEncoder->openFile(renderSettings->imageFilename(), renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), ticksPerFrame);
 			}
 #endif
 
-			if(settings->renderingRangeType() == RenderSettings::CURRENT_FRAME) {
+			if(renderSettings->renderingRangeType() == RenderSettings::CURRENT_FRAME) {
 				// Render a single frame.
 				TimePoint renderTime = animationSettings()->time();
 				int frameNumber = animationSettings()->timeToFrame(renderTime);
 				operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
-				notCanceled = renderFrame(renderTime, frameNumber, settings, renderer, viewport, frameBuffer, videoEncoder, std::move(operation));
+				notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, std::move(operation));
 			}
-			else if(settings->renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
+			else if(renderSettings->renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
 				// Render a specific frame.
-				TimePoint renderTime = animationSettings()->frameToTime(settings->customFrame());
-				operation.setProgressText(tr("Rendering frame %1").arg(settings->customFrame()));
-				notCanceled = renderFrame(renderTime, settings->customFrame(), settings, renderer, viewport, frameBuffer, videoEncoder, std::move(operation));
+				TimePoint renderTime = animationSettings()->frameToTime(renderSettings->customFrame());
+				operation.setProgressText(tr("Rendering frame %1").arg(renderSettings->customFrame()));
+				notCanceled = renderFrame(renderTime, renderSettings->customFrame(), renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, std::move(operation));
 			}
-			else if(settings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || settings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
+			else if(renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
 				// Render an animation interval.
 				TimePoint renderTime;
 				int firstFrameNumber, numberOfFrames;
-				if(settings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
+				if(renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
 					renderTime = animationSettings()->animationInterval().start();
 					firstFrameNumber = animationSettings()->timeToFrame(animationSettings()->animationInterval().start());
 					numberOfFrames = (animationSettings()->timeToFrame(animationSettings()->animationInterval().end()) - firstFrameNumber + 1);
 				}
 				else {
-					firstFrameNumber = settings->customRangeStart();
+					firstFrameNumber = renderSettings->customRangeStart();
 					renderTime = animationSettings()->frameToTime(firstFrameNumber);
-					numberOfFrames = (settings->customRangeEnd() - firstFrameNumber + 1);
+					numberOfFrames = (renderSettings->customRangeEnd() - firstFrameNumber + 1);
 				}
-				numberOfFrames = (numberOfFrames + settings->everyNthFrame() - 1) / settings->everyNthFrame();
+				numberOfFrames = (numberOfFrames + renderSettings->everyNthFrame() - 1) / renderSettings->everyNthFrame();
 				if(numberOfFrames < 1)
-					throwException(tr("Invalid rendering range: Frame %1 to %2").arg(settings->customRangeStart()).arg(settings->customRangeEnd()));
+					throwException(tr("Invalid rendering range: Frame %1 to %2").arg(renderSettings->customRangeStart()).arg(renderSettings->customRangeEnd()));
 				operation.setProgressMaximum(numberOfFrames);
 
 				// Render frames, one by one.
 				for(int frameIndex = 0; frameIndex < numberOfFrames && notCanceled && !operation.isCanceled(); frameIndex++) {
-					int frameNumber = firstFrameNumber + frameIndex * settings->everyNthFrame() + settings->fileNumberBase();
+					int frameNumber = firstFrameNumber + frameIndex * renderSettings->everyNthFrame() + renderSettings->fileNumberBase();
 
 					operation.setProgressValue(frameIndex);
 					operation.setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
-					notCanceled = renderFrame(renderTime, frameNumber, settings, renderer, viewport, frameBuffer, videoEncoder, operation.subOperation(true));
+					notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, operation.subOperation(true));
 
 					// Go to next animation frame.
-					renderTime += animationSettings()->ticksPerFrame() * settings->everyNthFrame();
+					renderTime += animationSettings()->ticksPerFrame() * renderSettings->everyNthFrame();
 
 					// Periodically free visual element resources during animation rendering to avoid clogging the memory.
 					visCache().discardUnusedObjects();
@@ -516,8 +583,8 @@ bool DataSet::renderScene(RenderSettings* settings, Viewport* viewport, FrameBuf
 /******************************************************************************
 * Renders a single frame and saves the output file.
 ******************************************************************************/
-bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings* settings, SceneRenderer* renderer, Viewport* viewport,
-		FrameBuffer* frameBuffer, VideoEncoder* videoEncoder, SynchronousOperation operation)
+bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings* settings, SceneRenderer* renderer, 
+		FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, SynchronousOperation operation)
 {
 	// Determine output filename for this frame.
 	QString imageFilename;
@@ -537,9 +604,6 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 		}
 	}
 
-	// Set up preliminary projection.
-	ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, settings->outputImageAspectRatio());
-
 	// Fill frame buffer with background color.
 	if(!settings->generateAlphaChannel()) {
 		frameBuffer->clear(ColorA(settings->backgroundColor()));
@@ -548,54 +612,76 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 		frameBuffer->clear();
 	}
 
-	// Request scene bounding box.
-	Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
-	if(operation.isCanceled())
-		return false;
+	// Compute relative weights of the viewport rectangles for the progress display. 
+	std::vector<int> progressWeights(viewportLayout.size());
+	std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [frameBuffer](const auto& r) {
+		return r.second.width() * r.second.height() * frameBuffer->width() * frameBuffer->height();
+	});
+	operation.beginProgressSubStepsWithWeights(std::move(progressWeights));
 
-	// Determine final view projection.
-	projParams = viewport->computeProjectionParameters(renderTime, settings->outputImageAspectRatio(), boundingBox);
+	// Render each viewport of the layout one after the other.
+	for(const std::pair<Viewport*, QRectF>& viewportRect : viewportLayout) {
+		Viewport* viewport = viewportRect.first;
 
-	// Render one frame.
-	try {
-		// Render viewport "underlays".
-		for(ViewportOverlay* layer : viewport->underlays()) {
-			if(layer->isEnabled()) {
-				{
-					layer->render(viewport, renderTime, frameBuffer, projParams, settings, operation.subOperation());
-					if(operation.isCanceled()) {
-						renderer->endFrame(false, nullptr);
-						return false;
+		// Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
+		QRectF pixelRect(viewportRect.second.x() * frameBuffer->width(), viewportRect.second.y() * frameBuffer->height(), viewportRect.second.width() * frameBuffer->width(), viewportRect.second.height() * frameBuffer->height());
+		QRect destinationRect = pixelRect.toRect();
+
+		if(!destinationRect.isEmpty()) {
+
+			// Set up preliminary projection.
+			FloatType viewportAspectRatio = (FloatType)destinationRect.height() / (FloatType)destinationRect.width();
+			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
+
+			// Request scene bounding box.
+			Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
+			if(operation.isCanceled())
+				return false;
+
+			// Determine final view projection.
+			projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, boundingBox);
+
+			// Render one frame.
+			try {
+				// Render viewport "underlays".
+				for(ViewportOverlay* layer : viewport->underlays()) {
+					if(layer->isEnabled()) {
+						layer->render(viewport, renderTime, frameBuffer, destinationRect, projParams, settings, operation.subOperation());
+						if(operation.isCanceled()) {
+							renderer->endFrame(false, nullptr, destinationRect);
+							return false;
+						}
+						frameBuffer->update();
 					}
 				}
-				frameBuffer->update();
-			}
-		}
 
-		// Let the scene renderer do its work.
-		renderer->beginFrame(renderTime, projParams, viewport);
-		if(!renderer->renderFrame(frameBuffer, SceneRenderer::NonStereoscopic, operation.subOperation())) {
-			renderer->endFrame(false, frameBuffer);
-			return false;
-		}
-		renderer->endFrame(true, frameBuffer);
-	}
-	catch(...) {
-		renderer->endFrame(false, nullptr);
-		throw;
-	}
-
-	// Render viewport overlays on top.
-	for(ViewportOverlay* layer : viewport->overlays()) {
-		if(layer->isEnabled()) {
-			{
-				layer->render(viewport, renderTime, frameBuffer, projParams, settings, operation.subOperation());
-				if(operation.isCanceled())
+				// Let the scene renderer do its work.
+				renderer->beginFrame(renderTime, projParams, viewport, destinationRect);
+				if(!renderer->renderFrame(frameBuffer, destinationRect, SceneRenderer::NonStereoscopic, operation.subOperation())) {
+					renderer->endFrame(false, frameBuffer, destinationRect);
 					return false;
+				}
+				renderer->endFrame(true, frameBuffer, destinationRect);
 			}
-			frameBuffer->update();
+			catch(...) {
+				renderer->endFrame(false, nullptr, destinationRect);
+				throw;
+			}
+
+			// Render viewport overlays on top.
+			for(ViewportOverlay* layer : viewport->overlays()) {
+				if(layer->isEnabled()) {
+					layer->render(viewport, renderTime, frameBuffer, destinationRect, projParams, settings, operation.subOperation());
+					if(operation.isCanceled())
+						return false;
+					frameBuffer->update();
+				}
+			}
 		}
+
+		operation.nextProgressSubStep();
 	}
+	operation.endProgressSubSteps();
 
 	// Save rendered image to disk.
 	if(settings->saveToFile()) {

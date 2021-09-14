@@ -64,23 +64,31 @@ Viewport menu
 -------------
 
 .. image:: /images/viewport_control_toolbar/viewport_menu_screenshot.*
-   :width: 30%
+   :width: 40%
    :align: right
 
-Click the caption label in the upper left corner of a viewport (e.g. *Perspective*, *Top*, etc.)
-to open the *viewport menu* as shown in the screenshot.
+Click on the caption text in the upper left corner of a viewport window (e.g. *Perspective*, *Top*, etc.)
+to open the *viewport menu*.
 
-The :guilabel:`View Type` menu lets you switch to one of the standard
-viewing orientations and between parallel (orthogonal) and perspective projection types. The
-:ref:`Adjust View <viewports.adjust_view_dialog>` function gives you precise
-control over the position and orientation of the viewport's camera using numeric input fields.
+:guilabel:`Preview Mode` activates a virtual frame in the viewport to
+precisely indicate the rectangular region that will be visible in :ref:`rendered output images <usage.rendering>`. 
+The aspect ratio of the frame reflects the image size currently set in the :ref:`Render settings <core.render_settings>` panel.
 
-The :guilabel:`Preview Mode` option activates a virtual frame that is displayed in the viewport to
-indicate the region that will be visible in :ref:`rendered images <usage.rendering>`. The aspect ratio of the frame reflects the
-image size currently set in the :ref:`Render settings <core.render_settings>` panel.
-With preview mode active, scene objects and any :ref:`viewport layers <viewport_layers>` will
-be rendered in the interactive viewport window just like they are in the final output image.
+The :guilabel:`Constrain Rotation` option controls whether the virtual camera's orientation is constrained at all times such 
+that the z-axis of the simulation coordinate system is pointing upward. If needed, you can set *x* or *y* to be the
+vertical axis in the :ref:`application settings dialog <application_settings.viewports>`. 
+
+The :guilabel:`View Type` submenu lets you switch between different standard
+viewing directions and parallel (orthogonal) and perspective projection types. The
+:ref:`Adjust View <viewports.adjust_view_dialog>` function gives you precise numeric
+control over the positioning and orientation of the viewport's camera.
 
 Use the :guilabel:`Create Camera` function to insert a camera object into the three-dimensional
-scene. This object will be linked to the viewport, and moving the camera object around automatically updates the viewport
-accordingly. This gives you the possibility to :ref:`animate the camera <usage.animation.camera>`.
+scene. This object will be linked to the viewport, and moving the camera object updates the view
+accordingly. This gives you the possibility to create animations with a :ref:'camera motion path <usage.animation.camera>`.
+
+The :guilabel:`Layout` submenu contains several functions that modify the current layout of viewport windows.
+OVITO creates 4 standard viewports by default, which are arranged in a 2-by-2 grid. You can add 
+and remove viewport windows as needed, and adjust their relative positioning by dragging the separator 
+lines between them with the mouse. OVITO Pro provides the option to render images and animations that shoow 
+multiple views side by side, see the :ref:`Render all viewports <core.render_settings>` option.

@@ -67,7 +67,7 @@ void OpenGLMarkerPrimitive::render(OpenGLSceneRenderer* renderer)
 	}
 
 	// Marker sclaing factor:
-	shader.setUniformValue("marker_size", 4.0 / renderer->renderingViewport().height());
+	shader.setUniformValue("marker_size", 4.0 / renderer->viewportRect().height());
 
 	// Upload marker positions.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), OpenGLShaderHelper::PerInstance);

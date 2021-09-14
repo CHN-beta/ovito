@@ -49,19 +49,16 @@ public:
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
+	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) override;
 
 	/// Is called after rendering has finished.
 	virtual void endRender() override;
-
-	/// Returns the final size of the rendered image in pixels.
-	virtual QSize outputSize() const override { return _outputSize; }
 
 protected:
 
@@ -86,9 +83,6 @@ private:
 
 	/// The resolution of the offscreen framebuffer.
 	QSize _framebufferSize;
-
-	/// The resolution of the output image.
-	QSize _outputSize;
 
 	/// The monotonically increasing identifier of the last frame that was rendered.
 	OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;

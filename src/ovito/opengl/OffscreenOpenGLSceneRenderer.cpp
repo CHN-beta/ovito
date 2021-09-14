@@ -119,8 +119,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
     initializeOpenGLFunctions();
 
 	// Determine internal framebuffer size including supersampling.
-	_outputSize = frameBufferSize;
-	_framebufferSize = QSize(_outputSize.width() * antialiasingLevel(), _outputSize.height() * antialiasingLevel());
+	_framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());
 
 	// Create OpenGL framebuffer.
 	QOpenGLFramebufferObjectFormat framebufferFormat;
@@ -139,7 +138,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
 	// Make GL context current.
 	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
@@ -149,7 +148,12 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	OVITO_ASSERT(currentResourceFrame() == 0);
 	setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp);
+	// Always render into the upper left corner of the OpenGL framebuffer.
+	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
+	OpenGLSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect);
 }
 
 /******************************************************************************
@@ -160,8 +164,6 @@ void OffscreenOpenGLSceneRenderer::initializeGLState()
 {
 	OpenGLSceneRenderer::initializeGLState();
 
-	setRenderingViewport(QRect(QPoint(0,0), _framebufferSize));
-	setDepthTestEnabled(true);
 	if(renderSettings())
 		setClearColor(ColorA(renderSettings()->backgroundColor(), 0));
 	else
@@ -171,12 +173,17 @@ void OffscreenOpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	OVITO_ASSERT(frameBuffer != nullptr);
 
+	// Always render into the upper left corner of the OpenGL framebuffer.
+	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, stereoTask, std::move(operation)))
 		return false;
 
 	return true;
@@ -185,7 +192,7 @@ bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	if(renderingSuccessful && frameBuffer) {
 
@@ -196,29 +203,35 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		QImage renderedImage = _framebufferObject->toImage();
 		// We need it in ARGB32 format for best results.
 		renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
-		// Rescale supersampled image to final size.
-		QImage scaledImage = renderedImage.scaled(_outputSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		// Rescale supersampled image.
+		QSize originalSize(renderedImage.width() / antialiasingLevel(), renderedImage.height() / antialiasingLevel());
+		QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		// Transfer OpenGL image to the output frame buffer.
 		if(!frameBuffer->image().isNull()) {
 			QPainter painter(&frameBuffer->image());
-			painter.drawImage(painter.window(), scaledImage);
+			painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
 		}
 		else {
 			frameBuffer->image() = scaledImage;
 		}
-		frameBuffer->update();
+		frameBuffer->update(viewportRect);
 	}
 
 	// Tell the resource manager that we are done rendering the frame.
 	if(_previousResourceFrame) {
 		OpenGLResourceManager::instance()->releaseResourceFrame(_previousResourceFrame);
 	}
-	// Keep the resource from the last frame alive to speed up rendering successive frames.
+	// Keep the resource from the last frame alive to speed up rendering of successive frames.
 	_previousResourceFrame = currentResourceFrame();
 	setCurrentResourceFrame(0);
 
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	// Always render into the upper left corner of the OpenGL framebuffer.
+	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
+	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, shiftedViewportRect);
 }
 
 /******************************************************************************

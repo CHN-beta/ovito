@@ -83,7 +83,7 @@ public:
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
-	/// Prepares the renderer for rendering and sets the data set to be rendered.
+	/// Prepares the renderer for rendering and sets the dataset to be rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize);
 
 	/// Returns the dataset being rendered.
@@ -110,8 +110,8 @@ public:
 	/// This may be NULL.
 	Viewport* viewport() const { return _viewport; }
 
-	/// Returns the final size of the rendered image in pixels.
-	virtual QSize outputSize() const;
+	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	const QRect& viewportRect() const { return _viewportRect; }
 
 	/// Returns the device pixel ratio of the output device we are rendering to.
 	virtual qreal devicePixelRatio() const;
@@ -124,14 +124,14 @@ public:
 
 	/// Sets the view projection parameters, the animation frame to render,
 	/// and the viewport being rendered.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp);
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect);
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) = 0;
+	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) = 0;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) {}
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) {}
 
 	/// Changes the current local-to-world transformation matrix.
 	void setWorldTransform(const AffineTransformation& tm) {
@@ -144,12 +144,6 @@ public:
 
 	/// Returns the current model-to-view transformation matrix.
 	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
-
-	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
-	virtual void setRenderingViewport(const QRect& viewportRect) { _viewportRect = viewportRect; }
-
-	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
-	const QRect& renderingViewport() const { return _viewportRect; }
 
 	/// Requests a new line geometry buffer from the renderer.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() {

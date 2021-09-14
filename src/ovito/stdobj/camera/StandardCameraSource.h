@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,10 +68,24 @@ public:
 	/// For a target camera, queries the distance between the camera and its target.
 	FloatType targetDistance() const;
 
+	/// Returns the current orthogonal field of view.
+	FloatType zoom() const;
+
+	/// Sets the field of view of a parallel projection camera.
+	void setZoom(FloatType newFOV);
+
+	/// Returns the current perspective field of view angle.
+	FloatType fov() const;
+
+	/// Sets the field of view angle of a perspective projection camera.
+	void setFov(FloatType newFOV);
+
 public:
 
 	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera)
 	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective)
+	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom)
+	Q_PROPERTY(FloatType fov READ fov WRITE setFov)
 
 private:
 

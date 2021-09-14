@@ -139,9 +139,10 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 		// Create the rendering frame buffer that receives the rendered image of the particles.
 		FrameBuffer frameBuffer(_resolution, _resolution);
+		QRect frameBufferRect(QPoint(0,0), frameBuffer.size());
 
 		// Initialize the renderer.
-		_renderer->startRender(nullptr, nullptr, frameBuffer.size());
+		_renderer->startRender(nullptr, nullptr, frameBufferRect.size());
 		try {
 			// The buffered particle geometry used for rendering the particles.
 			std::shared_ptr<ParticlePrimitive> particleBuffer;
@@ -176,7 +177,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
 				projParams.validityInterval = TimeInterval::infinite();
 
-				_renderer->beginFrame(0, projParams, nullptr);
+				_renderer->beginFrame(0, projParams, nullptr, frameBufferRect);
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				try {
 					// Create particle buffer.
@@ -188,7 +189,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 					_renderer->renderParticles(particleBuffer);
 				}
 				catch(...) {
-					_renderer->endFrame(false, nullptr);
+					_renderer->endFrame(false, nullptr, frameBufferRect);
 					throw;
 				}
 				// Discard the existing image in the frame buffer so that
@@ -197,7 +198,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				frameBuffer.image() = QImage();
 
 				// Retrieve the frame buffer contents.
-				_renderer->endFrame(true, &frameBuffer);
+				_renderer->endFrame(true, &frameBuffer, frameBufferRect);
 
 				// Extract brightness values from rendered image.
 				const QImage& image = frameBuffer.image();

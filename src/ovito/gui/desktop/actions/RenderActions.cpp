@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,18 +44,16 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		dataset()->animationSettings()->stopAnimationPlayback();
 
 		// Get the current render settings.
-		RenderSettings* settings = dataset()->renderSettings();
+		RenderSettings* renderSettings = dataset()->renderSettings();
 
-		// Get viewport to be rendered.
-		Viewport* viewport = dataset()->viewportConfig()->activeViewport();
-		if(!viewport)
-			throw Exception(tr("There is no active viewport to render."), dataset());
+		// Get the current viewport configuration.
+		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
 
 		// Get frame buffer and window.
 		FrameBufferWindow* frameBufferWindow = mainWindow()->frameBufferWindow();
 
 		// Allocate and resize frame buffer and frame buffer window if necessary.
-		std::shared_ptr<FrameBuffer> frameBuffer = frameBufferWindow->createFrameBuffer(settings->outputImageWidth(), settings->outputImageHeight());
+		std::shared_ptr<FrameBuffer> frameBuffer = frameBufferWindow->createFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
 		// Show and activate frame buffer window.
 		frameBufferWindow->showAndActivateWindow();
@@ -68,7 +66,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		progressDialog.show();
 
 		// Call high-level rendering function, which will take care of the rest.
-		dataset()->renderScene(settings, viewport, frameBuffer.get(), progressDialog.createOperation());
+		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), progressDialog.createOperation());
 	}
 	catch(const Exception& ex) {
 		ex.logError();

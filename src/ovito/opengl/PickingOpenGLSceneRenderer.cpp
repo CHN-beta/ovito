@@ -42,7 +42,7 @@ PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : OpenG
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
 	// Get the viewport's window.
 	ViewportWindowInterface* vpWindow = vp->window();
@@ -118,7 +118,7 @@ void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjection
 			throwException(tr("Failed to create OpenGL framebuffer for picking offscreen rendering."));
 	}
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp);
+	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect);
 }
 
 /******************************************************************************
@@ -134,13 +134,13 @@ void PickingOpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// Clear previous object records.
 	reset();
 
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
 		return false;
 
 	// Clear OpenGL error state, so we start fresh for the glReadPixels() call below.
@@ -223,7 +223,6 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRen
 		this->glDisable(GL_STENCIL_TEST);
 		this->glDisable(GL_BLEND);
 		this->glDisable(GL_DEPTH_TEST);
-		setRenderingViewport(QRect(QPoint(0,0), size));
 
 		// Transfer depth buffer to the color buffer so that the pixel data can be read.
 		// WebGL1 doesn't allow to read the data of a depth texture directly.
@@ -248,7 +247,7 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRen
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	endPickObject();
 	if(_framebufferObject) {
@@ -266,7 +265,7 @@ void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer*
 		glGenTextures(2, _framebufferTexturesGLES);
 		_framebufferTexturesGLES[0] = _framebufferTexturesGLES[1] = 0;
 	}
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
 
 	// Reactivate old GL context.
 	if(_oldSurface && _oldContext) {

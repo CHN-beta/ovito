@@ -264,7 +264,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -316,19 +316,29 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
     rpBeginInfo.pClearValues = clearValues;
     deviceFunctions()->vkCmdBeginRenderPass(currentCommandBuffer(), &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	VulkanSceneRenderer::beginFrame(time, params, vp);
+	// Always render into the upper left corner of the Vulkan framebuffer.
+	// That's because the Vulkan framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
+	VulkanSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
 
+	// Always render into the upper left corner of the Vulkan framebuffer.
+	// That's because the Vulkan framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
 	// Let the base class do the main rendering work.
-	if(!VulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!VulkanSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, stereoTask, std::move(operation)))
 		return false;
 
 	return true;
@@ -337,7 +347,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoR
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -454,20 +464,21 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		}
 		deviceFunctions()->vkUnmapMemory(logicalDevice(), _frameGrabImageMem);
 		
-		// Rescale supersampled image to final size.
-		QImage scaledImage = frameGrabTargetImage.scaled(_outputSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		// Rescale supersampled image.
+		QSize originalSize(frameGrabTargetImage.width() / antialiasingLevel(), frameGrabTargetImage.height() / antialiasingLevel());
+		QImage scaledImage = frameGrabTargetImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		// Transfer acquired image to the output frame buffer.
 		if(!frameBuffer->image().isNull()) {
 			// If the existing framebuffer is not empty, perform proper alpha blending.
 			QPainter painter(&frameBuffer->image());
-			painter.drawImage(painter.window(), scaledImage);
+			painter.drawImage(viewportRect, scaledImage, QRect(0, 0, viewportRect.width(), viewportRect.height()));
 		}
 		else {
 			// If the existing framebuffer is empty, no need to perform blending.
 			frameBuffer->image() = scaledImage;
 		}
-		frameBuffer->update();
+		frameBuffer->update(viewportRect);
 	}
 
 	// Tell the Vulkan resource manager that we are done rendering the frame.
@@ -480,7 +491,12 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		_cmdBuf = VK_NULL_HANDLE;
 	}
 
-	VulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	// Always render into the upper left corner of the Vulkan framebuffer.
+	// That's because the Vulkan framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = viewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
+	VulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer, shiftedViewportRect);
 }
 
 /******************************************************************************

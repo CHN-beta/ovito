@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -123,6 +123,18 @@ private:
 
 	/// The frames per second for encoding videos.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, framesPerSecond, setFramesPerSecond);
+
+	/// Controls whether all viewports of the current viewport layout are rendered (or just the active viewport).
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderAllViewports, setRenderAllViewports);
+
+	/// Controls the visibility of separators between viewports when rendering an entire viewport layout.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, layoutSeperatorsEnabled, setLayoutSeperatorsEnabled, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls the width (in pixels) of the separators between viewports when rendering an entire viewport layout.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, layoutSeperatorWidth, setLayoutSeperatorWidth, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls the color of the separator lines between viewports when rendering an entire viewport layout.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, layoutSeperatorColor, setLayoutSeperatorColor, PROPERTY_FIELD_MEMORIZE);
 
     friend class RenderSettingsEditor;
 };

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,6 +109,44 @@ PipelineFlowState StandardCameraSource::evaluateSynchronous(TimePoint time)
 
 	// Wrap the DataCollection in a PipelineFlowState.
 	return PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity);
+}
+
+/******************************************************************************
+* Returns the current orthogonal field of view.
+******************************************************************************/
+FloatType StandardCameraSource::zoom() const
+{
+	if(zoomController()) 
+		return zoomController()->currentFloatValue();
+	return 200;
+}
+
+/******************************************************************************
+* Sets the field of view of a parallel projection camera.
+******************************************************************************/
+void StandardCameraSource::setZoom(FloatType newFOV)
+{
+	if(zoomController()) 
+		zoomController()->setCurrentFloatValue(newFOV);
+}
+
+/******************************************************************************
+* Returns the current perspective field of view angle.
+******************************************************************************/
+FloatType StandardCameraSource::fov() const
+{
+	if(fovController()) 
+		return fovController()->currentFloatValue();
+	return FLOATTYPE_PI / 4;
+}
+
+/******************************************************************************
+* Sets the field of view angle of a perspective projection camera.
+******************************************************************************/
+void StandardCameraSource::setFov(FloatType newFOV)
+{
+	if(fovController()) 
+		fovController()->setCurrentFloatValue(newFOV);
 }
 
 /******************************************************************************

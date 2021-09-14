@@ -55,14 +55,8 @@ public:
 	/// \brief Returns whether this camera uses a perspective projection.
 	virtual bool isPerspectiveCamera() const = 0;
 
-	/// \brief Sets whether this camera uses a perspective projection.
-	virtual void setPerspectiveCamera(bool perspective) = 0;
-
 	/// \brief Returns the field of view of the camera.
 	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const = 0;
-
-	/// \brief Changes the field of view of the camera.
-	virtual void setFieldOfView(TimePoint time, FloatType newFOV) = 0;
 };
 
 }	// End of namespace

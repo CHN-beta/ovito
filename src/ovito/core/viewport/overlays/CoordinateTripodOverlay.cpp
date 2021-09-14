@@ -91,9 +91,10 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(DataSet* dataset) : ViewportOve
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings)
+void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams)
 {
-	FloatType tripodSize = this->tripodSize() * renderSettings->outputImageHeight();
+	const QRect& windowRect = painter.window();
+	FloatType tripodSize = this->tripodSize() * windowRect.height();
 	if(tripodSize <= 0) return;
 
 	FloatType lineWidth = this->lineWidth() * tripodSize;
@@ -101,16 +102,16 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 
 	FloatType arrowSize = FloatType(0.17);
 
-	QPointF origin(offsetX() * renderSettings->outputImageWidth(), -offsetY() * renderSettings->outputImageHeight());
+	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
 	FloatType margin = tripodSize + lineWidth;
 
 	if(alignment() & Qt::AlignLeft) origin.rx() += margin;
-	else if(alignment() & Qt::AlignRight) origin.rx() += renderSettings->outputImageWidth() - margin;
-	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * renderSettings->outputImageWidth();
+	else if(alignment() & Qt::AlignRight) origin.rx() += windowRect.width() - margin;
+	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * windowRect.width();
 
 	if(alignment() & Qt::AlignTop) origin.ry() += margin;
-	else if(alignment() & Qt::AlignBottom) origin.ry() += renderSettings->outputImageHeight() - margin;
-	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * renderSettings->outputImageHeight();
+	else if(alignment() & Qt::AlignBottom) origin.ry() += windowRect.height() - margin;
+	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * windowRect.height();
 
 	// Project axes to screen.
 	Vector3 axisDirs[4] = {

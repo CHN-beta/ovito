@@ -45,6 +45,10 @@ DEFINE_PROPERTY_FIELD(RenderSettings, customFrame);
 DEFINE_PROPERTY_FIELD(RenderSettings, everyNthFrame);
 DEFINE_PROPERTY_FIELD(RenderSettings, fileNumberBase);
 DEFINE_PROPERTY_FIELD(RenderSettings, framesPerSecond);
+DEFINE_PROPERTY_FIELD(RenderSettings, renderAllViewports);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorsEnabled);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorWidth);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorColor);
 SET_PROPERTY_FIELD_LABEL(RenderSettings, imageInfo, "Image info");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, renderer, "Renderer");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, backgroundColorController, "Background color");
@@ -60,10 +64,15 @@ SET_PROPERTY_FIELD_LABEL(RenderSettings, customFrame, "Frame");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, fileNumberBase, "File number base");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, framesPerSecond, "Frames per second");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, renderAllViewports, "Render all viewports");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorsEnabled, "Layout separators");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorWidth, "Separator width");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorColor, "Separator color");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, outputImageWidth, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, outputImageHeight, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, everyNthFrame, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, framesPerSecond, IntegerParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeperatorWidth, IntegerParameterUnit, 1);
 
 /******************************************************************************
 * Constructor.
@@ -80,7 +89,11 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 	_customFrame(0),
 	_everyNthFrame(1),
 	_fileNumberBase(0),
-	_framesPerSecond(0)
+	_framesPerSecond(0),
+	_renderAllViewports(false),
+	_layoutSeperatorsEnabled(false),
+	_layoutSeperatorWidth(2),
+	_layoutSeperatorColor(0.5, 0.5, 0.5)
 {
 }
 

@@ -78,9 +78,10 @@ TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSettings* renderSettings, const PipelineFlowState& flowState)
+void TextLabelOverlay::renderImplementation(QPainter& painter, const PipelineFlowState& flowState)
 {
-	FloatType fontSize = this->fontSize() * renderSettings->outputImageHeight();
+	const QRect& windowRect = painter.window();
+	FloatType fontSize = this->fontSize() * windowRect.height();
 	if(fontSize <= 0) return;
 
 	FloatType margin = fontSize;
@@ -109,8 +110,8 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const RenderSetti
 		}
 	}
 
-	QRectF textRect(margin, margin, renderSettings->outputImageWidth() - margin*2, renderSettings->outputImageHeight() - margin*2);
-	QPointF origin(offsetX() * renderSettings->outputImageWidth(), -offsetY() * renderSettings->outputImageHeight());
+	QRectF textRect(margin, margin, windowRect.width() - margin*2, windowRect.height() - margin*2);
+	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
 	textRect.translate(origin);
 
 	painter.setRenderHint(QPainter::Antialiasing);

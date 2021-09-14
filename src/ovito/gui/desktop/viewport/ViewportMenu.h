@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportLayout.h>
 
 namespace Ovito {
 
@@ -53,6 +54,8 @@ private Q_SLOTS:
 	void onAdjustView();
 	void onViewNode(QAction* action);
 	void onCreateCamera();
+	void onDeleteViewport();
+	void onSplitViewport(ViewportLayoutCell::SplitDirection direction);
 
 private:
 
@@ -64,6 +67,9 @@ private:
 
 	/// The view type sub-menu.
 	QMenu* _viewTypeMenu;
+
+	/// The cell in the window layout the viewport is living in.
+	ViewportLayoutCell* _layoutCell;
 };
 
 }	// End of namespace

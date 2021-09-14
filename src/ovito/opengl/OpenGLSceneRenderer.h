@@ -66,14 +66,17 @@ public:
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
 
+	/// Returns the device pixel ratio of the output device we are rendering to.
+	virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
+
 	/// Renders the current animation frame.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
+	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) override;
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer) override;
+	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) override;
 
 	/// Requests a new line geometry buffer from the renderer.
 	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
@@ -150,9 +153,6 @@ public:
 
 	/// Sets the frame buffer background color.
 	void setClearColor(const ColorA& color);
-
-	/// Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
-	virtual void setRenderingViewport(const QRect& viewportRect) override;
 
 	/// Clears the frame buffer contents.
 	void clearFrameBuffer(bool clearDepthBuffer = true, bool clearStencilBuffer = true);

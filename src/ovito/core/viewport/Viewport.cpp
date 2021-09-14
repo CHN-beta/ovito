@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -86,7 +86,7 @@ Viewport::~Viewport()
 /******************************************************************************
 * Changes the view type.
 ******************************************************************************/
-void Viewport::setViewType(ViewType type, bool keepCurrentView)
+void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool keepFieldOfView)
 {
 	if(type == viewType())
 		return;
@@ -123,7 +123,7 @@ void Viewport::setViewType(ViewType type, bool keepCurrentView)
 			setGridMatrix(cameraTransformation());
 			break;
 		case VIEW_ORTHO:
-			if(!keepCurrentView) {
+			if(!keepCameraTransformation) {
 				setCameraPosition(Point3::Origin());
 				if(viewType() == VIEW_NONE)
 					setCameraTransformation(AffineTransformation(coordSys));
@@ -131,7 +131,7 @@ void Viewport::setViewType(ViewType type, bool keepCurrentView)
 			setGridMatrix(AffineTransformation(coordSys));
 			break;
 		case VIEW_PERSPECTIVE:
-			if(!keepCurrentView) {
+			if(!keepCameraTransformation) {
 				if(viewType() >= VIEW_TOP && viewType() <= VIEW_ORTHO) {
 					setCameraPosition(cameraPosition() - (cameraDirection().normalized() * fieldOfView()));
 				}
@@ -143,6 +143,10 @@ void Viewport::setViewType(ViewType type, bool keepCurrentView)
 			setGridMatrix(AffineTransformation(coordSys));
 			break;
 		case VIEW_SCENENODE:
+			if(!keepCameraTransformation && viewNode()) {
+				TimeInterval iv;
+				setCameraTransformation(viewNode()->getWorldTransform(dataset()->animationSettings()->time(), iv));
+			}
 			setGridMatrix(AffineTransformation(coordSys));
 			break;
 		case VIEW_NONE:
@@ -150,15 +154,22 @@ void Viewport::setViewType(ViewType type, bool keepCurrentView)
 			break;
 	}
 
-	if(!keepCurrentView) {
-		// Setup default zoom.
+	if(!keepFieldOfView) {
+		// Reset to standard fov/zoom value when switching between perspective and parallel projections.
 		if(type == VIEW_PERSPECTIVE) {
-			if(viewType() != VIEW_PERSPECTIVE)
+			if(!isPerspectiveProjection() || viewType() == VIEW_NONE)
 				setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
 		}
-		else {
-			if(viewType() == VIEW_PERSPECTIVE || viewType() == VIEW_NONE)
+		else if(type != VIEW_SCENENODE) {
+			if(isPerspectiveProjection() || viewType() == VIEW_NONE)
 				setFieldOfView(DEFAULT_ORTHOGONAL_FIELD_OF_VIEW);
+		}
+		else if(type == VIEW_SCENENODE && viewNode()) {
+			const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(false);
+			if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+				TimeInterval iv;
+				setFieldOfView(camera->fieldOfView(dataset()->animationSettings()->time(), iv));
+			}
 		}
 	}
 
@@ -180,6 +191,15 @@ bool Viewport::isPerspectiveProjection() const
 }
 
 /******************************************************************************
+* Returns the viewing direction of the camera.
+******************************************************************************/
+Vector3 Viewport::cameraDirection() const 
+{
+	if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
+	else return -cameraTransformation().column(2);
+}
+
+/******************************************************************************
 * Changes the viewing direction of the camera.
 ******************************************************************************/
 void Viewport::setCameraDirection(const Vector3& newDir)
@@ -191,6 +211,24 @@ void Viewport::setCameraDirection(const Vector3& newDir)
 		}
 		setCameraTransformation(AffineTransformation::lookAlong(cameraPosition(), newDir, upVector).inverse());
 	}
+}
+
+/******************************************************************************
+* Returns the position of the camera.
+******************************************************************************/
+Point3 Viewport::cameraPosition() const 
+{
+	return Point3::Origin() + cameraTransformation().translation();
+}
+
+/******************************************************************************
+* Changes the viewing direction of the camera.
+******************************************************************************/
+void Viewport::setCameraPosition(const Point3& p)
+{
+	AffineTransformation tm = cameraTransformation();
+	tm.translation() = p - Point3::Origin();
+	setCameraTransformation(tm);
 }
 
 /******************************************************************************
@@ -314,8 +352,7 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 			QSize vpSize = windowSize();
 			aspectRatio = (vpSize.width() > 0) ? ((FloatType)vpSize.height() / vpSize.width()) : FloatType(1);
 			if(renderPreviewMode()) {
-				if(RenderSettings* renderSettings = dataset()->renderSettings())
-					aspectRatio = renderSettings->outputImageAspectRatio();
+				aspectRatio = renderAspectRatio();
 			}
 		}
 		if(aspectRatio == 0)
@@ -348,7 +385,19 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		if(source == viewNode()) {
-			// Update viewport when camera node has moved.
+			// Adopt camera information from view node.
+			if(viewType() == VIEW_SCENENODE && !isBeingLoaded()) {
+				// Get camera transformation and settings (FOV etc.).
+				TimePoint time = dataset()->animationSettings()->time();
+				TimeInterval iv;
+				setCameraTransformation(viewNode()->getWorldTransform(time, iv));
+				const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(false);
+				if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+					setFieldOfView(camera->fieldOfView(time, iv));
+				}
+			}
+
+			// Update viewport when camera node has moved or modified.
 			updateViewport();
 		}
 		else if(_overlays.contains(source) || _underlays.contains(source)) {
@@ -372,9 +421,6 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget
 	if(field == PROPERTY_FIELD(viewNode)) {
 		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
 			// If the camera node has been deleted, switch to Orthographic or Perspective view type.
-			// Keep current camera orientation.
-			setFieldOfView(projectionParams().fieldOfView);
-			setCameraTransformation(projectionParams().inverseViewMatrix);
 			setViewType(isPerspectiveProjection() ? VIEW_PERSPECTIVE : VIEW_ORTHO, true);
 		}
 		else if(viewType() != VIEW_SCENENODE && newTarget != nullptr) {
@@ -495,8 +541,8 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 	OVITO_ASSERT_MSG(!dataset()->viewportConfig()->isRendering(), "Viewport::renderInteractive()", "Some other viewport is already rendering.");
 	OVITO_ASSERT(!dataset()->viewportConfig()->isSuspended());
 
-	QSize vpSize = windowSize();
-	if(vpSize.height() <= 0 || vpSize.width() <= 0)
+	QRect vpRect(QPoint(0,0), windowSize());
+	if(vpRect.isEmpty())
 		return;
 
 	try {
@@ -506,10 +552,10 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		OVITO_ASSERT(renderSettings != nullptr);
 
 		// Set up the renderer.
-		renderer->startRender(dataset(), renderSettings, vpSize);
+		renderer->startRender(dataset(), renderSettings, vpRect.size());
 
 		// Set up preliminary projection without a known bounding box.
-		FloatType aspectRatio = (FloatType)vpSize.height() / vpSize.width();
+		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
 		_projParams = computeProjectionParameters(time, aspectRatio);
 
 		// Adjust projection if render frame is shown.
@@ -530,13 +576,13 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			adjustProjectionForRenderFrame(_projParams);
 
 		// Set up the viewport renderer.
-		renderer->beginFrame(time, _projParams, this);
+		renderer->beginFrame(time, _projParams, this, vpRect);
 
 		// Render viewport "underlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
 				// Let layers paint into QImage buffer, which will then be copied into the OpenGL frame buffer.
-				renderLayers(renderer, time, renderSettings, vpSize, boundingBox, underlays(), renderOperation);
+				renderLayers(renderer, time, renderSettings, vpRect, boundingBox, underlays(), renderOperation);
 			}
 		}
 
@@ -546,7 +592,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			renderer->setProjParams(_projParams);
 
 			// Call the viewport renderer to render the scene objects.
-			renderer->renderFrame(nullptr, SceneRenderer::NonStereoscopic, renderOperation.subOperation());
+			renderer->renderFrame(nullptr, vpRect, SceneRenderer::NonStereoscopic, renderOperation.subOperation());
 		}
 		else {
 
@@ -571,7 +617,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			renderer->setProjParams(params);
 
 			// Render image of left eye.
-			renderer->renderFrame(nullptr, SceneRenderer::StereoscopicLeft, renderOperation.subOperation());
+			renderer->renderFrame(nullptr, vpRect, SceneRenderer::StereoscopicLeft, renderOperation.subOperation());
 
 			// Setup projection of right eye.
 			left = -c * params.znear / convergence;
@@ -583,14 +629,14 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			renderer->setProjParams(params);
 
 			// Render image of right eye.
-			renderer->renderFrame(nullptr, SceneRenderer::StereoscopicRight, renderOperation.subOperation());
+			renderer->renderFrame(nullptr, vpRect, SceneRenderer::StereoscopicRight, renderOperation.subOperation());
 		}
 
 		// Render viewport overlays.
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
 				// Let overlays paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
-				renderLayers(renderer, time, renderSettings, vpSize, boundingBox, overlays(), renderOperation);
+				renderLayers(renderer, time, renderSettings, vpRect, boundingBox, overlays(), renderOperation);
 			}
 		}
 
@@ -600,7 +646,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		}
 
 		// Finish rendering.
-		renderer->endFrame(true, nullptr);
+		renderer->endFrame(true, nullptr, vpRect);
 		renderer->endRender();
 
 		// Discard unused vis element resources.
@@ -618,10 +664,10 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 /******************************************************************************
 * Renders the viewport layers to an image buffer.
 ******************************************************************************/
-void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
+void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, const QRect& vpRect, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
 {
 	// Let layers paint into QImage buffer, which will then be painted into the framebuffer.
-	QImage paintBuffer(vpSize, QImage::Format_ARGB32_Premultiplied);
+	QImage paintBuffer(vpRect.size(), QImage::Format_ARGB32_Premultiplied);
 	paintBuffer.fill(0);
 	Box2 renderFrameBox = renderFrameRect();
 	QRect renderFrameRect(
@@ -629,14 +675,18 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 			(renderFrameBox.minc.y() + 1) * paintBuffer.height() / 2,
 			renderFrameBox.width() * paintBuffer.width() / 2,
 			renderFrameBox.height() * paintBuffer.height() / 2);
-	ViewProjectionParameters renderProjParams = computeProjectionParameters(time, renderSettings->outputImageAspectRatio(), boundingBox);
-	for(ViewportOverlay* layer : layers) {
-		if(layer->isEnabled()) {
-			QPainter painter(&paintBuffer);
-			painter.setWindow(QRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight()));
-			painter.setViewport(renderFrameRect);
-			painter.setRenderHint(QPainter::Antialiasing);
-			layer->renderInteractive(this, time, painter, renderProjParams, renderSettings, operation.subOperation());
+
+	QRect renderViewportRect = this->renderViewportRect();
+	if(!renderViewportRect.isEmpty()) {
+		ViewProjectionParameters renderProjParams = computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox);
+		for(ViewportOverlay* layer : layers) {
+			if(layer->isEnabled()) {
+				QPainter painter(&paintBuffer);
+				painter.setWindow(QRect(0, 0, renderViewportRect.width(), renderViewportRect.height()));
+				painter.setViewport(renderFrameRect);
+				painter.setRenderHint(QPainter::Antialiasing);
+				layer->renderInteractive(this, time, painter, renderProjParams, renderSettings, operation.subOperation());
+			}
 		}
 	}
 	renderer->setDepthTestEnabled(false);
@@ -661,18 +711,56 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 }
 
 /******************************************************************************
+* Determines this viewport's area in the rendered output image. 
+******************************************************************************/
+QRect Viewport::renderViewportRect() const
+{
+	RenderSettings* renderSettings = dataset()->renderSettings();
+	if(!renderSettings)
+		return QRect();
+	QRect frameBufferRect(0, 0, renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
+
+	// Aspect ratio of the viewport rectangle in the rendered output image.
+	if(renderSettings->renderAllViewports()) {
+
+		// Compute target rectangles of all viewports of the current layout.
+		// TODO: This should to be optimized. Computing the full layout everytime seems unnecessary.
+		std::vector<std::pair<Viewport*, QRectF>> viewportRects = dataset()->viewportConfig()->getViewportRectangles(frameBufferRect);
+
+		// Find this viewport among the list of all viewports to look up its target rectangle in the output image.
+		for(const std::pair<Viewport*, QRectF>& rect : viewportRects) {
+			if(rect.first == this)
+				return rect.second.toRect();
+		}
+	}
+
+	return frameBufferRect;
+}
+
+/******************************************************************************
+* Determines the aspect ratio of this viewport's area in the rendered output image.
+******************************************************************************/
+FloatType Viewport::renderAspectRatio() const
+{
+	QRect rect = renderViewportRect();
+	if(rect.isEmpty())
+		return 1.0;
+
+	return (FloatType)rect.height() / (FloatType)rect.width();
+}
+
+/******************************************************************************
 * Modifies the projection such that the render frame painted over the 3d scene exactly
 * matches the true visible area.
 ******************************************************************************/
 void Viewport::adjustProjectionForRenderFrame(ViewProjectionParameters& params)
 {
 	QSize vpSize = windowSize();
-	RenderSettings* renderSettings = dataset()->renderSettings();
-	if(!renderSettings || vpSize.width() == 0 || vpSize.height() == 0)
+	if(vpSize.isEmpty())
 		return;
 
-	FloatType renderAspectRatio = renderSettings->outputImageAspectRatio();
-	FloatType windowAspectRatio = (FloatType)vpSize.height() / (FloatType)vpSize.width();
+	FloatType renderAspectRatio = this->renderAspectRatio();
+	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 
 	if(_projParams.isPerspective) {
 		if(renderAspectRatio < windowAspectRatio)
@@ -701,13 +789,14 @@ void Viewport::adjustProjectionForRenderFrame(ViewProjectionParameters& params)
 Box2 Viewport::renderFrameRect() const
 {
 	QSize vpSize = windowSize();
-	RenderSettings* renderSettings = dataset()->renderSettings();
-	if(!renderSettings || vpSize.width() == 0 || vpSize.height() == 0)
+	if(vpSize.isEmpty())
 		return { Point2(-1), Point2(+1) };
 
-	// Compute a rectangle that has the same aspect ratio as the rendered image.
-	FloatType renderAspectRatio = renderSettings->outputImageAspectRatio();
-	FloatType windowAspectRatio = (FloatType)vpSize.height() / (FloatType)vpSize.width();
+	// Aspect ratio of the viewport rectangle in the rendered output image.
+	FloatType renderAspectRatio = this->renderAspectRatio();
+
+	// Compute a rectangle fitted into the viewport window that has the same aspect ratio as the rendered viewport image.
+	FloatType windowAspectRatio = (FloatType)vpSize.height() / vpSize.width();
 	FloatType frameWidth, frameHeight;
 	if(renderAspectRatio < windowAspectRatio) {
 		frameWidth = VIEWPORT_RENDER_FRAME_SIZE;
@@ -848,6 +937,22 @@ Point3 Viewport::orbitCenter()
 		}
 		return currentOrbitCenter;
 	}
+}
+
+/******************************************************************************
+* Returns the nested layout cell this viewport's window is currently in (if any). 
+******************************************************************************/
+ViewportLayoutCell* Viewport::layoutCell() const
+{
+	ViewportLayoutCell* result = nullptr;
+	visitDependents([&](RefMaker* dependent) {
+		if(ViewportLayoutCell* cell = dynamic_object_cast<ViewportLayoutCell>(dependent)) {
+			OVITO_ASSERT(cell->viewport() == this);
+			OVITO_ASSERT(!result);
+			result = cell;
+		}
+	});
+	return result;
 }
 
 }	// End of namespace

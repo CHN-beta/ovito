@@ -91,6 +91,23 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 	_viewTypeMenu->addActions(viewTypeGroup->actions());
 	connect(viewTypeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewType);
 
+	QMenu* layoutMenu = addMenu(tr("Layout"));
+	_layoutCell = viewport->layoutCell();
+	OVITO_ASSERT(_layoutCell && _layoutCell->splitDirection() == ViewportLayoutCell::None && _layoutCell->children().empty());
+
+	// Actions that duplicate the viewport by splitting the layout cell.
+	action = layoutMenu->addAction(tr("Split Horizontal"));
+	connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Horizontal); });
+	action = layoutMenu->addAction(tr("Split Vertical"));
+	connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Vertical); });
+
+	layoutMenu->addSeparator();
+
+	// Action that deletes the viewport from the layout.
+	action = layoutMenu->addAction(tr("Delete Viewport"));
+	action->setEnabled(_layoutCell && _layoutCell->parentCell() != nullptr);
+	connect(action, &QAction::triggered, this, &ViewportMenu::onDeleteViewport);
+
 	addSeparator();
 	addAction(tr("Adjust View..."), this, SLOT(onAdjustView()))->setEnabled(_viewport->viewType() != Viewport::VIEW_SCENENODE);
 }
@@ -170,7 +187,7 @@ void ViewportMenu::onConstrainRotation(bool checked)
 ******************************************************************************/
 void ViewportMenu::onViewType(QAction* action)
 {
-	_viewport->setViewType((Viewport::ViewType)action->data().toInt());
+	_viewport->setViewType((Viewport::ViewType)action->data().toInt(), true, false);
 
 	// Remember which viewport was maximized across program sessions.
 	// The same viewport will be maximized next time OVITO is started.
@@ -198,8 +215,8 @@ void ViewportMenu::onViewNode(QAction* action)
 	OVITO_CHECK_OBJECT_POINTER(viewNode);
 
 	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Set camera"), [this, viewNode]() {
-		_viewport->setViewType(Viewport::VIEW_SCENENODE);
 		_viewport->setViewNode(viewNode);
+		OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
 	});
 }
 
@@ -247,8 +264,50 @@ void ViewportMenu::onCreateCamera()
 		scene->addChildNode(cameraNode);
 
 		// Set new camera as view node for current viewport.
-		_viewport->setViewType(Viewport::VIEW_SCENENODE);
 		_viewport->setViewNode(cameraNode);
+		OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
+	});
+}
+
+/******************************************************************************
+* Deletes the viewport from the current window layout.
+******************************************************************************/
+void ViewportMenu::onDeleteViewport()
+{
+	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Delete viewport"), [&]() {
+		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
+			parentCell->removeChild(parentCell->children().indexOf(_layoutCell));
+			_viewport->dataset()->viewportConfig()->layoutRootCell()->pruneViewportLayoutTree();
+		}
+	});
+}
+
+/******************************************************************************
+* Splits the viewport's layout cell.
+******************************************************************************/
+void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
+{
+	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Split viewport"), [&]() {
+
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(_layoutCell->dataset(), ExecutionContext::Interactive);
+		newCell->setViewport(CloneHelper().cloneObject(_viewport, true));
+
+		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
+			if(parentCell->splitDirection() == direction) {
+				int insertIndex = parentCell->children().indexOf(_layoutCell);
+				OVITO_ASSERT(insertIndex >= 0);
+				parentCell->insertChild(insertIndex + 1, std::move(newCell), parentCell->childWeights()[insertIndex]);
+				return;
+			}
+		}
+
+		OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create(_layoutCell->dataset(), ExecutionContext::Interactive);
+		newCell2->setViewport(_viewport);
+
+		_layoutCell->setSplitDirection(direction);
+		_layoutCell->setViewport(nullptr);
+		_layoutCell->addChild(std::move(newCell2));
+		_layoutCell->addChild(std::move(newCell));
 	});
 }
 

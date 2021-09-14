@@ -98,11 +98,13 @@ public:
 
 	/// \brief Changes the view type.
 	/// \param type The new view type.
-	/// \param keepViewParams When setting the view type to ViewType::VIEW_ORTHO or ViewType::VIEW_PERSPECTIVE,
-	///        this controls whether the camera is reset to the default position/orientation.
+	/// \param keepCameraTransformation When setting the view type to ViewType::VIEW_ORTHO or ViewType::VIEW_PERSPECTIVE,
+	///        this controls whether the camera is reset to the default position/orientation or not.
+	/// \param keepFieldOfView When switching between perspective/parallel projections,
+	///        this controls whether the camera's zoom or field of view angle is reset to a standard value or not.
 	/// \note if \a type is set to ViewType::VIEW_SCENENODE then a view node should be set
 	///       using setViewNode().
-	void setViewType(ViewType type, bool keepCurrentView = false);
+	void setViewType(ViewType type, bool keepCameraTransformation = false, bool keepFieldOfView = false);
 
 	/// \brief Returns true if the viewport is using a perspective project;
 	///        returns false if it is using an orthogonal projection.
@@ -118,25 +120,16 @@ public:
 	}
 
 	/// \brief Returns the viewing direction of the camera.
-	Vector3 cameraDirection() const {
-		if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
-		else return -cameraTransformation().column(2);
-	}
+	Vector3 cameraDirection() const;
 
 	/// \brief Changes the viewing direction of the camera.
 	void setCameraDirection(const Vector3& newDir);
 
 	/// \brief Returns the position of the camera.
-	Point3 cameraPosition() const {
-		return Point3::Origin() + cameraTransformation().translation();
-	}
+	Point3 cameraPosition() const;
 
 	/// \brief Sets the position of the camera.
-	void setCameraPosition(const Point3& p) {
-		AffineTransformation tm = cameraTransformation();
-		tm.translation() = p - Point3::Origin();
-		setCameraTransformation(tm);
-	}
+	void setCameraPosition(const Point3& p);
 
 	/// Return the current 3D projection used to render the contents of the viewport.
 	const ViewProjectionParameters& projectionParams() const { return _projParams; }
@@ -237,6 +230,9 @@ public:
 	/// \brief Associates this viewport with a GUI window. This is an internal method.
 	void setWindow(ViewportWindowInterface* window) { _window = window; }
 
+	/// Returns the nested layout cell this viewport's window is currently in (if any). 
+	ViewportLayoutCell* layoutCell() const;
+
 	/// Renders the contents of the interactive viewport in a window.
 	/// This is an internal method, which should not be called by user code.
 	void renderInteractive(SceneRenderer* renderer);
@@ -284,7 +280,13 @@ protected:
 	void adjustProjectionForRenderFrame(ViewProjectionParameters& params);
 
 	/// Renders the viewport overlays to an image buffer.
-	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, QSize vpSize, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation);
+	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, const QRect& vpRect, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation);
+
+	/// Determines this viewport's area in the rendered output image. 
+	QRect renderViewportRect() const;
+
+	/// Determines the aspect ratio of this viewport's area in the rendered output image. 
+	FloatType renderAspectRatio() const;
 
 private Q_SLOTS:
 

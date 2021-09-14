@@ -121,6 +121,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	}
 
 	// Output size
+	BooleanParameterUI* renderAllViewportsUI;
 	{
 		QGroupBox* groupBox = new QGroupBox(tr("Output image size"));
 		layout->addWidget(groupBox);
@@ -144,14 +145,25 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		_sizePresetsBox->insertSeparator(1);
 		for(int i = 0; i < sizeof(imageSizePresets)/sizeof(imageSizePresets[0]); i++)
 			_sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
-		connect(_sizePresetsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &RenderSettingsEditor::onSizePresetActivated);
+		connect(_sizePresetsBox, QOverload<int>::of(&QComboBox::activated), this, &RenderSettingsEditor::onSizePresetActivated);
 		layout2->addWidget(_sizePresetsBox, 0, 2);
 
-		_viewportPreviewModeBox = new QCheckBox(tr("Preview"));
-		layout2->addWidget(_viewportPreviewModeBox, 1, 2, Qt::AlignRight | Qt::AlignVCenter);
+		QVBoxLayout* sublayout = new QVBoxLayout();
+		sublayout->setContentsMargins(0,2,0,0);
+		layout2->addLayout(sublayout, 2, 0, 1, 3);
+
+		_viewportPreviewModeBox = new QCheckBox(tr("Preview visible region"));
+		sublayout->addWidget(_viewportPreviewModeBox);
 		connect(&mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
 		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
 		onViewportConfigReplaced(mainWindow()->datasetContainer().currentSet() ? mainWindow()->datasetContainer().currentSet()->viewportConfig() : nullptr);
+
+		renderAllViewportsUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::renderAllViewports));
+		sublayout->addWidget(renderAllViewportsUI->checkBox());
+#ifndef OVITO_BUILD_PROFESSIONAL
+		renderAllViewportsUI->setEnabled(false);
+		renderAllViewportsUI->checkBox()->setText(tr("%1 (OVITO Pro)").arg(renderAllViewportsUI->checkBox()->text()));
+#endif
 	}
 
 	// Render output
@@ -211,14 +223,17 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 #endif
 	layout->addLayout(sublayout);
 
-	// Create 'Render active viewport' button.
-	QPushButton* renderViewportButton = new QPushButton();
-	renderViewportButton->setAutoDefault(true);
+	// Create render button.
+	QPushButton* renderButton = new QPushButton();
+	renderButton->setAutoDefault(true);
 	QAction* renderAction = mainWindow()->actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
-	renderViewportButton->setText(tr("Render active viewport"));
-	renderViewportButton->setIcon(renderAction->icon());
-	connect(renderViewportButton, &QPushButton::clicked, renderAction, &QAction::trigger);
-	sublayout->addWidget(renderViewportButton, 3);
+	renderButton->setText(tr("Render active viewport"));
+	renderButton->setIcon(renderAction->icon());
+	connect(renderButton, &QPushButton::clicked, renderAction, &QAction::trigger);
+	connect(renderAllViewportsUI->checkBox(), &QAbstractButton::toggled, this, [=](bool checked) {
+		renderButton->setText(checked ? tr("Render all viewports") : tr("Render active viewport"));
+	});
+	sublayout->addWidget(renderButton, 3);
 
 	// Create 'Switch renderer' button.
 	QPushButton* switchRendererButton = new QPushButton(tr("Switch renderer..."));
@@ -397,8 +412,16 @@ void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor& fiel
 ******************************************************************************/
 void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
 {
-	if(activeViewport())
-		activeViewport()->setRenderPreviewMode(checked);
+	if(RenderSettings* rs = static_object_cast<RenderSettings>(editObject())) {
+		if(!rs->renderAllViewports()) {
+			if(activeViewport())
+				activeViewport()->setRenderPreviewMode(checked);
+		}
+		else {
+			for(Viewport* vp : rs->dataset()->viewportConfig()->viewports())
+				vp->setRenderPreviewMode(checked);
+		}
+	}
 }
 
 }	// End of namespace

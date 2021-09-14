@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,20 +78,9 @@ public:
 	/// \brief Returns whether this camera uses a perspective projection.
 	virtual bool isPerspectiveCamera() const override { return isPerspective(); }
 
-	/// \brief Sets whether this camera uses a perspective projection.
-	virtual void setPerspectiveCamera(bool perspective) override { setIsPerspective(perspective); }
-
 	/// \brief Returns the field of view of the camera.
 	virtual FloatType fieldOfView(TimePoint time, TimeInterval& validityInterval) const override {
 		return isPerspective() ? fov() : zoom();
-	}
-
-	/// \brief Changes the field of view of the camera.
-	virtual void setFieldOfView(TimePoint time, FloatType newFOV) override {
-		if(isPerspective())
-			setFov(newFOV);
-		else
-			setZoom(newFOV);
 	}
 
 private:

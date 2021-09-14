@@ -118,9 +118,9 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
     }
 
     // Get current viewport rectangle.
-    const QRect& vpRect = _renderer->renderingViewport();
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)vpRect.left(), (float)vpRect.top()));
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / (float)vpRect.width(), 2.0f / (float)vpRect.height()));
+    const QRect& vpRect = _renderer->viewportRect();
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", (float)vpRect.x(), (float)vpRect.y()));
+    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / vpRect.width(), 2.0f / vpRect.height()));
 
     // Need to render only the front-facing sides of the geometry.
     OVITO_CHECK_OPENGL(_renderer, _renderer->glCullFace(GL_BACK));

@@ -169,7 +169,7 @@ void DataInspectorPanel::onSceneSelectionChanged()
 /******************************************************************************
 * This is called whenever the selected scene node sends an event.
 ******************************************************************************/
-void DataInspectorPanel::onSceneNodeNotificationEvent(const ReferenceEvent& event)
+void DataInspectorPanel::onSceneNodeNotificationEvent(RefTarget* source, const ReferenceEvent& event)
 {
 }
 

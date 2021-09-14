@@ -130,6 +130,7 @@ SET(SourceFiles
 	viewport/Viewport.cpp
 	viewport/ViewportWindowInterface.cpp
 	viewport/ViewportConfiguration.cpp
+	viewport/ViewportLayout.cpp
 	viewport/ViewportSettings.cpp
 	viewport/overlays/ViewportOverlay.cpp
 	viewport/overlays/CoordinateTripodOverlay.cpp

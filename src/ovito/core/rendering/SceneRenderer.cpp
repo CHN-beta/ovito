@@ -47,23 +47,6 @@ SceneRenderer::SceneRenderer(DataSet* dataset) : RefTarget(dataset)
 }
 
 /******************************************************************************
-* Returns the final size of the rendered image in pixels.
-******************************************************************************/
-QSize SceneRenderer::outputSize() const
-{
-	if(isInteractive() && viewport() && viewport()->window()) {
-		return viewport()->windowSize();
-	}
-	else if(renderSettings()) {
-		return { renderSettings()->outputImageWidth(), renderSettings()->outputImageHeight() };
-	}
-	else {
-		OVITO_ASSERT(false);
-		return {};
-	}
-}
-
-/******************************************************************************
 * Returns the device pixel ratio of the output device we are rendering to.
 ******************************************************************************/
 qreal SceneRenderer::devicePixelRatio() const
@@ -153,11 +136,12 @@ void SceneRenderer::endRender()
 * Sets the view projection parameters, the animation frame to render,
 * and the viewport being rendered.
 ******************************************************************************/
-void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp) 
+void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) 
 {
 	_time = time;
-	_viewport = vp;
 	setProjParams(params);
+	_viewport = vp;
+	_viewportRect = viewportRect;
 	_modelWorldTM.setIdentity();
 	_modelViewTM = projParams().viewMatrix;
 }
@@ -444,7 +428,7 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 	ViewProjectionParameters originalProjParams = projParams();
 	ViewProjectionParameters newProjParams;
 	newProjParams.aspectRatio = originalProjParams.aspectRatio;
-	newProjParams.projectionMatrix = Matrix4::ortho(renderingViewport().left(), renderingViewport().right(), renderingViewport().bottom(), renderingViewport().top(), -1.0, 1.0);
+	newProjParams.projectionMatrix = Matrix4::ortho(viewportRect().left(), viewportRect().right() + 1, viewportRect().bottom() + 1, viewportRect().top(), -1.0, 1.0);
 	newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
 	setProjParams(newProjParams);
 	setWorldTransform(AffineTransformation::Identity());
@@ -462,8 +446,8 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 ******************************************************************************/
 FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 {
-	// Get window size in device-independent pixels.
-	int height = outputSize().height();
+	// Get window size in device pixels.
+	int height = viewportRect().height();
 	if(height == 0) return 0;
 
 	// The projected size in pixels:
@@ -609,7 +593,7 @@ void SceneRenderer::renderGrid()
 void ImagePrimitive::setRectViewport(const SceneRenderer* renderer, const Box2& rect)
 { 
 	OVITO_ASSERT(!rect.isEmpty());
-	QSize windowSize = renderer->outputSize();
+	QSize windowSize = renderer->viewportRect().size();
 	Point2 minc((rect.minc.x() + 1.0) * windowSize.width() / 2.0, (-rect.maxc.y() + 1.0) * windowSize.height() / 2.0);
 	Point2 maxc((rect.maxc.x() + 1.0) * windowSize.width() / 2.0, (-rect.minc.y() + 1.0) * windowSize.height() / 2.0);
 	setRectWindow(Box2(minc, maxc));
@@ -620,7 +604,7 @@ void ImagePrimitive::setRectViewport(const SceneRenderer* renderer, const Box2& 
 ******************************************************************************/
 void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Point2& pos)
 { 
-	QSize windowSize = renderer->outputSize();
+	QSize windowSize = renderer->viewportRect().size();
 	Point2 pwin((pos.x() + 1.0) * windowSize.width() / 2.0, (-pos.y() + 1.0) * windowSize.height() / 2.0);
 	setPositionWindow(pwin);
 }

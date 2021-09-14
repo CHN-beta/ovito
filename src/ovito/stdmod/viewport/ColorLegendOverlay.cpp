@@ -141,7 +141,7 @@ void ColorLegendOverlay::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation)
+void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, bool isInteractive, SynchronousOperation operation)
 {
 	DataOORef<const PropertyObject> typedProperty;
 
@@ -216,7 +216,8 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	}
 
 	// Calculate position and size of color legend rectangle.
-	FloatType legendSize = this->legendSize() * renderSettings->outputImageHeight();
+	const QRect& windowRect = painter.window();
+	FloatType legendSize = this->legendSize() * windowRect.height();
 	if(legendSize <= 0) return;
 
 	FloatType colorBarWidth = legendSize;
@@ -225,17 +226,17 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	if(vertical)
 		std::swap(colorBarWidth, colorBarHeight);
 
-	QPointF origin(offsetX() * renderSettings->outputImageWidth(), -offsetY() * renderSettings->outputImageHeight());
-	FloatType hmargin = FloatType(0.01) * renderSettings->outputImageWidth();
-	FloatType vmargin = FloatType(0.01) * renderSettings->outputImageHeight();
+	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
+	FloatType hmargin = FloatType(0.01) * windowRect.width();
+	FloatType vmargin = FloatType(0.01) * windowRect.height();
 
 	if(alignment() & Qt::AlignLeft) origin.rx() += hmargin;
-	else if(alignment() & Qt::AlignRight) origin.rx() += renderSettings->outputImageWidth() - hmargin - colorBarWidth;
-	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * renderSettings->outputImageWidth() - FloatType(0.5) * colorBarWidth;
+	else if(alignment() & Qt::AlignRight) origin.rx() += windowRect.width() - hmargin - colorBarWidth;
+	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * windowRect.width() - FloatType(0.5) * colorBarWidth;
 
 	if(alignment() & Qt::AlignTop) origin.ry() += vmargin;
-	else if(alignment() & Qt::AlignBottom) origin.ry() += renderSettings->outputImageHeight() - vmargin - colorBarHeight;
-	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * renderSettings->outputImageHeight() - FloatType(0.5) * colorBarHeight;
+	else if(alignment() & Qt::AlignBottom) origin.ry() += windowRect.height() - vmargin - colorBarHeight;
+	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * windowRect.height() - FloatType(0.5) * colorBarHeight;
 
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.setRenderHint(QPainter::TextAntialiasing);

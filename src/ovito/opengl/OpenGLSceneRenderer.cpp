@@ -164,9 +164,12 @@ bool OpenGLSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) cons
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
-	SceneRenderer::beginFrame(time, params, vp);
+	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
+
+	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect);
 
 	if(Application::instance()->headlessMode())
 		throwException(tr("Cannot use OpenGL renderer in headless mode."));
@@ -255,12 +258,10 @@ void OpenGLSceneRenderer::initializeGLState()
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 	setClearColor(ColorA(0, 0, 0, 0));
 
-    if(viewport() && viewport()->window()) {
-		
-		// Set up OpenGL render viewport to cover the entire window by default.
-    	QSize vpSize = viewport()->windowSize();
-    	setRenderingViewport(QRect(QPoint(0,0), vpSize));
+	// Set up OpenGL render viewport.
+	OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect().x(), viewportRect().y(), viewportRect().width(), viewportRect().height()));
 
+    if(viewport() && viewport()->window()) {
 		// When rendering an interactive viewport, use viewport background color to clear frame buffer.
 		if(isInteractive() && !isPicking()) {
 			if(!viewport()->renderPreviewMode())
@@ -275,7 +276,7 @@ void OpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	if(QOpenGLContext::currentContext()) {
 	    initializeOpenGLFunctions();
@@ -290,13 +291,16 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameB
 	_vertexArrayObject.reset();
 	_glcontext = nullptr;
 
-	SceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
+
+	SceneRenderer::endFrame(renderingSuccessful, frameBuffer, openGLViewportRect);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	OVITO_ASSERT(_glcontext == QOpenGLContext::currentContext());
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -788,15 +792,6 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 void OpenGLSceneRenderer::setClearColor(const ColorA& color)
 {
 	OVITO_CHECK_OPENGL(this, this->glClearColor(color.r(), color.g(), color.b(), color.a()));
-}
-
-/******************************************************************************
-* Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
-******************************************************************************/
-void OpenGLSceneRenderer::setRenderingViewport(const QRect& viewportRect)
-{
-	SceneRenderer::setRenderingViewport(viewportRect);
-	OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect.x(), viewportRect.y(), viewportRect.width(), viewportRect.height()));
 }
 
 /******************************************************************************

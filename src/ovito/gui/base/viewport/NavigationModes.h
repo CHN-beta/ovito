@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ protected:
 	virtual void deactivated(bool temporary) override;
 
 	/// Returns the camera object associates with the given viewport.
-	static AbstractCameraObject* getViewportCamera(Viewport* vp);
+	static PipelineObject* getViewportCamera(Viewport* vp);
 
 protected:
 

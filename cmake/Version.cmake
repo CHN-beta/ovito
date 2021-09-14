@@ -32,8 +32,9 @@ SET(OVITO_VERSION_REVISION		"4")
 #
 # Format version 30006 - OVITO ver>3.2.1: TimeAveragingModifier changed.
 # Format version 30007 - OVITO ver>3.3.5: New DataObject framework. Removed PropertyStorage class. Introduced PythonScriptDelegate class.
+# Format version 30008 - OVITO ver>3.5.4: Added viewport layouts.
 #
-SET(OVITO_FILE_FORMAT_VERSION	"30007")
+SET(OVITO_FILE_FORMAT_VERSION	"30008")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

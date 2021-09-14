@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(VectorRefTargetListenerBase, targets);
 bool RefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	// Emit Qt signal.
-	Q_EMIT notificationEvent(event);
+	Q_EMIT notificationEvent(source, event);
 
 	return RefMaker::referenceEvent(source, event);
 }

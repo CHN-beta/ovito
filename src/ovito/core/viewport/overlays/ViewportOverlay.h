@@ -45,7 +45,7 @@ protected:
 public:
 
 	/// \brief This method asks the overlay to paint its contents over the rendered image.
-	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer,
+	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const QRect& viewportRect,
 						const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) = 0;
 
 	/// \brief This method asks the overlay to paint its contents over the given interactive viewport.

@@ -49,14 +49,16 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// This method asks the overlay to paint its contents over the rendered image.
-	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
+	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const QRect& viewportRect, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
 		QPainter painter(&frameBuffer->image());
-		renderImplementation(time, painter, projParams, renderSettings, false, std::move(operation));
+		painter.setViewport(viewportRect);
+		painter.setWindow(0, 0, viewportRect.width(), viewportRect.height());
+		renderImplementation(time, painter, projParams, false, std::move(operation));
 	}
 
 	/// This method asks the overlay to paint its contents over the given interactive viewport.
 	virtual void renderInteractive(const Viewport* viewport, TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		renderImplementation(time, painter, projParams, renderSettings, true, std::move(operation));
+		renderImplementation(time, painter, projParams, true, std::move(operation));
 	}
 
 	/// Moves the position of the overlay in the viewport by the given amount,
@@ -73,7 +75,7 @@ public:
 private:
 
 	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, bool isInteractive, SynchronousOperation operation);
+	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, bool isInteractive, SynchronousOperation operation);
 
 	/// Draws the color legend for a Color Coding modifier.
 	void drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, SynchronousOperation operation);

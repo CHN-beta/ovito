@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,6 +44,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	connect(&mainWindow->datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
 	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
 	connect(&mainWindow->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
+	connect(&mainWindow->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
 
 	createCommandAction(ACTION_QUIT, tr("Quit"), ":/guibase/actions/file/file_quit.bw.svg", tr("Quit the application."));
 	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), ":/guibase/actions/file/file_open.bw.svg", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -69,9 +70,9 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 
 	createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), ":/guibase/actions/file/preferences.bw.svg", tr("Open the application settings dialog"), QKeySequence::Preferences);
 
-	createCommandAction(ACTION_RENDER_ACTIVE_VIEWPORT, tr("Render Active Viewport"), ":/guibase/actions/rendering/render_active_viewport.bw.svg", tr("Render an image or animation of the active viewport."));
+	createCommandAction(ACTION_RENDER_ACTIVE_VIEWPORT, tr("Render"), ":/guibase/actions/rendering/render_active_viewport.bw.svg", tr("Render an image or animation of the current viewport."));
 
-	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), ":/guibase/actions/viewport/maximize_viewport.bw.svg", tr("Enlarge/reduce the active viewport."));
+	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), ":/guibase/actions/viewport/maximize_viewport.bw.svg", tr("Enlarge/reduce the active viewport."))->setCheckable(true);
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS, tr("Zoom Scene Extents"), ":/guibase/actions/viewport/zoom_scene_extents.bw.svg",
 #ifndef Q_OS_MACOS
 		tr("Zoom active viewport to show everything. Use CONTROL key to zoom all viewports at once."));
@@ -201,6 +202,24 @@ void ActionManager::onAnimationIntervalChanged(TimeInterval newAnimationInterval
 	getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setEnabled(isAnimationInterval);
 	if(!isAnimationInterval && getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->isChecked())
 		getAction(ACTION_AUTO_KEY_MODE_TOGGLE)->setChecked(false);
+}
+
+/******************************************************************************
+* This is called when new viewport configuration has been loaded.
+******************************************************************************/
+void ActionManager::onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration)
+{
+	disconnect(_maximizedViewportChangedConnection);
+	QAction* maximizeViewportAction = getAction(ACTION_VIEWPORT_MAXIMIZE);
+	if(newViewportConfiguration) {
+		maximizeViewportAction->setChecked(newViewportConfiguration->maximizedViewport() != nullptr);
+		_maximizedViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::maximizedViewportChanged, maximizeViewportAction, [maximizeViewportAction](Viewport* maximizedViewport) {
+			maximizeViewportAction->setChecked(maximizedViewport != nullptr);
+		});
+	}
+	else {
+		maximizeViewportAction->setChecked(false);
+	}
 }
 
 /******************************************************************************

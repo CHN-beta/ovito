@@ -236,7 +236,7 @@ public:
 	}
 
 	/// Is called when the animation controller generates a notification event.
-	void onCtrlEvent(const ReferenceEvent& event) {
+	void onCtrlEvent(RefTarget* source, const ReferenceEvent& event) {
 		if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
 			if(refEvent.field() == &PROPERTY_FIELD(KeyframeController::keys)) {

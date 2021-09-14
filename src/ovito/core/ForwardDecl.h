@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -129,6 +129,7 @@ namespace Ovito {
 	class TextPrimitive;
 	class Viewport;
 	class ViewportConfiguration;
+	class ViewportLayoutCell;
 	class ViewportSettings;
 	struct ViewProjectionParameters;
 	class ViewportOverlay;

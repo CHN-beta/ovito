@@ -76,7 +76,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 	const FloatType tripodArrowSize = 0.17; 	// percentage of the above value.
 
 	// Set up projection matrix.
-	QSize imageSize = renderer->outputSize();
+	QSize imageSize = renderer->viewportRect().size();
 	const FloatType tripodPixelSize = tripodSize * renderer->devicePixelRatio();
 	Matrix4 viewportScalingTM = Matrix4::Identity();
 	viewportScalingTM(0,0) = tripodPixelSize / imageSize.width();

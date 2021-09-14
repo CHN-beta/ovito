@@ -63,7 +63,7 @@ protected Q_SLOTS:
 	void onSceneSelectionChanged();
 
 	/// This is called whenever the selected scene node sends an event.
-	void onSceneNodeNotificationEvent(const ReferenceEvent& event);
+	void onSceneNodeNotificationEvent(RefTarget* source, const ReferenceEvent& event);
 
 	/// Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
 	void onScenePreparationBegin();

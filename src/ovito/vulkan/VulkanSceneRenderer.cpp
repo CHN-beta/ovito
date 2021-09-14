@@ -173,9 +173,12 @@ void VulkanSceneRenderer::initResources()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
+void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
-	SceneRenderer::beginFrame(time, params, vp);
+	// Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
+	QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
+
+	SceneRenderer::beginFrame(time, params, vp, vulkanViewportRect);
 
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -183,8 +186,23 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
     // Make sure our Vulkan objects have been created.
     initResources();
 
-    // Specify viewport area.
-    setRenderingViewport(QRect(QPoint(0,0), frameBufferSize()));
+    // Specify dynamic Vulkan viewport area.
+    VkViewport viewport;
+    viewport.x = vulkanViewportRect.x();
+    viewport.y = vulkanViewportRect.y();
+    viewport.width = vulkanViewportRect.width();
+    viewport.height = vulkanViewportRect.height();
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
+
+    // Specify dynamic Vulkan scissor rectangle.
+    VkRect2D scissor;
+    scissor.offset.x = vulkanViewportRect.x();
+    scissor.offset.y = vulkanViewportRect.y();
+    scissor.extent.width = vulkanViewportRect.width();
+    scissor.extent.height = vulkanViewportRect.height();
+    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
 
     // Enable depth tests by default.
     setDepthTestEnabled(true);
@@ -193,7 +211,7 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
@@ -222,32 +240,6 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingT
     }
 
 	return !operation.isCanceled();
-}
-
-/******************************************************************************
-* Sets the rectangular region of the framebuffer we are rendering into (in device coordinates).
-******************************************************************************/
-void VulkanSceneRenderer::setRenderingViewport(const QRect& viewportRect)
-{
-	SceneRenderer::setRenderingViewport(viewportRect);
-
-    // Specify dynamic Vulkan viewport area.
-    VkViewport viewport;
-    viewport.x = viewportRect.x();
-    viewport.y = viewportRect.y();
-    viewport.width = viewportRect.width();
-    viewport.height = viewportRect.height();
-    viewport.minDepth = 0;
-    viewport.maxDepth = 1;
-    deviceFunctions()->vkCmdSetViewport(currentCommandBuffer(), 0, 1, &viewport);
-
-    // Specify dynamic Vulkan scissor rectangle.
-    VkRect2D scissor;
-    scissor.offset.x = viewportRect.x();
-    scissor.offset.y = viewportRect.y();
-    scissor.extent.width = viewportRect.width();
-    scissor.extent.height = viewportRect.height();
-    deviceFunctions()->vkCmdSetScissor(currentCommandBuffer(), 0, 1, &scissor);
 }
 
 /******************************************************************************

@@ -253,6 +253,9 @@ private Q_SLOTS:
 	/// This is called when the active animation interval has changed.
 	void onAnimationIntervalChanged(TimeInterval newAnimationInterval);
 
+	/// This is called when new viewport configuration has been loaded.
+	void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
+
 	/// This is called whenever the scene node selection changed.
 	void onSelectionChangeComplete(SelectionSet* selection);
 
@@ -293,6 +296,7 @@ private:
 	QMetaObject::Connection _animationIntervalChangedConnection;
 	QMetaObject::Connection _animationPlaybackChangedConnection;
 	QMetaObject::Connection _animationPlaybackToggledConnection;
+	QMetaObject::Connection _maximizedViewportChangedConnection;
 };
 
 }	// End of namespace

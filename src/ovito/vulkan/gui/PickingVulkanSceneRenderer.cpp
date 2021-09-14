@@ -41,25 +41,9 @@ PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(DataSet* dataset, std::sh
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering and sets the data set that is being rendered.
-******************************************************************************/
-bool PickingVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
-{
-	return OffscreenVulkanSceneRenderer::startRender(dataset, settings, frameBufferSize);
-}
-
-/******************************************************************************
-* This method is called just before renderFrame() is called.
-******************************************************************************/
-void PickingVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp)
-{
-	OffscreenVulkanSceneRenderer::beginFrame(time, params, vp);
-}
-
-/******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
 {
 	// Caller should never provide an external frame buffer.
 	OVITO_ASSERT(!frameBuffer);
@@ -70,7 +54,7 @@ bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRen
 	resetPickingBuffer();
 
 	// Let the base class do the main rendering work.
-	if(!OffscreenVulkanSceneRenderer::renderFrame(frameBuffer, stereoTask, std::move(operation)))
+	if(!OffscreenVulkanSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
 		return false;
 
 	return true;
@@ -79,7 +63,7 @@ bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, StereoRen
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void PickingVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer)
+void PickingVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	// Caller should never provide an external frame buffer.
 	OVITO_ASSERT(!frameBuffer);
@@ -93,7 +77,7 @@ void PickingVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer*
 	endPickObject();
 
 	// Let the base implementation fetch the Vulkan framebuffer contents.
-	OffscreenVulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer);
+	OffscreenVulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
 }
 
 /******************************************************************************
