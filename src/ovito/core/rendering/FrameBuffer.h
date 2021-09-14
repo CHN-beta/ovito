@@ -169,7 +169,7 @@ public:
 Q_SIGNALS:
 
 	/// This signal is emitted by the framebuffer when a part of its content has changed.
-	void contentChanged(QRect changedRegion);
+	void contentChanged(const QRect& changedRegion);
 
 	/// This signal is emitted by the framebuffer when its content has been replaced.
 	void contentReset();

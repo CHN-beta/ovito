@@ -388,9 +388,9 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                 // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader as a push constant.                
                 Vector_4<float> view_dir_eye_pos;
                 if(renderer->projParams().isPerspective)
-                    view_dir_eye_pos = Vector_4<float>(Vector_3<float>(renderer->modelViewTM().inverse().column(3)), 0.0f); // Camera position in object space
+                    view_dir_eye_pos = Vector_4<float>(renderer->modelViewTM().inverse().column(3).toDataType<float>(), 0.0f); // Camera position in object space
                 else
-                    view_dir_eye_pos = Vector_4<float>(Vector_3<float>(renderer->modelViewTM().inverse().column(2)), 0.0f); // Camera viewing direction in object space.
+                    view_dir_eye_pos = Vector_4<float>(renderer->modelViewTM().inverse().column(2).toDataType<float>(), 0.0f); // Camera viewing direction in object space.
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(view_dir_eye_pos), view_dir_eye_pos.data());
 
                 if(renderer->isPicking()) {

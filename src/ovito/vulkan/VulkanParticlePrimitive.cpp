@@ -592,7 +592,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                     else normal_matrix.setIdentity();
                     // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
                     // Better use a mat4 to be safe:
-                    Matrix_4<float> normal_matrix4(Matrix_3<float>(normal_matrix).transposed());
+                    Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
                     renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
                 }
                 else {
@@ -603,7 +603,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
             }
             else {
                 // Pass projection matrix to vertex shader as a push constant.
-                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), Matrix_4<float>(renderer->clipCorrection() * renderer->projParams().projectionMatrix).data());
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), (renderer->clipCorrection() * renderer->projParams().projectionMatrix).toDataType<float>().data());
 
                 // Pass model-view transformation matrix to vertex shader as a push constant.
                 // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
@@ -642,7 +642,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                 else normal_matrix.setIdentity();
                 // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
                 // Better use a mat4 to be safe:
-                Matrix_4<float> normal_matrix4(Matrix_3<float>(normal_matrix).transposed());
+                Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
                 renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
             }
             else {
@@ -680,7 +680,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
             }
             else {
                 // Pass projection matrix to vertex shader as a push constant.
-                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), Matrix_4<float>(renderer->clipCorrection() * renderer->projParams().projectionMatrix).data());
+                renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), (renderer->clipCorrection() * renderer->projParams().projectionMatrix).toDataType<float>().data());
 
                 // Pass model-view transformation matrix to vertex shader as a push constant.
                 // In order to match the 16-byte alignment requirements of shader interface blocks, we convert the 3x4 matrix from column-major
@@ -863,7 +863,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                     Vector_3<float> axes;
                     if(shape) {
                         if(*shape != Vector3::Zero()) {
-                            axes = Vector_3<float>(*shape);
+                            axes = (*shape).toDataType<float>();
                         }
                         else {
                             axes = Vector_3<float>(static_cast<float>(radius ? (*radius) : uniformRadius()));
@@ -903,7 +903,7 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                 for(int index : ConstDataBufferAccess<int>(indices())) {
                     Vector_3<float> axes;
                     if(asphericalShapeArray && asphericalShapeArray[index] != Vector3::Zero()) {
-                        axes = Vector_3<float>(asphericalShapeArray[index]);
+                        axes = asphericalShapeArray[index].toDataType<float>();
                     }
                     else {
                         axes = Vector_3<float>(static_cast<float>(radiusArray ? radiusArray[index] : uniformRadius()));
@@ -953,13 +953,13 @@ void VulkanParticlePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                 OVITO_ASSERT(roundness()->size() == positions()->size());
                 if(!indices()) {
                     for(const Vector2& r : ConstDataBufferAccess<Vector2>(roundness())) {
-                        *dst++ = Vector_2<float>(r);
+                        *dst++ = r.toDataType<float>();
                     }
                 }
                 else {
                     ConstDataBufferAccess<Vector2> roundnessArray(roundness());
                     for(int index : ConstDataBufferAccess<int>(indices())) {
-                        *dst++ = Vector_2<float>(roundnessArray[index]);
+                        *dst++ = roundnessArray[index].toDataType<float>();
                     }
                 }
             }

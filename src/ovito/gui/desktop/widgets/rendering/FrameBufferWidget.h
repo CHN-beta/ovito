@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,6 +33,8 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FrameBufferWidget : public QWidget
 {
+	Q_OBJECT
+
 public:
 
 	/// Constructor.
@@ -61,7 +63,7 @@ protected:
 private Q_SLOTS:
 
 	/// This handles contentChanged() signals from the frame buffer.
-	void onFrameBufferContentChanged(QRect changedRegion) {
+	void onFrameBufferContentChanged(const QRect& changedRegion) {
 		// Repaint only portion of the widget.
 		update(changedRegion);
 	}
@@ -76,12 +78,6 @@ private:
 
 	/// The current zoom factor.
 	qreal _zoomFactor = 1;
-
-private:
-
-	Q_OBJECT
 };
 
 }	// End of namespace
-
-

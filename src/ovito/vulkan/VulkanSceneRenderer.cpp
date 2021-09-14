@@ -457,8 +457,8 @@ VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
 {
     // Update the information in the uniforms data structure.
 	GlobalUniforms uniforms;
-    uniforms.projectionMatrix = static_cast<Matrix_4<float>>(clipCorrection() * projParams().projectionMatrix);
-    uniforms.inverseProjectionMatrix = static_cast<Matrix_4<float>>(projParams().inverseProjectionMatrix * clipCorrection().inverse());
+    uniforms.projectionMatrix = (clipCorrection() * projParams().projectionMatrix).toDataType<float>();
+    uniforms.inverseProjectionMatrix = (projParams().inverseProjectionMatrix * clipCorrection().inverse()).toDataType<float>();
     uniforms.viewportOrigin = Point_2<float>(0,0);
     uniforms.inverseViewportSize = Vector_2<float>(2.0f / (float)frameBufferSize().width(), 2.0f / (float)frameBufferSize().height());
     uniforms.znear = static_cast<float>(projParams().znear);

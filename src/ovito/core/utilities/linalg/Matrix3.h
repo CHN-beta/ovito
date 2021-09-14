@@ -143,7 +143,7 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR explicit operator Matrix_3<U>() const {
+    Q_DECL_CONSTEXPR Matrix_3<U> toDataType() const {
         return Matrix_3<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)),

@@ -92,7 +92,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 
 	// This helper functions computes the shortest distance between a point and a bin cell located at the origin.
 	auto shortestCellCellDistance = [binCell, planeNormals](const Vector3I& d) {
-		Vector3 p = binCell * Vector3(d);
+		Vector3 p = binCell * d.toDataType<FloatType>();
 		// Compute distance from point to corner.
 		FloatType distSq = p.squaredLength();
 		for(size_t dim = 0; dim < 3; dim++) {

@@ -237,7 +237,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
         // Also apply affine transform of simulation cell to velocity vectors.
         std::vector<Vector_3<float>> velocityBuffer(velocityProperty.size());
         boost::transform(ordering, velocityBuffer.begin(),
-            [&](size_t i) { return Vector_3<float>(transformation * velocityProperty[i]); });
+            [&](size_t i) { return (transformation * velocityProperty[i]).toDataType<float>(); });
         _gsdFile->writeChunk<float>("particles/velocity", velocityBuffer.size(), 3, velocityBuffer.data());
         if(operation.isCanceled()) return false;
     }

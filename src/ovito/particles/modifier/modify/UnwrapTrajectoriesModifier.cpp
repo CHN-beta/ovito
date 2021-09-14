@@ -196,7 +196,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 		const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
 		for(Point3& p : posProperty) {
-			p += cell->cellMatrix() * Vector3(*pbcShift++);
+			p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
 		}
 
 		// Unwrap bonds by adjusting their PBC shift vectors.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -124,7 +124,7 @@ public:
 
 	/// Casts the vector to another component type \a U.
 	template<typename U>
-	Q_DECL_CONSTEXPR explicit operator Vector_4<U>() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+	Q_DECL_CONSTEXPR Vector_4<U> toDataType() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
 
     /////////////////////////////// Unary operators //////////////////////////////
 

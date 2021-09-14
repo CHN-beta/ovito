@@ -392,7 +392,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
         else normal_matrix.setIdentity();
         // It's almost impossible to pass a mat3 to the shader with the correct memory layout. 
         // Better use a mat4 to be safe:
-        Matrix_4<float> normal_matrix4(Matrix_3<float>(normal_matrix).transposed());
+        Matrix_4<float> normal_matrix4(normal_matrix.toDataType<float>().transposed());
         renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(normal_matrix4), normal_matrix4.data());
     }
     else {
@@ -426,7 +426,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                 const Point3& p0 = mesh().vertex(face->vertex(0));
                 Vector3 d1 = mesh().vertex(face->vertex(1)) - p0;
                 Vector3 d2 = mesh().vertex(face->vertex(2)) - p0;
-                *faceNormal = static_cast<Vector_3<float>>(d1.cross(d2));
+                *faceNormal = d1.cross(d2).toDataType<float>();
                 if(*faceNormal != Vector_3<float>::Zero()) {
                     allMask |= face->smoothingGroups();
                 }
@@ -444,7 +444,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->normal = Vector_3<float>::Zero();
                     else
                         rv->normal = *faceNormal;
-                    rv->position = static_cast<Point_3<float>>(mesh().vertex(face->vertex(v)));
+                    rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
                         rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
@@ -503,8 +503,8 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
             for(auto face = mesh().faces().constBegin(); face != mesh().faces().constEnd(); ++face) {
                 // Initialize render vertices for this face.
                 for(size_t v = 0; v < 3; v++, rv++) {
-                    rv->normal = static_cast<Vector_3<float>>(*faceNormal++);
-                    rv->position = static_cast<Point_3<float>>(mesh().vertex(face->vertex(v)));
+                    rv->normal = (*faceNormal++).toDataType<float>();
+                    rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
                         rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
@@ -600,7 +600,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
 
             // Next, compute distance of each face from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(faceCount());
-            boost::transform(faceCenters, distances.begin(), [direction = Vector_3<float>(direction)](const Vector_3<float>& v) {
+            boost::transform(faceCenters, distances.begin(), [direction = direction.toDataType<float>()](const Vector_3<float>& v) {
                 return direction.dot(v);
             });
 
@@ -688,9 +688,9 @@ VkBuffer VulkanMeshPrimitive::getInstanceTMBuffer(VulkanSceneRenderer* renderer)
     VkBuffer instanceTMBuffer = renderer->context()->createCachedBuffer(instanceTMsKey, perInstanceTMs()->size() * 3 * sizeof(Vector_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
         for(const AffineTransformation& tm : ConstDataBufferAccess<AffineTransformation>(perInstanceTMs())) {
-            *row++ = static_cast<Vector_4<float>>(tm.row(0));
-            *row++ = static_cast<Vector_4<float>>(tm.row(1));
-            *row++ = static_cast<Vector_4<float>>(tm.row(2));
+            *row++ = tm.row(0).toDataType<float>();
+            *row++ = tm.row(1).toDataType<float>();
+            *row++ = tm.row(2).toDataType<float>();
         }
     });
 

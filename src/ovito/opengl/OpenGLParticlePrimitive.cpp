@@ -369,7 +369,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                     Vector_3<float> axes;
                     if(shape) {
                         if(*shape != Vector3::Zero()) {
-                            axes = Vector_3<float>(*shape);
+                            axes = shape->toDataType<float>();
                         }
                         else {
                             axes = Vector_3<float>(static_cast<float>(radius ? (*radius) : uniformRadius()));
@@ -409,7 +409,7 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                 for(int index : ConstDataBufferAccess<int>(indices())) {
                     Vector_3<float> axes;
                     if(asphericalShapeArray && asphericalShapeArray[index] != Vector3::Zero()) {
-                        axes = Vector_3<float>(asphericalShapeArray[index]);
+                        axes = asphericalShapeArray[index].toDataType<float>();
                     }
                     else {
                         axes = Vector_3<float>(static_cast<float>(radiusArray ? radiusArray[index] : uniformRadius()));
@@ -461,13 +461,13 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
                 OVITO_ASSERT(roundness()->size() == positions()->size());
                 if(!indices()) {
                     for(const Vector2& r : ConstDataBufferAccess<Vector2>(roundness())) {
-                        *dst++ = Vector_2<float>(r);
+                        *dst++ = r.toDataType<float>();
                     }
                 }
                 else {
                     ConstDataBufferAccess<Vector2> roundnessArray(roundness());
                     for(int index : ConstDataBufferAccess<int>(indices())) {
-                        *dst++ = Vector_2<float>(roundnessArray[index]);
+                        *dst++ = roundnessArray[index].toDataType<float>();
                     }
                 }
             }

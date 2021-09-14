@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -201,7 +201,7 @@ public:
 
 	/// \brief Casts the matrix to a matrix with another data type.
 	template<typename U>
-	Q_DECL_CONSTEXPR explicit operator AffineTransformationT<U>() const {
+	Q_DECL_CONSTEXPR AffineTransformationT<U> toDataType() const {
 		return AffineTransformationT<U>(
 				static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
 				static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),

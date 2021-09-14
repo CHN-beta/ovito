@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,6 +34,8 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FrameBufferWindow : public QMainWindow
 {
+	Q_OBJECT
+	
 public:
 
 	/// Constructor.
@@ -66,13 +68,7 @@ public Q_SLOTS:
 private:
 
 	/// The widget that displays the FrameBuffer.
-	FrameBufferWidget* _frameBufferWidget;
-
-private:
-
-	Q_OBJECT
+	FrameBufferWidget* _frameBufferWidget;	
 };
 
 }	// End of namespace
-
-

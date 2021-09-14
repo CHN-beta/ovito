@@ -125,7 +125,7 @@ public:
 
 	/// Casts the vector to another component type \a U.
 	template<typename U>
-	Q_DECL_CONSTEXPR explicit operator Vector_3<U>() const { return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+	Q_DECL_CONSTEXPR Vector_3<U> toDataType() const { return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
 
     /////////////////////////////// Unary operators //////////////////////////////
 

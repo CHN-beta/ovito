@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -252,7 +252,7 @@ void DislocImporter::FrameLoader::loadFile()
 			for(const auto& id : nodalIds4) {
 				auto iter = idMap4.find(id);
 				if(iter == idMap4.end())
-					iter = idMap4.emplace(id, microstructure.createVertex(Point3(*nodalPositionsIter))).first;
+					iter = idMap4.emplace(id, microstructure.createVertex(nodalPositionsIter->toDataType<FloatType>())).first;
 				*vertexMapIter = iter->second;
 				++vertexMapIter;
 				++nodalPositionsIter;
@@ -262,7 +262,7 @@ void DislocImporter::FrameLoader::loadFile()
 			for(const auto& id : nodalIds3) {
 				auto iter = idMap3.find(id);
 				if(iter == idMap3.end())
-					iter = idMap3.emplace(id, microstructure.createVertex(Point3(*nodalPositionsIter))).first;
+					iter = idMap3.emplace(id, microstructure.createVertex(nodalPositionsIter->toDataType<FloatType>())).first;
 				++nodalPositionsIter;
 			}
 		}
@@ -296,7 +296,7 @@ void DislocImporter::FrameLoader::loadFile()
 				OVITO_ASSERT(seg[1] >= 0 && seg[1] < (qlonglong)vertexMap.size());
 				MicrostructureAccess::vertex_index vertex1 = vertexMap[seg[0]];
 				MicrostructureAccess::vertex_index vertex2 = vertexMap[seg[1]];
-				microstructure.createDislocationSegment(vertex1, vertex2, Vector3(*burgersVector++), crystalRegion);
+				microstructure.createDislocationSegment(vertex1, vertex2, (*burgersVector++).toDataType<FloatType>(), crystalRegion);
 			}
 			segmentCount = dislocationSegments2.size();
 		}
@@ -318,7 +318,7 @@ void DislocImporter::FrameLoader::loadFile()
 
 				MicrostructureAccess::vertex_index vertex1 = iter1->second;
 				MicrostructureAccess::vertex_index vertex2 = iter2->second;
-				microstructure.createDislocationSegment(vertex1, vertex2, Vector3(*burgersVector++), crystalRegion);
+				microstructure.createDislocationSegment(vertex1, vertex2, (*burgersVector++).toDataType<FloatType>(), crystalRegion);
 			}
 			segmentCount = dislocationSegments3.size();
 		}
@@ -374,7 +374,7 @@ void DislocImporter::FrameLoader::loadFile()
 
 				// Create first mesh face.
 				MicrostructureAccess::face_index face = microstructure.createFace({}, crystalRegion, MicrostructureAccess::SLIP_FACET,
-					Vector3(*slipVector), slipFacetNormals.empty() ? Vector3::Zero() : Vector3(*slipFacetNormal));
+					(*slipVector).toDataType<FloatType>(), slipFacetNormals.empty() ? Vector3::Zero() : (*slipFacetNormal).toDataType<FloatType>());
 				MicrostructureAccess::vertex_index node0 = vertexMap[*slipFacetVertex++];
 				MicrostructureAccess::vertex_index node1 = node0;
 				MicrostructureAccess::vertex_index node2;
@@ -386,7 +386,7 @@ void DislocImporter::FrameLoader::loadFile()
 
 				// Create the opposite mesh face.
 				MicrostructureAccess::face_index oppositeFace = microstructure.createFace({}, crystalRegion, MicrostructureAccess::SLIP_FACET,
-					-Vector3(*slipVector), slipFacetNormals.empty() ? Vector3::Zero() : -Vector3(*slipFacetNormal));
+					-(*slipVector).toDataType<FloatType>(), slipFacetNormals.empty() ? Vector3::Zero() : -(*slipFacetNormal).toDataType<FloatType>());
 				MicrostructureAccess::edge_index edge = microstructure.firstFaceEdge(face);
 				do {
 					microstructure.createEdge(microstructure.vertex2(edge), microstructure.vertex1(edge), oppositeFace);

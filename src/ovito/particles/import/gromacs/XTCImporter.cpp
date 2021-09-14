@@ -163,12 +163,12 @@ void XTCImporter::FrameLoader::loadFile()
 	setParticleCount(numParticles);
 	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
 	std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
-		return static_cast<Point3>(p * 10.0f);
+		return (p * 10.0f).toDataType<FloatType>();
 	});
 	posProperty.reset();
 
 	// Convert cell vectors from nanometers to angstroms.
-	simulationCell()->setCellMatrix(AffineTransformation(static_cast<Matrix3>(xtcFrame.cell * 10.0f)));
+	simulationCell()->setCellMatrix(AffineTransformation((xtcFrame.cell * 10.0f).toDataType<FloatType>()));
 
 	state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step), dataSource());
 	state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time), dataSource());

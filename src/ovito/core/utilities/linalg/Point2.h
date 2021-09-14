@@ -120,7 +120,7 @@ public:
 
 	/// Casts the point to another coordinate type \a U.
 	template<typename U>
-	Q_DECL_CONSTEXPR explicit operator Point_2<U>() const { return Point_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
+	Q_DECL_CONSTEXPR Point_2<U> toDataType() const { return Point_2<U>(static_cast<U>(x()), static_cast<U>(y())); }
 
 	///////////////////////////// Assignment operators ///////////////////////////
 

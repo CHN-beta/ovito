@@ -497,7 +497,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 				Vector3 delta = p2 - p1;
 				if(ConstPropertyAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
 					if(simulationCell()) {
-						delta += simulationCell()->cellMatrix() * Vector3(periodicImageProperty[bondIndex]);
+						delta += simulationCell()->cellMatrix() * periodicImageProperty[bondIndex].toDataType<FloatType>();
 					}
 				}
 				str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
