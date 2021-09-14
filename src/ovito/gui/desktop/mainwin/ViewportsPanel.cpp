@@ -419,6 +419,29 @@ void ViewportsPanel::mouseMoveEvent(QMouseEvent* event)
 		// Set the new split weights.
 		parentCell->setChildWeights(std::move(childWeights));
     }
+	else if(event->button() == Qt::NoButton) {
+		int index = 0;
+		for(const auto& region : _splitterRegions) {
+			if(region.area.contains(event->pos())) {
+				if(_hoveredSplitter != index) {
+					if(_hoveredSplitter != -1)
+						update(_splitterRegions[_hoveredSplitter].area);
+					_hoveredSplitter = index;
+					update(region.area);
+					_highlightSplitterTimer.start(500, this);
+				}
+				break;
+			}
+			index++;
+		}
+		if(index == _splitterRegions.size() && _hoveredSplitter != -1) {
+			const auto& region = _splitterRegions[_hoveredSplitter];
+			_hoveredSplitter = -1;
+			_highlightSplitter = false;
+			_highlightSplitterTimer.stop();
+			update(region.area);
+		}
+	}
 }
 
 /******************************************************************************
@@ -459,22 +482,10 @@ bool ViewportsPanel::event(QEvent* event)
 		}
 	}
 	else if(event->type() == QEvent::HoverMove) {
-		if(_draggedSplitter == -1) {
-			int index = 0;
-			for(const auto& region : _splitterRegions) {
-				if(region.area.contains(static_cast<QHoverEvent*>(event)->pos())) {
-					if(_hoveredSplitter != index) {
-						if(_hoveredSplitter != -1)
-							update(_splitterRegions[_hoveredSplitter].area);
-						_hoveredSplitter = index;
-						update(region.area);
-						_highlightSplitterTimer.start(500, this);
-					}
-					break;
-				}
-				index++;
-			}
-			if(index == _splitterRegions.size() && _hoveredSplitter != -1) {
+		if(_draggedSplitter == -1 && _hoveredSplitter != -1) {
+			if(boost::algorithm::none_of(_splitterRegions, [&](const auto& region) {
+				return region.area.contains(static_cast<QHoverEvent*>(event)->pos());
+			})) {
 				const auto& region = _splitterRegions[_hoveredSplitter];
 				_hoveredSplitter = -1;
 				_highlightSplitter = false;

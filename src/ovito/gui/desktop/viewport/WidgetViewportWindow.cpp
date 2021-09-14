@@ -170,7 +170,7 @@ void WidgetViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void WidgetViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea) {
+	if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea && event->buttons() == Qt::NoButton) {
 		_cursorInContextMenuArea = true;
 		viewport()->updateViewport();
 	}
