@@ -283,6 +283,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case TopologyProperty:
+	case ParticleIdentifiersProperty:
 		dataType = PropertyObject::Int64;
 		componentCount = 2;
 		stride = componentCount * sizeof(qlonglong);
@@ -293,7 +294,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 		stride = componentCount * sizeof(int);
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "BondsObject::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "BondsObject::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard bond property type: %1").arg(type));
 	}
 	
@@ -335,6 +336,7 @@ void BondsObject::OOMetaClass::initialize()
 	const QStringList abList = QStringList() << "A" << "B";
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
 	const QStringList rgbList = QStringList() << "R" << "G" << "B";
+	const QStringList onetwoList = QStringList() << "1" << "2";
 
 	registerStandardProperty(TypeProperty, tr("Bond Type"), PropertyObject::Int, emptyList, &BondType::OOClass(), tr("Bond types"));
 	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
@@ -343,6 +345,7 @@ void BondsObject::OOMetaClass::initialize()
 	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abList);
 	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyObject::Int, xyzList);
 	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyObject::Float, emptyList);
+	registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), PropertyObject::Int64, onetwoList);
 }
 
 /******************************************************************************

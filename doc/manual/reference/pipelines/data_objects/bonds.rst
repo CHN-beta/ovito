@@ -44,8 +44,8 @@ appearance of the bonds as well as other aspects. The following table lists thes
 ========================= ========================== =======================================================================================
 Bond property             Data type (components)     Description
 ========================= ========================== =======================================================================================
-``Topology``              Integer (A, B)             This bond property is always present and holds the indices of the two particles 
-                                                     connected by a bond.
+``Topology``              Integer (A, B)             This bond property is always present and contains the indices of the two particles 
+                                                     connected by a bond. Indices are zero-based.
 ``Bond Type``             Integer                    Stores the type identifier of each bond. The bond type determines the display color 
                                                      if the ``Color`` property is not present.
 ``Color``                 Real (R, G, B)             If present, this property controls the display color of individual bonds. 

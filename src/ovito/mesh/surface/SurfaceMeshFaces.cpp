@@ -60,7 +60,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSe
 		OVITO_ASSERT(stride == sizeof(Vector3));
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "SurfaceMeshFaces::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "SurfaceMeshFaces::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard face property type: %1").arg(type));
 	}
 	const QStringList& componentNames = standardPropertyComponentNames(type);

@@ -126,7 +126,8 @@ public:
 		LengthProperty = PropertyObject::FirstSpecificProperty,
 		TopologyProperty,
 		PeriodicImageProperty,
-		TransparencyProperty
+		TransparencyProperty,
+		ParticleIdentifiersProperty
 	};
 
 	/// \brief Constructor.

@@ -57,7 +57,7 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(Dat
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "SurfaceMeshVertices::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "SurfaceMeshVertices::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard vertex property type: %1").arg(type));
 	}
 	const QStringList& componentNames = standardPropertyComponentNames(type);

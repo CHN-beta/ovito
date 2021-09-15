@@ -233,30 +233,11 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
 		reaxAtoms.push_back(reaxAtom);
 	}
 
-	// Sort atoms by ID.
-	std::sort(reaxAtoms.begin(), reaxAtoms.end(), 
-		[](const ReaxFFAtom& a, const ReaxFFAtom& b) { return a.id < b.id; });
-
-	// Resolve atom IDs into 0-based atom indices.
-	for(ReaxFFBond& bond : reaxBonds) {
-		for(qlonglong& id : bond.atoms) {
-			if(id >= 1 && (size_t)id <= reaxAtoms.size() && reaxAtoms[id - 1].id == id) {
-				id--;
-			}
-			else {
-				id = std::distance(reaxAtoms.cbegin(), std::lower_bound(reaxAtoms.cbegin(), reaxAtoms.cend(), id, 
-					[](const ReaxFFAtom& a, qlonglong id) { return a.id < id; }));
-				if(id == reaxAtoms.size() || reaxAtoms[id].id != id)
-					throw Exception(tr("Invalid neighbor atom id in bonds list in ReaxFF bond file.").arg(stream.lineNumber()));
-			}
-		}
-	}
-
 	{
 		// Create bonds storage.
 		setBondCount(reaxBonds.size());
-		PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
-		std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondTopologyProperty.begin(), [](const ReaxFFBond& bond) { return bond.atoms; });
+		PropertyAccess<ParticleIndexPair> bondParticleIdentifiersProperty = bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, false, executionContext());
+		std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondParticleIdentifiersProperty.begin(), [](const ReaxFFBond& bond) { return bond.atoms; });
 
 		// Create bond property for the bond order.
 		PropertyAccess<FloatType> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), PropertyObject::Float, 1, 0, false);

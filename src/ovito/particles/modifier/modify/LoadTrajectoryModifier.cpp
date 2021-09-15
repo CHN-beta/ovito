@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -288,11 +288,16 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 		particles->verifyIntegrity();
 
-		// If the trajectory file contains bond topology, completely replace all existing bonds 
+		// If the trajectory file contains a bond topology, completely replace all existing bonds 
 		// from the topology dataset with the new set of bonds. 
-		if(trajectoryBonds->getProperty(BondsObject::TopologyProperty)) {
+		// The topology can be specified either in the form of the "Topology" bond property (two 0-based particle indices)
+		// or in the form of the "Particle Identifiers" bond property (pairs of atom IDs).
+		const PropertyObject* bondTopology = trajectoryBonds->getProperty(BondsObject::TopologyProperty);
+		const PropertyObject* bondParticleIdentifiers = trajectoryBonds->getProperty(BondsObject::ParticleIdentifiersProperty);
+
+		if(bondTopology || bondParticleIdentifiers) {
 			if(particles->bonds()) {
-				// Replace the property arrays, but make sure BondType instances  
+				// Replace the property arrays, but make sure that BondType instances  
 				// as well as the visual elements from the topology dataset are preserved.
 				particles->makeBondsMutable()->setContent(trajectoryBonds->elementCount(), trajectoryBonds->properties());
 			}
@@ -300,6 +305,43 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				// We can simply adopt the bonds object from the trajectory dataset as a whole
 				// if the topology dataset didn't contain any bonds yet.
 				particles->setBonds(trajectoryBonds);
+			}
+
+			// If the input bonds are defined in terms of atom IDs (i.e. bond property "Particle Identifiers"), then map the IDs
+			// to corresponding particle indices and store them in the "Topology" bond property.
+			if(bondParticleIdentifiers) {
+				// Build map from particle identifiers to particle indices.
+				std::map<qlonglong, size_t> idToIndexMap;
+				if(ConstPropertyAccess<qlonglong> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+					size_t index = 0;
+					for(qlonglong id : particleIdentifierProperty) {
+						if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
+							throwException(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
+					}
+				}
+				else {
+					// Generate implicit IDs if the "Particle Identifier" property is not defined.
+					for(size_t i = 0; i < particles->elementCount(); i++)
+						idToIndexMap[i+1] = i;
+				}
+
+				// Perform lookup of particle IDs.
+				PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, ExecutionContext::Scripting);
+				auto t = bondTopologyArray.begin();
+				for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+					auto iter1 = idToIndexMap.find(bond[0]);
+					auto iter2 = idToIndexMap.find(bond[1]);
+					if(iter1 == idToIndexMap.end())
+						throwException(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[0]).arg(std::distance(bondTopologyArray.begin(), t)));
+					if(iter2 == idToIndexMap.end())
+						throwException(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[1]).arg(std::distance(bondTopologyArray.begin(), t)));
+					(*t)[0] = iter1->second;
+					(*t)[1] = iter2->second;
+					++t;
+				}
+
+				// Remove the "Particle Identifiers" property from bonds again, because it is no longer needed.
+				particles->makeBondsMutable()->removeProperty(bondParticleIdentifiers);
 			}
 
 			// Compute the PBC shift vectors of the bonds based on current particle positions.
@@ -310,7 +352,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			}
 		}
 		else if(particles->bonds()) {
-			// If the trajectory dataset doesn't contain the "Topology" bond property, 
+			// If the trajectory dataset doesn't contain the "Topology" nor the "Particle Identifiers" bond property, 
 			// then add the bond properties to the existing bonds from the topology dataset.
 			// This requires that the number of bonds remains constant.
 			if(trajectoryBonds->elementCount() != particles->bonds()->elementCount()) {

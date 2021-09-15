@@ -68,7 +68,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(Data
 		stride = sizeof(Matrix3);
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "SurfaceMeshRegions::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "SurfaceMeshRegions::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard region property type: %1").arg(type));
 	}
 	const QStringList& componentNames = standardPropertyComponentNames(type);

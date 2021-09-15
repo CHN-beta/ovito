@@ -73,7 +73,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "VoxelGrid::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "VoxelGrid::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid standard voxel property type: %1").arg(type));
 	}
 	const QStringList& componentNames = standardPropertyComponentNames(type);

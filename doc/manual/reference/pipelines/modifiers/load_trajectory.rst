@@ -84,32 +84,32 @@ The ``dump local`` command generates a file named :file:`bonds.dump` with six da
 
 When importing the file into OVITO using the *Load trajectory* modifier, you need to map these data columns
 to the correct :ref:`bond properties <scene_objects.bonds>` so that the program can interpret the values
-in the LAMMPS dump file correctly. The following table shows how the mapping should look like:
+in the LAMMPS dump file correctly. The following table shows how that mapping should look like:
 
 .. table::
   :widths: auto
 
-  ========== ======================== ============================ =======================
+  ========== ======================== ============================ ==========================
   Column     LAMMPS name              File column identifier       OVITO bond property
-  ========== ======================== ============================ =======================
+  ========== ======================== ============================ ==========================
   1          `index`                  `index`                      (*ignore*)
   2          `btype`                  `c_1[1]`                     ``Bond Type``
-  3          `batom1`                 `c_1[2]`                     ``Topology.A``
-  4          `batom2`                 `c_1[3]`                     ``Topology.B``
+  3          `batom1`                 `c_1[2]`                     ``Particle Identifiers.1``
+  4          `batom2`                 `c_1[3]`                     ``Particle Identifiers.2``
   5          `dist`                   `c_2[1]`                     ``Length``
   6          `engpot`                 `c_2[2]`                     ``Energy``
-  ========== ======================== ============================ =======================
+  ========== ======================== ============================ ==========================
 
-In this example, the third and the fourth file column were mapped to the ``Topology`` bond property,
+In this example, the third and the fourth file column were mapped to the ``Particle Identifiers`` bond property,
 which signals OVITO that the dump local file contains a complete new set of bonds, replacing the original (static) 
 bond topology previously loaded from the LAMMPS *data* file. 
-In contrast, if the dump local file doesn't contain the two topology columns, then OVITO assumes that 
-the file stores auxiliary bond property values and simply adds them to the existing bonds. In this case, 
-the number of entries in the dump local file must exactly match the number of existing bonds in OVITO.
+In contrast, if a dump local file doesn't contain pairs of particle IDs, then OVITO assumes that 
+the file stores auxiliary per-bond values and simply adds them to the existing bonds as new properties. In this case, 
+the number of bond records in the dump local file must exactly match the number of already existing bonds in the model.
 
 File written by the `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command
 have a different format, which is fixed. OVITO maps the contained information automatically to the right 
-bond and particle properties.  
+bond and particle properties.
 
 .. seealso::
 

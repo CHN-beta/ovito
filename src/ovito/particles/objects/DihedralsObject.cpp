@@ -58,7 +58,7 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		stride = componentCount * sizeof(qlonglong);
 		break;
 	default:
-		OVITO_ASSERT_MSG(false, "DihedralsObject::createStandardStorage", "Invalid standard property type");
+		OVITO_ASSERT_MSG(false, "DihedralsObject::createStandardPropertyInternal", "Invalid standard property type");
 		throw Exception(tr("This is not a valid dihedral standard property type: %1").arg(type));
 	}
 	const QStringList& componentNames = standardPropertyComponentNames(type);
