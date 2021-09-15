@@ -53,7 +53,7 @@ Render all viewports |ovito-pro|
   Activate this option to generate a composed output image with multiple side-by-side views of your 3d scene. 
   The arrangement of the views is determined by the current layout of the interactive viewport panels. 
   Note that you can modify the number, size and layout of the viewports by dragging the vertical and horizontal lines separating
-  the viewport windows. Right-click on one of the spearator lines to open a popup menu providing further layout functions, or
+  the viewport windows. Right-click on one of the separator lines to open a popup menu providing further layout functions, or
   use the :ref:`viewport menu <usage.viewports.menu>`.
 
 Save to file

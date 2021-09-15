@@ -449,17 +449,18 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
     if(!renderer->isPicking()) {
 
         // Put colors and transparencies into one combined Vulkan buffer with 4 floats per primitive.
-        RendererResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorCacheKey{ 
+        RendererResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorCacheKey{ 
             colors(),
             transparencies(),
-            colors() ? Color(0,0,0) : uniformColor()
+            colors() ? Color(0,0,0) : uniformColor(),
+            primitiveCount // This is needed to NOT use the same cached buffer for rendering different number of cylinders which happen to use the same uniform color.
         };
 
         // Upload vertex buffer with the color data.
         VkBuffer colorBuffer = renderer->context()->createCachedBuffer(colorCacheKey, primitiveCount * sizeof(Vector_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
             OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size());
             OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size());
-            const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
+            const ColorT<float> uniformColor = this->uniformColor().toDataType<float>();
             ConstDataBufferAccess<FloatType,true> colorArray(colors());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;

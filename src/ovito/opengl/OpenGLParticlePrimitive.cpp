@@ -261,12 +261,13 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
     if(!renderer->isPicking()) {
 
         // Put colors, transparencies and selection state into one combined Vulkan buffer with 4 floats per particle.
-        RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorSelectionCacheKey{ 
+        RendererResourceKey<OpenGLParticlePrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, Color, GLsizei> colorSelectionCacheKey{ 
             indices(),
             colors(),
             transparencies(),
             selection(),
-            colors() ? Color(0,0,0) : uniformColor()
+            colors() ? Color(0,0,0) : uniformColor(),
+            shader.instanceCount() // This is needed to NOT use the same cached buffer for rendering different number of particles which happen to use the same uniform color.
         };
 
         // Upload vertex buffer with the particle colors.
@@ -275,8 +276,8 @@ void OpenGLParticlePrimitive::render(OpenGLSceneRenderer* renderer)
             OVITO_ASSERT(!selection() || selection()->size() == positions()->size());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             ConstDataBufferAccess<int> selectionArray(selection());
-            const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
-            const ColorAT<float> selectionColor = (ColorAT<float>)this->selectionColor();
+            const ColorT<float> uniformColor = this->uniformColor().toDataType<float>();
+            const ColorAT<float> selectionColor = this->selectionColor().toDataType<float>();
             if(!indices()) {
                 ConstDataBufferAccess<FloatType,true> colorArray(colors());
                 const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;

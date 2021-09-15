@@ -93,6 +93,10 @@ public:
 		{ this->r() = T(v.x()); this->g() = T(v.y()); this->b() = T(v.z()); }
 #endif
 
+	/// Casts the color to another component type \a U.
+	template<typename U>
+	Q_DECL_CONSTEXPR ColorT<U> toDataType() const { return ColorT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b())); }
+
 	/// Sets all components of the color to zero.
 	void setBlack() { r() = g() = b() = T(0); }
 
@@ -384,6 +388,10 @@ public:
 
 	/// Initializes the color components from an array of four values.
 	Q_DECL_CONSTEXPR explicit ColorAT(const std::array<T, 4>& c) : std::array<T, 4>(c) {}
+
+	/// Casts the color to another component type \a U.
+	template<typename U>
+	Q_DECL_CONSTEXPR ColorAT<U> toDataType() const { return ColorAT<U>(static_cast<U>(r()), static_cast<U>(g()), static_cast<U>(b()), static_cast<U>(a())); }
 
 	/// Sets the red, green, and blue components to zero and alpha to one.
 	void setBlack() { r() = g() = b() = T(0); a() = T(1); }

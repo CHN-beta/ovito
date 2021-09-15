@@ -171,6 +171,7 @@ subgrain
 subgrains
 sublattice
 submatrix
+submenu
 superquadric
 supersampling
 Tachyon

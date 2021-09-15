@@ -90,5 +90,5 @@ accordingly. This gives you the possibility to create animations with a :ref:'ca
 The :guilabel:`Layout` submenu contains several functions that modify the current layout of viewport windows.
 OVITO creates 4 standard viewports by default, which are arranged in a 2-by-2 grid. You can add 
 and remove viewport windows as needed, and adjust their relative positioning by dragging the separator 
-lines between them with the mouse. OVITO Pro provides the option to render images and animations that shoow 
+lines between them with the mouse. OVITO Pro provides the option to render images and animations that show 
 multiple views side by side, see the :ref:`Render all viewports <core.render_settings>` option.

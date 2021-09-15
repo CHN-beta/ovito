@@ -158,17 +158,18 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
     if(!renderer->isPicking()) {
 
         // Put colors and transparencies into one combined GL buffer with 4 floats per primitive.
-        RendererResourceKey<OpenGLCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color> colorCacheKey{ 
+        RendererResourceKey<OpenGLCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color, GLsizei> colorCacheKey{ 
             colors(),
             transparencies(),
-            colors() ? Color(0,0,0) : uniformColor()
+            colors() ? Color(0,0,0) : uniformColor(),
+            shader.instanceCount() // This is needed to NOT use the same cached buffer for rendering different number of cylinders which happen to use the same uniform color.
         };
 
         // Upload vertex buffer with the color data.
         QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
             OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size());
             OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size());
-            const ColorT<float> uniformColor = (ColorT<float>)this->uniformColor();
+            const ColorT<float> uniformColor = this->uniformColor().toDataType<float>();
             ConstDataBufferAccess<FloatType,true> colorArray(colors());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;

@@ -12,6 +12,13 @@ of the distribution of angles formed by the pairs of neighbors of a central atom
 [`Ackland and Jones, Phys. Rev. B 73, 054104 <http://link.aps.org/doi/10.1103/PhysRevB.73.054104>`__]. The algorithm assigns a structural type
 to each particle having a local environment that matches one of the known structures (FCC, BCC, HCP, icosahedral).
 
+.. caution::
+
+  The Ackland-Jones method tends to produce a lot of false positive identifications when being applied to strongly distorted or amorphous structures. 
+  Please consider using one of the more robust and well-defined identification methods available in OVITO instead, e.g. :ref:`particles.modifiers.polyhedral_template_matching`
+  or :ref:`particles.modifiers.common_neighbor_analysis`. The Ackland-Jones modifier has only been implemented in OVITO for the sake of completeness, 
+  not because it is a good structure identification algorithm. 
+
 Modifier outputs
 """"""""""""""""
 
@@ -51,9 +58,9 @@ Alternatives
 """"""""""""
 
 OVITO provides implementations of other structure identification methods, for instance the
-:ref:`particles.modifiers.common_neighbor_analysis` modifier,
-the :ref:`particles.modifiers.identify_diamond_structure` modifier or
-the :ref:`particles.modifiers.polyhedral_template_matching` modifier.
+:ref:`particles.modifiers.common_neighbor_analysis`,
+:ref:`particles.modifiers.identify_diamond_structure` or
+:ref:`particles.modifiers.polyhedral_template_matching` modifiers.
 Furthermore, the :ref:`particles.modifiers.centrosymmetry` modifier can be used to detect defects in crystal lattices.
 
 .. seealso::
