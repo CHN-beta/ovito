@@ -201,6 +201,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 				throwException(tr("Detected duplicate element ID %1 in saved snapshot. Cannot apply saved property values.").arg(id));
 			index++;
 		}
+		storedIds.reset();
 
 		// Build index-to-index map.
 		std::vector<size_t> mapping(outputProperty->size());
@@ -211,6 +212,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 				throwException(tr("Detected new element ID %1, which didn't exist when the snapshot was created. Cannot restore saved property values.").arg(*id));
 			mappedIndex = mapEntry->second;
 		}
+		idProperty.reset();
 
 		// Copy and reorder property data.
 		myModApp->property()->mappedCopyTo(*outputProperty, mapping);

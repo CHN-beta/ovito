@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -305,7 +305,7 @@ protected:
 	using ModifierDelegate::ModifierDelegate;
 
 	/// Returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const = 0;
+	virtual int outputColorPropertyId() const { return PropertyObject::GenericColorProperty; }
 };
 
 /**

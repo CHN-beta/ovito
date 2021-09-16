@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,18 +23,18 @@
 #pragma once
 
 
-#include <ovito/grid/Grid.h>
-#include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/particles/Particles.h>
+#include <ovito/particles/objects/TrajectoryObject.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito { namespace Particles {
 
 using namespace Ovito::StdMod;
 
 /**
- * \brief Function for the ColorCodingModifier that operates on voxel grid cells.
+ * \brief Function for the ColorCodingModifier that operates on trajectory lines.
  */
-class OVITO_GRID_EXPORT VoxelGridColorCodingModifierDelegate : public ColorCodingModifierDelegate
+class TrajectoryColorCodingModifierDelegate : public ColorCodingModifierDelegate
 {
 	/// Give the modifier delegate its own metaclass.
 	class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
@@ -48,21 +48,21 @@ class OVITO_GRID_EXPORT VoxelGridColorCodingModifierDelegate : public ColorCodin
 		virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
 		/// Indicates which class of data objects the modifier delegate is able to operate on.
-		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return VoxelGrid::OOClass(); }
+		virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return TrajectoryObject::OOClass(); }
 
 		/// The name by which Python scripts can refer to this modifier delegate.
-		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
+		virtual QString pythonDataName() const override { return QStringLiteral("trajectories"); }
 	};
 
 	Q_OBJECT
-	OVITO_CLASS_META(VoxelGridColorCodingModifierDelegate, OOMetaClass)
+	OVITO_CLASS_META(TrajectoryColorCodingModifierDelegate, OOMetaClass)
 
-	Q_CLASSINFO("DisplayName", "Voxel grids");
+	Q_CLASSINFO("DisplayName", "Trajectory lines");
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoxelGridColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE TrajectoryColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
 };
 
 }	// End of namespace

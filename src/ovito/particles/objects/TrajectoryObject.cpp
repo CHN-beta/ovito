@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,6 +41,8 @@ void TrajectoryObject::OOMetaClass::initialize()
 
 	const QStringList emptyList;
 	const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
+	const QStringList rgbList = QStringList() << "R" << "G" << "B";
+	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList);
 	registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::Float, xyzList);
 	registerStandardProperty(SampleTimeProperty, tr("Time"), PropertyObject::Int, emptyList);
 	registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), PropertyObject::Int64, emptyList);
@@ -60,6 +62,12 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 		dataType = PropertyObject::Float;
 		componentCount = 3;
 		stride = sizeof(Point3);
+		break;
+	case ColorProperty:
+		dataType = PropertyObject::Float;
+		componentCount = 3;
+		stride = componentCount * sizeof(FloatType);
+		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case SampleTimeProperty:
 		dataType = PropertyObject::Int;
@@ -81,8 +89,28 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
-								propertyName, initializeMemory, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
+								propertyName, false, type, componentNames);
+
+	// Initialize memory if requested.
+	if(initializeMemory && !containerPath.empty()) {
+		// Certain standard properties need to be initialized with default values determined by the attached visual element.
+		if(type == ColorProperty) {
+			if(const TrajectoryObject* trajectory = dynamic_object_cast<TrajectoryObject>(containerPath.back())) {
+				if(TrajectoryVis* trajectoryVis = dynamic_object_cast<TrajectoryVis>(trajectory->visElement())) {
+					property->fill(trajectoryVis->lineColor());
+					initializeMemory = false;
+				}
+			}
+		}
+	}
+
+	if(initializeMemory) {
+		// Default-initialize property values with zeros.
+		property->fillZero();
+	}
+
+	return property;
 }
 
 /******************************************************************************

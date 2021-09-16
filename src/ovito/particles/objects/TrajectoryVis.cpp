@@ -128,7 +128,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 	FloatType endFrame = showUpToCurrentTime() ? dataset()->animationSettings()->timeToFrame(time) : std::numeric_limits<FloatType>::max();
 
-	// Lookup the rendering primitives in the vis cache.
+	// Look up the rendering primitives in the vis cache.
 	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
 			renderer,
 			trajObj,
@@ -151,29 +151,37 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 
 		FloatType lineRadius = lineWidth() / 2;
 		if(trajObj && lineRadius > 0) {
+			trajObj->verifyIntegrity();
 
 			// Retrieve the line data stored in the TrajectoryObject.
 			ConstPropertyAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
 			ConstPropertyAccess<int> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
 			ConstPropertyAccess<qlonglong> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-			if(posProperty && timeProperty && idProperty && posProperty.size() == timeProperty.size() && timeProperty.size() == idProperty.size() && posProperty.size() >= 2) {
+			ConstPropertyAccess<Color> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+			if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
 				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
+				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
+				const Color* color = colorProperty ? colorProperty.cbegin() : nullptr;
 				if(!simulationCell) {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
 							baseSegmentPoints.push_back(pos[0]);
 							headSegmentPoints.push_back(pos[1]);
+							if(color) segmentColors.push_back(color[1]);
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(pos[1]);
+								if(color) cornerColors.push_back(color[1]);
 							}
 						}
+						if(color) ++color;
 					}
 				}
 				else {
@@ -182,16 +190,20 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
 								baseSegmentPoints.push_back(p1);
 								headSegmentPoints.push_back(p2);
+								if(color) segmentColors.push_back(color[1]);
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
+								if(color) cornerColors.push_back(color[1]);
 							}
 						}
+						if(color) ++color;
 					}
 				}
 
 				// Create rendering primitive for the line segments.
 				visCache.segments = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), CylinderPrimitive::HighQuality);
+				visCache.segments->setColors(segmentColors.take());
 				visCache.segments->setUniformColor(lineColor());
 				visCache.segments->setUniformRadius(lineRadius);
 				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
@@ -200,6 +212,7 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 				visCache.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, cornerShadingMode, ParticlePrimitive::HighQuality);
 				visCache.corners->setPositions(cornerPoints.take());
 				visCache.corners->setUniformColor(lineColor());
+				visCache.corners->setColors(cornerColors.take());
 				visCache.corners->setUniformRadius(lineRadius);
 			}
 		}

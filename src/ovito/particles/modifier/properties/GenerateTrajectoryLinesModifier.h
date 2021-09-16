@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/TrajectoryVis.h>
 #include <ovito/particles/objects/TrajectoryObject.h>
+#include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
@@ -95,6 +96,12 @@ private:
 
 	/// Controls whether trajectories are unwrapped when crossing periodic boundaries.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
+
+	/// Controls whether a particle property is sampled and transfered to the output trajectory lines.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+
+	/// The particle property to be transfered to the output trajectory lines.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
 
 	/// The vis element for rendering the trajectory lines.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,6 +58,7 @@ public:
 
 	/// \brief The list of standard properties.
 	enum Type {
+		ColorProperty = PropertyObject::GenericColorProperty,
 		PositionProperty = PropertyObject::FirstSpecificProperty,
 		SampleTimeProperty,
 		ParticleIdentifierProperty

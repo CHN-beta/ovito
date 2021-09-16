@@ -104,6 +104,7 @@ SET(SourceFiles
 IF(OVITO_BUILD_PLUGIN_STDMOD)
 	LIST(APPEND SourceFiles
 		modifier/coloring/ParticlesColorCodingModifierDelegate.cpp
+		modifier/coloring/TrajectoryColorCodingModifierDelegate.cpp
 		modifier/coloring/ParticlesAssignColorModifierDelegate.cpp
 		modifier/modify/ParticlesSliceModifierDelegate.cpp
 		modifier/modify/ParticlesAffineTransformationModifierDelegate.cpp

@@ -18,13 +18,14 @@ The field :guilabel:`Operate on` selects the type of data elements the modifier 
   ================ =================================================================================
   Operate on       Description
   ================ =================================================================================
-  Particles        Colors particles according to a local property.
-  Bonds            Colors bonds according to a local bond property.
+  Particles        Colors particles based on a local property.
+  Bonds            Colors bonds based on a local bond property.
   Particle vectors Colors :ref:`vector glyphs <visual_elements.vectors>` by setting the ``Vector Color`` property of the associated particles.
   Voxel grids      Colors the cells of a :ref:`voxel grid <scene_objects.voxel_grid>` according to a local property.
   Mesh faces       Colors the facets of a :ref:`surface mesh <scene_objects.surface_mesh>` according to a local property.
   Mesh vertices    Colors the vertices of a :ref:`surface mesh <scene_objects.surface_mesh>` according to a local property.
   Mesh regions     Colors the volumetric components of a :ref:`surface mesh <scene_objects.surface_mesh>`.
+  Trajectory lines Colors :ref:`particle trajectories <scene_objects.particle_trajectory_lines>` created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier.
   ================ =================================================================================
 
 The color getting assigned to an element (e.g. a particle) is determined by the modifier as follows:
@@ -66,7 +67,7 @@ Parameters
 """"""""""
 
 Operate on
-  Selects the kind of data elements to be colored by the modifier. Note that the modifier lets you select only from those 
+  Selects the kind of data elements to be colored by the modifier (see table above). Note that the modifier lets you select only from those 
   data elements that are currently present in the dataset the modifier receives as input from the data pipeline.
 
 Property

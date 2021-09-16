@@ -12,14 +12,14 @@ This modifier copies all particles, bonds and other data elements multiple times
 The :guilabel:`Operate on` list in the lower panel lets you select the types of data elements that
 should be replicated by the modifier. By default, the modifier extends the simulation cell appropriately to
 encompass all generated images of the system. If not desired, you can turn off the option :guilabel:`Adjust simulation box size`
-to keep the original simulation cell geometry. You should be aware, however, that this produces an inconsistent state:
-The size of the periodic domain then no longer fits to the number of explicit images embedded in the domain.
+to keep the original simulation cell geometry. You should be aware, however, that this produces an inconsistent state, where the 
+periodicity length no longer fits to the explicitly replicated contents of the simulation cell. 
 
 Parameters
 """"""""""
 
 Number of images - X/Y/Z
-  These values specify how many times the system is copied in each direction.
+  These values control how many times the system is copied along each simulation cell vector.
 
 Adjust simulation box size
   Extends the simulation cell to match the size of the replicated system.
@@ -30,10 +30,7 @@ Assign unique IDs
   may cause problems with other modifiers (e.g. the :ref:`particles.modifiers.manual_selection` modifier), which
   rely on the uniqueness of identifiers.
 
-.. note::
-
-  The modifier does not assign new molecule IDs to the replicated atoms. The ``Molecule Identifier`` property of the 
-  copied atoms will have the same value as the original atoms.
+  For replicated particles, this option also adjusts their ``Molecule Identifier`` property if it exists.
 
 .. seealso::
 

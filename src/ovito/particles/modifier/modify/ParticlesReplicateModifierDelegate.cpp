@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -127,6 +127,9 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, Pip
 
 			size_t destinationIndex = 0;
 			Point3I image;
+
+			// TODO: Special handling of the particle identifiers property.
+			OVITO_ASSERT(property->type() != BondsObject::ParticleIdentifiersProperty);
 
 			// Special handling for the topology property.
 			if(property->type() == BondsObject::TopologyProperty) {

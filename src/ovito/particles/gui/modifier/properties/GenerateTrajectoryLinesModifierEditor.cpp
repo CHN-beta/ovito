@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,7 @@
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include "GenerateTrajectoryLinesModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -71,17 +72,27 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
 		layout2->addWidget(selectedParticlesButton);
 	}
 
-	// Periodic boundaries
+	// Options
 	{
-		QGroupBox* groupBox = new QGroupBox(tr("Periodic boundary conditions"));
+		QGroupBox* groupBox = new QGroupBox(tr("Options"));
 		layout->addWidget(groupBox);
 
 		QGridLayout* layout2 = new QGridLayout(groupBox);
 		layout2->setContentsMargins(4,4,4,4);
 		layout2->setSpacing(2);
+		layout2->setColumnMinimumWidth(0, 30);
 
 		BooleanParameterUI* unwrapTrajectoriesUI = new BooleanParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::unwrapTrajectories));
-		layout2->addWidget(unwrapTrajectoriesUI->checkBox(), 0, 0);
+		layout2->addWidget(unwrapTrajectoriesUI->checkBox(), 0, 0, 1, 2);
+
+		BooleanParameterUI* transferParticlePropertiesUI = new BooleanParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::transferParticleProperties));
+		transferParticlePropertiesUI->checkBox()->setText(tr("Sample a particle property:"));
+		layout2->addWidget(transferParticlePropertiesUI->checkBox(), 1, 0, 1, 2);
+
+		PropertyReferenceParameterUI* particlePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::particleProperty), &ParticlesObject::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
+		layout2->addWidget(particlePropertyUI->comboBox(), 2, 1);
+		particlePropertyUI->setEnabled(false);
+		connect(transferParticlePropertiesUI->checkBox(), &QCheckBox::toggled, particlePropertyUI, &PropertyReferenceParameterUI::setEnabled);
 	}
 
 	// Time range

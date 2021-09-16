@@ -64,11 +64,6 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE ParticlesColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
-
-protected:
-
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return ParticlesObject::ColorProperty; }
 };
 
 /**
@@ -142,11 +137,6 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE BondsColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
-
-protected:
-
-	/// \brief returns the ID of the standard property that will receive the computed colors.
-	virtual int outputColorPropertyId() const override { return BondsObject::ColorProperty; }
 };
 
 }	// End of namespace

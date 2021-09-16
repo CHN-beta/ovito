@@ -20,37 +20,24 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/particles/Particles.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
+#include "TrajectoryColorCodingModifierDelegate.h"
 
 namespace Ovito { namespace Particles {
 
-/**
- * \brief A properties editor for the GenerateTrajectoryLinesModifier class.
- */
-class GenerateTrajectoryLinesModifierEditor : public ModifierPropertiesEditor
+IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
+
+/******************************************************************************
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
+QVector<DataObjectReference> TrajectoryColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-	Q_OBJECT
-	OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)
-
-public:
-
-	/// Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifierEditor() {}
-
-protected:
-
-	/// Creates the user interface controls for the editor.
-	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private Q_SLOTS:
-
-	/// Is called when the user clicks the 'Regenerate trajectory' button.
-	void onRegenerateTrajectory();
-};
+	if(input.containsObject<TrajectoryObject>())
+		return { DataObjectReference(&TrajectoryObject::OOClass()) };
+	return {};
+}
 
 }	// End of namespace
 }	// End of namespace
