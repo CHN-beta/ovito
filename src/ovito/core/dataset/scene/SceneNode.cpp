@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,6 +38,7 @@ IMPLEMENT_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
+DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, hiddenInViewports);
 DEFINE_PROPERTY_FIELD(SceneNode, nodeName);
 DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
@@ -287,7 +288,7 @@ void SceneNode::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget
 }
 
 /******************************************************************************
-* This method marks the cached world bounding box as invalid,
+* This method marks the cached bounding box as invalid,
 * so it will be rebuilt during the next call to worldBoundingBox().
 ******************************************************************************/
 void SceneNode::invalidateBoundingBox()
@@ -417,18 +418,54 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 * Returns the bounding box of the scene node in world coordinates.
 *    time - The time at which the bounding box should be returned.
 ******************************************************************************/
-const Box3& SceneNode::worldBoundingBox(TimePoint time) const
+Box3 SceneNode::worldBoundingBox(TimePoint time, Viewport* vp) const
 {
-    if(_boundingBoxValidity.contains(time))
-		return _worldBoundingBox;
-	_boundingBoxValidity.setInfinite();
-	const AffineTransformation& tm = getWorldTransform(time, _boundingBoxValidity);
-	_worldBoundingBox = localBoundingBox(time, _boundingBoxValidity).transformed(tm);
-	for(SceneNode* child : children()) {
-		_worldBoundingBox.addBox(child->worldBoundingBox(time));
-		_boundingBoxValidity.intersect(child->_boundingBoxValidity);
+	if(vp && isHiddenInViewport(vp, true))
+		return Box3();
+    if(!_boundingBoxValidity.contains(time)) {
+		_boundingBoxValidity.setInfinite();
+		_localBoundingBox = localBoundingBox(time, _boundingBoxValidity);
 	}
-	return _worldBoundingBox;
+	TimeInterval iv;
+	const AffineTransformation& tm = getWorldTransform(time, iv);
+	Box3 worldBoundingBox = _localBoundingBox.transformed(tm);
+	for(SceneNode* child : children()) {
+		worldBoundingBox.addBox(child->worldBoundingBox(time, vp));
+	}
+	return worldBoundingBox;
+}
+
+/******************************************************************************
+* Shows/hides this node in the given viewport, i.e. turns rendering on or off.
+******************************************************************************/
+void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
+{
+	OVITO_ASSERT(vp);
+
+	if(visible) {
+		int index = _hiddenInViewports.indexOf(vp);
+		if(index >= 0)
+			_hiddenInViewports.remove(this, PROPERTY_FIELD(hiddenInViewports), index);
+	}
+	else {
+		if(!_hiddenInViewports.contains(vp))
+			_hiddenInViewports.push_back(this, PROPERTY_FIELD(hiddenInViewports), vp);
+	}
+}
+
+/******************************************************************************
+* Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
+* specifically in the given viewport.
+******************************************************************************/
+bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const
+{
+	OVITO_ASSERT(vp);
+	if(_hiddenInViewports.contains(vp))
+		return true;
+	if(includeHierarchyParent && parentNode())
+		return parentNode()->isHiddenInViewport(vp, true);
+	else
+		return false;
 }
 
 }	// End of namespace

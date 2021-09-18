@@ -168,6 +168,10 @@ bool SceneRenderer::renderNode(SceneNode* node, SynchronousOperation operation)
 {
     OVITO_CHECK_OBJECT_POINTER(node);
 
+	// Skip node if it is hidden in the current viewport.
+	if(viewport() && node->isHiddenInViewport(viewport(), false))
+		return true;
+
     // Set up transformation matrix.
 	TimeInterval interval;
 	const AffineTransformation& nodeTM = node->getWorldTransform(time(), interval);

@@ -70,25 +70,35 @@ Viewport menu
 Click on the caption text in the upper left corner of a viewport window (e.g. *Perspective*, *Top*, etc.)
 to open the *viewport menu*.
 
-:guilabel:`Preview Mode` activates a virtual frame in the viewport to
-precisely indicate the rectangular region that will be visible in :ref:`rendered output images <usage.rendering>`. 
-The aspect ratio of the frame reflects the image size currently set in the :ref:`Render settings <core.render_settings>` panel.
+:guilabel:`Preview Mode` activates the display of a virtual frame in the viewport to
+precisely indicate the rectangular region visible in :ref:`rendered output images <usage.rendering>`. 
+The aspect ratio of the frame is determined by the output image dimensions currently set in the :ref:`Render settings <core.render_settings>` panel.
 
-The :guilabel:`Constrain Rotation` option controls whether the virtual camera's orientation is constrained at all times such 
-that the z-axis of the simulation coordinate system is pointing upward. If needed, you can set *x* or *y* to be the
-vertical axis in the :ref:`application settings dialog <application_settings.viewports>`. 
+.. image:: /images/viewport_control_toolbar/viewport_preview_mode.*
+   :width: 55%
 
-The :guilabel:`View Type` submenu lets you switch between different standard
-viewing directions and parallel (orthogonal) and perspective projection types. The
-:ref:`Adjust View <viewports.adjust_view_dialog>` function gives you precise numeric
-control over the positioning and orientation of the viewport's camera.
+:guilabel:`Constrain Rotation` restricts the orientation of the virtual camera at all times such 
+that the z-axis of the simulation coordinate system points upward. If needed, you can also set the *x* or *y* axes 
+to remain vertical in the :ref:`application settings dialog <application_settings.viewports>`.
 
-Use the :guilabel:`Create Camera` function to insert a camera object into the three-dimensional
-scene. This object will be linked to the viewport, and moving the camera object updates the view
-accordingly. This gives you the possibility to create animations with a :ref:'camera motion path <usage.animation.camera>`.
+:guilabel:`View Type` lets you switch between different standard
+viewing directions and between parallel (orthogonal) and perspective projection types. 
 
-The :guilabel:`Layout` submenu contains several functions that modify the current layout of viewport windows.
-OVITO creates 4 standard viewports by default, which are arranged in a 2-by-2 grid. You can add 
-and remove viewport windows as needed, and adjust their relative positioning by dragging the separator 
-lines between them with the mouse. OVITO Pro provides the option to render images and animations that show 
+:guilabel:`Adjust View` opens :ref:`a dialog window <viewports.adjust_view_dialog>` giving you precise numeric
+control over the positioning and orientation of the viewport camera.
+
+:guilabel:`Create Camera` inserts a movable camera object into the three-dimensional
+scene. This camera object is linked to the viewport, and moving the camera updates the view
+accordingly and vice versa. Since you can animate the position of the camera object, you can 
+create fly-by animations based on a :ref:'camera motion path <usage.animation.camera>`.
+
+The :guilabel:`Window Layout` submenu provides several functions for manipulating the current viewport layout.
+OVITO creates 4 standard viewport windows by default, which are arranged in a 2-by-2 grid. You can add 
+and remove viewports as needed, and adjust their relative positioning by dragging the separator 
+lines between them with the mouse. OVITO Pro provides the option to render images and animations showing 
 multiple views side by side, see the :ref:`Render all viewports <core.render_settings>` option.
+
+:guilabel:`Pipeline Visibility` lists all :ref:`data pipelines <usage.modification_pipeline>` that are shown in the selected viewport. 
+By default, all pipelines that are part of the three-dimensional scene are shown in every viewport, but here you have the option to turn off the 
+visibility of individual objects for specific viewports. This gives you the possibility to show different 
+models or data visualizations in different viewports -- a very useful feature for creating comparative visualizations.

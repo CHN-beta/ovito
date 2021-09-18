@@ -311,7 +311,7 @@ ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, F
 ******************************************************************************/
 void Viewport::zoomToSceneExtents(FloatType viewportAspectRatio)
 {
-	Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(dataset()->animationSettings()->time());
+	Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(dataset()->animationSettings()->time(), this);
 	zoomToBox(sceneBoundingBox, viewportAspectRatio);
 }
 
@@ -322,7 +322,7 @@ void Viewport::zoomToSelectionExtents(FloatType viewportAspectRatio)
 {
 	Box3 selectionBoundingBox;
 	for(SceneNode* node : dataset()->selection()->nodes()) {
-		selectionBoundingBox.addBox(node->worldBoundingBox(dataset()->animationSettings()->time()));
+		selectionBoundingBox.addBox(node->worldBoundingBox(dataset()->animationSettings()->time(), this));
 	}
 	if(!selectionBoundingBox.isEmpty())
 		zoomToBox(selectionBoundingBox, viewportAspectRatio);
@@ -926,7 +926,7 @@ Point3 Viewport::orbitCenter()
 		return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
 	}
 	else {
-		Point3 currentOrbitCenter = dataset()->viewportConfig()->orbitCenter();
+		Point3 currentOrbitCenter = dataset()->viewportConfig()->orbitCenter(this);
 
 		if(viewNode() && isPerspectiveProjection()) {
 			// If a free camera node is selected, the current orbit center is at the same location as the camera.

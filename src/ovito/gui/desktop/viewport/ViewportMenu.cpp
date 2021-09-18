@@ -41,13 +41,15 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 	QAction* action;
 
 	// Build menu.
-	action = addAction(tr("Preview Mode"), this, SLOT(onRenderPreviewMode(bool)));
+	action = addAction(tr("Preview Mode"), this, &ViewportMenu::onRenderPreviewMode);
 	action->setCheckable(true);
 	action->setChecked(_viewport->renderPreviewMode());
-	action = addAction(tr("Show Grid"), this, SLOT(onShowGrid(bool)));
+#ifdef OVITO_DEBUG
+	action = addAction(tr("Show Grid"), this, &ViewportMenu::onShowGrid);
 	action->setCheckable(true);
 	action->setChecked(_viewport->isGridVisible());
-	action = addAction(tr("Constrain Rotation"), this, SLOT(onConstrainRotation(bool)));
+#endif
+	action = addAction(tr("Constrain Rotation"), this, &ViewportMenu::onConstrainRotation);
 	action->setCheckable(true);
 	action->setChecked(ViewportSettings::getSettings().constrainCameraRotation());
 	addSeparator();
@@ -91,7 +93,11 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 	_viewTypeMenu->addActions(viewTypeGroup->actions());
 	connect(viewTypeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewType);
 
-	QMenu* layoutMenu = addMenu(tr("Layout"));
+	addAction(tr("Adjust View..."), this, &ViewportMenu::onAdjustView)->setEnabled(_viewport->viewType() != Viewport::VIEW_SCENENODE);
+
+	addSeparator();
+
+	QMenu* layoutMenu = addMenu(tr("Window Layout"));
 	_layoutCell = viewport->layoutCell();
 	OVITO_ASSERT(_layoutCell && _layoutCell->splitDirection() == ViewportLayoutCell::None && _layoutCell->children().empty());
 
@@ -104,12 +110,20 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 	layoutMenu->addSeparator();
 
 	// Action that deletes the viewport from the layout.
-	action = layoutMenu->addAction(tr("Delete Viewport"));
+	action = layoutMenu->addAction(tr("Remove Viewport"));
 	action->setEnabled(_layoutCell && _layoutCell->parentCell() != nullptr);
 	connect(action, &QAction::triggered, this, &ViewportMenu::onDeleteViewport);
 
-	addSeparator();
-	addAction(tr("Adjust View..."), this, SLOT(onAdjustView()))->setEnabled(_viewport->viewType() != Viewport::VIEW_SCENENODE);
+	// Pipeline visibility
+	QMenu* visibilityMenu = addMenu(tr("Pipeline Visibility"));
+	for(SceneNode* node : viewport->dataset()->sceneRoot()->children()) {
+		QAction* action = visibilityMenu->addAction(node->objectTitle());
+		action->setData(QVariant::fromValue(OORef<OvitoObject>(node)));
+		action->setCheckable(true);
+		action->setChecked(!node->isHiddenInViewport(viewport, false));
+		connect(action, &QAction::toggled, this, &ViewportMenu::onPipelineVisibility);
+	}
+	visibilityMenu->setEnabled(!visibilityMenu->isEmpty());
 }
 
 /******************************************************************************
@@ -274,7 +288,7 @@ void ViewportMenu::onCreateCamera()
 ******************************************************************************/
 void ViewportMenu::onDeleteViewport()
 {
-	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Delete viewport"), [&]() {
+	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Remove viewport"), [&]() {
 		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
 			parentCell->removeChild(parentCell->children().indexOf(_layoutCell));
 			_viewport->dataset()->viewportConfig()->layoutRootCell()->pruneViewportLayoutTree();
@@ -308,6 +322,21 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
 		_layoutCell->setViewport(nullptr);
 		_layoutCell->addChild(std::move(newCell2));
 		_layoutCell->addChild(std::move(newCell));
+	});
+}
+
+/******************************************************************************
+* Handles the menu item event.
+******************************************************************************/
+void ViewportMenu::onPipelineVisibility(bool checked)
+{
+	QAction* action = qobject_cast<QAction*>(sender());
+	OVITO_ASSERT(action);
+
+	UndoableTransaction::handleExceptions(_viewport->dataset()->undoStack(), tr("Change pipeline visibility"), [&]() {
+		if(OORef<SceneNode> node = static_object_cast<SceneNode>(action->data().value<OORef<OvitoObject>>())) {
+			node->setPerViewportVisibility(_viewport, checked);
+		}
 	});
 }
 

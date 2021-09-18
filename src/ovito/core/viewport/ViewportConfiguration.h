@@ -90,7 +90,7 @@ public:
 	bool isRendering() const;
 
 	/// Returns the current location around which the viewport camera orbits.
-	Point3 orbitCenter();
+	Point3 orbitCenter(Viewport* vp);
 
 	/// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
 	/// This method is currently used in the implementation of the Viewport.create_widget() Python method.
@@ -175,7 +175,7 @@ private:
 	void updateListOfViewports();
 
 	/// The list of all viewports which are automatically refreshed when the scene changes.
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
 
 	/// The active viewport. May be null.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);

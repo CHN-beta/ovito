@@ -160,19 +160,19 @@ void ViewportConfiguration::resumeViewportUpdates()
 /******************************************************************************
 * Returns the world space point around which the viewport camera orbits.
 ******************************************************************************/
-Point3 ViewportConfiguration::orbitCenter()
+Point3 ViewportConfiguration::orbitCenter(Viewport* vp)
 {
 	// Update orbiting center.
 	if(orbitCenterMode() == ORBIT_SELECTION_CENTER) {
 		TimePoint time = dataset()->animationSettings()->time();
 		Box3 selectionBoundingBox;
 		for(SceneNode* node : dataset()->selection()->nodes()) {
-			selectionBoundingBox.addBox(node->worldBoundingBox(time));
+			selectionBoundingBox.addBox(node->worldBoundingBox(time, vp));
 		}
 		if(!selectionBoundingBox.isEmpty())
 			return selectionBoundingBox.center();
 		else {
-			Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(time);
+			Box3 sceneBoundingBox = dataset()->sceneRoot()->worldBoundingBox(time, vp);
 			if(!sceneBoundingBox.isEmpty())
 				return sceneBoundingBox.center();
 		}

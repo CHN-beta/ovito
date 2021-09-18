@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -185,10 +185,11 @@ public:
 
 	/// \brief Returns the bounding box of the scene node in world coordinates.
 	/// \param time The time at which the bounding box should be computed.
+	/// \param vp The viewport in which to compute the bounding box. If specified, the method takes into account per-viewport visibility of the scene nodes.
 	/// \return An axis-aligned box in the world local coordinate system that contains
 	///         the whole node geometry including the bounding boxes of all child nodes.
 	/// \note The returned box does also contain the bounding boxes of the child nodes.
-	const Box3& worldBoundingBox(TimePoint time) const;
+	Box3 worldBoundingBox(TimePoint time, Viewport* vp = nullptr) const;
 
 	/// \brief Returns whether this scene node is currently selected.
 	/// \return \c true if this node is part of the current SelectionSet;
@@ -223,6 +224,13 @@ public:
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
 	virtual void initializeObject(ExecutionContext executionContext) override;
+
+	/// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
+	void setPerViewportVisibility(Viewport* vp, bool visible);
+
+	/// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden 
+	/// specifically in the given viewport.
+	bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
 
 protected:
 
@@ -273,8 +281,11 @@ private:
 	/// at controller or null if this scene node is not bound to a target node.
 	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
-	/// Contains all child nodes.
+	/// The child nodes of this node.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+
+	/// Viewports in which this node should NOT be rendered. Can be used to control the visibility in different viewports. 
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, hiddenInViewports, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
 
 	/// This node's cached world transformation matrix.
 	/// It contains the transformation of the parent node.
@@ -284,10 +295,10 @@ private:
 	/// has been computed.
 	mutable TimeInterval _worldTransformValidity;
 
-	/// The cached world bounding box of this node.
-	mutable Box3 _worldBoundingBox;
+	/// The cached local bounding box of this node.
+	mutable Box3 _localBoundingBox;
 
-	/// Validity time interval of the cached bounding box.
+	/// Validity time interval of the cached local bounding box.
 	mutable TimeInterval _boundingBoxValidity;
 
 	friend class RootSceneNode;

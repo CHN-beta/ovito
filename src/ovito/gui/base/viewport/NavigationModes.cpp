@@ -240,7 +240,7 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
 FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 {
 	OVITO_CHECK_OBJECT_POINTER(vp);
-	Box3 sceneBoundingBox = vp->dataset()->sceneRoot()->worldBoundingBox(vp->dataset()->animationSettings()->time());
+	Box3 sceneBoundingBox = vp->dataset()->sceneRoot()->worldBoundingBox(vp->dataset()->animationSettings()->time(), vp);
 	if(!sceneBoundingBox.isEmpty())
 		return sceneBoundingBox.size().length() * FloatType(5e-4);
 	else
@@ -468,7 +468,7 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 		return;
 
 	// Render center of rotation.
-	Point3 center = vp->dataset()->viewportConfig()->orbitCenter();
+	Point3 center = vp->dataset()->viewportConfig()->orbitCenter(vp);
 	FloatType symbolSize = vp->nonScalingSize(center);
 	renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
 

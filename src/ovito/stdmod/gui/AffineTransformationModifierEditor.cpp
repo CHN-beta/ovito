@@ -393,7 +393,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
 			}
 		}
 		else {
-			const Point3 center = dataset()->viewportConfig()->orbitCenter();
+			const Point3 center = dataset()->viewportConfig()->orbitCenter(dataset()->viewportConfig()->activeViewport());
 			centerSpinnerX->setFloatValue(center.x());
 			centerSpinnerY->setFloatValue(center.y());
 			centerSpinnerZ->setFloatValue(center.z());
