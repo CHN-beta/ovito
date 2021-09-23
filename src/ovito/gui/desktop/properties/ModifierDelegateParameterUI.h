@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT ModifierDelegateParameterUI : public ParameterUI
 public:
 
 	/// Constructor.
-	ModifierDelegateParameterUI(QObject* parent, const OvitoClass& delegateType);
+	ModifierDelegateParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
 	/// Destructor.
 	virtual ~ModifierDelegateParameterUI();
@@ -68,7 +68,7 @@ public:
 	}
 
 	/// This method populates the combobox widget.
-	static void populateComboBox(QComboBox* comboBox, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType);
+	static void populateComboBox(QComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType);
 
 public:
 

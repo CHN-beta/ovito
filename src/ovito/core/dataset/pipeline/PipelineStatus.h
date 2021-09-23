@@ -57,6 +57,9 @@ public:
 	/// Constructs a status object with success status and a text string describing the status.
 	PipelineStatus(const QString& text) : _text(text) {}
 
+	/// Constructs a status object with error status and a text string taken from the given exception object.
+	PipelineStatus(const Exception& exception, QChar messageSeparator = QChar('\n')) : _type(Error), _text(exception.messages().join(messageSeparator)) {}
+
 	/// Returns the type of status stores in this object.
 	StatusType type() const { return _type; }
 

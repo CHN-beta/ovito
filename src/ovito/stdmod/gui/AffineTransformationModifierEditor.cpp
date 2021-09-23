@@ -259,7 +259,7 @@ void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(editObject());
 	if(!mod) return;
 
-	const PipelineFlowState& input = getModifierInput();
+	const PipelineFlowState& input = getPipelineInput();
 	const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
 	if(!cell) return;
 
@@ -355,7 +355,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
 		mainLayout->addLayout(layout);
 
 		// Decompose current transformation matrix into axis-angle form.
-		const AffineTransformation tm = mod->effectiveAffineTransformation(getModifierInput());
+		const AffineTransformation tm = mod->effectiveAffineTransformation(getPipelineInput());
 		Rotation rot(tm);
 		angleSpinner->setFloatValue(rot.angle());
 		axisSpinnerX->setFloatValue(rot.axis().x());

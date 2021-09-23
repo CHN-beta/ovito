@@ -76,11 +76,11 @@ Box3 SimulationCellVis::boundingBox(TimePoint time, const std::vector<const Data
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void SimulationCellVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SimulationCellVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	const SimulationCellObject* cell = dynamic_object_cast<SimulationCellObject>(objectStack.back());
 	OVITO_CHECK_OBJECT_POINTER(cell);
-	if(!cell) return;
+	if(!cell) return {};
 
 	if(renderer->isInteractive() && !renderer->viewport()->renderPreviewMode()) {
 		if(!renderer->isBoundingBoxPass()) {
@@ -93,7 +93,7 @@ void SimulationCellVis::render(TimePoint time, const std::vector<const DataObjec
 	}
 	else {
 		if(!renderCellEnabled())
-			return;		// Do nothing if rendering has been disabled by the user.
+			return {};		// Do nothing if rendering has been disabled by the user.
 
 		if(!renderer->isBoundingBoxPass()) {
 			renderSolid(time, cell, flowState, renderer, contextNode);
@@ -104,6 +104,8 @@ void SimulationCellVis::render(TimePoint time, const std::vector<const DataObjec
 			renderer->addToLocalBoundingBox(bb.padBox(cellLineWidth()));
 		}
 	}
+
+	return {};
 }
 
 /******************************************************************************

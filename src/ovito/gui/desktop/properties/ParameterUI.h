@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,14 +49,17 @@ public:
 	/// \param parentEditor The editor in which this parameter UI is used. This becomes the parent of this object.
 	///
 	/// The parameter UI is automatically deleted when the editor is deleted.
-	ParameterUI(QObject* parent);
+	ParameterUI(PropertiesEditor* parent);
 
 	/// \brief Destructor.
 	virtual ~ParameterUI() { clearAllReferences(); }
 
 	/// \brief Returns a pointer to the properties editor this parameter UI belongs to.
 	/// \return The editor in which this parameter UI is used or NULL if the parameter UI is used outside of a PropertiesEditor.
-	PropertiesEditor* editor() const { return qobject_cast<PropertiesEditor*>(this->parent()); }
+	PropertiesEditor* editor() const { 
+		OVITO_ASSERT(!this->parent() || qobject_cast<PropertiesEditor*>(this->parent()));
+		return static_cast<PropertiesEditor*>(this->parent()); 
+	}
 
 	/// \brief Returns the enabled state of the UI.
 	/// \return \c true if this parameter's value can be changed by the user;
@@ -128,7 +131,7 @@ public Q_SLOTS:
 
 	/// \brief Sets the object whose property is being displayed in this parameter UI.
 	/// \sa editObject()
-	void setEditObject(RefTarget* newObject) {
+	virtual void setEditObject(RefTarget* newObject) {
 		_editObject.set(this, PROPERTY_FIELD(editObject), newObject);
 		resetUI();
 	}
@@ -139,7 +142,7 @@ private:
 	DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// Stores whether this UI is enabled.
-	bool _enabled;
+	bool _enabled = true;
 
 	/// The dataset currently being edited.
 	QPointer<DataSet> _dataset;
@@ -159,12 +162,12 @@ public:
 	/// \brief Constructor for a Qt property.
 	/// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
 	/// \param propertyName The name of the property that has been defined using the \c Q_PROPERTY macro.
-	PropertyParameterUI(QObject* parent, const char* propertyName);
+	PropertyParameterUI(PropertiesEditor* parent, const char* propertyName);
 
 	/// \brief Constructor for a PropertyField or ReferenceField.
 	/// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
 	/// \param propField The property or reference field.
-	PropertyParameterUI(QObject* parent, const PropertyFieldDescriptor& propField);
+	PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor& propField);
 
 	/// \brief Destructor.
 	virtual ~PropertyParameterUI() { clearAllReferences(); }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -126,7 +126,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 
 	// Create Burgers vector families.
 
-	MicrostructurePhase* fccPattern = structureById(StructureAnalysis::LATTICE_FCC);
+	MicrostructurePhase* fccPattern = structureTypeById(StructureAnalysis::LATTICE_FCC);
 	fccPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
 	fccPattern->setShortName(QStringLiteral("fcc"));
 	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
@@ -136,7 +136,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 4, tr("1/3<100> (Hirth)"), Vector3(1.0f/3.0f, 0.0f, 0.0f), Color(1,1,0)));
 	fccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 5, tr("1/3<111> (Frank)"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
 
-	MicrostructurePhase* bccPattern = structureById(StructureAnalysis::LATTICE_BCC);
+	MicrostructurePhase* bccPattern = structureTypeById(StructureAnalysis::LATTICE_BCC);
 	bccPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
 	bccPattern->setShortName(QStringLiteral("bcc"));
 	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
@@ -144,7 +144,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 12, tr("<100>"), Vector3(1.0f, 0.0f, 0.0f), Color(1, 0.3f, 0.8f)));
 	bccPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 13, tr("<110>"), Vector3(1.0f, 1.0f, 0.0f), Color(0.2f, 0.5f, 1.0f)));
 
-	MicrostructurePhase* hcpPattern = structureById(StructureAnalysis::LATTICE_HCP);
+	MicrostructurePhase* hcpPattern = structureTypeById(StructureAnalysis::LATTICE_HCP);
 	hcpPattern->setShortName(QStringLiteral("hcp"));
 	hcpPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::HexagonalSymmetry);
 	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
@@ -154,7 +154,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 24, tr("1/3<1-100>"), Vector3(0.0f, sqrt(3.0f/2.0f)/3.0f, 0.0f), Color(1,0.5f,0)));
 	hcpPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 25, tr("1/3<1-213>"), Vector3(sqrt(0.5f), 0.0f, sqrt(4.0f/3.0f)), Color(1,1,0)));
 
-	MicrostructurePhase* cubicDiaPattern = structureById(StructureAnalysis::LATTICE_CUBIC_DIAMOND);
+	MicrostructurePhase* cubicDiaPattern = structureTypeById(StructureAnalysis::LATTICE_CUBIC_DIAMOND);
 	cubicDiaPattern->setShortName(QStringLiteral("diamond"));
 	cubicDiaPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
 	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
@@ -163,7 +163,7 @@ void DislocationAnalysisModifier::initializeObject(ExecutionContext executionCon
 	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 33, tr("1/6<110>"), Vector3(1.0f/6.0f, 1.0f/6.0f, 0.0f), Color(1,0,1)));
 	cubicDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext, 34, tr("1/3<111>"), Vector3(1.0f/3.0f, 1.0f/3.0f, 1.0f/3.0f), Color(0,1,1)));
 
-	MicrostructurePhase* hexDiaPattern = structureById(StructureAnalysis::LATTICE_HEX_DIAMOND);
+	MicrostructurePhase* hexDiaPattern = structureTypeById(StructureAnalysis::LATTICE_HEX_DIAMOND);
 	hexDiaPattern->setShortName(QStringLiteral("hex_diamond"));
 	hexDiaPattern->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::HexagonalSymmetry);
 	hexDiaPattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));

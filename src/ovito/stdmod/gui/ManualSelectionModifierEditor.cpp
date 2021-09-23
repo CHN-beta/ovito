@@ -29,6 +29,7 @@
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -266,7 +267,7 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// Status label.
 	layout->addSpacing(12);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************

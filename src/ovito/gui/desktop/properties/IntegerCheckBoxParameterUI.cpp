@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(IntegerCheckBoxParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(QObject* parentEditor, const char* propertyName, const QString& checkBoxLabel, int uncheckedValue, int checkedValue) :
+IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel, int uncheckedValue, int checkedValue) :
 	PropertyParameterUI(parentEditor, propertyName),
 	_uncheckedValue(uncheckedValue),
 	_checkedValue(checkedValue)
@@ -48,7 +48,7 @@ IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(QObject* parentEditor, co
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, int uncheckedValue, int checkedValue) :
+IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, int uncheckedValue, int checkedValue) :
 	PropertyParameterUI(parentEditor, propField),
 	_uncheckedValue(uncheckedValue),
 	_checkedValue(checkedValue)

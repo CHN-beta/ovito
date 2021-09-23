@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "VoronoiAnalysisModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -96,7 +97,7 @@ void VoronoiAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 }	// End of namespace

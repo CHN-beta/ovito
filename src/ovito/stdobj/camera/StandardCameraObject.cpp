@@ -169,11 +169,11 @@ FloatType StandardCameraObject::getTargetDistance(TimePoint time, const Pipeline
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus CameraVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Camera objects are only visible in the interactive viewports.
 	if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
-		return;
+		return {};
 
 	TimeInterval iv;
 
@@ -365,6 +365,8 @@ void CameraVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 		// Add camera symbol to bounding box.
 		renderer->addToLocalBoundingBox(Box3(Point3::Origin(), scaling * 2));
 	}
+
+	return {};
 }
 
 /******************************************************************************

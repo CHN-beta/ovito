@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,10 +52,11 @@ public:
 	/// \param flowState The pipeline evaluation results of the object node.
 	/// \param renderer The renderer that should be used to produce the visualization.
 	/// \param contextNode The pipeline node that is being rendered.
+	/// \return A status code indicating the success or failure of the rendering operation.
 	///
 	/// The world transformation matrix is already set up when this method is called by the
 	/// system. The data has to be rendered in the local object coordinate system.
-	virtual void render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) = 0;
+	virtual PipelineStatus render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) = 0;
 
 	/// \brief Computes the view-independent bounding box of the given data object.
 	/// \param time The animation time for which the bounding box should be computed.
@@ -75,6 +76,20 @@ public:
 	/// \brief Returns all pipeline nodes whose pipeline produced this visualization element.
 	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
 	QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
+
+	/// Returns whether the DataVis class currently manages its error state and not the scene renderer.
+	bool manualErrorStateControl() const { return _manualErrorStateControl; }
+
+	/// Sets whether the DataVis class currently manages its error state and not the scene renderer.
+	void setManualErrorStateControl(bool enable) { _manualErrorStateControl = enable; }
+
+private:
+
+	/// Indicates that the DataVis class manages its error state and not the scene renderer.
+	/// This flag is used by TransformingDataVis class to preserve an error state generated during
+	/// the transformation process. Otehrwise, the scene renderer would automatically reset the 
+	/// error state during rendering.  
+	bool _manualErrorStateControl = false;
 };
 
 }	// End of namespace

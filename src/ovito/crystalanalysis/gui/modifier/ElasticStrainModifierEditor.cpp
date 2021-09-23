@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "ElasticStrainModifierEditor.h"
 
 namespace Ovito { namespace CrystalAnalysis {
@@ -93,7 +94,7 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
 	sublayout2->addWidget(outputDeformationGradientsUI->checkBox(), 3, 0, 1, 2);
 
 	// Status label.
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Structure list.
 	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this);

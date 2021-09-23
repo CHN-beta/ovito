@@ -471,25 +471,24 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Handle bounding-box computation in a separate method.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	// Get input particle data.
 	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack.back());
-	if(!particles) return;
+	if(!particles) return {};
 	particles->verifyIntegrity();
 
 	// Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
 	size_t particleCount = particles->elementCount();
 	if(particleCount > (size_t)std::numeric_limits<int>::max()) {
-		qWarning() << "WARNING: This version of OVITO doesn't support rendering more than" << std::numeric_limits<int>::max() << "particles.";
-		return;
+		throwException(tr("This version of OVITO doesn't support rendering more than %1 particles.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// Render all mesh-based particle types.
@@ -500,6 +499,8 @@ void ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& 
 
 	// Render all (sphero-)cylindric particle types.
 	renderCylindricParticles(particles, renderer, contextNode);
+
+	return {};
 }
 
 /******************************************************************************

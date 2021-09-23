@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(BooleanRadioButtonParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEditor, const char* propertyName) :
+BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
@@ -50,7 +50,7 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEdit
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);

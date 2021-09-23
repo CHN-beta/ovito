@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ Box3 TriMeshVis::boundingBox(TimePoint time, const std::vector<const DataObject*
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-void TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(!renderer->isBoundingBoxPass()) {
 
@@ -114,6 +114,8 @@ void TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& ob
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
 	}
+
+	return {};
 }
 
 }	// End of namespace

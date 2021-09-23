@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -134,18 +134,18 @@ Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>&
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus BondsVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
-	if(objectStack.size() < 2) return;
+	if(objectStack.size() < 2) return {};
 	const BondsObject* bonds = dynamic_object_cast<BondsObject>(objectStack.back());
 	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
-	if(!bonds || !particles) return;
+	if(!bonds || !particles) return {};
 	particles->verifyIntegrity();
 	bonds->verifyIntegrity();
 	const PropertyObject* bondTopologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
@@ -169,8 +169,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 
 	// Make sure we don't exceed our internal limits.
 	if(bondTopologyProperty && bondTopologyProperty->size() * 2 > (size_t)std::numeric_limits<int>::max()) {
-		qWarning() << "WARNING: Cannot render more than" << (std::numeric_limits<int>::max()/2) << "bonds.";
-		return;
+		throwException(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
 	}
 
 	// The key type used for caching the rendering primitive:
@@ -333,7 +332,7 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		}
 	}
 	if(!visCache.cylinders)
-		return;
+		return {};
 
 	if(renderer->isPicking()) {
 		OORef<BondPickInfo> pickInfo(new BondPickInfo(particles, simulationCell));
@@ -351,6 +350,8 @@ void BondsVis::render(TimePoint time, const std::vector<const DataObject*>& obje
 		if(renderer->isPicking())
 			renderer->endPickObject();
 	}
+
+	return {};
 }
 
 /******************************************************************************

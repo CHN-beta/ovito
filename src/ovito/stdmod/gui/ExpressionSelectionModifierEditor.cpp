@@ -23,6 +23,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/ExpressionSelectionModifier.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include "ExpressionSelectionModifierEditor.h"
@@ -56,7 +57,7 @@ void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameter
 
 	// Status label.
 	layout->addSpacing(12);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
@@ -78,7 +79,7 @@ bool ExpressionSelectionModifierEditor::referenceEvent(RefTarget* source, const 
 	if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
 		updateEditorFields();
 	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

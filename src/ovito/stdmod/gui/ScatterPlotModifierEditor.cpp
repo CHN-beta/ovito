@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/stdmod/modifiers/ScatterPlotModifier.h>
@@ -67,10 +68,10 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	});
 
 
-	PropertyReferenceParameterUI* xPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty), nullptr);
+	PropertyReferenceParameterUI* xPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty));
 	layout->addWidget(new QLabel(tr("X-axis property:"), rollout));
 	layout->addWidget(xPropertyUI->comboBox());
-	PropertyReferenceParameterUI* yPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty), nullptr);
+	PropertyReferenceParameterUI* yPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty));
 	layout->addWidget(new QLabel(tr("Y-axis property:"), rollout));
 	layout->addWidget(yPropertyUI->comboBox());
 	connect(this, &PropertiesEditor::contentsChanged, this, [xPropertyUI,yPropertyUI](RefTarget* editObject) {
@@ -192,13 +193,10 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsReplaced, this, &ScatterPlotModifierEditor::plotScatterPlot);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &ScatterPlotModifierEditor::plotScatterPlot);
 }
 
 /******************************************************************************
@@ -242,7 +240,7 @@ void ScatterPlotModifierEditor::plotScatterPlot()
 
 	if(modifier && modifierApplication()) {
 		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
+		const PipelineFlowState& state = getPipelineInput();
 
 		// Look up the generated data table in the modifier's pipeline output.
 		const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("scatter"));

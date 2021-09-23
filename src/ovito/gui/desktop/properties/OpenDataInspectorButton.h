@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,15 +38,15 @@ class OVITO_GUI_EXPORT OpenDataInspectorButton : public QPushButton
 public:
 
 	/// Constructor.
-	OpenDataInspectorButton(ModifierPropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint = {}, const QVariant& modeHint = {});
+	OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint = {}, const QVariant& modeHint = {});
 
 	/// Returns the properties editor hosting this button.
-	ModifierPropertiesEditor* editor() const { return _editor; }
+	PropertiesEditor* editor() const { return _editor; }
 
 private:
 
 	/// The properties editor hosting this button.
-	ModifierPropertiesEditor* _editor;
+	PropertiesEditor* _editor;
 
 	/// Data object name hint to be passed to the data inspector when the button is clicked.
 	QString _objectNameHint;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,14 +24,14 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace Particles {
 
 /**
  * \brief A properties editor for the CommonNeighborAnalysisModifier class.
  */
-class CommonNeighborAnalysisModifierEditor : public ModifierPropertiesEditor
+class CommonNeighborAnalysisModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(CommonNeighborAnalysisModifierEditor)

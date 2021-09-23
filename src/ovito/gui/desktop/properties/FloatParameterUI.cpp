@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(FloatParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-FloatParameterUI::FloatParameterUI(QObject* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
+FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
 	NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &FloatParameterUnit::staticMetaObject, labelText)
 {
 }
@@ -41,7 +41,7 @@ FloatParameterUI::FloatParameterUI(QObject* parentEditor, const char* propertyNa
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-FloatParameterUI::FloatParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	NumericalParameterUI(parentEditor, propField, &FloatParameterUnit::staticMetaObject)
 {
 }

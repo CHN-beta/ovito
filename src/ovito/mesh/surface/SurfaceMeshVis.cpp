@@ -147,17 +147,17 @@ Box3 SurfaceMeshVis::boundingBox(TimePoint time, const std::vector<const DataObj
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Ignore render calls for the original SurfaceMesh.
 	// We are only interested in the RenderableSurfaceMesh.
 	if(dynamic_object_cast<SurfaceMesh>(objectStack.back()) != nullptr)
-		return;
+		return {};
 
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	// Get the rendering colors for the surface and cap meshes.
@@ -189,7 +189,7 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
 
     // Get the renderable mesh.
     const RenderableSurfaceMesh* renderableMesh = dynamic_object_cast<RenderableSurfaceMesh>(objectStack.back());
-    if(!renderableMesh) return;
+    if(!renderableMesh) return {};
 
 	// Lookup the rendering primitive in the vis cache.
     auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(renderer, objectStack.back(), color_surface, color_cap, highlightEdges()));
@@ -236,6 +236,8 @@ void SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>
 		visCache.capPrimitive.reset();
 	}
 	renderer->endPickObject();
+
+	return {};
 }
 
 /******************************************************************************
@@ -705,7 +707,6 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	}
 
 	_surfaceMesh.invalidateVertices();
-	_surfaceMesh.invalidateFaces();
 	OVITO_ASSERT(_originalFaceMap.size() == _surfaceMesh.faces().size());
 
 	endProgressSubSteps();

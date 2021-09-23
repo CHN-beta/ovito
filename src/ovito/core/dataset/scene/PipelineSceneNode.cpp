@@ -111,7 +111,7 @@ void PipelineSceneNode::invalidatePipelineCache(TimeInterval keepInterval, bool 
 void PipelineSceneNode::collectVisElements(const DataObject* dataObj, std::vector<DataVis*>& visElements)
 {
 	for(DataVis* vis : dataObj->visElements()) {
-		if(std::find(visElements.begin(), visElements.end(), vis) == visElements.end())
+		if(boost::find(visElements, vis) == visElements.end())
 			visElements.push_back(vis);
 	}
 
@@ -190,6 +190,15 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 			_pipelineRenderingCache.invalidateSynchronousState();
 			// Also recompute the cached bounding box of this scene node.
 			invalidateBoundingBox();
+			// Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
+			for(DataVis* vis : visElements())
+				vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
+		}
+		else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
+			// Inform vis elements that their input state has changed if the last pipeline stage was disabled.
+			// This is necessary, because we don't receive a PreliminaryStateAvailable signal from the pipeline stage in this case.
+			for(DataVis* vis : visElements())
+				vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
 		}
 	}
 	else if(_visElements.contains(source)) {
@@ -565,6 +574,52 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
 	notifyTargetChanged();
 
 	return newVis;
+}
+
+/******************************************************************************
+* Helper function that recursively finds all data objects which the given 
+* vis element is associated with.
+******************************************************************************/
+void PipelineSceneNode::collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const
+{
+	// Check if this vis element we are looking for is among the vis elements attached to the current data object.
+	for(DataVis* otherVis : path.back()->visElements()) {
+		otherVis = getReplacementVisElement(otherVis);
+		if(otherVis == vis) {
+			dataObjectPaths.push_back(path);
+			break;
+		}
+	}
+
+	// Recursively visit the sub-objects of the object.
+	path.back()->visitSubObjects([&](const DataObject* subObject) {
+		path.push_back(subObject);
+		collectDataObjectsForVisElement(path, vis, dataObjectPaths);
+		path.pop_back();
+		return false;
+	});
+}
+
+/******************************************************************************
+* Gathers a list of data objects from the given pipeline flow state (which 
+* should have been produced by this pipeline) that are associated with the 
+* given vis element. This method takes into account replacement vis elements 
+* of this pipeline node.
+******************************************************************************/
+std::vector<ConstDataObjectPath> PipelineSceneNode::getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const
+{
+	OVITO_ASSERT(visElements().contains(vis));
+	
+	std::vector<ConstDataObjectPath> results;
+	if(state) {
+		ConstDataObjectPath path(1);
+		for(const DataObject* obj : state.data()->objects()) {
+			OVITO_ASSERT(path.size() == 1);
+			path[0] = obj;
+			collectDataObjectsForVisElement(path, vis, results);
+		}
+	}
+	return results;
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
@@ -100,7 +101,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 	expressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
 
 	// Status label.
-	mainLayout->addWidget(statusLabel());
+	mainLayout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// List of available input variables.
 	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.compute_property");
@@ -130,7 +131,7 @@ bool ComputePropertyModifierEditor::referenceEvent(RefTarget* source, const Refe
 	else if(source == modifierApplication() && event.type() == ReferenceEvent::ObjectStatusChanged) {
 		updateVariablesListLater(this);
 	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

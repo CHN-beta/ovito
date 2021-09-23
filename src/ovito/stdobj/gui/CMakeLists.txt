@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -30,6 +30,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
 		properties/PropertyObjectEditor.cpp
 		properties/ElementTypeEditor.cpp
 		properties/InputColumnMappingDialog.cpp
+		properties/PropertyColorMappingEditor.cpp
 		simcell/SimulationCellObjectEditor.cpp
 		simcell/SimulationCellVisEditor.cpp
 		table/DataTableInspectionApplet.cpp

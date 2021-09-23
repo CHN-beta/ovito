@@ -77,9 +77,9 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 		}
 		catch(Exception& ex) {
 			ex.setContext(dataset());
-			setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar('\n'))));
+			setStatus(ex);
 			ex.prependGeneralMessage(tr("Pipeline source reported:"));
-			return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))), frameInterval);
+			return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);
 		}
 		catch(const std::bad_alloc&) {
 			setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));

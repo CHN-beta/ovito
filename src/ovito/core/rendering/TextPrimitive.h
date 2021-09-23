@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class rendering of text primitives.
+ * \brief A text string to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT TextPrimitive : public PrimitiveBase
 {

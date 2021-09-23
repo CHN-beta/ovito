@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(ColorParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-ColorParameterUI::ColorParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField)
+ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField)
 	: PropertyParameterUI(parentEditor, propField)
 {
 	_label = new QLabel(propField.displayName() + ":");

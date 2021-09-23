@@ -88,6 +88,10 @@ public:
 	/// If there is no replacement, the original vis element is returned.
 	DataVis* getReplacementVisElement(DataVis* vis) const;
 
+	/// Gathers a list of data objects from the given pipeline flow state (which should have been produced by this pipeline)
+	/// that are associated with the given vis element. This method takes into account replacement vis elements of this pipeline node.
+	std::vector<ConstDataObjectPath> getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const;
+
 protected:
 
 	/// This method is called when a referenced object has changed.
@@ -128,6 +132,9 @@ private:
 	/// Helper function that recursively collects all visual elements attached to a
 	/// data object and its children and stores them in an output vector.
 	static void collectVisElements(const DataObject* dataObj, std::vector<DataVis*>& visElements);
+
+	/// Helper function that recursively finds all data objects which the given vis element is associated with.
+	void collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const;
 
 	/// Computes the bounding box of a data object and all its sub-objects.
 	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, std::vector<const DataObject*>& objectStack) const;

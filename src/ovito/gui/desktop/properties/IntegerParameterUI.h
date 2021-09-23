@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT IntegerParameterUI : public NumericalParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	IntegerParameterUI(QObject* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+	IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField property.
-	IntegerParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Gets the minimum value to be entered.
 	/// This value is in native controller units.

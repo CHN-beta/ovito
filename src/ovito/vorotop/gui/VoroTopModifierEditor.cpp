@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/gui/modifier/analysis/StructureListParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FilenameParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "VoroTopModifierEditor.h"
@@ -75,7 +76,7 @@ void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutPa
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, false);
 	layout->addSpacing(10);

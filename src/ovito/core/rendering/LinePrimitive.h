@@ -31,7 +31,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for line drawing primitives.
+ * \brief A set of lines to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT LinePrimitive : public PrimitiveBase
 {

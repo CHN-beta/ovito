@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(BooleanGroupBoxParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(QObject* parentEditor, const char* propertyName, const QString& label) :
+BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& label) :
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	// Create UI widget.
@@ -50,7 +50,7 @@ BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(QObject* parentEditor, co
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.

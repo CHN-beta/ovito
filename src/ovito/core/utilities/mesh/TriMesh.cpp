@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs an empty mesh.
 ******************************************************************************/
-TriMesh::TriMesh() : _hasVertexColors(false), _hasFaceColors(false), _hasNormals(false)
+TriMesh::TriMesh()
 {
 }
 
@@ -41,10 +41,14 @@ void TriMesh::clear()
 	_vertices.clear();
 	_faces.clear();
 	_vertexColors.clear();
+	_vertexPseudoColors.clear();
 	_faceColors.clear();
+	_facePseudoColors.clear();
 	_boundingBox.setEmpty();
 	_hasVertexColors = false;
+	_hasVertexPseudoColors = false;
 	_hasFaceColors = false;
+	_hasFacePseudoColors = false;
 	_hasNormals = false;
 }
 
@@ -56,6 +60,8 @@ void TriMesh::setVertexCount(int n)
 	_vertices.resize(n);
 	if(_hasVertexColors)
 		_vertexColors.resize(n);
+	if(_hasVertexPseudoColors)
+		_vertexPseudoColors.resize(n);
 }
 
 /******************************************************************************
@@ -66,6 +72,8 @@ void TriMesh::setFaceCount(int n)
 	_faces.resize(n);
 	if(_hasFaceColors)
 		_faceColors.resize(n);
+	if(_hasFacePseudoColors)
+		_facePseudoColors.resize(n);
 	if(_hasNormals)
 		_normals.resize(n * 3);
 }
@@ -90,15 +98,20 @@ void TriMesh::saveToStream(SaveStream& stream)
 	// Save vertices.
 	stream << _vertices;
 
-	// Save vertex colors.
+	// Save per-vertex RGBA colors.
 	stream << _hasVertexColors;
 	stream << _vertexColors;
 
-	// Save face colors.
+	// Note: Current file format does not store pseudo-color values.
+	// This may be added in the future, when there is a usecase for it.
+	OVITO_ASSERT(!_hasVertexPseudoColors);
+	OVITO_ASSERT(!_hasFacePseudoColors);
+
+	// Save per-face colors.
 	stream << _hasFaceColors;
 	stream << _faceColors;
 
-	// Save face normals.
+	// Save normals (three per face).
 	stream << _hasNormals;
 	stream << _normals;
 
@@ -129,19 +142,19 @@ void TriMesh::loadFromStream(LoadStream& stream)
 	// Load vertices.
 	stream >> _vertices;
 
-	// Load vertex colors.
+	// Load per-vertex RGBA colors.
 	stream >> _hasVertexColors;
 	stream >> _vertexColors;
 	OVITO_ASSERT(_vertexColors.size() == _vertices.size() || !_hasVertexColors);
 
 	if(formatVersion >= 2) {
-		// Load face colors.
+		// Load per-face RGBA colors.
 		stream >> _hasFaceColors;
 		stream >> _faceColors;
 	}
 
 	if(formatVersion >= 3) {
-		// Load normals.
+		// Load normals (three per face).
 		stream >> _hasNormals;
 		stream >> _normals;
 	}
@@ -183,7 +196,6 @@ void TriMesh::flipFaces()
 			++n;
 		}
 	}
-	invalidateFaces();
 }
 
 /******************************************************************************
@@ -296,7 +308,9 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 {
 	TriMesh clippedMesh;
 	clippedMesh.setHasVertexColors(hasVertexColors());
+	clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
 	clippedMesh.setHasFaceColors(hasFaceColors());
+	clippedMesh.setHasFacePseudoColors(hasFacePseudoColors());
 
 	// Clip vertices.
 	std::vector<int> existingVertexMapping(vertexCount(), -1);
@@ -305,6 +319,8 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 			existingVertexMapping[vindex] = clippedMesh.addVertex(vertex(vindex));
 			if(hasVertexColors())
 				clippedMesh.vertexColors().back() = vertexColor(vindex);
+			if(hasVertexPseudoColors())
+				clippedMesh.vertexPseudoColors().back() = vertexPseudoColor(vindex);
 		}
 	}
 
@@ -333,6 +349,11 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 						newColor.g() = color1.g() + (color2.g() - color1.g()) * t;
 						newColor.b() = color1.b() + (color2.b() - color1.b()) * t;
 						newColor.a() = color1.a() + (color2.a() - color1.a()) * t;
+					}
+					if(hasVertexPseudoColors()) {
+						FloatType pseudoColor1 = vertexPseudoColor(vindices.first);
+						FloatType pseudoColor2 = vertexPseudoColor(vindices.second);
+						clippedMesh.vertexPseudoColors().back() = pseudoColor1 + (pseudoColor2 - pseudoColor1) * t;
 					}
 				}
 			}
@@ -402,6 +423,9 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 					if(hasFaceColors()) {
 						clippedMesh.faceColors().back() = faceColor(faceIndex);
 					}
+					if(hasFacePseudoColors()) {
+						clippedMesh.facePseudoColors().back() = facePseudoColor(faceIndex);
+					}
 					if(vout == 4) {
 						OVITO_ASSERT(newface[3] >= 0 && newface[3] < clippedMesh.vertexCount());
 						OVITO_ASSERT(newface[3] != newface[0]);
@@ -419,6 +443,9 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 						}
 						if(hasFaceColors()) {
 							clippedMesh.faceColors().back() = faceColor(faceIndex);
+						}
+						if(hasFacePseudoColors()) {
+							clippedMesh.facePseudoColors().back() = facePseudoColor(faceIndex);
 						}
 					}
 					else {
@@ -536,7 +563,6 @@ void TriMesh::removeDuplicateVertices(FloatType epsilon)
 
 	setVertexCount(newIndex);
 	invalidateVertices();
-	invalidateFaces();
 }
 
 /******************************************************************************
@@ -608,6 +634,5 @@ TriMesh TriMesh::createIcosphere(int resolution)
 	
 	return mesh;
 }
-
 
 }	// End of namespace

@@ -127,6 +127,8 @@
 	<file>glsl/mesh/mesh_instanced_picking.vert</file>
 	<file>glsl/mesh/mesh_instanced_with_colors.frag</file>
 	<file>glsl/mesh/mesh_instanced_with_colors.vert</file>
+	<file>glsl/mesh/mesh_color_mapping.frag</file>
+	<file>glsl/mesh/mesh_color_mapping.vert</file>
 
 	<file>glsl/lines/line.vert</file>
 	<file>glsl/lines/line.frag</file>

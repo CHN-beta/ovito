@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,6 +34,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/oo/OvitoClass.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ColorCodingModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -58,7 +59,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	layout1->addWidget(new QLabel(tr("Operate on:")));
 	layout1->addWidget(delegateUI->comboBox());
 
-	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::sourceProperty), nullptr);
+	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::sourceProperty));
 	layout1->addWidget(new QLabel(tr("Input property:")));
 	layout1->addWidget(_sourcePropertyUI->comboBox());
 	connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
@@ -91,9 +92,9 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	// Update color legend if another modifier has been loaded into the editor.
 	connect(this, &ColorCodingModifierEditor::contentsReplaced, this, &ColorCodingModifierEditor::updateColorGradient);
 	connect(this, &ColorCodingModifierEditor::contentsChanged, this, &ColorCodingModifierEditor::onModifierChanged);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		updateAutoRangeLater(this);
-	});
+
+	// Update the start/end parameters display whenever the modifier has been evaluated.
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &ColorCodingModifierEditor::autoRangeChanged);
 
 	layout1->addSpacing(10);
 
@@ -248,7 +249,7 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
 			}
 		}
 	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -272,7 +273,7 @@ void ColorCodingModifierEditor::onModifierChanged()
 		_lastAutoRangeMaxValue = std::numeric_limits<FloatType>::quiet_NaN();
 	}
 	else {
-		updateAutoRangeLater(this);
+		autoRangeChanged();
 	}
 }
 
@@ -282,8 +283,9 @@ void ColorCodingModifierEditor::onModifierChanged()
 void ColorCodingModifierEditor::autoRangeChanged()
 {
 	ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
+	if(!mod || !mod->autoAdjustRange()) return;
 	ModifierApplication* modApp = modifierApplication();
-	if(!mod || !modApp || !mod->autoAdjustRange()) return;
+	if(!modApp) return;
 
 	// Request the modifier's pipeline output.
 	const PipelineFlowState& state = modApp->evaluateSynchronous(dataset()->animationSettings()->time());

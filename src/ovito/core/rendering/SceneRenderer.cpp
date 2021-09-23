@@ -33,6 +33,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -237,13 +238,29 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 				objectStack.push_back(dataObj);
 				isOnStack = true;
 			}
+			PipelineStatus status;
 			try {
 				// Let the vis element do the rendering.
-				vis->render(time(), objectStack, state, this, pipeline);
+				status = vis->render(time(), objectStack, state, this, pipeline);
+				// Pass error status codes to the exception handler below.
+				if(status.type() == PipelineStatus::Error)
+					throwException(status.text());
+				// In console mode, print warning messages to the terminal.
+				if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
+					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
+				}
 			}
-			catch(const Exception& ex) {
-				ex.logError();
+			catch(Exception& ex) {
+				status = ex;
+				ex.prependGeneralMessage(tr("Visual element '%1' reported:").arg(objectTitle()));
+				// If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
+				if(Application::instance()->consoleMode()) 
+					throw;
 			}
+			// Unless the vis element has indicated that it is in control of the status,
+			// automatically adopt the outcome of the rendering operation as status code.
+			if(!vis->manualErrorStateControl())
+				vis->setStatus(status);
 		}
 	}
 
@@ -394,6 +411,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 			mod->renderModifierVisual(time(), pipeline, modApp, this, renderOverlay);
 		}
 		catch(const Exception& ex) {
+			// Swallow exceptions, because we are in interactive rendering mode.
 			ex.logError();
 		}
 
@@ -623,8 +641,12 @@ bool MeshPrimitive::isFullyOpaque() const
 			_isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });		
 		else if(mesh().hasVertexColors())
 			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh().vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+		else if(mesh().hasVertexPseudoColors())
+			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
 		else if(mesh().hasFaceColors())
 			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh().faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+		else if(mesh().hasFacePseudoColors())
+			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
 		else if(!materialColors().empty())
 			_isMeshFullyOpaque = boost::algorithm::none_of(materialColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
 		else

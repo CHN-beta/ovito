@@ -217,7 +217,6 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
 			return;
 	}
 	mesh->invalidateVertices();
-	mesh->invalidateFaces();
 
 	// Show some stats to the user.
 	state().setStatus(tr("%1 vertices, %2 triangles").arg(mesh->vertexCount()).arg(mesh->faceCount()));

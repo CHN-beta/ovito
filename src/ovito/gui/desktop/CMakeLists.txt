@@ -99,10 +99,10 @@ OVITO_STANDARD_PLUGIN(Gui
 		properties/IntegerParameterUI.cpp
 		properties/IntegerRadioButtonParameterUI.cpp
 		properties/IntegerCheckBoxParameterUI.cpp
-		properties/ModifierPropertiesEditor.cpp
 		properties/ModifierDelegateParameterUI.cpp
 		properties/ModifierDelegateFixedListParameterUI.cpp
 		properties/ModifierDelegateVariableListParameterUI.cpp
+		properties/ObjectStatusDisplay.cpp
 		properties/RefTargetListParameterUI.cpp
 		properties/StringParameterUI.cpp
 		properties/SubObjectParameterUI.cpp

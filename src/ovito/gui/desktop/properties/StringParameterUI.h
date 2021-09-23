@@ -38,10 +38,10 @@ class OVITO_GUI_EXPORT StringParameterUI : public PropertyParameterUI
 
 public:
 	/// Constructor for a Qt property.
-	StringParameterUI(QObject* parentEditor, const char* propertyName);
+	StringParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	StringParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Destructor.
 	virtual ~StringParameterUI();
@@ -77,8 +77,8 @@ public:
 
 public:
 
-	Q_PROPERTY(QLineEdit lineEdit READ lineEdit)
-	Q_PROPERTY(QWidget textBox READ textBox)
+	Q_PROPERTY(QLineEdit* lineEdit READ lineEdit)
+	Q_PROPERTY(QWidget* textBox READ textBox)
 
 public Q_SLOTS:
 

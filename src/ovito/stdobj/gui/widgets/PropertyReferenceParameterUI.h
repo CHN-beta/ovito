@@ -38,6 +38,8 @@ class OVITO_STDOBJGUI_EXPORT PropertyReferenceParameterUI : public PropertyParam
 	Q_OBJECT
 	OVITO_CLASS(PropertyReferenceParameterUI)
 
+	Q_PROPERTY(QComboBox comboBox READ comboBox)
+
 public:
 
     enum PropertyComponentsMode {
@@ -48,10 +50,10 @@ public:
     Q_ENUM(PropertyComponentsMode);
 
 	/// Constructor.
-	PropertyReferenceParameterUI(QObject* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
 	/// Constructor.
-	PropertyReferenceParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
 	/// Destructor.
 	virtual ~PropertyReferenceParameterUI();
@@ -79,26 +81,22 @@ public:
 		if(comboBox()) comboBox()->setWhatsThis(text);
 	}
 
-	/// Returns the property container from which the user can select a property.
+	/// Returns the data object reference to the property container from which the user can select a property.
 	const PropertyContainerReference& containerRef() const { return _containerRef; }
 
-	/// Sets the property container from which the user can select a property.
-	void setContainerRef(const PropertyContainerReference& containerRef) {
-		if(_containerRef != containerRef) {
-			_containerRef = containerRef;
-			_comboBox->setContainerClass(_containerRef.dataClass());
-			updateUI();
-		}
-	}
+	/// Sets the reference to the property container from which the user can select a property.
+	void setContainerRef(const PropertyContainerReference& containerRef);
+
+	/// Returns the container from which properties can be selected.
+	const DataOORef<const PropertyContainer>& container() const { return _container; }
+
+	/// Sets the concrete container from which properties can be selected.
+	void setContainer(const PropertyContainer* container);
 
 	/// Installs optional callback function that allows clients to filter the displayed property list.
 	void setPropertyFilter(std::function<bool(const PropertyObject*)> filter) {
 		_propertyFilter = std::move(filter);
 	}
-
-public:
-
-	Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
@@ -106,16 +104,24 @@ public Q_SLOTS:
 	/// this property UI is bound to.
 	void updatePropertyValue();
 
-protected:
-
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+private:
 
 	/// Returns the value currently set for the property field.
 	PropertyReference getPropertyReference();
 
 	/// Populates the combox box with items.
 	void addItemsToComboBox(const PipelineFlowState& state);
+
+	/// Populates the combox box with items.
+	void addItemsToComboBox(const PropertyContainer* container);
+
+	/// Returns the type of property container from which the user can choose a property.
+	const PropertyContainerClass* containerClass() const { 
+		if(container()) 
+			return &container()->getOOMetaClass();
+		else
+			return containerRef().dataClass();
+	}
 
 protected:
 
@@ -126,10 +132,13 @@ protected:
 	PropertyComponentsMode _componentsMode;
 
 	/// Controls whether the combo box should list input or output properties.
-	bool _inputProperty;
+	bool _isInputProperty;
 
-	/// The container from which properties that can be selected.
+	/// Data object reference to the container from which properties can be selected.
 	PropertyContainerReference _containerRef;
+
+	/// The container from which properties can be selected.
+	DataOORef<const PropertyContainer> _container;
 
 	/// An optional callback function that allows clients to filter the displayed property list.
 	std::function<bool(const PropertyObject*)> _propertyFilter;

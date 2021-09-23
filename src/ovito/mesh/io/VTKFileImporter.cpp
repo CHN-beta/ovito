@@ -158,7 +158,6 @@ void VTKFileImporter::FrameLoader::loadFile()
 		}
 	}
 	mesh->determineEdgeVisibility();
-	mesh->invalidateFaces();
 
 	if(!isPolyData) {
 		// Parse cell types
@@ -202,7 +201,6 @@ void VTKFileImporter::FrameLoader::loadFile()
 						while(*s > ' ') ++s;						// Proceed to end of token
 					}
 				}
-				mesh->invalidateFaces();
 			}
 			else {
 				mesh->setHasVertexColors(true);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "ClusterAnalysisModifierEditor.h"
@@ -96,7 +97,7 @@ void ClusterAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show list of clusters"), QStringLiteral("clusters"), 1); // Note: Mode hint "1" is used to switch to the data table view.
 	layout->addWidget(openDataInspectorBtn);

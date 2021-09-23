@@ -450,7 +450,6 @@ void SurfaceMeshTopology::convertToTriMesh(TriMesh& output) const
 	OVITO_ASSERT(fout == output.faces().end());
 
 	output.invalidateVertices();
-	output.invalidateFaces();
 }
 
 /******************************************************************************

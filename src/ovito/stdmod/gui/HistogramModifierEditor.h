@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,9 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 class QwtPlotZoneItem;
 
@@ -35,7 +34,7 @@ namespace Ovito { namespace StdMod {
 /**
  * A properties editor for the HistogramModifier class.
  */
-class HistogramModifierEditor : public ModifierPropertiesEditor
+class HistogramModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(HistogramModifierEditor)
@@ -62,9 +61,6 @@ private:
 
 	/// The plot item for indicating the seletion range.
 	QwtPlotZoneItem* _selectionRangeIndicator;
-
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<HistogramModifierEditor, &HistogramModifierEditor::plotHistogram> plotHistogramLater;
 };
 
 }	// End of namespace

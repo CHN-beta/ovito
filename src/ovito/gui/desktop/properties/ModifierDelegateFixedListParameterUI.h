@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public RefTargetLi
 public:
 
 	/// Constructor.
-	ModifierDelegateFixedListParameterUI(QObject* parentEditor,
+	ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor,
 			const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
 
 	/// This method is called when a new editable object has been activated.

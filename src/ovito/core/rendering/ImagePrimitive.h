@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief Rendering primitive for drawing 2d images.
+ * \brief A 2d image to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT ImagePrimitive : public PrimitiveBase
 {

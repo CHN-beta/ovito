@@ -26,14 +26,14 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdobj/util/ElementSelectionSet.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 
 namespace Ovito { namespace StdMod {
 /**
  * A properties editor for the ManualSelectionModifier class.
  */
-class ManualSelectionModifierEditor : public ModifierPropertiesEditor
+class ManualSelectionModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(ManualSelectionModifierEditor)

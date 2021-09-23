@@ -49,7 +49,7 @@ void ModifierDelegateParameterUI::setDelegateType(const QString& typeName)
 ******************************************************************************/
 bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged) {
+	if(source == editObject() && event.type() == ReferenceEvent::PipelineInputChanged) {
 		// The modifier's input from the pipeline has changed -> update list of available delegates
 		Q_EMIT delegateListChanged();
 	}

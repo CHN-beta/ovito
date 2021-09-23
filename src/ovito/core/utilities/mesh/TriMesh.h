@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,9 +56,6 @@ public:
 
 public:
 
-	/// Default constructor, which sets all flags and the smoothing group to zero.
-	TriMeshFace() : _smoothingGroups(0), _materialIndex(0), _flags(EDGES123) {}
-
 	/************************************ Vertices *******************************/
 
 	/// Sets the vertex indices of this face to new values.
@@ -86,15 +83,9 @@ public:
 
 	/// Sets the visibility of the three face edges.
 	void setEdgeVisibility(bool e1, bool e2, bool e3) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
 		_flags.setFlag(EDGE1, e1);
 		_flags.setFlag(EDGE2, e2);
 		_flags.setFlag(EDGE3, e3);
-#else
-		if(e1) _flags |= EDGE1; else _flags &= ~EDGE1;
-		if(e2) _flags |= EDGE2; else _flags &= ~EDGE2;
-		if(e3) _flags |= EDGE3; else _flags &= ~EDGE3;
-#endif
 	}
 
 	/// Sets the visibility of the three face edges all at once.
@@ -105,21 +96,13 @@ public:
 	/// Makes one of the edges of the triangle face visible.
 	void setEdgeVisible(size_t which) {
 		OVITO_ASSERT(which < 3);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
 		_flags.setFlag(MeshFaceFlag(EDGE1 << which));
-#else
-		_flags |= MeshFaceFlags(EDGE1 << which);
-#endif
 	}
 
 	/// Hides one of the edges of the triangle face.
 	void setEdgeHidden(size_t which) {
 		OVITO_ASSERT(which < 3);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
 		_flags.setFlag(MeshFaceFlag(EDGE1 << which), false);
-#else
-		_flags &= ~MeshFaceFlags(EDGE1 << which);
-#endif
 	}
 
 	/// Returns true if the edge is visible.
@@ -151,13 +134,16 @@ private:
 	std::array<int,3> _vertices;
 
 	/// The bit flags.
-	MeshFaceFlags _flags;
+	MeshFaceFlags _flags = EDGES123;
 
 	/// Smoothing group bits. Specifies the smoothing groups this face belongs to.
-	quint32 _smoothingGroups;
+	quint32 _smoothingGroups = 0;
 
 	/// The material index assigned to the face.
-	int _materialIndex;
+	int _materialIndex = 0;
+
+	// Make sure the constant OVITO_MAX_NUM_SMOOTHING_GROUPS has correct value.
+	static_assert(std::numeric_limits<decltype(TriMeshFace::_smoothingGroups)>::digits == OVITO_MAX_NUM_SMOOTHING_GROUPS, "Compile-time constant OVITO_MAX_NUM_SMOOTHING_GROUPS has incorrect value.");
 
 	friend class TriMesh;
 };
@@ -184,8 +170,12 @@ public:
 		std::swap(_boundingBox, other._boundingBox);
 		std::swap(_hasVertexColors, other._hasVertexColors);
 		_vertexColors.swap(other._vertexColors);
+		std::swap(_hasVertexPseudoColors, other._hasVertexPseudoColors);
+		_vertexPseudoColors.swap(other._vertexPseudoColors);
 		std::swap(_hasFaceColors, other._hasFaceColors);
 		_faceColors.swap(other._faceColors);
+		std::swap(_hasFacePseudoColors, other._hasFacePseudoColors);
+		_facePseudoColors.swap(other._facePseudoColors);
 		std::swap(_hasNormals, other._hasNormals);
 		_normals.swap(other._normals);
 	}
@@ -260,29 +250,26 @@ public:
 		return index;
 	}
 
-	/// \brief Returns whether this mesh has colors associated with its vertices.
+	/// \brief Returns whether this mesh has RGBA colors associated with its vertices.
 	bool hasVertexColors() const {
 		return _hasVertexColors;
 	}
 
-	/// \brief Controls whether this mesh has colors associated with its vertices.
+	/// \brief Controls whether this mesh has RGBA colors associated with its vertices.
 	void setHasVertexColors(bool enableColors) {
 		_hasVertexColors = enableColors;
 		_vertexColors.resize(enableColors ? _vertices.size() : 0);
 	}
 
-	/// \brief Allows direct access to the vertex color array of the mesh.
+	/// \brief Allows direct access to the vertex RGBA color array of the mesh.
 	/// \return A reference to the vector that stores all vertex colors.
-	/// \note After you have finished changing the vertex colors,
-	/// you have to call invalidateVertices() to let the mesh know that it has to update its internal
-	/// caches based on the new vertex colors.
 	QVector<ColorA>& vertexColors() {
 		OVITO_ASSERT(_hasVertexColors);
 		OVITO_ASSERT(_vertexColors.size() == _vertices.size());
 		return _vertexColors;
 	}
 
-	/// \brief Allows direct read-access to the vertex color array of the mesh.
+	/// \brief Allows direct read-access to the vertex RGBA color array of the mesh.
 	/// \return A constant reference to the vector that stores all vertex colors.
 	const QVector<ColorA>& vertexColors() const {
 		OVITO_ASSERT(_hasVertexColors);
@@ -290,7 +277,7 @@ public:
 		return _vertexColors;
 	}
 
-	/// \brief Returns the color of the vertex with the given index.
+	/// \brief Returns the RGBA color of the vertex with the given index.
 	/// \param index The index starting at 0 of the vertex whose color should be returned.
 	/// \return The color of the given vertex.
 	const ColorA& vertexColor(int index) const {
@@ -298,25 +285,62 @@ public:
 		return vertexColors()[index];
 	}
 
-	/// \brief Returns a reference to the color of the vertex with the given index.
+	/// \brief Returns a reference to the RGBA color of the vertex with the given index.
 	/// \param index The index starting at 0 of the vertex whose color should be returned.
 	/// \return A reference to the color of the given vertex. The reference can be used to alter the vertex color.
-	/// \note After you have finished changing the vertex colors,
-	/// you have to call invalidateVertices() to let the mesh know that it has
-	/// to update its internal caches based on the new vertex colors.
 	ColorA& vertexColor(int index) {
 		OVITO_ASSERT(index >= 0 && index < vertexCount());
 		return vertexColors()[index];
 	}
 
-	/// \brief Sets the color of the vertex with the given index.
+	/// \brief Sets the RGBA color of the vertex with the given index.
 	/// \param index The index starting at 0 of the vertex whose color should be set.
 	/// \param p The new color of the vertex.
-	/// \note After you have finished changing the vertex colors,
-	/// you have to call invalidateVertices() to let the mesh know that it has
-	/// to update its internal caches based on the new vertex colors.
 	void setVertexColor(int index, const ColorA& c) {
 		vertexColor(index) = c;
+	}
+
+	/// \brief Returns whether this mesh has pseudo-colors associated with its vertices.
+	bool hasVertexPseudoColors() const {
+		return _hasVertexPseudoColors;
+	}
+
+	/// \brief Controls whether this mesh has pseudo-colors associated with its vertices.
+	void setHasVertexPseudoColors(bool enablePseudoColors) {
+		_hasVertexPseudoColors = enablePseudoColors;
+		_vertexPseudoColors.resize(enablePseudoColors ? _vertices.size() : 0);
+	}
+
+	/// \brief Allows direct access to the per-vertex psudo-color array of the mesh.
+	/// \return A reference to the vector that stores all vertex pseudo-color values.
+	QVector<FloatType>& vertexPseudoColors() {
+		OVITO_ASSERT(_hasVertexPseudoColors);
+		OVITO_ASSERT(_vertexPseudoColors.size() == _vertices.size());
+		return _vertexPseudoColors;
+	}
+
+	/// \brief Allows direct read-access to the vertex pseudo-color array of the mesh.
+	/// \return A constant reference to the vector that stores all vertex pseudo-colors.
+	const QVector<FloatType>& vertexPseudoColors() const {
+		OVITO_ASSERT(_hasVertexPseudoColors);
+		OVITO_ASSERT(_vertexPseudoColors.size() == _vertices.size());
+		return _vertexPseudoColors;
+	}
+
+	/// \brief Returns the pseudo-color value of the vertex with the given index.
+	/// \param index The index starting at 0 of the vertex whose pseudo-color value should be returned.
+	/// \return The pseudo-color value of the given vertex.
+	FloatType vertexPseudoColor(int index) const {
+		OVITO_ASSERT(index >= 0 && index < vertexCount());
+		return vertexPseudoColors()[index];
+	}
+
+	/// \brief Sets the pseudo-color value of the vertex with the given index.
+	/// \param index The index starting at 0 of the vertex whose pseudo-color value should be set.
+	/// \param p The new value for the vertex.
+	void setVertexPseudoColor(int index, FloatType c) {
+		OVITO_ASSERT(index >= 0 && index < vertexCount());
+		vertexPseudoColors()[index] = c;
 	}
 
 	/// \brief Invalidates the parts of the internal mesh cache that depend on the vertex array.
@@ -339,9 +363,6 @@ public:
 
 	/// \brief Allows direct access to the face array of the mesh.
 	/// \return A reference to the vector that stores all mesh faces.
-	/// \note If you change the faces in the returned array then
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new face definitions.
 	QVector<TriMeshFace>& faces() { return _faces; }
 
 	/// \brief Allows direct read-access to the face array of the mesh.
@@ -359,9 +380,6 @@ public:
 	/// \param index The index starting at 0 of the face who should be returned.
 	/// \return A reference to the requested face. This reference can be used to change the
 	/// the face.
-	/// \note If you change the returned face then
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new face definition.
 	TriMeshFace& face(int index) {
 		OVITO_ASSERT(index >= 0 && index < faceCount());
 		return _faces[index];
@@ -374,37 +392,29 @@ public:
 	/// Increases the number of faces by one.
 	TriMeshFace& addFace();
 
-	/// \brief Invalidates the parts of the internal mesh cache that depend on the face array.
-	///
-	/// This must be called each time the faces of the mesh have been modified.
-	void invalidateFaces() {}
-
 	/// \brief Flip the orientation of all faces.
 	void flipFaces();
 
-	/// \brief Returns whether this mesh has colors associated with its faces.
+	/// \brief Returns whether this mesh has RGBA colors associated with the individual faces.
 	bool hasFaceColors() const {
 		return _hasFaceColors;
 	}
 
-	/// \brief Controls whether this mesh has colors associated with its faces.
+	/// \brief Controls whether this mesh has RGBA colors associated with the invidual faces.
 	void setHasFaceColors(bool enableColors) {
 		_hasFaceColors = enableColors;
 		_faceColors.resize(enableColors ? _faces.size() : 0);
 	}
 
-	/// \brief Allows direct access to the face color array of the mesh.
-	/// \return A reference to the vector that stores all face colors.
-	/// \note After you have finished changing the face colors,
-	/// you have to call invalidateFaces() to let the mesh know that it has to update its internal
-	/// caches based on the new colors.
+	/// \brief Allows direct access to the per-face RGBA color array of the mesh.
+	/// \return A reference to the vector storing each face's RGBA color.
 	QVector<ColorA>& faceColors() {
 		OVITO_ASSERT(_hasFaceColors);
 		OVITO_ASSERT(_faceColors.size() == _faces.size());
 		return _faceColors;
 	}
 
-	/// \brief Allows direct read-access to the face color array of the mesh.
+	/// \brief Allows direct read-access to the per-face RGBA color array of the mesh.
 	/// \return A constant reference to the vector that stores all face colors.
 	const QVector<ColorA>& faceColors() const {
 		OVITO_ASSERT(_hasFaceColors);
@@ -412,7 +422,7 @@ public:
 		return _faceColors;
 	}
 
-	/// \brief Returns the color of the face with the given index.
+	/// \brief Returns the RGBA color of the face with the given index.
 	/// \param index The index starting at 0 of the face whose color should be returned.
 	/// \return The color of the given face.
 	const ColorA& faceColor(int index) const {
@@ -420,25 +430,62 @@ public:
 		return faceColors()[index];
 	}
 
-	/// \brief Returns a reference to the color of the face with the given index.
+	/// \brief Returns a reference to the RGBA color of the face with the given index.
 	/// \param index The index starting at 0 of the face whose color should be returned.
 	/// \return A reference to the color of the given face. The reference can be used to alter the face color.
-	/// \note After you have finished changing the face colors,
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new colors.
 	ColorA& faceColor(int index) {
 		OVITO_ASSERT(index >= 0 && index < faceCount());
 		return faceColors()[index];
 	}
 
-	/// \brief Sets the color of the face with the given index.
+	/// \brief Sets the RGBA color of the face with the given index.
 	/// \param index The index starting at 0 of the face whose color should be set.
 	/// \param p The new color of the face.
-	/// \note After you have finished changing the face colors,
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new colors.
 	void setFaceColor(int index, const ColorA& c) {
-		vertexColor(index) = c;
+		faceColor(index) = c;
+	}
+
+	/// \brief Returns whether this mesh has pseudo-color values associated with the individual faces.
+	bool hasFacePseudoColors() const {
+		return _hasFacePseudoColors;
+	}
+
+	/// \brief Controls whether this mesh has pseudo-color values associated with the invidual faces.
+	void setHasFacePseudoColors(bool enableColors) {
+		_hasFacePseudoColors = enableColors;
+		_facePseudoColors.resize(enableColors ? _faces.size() : 0);
+	}
+
+	/// \brief Allows direct access to the per-face pseudo-color array of the mesh.
+	/// \return A reference to the vector storing each face's pseudo-color value.
+	QVector<FloatType>& facePseudoColors() {
+		OVITO_ASSERT(_hasFacePseudoColors);
+		OVITO_ASSERT(_facePseudoColors.size() == _faces.size());
+		return _facePseudoColors;
+	}
+
+	/// \brief Allows direct read-access to the per-face pseudo-color array of the mesh.
+	/// \return A constant reference to the vector that stores all face pseudo-color values.
+	const QVector<FloatType>& facePseudoColors() const {
+		OVITO_ASSERT(_hasFacePseudoColors);
+		OVITO_ASSERT(_facePseudoColors.size() == _faces.size());
+		return _facePseudoColors;
+	}
+
+	/// \brief Returns the pseudo-color value of the face with the given index.
+	/// \param index The index starting at 0 of the face whose pseudo-color should be returned.
+	/// \return The pseudo-color value of the given face.
+	FloatType facePseudoColor(int index) const {
+		OVITO_ASSERT(index >= 0 && index < faceCount());
+		return facePseudoColors()[index];
+	}
+
+	/// \brief Sets the pseudo-color value of the face with the given index.
+	/// \param index The index starting at 0 of the face whose color should be set.
+	/// \param p The new pseudo-color value for the face.
+	void setFacePseudoColor(int index, FloatType c) {
+		OVITO_ASSERT(index >= 0 && index < faceCount());
+		facePseudoColors()[index] = c;
 	}
 
 	/// \brief Returns whether this mesh has normal vectors stored.
@@ -454,9 +501,6 @@ public:
 
 	/// \brief Allows direct access to the face vertex normals of the mesh.
 	/// \return A reference to the vector that stores all normal vectors (three per face).
-	/// \note After you have finished changing the normals,
-	/// you have to call invalidateFaces() to let the mesh know that it has to update its internal
-	/// caches based on the new normals.
 	QVector<Vector3>& normals() {
 		OVITO_ASSERT(_hasNormals);
 		OVITO_ASSERT(_normals.size() == _faces.size()*3);
@@ -485,9 +529,6 @@ public:
 	/// \param faceIndex The index starting at 0 of the face whose normal should be returned.
 	/// \param vertexIndex The face vertex (0-2) for which the normal should be returned.
 	/// \return A reference to the normal vector of the given face vertex. The reference can be used to alter the vector..
-	/// \note After you have finished changing the normals,
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new normals.
 	Vector3& faceVertexNormal(int faceIndex, int vertexIndex) {
 		OVITO_ASSERT(faceIndex >= 0 && faceIndex < faceCount());
 		OVITO_ASSERT(vertexIndex >= 0 && vertexIndex < 3);
@@ -498,9 +539,6 @@ public:
 	/// \param faceIndex The index starting at 0 of the face whose normal should be set.
 	/// \param vertexIndex The face vertex (0-2) for which the normal should be set.
 	/// \param n The new normal vector.
-	/// \note After you have finished changing the normal vectors,
-	/// you have to call invalidateFaces() to let the mesh know that it has
-	/// to update its internal caches based on the new normals.
 	void setFaceVertexNormal(int faceIndex, int vertexIndex, const Vector3& n) {
 		faceVertexNormal(faceIndex, vertexIndex) = n;
 	}
@@ -558,23 +596,35 @@ private:
 	/// Array of vertex coordinates.
 	QVector<Point3> _vertices;
 
-	/// Indicates that per-vertex colors are stored in this mesh.
-	bool _hasVertexColors;
+	/// Indicates that per-vertex RGBA colors are stored in this mesh.
+	bool _hasVertexColors = false;
 
-	/// Array of vertex colors.
+	/// Array of per-vertex RGBA colors.
 	QVector<ColorA> _vertexColors;
 
-	/// Indicates that per-face colors are stored in this mesh.
-	bool _hasFaceColors;
+	/// Indicates that per-vertex pseudo-colors are stored in this mesh.
+	bool _hasVertexPseudoColors = false;
 
-	/// Array of face colors.
+	/// Array of per-vertex pseudo-colors.
+	QVector<FloatType> _vertexPseudoColors;
+
+	/// Indicates that per-face RGBA colors are stored in this mesh.
+	bool _hasFaceColors = false;
+
+	/// Array of per-face RGBA colors.
 	QVector<ColorA> _faceColors;
+
+	/// Indicates that per-face pseudo-color values are stored in this mesh.
+	bool _hasFacePseudoColors = false;
+
+	/// Array of per-face pseudo-color values.
+	QVector<FloatType> _facePseudoColors;
 
 	/// Array of mesh faces.
 	QVector<TriMeshFace> _faces;
 
 	/// Indicates that normal vectors are stored in this mesh.
-	bool _hasNormals;
+	bool _hasNormals = false;
 
 	/// Array of normals (three per face).
 	QVector<Vector3> _normals;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,15 +21,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
+#include <ovito/stdmod/modifiers/HistogramModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/stdmod/modifiers/HistogramModifier.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "HistogramModifierEditor.h"
 
 #include <qwt/qwt_plot_zoneitem.h>
@@ -56,7 +58,7 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 	layout->addWidget(new QLabel(tr("Operate on:")));
 	layout->addWidget(pclassUI->comboBox());
 
-	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(HistogramModifier::sourceProperty), nullptr);
+	PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(HistogramModifier::sourceProperty));
 	layout->addWidget(new QLabel(tr("Property:")));
 	layout->addWidget(sourcePropertyUI->comboBox());
 	connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI](RefTarget* editObject) {
@@ -171,13 +173,10 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsReplaced, this, &HistogramModifierEditor::plotHistogram);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotHistogramLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HistogramModifierEditor::plotHistogram);
 }
 
 /******************************************************************************
@@ -205,7 +204,7 @@ void HistogramModifierEditor::plotHistogram()
 
 	if(modifier && modifierApplication()) {
 		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
+		const PipelineFlowState& state = getPipelineOutput();
 
 		// Look up the generated data table in the modifier's pipeline output.
 		QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());

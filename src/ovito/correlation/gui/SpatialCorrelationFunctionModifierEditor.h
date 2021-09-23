@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -27,8 +27,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 class QwtPlot;
 class QwtPlotCurve;
@@ -38,7 +37,7 @@ namespace Ovito { namespace Particles {
 /**
  * A properties editor for the SpatialCorrelationFunctionModifier class.
  */
-class SpatialCorrelationFunctionModifierEditor : public ModifierPropertiesEditor
+class SpatialCorrelationFunctionModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
@@ -71,9 +70,6 @@ private:
 
 	/// The plot item for the short-ranged part of the real-space correlation function.
     QwtPlotCurve* _neighCurve = nullptr;
-
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<SpatialCorrelationFunctionModifierEditor, &SpatialCorrelationFunctionModifierEditor::plotAllData> plotAllDataLater;
 };
 
 }	// End of namespace

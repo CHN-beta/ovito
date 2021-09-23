@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(BooleanParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-BooleanParameterUI::BooleanParameterUI(QObject* parentEditor, const char* propertyName, const QString& checkBoxLabel) :
+BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel) :
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	// Create UI widget.
@@ -45,7 +45,7 @@ BooleanParameterUI::BooleanParameterUI(QObject* parentEditor, const char* proper
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanParameterUI::BooleanParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.

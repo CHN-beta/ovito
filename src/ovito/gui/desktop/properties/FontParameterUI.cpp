@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(FontParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-FontParameterUI::FontParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField)
+FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField)
 	: PropertyParameterUI(parentEditor, propField)
 {
 	_label = new QLabel(propField.displayName() + ":");

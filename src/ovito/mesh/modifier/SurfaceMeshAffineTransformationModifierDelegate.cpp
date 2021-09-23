@@ -90,7 +90,6 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 			if(mesh->hasNormals()) {
 				for(Vector3& n : mesh->normals())
 					n = tm * n;
-				mesh->invalidateFaces();
 			}
 		}
 	}

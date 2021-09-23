@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/modify/LoadTrajectoryModifier.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "LoadTrajectoryModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -44,7 +45,7 @@ void LoadTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout->setSpacing(4);
 
 	// Status label.
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Open a sub-editor for the source object.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(LoadTrajectoryModifier::trajectorySource), RolloutInsertionParameters().setTitle(tr("Trajectory Source: %1")));

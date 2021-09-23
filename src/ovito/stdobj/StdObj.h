@@ -46,6 +46,7 @@ namespace Ovito {
         class SimulationCellObject;
         class SimulationCellVis;
         class DataTable;
+        class PropertyColorMapping;
     }
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,10 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
+#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/data/DataVis.h>
 
 namespace Ovito {
 
@@ -71,9 +75,15 @@ void PropertiesEditor::initialize(PropertiesPanel* container, MainWindow* mainWi
 	OVITO_CHECK_POINTER(container);
 	OVITO_CHECK_POINTER(mainWindow);
 	OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
+	OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
 	_container = container;
 	_mainWindow = mainWindow;
 	_parentEditor = parentEditor;
+	// Forward signals emitted by the parent editor.
+	if(parentEditor) {
+		connect(parentEditor, &PropertiesEditor::pipelineOutputChanged, this, &PropertiesEditor::pipelineOutputChanged);
+		connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertiesEditor::pipelineInputChanged);
+	}
 	createUI(rolloutParams);
 	Q_EMIT contentsReplaced(nullptr);
 }
@@ -156,8 +166,16 @@ void PropertiesEditor::disableRollout(QWidget* rolloutWidget, const QString& not
 ******************************************************************************/
 bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		Q_EMIT contentsChanged(source);
+	if(source == editObject()) {
+		if(event.type() == ReferenceEvent::TargetChanged) {
+			Q_EMIT contentsChanged(source);
+		}
+		else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
+			emitPipelineOutputChangedSignal(this);
+		}
+		else if(event.type() == ReferenceEvent::PipelineInputChanged) {
+			emitPipelineInputChangedSignal(this);
+		}
 	}
 	return RefMaker::referenceEvent(source, event);
 }
@@ -173,6 +191,8 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 		if(newTarget) newTarget->setObjectEditingFlag();
 		Q_EMIT contentsReplaced(editObject());
 		Q_EMIT contentsChanged(editObject());
+		emitPipelineInputChangedSignal(this);
+		emitPipelineOutputChangedSignal(this);
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -184,6 +204,127 @@ void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& f
 {
 	if(editObject())
 		editObject()->setPropertyFieldValue(field, newValue);
+}
+
+/******************************************************************************
+* Returns the current input data from the upstream pipeline.
+******************************************************************************/
+PipelineFlowState PropertiesEditor::getPipelineInput() const
+{
+	// When editing a modifier, request pipeline input state from the modifier application being edit in the parent editor.
+	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
+		return modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+	}
+
+	// When editing a DataVis element, request pipeline input state from the current scene node.
+	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
+			OVITO_ASSERT(vis->pipelines(true).contains(pipelineNode));
+			OVITO_ASSERT(pipelineNode->visElements().contains(vis));
+			return pipelineNode->evaluatePipelineSynchronous(false);
+		}
+	}
+
+	// Sub-editors inherit the information from their parent editor.
+	if(parentEditor())
+		return parentEditor()->getPipelineInput();
+	
+	return {};
+}
+
+/******************************************************************************
+* Returns the current input data from the upstream pipeline.
+******************************************************************************/
+std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
+{
+	std::vector<PipelineFlowState> inputStates;
+
+	// Sub-editors inherit the information from their parent editor.
+	if(parentEditor())
+		inputStates = parentEditor()->getPipelineInputs();
+
+	// When editing a modifier, get the pipeline state from the modifier applications.
+	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
+		for(ModifierApplication* modApp : modifier->modifierApplications()) {
+			inputStates.push_back(modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+		}
+	}
+
+	// When editing a DataVis element, get the pipeline state from the scene nodes.
+	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+		for(PipelineSceneNode* pipeline : vis->pipelines(true)) {
+			inputStates.push_back(pipeline->evaluatePipelineSynchronous(false));
+		}
+	}
+	
+	return inputStates;
+}
+
+/******************************************************************************
+* Returns the current output data produced by the object being edited.
+******************************************************************************/
+PipelineFlowState PropertiesEditor::getPipelineOutput() const
+{
+	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
+		// If it's a modifier being edited, request output from the parent editor, which hosts the ModifierApplication.
+		if(parentEditor())
+			return parentEditor()->getPipelineOutput();
+	}
+	else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
+		// Request pipeline output state from the modifier application.
+		return modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+	}
+	return {};
+}
+
+/******************************************************************************
+* Returns the first ModifierApplication of the modifier currently being edited.
+******************************************************************************/
+ModifierApplication* PropertiesEditor::modifierApplication() const
+{
+	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject()))
+		return modApp;
+	else if(parentEditor())
+		return parentEditor()->modifierApplication();
+	else
+		return nullptr;
+}
+
+/******************************************************************************
+* Returns the list of ModifierApplications of the modifier currently being edited.
+******************************************************************************/
+QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
+{
+	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject()))
+		return modifier->modifierApplications();
+	else if(parentEditor())
+		return parentEditor()->modifierApplications();
+	else
+		return {};
+}
+
+/******************************************************************************
+* For an editor of a DataVis element, returns the DataObject to which the 
+* DataVis element is attached.
+******************************************************************************/
+ConstDataObjectRef PropertiesEditor::getVisDataObject() const
+{
+	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+		// We'll now try to find the DataObject this DataVis element is associated with.
+		// Let's start looking in the output data collection of the currently selected pipeline scene node.
+		if(PipelineSceneNode* pipelineNode = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
+			const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(false);
+			std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
+			if(!dataObjectPaths.empty()) {
+				// Take the first path from the list and return the leaf data object.
+				return dataObjectPaths.front().back();
+			}
+		}
+	}
+	else if(parentEditor())
+		return parentEditor()->getVisDataObject();
+	else
+		return {};
 }
 
 }	// End of namespace

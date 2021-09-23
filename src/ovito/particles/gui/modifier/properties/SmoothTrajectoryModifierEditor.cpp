@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/modifier/properties/SmoothTrajectoryModifier.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "SmoothTrajectoryModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -54,7 +55,7 @@ void SmoothTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& 
 
 	// Status label.
 	layout->setRowMinimumHeight(2, 8);
-	layout->addWidget(statusLabel(), 3, 0, 1, 2);
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 3, 0, 1, 2);
 }
 
 }	// End of namespace

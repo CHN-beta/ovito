@@ -36,6 +36,8 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 {
+    QOpenGLTexture* colorMapTexture = nullptr;
+
     // Make sure there is something to be rendered. Otherwise, step out early.
 	if(faceCount() == 0)
 		return;
@@ -49,13 +51,16 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
     if(!useInstancedRendering()) {
-        if(!renderer->isPicking())
-			shader.load("mesh", "mesh/mesh.vert", "mesh/mesh.frag");
-        else
+        if(renderer->isPicking())
 			shader.load("mesh_picking", "mesh/mesh_picking.vert", "mesh/mesh_picking.frag");
+        else if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid())
+			shader.load("mesh_color_mapping", "mesh/mesh_color_mapping.vert", "mesh/mesh_color_mapping.frag");
+        else
+			shader.load("mesh", "mesh/mesh.vert", "mesh/mesh.frag");
         shader.setInstanceCount(1);
     }
     else {
+        OVITO_ASSERT(!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors() && !pseudoColorMapping().isValid()); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
         if(!renderer->isPicking()) {
             if(!perInstanceColors())
 				shader.load("mesh_instanced", "mesh/mesh_instanced.vert", "mesh/mesh_instanced.frag");
@@ -119,7 +124,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
             // Initialize render vertices.
             ColoredVertexWithNormal* rv = renderVertices;
             faceNormal = faceNormals.begin();
-            ColorAT<float> defaultVertexColor = static_cast<ColorAT<float>>(uniformColor());
+            ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
             for(auto face = mesh().faces().constBegin(); face != mesh().faces().constEnd(); ++face, ++faceNormal) {
 
                 // Initialize render vertices for this face.
@@ -130,15 +135,21 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                         rv->normal = *faceNormal;
                     rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
+                        rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                    }
+                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                     }
                     else if(mesh().hasFaceColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().faceColor(face - mesh().faces().constBegin()));
+                        rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
+                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
+                    }
                     else if(face->materialIndex() < materialColors().size() && face->materialIndex() >= 0) {
-                        rv->color = static_cast<ColorAT<float>>(materialColors()[face->materialIndex()]);
+                        rv->color = materialColors()[face->materialIndex()].toDataType<float>();
                     }
                     else {
                         rv->color = defaultVertexColor;
@@ -183,22 +194,28 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
             // Use normals stored in the mesh.
             ColoredVertexWithNormal* rv = renderVertices;
             const Vector3* faceNormal = mesh().normals().begin();
-            ColorAT<float> defaultVertexColor = static_cast<ColorAT<float>>(uniformColor());
+            ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
             for(auto face = mesh().faces().constBegin(); face != mesh().faces().constEnd(); ++face) {
                 // Initialize render vertices for this face.
                 for(size_t v = 0; v < 3; v++, rv++) {
                     rv->normal = (*faceNormal++).toDataType<float>();
                     rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
+                        rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                    }
+                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                     }
                     else if(mesh().hasFaceColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().faceColor(face - mesh().faces().constBegin()));
+                        rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
+                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
+                    }
                     else if(face->materialIndex() >= 0 && face->materialIndex() < materialColors().size()) {
-                        rv->color = static_cast<ColorAT<float>>(materialColors()[face->materialIndex()]);
+                        rv->color = materialColors()[face->materialIndex()].toDataType<float>();
                     }
                     else {
                         rv->color = defaultVertexColor;
@@ -211,7 +228,21 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	// Bind vertex buffer to vertex attributes.
 	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, position), OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
-	shader.bindBuffer(meshBuffer, "color",    GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color),    OpenGLShaderHelper::PerVertex);
+	if((!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors()) || !pseudoColorMapping().isValid()) {
+        // Rendering with true RGBA colors.
+        shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+    }
+    else {
+        // Rendering  with pseudo-colors and a color mapping function.
+        shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 1, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+        shader.setUniformValue("opacity", uniformColor().a());
+        shader.setUniformValue("color_range_min", pseudoColorMapping().minValue());
+        shader.setUniformValue("color_range_max", pseudoColorMapping().maxValue());
+
+        // Upload color map as a 1-d OpenGL texture.
+        colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(pseudoColorMapping().gradient(), renderer->currentResourceFrame());
+        colorMapTexture->bind();
+    }
 
     if(useInstancedRendering()) {
         // Upload the per-instance TMs to GPU memory.
@@ -351,6 +382,11 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	if(emphasizeEdges() && !renderer->isPicking()) {
 		renderer->glDisable(GL_POLYGON_OFFSET_FILL);
 	}
+
+    // Unbind color mapping texture.
+    if(colorMapTexture) {
+        colorMapTexture->release();
+    }
 }
 
 /******************************************************************************

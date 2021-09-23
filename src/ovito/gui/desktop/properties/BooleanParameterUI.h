@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT BooleanParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	BooleanParameterUI(QObject* parentEditor, const char* propertyName, const QString& checkBoxLabel);
+	BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel);
 
 	/// Constructor for a PropertyField property.
-	BooleanParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Destructor.
 	virtual ~BooleanParameterUI();

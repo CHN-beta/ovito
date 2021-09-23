@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,14 +25,14 @@
 
 #include <ovito/vorotop/VoroTopPlugin.h>
 #include <ovito/vorotop/VoroTopModifier.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace VoroTop {
 
 /**
  * A properties editor for the VoroTopModifier class.
  */
-class VoroTopModifierEditor : public ModifierPropertiesEditor
+class VoroTopModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(VoroTopModifierEditor)

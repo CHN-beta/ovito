@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,16 +39,6 @@ namespace Ovito { namespace StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorCodingModifierDelegate);
 
-IMPLEMENT_OVITO_CLASS(ColorCodingGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingHSVGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingGrayscaleGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingHotGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingJetGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingBlueWhiteRedGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingViridisGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingMagmaGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingTableGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingImageGradient);
 IMPLEMENT_OVITO_CLASS(ColorCodingModifier);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, startValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, endValueController);
@@ -64,9 +54,6 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorOnlySelected, "Color only sel
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatically adjust range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
-
-DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
-DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -437,45 +424,6 @@ PipelineStatus ColorCodingModifierDelegate::apply(Modifier* modifier, PipelineFl
 		throwException(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
 
 	return PipelineStatus::Success;
-}
-
-/******************************************************************************
-* Converts a scalar value to a color value.
-******************************************************************************/
-Color ColorCodingTableGradient::valueToColor(FloatType t)
-{
-	if(table().empty()) return Color(0,0,0);
-	if(table().size() == 1) return table()[0];
-	t *= (table().size() - 1);
-	FloatType t0 = std::floor(t);
-	const Color& c1 = table()[(size_t)t0];
-	const Color& c2 = table()[(size_t)std::ceil(t)];
-	return c1 * (FloatType(1) - (t - t0)) + c2 * (t - t0);
-}
-
-/******************************************************************************
-* Loads the given image file from disk.
-******************************************************************************/
-void ColorCodingImageGradient::loadImage(const QString& filename)
-{
-	QImage image(filename);
-	if(image.isNull())
-		throwException(tr("Could not load image file '%1'.").arg(filename));
-	setImage(image);
-}
-
-/******************************************************************************
-* Converts a scalar value to a color value.
-******************************************************************************/
-Color ColorCodingImageGradient::valueToColor(FloatType t)
-{
-	if(image().isNull()) return Color(0,0,0);
-	QPoint p;
-	if(image().width() > image().height())
-		p = QPoint(std::min((int)(t * image().width()), image().width()-1), 0);
-	else
-		p = QPoint(0, std::min((int)(t * image().height()), image().height()-1));
-	return Color(image().pixel(p));
 }
 
 }	// End of namespace

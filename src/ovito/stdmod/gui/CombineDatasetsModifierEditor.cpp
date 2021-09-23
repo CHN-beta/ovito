@@ -22,6 +22,7 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/CombineDatasetsModifier.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include "CombineDatasetsModifierEditor.h"
 
@@ -45,7 +46,7 @@ void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& r
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Open a sub-editor for the source object.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));

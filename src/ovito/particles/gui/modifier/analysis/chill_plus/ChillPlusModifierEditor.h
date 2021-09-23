@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright (2019) Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -25,14 +25,14 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace Particles {
 
 /**
  * \brief A properties editor for the ChillPlusModifier class.
  */
-class ChillPlusModifierEditor : public ModifierPropertiesEditor
+class ChillPlusModifierEditor : public PropertiesEditor
 {
 	OVITO_CLASS(ChillPlusModifierEditor)
 	Q_OBJECT

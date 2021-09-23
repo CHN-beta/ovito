@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdmod/modifiers/InvertSelectionModifier.h>
 
 namespace Ovito { namespace StdMod {
@@ -32,7 +32,7 @@ namespace Ovito { namespace StdMod {
 /**
  * A properties editor for the InvertSelectionModifier class.
  */
-class InvertSelectionModifierEditor : public ModifierPropertiesEditor
+class InvertSelectionModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(InvertSelectionModifierEditor)

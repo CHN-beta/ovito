@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,9 +24,8 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 class QwtPlotMarker;
 
@@ -35,7 +34,7 @@ namespace Ovito { namespace Grid {
 /**
  * \brief A properties editor for the CreateIsosurfaceModifier class.
  */
-class CreateIsosurfaceModifierEditor : public ModifierPropertiesEditor
+class CreateIsosurfaceModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(CreateIsosurfaceModifierEditor)
@@ -68,9 +67,6 @@ private:
 
 	/// The plot item for indicating the current iso level value.
 	QwtPlotMarker* _isoLevelIndicator;
-
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<CreateIsosurfaceModifierEditor, &CreateIsosurfaceModifierEditor::plotHistogram> plotHistogramLater;
 
 	/// Indicates that the user is currently interacting with the plot widget.
 	bool _interactionInProgress = false;

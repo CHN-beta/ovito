@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/modifier/properties/InteractiveMolecularDynamicsModifier.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "InteractiveMolecularDynamicsModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -75,7 +76,7 @@ void InteractiveMolecularDynamicsModifierEditor::createUI(const RolloutInsertion
 
 	// Status label.
 	layout->setRowMinimumHeight(4, 10);
-	layout->addWidget(statusLabel(), 5, 0, 1, 2);
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 5, 0, 1, 2);
 
 	// Handle connect button.
 	connect(_connectButton, &QPushButton::clicked, this, [&]() {

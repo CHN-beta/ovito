@@ -31,7 +31,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for particle drawing primitives.
+ * \brief A point-like marker primitive to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT MarkerPrimitive : public PrimitiveBase
 {

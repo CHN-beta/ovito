@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
@@ -36,7 +36,7 @@ class PickPlanePointsInputMode;	// Defined below
 /**
  * A properties editor for the SliceModifier class.
  */
-class SliceModifierEditor : public ModifierPropertiesEditor
+class SliceModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(SliceModifierEditor)

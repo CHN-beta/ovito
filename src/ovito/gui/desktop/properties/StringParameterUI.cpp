@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(StringParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-StringParameterUI::StringParameterUI(QObject* parentEditor, const char* propertyName) :
+StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
 	PropertyParameterUI(parentEditor, propertyName), _textBox(nullptr)
 {
 	// Create UI widget.
@@ -43,7 +43,7 @@ StringParameterUI::StringParameterUI(QObject* parentEditor, const char* property
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-StringParameterUI::StringParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField), _textBox(nullptr)
 {
 	// Create UI widget.
@@ -141,7 +141,7 @@ void StringParameterUI::setEnabled(bool enabled)
 	if(enabled == isEnabled()) return;
 	PropertyParameterUI::setEnabled(enabled);
 	if(textBox())
-		textBox()->setEnabled(editObject() != NULL && isEnabled());
+		textBox()->setEnabled(editObject() && isEnabled());
 }
 
 /******************************************************************************

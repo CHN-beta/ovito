@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -32,7 +32,9 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/core/oo/CloneHelper.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "SpatialCorrelationFunctionModifierEditor.h"
 
 #include <qwt/qwt_plot.h>
@@ -263,19 +265,15 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
 	reciprocalSpaceLayout->addWidget(_reciprocalSpacePlot);
 	reciprocalSpaceLayout->addWidget(axesBox);
 
-	connect(this, &SpatialCorrelationFunctionModifierEditor::contentsReplaced, this, &SpatialCorrelationFunctionModifierEditor::plotAllData);
-
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsChanged, this, [this]() {
-		plotAllDataLater(this);
-	});
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotAllDataLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &SpatialCorrelationFunctionModifierEditor::plotAllData);
+
+	// Update data plot whenever the modifier is modified.
+	connect(this, &PropertiesEditor::contentsChanged, this, &SpatialCorrelationFunctionModifierEditor::plotAllData);
 }
 
 /******************************************************************************
@@ -367,7 +365,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 		_reciprocalSpacePlot->setAxisAutoScale(QwtPlot::yLeft);
 
 	// Obtain the pipeline data produced by the modifier.
-	const PipelineFlowState& state = getModifierOutput();
+	const PipelineFlowState& state = getPipelineOutput();
 
 	// Retreive computed values from pipeline.
 	const QVariant& mean1 = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.mean1"));

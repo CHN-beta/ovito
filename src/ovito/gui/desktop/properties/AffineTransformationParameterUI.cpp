@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(AffineTransformationParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-AffineTransformationParameterUI::AffineTransformationParameterUI(QObject* parentEditor, const char* propertyName, size_t _row, size_t _column, const QString& labelText, const QMetaObject* parameterUnitType)
+AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t _row, size_t _column, const QString& labelText, const QMetaObject* parameterUnitType)
 	: FloatParameterUI(parentEditor, propertyName, labelText, parameterUnitType), row(_row), column(_column)
 {
 	OVITO_ASSERT_MSG(row >= 0 && row < 3, "AffineTransformationParameterUI constructor", "The row must be in the range 0-2.");
@@ -40,7 +40,7 @@ AffineTransformationParameterUI::AffineTransformationParameterUI(QObject* parent
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-AffineTransformationParameterUI::AffineTransformationParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, size_t _row, size_t _column)
+AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t _row, size_t _column)
 	: FloatParameterUI(parentEditor, propField), row(_row), column(_column)
 {
 	OVITO_ASSERT_MSG(row >= 0 && row < 3, "AffineTransformationParameterUI constructor", "The row must be in the range 0-2.");

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include "ModifierDelegateFixedListParameterUI.h"
 
 namespace Ovito {
@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(ModifierDelegateFixedListParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-ModifierDelegateFixedListParameterUI::ModifierDelegateFixedListParameterUI(QObject* parentEditor, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
+ModifierDelegateFixedListParameterUI::ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
 	: RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(MultiDelegatingModifier::delegates), rolloutParams, defaultEditorClass)
 {
 }
@@ -82,11 +82,8 @@ Qt::ItemFlags ModifierDelegateFixedListParameterUI::getItemFlags(RefTarget* targ
 	Qt::ItemFlags flags = RefTargetListParameterUI::getItemFlags(target, index);
 	if(index.column() == 0) {
 		if(ModifierDelegate* delegate = dynamic_object_cast<ModifierDelegate>(target)) {
-			if(ModifierPropertiesEditor* editor = dynamic_object_cast<ModifierPropertiesEditor>(this->editor())) {
-				const PipelineFlowState& input = editor->getModifierInput();
-				if(delegate->getOOMetaClass().getApplicableObjects(input).empty()) {
-					flags &= ~Qt::ItemIsEnabled;
-				}
+			if(delegate->getOOMetaClass().getApplicableObjects(editor()->getPipelineInput()).empty()) {
+				flags &= ~Qt::ItemIsEnabled;
 			}
 		}
 		return flags | Qt::ItemIsUserCheckable;

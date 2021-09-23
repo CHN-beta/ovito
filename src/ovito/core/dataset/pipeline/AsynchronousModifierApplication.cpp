@@ -50,7 +50,7 @@ bool AsynchronousModifierApplication::referenceEvent(RefTarget* source, const Re
 		if(_completedEngine && !_completedEngine->pipelineInputChanged())
 			_completedEngine.reset();
 	}
-	else if((event.type() == ReferenceEvent::TargetChanged && source == input()) || (event.type() == ReferenceEvent::ModifierInputChanged && source == modifier())) {
+	else if((event.type() == ReferenceEvent::TargetChanged && source == input()) || (event.type() == ReferenceEvent::PipelineInputChanged && source == modifier())) {
 		// Whenever the modifier's inputs change, invalidate the cached computation results hold on to any 
 		// cached results needed for preliminary pipeline evaluation. 
 		_validStages.clear();

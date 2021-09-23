@@ -40,10 +40,10 @@ class OVITO_GUI_EXPORT BooleanGroupBoxParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	BooleanGroupBoxParameterUI(QObject* parentEditor, const char* propertyName, const QString& label);
+	BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& label);
 
 	/// Constructor for a PropertyField property.
-	BooleanGroupBoxParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Destructor, which releases all GUI controls.
 	virtual ~BooleanGroupBoxParameterUI();

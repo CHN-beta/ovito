@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/gui/widgets/PropertySelectionComboBox.h>
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
@@ -56,7 +56,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
 			&& std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
 	});
 
-	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::sourceProperty), nullptr);
+	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::sourceProperty));
 	layout->addSpacing(4);
 	layout->addWidget(new QLabel(tr("Property:")));
 	layout->addWidget(_sourcePropertyUI->comboBox());
@@ -110,7 +110,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
 	// Status label.
 	layout->addSpacing(12);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************

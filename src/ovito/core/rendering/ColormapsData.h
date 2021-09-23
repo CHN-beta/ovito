@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #pragma once
 
 
-namespace Ovito { namespace StdMod {
+namespace Ovito {
 
 // Viridis colormap by Nathaniel J. Smith, Stefan van der Walt and Eric Firing
 // Colormap data released under the CC0 license / public domain dedication.
@@ -549,5 +549,4 @@ const float colormap_magma_data[][3] = {
 	{0.987053f, 0.991438f, 0.749504f}
 };
 
-}	// End of namespace
 }	// End of namespace

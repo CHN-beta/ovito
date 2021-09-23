@@ -54,7 +54,7 @@ void DataObjectReferenceParameterUI::setDataObjectType(const QString& typeName)
 ******************************************************************************/
 bool DataObjectReferenceParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged) {
+	if(source == editObject() && event.type() == ReferenceEvent::PipelineInputChanged) {
 		// The modifier's input from the pipeline has changed -> update list of available input data objects.
 		updateDataObjectList();
 		// The index of the selected list item may have changed. Update the index as well.

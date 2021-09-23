@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,11 +57,8 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 	
 	/// Returns the crystal structure with the given ID, or null if no such structure exists.
-	MicrostructurePhase* structureById(int id) const {
-		for(ElementType* stype : structureTypes())
-			if(stype->numericId() == id)
-				return dynamic_object_cast<MicrostructurePhase>(stype);
-		return nullptr;
+	MicrostructurePhase* structureTypeById(int id) const {
+		return dynamic_object_cast<MicrostructurePhase>(StructureIdentificationModifier::structureTypeById(id));
 	}
 
 protected:

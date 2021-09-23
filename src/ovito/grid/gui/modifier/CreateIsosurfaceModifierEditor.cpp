@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,8 +27,10 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/grid/modifier/CreateIsosurfaceModifier.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "CreateIsosurfaceModifierEditor.h"
 
 #include <qwt/qwt_plot_marker.h>
@@ -66,7 +68,7 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 	layout2->addWidget(new QLabel(tr("Operate on:")), 0, 0);
 	layout2->addWidget(pclassUI->comboBox(), 0, 1);
 
-	PropertyReferenceParameterUI* fieldQuantityUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty), nullptr);
+	PropertyReferenceParameterUI* fieldQuantityUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty));
 	layout2->addWidget(new QLabel(tr("Field quantity:")), 1, 0);
 	layout2->addWidget(fieldQuantityUI->comboBox(), 1, 1);
 	connect(this, &PropertiesEditor::contentsChanged, this, [fieldQuantityUI](RefTarget* editObject) {
@@ -110,16 +112,13 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 
 	// Status label.
 	layout1->addSpacing(8);
-	layout1->addWidget(statusLabel());
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Open a sub-editor for the mesh vis element.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout));
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsReplaced, this, &CreateIsosurfaceModifierEditor::plotHistogram);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotHistogramLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CreateIsosurfaceModifierEditor::plotHistogram);
 }
 
 /******************************************************************************
@@ -134,7 +133,7 @@ void CreateIsosurfaceModifierEditor::plotHistogram()
 		_isoLevelIndicator->show();
 
 		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
+		const PipelineFlowState& state = getPipelineOutput();
 
 		// Look up the generated data table in the modifier's pipeline output.
 		const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("isosurface-histogram"));

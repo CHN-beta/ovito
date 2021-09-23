@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,8 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "OpenDataInspectorButton.h"
 
 namespace Ovito {
@@ -30,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenDataInspectorButton::OpenDataInspectorButton(ModifierPropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint, const QVariant& modeHint)
+OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const QString& buttonTitle, const QString& objectNameHint, const QVariant& modeHint)
 	: QPushButton(buttonTitle), _editor(editor), _objectNameHint(objectNameHint), _modeHint(modeHint)
 {
 	connect(this, &QPushButton::clicked, [this]() {

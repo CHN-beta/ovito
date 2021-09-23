@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -27,8 +27,10 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "GrainSegmentationModifierEditor.h"
 
 #include <3rdparty/qwt/qwt_plot_zoneitem.h>
@@ -102,7 +104,7 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 	sublayout2->addWidget(outputBondsUI->checkBox(), 3, 0, 1, 2);
 
 	// Status label.
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	QPushButton* btn = new QPushButton(tr("Show list of grains"));
 	connect(btn, &QPushButton::clicked, this, [this]() {
@@ -122,7 +124,6 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 	_mergeRangeIndicator->hide();
 	layout->addSpacing(10);
 	layout->addWidget(_mergePlotWidget);
-	connect(this, &GrainSegmentationModifierEditor::contentsReplaced, this, &GrainSegmentationModifierEditor::plotMerges);
 
 	// Create plot widget for log distances
 	_logPlotWidget = new DataTablePlotWidget();
@@ -135,18 +136,8 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 	_logRangeIndicator->hide();
 	layout->addSpacing(10);
 	layout->addWidget(_logPlotWidget);
-	connect(this, &GrainSegmentationModifierEditor::contentsReplaced, this, &GrainSegmentationModifierEditor::plotMerges);
-}
 
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool GrainSegmentationModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(source == modifierApplication() && event.type() == ReferenceEvent::PipelineCacheUpdated) {
-		plotLater(this);
-	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &GrainSegmentationModifierEditor::plotMerges);
 }
 
 /******************************************************************************
@@ -158,7 +149,7 @@ void GrainSegmentationModifierEditor::plotMerges()
 
 	if(modifier && modifierApplication()) {
 		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
+		const PipelineFlowState& state = getPipelineOutput();
 
 		// Look up the data table in the modifier's pipeline output.
 		_mergePlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("grains-merge")));

@@ -36,7 +36,7 @@ class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
 class OpenGLShaderHelper;  // defined in OpenGLShaderHelper.h
 
 /**
- * \brief Buffer object that stores a triangle mesh to be rendered in the viewports.
+ * \brief A triangle mesh primitive to be rendered by the OpenGLSceneRenderer.
  */
 class OpenGLMeshPrimitive : public MeshPrimitive, public std::enable_shared_from_this<OpenGLMeshPrimitive>
 {

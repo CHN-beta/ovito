@@ -29,6 +29,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/RendererResourceCache.h>
+#include <ovito/core/rendering/ColorCodingGradient.h>
 
 #include <QOpenGLTexture>
 
@@ -46,8 +47,11 @@ public:
     /// Default constructor.
     OpenGLResourceManager() = default;
 
-    /// Create an OpenGL texture object for a QImage.
+    /// Creates an OpenGL texture object for a QImage.
     QOpenGLTexture* uploadImage(const QImage& image, ResourceFrameHandle resourceFrame, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
+
+    /// Creates a 1-D OpenGL texture object for a ColorCodingGradient.
+    QOpenGLTexture* uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame);
 };
 
 }	// End of namespace

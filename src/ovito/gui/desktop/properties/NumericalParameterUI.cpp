@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(NumericalParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-NumericalParameterUI::NumericalParameterUI(QObject* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText) :
+NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText) :
 	PropertyParameterUI(parentEditor, propertyName), _parameterUnitType(defaultParameterUnitType)
 {
 	initUIControls(labelText);
@@ -44,7 +44,7 @@ NumericalParameterUI::NumericalParameterUI(QObject* parentEditor, const char* pr
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-NumericalParameterUI::NumericalParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, const QMetaObject* defaultParameterUnitType) :
+NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, const QMetaObject* defaultParameterUnitType) :
 	PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
 {
 	// Look up the ParameterUnit type for this parameter.

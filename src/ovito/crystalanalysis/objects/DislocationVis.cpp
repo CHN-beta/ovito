@@ -229,18 +229,18 @@ Box3 DislocationVis::boundingBox(TimePoint time, const std::vector<const DataObj
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus DislocationVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
 	// We are only interested in the RenderableDIslocationLines.
-	if(dynamic_object_cast<DislocationNetworkObject>(objectStack.back())) return;
-	if(dynamic_object_cast<Microstructure>(objectStack.back())) return;
+	if(dynamic_object_cast<DislocationNetworkObject>(objectStack.back())) return {};
+	if(dynamic_object_cast<Microstructure>(objectStack.back())) return {};
 
 	// Just compute the bounding box of the rendered objects if requested.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	// The key type used for caching the rendering primitives:
@@ -269,13 +269,11 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 
 	// Get the renderable dislocation lines.
 	const RenderableDislocationLines* renderableLines = dynamic_object_cast<RenderableDislocationLines>(objectStack.back());
-	if(!renderableLines) return;
+	if(!renderableLines) return {};
 
 	// Make sure we don't exceed our internal limits.
-	if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max()) {
-		qWarning() << "WARNING: Cannot render more than" << std::numeric_limits<int>::max() << "dislocation segments.";
-		return;
-	}
+	if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
+		throwException(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
 
 	// Get the original dislocation lines.
 	const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableLines->sourceDataObject().get());
@@ -283,11 +281,11 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 	const Microstructure* microstructureObj = dynamic_object_cast<Microstructure>(domainObj);
 	const PropertyObject* phaseProperty = microstructureObj ? microstructureObj->regions()->getProperty(SurfaceMeshRegions::PhaseProperty) : nullptr;
 	const PropertyObject* correspondenceProperty = microstructureObj ? microstructureObj->regions()->getProperty(SurfaceMeshRegions::LatticeCorrespondenceProperty) : nullptr;
-	if(!dislocationsObj && !microstructureObj) return;
+	if(!dislocationsObj && !microstructureObj) return {};
 
 	// Get the simulation cell.
 	const SimulationCellObject* cellObject = domainObj->domain();
-	if(!cellObject) return;
+	if(!cellObject) return {};
 
 	// Lookup the rendering primitives in the vis cache.
 	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(
@@ -473,6 +471,8 @@ void DislocationVis::render(TimePoint time, const std::vector<const DataObject*>
 		renderer->renderCylinders(primitives.burgersArrows);
 
 	renderer->endPickObject();
+
+	return {};
 }
 
 /******************************************************************************

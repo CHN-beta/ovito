@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT FilenameParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	FilenameParameterUI(QObject* parentEditor, const char* propertyName);
+	FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	FilenameParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Destructor.
 	virtual ~FilenameParameterUI();

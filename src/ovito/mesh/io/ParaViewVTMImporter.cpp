@@ -274,7 +274,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 			}
 			catch(Exception& ex) {
 				// Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
-				request.state.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))));
+				request.state.setStatus(PipelineStatus(ex, QChar(' ')));
 				ex.setContext(request.dataset);
 				ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
 				ex.reportError();

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
-//  Copyright (2019) Henrik Andersen Sveinsson
+//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/particles/modifier/analysis/chill_plus/ChillPlusModifier.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "ChillPlusModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -64,7 +65,7 @@ void ChillPlusModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
 	// Status label.
 	layout1->addSpacing(10);
-	layout1->addWidget(statusLabel());
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
 	layout1->addSpacing(10);

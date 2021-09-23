@@ -88,7 +88,7 @@ bool ParticlesComputePropertyModifierDelegateEditor::referenceEvent(RefTarget* s
 			updateVariablesListLater(this);
 		}
 	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParam
 public:
 
 	/// Constructor.
-	PropertyContainerParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Destructor.
 	virtual ~PropertyContainerParameterUI();
@@ -84,9 +84,6 @@ public Q_SLOTS:
 	void updatePropertyValue();
 
 protected:
-
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// The combo box of the UI component.
 	QPointer<QComboBox> _comboBox;

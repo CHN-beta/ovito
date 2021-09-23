@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,8 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "PolyhedralTemplateMatchingModifierEditor.h"
 
 #include <qwt/qwt_plot_zoneitem.h>
@@ -117,7 +119,7 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
 
 	// Status label.
 	layout1->addSpacing(10);
-	layout1->addWidget(statusLabel());
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************
@@ -128,7 +130,7 @@ bool PolyhedralTemplateMatchingModifierEditor::referenceEvent(RefTarget* source,
 	if(source == modifierApplication() && event.type() == ReferenceEvent::PipelineCacheUpdated) {
 		plotHistogramLater(this);
 	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -145,10 +147,8 @@ void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
 		_rmsdRangeIndicator->hide();
 	}
 
-	if(modifierApplication()) {
-		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
-
+	// Request the modifier's pipeline output.
+	if(const PipelineFlowState& state = getPipelineOutput()) {
 		// Look up the data table in the modifier's pipeline output.
 		_rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("ptm-rmsd")));
 	}

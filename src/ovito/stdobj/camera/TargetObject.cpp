@@ -54,11 +54,11 @@ void TargetObject::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TargetVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Target objects are only visible in the viewports.
 	if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
-		return;
+		return {};
 
 	// Setup transformation matrix to always show the icon at the same size.
 	Point3 objectPos = Point3::Origin() + renderer->worldTransform().translation();
@@ -124,6 +124,8 @@ void TargetVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 		// Add target symbol to bounding box.
 		renderer->addToLocalBoundingBox(Box3(Point3::Origin(), scaling));
 	}
+
+	return {};
 }
 
 /******************************************************************************

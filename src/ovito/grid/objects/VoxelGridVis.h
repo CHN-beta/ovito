@@ -25,6 +25,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
@@ -51,7 +52,7 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;		
 
 	/// Lets the visualization element render the data object.
-	virtual void render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+	virtual PipelineStatus render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// Computes the bounding box of the object.
 	virtual Box3 boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
@@ -72,6 +73,9 @@ private:
 
 	/// Controls whether the voxel face colors should be interpolated.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, interpolateColors, setInterpolateColors);
+
+	/// Transfer function for pseudo-color visualization of a grid property.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
 /**
@@ -86,8 +90,8 @@ class VoxelGridPickInfo : public ObjectPickInfo
 public:
 
 	/// Constructor.
-	VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid) :
-		_visElement(visElement), _voxelGrid(voxelGrid) {}
+	VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid, size_t trianglesPerCell) :
+		_visElement(visElement), _voxelGrid(voxelGrid), _trianglesPerCell(trianglesPerCell) {}
 
 	/// Returns the data object.
 	const DataOORef<const VoxelGrid>& voxelGrid() const { return _voxelGrid; }
@@ -105,6 +109,9 @@ private:
 
 	/// The vis element that rendered the voxel grid.
 	OORef<VoxelGridVis> _visElement;
+
+	/// The number of triangles rendered per voxel grid cell.
+	size_t _trianglesPerCell;
 };
 
 }	// End of namespace

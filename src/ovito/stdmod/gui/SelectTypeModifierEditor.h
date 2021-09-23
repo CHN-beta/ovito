@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 
 namespace Ovito { namespace StdMod {
@@ -32,7 +32,7 @@ namespace Ovito { namespace StdMod {
 /**
  * A properties editor for the SelectTypeModifier class.
  */
-class SelectTypeModifierEditor : public ModifierPropertiesEditor
+class SelectTypeModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(SelectTypeModifierEditor)

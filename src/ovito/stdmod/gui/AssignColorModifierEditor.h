@@ -24,14 +24,14 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace StdMod {
 
 /**
  * A properties editor for the AssignColorModifier class.
  */
-class AssignColorModifierEditor : public ModifierPropertiesEditor
+class AssignColorModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(AssignColorModifierEditor)

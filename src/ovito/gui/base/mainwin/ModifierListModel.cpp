@@ -100,11 +100,7 @@ ModifierAction* ModifierAction::createForScript(const QString& fileName, const Q
 	action->setObjectName(QStringLiteral("InsertModifierScript.%1").arg(action->_scriptPath));
 
 	// Set the action's UI display name. Chop of ".py" extension of filename.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 	action->setText(fileName.chopped(3));
-#else
-	action->setText(fileName.left(fileName.size() - 3));
-#endif
 
 	// Give the modifier a status bar text.
 	action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));

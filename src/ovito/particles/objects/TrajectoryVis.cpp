@@ -96,12 +96,12 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObje
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(objectStack.back());
@@ -219,12 +219,14 @@ void TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>&
 	}
 
 	if(!visCache.segments)
-		return;
+		return {};
 
 	renderer->beginPickObject(contextNode);
 	renderer->renderCylinders(visCache.segments);
 	renderer->renderParticles(visCache.corners);
 	renderer->endPickObject();
+
+	return {};
 }
 
 /******************************************************************************

@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(IntegerRadioButtonParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(QObject* parentEditor, const char* propertyName) :
+IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	_buttonGroup = new QButtonGroup(this);
@@ -48,7 +48,7 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(QObject* parentEdit
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);

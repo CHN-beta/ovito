@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,15 +25,14 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace Particles {
 
 /**
  * \brief A properties editor for the CentroSymmetryModifier class.
  */
-class CentroSymmetryModifierEditor : public ModifierPropertiesEditor
+class CentroSymmetryModifierEditor : public PropertiesEditor
 {
 	OVITO_CLASS(CentroSymmetryModifierEditor)
 	Q_OBJECT
@@ -53,19 +52,11 @@ private:
 	/// The graph widget to display the CSP histogram.
 	DataTablePlotWidget* _cspPlotWidget;
 
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<CentroSymmetryModifierEditor, &CentroSymmetryModifierEditor::plotHistogram> plotHistogramLater;
-
 protected:
 
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 };
 
 }	// End of namespace
 }	// End of namespace
-
-

@@ -40,10 +40,10 @@ class OVITO_GUI_EXPORT Vector3ParameterUI : public FloatParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	Vector3ParameterUI(QObject* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+	Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField or ReferenceField property.
-	Vector3ParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent);
+	Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent);
 
 	/// This method updates the displayed value of the parameter UI.
 	virtual void updateUI() override;

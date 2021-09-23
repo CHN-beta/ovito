@@ -27,11 +27,12 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "PrimitiveBase.h"
+#include "PseudoColorMapping.h"
 
 namespace Ovito {
 
 /**
- * \brief Abstract base class for rendering triangle meshes.
+ * \brief A triangle mesh to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT MeshPrimitive : public PrimitiveBase
 {
@@ -89,6 +90,14 @@ public:
 		_isMeshFullyOpaque = boost::none;
 	}
 
+	/// Returns the mapping from pseudo-color values at the mesh vertices to RGB colors.
+	const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
+
+	/// Sets the mapping from pseudo-color values at the mesh vertices to RGB colors.
+	void setPseudoColorMapping(const PseudoColorMapping& mapping) { 
+		_pseudoColorMapping = mapping; 
+	}
+
 	/// Activates rendering of multiple instances of the mesh.
 	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {
 		OVITO_ASSERT(perInstanceTMs);
@@ -117,7 +126,7 @@ private:
 	/// Controls the culling of triangles not facing the viewer.
 	bool _cullFaces = false;
 
-	/// Indicates whether the mesh colors are fully opaque (alpha=1).
+	/// Indicates whether the mesh's colors are all fully opaque (alpha=1).
 	mutable boost::optional<bool> _isMeshFullyOpaque;
 
 	/// The array of materials referenced by the materialIndex() field of the mesh faces.
@@ -128,6 +137,9 @@ private:
 
 	/// The rendering color to be used if the mesh doesn't have per-vertex colors.
 	ColorA _uniformColor{1,1,1,1};
+
+	/// The mapping from pseudo-color values at the mesh vertices to RGB colors.
+	PseudoColorMapping _pseudoColorMapping;
 
 	/// Controls the rendering of edge wireframe.
 	bool _emphasizeEdges = false;

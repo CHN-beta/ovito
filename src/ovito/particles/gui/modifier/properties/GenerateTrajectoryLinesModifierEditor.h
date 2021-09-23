@@ -24,14 +24,14 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace Particles {
 
 /**
  * \brief A properties editor for the GenerateTrajectoryLinesModifier class.
  */
-class GenerateTrajectoryLinesModifierEditor : public ModifierPropertiesEditor
+class GenerateTrajectoryLinesModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)

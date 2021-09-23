@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/modify/UnwrapTrajectoriesModifier.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "UnwrapTrajectoriesModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -43,7 +44,7 @@ void UnwrapTrajectoriesModifierEditor::createUI(const RolloutInsertionParameters
 	layout->setSpacing(6);
 
 	// Status label.
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 	layout->addSpacing(6);
 }
 

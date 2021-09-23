@@ -21,9 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/gui/widgets/PropertySelectionComboBox.h>
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdmod/modifiers/SelectTypeModifier.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "SelectTypeModifierEditor.h"
 
 namespace Ovito { namespace StdMod {
@@ -50,7 +51,7 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 		return std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
 	});
 
-	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SelectTypeModifier::sourceProperty), nullptr);
+	_sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SelectTypeModifier::sourceProperty));
 	layout->addWidget(new QLabel(tr("Property:")));
 	layout->addWidget(_sourcePropertyUI->comboBox());
 
@@ -99,7 +100,7 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 
 	// Status label.
 	layout->addSpacing(12);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************

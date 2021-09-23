@@ -31,7 +31,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-RefTargetListParameterUI::RefTargetListParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
+RefTargetListParameterUI::RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
 	: ParameterUI(parentEditor), _refField(refField), _rolloutParams(rolloutParams), _defaultEditorClass(defaultEditorClass)
 {
 	OVITO_ASSERT_MSG(refField.isVector(), "RefTargetListParameterUI constructor", "The reference field bound to this parameter UI must be a vector reference field.");

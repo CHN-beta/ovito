@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT FloatParameterUI : public NumericalParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	FloatParameterUI(QObject* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
+	FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField property.
-	FloatParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField);
+	FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
 
 	/// Gets the minimum value to be entered.
 	/// This value is in native controller units.

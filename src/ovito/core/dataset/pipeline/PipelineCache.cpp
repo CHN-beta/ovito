@@ -116,7 +116,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 			future = pipelineObject->evaluateInternal(request);
 		}
 		catch(const Exception& ex) {
-			pipelineObject->setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join('\n')));
+			pipelineObject->setStatus(ex);
 			future = Future<PipelineFlowState>::createImmediateEmplace(nullptr, pipelineObject->status());
 		}
 	}

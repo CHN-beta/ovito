@@ -60,4 +60,39 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 	return texture.get();
 }
 
+/******************************************************************************
+* Creates a 1-D OpenGL texture object for a ColorCodingGradient.
+******************************************************************************/
+QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame)
+{
+	OVITO_ASSERT(gradient);
+
+    // Check if this color map has already been uploaded to the GPU.
+	RendererResourceKey<OpenGLResourceManager, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
+    std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
+
+    if(!texture) {
+		// Sample the color gradient to produce a row of RGB pixel data.
+		constexpr int resolution = 256;
+		std::vector<uint8_t> pixelData(resolution * 3);
+		for(int x = 0; x < resolution; x++) {
+			Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+			pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
+			pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
+			pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+		}
+
+		// Create the 1-d texture object.
+		texture = std::make_unique<QOpenGLTexture>(QOpenGLTexture::Target1D);
+		texture->setFormat(QOpenGLTexture::RGB8_UNorm);
+		texture->setSize(resolution);
+		texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
+		texture->setAutoMipMapGenerationEnabled(true);
+		texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+		texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+	}
+
+	return texture.get();
+}
+
 }	// End of namespace

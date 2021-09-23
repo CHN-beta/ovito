@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisModifier.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 
 namespace Ovito { namespace CrystalAnalysis {
@@ -42,7 +42,7 @@ class DislocationTypeListParameterUI : public RefTargetListParameterUI
 public:
 
 	/// Constructor.
-	DislocationTypeListParameterUI(QObject* parent = nullptr);
+	DislocationTypeListParameterUI(PropertiesEditor* parent);
 
 	/// This method is called when a new editable object has been activated.
 	virtual void resetUI() override {
@@ -53,6 +53,12 @@ public:
 
 	/// Obtains the current statistics from the pipeline.
 	void updateDislocationCounts(const PipelineFlowState& state, ModifierApplication* modApp);
+
+	/// Sets the object whose property is being displayed in this parameter UI.
+	virtual void setEditObject(RefTarget* newObject) override {
+		DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(newObject);
+		RefTargetListParameterUI::setEditObject(modifier ? modifier->structureTypeById(modifier->inputCrystalStructure()) : nullptr);
+	}
 
 protected:
 
@@ -94,7 +100,7 @@ private:
 /**
  * Properties editor for the DislocationAnalysisModifier class.
  */
-class DislocationAnalysisModifierEditor : public ModifierPropertiesEditor
+class DislocationAnalysisModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(DislocationAnalysisModifierEditor)
@@ -108,10 +114,6 @@ protected:
 
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private:
-
-	std::unique_ptr<DislocationTypeListParameterUI> _burgersFamilyListUI;
 };
 
 }	// End of namespace

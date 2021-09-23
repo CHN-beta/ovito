@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,8 +22,6 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "PropertyContainerParameterUI.h"
@@ -35,15 +33,18 @@ IMPLEMENT_OVITO_CLASS(PropertyContainerParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainerParameterUI::PropertyContainerParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+PropertyContainerParameterUI::PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new QComboBox())
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(comboBox(), &QComboBox::textActivated, this, &PropertyContainerParameterUI::updatePropertyValue);
 #else
-	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &PropertyContainerParameterUI::updatePropertyValue);
+	connect(comboBox(), qOverload<const QString&>(&QComboBox::activated), this, &PropertyContainerParameterUI::updatePropertyValue);
 #endif
+
+	// Update the list whenever the pipeline input changes.
+	connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertyContainerParameterUI::updateUI);
 }
 
 /******************************************************************************
@@ -67,18 +68,6 @@ void PropertyContainerParameterUI::resetUI()
 }
 
 /******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool PropertyContainerParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged) {
-		// The modifier's input from the pipeline has changed -> update list of available delegates
-		updateUI();
-	}
-	return PropertyParameterUI::referenceEvent(source, event);
-}
-
-/******************************************************************************
 * This method is called when a new editable object has been assigned to the
 * properties owner this parameter UI belongs to.
 ******************************************************************************/
@@ -97,39 +86,36 @@ void PropertyContainerParameterUI::updateUI()
 		comboBox()->clear();
 		int selectedIndex = -1;
 		bool currentContainerFilteredOut = false;
-		if(Modifier* mod = dynamic_object_cast<Modifier>(editObject())) {
-			for(ModifierApplication* modApp : mod->modifierApplications()) {
-				const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-				std::vector<ConstDataObjectPath> containers = state.getObjectsRecursive(PropertyContainer::OOClass());
-				for(const ConstDataObjectPath& path : containers) {
-					const PropertyContainer* container = static_object_cast<PropertyContainer>(path.back());
+		for(const PipelineFlowState& state : editor()->getPipelineInputs()) {
+			std::vector<ConstDataObjectPath> containers = state.getObjectsRecursive(PropertyContainer::OOClass());
+			for(const ConstDataObjectPath& path : containers) {
+				const PropertyContainer* container = static_object_cast<PropertyContainer>(path.back());
 
-					PropertyContainerReference propRef(path);
+				PropertyContainerReference propRef(path);
 
-					// The client can apply a custom filter function to the container list.
-					if(_containerFilter && !_containerFilter(container)) {
-						if(selectedPropertyContainer == propRef)
-							currentContainerFilteredOut = true;
-						continue;
-					}
-
-					// Do not add the same container to the list more than once.
-					bool existsAlready = false;
-					for(int i = 0; i < comboBox()->count(); i++) {
-						PropertyContainerReference containerRef = comboBox()->itemData(i).value<PropertyContainerReference>();
-						if(containerRef == propRef) {
-							existsAlready = true;
-							break;
-						}
-					}
-					if(existsAlready)
-						continue;
-
-					if(propRef == selectedPropertyContainer)
-						selectedIndex = comboBox()->count();
-
-					comboBox()->addItem(propRef.dataTitle(), QVariant::fromValue(propRef));
+				// The client can apply a custom filter function to the container list.
+				if(_containerFilter && !_containerFilter(container)) {
+					if(selectedPropertyContainer == propRef)
+						currentContainerFilteredOut = true;
+					continue;
 				}
+
+				// Do not add the same container to the list more than once.
+				bool existsAlready = false;
+				for(int i = 0; i < comboBox()->count(); i++) {
+					PropertyContainerReference containerRef = comboBox()->itemData(i).value<PropertyContainerReference>();
+					if(containerRef == propRef) {
+						existsAlready = true;
+						break;
+					}
+				}
+				if(existsAlready)
+					continue;
+
+				if(propRef == selectedPropertyContainer)
+					selectedIndex = comboBox()->count();
+
+				comboBox()->addItem(propRef.dataTitle(), QVariant::fromValue(propRef));
 			}
 		}
 
@@ -195,7 +181,8 @@ void PropertyContainerParameterUI::setEnabled(bool enabled)
 {
 	if(enabled == isEnabled()) return;
 	PropertyParameterUI::setEnabled(enabled);
-	if(comboBox()) comboBox()->setEnabled(editObject() && isEnabled());
+	if(comboBox()) 
+		comboBox()->setEnabled(editObject() && isEnabled());
 }
 
 }	// End of namespace

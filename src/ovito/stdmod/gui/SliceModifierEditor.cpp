@@ -25,6 +25,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
@@ -40,6 +41,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "SliceModifierEditor.h"
 
@@ -145,7 +147,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 
 	// Status label.
 	layout->addSpacing(12);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Create a second rollout.
 	rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.slice");
@@ -188,7 +190,7 @@ void SliceModifierEditor::onCoordinateTypeChanged()
 	SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 	if(!mod) return;
 
-	const PipelineFlowState& input = getModifierInput();
+	const PipelineFlowState& input = getPipelineInput();
 	const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
 	if(!cell) return;
 
@@ -256,7 +258,7 @@ void SliceModifierEditor::onAlignPlaneToView()
 		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 		if(!mod) return;
 
-		const PipelineFlowState& input = getModifierInput();
+		const PipelineFlowState& input = getPipelineInput();
 
 		Plane3 oldPlaneLocal = std::get<Plane3>(mod->slicingPlane(time, interval, input));
 		Point3 basePoint = Point3::Origin() + oldPlaneLocal.normal * oldPlaneLocal.dist;
@@ -302,7 +304,7 @@ void SliceModifierEditor::onAlignViewToPlane()
 		// Transform the current slicing plane to the world coordinate system.
 		SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
 		if(!mod) return;
-		Plane3 planeLocal = std::get<Plane3>(mod->slicingPlane(time, interval, mod->someModifierApplication()->evaluateInputSynchronous(time)));
+		Plane3 planeLocal = std::get<Plane3>(mod->slicingPlane(time, interval, getPipelineInput()));
 		Plane3 planeWorld = nodeTM * planeLocal;
 
 		// Calculate the intersection point of the current viewing direction with the current slicing plane.

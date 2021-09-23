@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT ModifierDelegateVariableListParameterUI : public Paramete
 public:
 
 	/// Constructor.
-	ModifierDelegateVariableListParameterUI(QObject* parentEditor, const OvitoClass& delegateType);
+	ModifierDelegateVariableListParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
 	/// Destructor.
 	virtual ~ModifierDelegateVariableListParameterUI();

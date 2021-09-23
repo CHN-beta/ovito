@@ -24,17 +24,16 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 namespace Ovito { namespace StdMod {
 
 /**
  * A properties editor for the ColorCodingModifier class.
  */
-class ColorCodingModifierEditor : public ModifierPropertiesEditor
+class ColorCodingModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(ColorCodingModifierEditor)
@@ -110,9 +109,6 @@ private:
 	QPushButton* _reverseRangeBtn;
 	FloatType _lastAutoRangeMinValue;
 	FloatType _lastAutoRangeMaxValue;
-
-	/// For deferred invocation of the event handler function.
-	DeferredMethodInvocation<ColorCodingModifierEditor, &ColorCodingModifierEditor::autoRangeChanged> updateAutoRangeLater;
 };
 
 }	// End of namespace

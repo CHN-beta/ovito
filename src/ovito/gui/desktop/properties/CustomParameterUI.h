@@ -39,13 +39,13 @@ class OVITO_GUI_EXPORT CustomParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor.
-	CustomParameterUI(QObject* parentEditor, const char* propertyName, QWidget* widget,
+	CustomParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QWidget* widget,
 			const std::function<void(const QVariant&)>& updateWidgetFunction,
 			const std::function<QVariant()>& updatePropertyFunction,
 			const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());
 
 	/// Constructor for a PropertyField property.
-	CustomParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, QWidget* widget,
+	CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QWidget* widget,
 			const std::function<void(const QVariant&)>& updateWidgetFunction,
 			const std::function<QVariant()>& updatePropertyFunction,
 			const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());

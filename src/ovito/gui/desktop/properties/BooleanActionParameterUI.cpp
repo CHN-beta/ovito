@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(BooleanActionParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-BooleanActionParameterUI::BooleanActionParameterUI(QObject* parentEditor, const char* propertyName, QAction* action) :
+BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QAction* action) :
 	PropertyParameterUI(parentEditor, propertyName), _action(action)
 {
 	OVITO_ASSERT(action != nullptr);
@@ -42,7 +42,7 @@ BooleanActionParameterUI::BooleanActionParameterUI(QObject* parentEditor, const 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanActionParameterUI::BooleanActionParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, QAction* action) :
+BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QAction* action) :
 	PropertyParameterUI(parentEditor, propField), _action(action)
 {
 	OVITO_ASSERT(isPropertyFieldUI());

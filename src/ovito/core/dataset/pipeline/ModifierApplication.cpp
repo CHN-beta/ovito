@@ -128,7 +128,7 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 			// Inform modifier that the input state has changed if the immediately following input stage was disabled.
 			// This is necessary, because we don't receive a PreliminaryStateAvailable signal in this case.
  			if(modifier())
-				modifier()->notifyDependents(ReferenceEvent::ModifierInputChanged);
+				modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
 		}
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged && source == modifier()) {
@@ -166,10 +166,10 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 		pipelineCache().invalidateSynchronousState();
 		// Inform modifier that the input state has changed.
 		if(modifier())
-			modifier()->notifyDependents(ReferenceEvent::ModifierInputChanged);
+			modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
 	}
 #ifdef OVITO_QML_GUI
-	else if(event.type() == ReferenceEvent::ModifierInputChanged && source == modifier()) {
+	else if(event.type() == ReferenceEvent::PipelineInputChanged && source == modifier()) {
 		// Inform the QML GUI that the modifier's input has changed.
 		Q_EMIT modifierInputChanged();
 	}
@@ -193,11 +193,11 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field
 		// Update the status of the Modifier when it is detached from the ModifierApplication.
 		if(Modifier* oldMod = static_object_cast<Modifier>(oldTarget)) {
 			oldMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-			oldMod->notifyDependents(ReferenceEvent::ModifierInputChanged);
+			oldMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
 		}
 		if(Modifier* newMod = static_object_cast<Modifier>(newTarget)) {
 			newMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-			newMod->notifyDependents(ReferenceEvent::ModifierInputChanged);
+			newMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
 		}
 		notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
 
@@ -210,7 +210,7 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field
 		pipelineCache().invalidate(TimeInterval::empty(), true);
 		// Update the status of the Modifier when ModifierApplication is inserted/removed into pipeline.
 		if(modifier())
-			modifier()->notifyDependents(ReferenceEvent::ModifierInputChanged);
+			modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
 		// The animation length might have changed when the pipeline has changed.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,8 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <qwt/qwt_plot_zoneitem.h>
 #include "CentroSymmetryModifierEditor.h"
 
@@ -82,25 +84,11 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout1->addWidget(_cspPlotWidget);
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsReplaced, this, &CentroSymmetryModifierEditor::plotHistogram);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotHistogramLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CentroSymmetryModifierEditor::plotHistogram);
 
 	// Status label.
 	layout1->addSpacing(10);
-	layout1->addWidget(statusLabel());
-}
-
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool CentroSymmetryModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(source == modifierApplication() && event.type() == ReferenceEvent::PipelineCacheUpdated) {
-		plotHistogramLater(this);
-	}
-	return ModifierPropertiesEditor::referenceEvent(source, event);
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 /******************************************************************************
@@ -108,10 +96,10 @@ bool CentroSymmetryModifierEditor::referenceEvent(RefTarget* source, const Refer
 ******************************************************************************/
 void CentroSymmetryModifierEditor::plotHistogram()
 {
-	if(modifierApplication()) {
-		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getModifierOutput();
+	// Request the modifier's pipeline output.
+	const PipelineFlowState& state = getPipelineOutput();
 
+	if(state) {
 		// Look up the data table in the modifier's pipeline output.
 		_cspPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("csp-centrosymmetry")));
 	}

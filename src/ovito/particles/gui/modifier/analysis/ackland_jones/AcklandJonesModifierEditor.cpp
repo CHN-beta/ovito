@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/particles/gui/modifier/analysis/StructureListParameterUI.h>
 #include <ovito/particles/modifier/analysis/ackland_jones/AcklandJonesModifier.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "AcklandJonesModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -54,7 +55,7 @@ void AcklandJonesModifierEditor::createUI(const RolloutInsertionParameters& roll
 
 	// Status label.
 	layout1->addSpacing(10);
-	layout1->addWidget(statusLabel());
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
 	layout1->addSpacing(10);

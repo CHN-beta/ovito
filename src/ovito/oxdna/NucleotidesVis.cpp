@@ -182,20 +182,20 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	// Get input data.
 	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack.back());
-	if(!particles) return;
+	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-	if(!positionProperty) return;
+	if(!positionProperty) return {};
 	const PropertyObject* colorProperty = particles->getProperty(ParticlesObject::ColorProperty);
 	const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty);
 	const PropertyObject* strandProperty = particles->getProperty(ParticlesObject::DNAStrandProperty);
@@ -206,8 +206,7 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 	// Make sure we don't exceed our internal limits.
 	if(particles->elementCount() > (size_t)std::numeric_limits<int>::max()) {
-		qWarning() << "WARNING: Cannot render more than" << std::numeric_limits<int>::max() << "nucleotides.";
-		return;
+		throwException(tr("Cannot render more than %1 nucleotides.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// The type of lookup key used for caching the rendering primitives:
@@ -350,6 +349,8 @@ void NucleotidesVis::render(TimePoint time, const std::vector<const DataObject*>
 
 	if(renderer->isPicking())
 		renderer->endPickObject();
+
+	return {};
 }
 
 }	// End of namespace

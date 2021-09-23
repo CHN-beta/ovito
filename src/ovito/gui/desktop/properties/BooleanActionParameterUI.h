@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT BooleanActionParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor for a Qt property.
-	BooleanActionParameterUI(QObject* parentEditor, const char* propertyName, QAction* action);
+	BooleanActionParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QAction* action);
 
 	/// Constructor for a PropertyField property.
-	BooleanActionParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, QAction* action);
+	BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QAction* action);
 
 	/// This returns the action associated with this parameter UI.
 	QAction* action() const { return _action; }

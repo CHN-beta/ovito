@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for rendering cylinder primitives and arrow glyphs.
+ * \brief A set of cylinders or arrow glyphs to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT CylinderPrimitive : public PrimitiveBase
 {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
 #include "DeleteSelectedModifierEditor.h"
 
@@ -47,7 +48,7 @@ void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout->addWidget(delegatesPUI->listWidget());
 
 	// Status label.
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
 }	// End of namespace

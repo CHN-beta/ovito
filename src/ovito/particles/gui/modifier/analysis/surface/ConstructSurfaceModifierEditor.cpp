@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include "ConstructSurfaceModifierEditor.h"
@@ -136,8 +137,9 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 	sublayout->addWidget(computeSurfaceDistanceUI->checkBox(), 3, 0, 1, 2);
 
 	// Status label.
-	layout->addWidget(statusLabel());
-	statusLabel()->setMinimumHeight(56);
+	StatusWidget* statusWidget = (new ObjectStatusDisplay(this))->statusWidget();
+	layout->addWidget(statusWidget);
+	statusWidget->setMinimumHeight(56);
 
 	// Open a sub-editor for the surface mesh vis element.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout));

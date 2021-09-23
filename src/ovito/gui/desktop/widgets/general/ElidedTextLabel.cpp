@@ -35,11 +35,7 @@ QRect ElidedTextLabel::documentRect() const
 	cr.adjust(m, m, -m, -m);
 	m = indent();
     if(m < 0 && frameWidth()) // no indent, but we do have a frame
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     	m = fontMetrics().horizontalAdvance(QLatin1Char('x')) / 2 - margin();
-#else
-    	m = fontMetrics().width(QLatin1Char('x')) / 2 - margin();
-#endif
     int align = QStyle::visualAlignment(layoutDirection(), alignment());
     if(m > 0) {
 		if (align & Qt::AlignLeft)

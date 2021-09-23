@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for particle drawing primitives.
+ * \brief A set of particles to be rendered by a SceneRenderer implementation.
  */
 class OVITO_CORE_EXPORT ParticlePrimitive : public PrimitiveBase
 {

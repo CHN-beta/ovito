@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(FilenameParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-FilenameParameterUI::FilenameParameterUI(QObject* parentEditor, const char* propertyName) :
+FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
 	PropertyParameterUI(parentEditor, propertyName)
 {
 	// Create UI widget.
@@ -41,7 +41,7 @@ FilenameParameterUI::FilenameParameterUI(QObject* parentEditor, const char* prop
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-FilenameParameterUI::FilenameParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.

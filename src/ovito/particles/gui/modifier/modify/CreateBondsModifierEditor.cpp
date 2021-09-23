@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "CreateBondsModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -114,7 +115,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
 	// Status label.
 	layout1->addSpacing(10);
-	layout1->addWidget(statusLabel());
+	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Open a sub-editor for the bonds vis element.
 	new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondsVis), rolloutParams.after(rollout));
@@ -140,7 +141,7 @@ void CreateBondsModifierEditor::updatePairCutoffList()
 
 	// Obtain the list of particle types in the modifier's input.
 	PairCutoffTableModel::ContentType pairCutoffs;
-	const PipelineFlowState& inputState = getModifierInput();
+	const PipelineFlowState& inputState = getPipelineInput();
 	if(const ParticlesObject* particles = inputState.getObject<ParticlesObject>()) {
 		if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 			for(auto ptype1 = typeProperty->elementTypes().constBegin(); ptype1 != typeProperty->elementTypes().constEnd(); ++ptype1) {
@@ -231,7 +232,7 @@ void CreateBondsModifierEditor::updateVanDerWaalsList()
 	int row = 0;
 
 	// Obtain the list of particle types and their van der Waals radii from the modifier's input.
-	const PipelineFlowState& inputState = getModifierInput();
+	const PipelineFlowState& inputState = getPipelineInput();
 	if(const ParticlesObject* particles = inputState.getObject<ParticlesObject>()) {
 		if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 			// Count number of table entries.

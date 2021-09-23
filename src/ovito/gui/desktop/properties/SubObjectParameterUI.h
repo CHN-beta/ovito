@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_GUI_EXPORT SubObjectParameterUI : public PropertyParameterUI
 public:
 
 	/// Constructor.
-	SubObjectParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
+	SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
 
 	/// Destructor.
 	virtual ~SubObjectParameterUI() {}
@@ -67,5 +67,3 @@ protected:
 };
 
 }	// End of namespace
-
-

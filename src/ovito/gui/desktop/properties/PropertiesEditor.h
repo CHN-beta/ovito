@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/DeferredMethodInvocation.h>
 #include "PropertiesPanel.h"
 
 namespace Ovito {
@@ -122,6 +123,26 @@ public:
 	/// Changes the value of a non-animatable property field of the object being edited.
 	void changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue);
 
+	/// Returns the current input data from the upstream pipeline.
+	PipelineFlowState getPipelineInput() const;
+
+	/// Returns the current input data from the upstream pipeline.
+	std::vector<PipelineFlowState> getPipelineInputs() const;
+
+	/// Returns the current output data produced by the object being edited.
+	PipelineFlowState getPipelineOutput() const;
+
+	/// Returns the first ModifierApplication of the modifier currently being edited.
+	/// If this editor does not host a modifier, nullptr is returned.
+	ModifierApplication* modifierApplication() const;
+
+	/// Returns the list of all ModifierApplications of the modifier currently being edited.
+	/// If this editor does not host a modifier, an empty list is returned.
+	QVector<ModifierApplication*> modifierApplications() const;
+
+	/// For an editor of a DataVis element, returns the DataObject to which the DataVis element is attached.
+	ConstDataObjectRef getVisDataObject() const;
+
 public Q_SLOTS:
 
 	/// \brief Sets the object being edited in this editor.
@@ -135,13 +156,21 @@ Q_SIGNALS:
 
 	/// \brief This signal is emitted by the editor when a new edit object
 	///        has been loaded into the editor via the setEditObject() method.
-	/// \sa newEditObject The new object loaded into the editor.
-    void contentsReplaced(Ovito::RefTarget* newEditObject);
+	/// \sa editObject The new object loaded into the editor.
+    void contentsReplaced(RefTarget* editObject);
 
 	/// \brief This signal is emitted by the editor when the current edit object has generated a TargetChanged
 	///        event or if a new object has been loaded into editor via the setEditObject() method.
 	/// \sa editObject The object that has changed.
-    void contentsChanged(Ovito::RefTarget* editObject);
+    void contentsChanged(RefTarget* editObject);
+
+	/// \brief This signal is emitted whenever the edited object has produced new results as part of a pipeline evaluation
+	///        or when a new object has been loaded into the editor. 
+    void pipelineOutputChanged();
+
+	/// \brief This signal is emitted whenever the edited object received new pipeline inputs due to an upstream pipeline change
+	///        or when a new object has been loaded into the editor. 
+    void pipelineInputChanged();
 
 protected:
 
@@ -172,6 +201,12 @@ private:
 	/// The list of rollout widgets that have been created by editor.
 	/// The cleanup handler is used to delete them when the editor is being deleted.
 	QObjectCleanupHandler _rollouts;
+
+	/// For emitting the pipelineOutputChanged() signal with a short delay.
+	DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineOutputChanged> emitPipelineOutputChangedSignal;
+
+	/// For emitting the pipelineInputChanged() signal with a short delay.
+	DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;
 };
 
 /// This macro is used to assign a PropertiesEditor-derived class to a RefTarget-derived class.

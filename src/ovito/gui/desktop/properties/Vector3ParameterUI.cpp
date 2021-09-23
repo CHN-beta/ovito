@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(Vector3ParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-Vector3ParameterUI::Vector3ParameterUI(QObject* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText, const QMetaObject* parameterUnitType)
+Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText, const QMetaObject* parameterUnitType)
 	: FloatParameterUI(parentEditor, propertyName, labelText, parameterUnitType), _component(vectorComponent)
 {
 	OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
@@ -41,7 +41,7 @@ Vector3ParameterUI::Vector3ParameterUI(QObject* parentEditor, const char* proper
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-Vector3ParameterUI::Vector3ParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent)
+Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent)
 	: FloatParameterUI(parentEditor, propField), _component(vectorComponent)
 {
 	OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");

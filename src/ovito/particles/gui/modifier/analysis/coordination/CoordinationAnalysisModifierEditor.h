@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,15 +25,14 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/gui/desktop/properties/ModifierPropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito { namespace Particles {
 
 /**
  * A properties editor for the CoordinationAnalysisModifier class.
  */
-class CoordinationAnalysisModifierEditor : public ModifierPropertiesEditor
+class CoordinationAnalysisModifierEditor : public PropertiesEditor
 {
 	Q_OBJECT
 	OVITO_CLASS(CoordinationAnalysisModifierEditor)
@@ -57,9 +56,6 @@ private:
 
 	/// The plotting widget for displaying the computed RDFs.
 	DataTablePlotWidget* _rdfPlot;
-
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<CoordinationAnalysisModifierEditor, &CoordinationAnalysisModifierEditor::plotRDF> plotRDFLater;
 };
 
 }	// End of namespace

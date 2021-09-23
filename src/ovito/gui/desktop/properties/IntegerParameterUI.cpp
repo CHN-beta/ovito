@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(IntegerParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-IntegerParameterUI::IntegerParameterUI(QObject* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
+IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
 	NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &IntegerParameterUnit::staticMetaObject, labelText)
 {
 }
@@ -41,7 +41,7 @@ IntegerParameterUI::IntegerParameterUI(QObject* parentEditor, const char* proper
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerParameterUI::IntegerParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 		NumericalParameterUI(parentEditor, propField, &IntegerParameterUnit::staticMetaObject)
 {
 }

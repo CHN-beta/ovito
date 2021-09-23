@@ -41,19 +41,17 @@ DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParameterUI::ParameterUI(QObject* parent) : RefMaker(nullptr), _enabled(true)
+ParameterUI::ParameterUI(PropertiesEditor* parent) : RefMaker(nullptr)
 {
+	OVITO_ASSERT(parent);
 	setParent(parent);
 
-	PropertiesEditor* editor = this->editor();
-	if(editor) {
-		if(editor->editObject())
-			setEditObject(editor->editObject());
+	if(editor()->editObject())
+		setEditObject(editor()->editObject());
 
-		// Connect to the contentsReplaced() signal of the editor to synchronize the
-		// parameter UI's edit object with the editor's edit object.
-		connect(editor, &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
-	}
+	// Connect to the contentsReplaced() signal of the editor to synchronize the
+	// parameter UI's edit object with the editor's edit object.
+	connect(editor(), &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
 }
 
 ///////////////////////////////////// PropertyParameterUI /////////////////////////////////////////
@@ -61,7 +59,7 @@ ParameterUI::ParameterUI(QObject* parent) : RefMaker(nullptr), _enabled(true)
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(QObject* parent, const char* propertyName) :
+PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* propertyName) :
 	ParameterUI(parent), _propertyName(propertyName), _propField(nullptr)
 {
 	OVITO_ASSERT(propertyName);
@@ -70,7 +68,7 @@ PropertyParameterUI::PropertyParameterUI(QObject* parent, const char* propertyNa
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(QObject* parent, const PropertyFieldDescriptor& propField) :
+PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor& propField) :
 	ParameterUI(parent), _propertyName(nullptr), _propField(&propField)
 {
 	// If requested, save parameter value to application's settings store each time the user changes it.

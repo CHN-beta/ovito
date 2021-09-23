@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -163,18 +163,18 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Pro
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VectorVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
-		return;
+		return {};
 	}
 
 	// Get input data.
-	if(objectStack.size() < 2) return;
+	if(objectStack.size() < 2) return {};
 	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
-	if(!particles) return;
+	if(!particles) return {};
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
@@ -183,8 +183,7 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 
 	// Make sure we don't exceed our internal limits.
 	if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
-		qWarning() << "WARNING: Cannot render more than" << std::numeric_limits<int>::max() << "vector arrows.";
-		return;
+		throwException(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// The key type used for caching the rendering primitive:
@@ -294,6 +293,8 @@ void VectorVis::render(TimePoint time, const std::vector<const DataObject*>& obj
 	if(renderer->isPicking()) {
 		renderer->endPickObject();
 	}
+
+	return {};
 }
 
 /******************************************************************************

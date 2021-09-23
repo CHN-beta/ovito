@@ -35,16 +35,19 @@ IMPLEMENT_OVITO_CLASS(ModifierDelegateParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierDelegateParameterUI::ModifierDelegateParameterUI(QObject* parent, const OvitoClass& delegateType) :
-	ParameterUI(parent),
+ModifierDelegateParameterUI::ModifierDelegateParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType) :
+	ParameterUI(parentEditor),
 	_comboBox(new QComboBox()),
 	_delegateType(delegateType)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 	connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
 #else
-	connect(comboBox(), static_cast<void (QComboBox::*)(const QString&)>(&QComboBox::activated), this, &ModifierDelegateParameterUI::updatePropertyValue);
+	connect(comboBox(), qOverload<const QString&>(&QComboBox::activated), this, &ModifierDelegateParameterUI::updatePropertyValue);
 #endif
+
+	// Update the list whenever the pipeline input changes.
+	connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &ModifierDelegateParameterUI::updateUI);
 }
 
 /******************************************************************************
@@ -72,11 +75,7 @@ void ModifierDelegateParameterUI::resetUI()
 ******************************************************************************/
 bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged) {
-		// The modifier's input from the pipeline has changed -> update list of available delegates
-		updateUI();
-	}
-	else if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
+	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
 			(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(DelegatingModifier::delegate) ||
 			static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
 		// The modifier has been assigned a new delegate -> update list of delegates
@@ -94,17 +93,17 @@ void ModifierDelegateParameterUI::updateUI()
 	ParameterUI::updateUI();
 
 	if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(editObject())) {
-		populateComboBox(comboBox(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
+		populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
 	}
 	else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(editObject())) {
-		populateComboBox(comboBox(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
+		populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
 	}
 }
 
 /******************************************************************************
 * This method populates the combobox widget.
 ******************************************************************************/
-void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType)
+void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType)
 {
 	OVITO_ASSERT(!delegate || delegateType.isMember(delegate));
 
@@ -114,13 +113,8 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Modifier
 		comboBox->setIconSize(QSize(16,16));
 #endif
 
-		// Obtain modifier inputs.
-		std::vector<OORef<DataCollection>> modifierInputs;
-		for(ModifierApplication* modApp : modifier->modifierApplications()) {
-			const PipelineFlowState& state = modApp->evaluateInputSynchronous(modifier->dataset()->animationSettings()->time());
-			if(state.data())
-				modifierInputs.push_back(state.data());
-		}
+		// Obtain pipeline inputs.
+		std::vector<PipelineFlowState> pipelineInputs = editor->getPipelineInputs();
 
 		// Add list items for the registered delegate classes.
 		int indexToBeSelected = -1;
@@ -129,12 +123,13 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Modifier
 
 			// Collect the set of data objects in the modifier's pipeline input this delegate can handle.
 			QVector<DataObjectReference> applicableObjects;
-			for(const DataCollection* data : modifierInputs) {
+			for(const PipelineFlowState& state : pipelineInputs) {
+				if(!state) continue;
 
 				// Query the delegate for the list of input data objects it can handle.
 				QVector<DataObjectReference> objList;
 				if(clazz->isDerivedFrom(ModifierDelegate::OOClass()))
-					objList = static_cast<const ModifierDelegate::OOMetaClass*>(clazz)->getApplicableObjects(*data);
+					objList = static_cast<const ModifierDelegate::OOMetaClass*>(clazz)->getApplicableObjects(*state.data());
 
 				// Combine the delegate's list with the existing list.
 				// Make sure no data object appears more than once.

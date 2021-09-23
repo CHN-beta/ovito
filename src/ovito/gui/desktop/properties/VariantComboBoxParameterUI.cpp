@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(VariantComboBoxParameterUI);
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
-VariantComboBoxParameterUI::VariantComboBoxParameterUI(QObject* parentEditor, const char* propertyName) :
+VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
 	PropertyParameterUI(parentEditor, propertyName), _comboBox(new QComboBox())
 {
 	connect(comboBox(), (void (QComboBox::*)(int))&QComboBox::activated, this, &VariantComboBoxParameterUI::updatePropertyValue);
@@ -40,7 +40,7 @@ VariantComboBoxParameterUI::VariantComboBoxParameterUI(QObject* parentEditor, co
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-VariantComboBoxParameterUI::VariantComboBoxParameterUI(QObject* parentEditor, const PropertyFieldDescriptor& propField) :
+VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
 	PropertyParameterUI(parentEditor, propField), _comboBox(new QComboBox())
 {
 	connect(comboBox(), (void (QComboBox::*)(int))&QComboBox::activated, this, &VariantComboBoxParameterUI::updatePropertyValue);

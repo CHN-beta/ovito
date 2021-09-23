@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -127,6 +127,7 @@ SET(SourceFiles
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp
 	rendering/StandardSceneRenderer.cpp
+	rendering/ColorCodingGradient.cpp
 	viewport/Viewport.cpp
 	viewport/ViewportWindowInterface.cpp
 	viewport/ViewportConfiguration.cpp

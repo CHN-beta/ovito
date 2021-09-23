@@ -47,7 +47,7 @@ void PropertyReferenceParameterUI::setPropertyContainer(const QVariant& dataObje
 ******************************************************************************/
 bool PropertyReferenceParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::ModifierInputChanged && propertyParameterType() == InputProperty) {
+	if(source == editObject() && event.type() == ReferenceEvent::PipelineInputChanged && propertyParameterType() == InputProperty) {
 		// The modifier's input from the pipeline has changed -> update list of available input properties.
 		updatePropertyList();
 		// The index of the selected list item may have changed. Update the index as well.

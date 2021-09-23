@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,8 +25,10 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "CoordinationAnalysisModifierEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -83,13 +85,10 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 
 	// Status label.
 	layout->addSpacing(6);
-	layout->addWidget(statusLabel());
+	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
 	// Update data plot whenever the modifier has calculated new results.
-	connect(this, &ModifierPropertiesEditor::contentsReplaced, this, &CoordinationAnalysisModifierEditor::plotRDF);
-	connect(this, &ModifierPropertiesEditor::modifierEvaluated, this, [this]() {
-		plotRDFLater(this);
-	});
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationAnalysisModifierEditor::plotRDF);
 }
 
 /******************************************************************************
@@ -97,28 +96,24 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 ******************************************************************************/
 void CoordinationAnalysisModifierEditor::plotRDF()
 {
-	OORef<DataTable> table;
+	// Look up the data table in the modifier's pipeline output.
+	OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modifierApplication(), QStringLiteral("coordination-rdf"));
 
-	if(modifierApplication()) {
-		// Look up the data table in the modifier's pipeline output.
-		table = getModifierOutput().getObjectBy<DataTable>(modifierApplication(), QStringLiteral("coordination-rdf"));
-
-		// Determine X plotting range.
-		if(table) {
-			ConstPropertyAccessAndRef<FloatType,false> rdfXArray(table->getXValues());
-			ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->getY());
-			double minX = 0;
-			for(size_t i = 0; i < rdfYArray.size(); i++) {
-				for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
-					if(rdfYArray.get(i, cmpnt) != 0) {
-						minX = rdfXArray[i];
-						break;
-					}
+	// Determine X plotting range.
+	if(table) {
+		ConstPropertyAccessAndRef<FloatType,false> rdfXArray(table->getXValues());
+		ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->getY());
+		double minX = 0;
+		for(size_t i = 0; i < rdfYArray.size(); i++) {
+			for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
+				if(rdfYArray.get(i, cmpnt) != 0) {
+					minX = rdfXArray[i];
+					break;
 				}
-				if(minX) break;
 			}
-			_rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
+			if(minX) break;
 		}
+		_rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
 	}
 	_rdfPlot->setTable(table);
 }
