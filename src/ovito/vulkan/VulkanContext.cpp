@@ -538,7 +538,7 @@ bool VulkanContext::create(QWindow* window)
     if(err != VK_SUCCESS)
         throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
 
-    // Create a texture sampler
+    // Create a standard texture sampler.
 	VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 	samplerInfo.magFilter = VK_FILTER_NEAREST;
 	samplerInfo.minFilter = VK_FILTER_NEAREST;
@@ -551,7 +551,7 @@ bool VulkanContext::create(QWindow* window)
 	samplerInfo.minLod = samplerInfo.maxLod = 0.0f;
 	err = deviceFunctions()->vkCreateSampler(logicalDevice(), &samplerInfo, nullptr, &_samplerNearest);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
+        throw Exception(tr("Failed to create Vulkan texture sampler (error code %1).").arg(err));
 
     // Create the descriptor pool.
     std::array<VkDescriptorPoolSize, 2> poolSizes;
@@ -643,7 +643,7 @@ void VulkanContext::reset()
         _transferFence = VK_NULL_HANDLE;
     }
 
-    // Release the texture sampler.
+    // Release the texture samplers.
     if(_samplerNearest != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroySampler(logicalDevice(), _samplerNearest, nullptr);
         _samplerNearest = VK_NULL_HANDLE;

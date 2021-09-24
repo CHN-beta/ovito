@@ -177,8 +177,15 @@ public:
 	/// Returns the descriptor set layout for the global uniforms buffer.
 	VkDescriptorSetLayout globalUniformsDescriptorSetLayout();
 
+	/// Returns the descriptor set layout for color gradient maps.
+	VkDescriptorSetLayout colorMapDescriptorSetLayout();
+
 	/// Returns the Vulkan descriptor set for the global uniforms structure, which can be bound to a pipeline. 
 	VkDescriptorSet getGlobalUniformsDescriptorSet();
+
+	/// Uploads a color coding map to the Vulkan device as a uniforms buffer.
+	VkDescriptorSet uploadColorMap(ColorCodingGradient* gradient);
+
 
 protected:
 
@@ -284,6 +291,7 @@ private:
 	};
 
 	VkDescriptorSetLayout _globalUniformsDescriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout _colorMapDescriptorSetLayout = VK_NULL_HANDLE;
 
 	friend class VulkanTextPrimitive;
 	friend class VulkanImagePrimitive;

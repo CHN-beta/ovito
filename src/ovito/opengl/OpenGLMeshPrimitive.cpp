@@ -228,7 +228,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	// Bind vertex buffer to vertex attributes.
 	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, position), OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
-	if((!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors()) || !pseudoColorMapping().isValid()) {
+	if((!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors()) || !pseudoColorMapping().isValid() || renderer->isPicking()) {
         // Rendering with true RGBA colors.
         shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
     }
@@ -236,8 +236,12 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 1, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", uniformColor().a());
-        shader.setUniformValue("color_range_min", pseudoColorMapping().minValue());
-        shader.setUniformValue("color_range_max", pseudoColorMapping().maxValue());
+        float minValue = pseudoColorMapping().minValue();
+        float maxValue = pseudoColorMapping().maxValue();
+        // Avoid division by zero due to degenerate value interval.
+        if(minValue == maxValue) maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+        shader.setUniformValue("color_range_min", minValue);
+        shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
         colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(pseudoColorMapping().gradient(), renderer->currentResourceFrame());

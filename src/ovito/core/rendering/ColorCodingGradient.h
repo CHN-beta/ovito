@@ -69,7 +69,10 @@ public:
 	/// \brief Converts a scalar value to a color value.
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
-	virtual Color valueToColor(FloatType t) override { return Color::fromHSV((FloatType(1) - t) * FloatType(0.7), 1, 1); }
+	virtual Color valueToColor(FloatType t) override { 
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
+		return Color::fromHSV((FloatType(1) - t) * FloatType(0.7), 1, 1); 
+	}
 };
 
 /**
@@ -89,7 +92,10 @@ public:
 	/// \brief Converts a scalar value to a color value.
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
-	virtual Color valueToColor(FloatType t) override { return Color(t, t, t); }
+	virtual Color valueToColor(FloatType t) override { 
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
+		return Color(t, t, t); 
+	}
 };
 
 /**
@@ -110,8 +116,8 @@ public:
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
 	virtual Color valueToColor(FloatType t) override {
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 		// Interpolation black->red->yellow->white.
-		OVITO_ASSERT(t >= 0 && t <= 1);
 		return Color(std::min(t / FloatType(0.375), FloatType(1)), std::max(FloatType(0), std::min((t-FloatType(0.375))/FloatType(0.375), FloatType(1))), std::max(FloatType(0), t*4 - FloatType(3)));
 	}
 };
@@ -134,6 +140,7 @@ public:
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
 	virtual Color valueToColor(FloatType t) override {
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 	    if(t < FloatType(0.125)) return Color(0, 0, FloatType(0.5) + FloatType(0.5) * t / FloatType(0.125));
 	    else if(t < FloatType(0.125) + FloatType(0.25)) return Color(0, (t - FloatType(0.125)) / FloatType(0.25), 1);
 	    else if(t < FloatType(0.125) + FloatType(0.25) + FloatType(0.25)) return Color((t - FloatType(0.375)) / FloatType(0.25), 1, FloatType(1) - (t - FloatType(0.375)) / FloatType(0.25));
@@ -160,6 +167,7 @@ public:
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
 	virtual Color valueToColor(FloatType t) override {
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 		if(t <= FloatType(0.5))
 			return Color(t * 2, t * 2, 1);
 		else
@@ -185,6 +193,7 @@ public:
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
 	virtual Color valueToColor(FloatType t) override {
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 		int index = t * (sizeof(colormap_viridis_data)/sizeof(colormap_viridis_data[0]) - 1);
 		OVITO_ASSERT(t >= 0 && t < sizeof(colormap_viridis_data)/sizeof(colormap_viridis_data[0]));
 		return Color(colormap_viridis_data[index][0], colormap_viridis_data[index][1], colormap_viridis_data[index][2]);
@@ -209,6 +218,7 @@ public:
 	/// \param t A value between 0 and 1.
 	/// \return The color that visualizes the given scalar value.
 	virtual Color valueToColor(FloatType t) override {
+		OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 		int index = t * (sizeof(colormap_magma_data)/sizeof(colormap_magma_data[0]) - 1);
 		OVITO_ASSERT(t >= 0 && t < sizeof(colormap_magma_data)/sizeof(colormap_magma_data[0]));
 		return Color(colormap_magma_data[index][0], colormap_magma_data[index][1], colormap_magma_data[index][2]);

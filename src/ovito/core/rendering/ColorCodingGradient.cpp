@@ -44,6 +44,7 @@ DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 ******************************************************************************/
 Color ColorCodingTableGradient::valueToColor(FloatType t)
 {
+	OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 	if(table().empty()) return Color(0,0,0);
 	if(table().size() == 1) return table()[0];
 	t *= (table().size() - 1);
@@ -69,6 +70,7 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 ******************************************************************************/
 Color ColorCodingImageGradient::valueToColor(FloatType t)
 {
+	OVITO_ASSERT(t >= 0.0 && t <= 1.0);
 	if(image().isNull()) 
 		return Color(0,0,0);
 	QPoint p;

@@ -282,6 +282,11 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
         _globalUniformsDescriptorSetLayout = VK_NULL_HANDLE;
     }
 
+    if(_colorMapDescriptorSetLayout != VK_NULL_HANDLE) {
+        deviceFunctions()->vkDestroyDescriptorSetLayout(logicalDevice(), _colorMapDescriptorSetLayout, nullptr);
+        _colorMapDescriptorSetLayout = VK_NULL_HANDLE;
+    }
+
     _resourcesInitialized = false;
 }
 
@@ -450,6 +455,32 @@ VkDescriptorSetLayout VulkanSceneRenderer::globalUniformsDescriptorSetLayout()
 }
 
 /******************************************************************************
+* Returns the descriptor set layout for the color gradient maps.
+******************************************************************************/
+VkDescriptorSetLayout VulkanSceneRenderer::colorMapDescriptorSetLayout()
+{
+    if(_colorMapDescriptorSetLayout == VK_NULL_HANDLE) {
+
+        // Specify the descriptor layout binding.
+        VkDescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        // Create descriptor set layout.
+        VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &layoutBinding;
+        VkResult err = deviceFunctions()->vkCreateDescriptorSetLayout(logicalDevice(), &layoutInfo, nullptr, &_colorMapDescriptorSetLayout);
+        if(err != VK_SUCCESS)
+            throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+    }
+
+    return _colorMapDescriptorSetLayout;
+}
+
+/******************************************************************************
 * Returns the Vulkan descriptor set for the global uniforms structure, which 
 * can be bound to a pipeline. 
 ******************************************************************************/
@@ -464,7 +495,7 @@ VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
     uniforms.znear = static_cast<float>(projParams().znear);
     uniforms.zfar = static_cast<float>(projParams().zfar);
 
-    // Upload uniforms buffer to GPU memory (only if has changed).
+    // Upload uniforms buffer to GPU memory (only if it has changed).
     VkBuffer uniformsBuffer = context()->createCachedBuffer(uniforms, sizeof(uniforms), currentResourceFrame(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, [&](void* buffer) {
         memcpy(buffer, &uniforms, sizeof(uniforms));
     });
@@ -481,6 +512,48 @@ VkDescriptorSet VulkanSceneRenderer::getGlobalUniformsDescriptorSet()
         bufferInfo.buffer = uniformsBuffer;
         bufferInfo.offset = 0;
         bufferInfo.range = VK_WHOLE_SIZE ;
+        VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        descriptorWrite.dstSet = descriptorSet.first;
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        deviceFunctions()->vkUpdateDescriptorSets(logicalDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
+
+    return descriptorSet.first;
+}
+
+/******************************************************************************
+* Uploads a color coding map to the Vulkan device as a uniforms buffer.
+******************************************************************************/
+VkDescriptorSet VulkanSceneRenderer::uploadColorMap(ColorCodingGradient* gradient)
+{
+    OVITO_ASSERT(gradient);
+    OVITO_ASSERT(logicalDevice());
+
+	// This method must be called from the main thread where the Vulkan device lives.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+    // Sampling resolution of the tabulated color gradient.
+    constexpr int resolution = 256;
+
+    // Upload tabulated color gradient to GPU memory (only if it has changed).
+    VkBuffer uniformsBuffer = context()->createCachedBuffer(RendererResourceKey<VulkanContext, OORef<ColorCodingGradient>>{gradient}, sizeof(ColorAT<float>) * resolution, currentResourceFrame(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, [&](void* buffer) {
+        ColorAT<float>* table = static_cast<ColorAT<float>*>(buffer);
+        for(int x = 0; x < resolution; x++)
+            table[x] = gradient->valueToColor((FloatType)x / (resolution - 1)).toDataType<float>();
+    });
+
+    // Create the descriptor set (only if a new Vulkan buffer has been created).
+    std::pair<VkDescriptorSet, bool> descriptorSet = context()->createDescriptorSet(colorMapDescriptorSetLayout(), RendererResourceKey<ColorCodingGradient, VkBuffer>{uniformsBuffer}, currentResourceFrame());
+
+    // Initialize the descriptor set if it was newly created.
+    if(descriptorSet.second) {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = uniformsBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
         VkWriteDescriptorSet descriptorWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
         descriptorWrite.dstSet = descriptorSet.first;
         descriptorWrite.dstBinding = 0;

@@ -152,6 +152,8 @@ IF(NOT OVITO_DONT_RECOMPILE_VULKAN_SHADERS AND TARGET Vulkan::glslc)
 	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_picking.vert)
 	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.frag)
 	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_instanced_with_colors.vert)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.frag)
+	add_vulkan_shader(VulkanRenderer resources/mesh/mesh_color_mapping.vert)
 ENDIF()
 
 # Build corresponding GUI plugin.

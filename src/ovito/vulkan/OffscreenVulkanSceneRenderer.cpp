@@ -295,7 +295,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	// Always render with a fully transparent background. 
 	// Compositing with the viewport layer content will be performed in an OVITO FrameBuffer. 
     VkClearColorValue clearColor = {{ 0, 0, 0, 0 }};
-	if(renderSettings()) {
+	if(renderSettings() && !isPicking()) {
 		clearColor.float32[0] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().r()), 1.0f);
 		clearColor.float32[1] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().g()), 1.0f);
 		clearColor.float32[2] = qBound(0.0f, static_cast<float>(renderSettings()->backgroundColor().b()), 1.0f);

@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/rendering/RendererResourceCache.h>
+#include <ovito/core/rendering/ColorCodingGradient.h>
 
 #include <QLoggingCategory>
 #include <QVulkanInstance>

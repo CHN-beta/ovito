@@ -123,6 +123,27 @@ VulkanPipeline& VulkanMeshPrimitive::Pipelines::create(VulkanSceneRenderer* rend
             true // enableDepthOffset
         );
 
+    if(&pipeline == &mesh_color_mapping) {
+        std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts2 = { renderer->globalUniformsDescriptorSetLayout(), renderer->colorMapDescriptorSetLayout() };
+        mesh_color_mapping.create(*renderer->context(),
+            QStringLiteral("mesh/mesh_color_mapping"),
+            renderer->defaultRenderPass(),
+            sizeof(Matrix_4<float>) + sizeof(Matrix_4<float>), // vertexPushConstantSize
+            0, // fragmentPushConstantSize
+            1, // vertexBindingDescriptionCount
+            vertexBindingDesc, 
+            3, // vertexAttributeDescriptionCount
+            vertexAttrDesc, 
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // topology
+            extraDynamicStateCount,
+            extraDynamicState.data(),
+            true, // supportAlphaBlending
+            descriptorSetLayouts2.size(), // setLayoutCount
+            descriptorSetLayouts2.data(), // pSetLayouts
+            true // enableDepthOffset
+        );
+    }
+
     if(&pipeline == &mesh_picking)
         mesh_picking.create(*renderer->context(),
             QStringLiteral("mesh/mesh_picking"),
@@ -318,6 +339,12 @@ void VulkanMeshPrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	mesh_instanced.release(*renderer->context());
 	mesh_instanced_picking.release(*renderer->context());
 	mesh_instanced_with_colors.release(*renderer->context());
+	mesh_color_mapping.release(*renderer->context());
+
+    if(colormap_descriptorSetLayout != VK_NULL_HANDLE) {
+        renderer->deviceFunctions()->vkDestroyDescriptorSetLayout(renderer->logicalDevice(), colormap_descriptorSetLayout, nullptr);
+        colormap_descriptorSetLayout = VK_NULL_HANDLE;
+    }
 }
 
 /******************************************************************************
@@ -347,16 +374,21 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     // Bind the right pipeline.
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     if(!useInstancedRendering()) {
-        if(!renderer->isPicking()) {
-            pipelines.create(renderer, pipelines.mesh).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
-            pipelineLayout = pipelines.mesh.layout();
-        }
-        else {
+        if(renderer->isPicking()) {
             pipelines.create(renderer, pipelines.mesh_picking).bind(*renderer->context(), renderer->currentCommandBuffer());
             pipelineLayout = pipelines.mesh_picking.layout();
         }
+        else if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid()) {
+            pipelines.create(renderer, pipelines.mesh_color_mapping).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+            pipelineLayout = pipelines.mesh_color_mapping.layout();
+        }
+        else {
+            pipelines.create(renderer, pipelines.mesh).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
+            pipelineLayout = pipelines.mesh.layout();
+        }
     }
     else {
+        OVITO_ASSERT(!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors() && !pseudoColorMapping().isValid()); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
         if(!renderer->isPicking()) {
             if(!perInstanceColors()) {
                 pipelines.create(renderer, pipelines.mesh_instanced).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
@@ -446,15 +478,27 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->normal = *faceNormal;
                     rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
+                        rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                    }
+                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
+                        rv->color.g() = 0;
+                        rv->color.b() = 0;
+                        rv->color.a() = defaultVertexColor.a();
                     }
                     else if(mesh().hasFaceColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().faceColor(face - mesh().faces().constBegin()));
+                        rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
+                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
+                        rv->color.g() = 0;
+                        rv->color.b() = 0;
+                        rv->color.a() = defaultVertexColor.a();
+                    }
                     else if(face->materialIndex() < materialColors().size() && face->materialIndex() >= 0) {
-                        rv->color = static_cast<ColorAT<float>>(materialColors()[face->materialIndex()]);
+                        rv->color = materialColors()[face->materialIndex()].toDataType<float>();
                     }
                     else {
                         rv->color = defaultVertexColor;
@@ -506,15 +550,27 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                     rv->normal = (*faceNormal++).toDataType<float>();
                     rv->position = mesh().vertex(face->vertex(v)).toDataType<float>();
                     if(mesh().hasVertexColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().vertexColor(face->vertex(v)));
+                        rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
+                    }
+                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
+                        rv->color.g() = 0;
+                        rv->color.b() = 0;
+                        rv->color.a() = defaultVertexColor.a();
                     }
                     else if(mesh().hasFaceColors()) {
-                        rv->color = static_cast<ColorAT<float>>(mesh().faceColor(face - mesh().faces().constBegin()));
+                        rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
+                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                        rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
+                        rv->color.g() = 0;
+                        rv->color.b() = 0;
+                        rv->color.a() = defaultVertexColor.a();
+                    }
                     else if(face->materialIndex() >= 0 && face->materialIndex() < materialColors().size()) {
-                        rv->color = static_cast<ColorAT<float>>(materialColors()[face->materialIndex()]);
+                        rv->color = materialColors()[face->materialIndex()].toDataType<float>();
                     }
                     else {
                         rv->color = defaultVertexColor;
@@ -527,6 +583,21 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     // Bind vertex buffer.
     VkDeviceSize offset = 0;
     renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 1, &meshBuffer, &offset);
+
+    // Are we rendering with pseudo-colors and a color mapping function.
+	if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid() && !renderer->isPicking()) {
+        // We pass the min/max range of the color map to the vertex shader in the push constants buffer.
+        // But since the push constants buffer is already occupied with two mat4 matrices (128 bytes), we 
+        // have to squeeze the values into unused elements of the normal transformation matrix.
+        Vector_2<float> color_range(pseudoColorMapping().minValue(), pseudoColorMapping().maxValue());
+        // Avoid division by zero due to degenerate value interval.
+        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+        renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(float) * 4 * 3, sizeof(color_range), color_range.data());
+
+        // Create the descriptor set with the color map and bind it to the pipeline.
+        VkDescriptorSet colorMapSet = renderer->uploadColorMap(pseudoColorMapping().gradient());
+        renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &colorMapSet, 0, nullptr);
+    }
 
     // The number of instances the Vulkan draw command should draw.
     uint32_t renderInstanceCount = 1;

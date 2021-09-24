@@ -87,6 +87,8 @@
 	<file>mesh/mesh_instanced_picking.vert.spv</file>
 	<file>mesh/mesh_instanced_with_colors.frag.spv</file>
 	<file>mesh/mesh_instanced_with_colors.vert.spv</file>
+	<file>mesh/mesh_color_mapping.frag.spv</file>
+	<file>mesh/mesh_color_mapping.vert.spv</file>
 </qresource>
 
 </RCC>
