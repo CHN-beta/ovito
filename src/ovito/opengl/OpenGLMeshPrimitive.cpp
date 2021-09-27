@@ -148,14 +148,14 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                         rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasVertexPseudoColors()) {
                         rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                     }
                     else if(mesh().hasFaceColors()) {
                         rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasFacePseudoColors()) {
                         rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
                     }
                     else if(face->materialIndex() < materialColors().size() && face->materialIndex() >= 0) {
@@ -222,14 +222,14 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                         rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasVertexPseudoColors()) {
                         rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                     }
                     else if(mesh().hasFaceColors()) {
                         rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasFacePseudoColors()) {
                         rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
                     }
                     else if(face->materialIndex() >= 0 && face->materialIndex() < materialColors().size()) {

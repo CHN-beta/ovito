@@ -45,6 +45,17 @@ protected:
 
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+private Q_SLOTS:
+
+	/// Updates the coloring controls shown in the UI.
+	void updateColoringOptions();
+	
+private:
+
+	IntegerRadioButtonParameterUI* _coloringModeUI;
+	ColorParameterUI* _lineColorUI;
+	SubObjectParameterUI* _colorMappingParamUI;
 };
 
 }	// End of namespace

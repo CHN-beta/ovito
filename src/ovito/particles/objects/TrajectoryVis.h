@@ -24,6 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "TrajectoryObject.h"
@@ -48,8 +49,19 @@ public:
 	};
 	Q_ENUM(ShadingMode);
 
+	/// The coloring modes supported by the trajectory vis element.
+	enum ColoringMode {
+		UniformColoring,
+		PseudoColoring,
+	};
+	Q_ENUMS(ColoringMode);	
+
 	/// \brief Constructor.
 	Q_INVOKABLE TrajectoryVis(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ExecutionContext executionContext) override;		
 
 	/// \brief Renders the associated data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -80,6 +92,12 @@ private:
 
 	/// Controls the shading mode for lines.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TrajectoryVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls how the lines are being colored.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(TrajectoryVis::ColoringMode, coloringMode, setColoringMode);
+
+	/// Transfer function for pseudo-color visualization of a trajectory line property.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
 }	// End of namespace

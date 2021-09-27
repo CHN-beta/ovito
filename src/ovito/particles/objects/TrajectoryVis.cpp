@@ -36,11 +36,15 @@ DEFINE_PROPERTY_FIELD(TrajectoryVis, lineColor);
 DEFINE_PROPERTY_FIELD(TrajectoryVis, shadingMode);
 DEFINE_PROPERTY_FIELD(TrajectoryVis, showUpToCurrentTime);
 DEFINE_PROPERTY_FIELD(TrajectoryVis, wrappedLines);
+DEFINE_PROPERTY_FIELD(TrajectoryVis, coloringMode);
+DEFINE_REFERENCE_FIELD(TrajectoryVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineColor, "Line color");
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, showUpToCurrentTime, "Show up to current time only");
-SET_PROPERTY_FIELD_LABEL(TrajectoryVis, wrappedLines, "Wrapped trajectory lines");
+SET_PROPERTY_FIELD_LABEL(TrajectoryVis, wrappedLines, "Wrap trajectory lines around");
+SET_PROPERTY_FIELD_LABEL(TrajectoryVis, coloringMode, "Coloring mode");
+SET_PROPERTY_FIELD_LABEL(TrajectoryVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TrajectoryVis, lineWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
@@ -51,8 +55,21 @@ TrajectoryVis::TrajectoryVis(DataSet* dataset) : DataVis(dataset),
 	_lineColor(0.6, 0.6, 0.6),
 	_shadingMode(FlatShading),
 	_showUpToCurrentTime(false),
-	_wrappedLines(false)
+	_wrappedLines(false),
+	_coloringMode(UniformColoring)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TrajectoryVis::initializeObject(ExecutionContext executionContext)
+{
+	// Create a color mapping object for pseudo-color visualization of a trajectory property.
+	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
+
+	DataVis::initializeObject(executionContext);
 }
 
 /******************************************************************************
@@ -98,16 +115,35 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const ConstDataObjectPath& path,
 ******************************************************************************/
 PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
+	PipelineStatus status;
+
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
-		return {};
+		return status;
 	}
 
 	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(path.back());
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
+
+	// Look for selected pseudo-coloring property.
+	const PropertyObject* pseudoColorProperty = nullptr;
+	int pseudoColorPropertyComponent = 0;
+	if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !trajObj->getProperty(TrajectoryObject::ColorProperty)) {
+		pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(trajObj);
+		if(!pseudoColorProperty) {
+			status = PipelineStatus(PipelineStatus::Error, tr("The property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
+		}
+		else {
+			if(colorMapping()->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) {
+				status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(colorMapping()->sourceProperty().name()).arg(pseudoColorProperty->componentCount()));
+				pseudoColorProperty = nullptr;
+			}
+			pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
+		}
+	}
 
 	// The key type used for caching the rendering primitive:
 	using CacheKey = std::tuple<
@@ -117,7 +153,9 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 		Color,					// Line color,
 		ShadingMode,			// Shading mode
 		FloatType,				// End frame
-		ConstDataObjectRef		// Simulation cell
+		ConstDataObjectRef,		// Simulation cell
+		ConstDataObjectRef,		// Pseudo-color property
+		int						// Pseudo-color vector component
 	>;
 
 	// The data structure stored in the vis cache.
@@ -136,7 +174,9 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 			lineColor(),
 			shadingMode(),
 			endFrame,
-			simulationCell));
+			simulationCell,
+			pseudoColorProperty, 
+			pseudoColorPropertyComponent));
 
 	// The shading mode for corner spheres.
 	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ShadingMode::NormalShading)
@@ -219,14 +259,14 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 	}
 
 	if(!visCache.segments)
-		return {};
+		return status;
 
 	renderer->beginPickObject(contextNode);
 	renderer->renderCylinders(visCache.segments);
 	renderer->renderParticles(visCache.corners);
 	renderer->endPickObject();
 
-	return {};
+	return status;
 }
 
 /******************************************************************************

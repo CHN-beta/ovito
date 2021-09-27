@@ -491,7 +491,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasVertexPseudoColors()) {
                         rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                         rv->color.g() = 0;
                         rv->color.b() = 0;
@@ -501,7 +501,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasFacePseudoColors()) {
                         rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
                         rv->color.g() = 0;
                         rv->color.b() = 0;
@@ -571,7 +571,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->color = mesh().vertexColor(face->vertex(v)).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasVertexPseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasVertexPseudoColors()) {
                         rv->color.r() = mesh().vertexPseudoColor(face->vertex(v));
                         rv->color.g() = 0;
                         rv->color.b() = 0;
@@ -581,7 +581,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                         rv->color = mesh().faceColor(face - mesh().faces().constBegin()).toDataType<float>();
                         if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
                     }
-                    else if(mesh().hasFacePseudoColors() && pseudoColorMapping().isValid()) {
+                    else if(renderWithPseudoColorMapping && mesh().hasFacePseudoColors()) {
                         rv->color.r() = mesh().facePseudoColor(face - mesh().faces().constBegin());
                         rv->color.g() = 0;
                         rv->color.b() = 0;

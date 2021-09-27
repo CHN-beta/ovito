@@ -57,6 +57,7 @@ void VoxelGridSliceModifierDelegate::initializeObject(ExecutionContext execution
 	surfaceMeshVis()->setHighlightEdges(false);
 	surfaceMeshVis()->setSmoothShading(false);
 	surfaceMeshVis()->setSurfaceIsClosed(false);
+	surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
 
 	SliceModifierDelegate::initializeObject(executionContext);

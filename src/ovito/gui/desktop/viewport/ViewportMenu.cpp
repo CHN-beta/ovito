@@ -98,6 +98,7 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 	addSeparator();
 
 	QMenu* layoutMenu = addMenu(tr("Window Layout"));
+	layoutMenu->setEnabled(viewport != viewport->dataset()->viewportConfig()->maximizedViewport());
 	_layoutCell = viewport->layoutCell();
 	OVITO_ASSERT(_layoutCell && _layoutCell->splitDirection() == ViewportLayoutCell::None && _layoutCell->children().empty());
 

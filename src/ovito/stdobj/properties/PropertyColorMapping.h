@@ -25,6 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/core/rendering/PseudoColorMapping.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
 namespace Ovito { namespace StdObj {

@@ -15,9 +15,9 @@ This :ref:`visual element <visual_elements>` renders a set of continuous lines t
 trajectories of motion of particles. Normally, the element is automatically created by the program when you apply the
 :ref:`particles.modifiers.generate_trajectory_lines` modifier.
 
-The option :guilabel:`Wrap trajectory lines` folds trajectory lines leaving the periodic simulation
-cell back into the cell. Note that this option will yield correct results only if the simulation cell size
-is not changing with time.
+The option :guilabel:`Wrap trajectory lines around` folds trajectory lines leaving the periodic simulation
+cell back into the cell. Note that this option can only yield correct results if the simulation cell dimensions
+do not change with time.
 
 The option :guilabel:`Show up to current time only` restricts rendering of trajectories lines to
 those parts that have been traversed by particles at the current animation time. Thus, the trajectory lines will

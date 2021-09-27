@@ -40,13 +40,11 @@ public:
 
 	/// Constructor.
 	PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient) : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)) {
-		OVITO_ASSERT(std::isfinite(_minValue));
-		OVITO_ASSERT(std::isfinite(_maxValue));
 		OVITO_ASSERT(_gradient);
 	}
 
 	/// Returns true if this is not the null mapping.
-	bool isValid() const { return (bool)_gradient; }
+	bool isValid() const { return (bool)_gradient && std::isfinite(_minValue) && std::isfinite(_maxValue); }
 
 	/// Returns the lower bound of the mapping interval.
 	FloatType minValue() const { return _minValue; }
