@@ -28,7 +28,7 @@ void main()
 
     // Pass normalized pseudo-color information on to fragment shader.
     pseudocolor_fs.x = (pseudocolor.r - color_range_min) / (color_range_max - color_range_min);
-    pseudocolor_fs.y = pseudocolor.a;
+    pseudocolor_fs.y = (pseudocolor.g == 0.0) ? pseudocolor.a : -1.0; // Note: A non-zero color component G indicates selected faces.
 
     // Transform vertex normal from object to view space.
     normal_fs = vec3(PushConstants.normal_tm * vec4(normal, 0.0));

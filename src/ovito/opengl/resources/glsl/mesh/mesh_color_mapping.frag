@@ -26,9 +26,11 @@
 // Uniforms:
 uniform sampler1D color_map;
 uniform float opacity;
+uniform vec4 selection_color;
 
 // Inputs:
 in float pseudocolor_fs;
+flat in float selected_face_fs;
 in vec3 normal_fs;
 
 // Outputs:
@@ -36,6 +38,11 @@ out vec4 fragColor;
 
 void main()
 {
-    vec3 color = texture(color_map, pseudocolor_fs).xyz;
-    fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(color, opacity));
+    if(selected_face_fs == 0.0) {
+        vec3 color = texture(color_map, pseudocolor_fs).xyz;
+        fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(color, opacity));
+    }
+    else {
+        fragColor = shadeSurfaceColor(normalize(normal_fs), selection_color);
+    }
 }

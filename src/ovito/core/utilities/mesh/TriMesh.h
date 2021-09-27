@@ -51,6 +51,7 @@ public:
 		EDGES23 = EDGE2 | EDGE3,	//< Second and third edge visible
 		EDGES13 = EDGE1 | EDGE3,	//< First and third edge visible
 		EDGES123 = EDGE1 | EDGE2 | EDGE3,	//< All edges Visible
+		IS_SELECTED //< Face selection state
 	};
 	Q_DECLARE_FLAGS(MeshFaceFlags, MeshFaceFlag);
 
@@ -125,6 +126,14 @@ public:
 
 	/// Returns the smoothing groups this face belongs to as a bit array.
 	quint32 smoothingGroups() const { return _smoothingGroups; }
+
+	/************************************ Selection *******************************/
+
+	/// Returns whether the face selection flag is set.
+	bool isSelected() const { return _flags.testFlag(IS_SELECTED); }
+
+	/// Sets the face's selection flag.
+	void setSelected(bool selected = true) { _flags.setFlag(IS_SELECTED, selected); }
 
 private:
 

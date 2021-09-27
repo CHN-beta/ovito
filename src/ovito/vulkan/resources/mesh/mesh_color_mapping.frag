@@ -17,8 +17,14 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    // Compute index into color look-up table.
-    int index = int(clamp(pseudocolor_fs.x * 256.0, 0.0, 255.0));
-    // Perform surface shading.
-    fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(ColorMap.table[index].xyz, pseudocolor_fs.y));
+    if(pseudocolor_fs.y >= 0.0) {
+        // Compute index into color look-up table.
+        int index = int(clamp(pseudocolor_fs.x * 256.0, 0.0, 255.0));
+        // Perform surface shading.
+        fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(ColorMap.table[index].xyz, pseudocolor_fs.y));
+    }
+    else {
+        // It's a selected face. Use a red highlighting color to render it.
+        fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(1.0, 0.0, 0.0, 1.0));
+    }
 }

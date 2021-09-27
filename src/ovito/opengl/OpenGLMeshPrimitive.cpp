@@ -104,11 +104,12 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	}
 
     // The look-up key for the buffer cache.
-    RendererResourceKey<OpenGLMeshPrimitive, std::shared_ptr<OpenGLMeshPrimitive>, int, std::vector<ColorA>, ColorA> meshCacheKey{
+    RendererResourceKey<OpenGLMeshPrimitive, std::shared_ptr<OpenGLMeshPrimitive>, int, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         shared_from_this(),
         faceCount(),
         materialColors(),
-        uniformColor()
+        uniformColor(),
+        faceSelectionColor()
     };
 
     // Upload vertex buffer to GPU memory.
@@ -162,6 +163,14 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                     }
                     else {
                         rv->color = defaultVertexColor;
+                    }
+
+                    // Override color of faces that are selected.
+                    if(face->isSelected() && renderer->isInteractive()) {
+                        if(!renderWithPseudoColorMapping)
+                            rv->color = ColorAT<float>(faceSelectionColor());
+                        else
+                            rv->color.r() = std::numeric_limits<float>::infinity();
                     }
                 }
             }
@@ -229,6 +238,14 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                     else {
                         rv->color = defaultVertexColor;
                     }
+
+                    // Override color of faces that are selected.
+                    if(face->isSelected() && renderer->isInteractive()) {
+                        if(!renderWithPseudoColorMapping)
+                            rv->color = ColorAT<float>(faceSelectionColor());
+                        else
+                            rv->color.r() = std::numeric_limits<float>::infinity();
+                    }
                 }
             }
         }
@@ -247,6 +264,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 1, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", uniformColor().a());
+        shader.setUniformValue("selection_color", ColorA(faceSelectionColor()));
         float minValue = pseudoColorMapping().minValue();
         float maxValue = pseudoColorMapping().maxValue();
         // Avoid division by zero due to degenerate value interval.

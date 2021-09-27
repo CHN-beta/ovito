@@ -447,11 +447,12 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
     // The look-up key for the Vulkan buffer cache.
-    RendererResourceKey<VulkanMeshPrimitive, std::shared_ptr<VulkanMeshPrimitive>, int, std::vector<ColorA>, ColorA> meshCacheKey{
+    RendererResourceKey<VulkanMeshPrimitive, std::shared_ptr<VulkanMeshPrimitive>, int, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         shared_from_this(),
         faceCount(),
         materialColors(),
-        uniformColor()
+        uniformColor(),
+        faceSelectionColor()
     };
 
     // Upload vertex buffer to GPU memory.
@@ -511,6 +512,14 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                     }
                     else {
                         rv->color = defaultVertexColor;
+                    }
+
+                    // Override color of faces that are selected.
+                    if(face->isSelected() && renderer->isInteractive()) {
+                        if(!renderWithPseudoColorMapping)
+                            rv->color = ColorAT<float>(faceSelectionColor());
+                        else
+                            rv->color.g() = 1.0f;
                     }
                 }
             }
@@ -583,6 +592,14 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
                     }
                     else {
                         rv->color = defaultVertexColor;
+                    }
+
+                    // Override color of faces that are selected.
+                    if(face->isSelected() && renderer->isInteractive()) {
+                        if(!renderWithPseudoColorMapping)
+                            rv->color = ColorAT<float>(faceSelectionColor());
+                        else
+                            rv->color.g() = 1.0f;
                     }
                 }
             }

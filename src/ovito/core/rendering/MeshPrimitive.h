@@ -121,6 +121,14 @@ public:
 	/// Returns whether instanced rendering of the mesh has been activated.
 	bool useInstancedRendering() const { return (bool)_perInstanceTMs; }
 
+	/// Returns the color used for rendering all selected faces.
+	const Color& faceSelectionColor() const { return _faceSelectionColor; }
+
+	/// \brief Sets the color to be used for rendering the selected mesh faces.
+	void setFaceSelectionColor(const Color& color) {
+		_faceSelectionColor = color;
+	}
+
 private:
 
 	/// Controls the culling of triangles not facing the viewer.
@@ -149,6 +157,9 @@ private:
 
 	/// The list of colors when rendering multiple instances of the mesh.
 	ConstDataBufferPtr _perInstanceColors; // Array of ColorA
+
+	/// The color used for rendering all selected faces.
+	Color _faceSelectionColor{1,0,0};
 };
 
 }	// End of namespace

@@ -487,7 +487,6 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 {
 	ColorA defaultFaceColor(_surfaceColor);
-	ColorA selectionColor(1,0,0,1);
 
 	if(ConstPropertyAccess<Color> colorProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
 		// The "Color" property of mesh faces has the highest priority.
@@ -561,34 +560,24 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 	}
 
 	if(ConstPropertyAccess<int> selectionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
-		// The "Selection" property of mesh faces has the highest priority.
-		// If it is present, use it to highlight selected mesh faces.
-		if(!_surfaceMesh.hasFaceColors()) {
-			_surfaceMesh.setHasFaceColors(true);
-			boost::fill(_surfaceMesh.faceColors(), defaultFaceColor);
-		}
-		auto meshFaceColor = _surfaceMesh.faceColors().begin();
+		auto meshFace = _surfaceMesh.faces().begin();
 		for(size_t originalFace : _originalFaceMap) {
 			if(selectionProperty[originalFace])
-				*meshFaceColor = selectionColor;
-			++meshFaceColor;
+				meshFace->setSelected();
+			++meshFace;
 		}
 	}
 	else if(ConstPropertyAccess<int> selectionProperty = _inputMesh->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
 		// If the "Selection" property of mesh regions is present, use it information to highlight the 
 		// mesh faces that belong to selected regions.
 		if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
-			if(!_surfaceMesh.hasFaceColors()) {
-				_surfaceMesh.setHasFaceColors(true);
-				boost::fill(_surfaceMesh.faceColors(), defaultFaceColor);
-			}
 			size_t regionCount = selectionProperty.size();
-			auto meshFaceColor = _surfaceMesh.faceColors().begin();
+			auto meshFace = _surfaceMesh.faces().begin();
 			for(size_t originalFace : _originalFaceMap) {
 				SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
 				if(regionIndex >= 0 && regionIndex < regionCount && selectionProperty[regionIndex])
-					*meshFaceColor = selectionColor;
-				++meshFaceColor;
+					meshFace->setSelected();
+				++meshFace;
 			}
 		}
 	}
