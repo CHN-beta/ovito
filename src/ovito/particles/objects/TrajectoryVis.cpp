@@ -58,9 +58,9 @@ TrajectoryVis::TrajectoryVis(DataSet* dataset) : DataVis(dataset),
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TrajectoryVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(objectStack.back());
+	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(path.back());
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
@@ -96,15 +96,15 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const std::vector<const DataObje
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus TrajectoryVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return {};
 	}
 
-	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(objectStack.back());
+	const TrajectoryObject* trajObj = dynamic_object_cast<TrajectoryObject>(path.back());
 
 	// Get the simulation cell.
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;

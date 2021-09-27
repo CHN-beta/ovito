@@ -199,11 +199,12 @@ bool SceneRenderer::renderNode(SceneNode* node, SynchronousOperation operation)
 												pipelineEvaluation.result() :
 												pipeline->evaluatePipelineSynchronous(true);
 
-			// Invoke all vis elements of all data objects in the pipeline state.
-			std::vector<const DataObject*> objectStack;
-			if(state)
-				renderDataObject(state.data(), pipeline, state, objectStack);
-			OVITO_ASSERT(objectStack.empty());
+			if(state) {
+				// Invoke all vis elements of all data objects in the pipeline state.
+				ConstDataObjectPath dataObjectPath;
+				renderDataObject(state.data(), pipeline, state, dataObjectPath);
+				OVITO_ASSERT(dataObjectPath.empty());
+			}
 		}
 	}
 
@@ -224,7 +225,7 @@ bool SceneRenderer::renderNode(SceneNode* node, SynchronousOperation operation)
 /******************************************************************************
 * Renders a data object and all its sub-objects.
 ******************************************************************************/
-void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, std::vector<const DataObject*>& objectStack)
+void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
 {
 	bool isOnStack = false;
 
@@ -235,13 +236,13 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 		if(vis->isEnabled()) {
 			// Push the data object onto the stack.
 			if(!isOnStack) {
-				objectStack.push_back(dataObj);
+				dataObjectPath.push_back(dataObj);
 				isOnStack = true;
 			}
 			PipelineStatus status;
 			try {
 				// Let the vis element do the rendering.
-				status = vis->render(time(), objectStack, state, this, pipeline);
+				status = vis->render(time(), dataObjectPath, state, this, pipeline);
 				// Pass error status codes to the exception handler below.
 				if(status.type() == PipelineStatus::Error)
 					throwException(status.text());
@@ -268,16 +269,16 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 	dataObj->visitSubObjects([&](const DataObject* subObject) {
 		// Push the data object onto the stack.
 		if(!isOnStack) {
-			objectStack.push_back(dataObj);
+			dataObjectPath.push_back(dataObj);
 			isOnStack = true;
 		}
-		renderDataObject(subObject, pipeline, state, objectStack);
+		renderDataObject(subObject, pipeline, state, dataObjectPath);
 		return false;
 	});
 
 	// Pop the data object from the stack.
 	if(isOnStack) {
-		objectStack.pop_back();
+		dataObjectPath.pop_back();
 	}
 }
 

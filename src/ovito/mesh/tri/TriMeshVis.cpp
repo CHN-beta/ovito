@@ -62,10 +62,10 @@ void TriMeshVis::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TriMeshVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 TriMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// Compute bounding box.
-	if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(objectStack.back())) {
+	if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(path.back())) {
 		if(triMeshObj->mesh())
 			return triMeshObj->mesh()->boundingBox();
 	}
@@ -75,7 +75,7 @@ Box3 TriMeshVis::boundingBox(TimePoint time, const std::vector<const DataObject*
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TriMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(!renderer->isBoundingBoxPass()) {
 
@@ -93,14 +93,14 @@ PipelineStatus TriMeshVis::render(TimePoint time, const std::vector<const DataOb
 		ColorA color_mesh(color(), FloatType(1) - transp);
 
 		// Lookup the rendering primitive in the vis cache.
-		auto& meshPrimitive = dataset()->visCache().get<std::shared_ptr<MeshPrimitive>>(CacheKey(renderer, objectStack.back(), color_mesh, highlightEdges()));
+		auto& meshPrimitive = dataset()->visCache().get<std::shared_ptr<MeshPrimitive>>(CacheKey(renderer, path.back(), color_mesh, highlightEdges()));
 
 		// Check if we already have a valid rendering primitive that is up to date.
 		if(!meshPrimitive) {
 			meshPrimitive = renderer->createMeshPrimitive();
 			meshPrimitive->setEmphasizeEdges(highlightEdges());
 			meshPrimitive->setUniformColor(color_mesh);
-			if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(objectStack.back()))
+			if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(path.back()))
 				if(triMeshObj->mesh())
 					meshPrimitive->setMesh(*triMeshObj->mesh());
 		}
@@ -112,7 +112,7 @@ PipelineStatus TriMeshVis::render(TimePoint time, const std::vector<const DataOb
 	else {
 		// Add mesh to bounding box.
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 	}
 
 	return {};

@@ -49,6 +49,7 @@ DEFINE_PROPERTY_FIELD(ColorLegendOverlay, label1);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, label2);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, valueFormatString);
 DEFINE_REFERENCE_FIELD(ColorLegendOverlay, modifier);
+DEFINE_REFERENCE_FIELD(ColorLegendOverlay, colorMapping);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, sourceProperty);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderEnabled);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderColor);
@@ -118,7 +119,7 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 ******************************************************************************/
 void ColorLegendOverlay::initializeObject(ExecutionContext executionContext)
 {
-	// If there is no Color Coding modifier in the scene, initialize the overlay to use 
+	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
 	if(executionContext == ExecutionContext::Interactive && modifier() == nullptr && !sourceProperty()) {
 		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
@@ -146,7 +147,7 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	DataOORef<const PropertyObject> typedProperty;
 
 	// Check whether a source has been set for this color legend:
-	if(modifier()) {
+	if(modifier() || colorMapping()) {
 		// Reset status of overlay.
 		setStatus(PipelineStatus::Success);
 	}
@@ -245,8 +246,42 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	QRectF colorBarRect(origin, QSizeF(colorBarWidth, colorBarHeight));
 
 	if(modifier()) {
-		drawContinuousColorMap(time, painter, colorBarRect, legendSize, isInteractive, std::move(operation));
-	}	
+
+		// Get modifier's parameters.
+		FloatType startValue = modifier()->startValue();
+		FloatType endValue = modifier()->endValue();
+		if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
+			// Get the automatically adjusted range of the color coding modifier.
+			// This requires a partial pipeline evaluation up to the color coding modifier.
+			startValue = std::numeric_limits<FloatType>::quiet_NaN();
+			endValue = std::numeric_limits<FloatType>::quiet_NaN();
+			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
+				QVariant minValue, maxValue;
+				if(!isInteractive) {
+					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(PipelineEvaluationRequest(time));
+					if(!operation.waitForFuture(stateFuture))
+						return;
+					const PipelineFlowState& state = stateFuture.result();
+					minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+					maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+				}
+				else {
+					const PipelineFlowState& state = modApp->evaluateSynchronous(time);
+					minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
+					maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+				}
+				if(minValue.isValid() && maxValue.isValid()) {
+					startValue = minValue.value<FloatType>();
+					endValue = maxValue.value<FloatType>();
+				}
+			}
+		}
+
+		drawContinuousColorMap(time, painter, colorBarRect, legendSize, isInteractive, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()), modifier()->sourceProperty().nameWithComponent());
+	}
+	else if(colorMapping()) {
+		drawContinuousColorMap(time, painter, colorBarRect, legendSize, isInteractive, colorMapping()->pseudoColorMapping(), colorMapping()->sourceProperty().nameWithComponent());
+	}
 	else if(typedProperty) {
 		drawDiscreteColorMap(painter, colorBarRect, legendSize, typedProperty);
 	}
@@ -255,14 +290,17 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, SynchronousOperation operation)
+void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, const PseudoColorMapping& mapping, const QString& propertyName)
 {
+	if(!mapping.gradient())
+		return;
+
 	// Create the color scale image.
 	int imageSize = 256;
 	QImage image((orientation() == Qt::Vertical) ? 1 : imageSize, (orientation() == Qt::Vertical) ? imageSize : 1, QImage::Format_RGB32);
 	for(int i = 0; i < imageSize; i++) {
 		FloatType t = (FloatType)i / (FloatType)(imageSize - 1);
-		Color color = modifier()->colorGradient()->valueToColor((orientation() == Qt::Vertical) ? (FloatType(1) - t) : t);
+		Color color = mapping.gradient()->valueToColor((orientation() == Qt::Vertical) ? (FloatType(1) - t) : t);
 		image.setPixel((orientation() == Qt::Vertical) ? 0 : i, (orientation() == Qt::Vertical) ? i : 0, QColor(color).rgb());
 	}
 	painter.drawImage(colorBarRect, image);
@@ -278,50 +316,20 @@ void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painte
 	if(fontSize == 0) return;
 	QFont font = this->font();
 
-	// Get modifier's parameters.
-	FloatType startValue = modifier()->startValue();
-	FloatType endValue = modifier()->endValue();
-	if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
-		// Get the automatically adjusted range of the color coding modifier.
-		// This requires a partial pipeline evaluation up to the color coding modifier.
-		startValue = std::numeric_limits<FloatType>::quiet_NaN();
-		endValue = std::numeric_limits<FloatType>::quiet_NaN();
-		if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
-			QVariant minValue, maxValue;
-			if(!isInteractive) {
-				SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(PipelineEvaluationRequest(time));
-				if(!operation.waitForFuture(stateFuture))
-					return;
-				const PipelineFlowState& state = stateFuture.result();
-				minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-				maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
-			}
-			else {
-				const PipelineFlowState& state = modApp->evaluateSynchronous(time);
-				minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-				maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
-			}
-			if(minValue.isValid() && maxValue.isValid()) {
-				startValue = minValue.value<FloatType>();
-				endValue = maxValue.value<FloatType>();
-			}
-		}
-	}
-
 	QByteArray format = valueFormatString().toUtf8();
 	if(format.contains("%s")) format.clear();
 
 	QString titleLabel, topLabel, bottomLabel;
 	if(label1().isEmpty())
-		topLabel = std::isfinite(endValue) ? QString::asprintf(format.constData(), endValue) : QStringLiteral("###");
+		topLabel = std::isfinite(mapping.maxValue()) ? QString::asprintf(format.constData(), mapping.maxValue()) : QStringLiteral("###");
 	else
 		topLabel = label1();
 	if(label2().isEmpty())
-		bottomLabel = std::isfinite(startValue) ? QString::asprintf(format.constData(), startValue) : QStringLiteral("###");
+		bottomLabel = std::isfinite(mapping.minValue()) ? QString::asprintf(format.constData(), mapping.minValue()) : QStringLiteral("###");
 	else
 		bottomLabel = label2();
 	if(title().isEmpty())
-		titleLabel = modifier()->sourceProperty().nameWithComponent();
+		titleLabel = propertyName;
 	else
 		titleLabel = title();
 

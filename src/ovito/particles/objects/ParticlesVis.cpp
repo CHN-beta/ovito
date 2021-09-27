@@ -61,9 +61,9 @@ ParticlesVis::ParticlesVis(DataSet* dataset) : DataVis(dataset),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 ParticlesVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 ParticlesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack.back());
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -471,17 +471,17 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus ParticlesVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus ParticlesVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Handle bounding-box computation in a separate method.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return {};
 	}
 
 	// Get input particle data.
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack.back());
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
 	if(!particles) return {};
 	particles->verifyIntegrity();
 

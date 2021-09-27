@@ -320,6 +320,7 @@ ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 				return dataObjectPaths.front().back();
 			}
 		}
+		return {};
 	}
 	else if(parentEditor())
 		return parentEditor()->getVisDataObject();

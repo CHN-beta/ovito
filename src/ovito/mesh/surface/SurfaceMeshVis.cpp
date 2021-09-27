@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,8 +45,10 @@ DEFINE_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceIsClosed);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, colorMappingMode);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, capTransparencyController);
+DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceColorMapping);
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColor, "Surface color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capColor, "Cap color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, showCap, "Show cap polygons");
@@ -56,6 +58,8 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capTransparencyController, "Cap transpa
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, reverseOrientation, "Flip surface orientation");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, highlightEdges, "Highlight edges");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceIsClosed, "Closed surface");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColorMapping, "Color mapping");
+SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, colorMappingMode, "Color mapping mode");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, surfaceTransparencyController, PercentParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, capTransparencyController, PercentParameterUnit, 0, 1);
 
@@ -71,7 +75,8 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 	_smoothShading(true),
 	_reverseOrientation(false),
 	_highlightEdges(false),
-	_surfaceIsClosed(true)
+	_surfaceIsClosed(true),
+	_colorMappingMode(NoPseudoColoring)
 {
 }
 
@@ -81,8 +86,12 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 ******************************************************************************/
 void SurfaceMeshVis::initializeObject(ExecutionContext executionContext)
 {
+	// Create animation controllers for the transparency parameters.
 	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
 	setCapTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	// Create a color mapping object for pseudo-color visualization of a surface property.
+	setSurfaceColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
 
 	TransformingDataVis::initializeObject(executionContext);
 }
@@ -92,11 +101,48 @@ void SurfaceMeshVis::initializeObject(ExecutionContext executionContext)
 ******************************************************************************/
 void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor& field)
 {
-	if(field == PROPERTY_FIELD(smoothShading) || field == PROPERTY_FIELD(reverseOrientation)) {
+	if(field == PROPERTY_FIELD(smoothShading) || field == PROPERTY_FIELD(reverseOrientation) || field == PROPERTY_FIELD(colorMappingMode)) {
 		// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
 		invalidateTransformedObjects();
 	}
+
+	// Whenever the pseudo-coloring mode is changed, update the source property reference.
+	if(field == PROPERTY_FIELD(colorMappingMode) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && surfaceColorMapping()) {
+		const PropertyContainerClass* newContainerClass = nullptr;
+		if(colorMappingMode() == VertexPseudoColoring) newContainerClass = &SurfaceMeshVertices::OOClass();
+		else if(colorMappingMode() == FacePseudoColoring) newContainerClass = &SurfaceMeshFaces::OOClass();
+		else if(colorMappingMode() == RegionPseudoColoring) newContainerClass = &SurfaceMeshRegions::OOClass();
+		if(newContainerClass)
+			surfaceColorMapping()->setSourceProperty(surfaceColorMapping()->sourceProperty().convertToContainerClass(newContainerClass));
+	}
+
 	TransformingDataVis::propertyChanged(field);
+}
+
+/******************************************************************************
+* This method is called when a reference target changes.
+******************************************************************************/
+bool SurfaceMeshVis::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(source == surfaceColorMapping() && event.type() == ReferenceEvent::TargetChanged) {
+		if(static_cast<const TargetChangedEvent&>(event).field() == &PROPERTY_FIELD(PropertyColorMapping::sourceProperty)) {
+			// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
+			invalidateTransformedObjects();
+		}
+	}
+	return TransformingDataVis::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Is called when the value of a reference field of this RefMaker changes.
+******************************************************************************/
+void SurfaceMeshVis::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if(field == PROPERTY_FIELD(surfaceColorMapping)) {
+		// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
+		invalidateTransformedObjects();
+	}
+	TransformingDataVis::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -117,13 +163,15 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 
 	// Submit engine for execution and post-process results.
 	return dataset()->taskManager().runTaskAsync(std::move(engine))
-		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](TriMesh&& surfaceMesh, TriMesh&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided) mutable {
+		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](TriMesh&& surfaceMesh, TriMesh&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
 			// Output the computed mesh as a RenderableSurfaceMesh.
 			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), Application::instance()->executionContext(), this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
             renderableMesh->setVisElement(this);
 			renderableMesh->setMaterialColors(std::move(materialColors));
             renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
 			flowState.addObject(std::move(renderableMesh));
+			if(flowState.status().type() != PipelineStatus::Error && status.type() != PipelineStatus::Success)
+				flowState.setStatus(std::move(status));
 			return std::move(flowState);
 		});
 }
@@ -131,13 +179,13 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 SurfaceMeshVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 SurfaceMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	Box3 bb;
 
 	// Compute mesh bounding box.
 	// Requires that the periodic SurfaceMesh has already been transformed into a non-periodic RenderableSurfaceMesh.
-	if(const RenderableSurfaceMesh* meshObj = dynamic_object_cast<RenderableSurfaceMesh>(objectStack.back())) {
+	if(const RenderableSurfaceMesh* meshObj = dynamic_object_cast<RenderableSurfaceMesh>(path.back())) {
 		bb.addBox(meshObj->surfaceMesh().boundingBox());
 		bb.addBox(meshObj->capPolygonsMesh().boundingBox());
 	}
@@ -147,16 +195,16 @@ Box3 SurfaceMeshVis::boundingBox(TimePoint time, const std::vector<const DataObj
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SurfaceMeshVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Ignore render calls for the original SurfaceMesh.
 	// We are only interested in the RenderableSurfaceMesh.
-	if(dynamic_object_cast<SurfaceMesh>(objectStack.back()) != nullptr)
+	if(dynamic_object_cast<SurfaceMesh>(path.back()) != nullptr)
 		return {};
 
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return {};
 	}
 
@@ -168,7 +216,7 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const std::vector<const Da
 		surface_alpha = qBound(0.0, FloatType(1) - surfaceTransparencyController()->getFloatValue(time, iv), 1.0);
 	if(capTransparencyController())
 		cap_alpha = qBound(0.0, FloatType(1) - capTransparencyController()->getFloatValue(time, iv), 1.0);
-	ColorA color_surface(surfaceColor(), surface_alpha);
+	ColorA color_surface(colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1), surface_alpha);
 	ColorA color_cap(capColor(), cap_alpha);
 
 	// The key type used for caching the surface primitive:
@@ -188,11 +236,11 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const std::vector<const Da
     };
 
     // Get the renderable mesh.
-    const RenderableSurfaceMesh* renderableMesh = dynamic_object_cast<RenderableSurfaceMesh>(objectStack.back());
+    const RenderableSurfaceMesh* renderableMesh = dynamic_object_cast<RenderableSurfaceMesh>(path.back());
     if(!renderableMesh) return {};
 
 	// Lookup the rendering primitive in the vis cache.
-    auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(renderer, objectStack.back(), color_surface, color_cap, highlightEdges()));
+    auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(renderer, path.back(), color_surface, color_cap, highlightEdges()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
 	if(!visCache.surfacePrimitive) {
@@ -226,6 +274,10 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const std::vector<const Da
 	// Handle picking of triangles.
 	renderer->beginPickObject(contextNode, visCache.pickInfo);
 	if(visCache.surfacePrimitive) {
+
+		// Update the color mapping.
+		visCache.surfacePrimitive->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
+
 		renderer->renderMesh(visCache.surfacePrimitive);
 	}
 	if(showCap()) {
@@ -363,7 +415,9 @@ std::shared_ptr<SurfaceMeshVis::PrepareSurfaceEngine> SurfaceMeshVis::createSurf
 		reverseOrientation(),
 		mesh->cuttingPlanes(),
 		smoothShading(),
-		surfaceColor(),
+		colorMappingMode(),
+		surfaceColorMapping()->sourceProperty(),
+		colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1),
 		surfaceIsClosed());
 }
 
@@ -421,7 +475,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 		std::move(_capPolygonsMesh), 
 		std::move(_materialColors), 
 		std::move(_originalFaceMap), 
-		_renderFacesTwoSided);
+		_renderFacesTwoSided,
+		std::move(_status));
 
 	endProgressSubSteps();
 }
@@ -457,6 +512,51 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 				else
 					*meshFaceColor++ = defaultFaceColor;
 			}
+		}
+	}
+	else if(_colorMappingMode == FacePseudoColoring && _pseudoColorPropertyRef && _inputMesh->faces()) {
+		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->faces())) {
+			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
+				_surfaceMesh.setHasFacePseudoColors(true);
+				ConstPropertyAccess<void,true> pseudoColorArray(pseudoColorProperty);
+				size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
+				auto meshFacePseudoColor = _surfaceMesh.facePseudoColors().begin();
+				for(size_t originalFace : _originalFaceMap) {
+					*meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(originalFace, vecComponent);
+				}
+			}
+			else {
+				_status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
+			}
+		}
+		else {
+			_status = PipelineStatus(PipelineStatus::Error, tr("The face property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
+		}
+	}
+	else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && _inputMesh->regions()) {
+		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->regions())) {
+			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
+				if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+					_surfaceMesh.setHasFacePseudoColors(true);
+					ConstPropertyAccess<void,true> pseudoColorArray(pseudoColorProperty);
+					size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
+					size_t regionCount = pseudoColorProperty->size();
+					auto meshFacePseudoColor = _surfaceMesh.facePseudoColors().begin();
+					for(size_t originalFace : _originalFaceMap) {
+						SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
+						if(regionIndex >= 0 && regionIndex < regionCount)
+							*meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(regionIndex, vecComponent);
+						else
+							*meshFacePseudoColor++ = 0;
+					}
+				}
+			}
+			else {
+				_status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
+			}
+		}
+		else {
+			_status = PipelineStatus(PipelineStatus::Error, tr("The region property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
 		}
 	}
 
@@ -504,6 +604,21 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 		if(colorProperty.size() == _surfaceMesh.vertexCount()) {
 			_surfaceMesh.setHasVertexColors(true);
 			boost::copy(colorProperty, _surfaceMesh.vertexColors().begin());
+		}
+	}
+	else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorPropertyRef) {
+		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->vertices())) {
+			OVITO_ASSERT(pseudoColorProperty->size() == _surfaceMesh.vertexCount());
+			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
+				_surfaceMesh.setHasVertexPseudoColors(true);
+				pseudoColorProperty->copyTo(_surfaceMesh.vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
+			}
+			else {
+				_status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
+			}
+		}
+		else {
+			_status = PipelineStatus(PipelineStatus::Error, tr("The vertex property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
 		}
 	}
 }
@@ -658,9 +773,10 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 		int oldVertexCount = _surfaceMesh.vertexCount();
 		std::vector<Point3> newVertices;
 		std::vector<ColorA> newVertexColors;
+		std::vector<FloatType> newVertexPseudoColors;
 		std::map<std::pair<int,int>,std::tuple<int,int,FloatType>> newVertexLookupMap;
 		for(int findex = 0; findex < oldFaceCount; findex++) {
-			if(!splitFace(findex, oldVertexCount, newVertices, newVertexColors, newVertexLookupMap, dim)) {
+			if(!splitFace(findex, oldVertexCount, newVertices, newVertexColors, newVertexPseudoColors, newVertexLookupMap, dim)) {
 				return false;
 			}
 		}
@@ -671,6 +787,10 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 		if(_surfaceMesh.hasVertexColors()) {
 			OVITO_ASSERT(newVertexColors.size() == newVertices.size());
 			std::copy(newVertexColors.cbegin(), newVertexColors.cend(), _surfaceMesh.vertexColors().begin() + oldVertexCount);
+		}
+		if(_surfaceMesh.hasVertexPseudoColors()) {
+			OVITO_ASSERT(newVertexPseudoColors.size() == newVertices.size());
+			std::copy(newVertexPseudoColors.cbegin(), newVertexPseudoColors.cend(), _surfaceMesh.vertexPseudoColors().begin() + oldVertexCount);
 		}
 	}
 	if(isCanceled())
@@ -717,7 +837,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 * Splits a triangle face at a periodic boundary.
 ******************************************************************************/
 bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors,
-		std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
+		std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
     TriMeshFace& face = _surfaceMesh.face(faceIndex);
 	OVITO_ASSERT(face.vertex(0) != face.vertex(1));
@@ -794,6 +914,13 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 									color1.a() + (color2.a() - color1.a()) * t);
 				newVertexColors.push_back(interp_color);
 				newVertexColors.push_back(interp_color);
+			}
+			if(_surfaceMesh.hasVertexPseudoColors()) {
+				FloatType pseudocolor1 = _surfaceMesh.vertexPseudoColor(vi1);
+				FloatType pseudocolor2 = _surfaceMesh.vertexPseudoColor(vi2);
+				FloatType interp_pseudocolor = pseudocolor1 + (pseudocolor2 - pseudocolor1) * t;
+				newVertexPseudoColors.push_back(interp_pseudocolor);
+				newVertexPseudoColors.push_back(interp_pseudocolor);
 			}
 		}
 		// Compute interpolated normal vector at intersection point.

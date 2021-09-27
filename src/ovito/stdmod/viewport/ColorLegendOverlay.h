@@ -25,6 +25,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 
@@ -78,7 +79,7 @@ private:
 	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, bool isInteractive, SynchronousOperation operation);
 
 	/// Draws the color legend for a Color Coding modifier.
-	void drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, SynchronousOperation operation);
+	void drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, const PseudoColorMapping& mapping, const QString& propertyName);
 
 	/// Draws the color legend for a typed property.
 	void drawDiscreteColorMap(QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
@@ -118,6 +119,9 @@ private:
 
 	/// The ColorCodingModifier for which to display the legend.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier, PROPERTY_FIELD_NO_SUB_ANIM);
+
+	/// The selected PropertyColorMapping for which to display the legend.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PropertyColorMapping>, colorMapping, setColorMapping, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Controls the formatting of the value labels in the color legend.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

@@ -56,12 +56,13 @@ void ColorPickerWidget::setColor(const Color& newVal, bool emitChangeSignal)
 void ColorPickerWidget::paintEvent(QPaintEvent* event)
 {
 	QPainter painter(this);
-	QBrush brush{(QColor)color()};
 	if(isEnabled()) {
+		QBrush brush{(QColor)color()};
 		qDrawShadePanel(&painter, rect(), palette(), isDown(), 1, &brush);
 	}
 	else {
-		painter.fillRect(rect(), brush);
+		painter.setPen(QPen(palette().mid(), 1));
+		painter.drawRect(rect().adjusted(0,0,-1,-1));
 	}
 }
 

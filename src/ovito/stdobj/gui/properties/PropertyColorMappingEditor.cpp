@@ -83,14 +83,10 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 	layout2->setColumnStretch(1, 1);
 	layout1->addLayout(layout2);
 
-	// Auto-adjust range.
-	BooleanParameterUI* autoAdjustRangePUI = new BooleanParameterUI(this, PROPERTY_FIELD(PropertyColorMapping::autoAdjustRange));
-	layout2->addWidget(autoAdjustRangePUI->checkBox(), 0, 1);
-
 	// End value parameter.
 	_endValueUI = new FloatParameterUI(this, PROPERTY_FIELD(PropertyColorMapping::endValue));
-	layout2->addWidget(_endValueUI->label(), 1, 0);
-	layout2->addLayout(_endValueUI->createFieldLayout(), 1, 1);
+	layout2->addWidget(_endValueUI->label(), 0, 0);
+	layout2->addLayout(_endValueUI->createFieldLayout(), 0, 1);
 
 	// Insert color map display.
 	class ColorMapWidget : public QLabel
@@ -115,12 +111,12 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 	_colorLegendLabel = new ColorMapWidget(rollout, this);
 	_colorLegendLabel->setScaledContents(true);
 	_colorLegendLabel->setMouseTracking(true);
-	layout2->addWidget(_colorLegendLabel, 2, 1);
+	layout2->addWidget(_colorLegendLabel, 1, 1);
 
 	// Start value parameter.
 	_startValueUI = new FloatParameterUI(this, PROPERTY_FIELD(PropertyColorMapping::startValue));
-	layout2->addWidget(_startValueUI->label(), 3, 0);
-	layout2->addLayout(_startValueUI->createFieldLayout(), 3, 1);
+	layout2->addWidget(_startValueUI->label(), 2, 0);
+	layout2->addLayout(_startValueUI->createFieldLayout(), 2, 1);
 
 	// Export color scale button.
 	QToolButton* exportBtn = new QToolButton(rollout);
@@ -129,21 +125,21 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 	exportBtn->setAutoRaise(true);
 	exportBtn->setIconSize(QSize(42,22));
 	connect(exportBtn, &QPushButton::clicked, this, &PropertyColorMappingEditor::onExportColorScale);
-	layout2->addWidget(exportBtn, 2, 0, Qt::AlignCenter);
+	layout2->addWidget(exportBtn, 1, 0, Qt::AlignCenter);
 
 	layout1->addSpacing(8);
+
+	_adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
+	connect(_adjustRangeBtn, &QPushButton::clicked, this, &PropertyColorMappingEditor::onAdjustRange);
+	layout1->addWidget(_adjustRangeBtn);
+	layout1->addSpacing(4);
+
 	_reverseRangeBtn = new QPushButton(tr("Reverse range"), rollout);
 	connect(_reverseRangeBtn, &QPushButton::clicked, this, &PropertyColorMappingEditor::onReverseRange);
 	layout1->addWidget(_reverseRangeBtn);
 
 	// Update color legend if another color mapping object has been loaded into the editor.
 	connect(this, &PropertiesEditor::contentsReplaced, this, &PropertyColorMappingEditor::updateColorGradient);
-
-	// Update the editor widgets if the color mapping object has been modified.
-	connect(this, &PropertiesEditor::contentsChanged, this, &PropertyColorMappingEditor::updateRangeControls);
-
-	// Update the automatic start/end parameters displayed whenever the pipeline input changes.
-	connect(this, &PropertiesEditor::pipelineInputChanged, this, &PropertyColorMappingEditor::autoRangeChanged);
 }
 
 /******************************************************************************
@@ -203,47 +199,13 @@ bool PropertyColorMappingEditor::referenceEvent(RefTarget* source, const Referen
 			updateColorGradient();
 		}
 	}
-	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(PropertyColorMapping::autoAdjustRange)) {
-			PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-			if(mapping->autoAdjustRange() == false && dataset()->undoStack().isRecording()) {
-				// When the user turns off the auto-adjust option, adopt the current automatic range
-				// as the new user-defined range.
-				if(boost::optional<std::pair<FloatType, FloatType>> range = determineAutoRange()) {
-					mapping->setStartValue(range->first);
-					mapping->setEndValue(range->second);
-				}
-			}
-		}
-	}
 	return PropertiesEditor::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* This method is called whenever the color mapping has been modified.
-******************************************************************************/
-void PropertyColorMappingEditor::updateRangeControls()
-{
-	PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-
-	bool enableCustomRangeCtrls = (mapping && !mapping->autoAdjustRange());
-
-	_startValueUI->setEnabled(enableCustomRangeCtrls);
-	_endValueUI->setEnabled(enableCustomRangeCtrls);
-	_reverseRangeBtn->setEnabled(enableCustomRangeCtrls);
-	if(enableCustomRangeCtrls) {
-		_startValueUI->spinner()->updateTextBox();
-		_endValueUI->spinner()->updateTextBox();
-	}
-	else {
-		autoRangeChanged();
-	}
 }
 
 /******************************************************************************
 * Determines the min/max range of values in the selected input property.
 ******************************************************************************/
-boost::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineAutoRange() const
+boost::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineValueRange() const
 {
 	// Get the color mapping object.
 	PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
@@ -265,39 +227,12 @@ boost::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::det
 }
 
 /******************************************************************************
-* Is called whenever the color mapping has updated the automatic value range.
-******************************************************************************/
-void PropertyColorMappingEditor::autoRangeChanged()
-{
-	// Get the color mapping object.
-	PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-	if(!mapping || !mapping->autoAdjustRange()) return;
-
-	// Determine min/max value range.
-	if(boost::optional<std::pair<FloatType, FloatType>> range = determineAutoRange()) {
-		_startValueUI->textBox()->setText(_startValueUI->spinner()->unit()->formatValue(range->first));
-		_endValueUI->textBox()->setText(_endValueUI->spinner()->unit()->formatValue(range->second));
-	}
-	else {
-		_startValueUI->textBox()->setText(tr("###"));
-		_endValueUI->textBox()->setText(tr("###"));
-	}
-}
-
-/******************************************************************************
 * Determine the property value corresponding to the given relative position in the range interval.
 ******************************************************************************/
 FloatType PropertyColorMappingEditor::computeRangeValue(FloatType t) const
 {
 	if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
-		if(!mapping->autoAdjustRange()) {
-			return mapping->startValue() + t * (mapping->endValue() - mapping->startValue());
-		}
-		else {
-			if(boost::optional<std::pair<FloatType, FloatType>> range = determineAutoRange()) {
-				return range->first + t * (range->second - range->first);
-			}
-		}
+		return mapping->startValue() + t * (mapping->endValue() - mapping->startValue());
 	}
 	return std::numeric_limits<FloatType>::quiet_NaN();
 }
@@ -336,6 +271,21 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 			}
 		});
 	}
+}
+
+/******************************************************************************
+* Is called when the user presses the "Adjust Range" button.
+******************************************************************************/
+void PropertyColorMappingEditor::onAdjustRange()
+{
+	undoableTransaction(tr("Adjust range"), [&]() {
+		if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
+			if(boost::optional<std::pair<FloatType, FloatType>> range = determineValueRange()) {
+				mapping->setStartValue(range->first);
+				mapping->setEndValue(range->second);
+			}
+		}
+	});
 }
 
 /******************************************************************************

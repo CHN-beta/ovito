@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,11 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
+#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -47,6 +48,14 @@ class OVITO_MESH_EXPORT SurfaceMeshVis : public TransformingDataVis
 
 public:
 
+	enum ColorMappingMode {
+		NoPseudoColoring,
+		VertexPseudoColoring,
+		FacePseudoColoring,
+		RegionPseudoColoring
+	};
+	Q_ENUMS(ColorMappingMode);
+
 	/// \brief Constructor.
 	Q_INVOKABLE SurfaceMeshVis(DataSet* dataset);
 
@@ -55,10 +64,10 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 
 	/// Lets the visualization element render the data object.
-	virtual PipelineStatus render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 
 	/// Computes the bounding box of the object.
-	virtual Box3 boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
 	/// Returns the transparency of the surface mesh.
 	FloatType surfaceTransparency() const { return surfaceTransparencyController() ? surfaceTransparencyController()->currentFloatValue() : 0.0f; }
@@ -80,17 +89,25 @@ protected:
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
+	/// Is called when the value of a reference field of this RefMaker changes.
+	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// This method is called when a reference target changes.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
 	/// Computation engine that builds the rendering mesh.
-	class OVITO_MESH_EXPORT PrepareSurfaceEngine : public AsynchronousTask<TriMesh, TriMesh, std::vector<ColorA>, std::vector<size_t>, bool>
+	class OVITO_MESH_EXPORT PrepareSurfaceEngine : public AsynchronousTask<TriMesh, TriMesh, std::vector<ColorA>, std::vector<size_t>, bool, PipelineStatus>
 	{
 	public:
 
 		/// Constructor.
-		PrepareSurfaceEngine(const SurfaceMesh* mesh, bool reverseOrientation, QVector<Plane3> cuttingPlanes, bool smoothShading, Color surfaceColor, bool generateCapPolygons) :
+		PrepareSurfaceEngine(const SurfaceMesh* mesh, bool reverseOrientation, QVector<Plane3> cuttingPlanes, bool smoothShading, ColorMappingMode colorMappingMode, const PropertyReference& pseudoColorPropertyRef, Color surfaceColor, bool generateCapPolygons) :
 			_inputMesh(mesh),
 			_reverseOrientation(reverseOrientation),
 			_cuttingPlanes(std::move(cuttingPlanes)),
 			_smoothShading(smoothShading),
+			_colorMappingMode(colorMappingMode),
+			_pseudoColorPropertyRef(pseudoColorPropertyRef),
 			_surfaceColor(surfaceColor),
 			_generateCapPolygons(generateCapPolygons) {}
 
@@ -125,7 +142,7 @@ protected:
 	private:
 
 		/// Splits a triangle face at a periodic boundary.
-		bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
+		bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
 		/// Traces the closed contour of the surface-boundary intersection.
 		std::vector<Point2> traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim) const;
@@ -147,6 +164,8 @@ protected:
 		bool _generateCapPolygons;			///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.
 		QVector<Plane3> _cuttingPlanes;		///< List of cutting planes at which the mesh should be truncated.
 		Color _surfaceColor;				///< The uniform surface color set by the user.
+		ColorMappingMode _colorMappingMode; ///< The pseudo-coloring mode.
+		PropertyReference _pseudoColorPropertyRef;
 
 		TriMesh _surfaceMesh;					///< The output mesh generated by clipping the surface mesh at the cell boundaries.
 		TriMesh _capPolygonsMesh;				///< The output mesh containing the generated cap polygons.
@@ -154,6 +173,7 @@ protected:
 		std::vector<ColorA> _materialColors;	///< The list of material colors for the output TriMesh.
 		std::vector<size_t> _originalFaceMap;	///< Maps output mesh triangles to input mesh facets.
 		bool _renderFacesTwoSided = true;		///< Indicates that output triangle faces should be rendered two-sided. 
+		PipelineStatus _status;					///< The outcome of the process.
 	};
 
 	/// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
@@ -195,6 +215,12 @@ private:
 	/// Internal field indicating whether the surface meshes rendered by this viz element are closed or not.
 	/// Depending on this setting, the UI will show the cap polygon option to the user.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, surfaceIsClosed, setSurfaceIsClosed);
+
+	/// Transfer function for pseudo-color visualization of a surface property.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, surfaceColorMapping, setSurfaceColorMapping);
+
+	/// Controls which part of a surface mesh is used for pseudo-color mapping.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(ColorMappingMode, colorMappingMode, setColorMappingMode);
 };
 
 

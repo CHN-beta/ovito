@@ -59,9 +59,9 @@ SimulationCellVis::SimulationCellVis(DataSet* dataset) : DataVis(dataset),
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 SimulationCellVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 SimulationCellVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const SimulationCellObject* cellObject = dynamic_object_cast<SimulationCellObject>(objectStack.back());
+	const SimulationCellObject* cellObject = dynamic_object_cast<SimulationCellObject>(path.back());
 	OVITO_CHECK_OBJECT_POINTER(cellObject);
 
 	AffineTransformation matrix = cellObject->cellMatrix();
@@ -76,9 +76,9 @@ Box3 SimulationCellVis::boundingBox(TimePoint time, const std::vector<const Data
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SimulationCellVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SimulationCellVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
-	const SimulationCellObject* cell = dynamic_object_cast<SimulationCellObject>(objectStack.back());
+	const SimulationCellObject* cell = dynamic_object_cast<SimulationCellObject>(path.back());
 	OVITO_CHECK_OBJECT_POINTER(cell);
 	if(!cell) return {};
 
@@ -88,7 +88,7 @@ PipelineStatus SimulationCellVis::render(TimePoint time, const std::vector<const
 		}
 		else {
 			TimeInterval validityInterval;
-			renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+			renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		}
 	}
 	else {
@@ -100,7 +100,7 @@ PipelineStatus SimulationCellVis::render(TimePoint time, const std::vector<const
 		}
 		else {
 			TimeInterval validityInterval;
-			Box3 bb = boundingBox(time, objectStack, contextNode, flowState, validityInterval);
+			Box3 bb = boundingBox(time, path, contextNode, flowState, validityInterval);
 			renderer->addToLocalBoundingBox(bb.padBox(cellLineWidth()));
 		}
 	}

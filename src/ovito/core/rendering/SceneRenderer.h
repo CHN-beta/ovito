@@ -315,7 +315,7 @@ protected:
 private:
 
 	/// Renders a data object and all its sub-objects.
-	void renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, std::vector<const DataObject*>& objectStack);
+	void renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
 
 	/// The dataset being rendered in the current rendering pass.
 	DataSet* _renderDataset = nullptr;

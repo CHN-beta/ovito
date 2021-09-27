@@ -142,7 +142,7 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 	statusWidget->setMinimumHeight(56);
 
 	// Open a sub-editor for the surface mesh vis element.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout));
+	new SubObjectParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout).setTitle(tr("Surface display")));
 }
 
 }	// End of namespace

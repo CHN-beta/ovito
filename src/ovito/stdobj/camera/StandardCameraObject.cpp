@@ -169,7 +169,7 @@ FloatType StandardCameraObject::getTargetDistance(TimePoint time, const Pipeline
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-PipelineStatus CameraVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	// Camera objects are only visible in the interactive viewports.
 	if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
@@ -198,7 +198,7 @@ PipelineStatus CameraVis::render(TimePoint time, const std::vector<const DataObj
 		Color color = ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS);
 
 		// Lookup the rendering primitive in the vis cache.
-		auto& cameraPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, objectStack.back(), color));
+		auto& cameraPrimitives = dataset()->visCache().get<CacheValue>(CacheKey(renderer, path.back(), color));
 
 		// Check if we already have a valid rendering primitive that is up to date.
 		if(!cameraPrimitives.iconRendering || !cameraPrimitives.iconPicking) {
@@ -266,7 +266,7 @@ PipelineStatus CameraVis::render(TimePoint time, const std::vector<const DataObj
 	if(contextNode->isSelected()) {
 		if(RenderSettings* renderSettings = dataset()->renderSettings())
 			aspectRatio = renderSettings->outputImageAspectRatio();
-		if(const StandardCameraObject* camera = dynamic_object_cast<StandardCameraObject>(objectStack.back())) {
+		if(const StandardCameraObject* camera = dynamic_object_cast<StandardCameraObject>(path.back())) {
 			if(camera->isPerspective()) {
 				coneAngle = camera->fieldOfView(time, iv);
 				if(targetDistance == 0)
@@ -372,7 +372,7 @@ PipelineStatus CameraVis::render(TimePoint time, const std::vector<const DataObj
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 CameraVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 CameraVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
 	// This is not a physical object. It doesn't have a size.
 	return Box3(Point3::Origin(), Point3::Origin());

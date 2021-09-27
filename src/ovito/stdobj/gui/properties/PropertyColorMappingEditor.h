@@ -63,24 +63,21 @@ private:
 	QIcon iconFromColorMap(ColorCodingGradient* map);
 
 	/// Determines the min/max range of values in the selected input property.
-	boost::optional<std::pair<FloatType, FloatType>> determineAutoRange() const;
+	boost::optional<std::pair<FloatType, FloatType>> determineValueRange() const;
 
 	/// Determine the property value corresponding to the given relative position in the range interval.
 	FloatType computeRangeValue(FloatType t) const;
 
 protected Q_SLOTS:
 
-	/// This method is called whenever the color mapping has been modified.
-	void updateRangeControls();
-
-	/// Is called whenever the color mapping has updated the automatic value range.
-	void autoRangeChanged();
-
 	/// Updates the display for the color gradient.
 	void updateColorGradient();
 
 	/// Is called when the user selects a color gradient in the list box.
 	void onColorGradientSelected(int index);
+
+	/// Is called when the user presses the "Adjust range" button.
+	void onAdjustRange();
 
 	/// Is called when the user presses the "Reverse range" button.
 	void onReverseRange();
@@ -107,6 +104,7 @@ private:
 	PropertyReferenceParameterUI* _sourcePropertyUI;
 	FloatParameterUI* _startValueUI;
 	FloatParameterUI* _endValueUI;
+	QPushButton* _adjustRangeBtn;
 	QPushButton* _reverseRangeBtn;
 };
 

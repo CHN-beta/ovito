@@ -110,9 +110,9 @@ void ColorParameterUI::setEnabled(bool enabled)
 	PropertyParameterUI::setEnabled(enabled);
 	if(colorPicker()) {
 		if(isReferenceFieldUI())
-			colorPicker()->setEnabled(parameterObject() != NULL && isEnabled());
+			colorPicker()->setEnabled(parameterObject() && isEnabled());
 		else
-			colorPicker()->setEnabled(editObject() != NULL && isEnabled());
+			colorPicker()->setEnabled(editObject() && isEnabled());
 	}
 }
 

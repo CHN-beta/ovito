@@ -60,7 +60,7 @@ public:
 #endif
 
 	/// Creates a PseudoColorMapping that can be used for rendering of graphics primitives.
-	PseudoColorMapping pseudoColorMapping(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const;
+	PseudoColorMapping pseudoColorMapping() const;
 
 	/// Determines the min/max range of values stored in the given property array.
 	boost::optional<std::pair<FloatType, FloatType>> determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const;
@@ -83,9 +83,6 @@ private:
 
 	/// The input property that is used as data source for the coloring.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
-
-	/// Controls whether the interval of the color map is automatically adjusted to the range of input values.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustRange, setAutoAdjustRange);
 };
 
 }	// End of namespace

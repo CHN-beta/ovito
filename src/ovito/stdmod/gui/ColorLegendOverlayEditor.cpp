@@ -187,16 +187,34 @@ void ColorLegendOverlayEditor::updateSourcesList()
 	_sourcesComboBox->clear();
 	if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
 
-		// Find all ColorCodingModifiers in the scene. For this we have to visit all
-		// pipelines and iterate over their modifier applications.		
+		// List all ColorCodingModifiers, typed PropertyObjects, and PropertyColorMappings in the scene. To find them, visit all
+		// pipelines and iterate over their modifier applications and output data collections.
 		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-			// Walk along the pipeline:
+
+			// Go through the visual elements of the pipeline and look if any one has a PropertyColorMapping attached to it.
+			for(DataVis* vis : pipeline->visElements()) {
+				if(vis->isEnabled()) {
+					for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
+						if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
+							if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(*field))) {
+								if(mapping->sourceProperty()) {
+									// Prepend property color mappings to the front of the list.
+									_sourcesComboBox->insertItem(0, tr("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+
+			// Walk along the pipeline stages to find ModifierApplications associated with a ColorCodingModifier:
 			PipelineObject* obj = pipeline->dataProvider();
 			while(obj) {
 				if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
 					if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
-						// Prepend Color Coding modifier to the front of the list.
-						_sourcesComboBox->insertItem(0, mod->sourceProperty().nameWithComponent(), QVariant::fromValue(mod));
+						// Prepend color coding modifiers to the front of the list.
+						_sourcesComboBox->insertItem(0, tr("Color coding: %1").arg(mod->sourceProperty().nameWithComponent()), QVariant::fromValue(mod));
 					}
 					obj = modApp->input();
 				}
@@ -234,6 +252,18 @@ void ColorLegendOverlayEditor::updateSourcesList()
 			_label2PUI->setEnabled(true);
 			_valueFormatStringPUI->setEnabled(true);
 		}
+		else if(overlay->colorMapping()) {
+			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->colorMapping()));
+			if(index >= 0)
+				_sourcesComboBox->setCurrentIndex(index);
+			else {
+				_sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->colorMapping()->sourceProperty().nameWithComponent());
+				_sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+			}
+			_label1PUI->setEnabled(true);
+			_label2PUI->setEnabled(true);
+			_valueFormatStringPUI->setEnabled(true);
+		}
 		else if(overlay->sourceProperty()) {
 			int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
 			if(index >= 0)
@@ -263,10 +293,17 @@ void ColorLegendOverlayEditor::colorSourceSelected()
 
 			if(selectedData.canConvert<ColorCodingModifier*>()) {
 				overlay->setModifier(selectedData.value<ColorCodingModifier*>());
+				overlay->setColorMapping(nullptr);
+				overlay->setSourceProperty({});
+			}
+			else if(selectedData.canConvert<PropertyColorMapping*>()) {
+				overlay->setColorMapping(selectedData.value<PropertyColorMapping*>());
+				overlay->setModifier(nullptr);
 				overlay->setSourceProperty({});
 			}
 			else if(selectedData.canConvert<PropertyDataObjectReference>()) {
 				overlay->setModifier(nullptr);
+				overlay->setColorMapping(nullptr);
 				overlay->setSourceProperty(selectedData.value<PropertyDataObjectReference>());
 			}
 		});

@@ -371,6 +371,15 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     // Are we rendering a semi-transparent mesh?
     bool useBlending = !renderer->isPicking() && !isFullyOpaque();
 
+    // Decide whether per-pixel pseudo-color mapping is used.
+    bool renderWithPseudoColorMapping = false;
+    if(pseudoColorMapping().isValid() && !renderer->isPicking() && !useInstancedRendering()) {
+        if(!mesh().hasVertexColors() && mesh().hasVertexPseudoColors())
+            renderWithPseudoColorMapping = true;
+        else if(!mesh().hasFaceColors() && mesh().hasFacePseudoColors())
+            renderWithPseudoColorMapping = true;
+    }
+
     // Bind the right pipeline.
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     if(!useInstancedRendering()) {
@@ -378,7 +387,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
             pipelines.create(renderer, pipelines.mesh_picking).bind(*renderer->context(), renderer->currentCommandBuffer());
             pipelineLayout = pipelines.mesh_picking.layout();
         }
-        else if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid()) {
+        else if(renderWithPseudoColorMapping) {
             pipelines.create(renderer, pipelines.mesh_color_mapping).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
             pipelineLayout = pipelines.mesh_color_mapping.layout();
         }
@@ -388,7 +397,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
         }
     }
     else {
-        OVITO_ASSERT(!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors() && !pseudoColorMapping().isValid()); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
+        OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
         if(!renderer->isPicking()) {
             if(!perInstanceColors()) {
                 pipelines.create(renderer, pipelines.mesh_instanced).bind(*renderer->context(), renderer->currentCommandBuffer(), useBlending);
@@ -585,7 +594,7 @@ void VulkanMeshPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipel
     renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 1, &meshBuffer, &offset);
 
     // Are we rendering with pseudo-colors and a color mapping function.
-	if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid() && !renderer->isPicking()) {
+	if(renderWithPseudoColorMapping) {
         // We pass the min/max range of the color map to the vertex shader in the push constants buffer.
         // But since the push constants buffer is already occupied with two mat4 matrices (128 bytes), we 
         // have to squeeze the values into unused elements of the normal transformation matrix.

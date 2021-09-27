@@ -87,12 +87,12 @@ void VectorVis::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 VectorVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(objectStack.size() < 2) return {};
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
+	if(path.size() < 2) return {};
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
 	if(!particles) return {};
-	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
+	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(path.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;
@@ -163,19 +163,19 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Pro
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VectorVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return {};
 	}
 
 	// Get input data.
-	if(objectStack.size() < 2) return {};
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
+	if(path.size() < 2) return {};
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
 	if(!particles) return {};
-	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(objectStack.back());
+	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(path.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
 		vectorProperty = nullptr;

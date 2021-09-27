@@ -137,7 +137,7 @@ private:
 	void collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const;
 
 	/// Computes the bounding box of a data object and all its sub-objects.
-	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, std::vector<const DataObject*>& objectStack) const;
+	void getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const;
 
 	/// The terminal object of the pipeline that outputs the data to be rendered by this PipelineSceneNode.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PipelineObject>, dataProvider, setDataProvider);

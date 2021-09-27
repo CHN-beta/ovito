@@ -155,6 +155,10 @@ void PipelineSceneNode::updateVisElementList(const PipelineFlowState& state)
 		if(!visElements().contains(vis))
 			_visElements.push_back(this, PROPERTY_FIELD(visElements), vis);
 	}
+
+	// Since this method was invoked after a completed pipeline evaluation, inform all vis elements that their input state has changed.
+	for(DataVis* vis : visElements())
+		vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
 }
 
 /******************************************************************************
@@ -372,10 +376,10 @@ Box3 PipelineSceneNode::localBoundingBox(TimePoint time, TimeInterval& validity)
 
 	// Let visual elements compute the bounding boxes of the data objects.
 	Box3 bb;
-	std::vector<const DataObject*> objectStack;
+	ConstDataObjectPath dataObjectPath;
 	if(state.data())
-		getDataObjectBoundingBox(time, state.data(), state, validity, bb, objectStack);
-	OVITO_ASSERT(objectStack.empty());
+		getDataObjectBoundingBox(time, state.data(), state, validity, bb, dataObjectPath);
+	OVITO_ASSERT(dataObjectPath.empty());
 	validity.intersect(state.stateValidity());
 	return bb;
 }
@@ -383,7 +387,7 @@ Box3 PipelineSceneNode::localBoundingBox(TimePoint time, TimeInterval& validity)
 /******************************************************************************
 * Computes the bounding box of a data object and all its sub-objects.
 ******************************************************************************/
-void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, std::vector<const DataObject*>& objectStack) const
+void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const
 {
 	bool isOnStack = false;
 
@@ -394,12 +398,12 @@ void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObjec
 		if(vis->isEnabled()) {
 			// Push the data object onto the stack.
 			if(!isOnStack) {
-				objectStack.push_back(dataObj);
+				dataObjectPath.push_back(dataObj);
 				isOnStack = true;
 			}
 			try {
 				// Let the vis element do the rendering.
-				bb.addBox(vis->boundingBox(time, objectStack, this, state, validity));
+				bb.addBox(vis->boundingBox(time, dataObjectPath, this, state, validity));
 			}
 			catch(const Exception& ex) {
 				ex.logError();
@@ -411,16 +415,16 @@ void PipelineSceneNode::getDataObjectBoundingBox(TimePoint time, const DataObjec
 	dataObj->visitSubObjects([&](const DataObject* subObject) {
 		// Push the data object onto the stack.
 		if(!isOnStack) {
-			objectStack.push_back(dataObj);
+			dataObjectPath.push_back(dataObj);
 			isOnStack = true;
 		}
-		getDataObjectBoundingBox(time, subObject, state, validity, bb, objectStack);
+		getDataObjectBoundingBox(time, subObject, state, validity, bb, dataObjectPath);
 		return false;
 	});
 
 	// Pop the data object from the stack.
 	if(isOnStack) {
-		objectStack.pop_back();
+		dataObjectPath.pop_back();
 	}
 }
 
@@ -608,8 +612,6 @@ void PipelineSceneNode::collectDataObjectsForVisElement(ConstDataObjectPath& pat
 ******************************************************************************/
 std::vector<ConstDataObjectPath> PipelineSceneNode::getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const
 {
-	OVITO_ASSERT(visElements().contains(vis));
-	
 	std::vector<ConstDataObjectPath> results;
 	if(state) {
 		ConstDataObjectPath path(1);

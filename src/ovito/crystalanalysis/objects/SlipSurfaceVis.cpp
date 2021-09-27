@@ -50,7 +50,7 @@ SlipSurfaceVis::SlipSurfaceVis(DataSet* dataset) : SurfaceMeshVis(dataset)
 * Constructor.
 ******************************************************************************/
 SlipSurfaceVis::PrepareMeshEngine::PrepareMeshEngine(const SurfaceMesh* microstructure, QVector<Plane3> cuttingPlanes, bool smoothShading) :
-        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, std::move(cuttingPlanes), smoothShading, Color(1,1,1), false),
+        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, std::move(cuttingPlanes), smoothShading, NoPseudoColoring, {}, Color(1,1,1), false),
         _microstructure(static_object_cast<Microstructure>(microstructure))
 {
     if(const PropertyObject* phaseProperty = microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty)) {

@@ -48,19 +48,28 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
     if(emphasizeEdges() && !renderer->isPicking())
         renderWireframe(renderer);
 
+    // Decide whether per-pixel pseudo-color mapping is used.
+    bool renderWithPseudoColorMapping = false;
+    if(pseudoColorMapping().isValid() && !renderer->isPicking() && !useInstancedRendering()) {
+        if(!mesh().hasVertexColors() && mesh().hasVertexPseudoColors())
+            renderWithPseudoColorMapping = true;
+        else if(!mesh().hasFaceColors() && mesh().hasFacePseudoColors())
+            renderWithPseudoColorMapping = true;
+    }
+
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
     if(!useInstancedRendering()) {
         if(renderer->isPicking())
 			shader.load("mesh_picking", "mesh/mesh_picking.vert", "mesh/mesh_picking.frag");
-        else if((mesh().hasVertexPseudoColors() || mesh().hasFacePseudoColors()) && pseudoColorMapping().isValid())
+        else if(renderWithPseudoColorMapping)
 			shader.load("mesh_color_mapping", "mesh/mesh_color_mapping.vert", "mesh/mesh_color_mapping.frag");
         else
 			shader.load("mesh", "mesh/mesh.vert", "mesh/mesh.frag");
         shader.setInstanceCount(1);
     }
     else {
-        OVITO_ASSERT(!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors() && !pseudoColorMapping().isValid()); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
+        OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
         if(!renderer->isPicking()) {
             if(!perInstanceColors())
 				shader.load("mesh_instanced", "mesh/mesh_instanced.vert", "mesh/mesh_instanced.frag");
@@ -228,9 +237,11 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 	// Bind vertex buffer to vertex attributes.
 	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, position), OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
-	if((!mesh().hasVertexPseudoColors() && !mesh().hasFacePseudoColors()) || !pseudoColorMapping().isValid() || renderer->isPicking()) {
-        // Rendering with true RGBA colors.
-        shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+	if(!renderWithPseudoColorMapping) {
+        if(!renderer->isPicking()) {
+            // Rendering with true RGBA colors.
+            shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+        }
     }
     else {
         // Rendering  with pseudo-colors and a color mapping function.

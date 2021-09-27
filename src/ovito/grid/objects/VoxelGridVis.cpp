@@ -71,9 +71,9 @@ void VoxelGridVis::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 VoxelGridVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 VoxelGridVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(objectStack.back())) {
+	if(const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(path.back())) {
 		if(gridObj->domain()) {
 			AffineTransformation matrix = gridObj->domain()->cellMatrix();
 			if(gridObj->domain()->is2D()) {
@@ -88,19 +88,19 @@ Box3 VoxelGridVis::boundingBox(TimePoint time, const std::vector<const DataObjec
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VoxelGridVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	PipelineStatus status;
 
 	// Check if this is just the bounding box computation pass.
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return status;
 	}
 
 	// Get the grid object being rendered.
-	const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(objectStack.back());
+	const VoxelGrid* gridObj = dynamic_object_cast<VoxelGrid>(path.back());
 	if(!gridObj) return status;
 
 	// Throws an exception if the input data structure is corrupt.
@@ -586,7 +586,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const std::vector<const Data
 	}
 
 	// Update the color mapping.
-	primitives.volumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping(pseudoColorProperty, pseudoColorPropertyComponent));
+	primitives.volumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
 	renderer->beginPickObject(contextNode, primitives.pickInfo);
 	renderer->renderMesh(primitives.volumeFaces);

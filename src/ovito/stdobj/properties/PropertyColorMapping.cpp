@@ -25,7 +25,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/core/rendering/RendererResourceCache.h>
 #include "PropertyColorMapping.h"
 
 namespace Ovito { namespace StdObj {
@@ -34,12 +33,10 @@ IMPLEMENT_OVITO_CLASS(PropertyColorMapping);
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);
-DEFINE_PROPERTY_FIELD(PropertyColorMapping, autoAdjustRange);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, sourceProperty);
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");
-SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, autoAdjustRange, "Automatically adjust range");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property");
 
 /******************************************************************************
@@ -47,8 +44,7 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property"
 ******************************************************************************/
 PropertyColorMapping::PropertyColorMapping(DataSet* dataset) : RefTarget(dataset),
 	_startValue(0.0),
-	_endValue(0.0),
-	_autoAdjustRange(true)
+	_endValue(0.0)
 {
 }
 
@@ -88,21 +84,9 @@ void PropertyColorMapping::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Creates a PseudoColorMapping that can be used for rendering of graphics primitives.
 ******************************************************************************/
-PseudoColorMapping PropertyColorMapping::pseudoColorMapping(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
+PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 {
-	if(!autoAdjustRange()) {
-		// Manual range control.
-		return PseudoColorMapping(startValue(), endValue(), colorGradient());
-	}
-	else if(pseudoColorProperty && colorGradient()) {
-		// Automatic range control. Need to determine min/max range of input property values.
-		if(boost::optional<std::pair<FloatType, FloatType>> range = determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent)) {
-			return PseudoColorMapping(range->first, range->second, colorGradient());
-		}
-	}
-
-	// Returns an invalid mapping.
-	return {};
+	return PseudoColorMapping(startValue(), endValue(), colorGradient());
 }
 
 /******************************************************************************
@@ -110,41 +94,27 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping(const PropertyObject
 ******************************************************************************/
 boost::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
 {
-	if(!pseudoColorProperty)
-		return {};
+	OVITO_ASSERT(pseudoColorProperty);
 	OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());
 
-	// Compute ranges for input properties are kept in an internal cache to speed up subsequent queries.
+	FloatType minValue = std::numeric_limits<FloatType>::max();
+	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+	
+	// Iterate over the property array to find the lowest/highest value.
+	pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
+			if(v > maxValue) maxValue = v;
+			if(v < minValue) minValue = v;
+		});
 
-	// The tagged key used for caching:
-	RendererResourceKey<PropertyColorMapping, ConstDataObjectRef, int> cacheKey(pseudoColorProperty, pseudoColorPropertyComponent);
-	// The value type stored in the cache:
-	struct CacheValue {
-		FloatType minValue = std::numeric_limits<FloatType>::max();
-		FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-	};
-	// Perform cache lookup.
-	auto& range = dataset()->visCache().get<CacheValue>(std::move(cacheKey));
+	// Range may be degenerate if input property contains zero elements.
+	if(minValue == std::numeric_limits<FloatType>::max())
+		return {};
 
-	// Check if value returned by cache is already initialized. If not, we have to perform the range computation.
-	if(range.minValue == std::numeric_limits<FloatType>::max()) {
+	// Clamp to finite range.
+	if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
+	if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
 
-		// Iterate over the property array to find the lowest/highest value.
-		pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
-				if(v > range.maxValue) range.maxValue = v;
-				if(v < range.minValue) range.minValue = v;
-			});
-
-		// Range may be degenerate if input property contains zero elements.
-		if(range.minValue == std::numeric_limits<FloatType>::max())
-			return {};
-
-		// Clamp to finite range.
-		if(!std::isfinite(range.minValue)) range.minValue = std::numeric_limits<FloatType>::lowest();
-		if(!std::isfinite(range.maxValue)) range.maxValue = std::numeric_limits<FloatType>::max();
-	}
-
-	return std::make_pair(range.minValue, range.maxValue);
+	return std::make_pair(minValue, maxValue);
 }
 
 /******************************************************************************

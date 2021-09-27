@@ -63,11 +63,11 @@ BondsVis::BondsVis(DataSet* dataset) : DataVis(dataset),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(objectStack.size() < 2) return {};
-	const BondsObject* bonds = dynamic_object_cast<BondsObject>(objectStack.back());
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
+	if(path.size() < 2) return {};
+	const BondsObject* bonds = dynamic_object_cast<BondsObject>(path.back());
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
 	if(!bonds || !particles) return {};
 	particles->verifyIntegrity();
 	bonds->verifyIntegrity();
@@ -134,17 +134,17 @@ Box3 BondsVis::boundingBox(TimePoint time, const std::vector<const DataObject*>&
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus BondsVis::render(TimePoint time, const std::vector<const DataObject*>& objectStack, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
-		renderer->addToLocalBoundingBox(boundingBox(time, objectStack, contextNode, flowState, validityInterval));
+		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
 		return {};
 	}
 
-	if(objectStack.size() < 2) return {};
-	const BondsObject* bonds = dynamic_object_cast<BondsObject>(objectStack.back());
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectStack[objectStack.size()-2]);
+	if(path.size() < 2) return {};
+	const BondsObject* bonds = dynamic_object_cast<BondsObject>(path.back());
+	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
 	if(!bonds || !particles) return {};
 	particles->verifyIntegrity();
 	bonds->verifyIntegrity();
