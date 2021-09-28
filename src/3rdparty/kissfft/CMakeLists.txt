@@ -53,7 +53,7 @@ ENDIF()
 IF(EMSCRIPTEN)
 	# Adopt the Emscript compiler flags from Qt's platform target.
 	# That's because all libraries linked into the static WASM module need be built with the same flags.
-	TARGET_LINK_LIBRARIES(kissft PRIVATE Qt::Platform)
+	TARGET_LINK_LIBRARIES(kissfft PRIVATE Qt::Platform)
 ENDIF()
 
 # Export this target.
