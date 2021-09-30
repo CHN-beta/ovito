@@ -29,11 +29,13 @@ layout(triangle_strip, max_vertices=14) out;
 in vec3 base_gs[1];
 in vec3 head_gs[1];
 in float radius_gs[1];
-in vec4 color_gs[1];
+in vec4 color1_gs[1];
+in vec4 color2_gs[1];
 uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
-flat out vec4 color_fs;
+flat out vec4 color1_fs;
+flat out vec4 color2_fs;
 flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
@@ -69,8 +71,9 @@ void main()
         // Apply model-view-projection matrix to box vertex position.
         gl_Position = modelview_projection_matrix * vec4(base_gs[0] + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
 
-        // Forward cylinder color to fragment shader.
-        color_fs = color_gs[0];
+        // Forward cylinder colors to fragment shader.
+        color1_fs = color1_gs[0];
+        color2_fs = color2_gs[0];
 
         // Pass square of cylinder radius to fragment shader.
         cylinder_radius_sq_fs = viewspace_radius * viewspace_radius;

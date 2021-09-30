@@ -3,14 +3,27 @@
 #include "../global_uniforms.glsl"
 #include "../shading.glsl"
 
+// Push constants:
+layout(push_constant) uniform constants_fragment {
+	// mat4 mvp; -> used in the vertex shader
+    // layout(row_major) mat4x3 modelview_matrix; -> used in the vertex shader
+    layout(offset = 112) vec2 color_range;
+} PushConstants;
+
+// Tabulated color map:
+layout(std140, set = 1, binding = 0) uniform ColorMapObject {
+    vec4 table[256];
+} ColorMap;
+
 // Inputs:
-layout(location = 0) flat in vec4 color_fs;
-layout(location = 1) flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
-layout(location = 2) flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
-layout(location = 3) flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
-layout(location = 4) flat in float cylinder_length;			// The length of the cylinder
-layout(location = 5) noperspective in vec3 ray_origin;
-layout(location = 6) noperspective in vec3 ray_dir;
+layout(location = 0) flat in vec4 color1_fs;
+layout(location = 1) flat in vec4 color2_fs;
+layout(location = 2) flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
+layout(location = 3) flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
+layout(location = 4) flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
+layout(location = 5) flat in float cylinder_length;			// The length of the cylinder
+layout(location = 6) noperspective in vec3 ray_origin;
+layout(location = 7) noperspective in vec3 ray_dir;
 
 // Outputs:
 layout(location = 0) out vec4 fragColor;
@@ -28,6 +41,7 @@ void main()
 	vec3 surface_normal;
 
 	bool skip = false;
+	float x;	// Normalized location along cylinder (used for color interpolation). 
 
 	if(ln < 1e-7 * cylinder_length) {
 		// Handle case where view ray is parallel to cylinder axis:
@@ -44,7 +58,9 @@ void main()
 			if(tfar < 0.0) {
 				view_intersection_pnt += tfar * ray_dir_norm;
 				surface_normal = cylinder_view_axis;
+				x = 1.0;
 			}
+			else x = 0.0;
 		}
 	}
 	else {
@@ -73,6 +89,7 @@ void main()
 
 				// Calculate surface normal in view coordinate system.
 				surface_normal = (view_intersection_pnt - (cylinder_view_base + anear * cylinder_view_axis));
+				x = anear;
 			}
 			else {
 				// Calculate second intersection point.
@@ -84,10 +101,12 @@ void main()
 				if(anear < 0.0 && afar > 0.0) {
 					view_intersection_pnt += (anear / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 					surface_normal = -cylinder_view_axis;
+					x = 0.0;
 				}
 				else if(anear > 1.0 && afar < 1.0) {
 					view_intersection_pnt += ((anear - 1.0) / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 					surface_normal = cylinder_view_axis;
+					x = 1.0;
 				}
 				else {
 					discard;
@@ -103,5 +122,20 @@ void main()
 	vec4 projected_intersection = GlobalUniforms.projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = projected_intersection.z / projected_intersection.w;
 
-    fragColor = shadeSurfaceColor(normalize(surface_normal), color_fs);
+	// Perform linear interpolation of color.
+	vec4 color = mix(color1_fs, color2_fs, x);
+
+	// If pseudocolor mapping is used, apply tabulated transfer function to pseudocolor value,
+	// which is stored in the R component of the input color.
+	if(PushConstants.color_range.x != PushConstants.color_range.y) {
+		// Compute normalized pseudocolor value.
+		float pseudocolor_value = (color.r - PushConstants.color_range.x) / (PushConstants.color_range.y - PushConstants.color_range.x);
+        // Compute index into color look-up table.
+        int index = int(clamp(pseudocolor_value * 256.0, 0.0, 255.0));
+		// Replace RGB value.
+		color.xyz = ColorMap.table[index].xyz;
+	}
+
+	// Perform surface shading.
+	fragColor = shadeSurfaceColor(normalize(surface_normal), color);
 }

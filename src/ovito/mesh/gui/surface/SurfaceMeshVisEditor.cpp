@@ -50,31 +50,29 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
 
-	QGroupBox* coloringGroupBox = new QGroupBox(tr("Coloring"));
+	QGroupBox* coloringGroupBox = new QGroupBox(tr("Color mapping mode"));
 	QGridLayout* sublayout = new QGridLayout(coloringGroupBox);
 	sublayout->setContentsMargins(4,4,4,4);
 	sublayout->setSpacing(4);
 	sublayout->setColumnStretch(1, 1);
-//	sublayout->setColumnMinimumWidth(0, 20);
 	layout->addWidget(coloringGroupBox);
 
 	// Coloring mode.
 	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::colorMappingMode));
-	sublayout->addWidget(new QLabel(tr("Pseudo-coloring mode:")), 0, 0, 1, 2);
+	sublayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::NoPseudoColoring, tr("Uniform color:")), 0, 0);
 	QHBoxLayout* boxlayout = new QHBoxLayout();
 	boxlayout->setContentsMargins(0,0,0,0);
 	sublayout->addLayout(boxlayout, 1, 0, 1, 2);
 	boxlayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::VertexPseudoColoring, tr("Vertices")), 1);
 	boxlayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::FacePseudoColoring, tr("Faces")), 1);
 	boxlayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::RegionPseudoColoring, tr("Regions")), 1);
-	sublayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::NoPseudoColoring, tr("Uniform:")), 2, 0);
 
 	_surfaceColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceColor));
-	sublayout->addWidget(_surfaceColorUI->colorPicker(), 2, 1);
+	sublayout->addWidget(_surfaceColorUI->colorPicker(), 0, 1);
 
 	FloatParameterUI* surfaceTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceTransparencyController));
-	sublayout->addWidget(new QLabel(tr("Transparency:")), 3, 0);
-	sublayout->addLayout(surfaceTransparencyUI->createFieldLayout(), 3, 1);
+	sublayout->addWidget(new QLabel(tr("Transparency:")), 2, 0);
+	sublayout->addLayout(surfaceTransparencyUI->createFieldLayout(), 2, 1);
 
 	// Rendering options
 	QGroupBox* renderingOptionsGroupBox = new QGroupBox(tr("Rendering options"));

@@ -12,7 +12,8 @@ layout(push_constant) uniform constants {
 layout(location = 0) in vec3 base;
 layout(location = 1) in vec3 head;
 layout(location = 2) in float radius;
-layout(location = 3) in vec4 color;
+layout(location = 3) in vec4 color1;
+layout(location = 4) in vec4 color2;
 
 // Outputs:
 layout(location = 0) out vec4 color_fs;
@@ -70,7 +71,7 @@ void main()
     gl_Position = PushConstants.mvp * vec4(base + (orientation_tm * box[corner]), 1.0);
 
     // Forward cylinder color to fragment shader.
-    color_fs = color;
+    color_fs = color1;
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(PushConstants.modelview_matrix[0]);

@@ -66,8 +66,8 @@ void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	// Coloring mode.
 	layout->addWidget(new QLabel(tr("Line coloring:")), 2, 0, 1, 3);
 	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(TrajectoryVis::coloringMode));
-	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform:")), 3, 1);
-	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::PseudoColoring, tr("Pseudo-coloring")), 4, 1, 1, 2);
+	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform color:")), 3, 1);
+	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::PseudoColoring, tr("Color mapping")), 4, 1, 1, 2);
 
 	// Line uniform color.
 	_lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(TrajectoryVis::lineColor));

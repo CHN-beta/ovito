@@ -55,7 +55,6 @@ public:
 		VulkanPipeline mesh_instanced_picking;
 		VulkanPipeline mesh_instanced_with_colors;
 		VulkanPipeline mesh_color_mapping;
-		VkDescriptorSetLayout colormap_descriptorSetLayout = VK_NULL_HANDLE;
 	};
 
 	/// Sets the mesh to be stored in this buffer object.

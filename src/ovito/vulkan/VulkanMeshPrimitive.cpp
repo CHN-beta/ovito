@@ -340,11 +340,6 @@ void VulkanMeshPrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
 	mesh_instanced_picking.release(*renderer->context());
 	mesh_instanced_with_colors.release(*renderer->context());
 	mesh_color_mapping.release(*renderer->context());
-
-    if(colormap_descriptorSetLayout != VK_NULL_HANDLE) {
-        renderer->deviceFunctions()->vkDestroyDescriptorSetLayout(renderer->logicalDevice(), colormap_descriptorSetLayout, nullptr);
-        colormap_descriptorSetLayout = VK_NULL_HANDLE;
-    }
 }
 
 /******************************************************************************

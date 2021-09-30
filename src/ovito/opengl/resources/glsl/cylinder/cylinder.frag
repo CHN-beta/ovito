@@ -23,8 +23,14 @@
 #include "../global_uniforms.glsl"
 #include "../shading.glsl"
 
+// Uniforms:
+uniform float color_range_min;
+uniform float color_range_max;
+uniform sampler1D color_map;
+
 // Inputs:
-flat in vec4 color_fs;
+flat in vec4 color1_fs;
+flat in vec4 color2_fs;
 flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
 flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
@@ -48,6 +54,7 @@ void main()
 	vec3 surface_normal;
 
 	bool skip = false;
+	float x;	// Normalized location along cylinder (used for color interpolation). 
 
 	if(ln < 1e-7 * cylinder_length) {
 		// Handle case where view ray is parallel to cylinder axis:
@@ -64,7 +71,9 @@ void main()
 			if(tfar < 0.0) {
 				view_intersection_pnt += tfar * ray_dir_norm;
 				surface_normal = cylinder_view_axis;
+				x = 1.0;
 			}
+			else x = 0.0;
 		}
 	}
 	else {
@@ -93,6 +102,7 @@ void main()
 
 				// Calculate surface normal in view coordinate system.
 				surface_normal = (view_intersection_pnt - (cylinder_view_base + anear * cylinder_view_axis));
+				x = anear;
 			}
 			else {
 				// Calculate second intersection point.
@@ -104,10 +114,12 @@ void main()
 				if(anear < 0.0 && afar > 0.0) {
 					view_intersection_pnt += (anear / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 					surface_normal = -cylinder_view_axis;
+					x = 0.0;
 				}
 				else if(anear > 1.0 && afar < 1.0) {
 					view_intersection_pnt += ((anear - 1.0) / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 					surface_normal = cylinder_view_axis;
+					x = 1.0;
 				}
 				else {
 					discard;
@@ -123,5 +135,16 @@ void main()
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
 	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
-    fragColor = shadeSurfaceColorDir(normalize(surface_normal), color_fs, ray_dir_norm);
+	// Perform linear interpolation of color.
+	vec4 color = mix(color1_fs, color2_fs, x);
+
+	// If pseudocolor mapping is used, apply tabulated transfer function to pseudocolor value,
+	// which is stored in the R component of the input color.
+	if(color_range_min != color_range_max) {
+		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
+		color.rgb = texture(color_map, pseudocolor_value).rgb;
+	}
+
+	// Perform surface shading calculation.
+    fragColor = shadeSurfaceColorDir(normalize(surface_normal), color, ray_dir_norm);
 }

@@ -26,7 +26,8 @@
 in vec3 base;
 in vec3 head;
 in float radius;
-in vec4 color;
+in vec4 color1;
+in vec4 color2;
 uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
@@ -70,7 +71,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(head + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
 
     // Forward cylinder color to fragment shader.
-    color_fs = color;
+    color_fs = color1;
 
     // Apply additional scaling to cone radius due to model-view transformation. 
 	// Pass square of cylinder radius to fragment shader.

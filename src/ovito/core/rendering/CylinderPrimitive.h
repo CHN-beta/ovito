@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "PrimitiveBase.h"
+#include "PseudoColorMapping.h"
 
 namespace Ovito {
 
@@ -105,9 +106,9 @@ public:
 	/// Returns the buffer storing the colors.
 	const ConstDataBufferPtr& colors() const { return _colors; }
 
-	/// Sets the per-primitive colors.
+	/// Sets the per-primitive (or per-vertex) colors.
 	virtual void setColors(ConstDataBufferPtr colors) {
-		OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && colors->componentCount() == 3));
+		OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && (colors->componentCount() == 3 || colors->componentCount() == 1)));
 		_colors = std::move(colors);
 	}
 
@@ -129,6 +130,14 @@ public:
 	/// Returns the buffer storing the per-primitive radius values.
 	const ConstDataBufferPtr& radii() const { return _radii; }
 
+	/// Returns the mapping from pseudo-color values to RGB colors.
+	const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
+
+	/// Sets the mapping from pseudo-color values to RGB colors.
+	void setPseudoColorMapping(const PseudoColorMapping& mapping) { 
+		_pseudoColorMapping = mapping; 
+	}
+
 private:
 
 	/// Controls the shading.
@@ -139,6 +148,9 @@ private:
 
 	/// The shape of the elements.
 	Shape _shape;
+
+	/// The mapping from pseudo-color values to RGB colors.
+	PseudoColorMapping _pseudoColorMapping;
 
 	/// The color to be used if no per-primitive colors have been specified.
 	Color _uniformColor{1,1,1};
@@ -153,7 +165,7 @@ private:
 	ConstDataBufferPtr _headPositions; // Array of Point3
 
 	/// Buffer storing the colors of the arrows/cylinders.
-	ConstDataBufferPtr _colors; // Array of Color
+	ConstDataBufferPtr _colors; // Array of Color (RGB) or Float (pseudocolor values)
 
 	/// Buffer storing the semi-transparency values.
 	ConstDataBufferPtr _transparencies; // Array of FloatType	

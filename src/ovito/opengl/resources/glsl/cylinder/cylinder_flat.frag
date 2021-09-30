@@ -20,14 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// Uniforms:
+uniform float color_range_min;
+uniform float color_range_max;
+uniform sampler1D color_map;
+
 // Inputs:
-flat in vec4 color_fs;
+in vec4 color_fs;
 
 // Outputs:
 out vec4 fragColor;
 
 void main()
 {
+	// Interpolated input color.
+	vec4 color = color_fs;
+
+	// If pseudocolor mapping is used, apply tabulated transfer function to pseudocolor value,
+	// which is stored in the R component of the input color.
+	if(color_range_min != color_range_max) {
+		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
+		color.rgb = texture(color_map, pseudocolor_value).rgb;
+	}
+
     // Flat shading:
-    fragColor = color_fs;
+    fragColor = color;
 }

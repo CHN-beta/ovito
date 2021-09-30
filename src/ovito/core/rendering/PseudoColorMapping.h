@@ -76,6 +76,11 @@ public:
 		return gradient()->valueToColor(t);
 	}
 
+	/// Comparison operator. Is required so PseudoColorMapping can be used as key value in the vis cache.
+	bool operator==(const PseudoColorMapping& other) const {
+		return _minValue == other._minValue && _maxValue == other._maxValue && _gradient == other._gradient;
+	}
+
 private:
 
 	/// The lower bound of the mapping interval.

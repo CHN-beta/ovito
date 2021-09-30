@@ -12,16 +12,18 @@ layout(push_constant) uniform constants {
 layout(location = 0) in vec3 base;
 layout(location = 1) in vec3 head;
 layout(location = 2) in float radius;
-layout(location = 3) in vec4 color;
+layout(location = 3) in vec4 color1;
+layout(location = 4) in vec4 color2;
 
 // Outputs:
-layout(location = 0) out vec4 color_fs;
-layout(location = 1) out vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
-layout(location = 2) out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
-layout(location = 3) out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
-layout(location = 4) out float cylinder_length;			// The length of the cylinder
-layout(location = 5) out vec3 ray_origin;
-layout(location = 6) out vec3 ray_dir;
+layout(location = 0) out vec4 color1_fs;
+layout(location = 1) out vec4 color2_fs;
+layout(location = 2) out vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
+layout(location = 3) out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
+layout(location = 4) out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
+layout(location = 5) out float cylinder_length;			// The length of the cylinder
+layout(location = 6) out vec3 ray_origin;
+layout(location = 7) out vec3 ray_dir;
 out gl_PerVertex { vec4 gl_Position; };
 
 void main()
@@ -65,7 +67,8 @@ void main()
     gl_Position = PushConstants.mvp * vec4(base + (orientation_tm * box[corner]), 1.0);
 
     // Forward cylinder color to fragment shader.
-    color_fs = color;
+    color1_fs = color1;
+    color2_fs = color2;
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(PushConstants.modelview_matrix[0]);

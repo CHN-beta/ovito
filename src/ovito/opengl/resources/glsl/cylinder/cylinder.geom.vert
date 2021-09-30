@@ -26,13 +26,15 @@
 in vec3 base;
 in vec3 head;
 in float radius;
-in vec4 color;
+in vec4 color1;
+in vec4 color2;
 
 // Outputs:
 out vec3 base_gs;
 out vec3 head_gs;
 out float radius_gs;
-out vec4 color_gs;
+out vec4 color1_gs;
+out vec4 color2_gs;
 
 void main()
 {
@@ -40,5 +42,6 @@ void main()
     base_gs = base;
     head_gs = head;
     radius_gs = radius;
-    color_gs = color;
+    color1_gs = color1;
+    color2_gs = color2;
 }

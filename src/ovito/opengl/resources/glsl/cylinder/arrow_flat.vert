@@ -29,7 +29,8 @@ uniform vec3 view_dir_eye_pos; // Either camera viewing direction (parallel) or 
 in vec3 base;
 in vec3 head;
 in float radius;
-in vec4 color;
+in vec4 color1;
+in vec4 color2;
 
 // Outputs:
 flat out vec4 color_fs;
@@ -72,5 +73,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm * vec3(vpos, 0.0), 1.0);
 
     // Forward primitive color to fragment shader.
-    color_fs = color;
+    color_fs = color1;
 }

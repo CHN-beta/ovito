@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -162,6 +162,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 	struct CacheValue {
 		std::shared_ptr<CylinderPrimitive> segments;
 		std::shared_ptr<ParticlePrimitive> corners;
+		ConstDataBufferPtr cornerPseudoColors;
 	};
 
 	FloatType endFrame = showUpToCurrentTime() ? dataset()->animationSettings()->timeToFrame(time) : std::numeric_limits<FloatType>::max();
@@ -182,12 +183,13 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 	ParticlePrimitive::ShadingMode cornerShadingMode = (shadingMode() == ShadingMode::NormalShading)
 			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
-	// Check if we already have a valid rendering primitives that are up to date.
+	// Check if we already have valid rendering primitives that are up to date.
 	if(!visCache.segments || !visCache.corners) {
 
 		// Update the rendering primitives.
 		visCache.segments.reset();
 		visCache.corners.reset();
+		visCache.cornerPseudoColors.reset();
 
 		FloatType lineRadius = lineWidth() / 2;
 		if(trajObj && lineRadius > 0) {
@@ -198,6 +200,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 			ConstPropertyAccess<int> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
 			ConstPropertyAccess<qlonglong> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
 			ConstPropertyAccess<Color> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+			ConstPropertyAccess<void,true> pseudoColorArray = pseudoColorProperty;
 			if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
@@ -206,6 +209,8 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
 				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
 				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
+				DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 1, 0, false) : nullptr;
+				DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 1, 0, false) : nullptr;
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
@@ -215,10 +220,18 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
 							baseSegmentPoints.push_back(pos[0]);
 							headSegmentPoints.push_back(pos[1]);
-							if(color) segmentColors.push_back(color[1]);
+							if(color) {
+								segmentColors.push_back(color[0]);
+								segmentColors.push_back(color[1]);
+							}
+							else if(pseudoColorArray) {
+								segmentPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
+								segmentPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+							}
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(pos[1]);
 								if(color) cornerColors.push_back(color[1]);
+								else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
 							}
 						}
 						if(color) ++color;
@@ -227,14 +240,24 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				else {
 					for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, ++sampleTime, ++id) {
 						if(id[0] == id[1] && sampleTime[1] <= endFrame) {
-							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2) {
+							clipTrajectoryLine(pos[0], pos[1], simulationCell, [&](const Point3& p1, const Point3& p2, FloatType t1, FloatType t2) {
 								baseSegmentPoints.push_back(p1);
 								headSegmentPoints.push_back(p2);
-								if(color) segmentColors.push_back(color[1]);
+								if(color) {
+									segmentColors.push_back((FloatType(1) - t1) * color[0] + t1 * color[1]);
+									segmentColors.push_back((FloatType(1) - t2) * color[0] + t2 * color[1]);
+								}
+								else if(pseudoColorArray) {
+									FloatType ps1 = pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent);
+									FloatType ps2 = pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent);
+									segmentPseudoColors.push_back((FloatType(1) - t1) * ps1 + t1 * ps2);
+									segmentPseudoColors.push_back((FloatType(1) - t2) * ps1 + t2 * ps2);
+								}
 							});
 							if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
 								cornerPoints.push_back(simulationCell->wrapPoint(pos[1]));
 								if(color) cornerColors.push_back(color[1]);
+								else if(pseudoColorArray) cornerPseudoColors.push_back(pseudoColorArray.get<FloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
 							}
 						}
 						if(color) ++color;
@@ -243,7 +266,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 
 				// Create rendering primitive for the line segments.
 				visCache.segments = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), CylinderPrimitive::HighQuality);
-				visCache.segments->setColors(segmentColors.take());
+				visCache.segments->setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
 				visCache.segments->setUniformColor(lineColor());
 				visCache.segments->setUniformRadius(lineRadius);
 				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
@@ -254,12 +277,31 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				visCache.corners->setUniformColor(lineColor());
 				visCache.corners->setColors(cornerColors.take());
 				visCache.corners->setUniformRadius(lineRadius);
+
+				// Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
+				visCache.cornerPseudoColors = cornerPseudoColors.take();
 			}
 		}
 	}
 
 	if(!visCache.segments)
 		return status;
+
+	// Update the color mapping.
+	visCache.segments->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+
+	// Convert the pseudocolors of the corner spheres to RGB colors if necessary.
+	if(visCache.cornerPseudoColors) {
+		// Perform a cache lookup to check if latest pseudocolors have already been mapped to RGB colors.
+		auto& cornerColorsUpToDate = dataset()->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments->pseudoColorMapping()));
+		if(!cornerColorsUpToDate) {
+			// Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
+			DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, visCache.cornerPseudoColors->size(), DataBuffer::Float, 3, 0, false);
+			boost::transform(ConstDataBufferAccess<FloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](FloatType v) { return visCache.segments->pseudoColorMapping().valueToColor(v); });
+			visCache.corners->setColors(cornerColorsArray.take());
+			cornerColorsUpToDate = true;
+		}
+	}
 
 	renderer->beginPickObject(contextNode);
 	renderer->renderCylinders(visCache.segments);
@@ -272,7 +314,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 /******************************************************************************
 * Clips a trajectory line at the periodic box boundaries.
 ******************************************************************************/
-void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&)>& segmentCallback)
+void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, FloatType, FloatType)>& segmentCallback)
 {
 	OVITO_ASSERT(simulationCell);
 
@@ -285,6 +327,7 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 		}
 	}
 	Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
+	FloatType t1 = 0;
 	FloatType smallestT;
 	bool clippedDimensions[3] = { false, false, false };
 	do {
@@ -310,21 +353,24 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 		if(smallestT != FLOATTYPE_MAX) {
 			clippedDimensions[crossDim] = true;
 			Point3 intersection = rp1 + smallestT * (rp2 - rp1);
-			intersection[crossDim] = std::floor(intersection[crossDim] + FloatType(0.5));
+			intersection[crossDim] = std::round(intersection[crossDim]);
+			FloatType t2 = (FloatType(1) - smallestT) * t1 + smallestT;
 			Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
 			Point3 intabs = simulationCell->reducedToAbsolute(intersection);
 			if(!intabs.equals(rp1abs)) {
-				segmentCallback(rp1abs, intabs);
+				OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
+				segmentCallback(rp1abs, intabs, t1, t2);
 			}
 			shiftVector[crossDim] -= crossDir;
 			rp1 = intersection;
 			rp1[crossDim] -= crossDir;
 			rp2[crossDim] -= crossDir;
+			t1 = t2;
 		}
 	}
 	while(smallestT != FLOATTYPE_MAX);
 
-	segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2));
+	segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
 }
 
 }	// End of namespace

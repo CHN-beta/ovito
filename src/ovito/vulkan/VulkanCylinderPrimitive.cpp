@@ -43,7 +43,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
 
     // Color + alpha:
     vertexBindingDesc[1].binding = 1;
-    vertexBindingDesc[1].stride = sizeof(Vector_4<float>);
+    vertexBindingDesc[1].stride = 2 * sizeof(Vector_4<float>);
     vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     VkVertexInputAttributeDescription vertexAttrDesc[] = {
@@ -65,31 +65,37 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             VK_FORMAT_R32_SFLOAT,
             sizeof(Vector_3<float>) + sizeof(Vector_3<float>) // offset
         },
-        VkVertexInputAttributeDescription{ // color:
+        VkVertexInputAttributeDescription{ // color1:
             3, // location
             1, // binding
             VK_FORMAT_R32G32B32A32_SFLOAT,
             0 // offset
+        },
+        VkVertexInputAttributeDescription{ // color2:
+            4, // location
+            1, // binding
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            sizeof(Vector_4<float>) // offset
         }
     };
 
-    std::array<VkDescriptorSetLayout, 1> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout() };
+    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = { renderer->globalUniformsDescriptorSetLayout(), renderer->colorMapDescriptorSetLayout() };
 
     if(&pipeline == &cylinder)
         cylinder.create(*renderer->context(),
             QStringLiteral("cylinder/cylinder"), 
             renderer->defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(AffineTransformationT<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
+            sizeof(Vector_2<float>), // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            4, // vertexAttributeDescriptionCount
+            5, // vertexAttributeDescriptionCount
             vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            2, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -107,7 +113,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -116,16 +122,16 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             QStringLiteral("cylinder/cylinder_flat"), 
             renderer->defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(Vector_4<float>), // vertexPushConstantSize
-            0, // fragmentPushConstantSize
+            sizeof(Vector_2<float>), // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            4, // vertexAttributeDescriptionCount
+            5, // vertexAttributeDescriptionCount
             vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            2, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -143,7 +149,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -155,13 +161,13 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            4, // vertexAttributeDescriptionCount
+            5, // vertexAttributeDescriptionCount
             vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -179,7 +185,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -191,13 +197,13 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            4, // vertexAttributeDescriptionCount
+            5, // vertexAttributeDescriptionCount
             vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -215,7 +221,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -227,13 +233,13 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
             vertexBindingDesc.data(), 
-            4, // vertexAttributeDescriptionCount
+            5, // vertexAttributeDescriptionCount
             vertexAttrDesc, 
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, // topology
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             true, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -251,7 +257,7 @@ VulkanPipeline& VulkanCylinderPrimitive::Pipelines::create(VulkanSceneRenderer* 
             0, // extraDynamicStateCount
             nullptr, // pExtraDynamicStates
             false, // supportAlphaBlending
-            descriptorSetLayouts.size(), // setLayoutCount
+            1, // setLayoutCount
             descriptorSetLayouts.data()
         );
 
@@ -293,6 +299,13 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !renderer->isPicking() && (transparencies() != nullptr);
+
+    // Decide whether per-pixel pseudo-color mapping is used (instead of direct RGB coloring).
+    bool renderWithPseudoColorMapping = false;
+    if(pseudoColorMapping().isValid() && !renderer->isPicking() && colors() && colors()->componentCount() == 1) {
+        OVITO_ASSERT(shape() == CylinderShape);
+        renderWithPseudoColorMapping = true;
+    }
 
     // Bind the right Vulkan pipeline.
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -383,6 +396,21 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                     uint32_t pickingBaseId = renderer->registerSubObjectIDs(basePositions()->size());
                     renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(pickingBaseId), &pickingBaseId);
                 }
+                else if(shape() == CylinderShape) {
+                    Vector_2<float> color_range(0,0);
+                    if(renderWithPseudoColorMapping) {
+                        // Rendering  with pseudo-colors and a color mapping function.
+                        // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
+                        color_range = Vector_2<float>(pseudoColorMapping().minValue(), pseudoColorMapping().maxValue());
+                        // Avoid division by zero due to degenerate value interval.
+                        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+
+                        // Create the descriptor set with the color map and bind it to the pipeline.
+                        VkDescriptorSet colorMapSet = renderer->uploadColorMap(pseudoColorMapping().gradient());
+                        renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &colorMapSet, 0, nullptr);
+                    }
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>) + sizeof(transposed_modelview_matrix), sizeof(color_range), color_range.data());
+                }
             }
             else {
                 // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader as a push constant.                
@@ -397,6 +425,21 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
                     // Pass picking base ID to vertex shader as a push constant.
                     uint32_t pickingBaseId = renderer->registerSubObjectIDs(basePositions()->size());
                     renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>) + sizeof(view_dir_eye_pos), sizeof(pickingBaseId), &pickingBaseId);
+                }
+                else if(shape() == CylinderShape) {
+                    Vector_2<float> color_range(0,0);
+                    if(renderWithPseudoColorMapping) {
+                        // Rendering  with pseudo-colors and a color mapping function.
+                        // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
+                        color_range = Vector_2<float>(pseudoColorMapping().minValue(), pseudoColorMapping().maxValue());
+                        // Avoid division by zero due to degenerate value interval.
+                        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+
+                        // Create the descriptor set with the color map and bind it to the pipeline.
+                        VkDescriptorSet colorMapSet = renderer->uploadColorMap(pseudoColorMapping().gradient());
+                        renderer->deviceFunctions()->vkCmdBindDescriptorSets(renderer->currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &colorMapSet, 0, nullptr);
+                    }
+                    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>) + sizeof(view_dir_eye_pos), sizeof(color_range), color_range.data());
                 }
             }
             
@@ -448,7 +491,7 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
 
     if(!renderer->isPicking()) {
 
-        // Put colors and transparencies into one combined Vulkan buffer with 4 floats per primitive.
+        // Put colors and transparencies into one combined Vulkan buffer with 8 floats per primitive (two RGBA values).
         RendererResourceKey<VulkanCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color, uint32_t> colorCacheKey{ 
             colors(),
             transparencies(),
@@ -457,28 +500,59 @@ void VulkanCylinderPrimitive::render(VulkanSceneRenderer* renderer, Pipelines& p
         };
 
         // Upload vertex buffer with the color data.
-        VkBuffer colorBuffer = renderer->context()->createCachedBuffer(colorCacheKey, primitiveCount * sizeof(Vector_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
-            OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size());
-            OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size());
+        VkBuffer colorBuffer = renderer->context()->createCachedBuffer(colorCacheKey, primitiveCount * 2 * sizeof(Vector_4<float>), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+            OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size() || colors()->size() == 2 * basePositions()->size());
+            OVITO_ASSERT(!colors() || (colors()->componentCount() == 1 && renderWithPseudoColorMapping) || (colors()->componentCount() == 3 && !renderWithPseudoColorMapping));
+            OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size() || transparencies()->size() == 2 * basePositions()->size());
             const ColorT<float> uniformColor = this->uniformColor().toDataType<float>();
             ConstDataBufferAccess<FloatType,true> colorArray(colors());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
-            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + primitiveCount * 4; dst != dst_end;) {
-                // RGB:
-                if(color) {
-                    *dst++ = static_cast<float>(*color++);
-                    *dst++ = static_cast<float>(*color++);
-                    *dst++ = static_cast<float>(*color++);
+            bool twoColorsPerPrimitive = (colors() && colors()->size() == 2 * basePositions()->size());
+            bool twoTransparenciesPerPrimitive = (transparencies() && transparencies()->size() == 2 * basePositions()->size());
+            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + primitiveCount * 8; dst != dst_end; dst += 8) {
+                // RGB/pseudocolor:
+                if(renderWithPseudoColorMapping) {
+                    OVITO_ASSERT(color);
+                    dst[0] = static_cast<float>(*color++);
+                    dst[1] = 0;
+                    dst[2] = 0;
+                }
+                else if(color) {
+                    dst[0] = static_cast<float>(*color++);
+                    dst[1] = static_cast<float>(*color++);
+                    dst[2] = static_cast<float>(*color++);
                 }
                 else {
-                    *dst++ = uniformColor.r();
-                    *dst++ = uniformColor.g();
-                    *dst++ = uniformColor.b();
+                    dst[0] = uniformColor.r();
+                    dst[1] = uniformColor.g();
+                    dst[2] = uniformColor.b();
                 }
                 // Alpha:
-                *dst++ = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
+                dst[3] = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
+                // Second color and transparency.
+                if(twoColorsPerPrimitive) {
+                    if(renderWithPseudoColorMapping) {
+                        dst[4] = static_cast<float>(*color++);
+                        dst[5] = 0;
+                        dst[6] = 0;
+                    }
+                    else {
+                        dst[4] = static_cast<float>(*color++);
+                        dst[5] = static_cast<float>(*color++);
+                        dst[6] = static_cast<float>(*color++);
+                    }
+                }
+                else {
+                    dst[4] = dst[0];
+                    dst[5] = dst[1];
+                    dst[6] = dst[2];
+                }
+                if(twoTransparenciesPerPrimitive)
+                    dst[7] = qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f);
+                else
+                    dst[7] = dst[3];
             }
         });
 

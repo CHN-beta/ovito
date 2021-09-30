@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,6 +38,12 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 
     // The OpenGL drawing primitive.
     GLenum primitiveDrawMode = GL_TRIANGLE_STRIP;
+
+    // Decide whether per-pixel pseudo-color mapping is used (instead of direct RGB coloring).
+    bool renderWithPseudoColorMapping = false;
+    if(pseudoColorMapping().isValid() && !renderer->isPicking() && colors() && colors()->componentCount() == 1)
+        renderWithPseudoColorMapping = true;
+    QOpenGLTexture* colorMapTexture = nullptr;
 
 	// Activate the right OpenGL shader program.
 	OpenGLShaderHelper shader(renderer);
@@ -157,7 +163,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 
     if(!renderer->isPicking()) {
 
-        // Put colors and transparencies into one combined GL buffer with 4 floats per primitive.
+        // Put colors and transparencies into one combined GL buffer with 2*4 floats per primitive (two RGBA values).
         RendererResourceKey<OpenGLCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, Color, GLsizei> colorCacheKey{ 
             colors(),
             transparencies(),
@@ -165,34 +171,88 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             shader.instanceCount() // This is needed to NOT use the same cached buffer for rendering different number of cylinders which happen to use the same uniform color.
         };
 
-        // Upload vertex buffer with the color data.
-        QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
-            OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size());
-            OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size());
+        // Upload vertex buffer with the RGB color data.
+        QOpenGLBuffer colorBuffer = shader.createCachedBuffer(colorCacheKey, 2 * sizeof(ColorAT<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
+            // The color and the transparency arrays may contain either 1 or 2 values per primitive.
+            // In case two colors/transparencies have been specified, linear interpolation 
+            // along the primitive is performed by the renderer.
+            OVITO_ASSERT(!colors() || colors()->size() == basePositions()->size() || colors()->size() == 2 * basePositions()->size());
+            OVITO_ASSERT(!colors() || colors()->componentCount() == 1 || colors()->componentCount() == 3);
+            OVITO_ASSERT(!transparencies() || transparencies()->size() == basePositions()->size() || transparencies()->size() == 2 * basePositions()->size());
             const ColorT<float> uniformColor = this->uniformColor().toDataType<float>();
             ConstDataBufferAccess<FloatType,true> colorArray(colors());
             ConstDataBufferAccess<FloatType> transparencyArray(transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
-            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + shader.instanceCount() * 4; dst != dst_end;) {
-                // RGB:
-                if(color) {
-                    *dst++ = static_cast<float>(*color++);
-                    *dst++ = static_cast<float>(*color++);
-                    *dst++ = static_cast<float>(*color++);
+            bool twoColorsPerPrimitive = (colors() && colors()->size() == 2 * basePositions()->size());
+            bool twoTransparenciesPerPrimitive = (transparencies() && transparencies()->size() == 2 * basePositions()->size());
+            for(float* dst = reinterpret_cast<float*>(buffer), *dst_end = dst + 8 * shader.instanceCount(); dst != dst_end; dst += 8) {
+                // RGB/pseudocolor:
+                if(renderWithPseudoColorMapping) {
+                    OVITO_ASSERT(color);
+                    dst[0] = static_cast<float>(*color++);
+                    dst[1] = 0;
+                    dst[2] = 0;
+                }
+                else if(color) {
+                    dst[0] = static_cast<float>(*color++);
+                    dst[1] = static_cast<float>(*color++);
+                    dst[2] = static_cast<float>(*color++);
                 }
                 else {
-                    *dst++ = uniformColor.r();
-                    *dst++ = uniformColor.g();
-                    *dst++ = uniformColor.b();
+                    dst[0] = uniformColor.r();
+                    dst[1] = uniformColor.g();
+                    dst[2] = uniformColor.b();
                 }
                 // Alpha:
-                *dst++ = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
+                dst[3] = transparency ? qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f) : 1.0f;
+                // Second color and transparency.
+                if(twoColorsPerPrimitive) {
+                    if(renderWithPseudoColorMapping) {
+                        dst[4] = static_cast<float>(*color++);
+                        dst[5] = 0;
+                        dst[6] = 0;
+                    }
+                    else {
+                        dst[4] = static_cast<float>(*color++);
+                        dst[5] = static_cast<float>(*color++);
+                        dst[6] = static_cast<float>(*color++);
+                    }
+                }
+                else {
+                    dst[4] = dst[0];
+                    dst[5] = dst[1];
+                    dst[6] = dst[2];
+                }
+                if(twoTransparenciesPerPrimitive)
+                    dst[7] = qBound(0.0f, 1.0f - static_cast<float>(*transparency++), 1.0f);
+                else
+                    dst[7] = dst[3];
             }
         });
 
         // Bind color vertex buffer.
-		shader.bindBuffer(colorBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(colorBuffer, "color1", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(colorBuffer, "color2", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
+
+        if(renderWithPseudoColorMapping) {
+            // Rendering  with pseudo-colors and a color mapping function.
+            float minValue = pseudoColorMapping().minValue();
+            float maxValue = pseudoColorMapping().maxValue();
+            // Avoid division by zero due to degenerate value interval.
+            if(minValue == maxValue) maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+            shader.setUniformValue("color_range_min", minValue);
+            shader.setUniformValue("color_range_max", maxValue);
+
+            // Upload color map as a 1-d OpenGL texture.
+            colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(pseudoColorMapping().gradient(), renderer->currentResourceFrame());
+            colorMapTexture->bind();
+        }
+        else {
+            // This will turn pseudocolor mapping off in the fragment shader.
+            shader.setUniformValue("color_range_min", 0.0f);
+            shader.setUniformValue("color_range_max", 0.0f);
+        }
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).
@@ -208,6 +268,11 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
         }
 
         shader.drawArrays(GL_TRIANGLE_STRIP);
+    }
+
+    // Unbind color mapping texture.
+    if(colorMapTexture) {
+        colorMapTexture->release();
     }
 }
 
