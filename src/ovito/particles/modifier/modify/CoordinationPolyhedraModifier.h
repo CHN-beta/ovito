@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,7 +84,7 @@ private:
 		/// Constructor.
 		ComputePolyhedraEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
 				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
-				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh) :
+				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
 			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
@@ -92,7 +92,8 @@ private:
 			_particleIdentifiers(std::move(particleIdentifiers)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_mesh(std::move(mesh)) {}
+			_mesh(std::move(mesh)),
+			_particleProperties(std::move(particleProperties)) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -102,6 +103,9 @@ private:
 
 		/// Returns the simulation cell geometry.
 		const SimulationCellObject* cell() const { return _mesh->domain(); }
+
+		/// Returns the list of particle properties to copy over to the generated mesh.
+		const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }
 
 	private:
 
@@ -114,10 +118,16 @@ private:
 
 		/// The generated mesh structure.
 		DataOORef<SurfaceMesh> _mesh;
+
+		/// The list of particle properties to copy over to the generated mesh.
+		std::vector<ConstPropertyPtr> _particleProperties;
 	};
 
 	/// The vis element for rendering the polyhedra.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+
+	/// Controls whether property values should be copied over from the input particles to the generated mesh vertices.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 };
 
 }	// End of namespace
