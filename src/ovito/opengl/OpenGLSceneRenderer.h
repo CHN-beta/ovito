@@ -196,6 +196,9 @@ public:
 	/// Returns the list of extensions supported by the OpenGL implementation.
 	static const QSet<QByteArray>& openglExtensions() { return _openglExtensions; }
 
+	/// Returns whether the OpenGL implementation supports geometry shaders.
+	static bool openGLSupportsGeometryShaders() { return _openGLSupportsGeometryShaders; }
+
 	/// Determines the capabilities of the current OpenGL implementation.
 	static void determineOpenGLInfo();
 
@@ -279,6 +282,9 @@ private:
 
 	/// The list of extensions supported by the OpenGL implementation.
 	static QSet<QByteArray> _openglExtensions;
+
+	/// Indicates whether the OpenGL implementation supports geometry shaders.
+	static bool _openGLSupportsGeometryShaders;
 
 	friend class OpenGLMeshPrimitive;
 	friend class OpenGLCylinderPrimitive;

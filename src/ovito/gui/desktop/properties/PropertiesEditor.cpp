@@ -304,10 +304,10 @@ QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
 }
 
 /******************************************************************************
-* For an editor of a DataVis element, returns the DataObject to which the 
-* DataVis element is attached.
+* For an editor of a DataVis element, returns the data collection path to 
+* the DataObject which the DataVis element is attached to.
 ******************************************************************************/
-ConstDataObjectRef PropertiesEditor::getVisDataObject() const
+std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjectPath() const
 {
 	if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
 		// We'll now try to find the DataObject this DataVis element is associated with.
@@ -316,16 +316,26 @@ ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 			const PipelineFlowState& state = pipelineNode->evaluatePipelineSynchronous(false);
 			std::vector<ConstDataObjectPath> dataObjectPaths = pipelineNode->getDataObjectsForVisElement(state, vis);
 			if(!dataObjectPaths.empty()) {
-				// Take the first path from the list and return the leaf data object.
-				return dataObjectPaths.front().back();
+				// Return just the first path from the list.
+				return std::vector<ConstDataObjectRef>(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
 			}
 		}
 		return {};
 	}
 	else if(parentEditor())
-		return parentEditor()->getVisDataObject();
+		return parentEditor()->getVisDataObjectPath();
 	else
 		return {};
+}
+
+/******************************************************************************
+* For an editor of a DataVis element, returns the DataObject to which the 
+* DataVis element is attached.
+******************************************************************************/
+ConstDataObjectRef PropertiesEditor::getVisDataObject() const
+{
+	std::vector<ConstDataObjectRef> path = getVisDataObjectPath();
+	return path.empty() ? ConstDataObjectRef{} : ConstDataObjectRef(std::move(path.back()));
 }
 
 }	// End of namespace

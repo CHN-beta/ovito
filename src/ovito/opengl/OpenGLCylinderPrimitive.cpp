@@ -233,7 +233,8 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
 
         // Bind color vertex buffer.
         shader.bindBuffer(colorBuffer, "color1", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(colorBuffer, "color2", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
+        if(shape() == CylinderShape)
+            shader.bindBuffer(colorBuffer, "color2", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
 
         if(renderWithPseudoColorMapping) {
             // Rendering  with pseudo-colors and a color mapping function.

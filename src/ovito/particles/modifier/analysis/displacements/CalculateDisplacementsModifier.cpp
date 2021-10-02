@@ -57,6 +57,8 @@ void CalculateDisplacementsModifier::initializeObject(ExecutionContext execution
 	// to the current particle positions.
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
+	if(executionContext == ExecutionContext::Interactive)
+		vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
 
 	ReferenceConfigurationModifier::initializeObject(executionContext);
 }

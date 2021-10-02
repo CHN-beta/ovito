@@ -140,8 +140,11 @@ public:
 	/// If this editor does not host a modifier, an empty list is returned.
 	QVector<ModifierApplication*> modifierApplications() const;
 
-	/// For an editor of a DataVis element, returns the DataObject to which the DataVis element is attached.
+	/// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
 	ConstDataObjectRef getVisDataObject() const;
+
+	/// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
+	std::vector<ConstDataObjectRef> getVisDataObjectPath() const;
 
 public Q_SLOTS:
 

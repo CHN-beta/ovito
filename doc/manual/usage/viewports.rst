@@ -98,7 +98,7 @@ and remove viewports as needed, and adjust their relative positioning by draggin
 lines between them with the mouse. OVITO Pro provides the option to render images and animations showing 
 multiple views side by side, see the :ref:`Render all viewports <core.render_settings>` option.
 
-:guilabel:`Pipeline Visibility` lists all :ref:`data pipelines <usage.modification_pipeline>` that are shown in the selected viewport. 
-By default, all pipelines that are part of the three-dimensional scene are shown in every viewport, but here you have the option to turn off the 
-visibility of individual objects for specific viewports. This gives you the possibility to show different 
-models or data visualizations in different viewports -- a very useful feature for creating comparative visualizations.
+The :guilabel:`Pipeline Visibility` submenu lists all :ref:`data pipelines <usage.modification_pipeline>` currently shown in the viewport. 
+By default, all pipelines that are part of the three-dimensional scene are shown in every viewport window, but here you have the option to turn off the 
+display of individual objects for specific viewports. This gives you the possibility to show different 
+models or visualizations in different viewports -- a very useful feature for creating comparative visualizations.

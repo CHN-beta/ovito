@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -59,6 +60,13 @@ public:
 		Head
 	};
 	Q_ENUM(ArrowPosition);
+
+	/// The coloring modes supported by the vis element.
+	enum ColoringMode {
+		UniformColoring,
+		PseudoColoring,
+	};
+	Q_ENUMS(ColoringMode);	
 
 public:
 
@@ -99,26 +107,32 @@ protected:
 	/// Controls how the arrows are positioned relative to the particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the color of the arrows.
+	/// The uniform display color of the arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the width of the arrows in world units.
+	/// The width of the arrows in world units.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the scaling factor applied to the vectors.
+	/// The scaling factor applied to the vectors.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the shading mode for arrows.
+	/// The shading mode for arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the rendering quality mode for arrows.
+	/// The rendering quality mode for arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 
-	/// Controls the transparency of the arrows.
+	/// The transparency value of the arrows.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
-	/// Controls the displacement offset to be applied to all arrows.
+	/// Displacement offset to be applied to all arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
+
+	/// Determines how the arrows are colored.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode, coloringMode, setColoringMode);
+
+	/// Transfer function for pseudo-color visualization of a particle property.
+	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
 /**

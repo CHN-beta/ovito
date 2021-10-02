@@ -27,8 +27,10 @@
 
 namespace Ovito {
 
-/// Utility class that is used to reference a particular data object in a DataCollection
-/// as a path through the hierarchy of nested data objects.
+/**
+ * \brief Utility class that is used to reference a particular data object in a DataCollection
+ *        as a path through the hierarchy of nested data objects.
+ */
 class OVITO_CORE_EXPORT ConstDataObjectPath : public QVarLengthArray<const DataObject*, 3>
 {
 public:
@@ -58,10 +60,15 @@ public:
 		if(empty()) return ConstDataObjectPath{};
 		return ConstDataObjectPath(begin(), std::prev(end()));
 	}
+
+	/// Returns the last data object in the path - or null if the path is empty.
+	const DataObject* leaf() const { return empty() ? nullptr : back(); }
 };
 
-/// Utility class that is used to reference a particular data object in a DataCollection
-/// as a path through the hierarchy of nested data objects.
+/**
+ * \brief Utility class that is used to reference a particular data object in a DataCollection
+ *        as a path through the hierarchy of nested data objects.
+ */
 class OVITO_CORE_EXPORT DataObjectPath : public QVarLengthArray<DataObject*, 3>
 {
 public:
@@ -96,6 +103,9 @@ public:
 		if(empty()) return DataObjectPath{};
 		return DataObjectPath(begin(), std::prev(end()));
 	}
+
+	/// Returns the last data object in the path - or null if the path is empty.
+	DataObject* leaf() const { return empty() ? nullptr : back(); }
 };
 
 /**

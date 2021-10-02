@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,8 @@ void VoxelGridSliceModifierDelegate::initializeObject(ExecutionContext execution
 	surfaceMeshVis()->setHighlightEdges(false);
 	surfaceMeshVis()->setSmoothShading(false);
 	surfaceMeshVis()->setSurfaceIsClosed(false);
-	surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
+	if(executionContext == ExecutionContext::Interactive)
+		surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
 
 	SliceModifierDelegate::initializeObject(executionContext);

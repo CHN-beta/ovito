@@ -60,6 +60,8 @@ public:
 	/// Destructor.
 	~OpenGLShaderHelper() {
 		if(_shader) {
+		    OVITO_REPORT_OPENGL_ERRORS(_renderer);
+
 			// Reset attribute states.
 			for(GLuint attrIndex : _instanceAttributes) {
 				OVITO_CHECK_OPENGL(_renderer, _renderer->glVertexAttribDivisor(attrIndex, 0));
@@ -83,12 +85,10 @@ public:
 	}
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
-	void bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) {
-		bindBuffer(buffer, _shader->attributeLocation(attributeName), type, tupleSize, stride, offset, inputRate);
-	}
+	void bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate);
 
 	/// Binds an OpenGL buffer to a vertex attribute of the shader.
-	void bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate);
+	void bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate);
 
 	/// Passes the base object ID to the shader in picking mode.
 	void setPickingBaseId(GLint baseId) {

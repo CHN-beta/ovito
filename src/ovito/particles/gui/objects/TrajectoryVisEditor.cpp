@@ -100,7 +100,7 @@ void TrajectoryVisEditor::updateColoringOptions()
 	// Retrieve the TrajectoryObject this vis element is associated with.
 	DataOORef<const TrajectoryObject> trajectoryObject = dynamic_object_cast<const TrajectoryObject>(getVisDataObject());
 
-	// Do lines have the explicit colors assigned ("Color" property exists)?
+	// Do lines have explicit RGB colors assigned ("Color" property exists)?
 	bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(TrajectoryObject::ColorProperty));
 
 	TrajectoryVis::ColoringMode coloringMode = editObject() ? static_object_cast<TrajectoryVis>(editObject())->coloringMode() : TrajectoryVis::UniformColoring;

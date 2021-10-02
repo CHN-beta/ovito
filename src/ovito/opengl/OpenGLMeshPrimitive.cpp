@@ -253,7 +253,9 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
 
 	// Bind vertex buffer to vertex attributes.
 	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, position), OpenGLShaderHelper::PerVertex);
-	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
+    if(!renderer->isPicking())
+    	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
+        
 	if(!renderWithPseudoColorMapping) {
         if(!renderer->isPicking()) {
             // Rendering with true RGBA colors.

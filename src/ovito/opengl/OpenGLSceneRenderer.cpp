@@ -70,6 +70,9 @@ QSurfaceFormat OpenGLSceneRenderer::_openglSurfaceFormat;
 /// The list of extensions supported by the OpenGL implementation.
 QSet<QByteArray> OpenGLSceneRenderer::_openglExtensions;
 
+/// Indicates whether the OpenGL implementation supports geometry shaders.
+bool OpenGLSceneRenderer::_openGLSupportsGeometryShaders = false;
+
 /******************************************************************************
 * Is called by OVITO to query the class for any information that should be 
 * included in the application's system report.
@@ -92,6 +95,7 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 		stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
 		stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
 		stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
+		stream << "Geometry shader support: " << (OpenGLSceneRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
 		stream << "Supported extensions:\n";
 		QStringList extensionList;
 		for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
@@ -145,6 +149,7 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	_openGLSLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
 	_openglSurfaceFormat = QOpenGLContext::currentContext()->format();
 	_openglExtensions = tempContext.extensions();
+	_openGLSupportsGeometryShaders = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
 }
 
 /******************************************************************************

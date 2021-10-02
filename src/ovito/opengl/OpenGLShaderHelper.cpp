@@ -274,7 +274,21 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
 /******************************************************************************
 * Binds an OpenGL buffer to a vertex attribute of the shader.
 ******************************************************************************/
-void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, GLuint attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) 
+void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, const char* attributeName, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate)
+{
+    int attrIndex = _shader->attributeLocation(attributeName);
+    if(attrIndex < 0) {
+        qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName() << ": attribute with name" << attributeName << "does not exist in shader.";
+        _renderer->throwException(QStringLiteral("Attribute with name %1 does not exist in shader '%2'.").arg(attributeName).arg(_shader->objectName()));
+    }
+    bindBuffer(buffer, attrIndex, type, tupleSize, stride, offset, inputRate);
+}
+
+
+/******************************************************************************
+* Binds an OpenGL buffer to a vertex attribute of the shader.
+******************************************************************************/
+void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum type, int tupleSize, int stride, int offset, VertexInputRate inputRate) 
 {
     OVITO_ASSERT(verticesPerInstance() > 0);
     OVITO_ASSERT(instanceCount() > 0);

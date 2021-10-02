@@ -3,54 +3,55 @@
 Vectors
 -------
 
-.. image:: /images/visual_elements/vectors_panel.png
+.. image:: /images/visual_elements/vectors_panel.jpg
   :width: 35%
   :align: right
 
-This :ref:`visual element <visual_elements>` visualizes vectorial particle properties as arrows.
-The :ref:`particles.modifiers.displacement_vectors` modifier, for example,
-outputs the calculated displacement vector of each particle as a new particle property named ``Displacement``.
-This property is associated with a corresponding `Vectors` visual element,
-which appears under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot),
-and which controls the visualization of the vector data as arrow glyphs.
-
-Arrow coloring
-""""""""""""""
-
-Note that, by default, all arrows are rendered in the same uniform color. If desired, however, you can give each arrow an individual
-color by setting the ``Vector Color`` particle property, for example using the :ref:`particles.modifiers.color_coding` or
-:ref:`particles.modifiers.compute_property` modifiers.
+This :ref:`visual element <visual_elements>` visualize a vectorial property associated with the particles using arrow glyphs.
+For example, the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
+has an attached visual element, which can be found under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
+This visual element provides controls for the appearance of the arrow glyphs. 
 
 Parameters
 """"""""""
 
-Shading mode
-  Selects between a three-dimensional (:guilabel:`Normal`) and a two-dimensional (:guilabel:`Flat`)
-  rendering of of arrow glyphs.
-
 Scaling factor
-  The arrow length is scaled by this factor. The default scaling factor is 1.0, which means the arrow length exactly matches the original three-dimensional vector.
+  All arrow lengths get scaled by this factor. The default scaling factor is 1.0, which means the lengths of the rendered glyphs reflect the original three-dimensional vectors.
 
 Arrow width
-  The diameter or width of the arrow lines (in simulation units of length).
+  The width of the arrow glyphs (in simulation units of length).
 
 Alignment
-  Controls how arrows are positioned relative to the particles they are associated with.
+  Controls how the arrow glyphs are positioned relative to the particles they belong to.
 
 Reverse direction
   Flips the direction of all arrows, swapping their heads and tails.
 
-Arrow color
-  The display color of arrows. This uniform color is used when the ``Vector Color``
-  particle property is not present. Otherwise the per-particle colors defined by the ``Vector Color`` property
-  are used to render the arrows.
+Flat shading
+  This option switches from three-dimensional (solid) arrow glyphs to two-dimensional (flat) glyphs.
+
+Coloring
+  You can choose between uniform coloring of the all arrows and pseudo-coloring of the arrow glyphs
+  based on some scalar property of the particles. When you activate the :guilabel:`Color mapping` option,
+  OVITO shows a separate panel letting you pick the source property for the pseudo-coloring
+  and configure the color transfer function.
+
+  .. hint:: 
+  
+    A third method of coloring the arrows is to assign explicit RGB color values to the ``Vector Color`` property of the particles.
+    This approach gives you full control over the color of each individual arrow. You can set the ``Vector Color`` property
+    using the :ref:`particles.modifiers.color_coding` or :ref:`particles.modifiers.compute_property` modifiers, for example.
 
 Transparency
   The degree of semi-transparency of the arrows. 
   
-Offset
-  Three-dimensional offset by which all arrows should be displaced. The offset parameter can be used to move the 
-  arrows fully in front of or behind the particles to avoid undesirable occlusions.
+Offset (XYZ)
+  An optional three-dimensional offset vector by which all arrow glyphs are displaced. The offset can be used to move the 
+  arrows fully in front of the particles and avoid undesirable occlusions.
+
+  .. image:: /images/visual_elements/vector_offset_example.png
+    :width: 75%
+
 
 .. seealso::
 

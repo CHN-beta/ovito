@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,10 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
+#include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "VectorVisEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -47,55 +51,106 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	QGridLayout* layout = new QGridLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
+	layout->setColumnStretch(2, 1);
+	layout->setColumnMinimumWidth(1, 24);
 	int row = 0;
-
-	// Shading mode.
-	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
-	layout->addWidget(new QLabel(tr("Shading mode:")), row, 0);
-	layout->addWidget(shadingModeUI->comboBox(), row++, 1);
 
 	// Scaling factor.
 	FloatParameterUI* scalingFactorUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::scalingFactor));
-	layout->addWidget(scalingFactorUI->label(), row, 0);
-	layout->addLayout(scalingFactorUI->createFieldLayout(), row++, 1);
+	layout->addWidget(scalingFactorUI->label(), row, 0, 1, 2);
+	layout->addLayout(scalingFactorUI->createFieldLayout(), row++, 2);
 
 	// Arrow width factor.
 	FloatParameterUI* arrowWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::arrowWidth));
-	layout->addWidget(arrowWidthUI->label(), row, 0);
-	layout->addLayout(arrowWidthUI->createFieldLayout(), row++, 1);
+	layout->addWidget(arrowWidthUI->label(), row, 0, 1, 2);
+	layout->addLayout(arrowWidthUI->createFieldLayout(), row++, 2);
 
+	// Arrow position.
 	VariantComboBoxParameterUI* arrowPositionUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::arrowPosition));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_base.png"), tr("Base"), QVariant::fromValue((int)VectorVis::Base));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_center.png"), tr("Center"), QVariant::fromValue((int)VectorVis::Center));
-	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_head.png"), tr("Head"), QVariant::fromValue((int)VectorVis::Head));
-	layout->addWidget(new QLabel(tr("Alignment:")), row, 0);
-	layout->addWidget(arrowPositionUI->comboBox(), row++, 1);
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_base.png"), tr("Base"), QVariant::fromValue<int>(VectorVis::Base));
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_center.png"), tr("Center"), QVariant::fromValue<int>(VectorVis::Center));
+	arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_head.png"), tr("Head"), QVariant::fromValue<int>(VectorVis::Head));
+	layout->addWidget(new QLabel(tr("Alignment:")), row, 0, 1, 2);
+	layout->addWidget(arrowPositionUI->comboBox(), row++, 2);
 
+	// Reverse direction.
 	BooleanParameterUI* reverseArrowDirectionUI = new BooleanParameterUI(this, PROPERTY_FIELD(VectorVis::reverseArrowDirection));
-	layout->addWidget(reverseArrowDirectionUI->checkBox(), row++, 1, 1, 1);
+	layout->addWidget(reverseArrowDirectionUI->checkBox(), row++, 2);
 
-	ColorParameterUI* arrowColorUI = new ColorParameterUI(this, PROPERTY_FIELD(VectorVis::arrowColor));
-	layout->addWidget(arrowColorUI->label(), row, 0);
-	layout->addWidget(arrowColorUI->colorPicker(), row++, 1);
+	// Shading mode.
+	IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(VectorVis::shadingMode), CylinderPrimitive::NormalShading, CylinderPrimitive::FlatShading);
+	shadingModeUI->checkBox()->setText(tr("Flat shading"));
+	layout->addWidget(shadingModeUI->checkBox(), row++, 2);
 
+	// Coloring mode.
+	layout->addWidget(new QLabel(tr("Coloring:")), row++, 0, 1, 3);
+	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(VectorVis::coloringMode));
+	layout->addWidget(_coloringModeUI->addRadioButton(VectorVis::UniformColoring, tr("Uniform:")), row, 1);
+	
+	// Uniform color.
+	_arrowColorUI = new ColorParameterUI(this, PROPERTY_FIELD(VectorVis::arrowColor));
+	layout->addWidget(_arrowColorUI->colorPicker(), row++, 2);
+	layout->addWidget(_coloringModeUI->addRadioButton(VectorVis::PseudoColoring, tr("Color mapping")), row++, 1, 1, 2);
+
+	layout->setRowMinimumHeight(row++, 6);
+
+	// Transparency.
 	FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::transparencyController));
-	layout->addWidget(transparencyUI->label(), row, 0);
-	layout->addLayout(transparencyUI->createFieldLayout(), row++, 1);
+	layout->addWidget(transparencyUI->label(), row, 0, 1, 2);
+	layout->addLayout(transparencyUI->createFieldLayout(), row++, 2);
 
-	layout->addWidget(new QLabel(tr("Offset:")), row++, 0, 1, 2);
+	layout->setRowMinimumHeight(row++, 6);
+
+	// Offset vector.
+	layout->addWidget(new QLabel(tr("Offset (XYZ):")), row++, 0, 1, 3);
 	Vector3ParameterUI* offsetXUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 0);
 	Vector3ParameterUI* offsetYUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 1);
 	Vector3ParameterUI* offsetZUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 2);
 	QHBoxLayout* sublayout = new QHBoxLayout();
 	sublayout->setContentsMargins(0,0,0,0);
 	sublayout->setSpacing(4);
-	layout->addLayout(sublayout, row++, 0, 1, 2);
+	layout->addLayout(sublayout, row++, 0, 1, 3);
 	sublayout->addLayout(offsetXUI->createFieldLayout(), 1);
 	sublayout->addLayout(offsetYUI->createFieldLayout(), 1);
 	sublayout->addLayout(offsetZUI->createFieldLayout(), 1);
+
+	// Open a sub-editor for the property color mapping.
+	_colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(VectorVis::colorMapping), rolloutParams.after(rollout));
+
+	// Whenever the pipeline input of the vis element changes, update the list of available
+	// properties in the color mapping editor.
+	connect(this, &PropertiesEditor::pipelineInputChanged, this, &VectorVisEditor::updateColoringOptions);
+
+	// Update the coloring controls when a parameter of the vis element has been changed.
+	connect(this, &PropertiesEditor::contentsChanged, this, &VectorVisEditor::updateColoringOptions);
+}
+
+/******************************************************************************
+* Updates the coloring controls shown in the UI.
+******************************************************************************/
+void VectorVisEditor::updateColoringOptions()
+{
+	// Retrieve the ParticlesObject containing the vector property this vis element is associated with.
+	std::vector<ConstDataObjectRef> path = getVisDataObjectPath();
+	DataOORef<const ParticlesObject> particles = path.size() >= 2 ? dynamic_object_cast<const ParticlesObject>(std::move(path[path.size() - 2])) : nullptr;
+
+	// Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
+	bool hasExplicitColors = (particles && particles->getProperty(ParticlesObject::VectorColorProperty));
+
+	VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
+	if(particles && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
+		_colorMappingParamUI->setEnabled(true);
+		_arrowColorUI->setEnabled(false);
+		// Set particles object as property container containing the available properties the user can choose from.
+		static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(particles);
+	}
+	else {
+		_colorMappingParamUI->setEnabled(false);
+		_arrowColorUI->setEnabled(!hasExplicitColors);
+	}
+
+	_coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(particles && !particles->properties().isEmpty() && !hasExplicitColors);
+	_coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
 }
 
 }	// End of namespace

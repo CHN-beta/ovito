@@ -44,6 +44,8 @@ DEFINE_PROPERTY_FIELD(VectorVis, shadingMode);
 DEFINE_PROPERTY_FIELD(VectorVis, renderingQuality);
 DEFINE_REFERENCE_FIELD(VectorVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VectorVis, offset);
+DEFINE_PROPERTY_FIELD(VectorVis, coloringMode);
+DEFINE_REFERENCE_FIELD(VectorVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowColor, "Arrow color");
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowWidth, "Arrow width");
 SET_PROPERTY_FIELD_LABEL(VectorVis, scalingFactor, "Scaling factor");
@@ -53,6 +55,8 @@ SET_PROPERTY_FIELD_LABEL(VectorVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(VectorVis, renderingQuality, "RenderingQuality");
 SET_PROPERTY_FIELD_LABEL(VectorVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(VectorVis, offset, "Offset");
+SET_PROPERTY_FIELD_LABEL(VectorVis, coloringMode, "Coloring mode");
+SET_PROPERTY_FIELD_LABEL(VectorVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VectorVis, arrowWidth, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VectorVis, scalingFactor, FloatParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VectorVis, transparencyController, PercentParameterUnit, 0, 1);
@@ -69,7 +73,8 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 	_scalingFactor(1),
 	_shadingMode(FlatShading),
 	_renderingQuality(CylinderPrimitive::LowQuality),
-	_offset(Vector3::Zero())
+	_offset(Vector3::Zero()),
+	_coloringMode(UniformColoring)
 {
 }
 
@@ -79,7 +84,13 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 ******************************************************************************/
 void VectorVis::initializeObject(ExecutionContext executionContext)
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+	// Create animation controller for the transparency parameter.
+	if(!transparencyController())
+		setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+
+	// Create a color mapping object for pseudo-color visualization of a particle property.
+	if(!colorMapping())
+		setColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
 
 	DataVis::initializeObject(executionContext);
 }
@@ -165,16 +176,19 @@ Box3 VectorVis::arrowBoundingBox(const PropertyObject* vectorProperty, const Pro
 ******************************************************************************/
 PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
 {
+	PipelineStatus status;
+
 	if(renderer->isBoundingBoxPass()) {
 		TimeInterval validityInterval;
 		renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, validityInterval));
-		return {};
+		return status;
 	}
 
 	// Get input data.
 	if(path.size() < 2) return {};
 	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
 	if(!particles) return {};
+	particles->verifyIntegrity();
 	const PropertyObject* vectorProperty = dynamic_object_cast<PropertyObject>(path.back());
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
 	if(vectorProperty && (vectorProperty->dataType() != PropertyObject::Float || vectorProperty->componentCount() != 3))
@@ -184,6 +198,25 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	// Make sure we don't exceed our internal limits.
 	if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
 		throwException(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
+	}
+
+	// Look for selected pseudo-coloring property.
+	const PropertyObject* pseudoColorProperty = nullptr;
+	int pseudoColorPropertyComponent = 0;
+	PseudoColorMapping pseudoColorMapping;
+	if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorColorProperty) {
+		pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(particles);
+		if(!pseudoColorProperty) {
+			status = PipelineStatus(PipelineStatus::Error, tr("The particle property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
+		}
+		else {
+			if(colorMapping()->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) {
+				status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The particle property '%1' has only %2 values per data element.").arg(colorMapping()->sourceProperty().name()).arg(pseudoColorProperty->componentCount()));
+				pseudoColorProperty = nullptr;
+			}
+			pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
+			pseudoColorMapping = colorMapping()->pseudoColorMapping();
+		}
 	}
 
 	// The key type used for caching the rendering primitive:
@@ -199,7 +232,10 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		FloatType,				// Arrow transparency
 		bool,					// Reverse arrow direction
 		ArrowPosition,			// Arrow position
-		ConstDataObjectRef		// Vector color property
+		ConstDataObjectRef,		// Vector color property
+		ConstDataObjectRef,		// Pseudo-color property
+		int,					// Pseudo-color vector component
+		PseudoColorMapping		// Pseudo-color mapping
 	>;
 
 	// Determine effective color including alpha value.
@@ -221,7 +257,10 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 			transparency,
 			reverseArrowDirection(),
 			arrowPosition(),
-			vectorColorProperty));
+			vectorColorProperty,
+			pseudoColorProperty, 
+			pseudoColorPropertyComponent,
+			pseudoColorMapping));
 
 	// Check if we already have a valid rendering primitive that is up to date.
 	if(!arrows) {
@@ -239,7 +278,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		// Allocate data buffers.
 		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
 		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> arrowColors = vectorColorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
+		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
 
 		// Fill data buffers.
 		if(vectorCount) {
@@ -248,6 +287,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 				scalingFac = -scalingFac;
 			ConstPropertyAccess<Point3> particlePositions(positionProperty);
 			ConstPropertyAccess<Color> vectorColorData(vectorColorProperty);
+			ConstPropertyAccess<void,true> vectorPseudoColorData(pseudoColorProperty);
 			size_t inIndex = 0;
 			size_t outIndex = 0;
 			for(size_t inIndex = 0; inIndex < particlePositions.size(); inIndex++) {
@@ -263,6 +303,8 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 					arrowHeadPositions[outIndex] = base + v;
 					if(vectorColorProperty)
 						arrowColors[outIndex] = vectorColorData[inIndex];
+					else if(pseudoColorProperty)
+						arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<FloatType>(inIndex, pseudoColorPropertyComponent));
 					outIndex++;
 				}
 			}
@@ -294,7 +336,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		renderer->endPickObject();
 	}
 
-	return {};
+	return status;
 }
 
 /******************************************************************************

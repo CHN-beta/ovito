@@ -15,8 +15,8 @@ This type of :ref:`visual element <visual_elements>` controls the visual appeara
   :width: 30%
   :align: right
 
-This visual element renders the voxel grid as a solid object showing just the voxel cells on the outer 
-boundaries of the domain. Note that by default the voxel cells will all appear gray, because they do not have a 
+This visual element renders the voxel grid as a solid object showing just the grid cells on the outer 
+boundaries of the domain. Note that, by default, the voxel cells will all appear gray, because they do not have a 
 color assigned to them yet. You can use the :ref:`particles.modifiers.color_coding` modifier
 to given them a color and visualize a numeric field quantity associated with the grid cells as in this example.
 
