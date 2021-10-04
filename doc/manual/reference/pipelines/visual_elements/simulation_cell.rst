@@ -29,7 +29,7 @@ Line color
 
 Note that the :guilabel:`Line width` and :guilabel:`Line color` settings
 control how the cell appears in :ref:`rendered images <usage.rendering>` of the scene. In the
-:ref:`interactive viewports <usage.viewports>` of OVITO, the cell is always rendered as a white (or black) wireframe model.
+:ref:`interactive viewports <usage.viewports>` of OVITO, the cell is always rendered as a white wireframe model.
 
 .. seealso::
   

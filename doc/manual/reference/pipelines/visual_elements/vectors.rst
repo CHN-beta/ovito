@@ -7,10 +7,10 @@ Vectors
   :width: 35%
   :align: right
 
-This :ref:`visual element <visual_elements>` visualize a vectorial property associated with the particles using arrow glyphs.
-For example, the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
-has an attached visual element, which can be found under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
-This visual element provides controls for the appearance of the arrow glyphs. 
+This :ref:`visual element <visual_elements>` shows arrow glyphs to visualize a vectorial property associated with the particles.
+For example, the visual element for the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
+can be found under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
+The visual element provides controls for the appearance of the arrow glyphs. 
 
 Parameters
 """"""""""
@@ -31,8 +31,8 @@ Flat shading
   This option switches from three-dimensional (solid) arrow glyphs to two-dimensional (flat) glyphs.
 
 Coloring
-  You can choose between uniform coloring of the all arrows and pseudo-coloring of the arrow glyphs
-  based on some scalar property of the particles. When you activate the :guilabel:`Color mapping` option,
+  You can choose between uniform coloring of all arrows and pseudo-coloring of the individual arrow glyphs
+  based on some scalar property associated with the particles. When you activate the :guilabel:`Color mapping` option,
   OVITO shows a separate panel letting you pick the source property for the pseudo-coloring
   and configure the color transfer function.
 
@@ -40,7 +40,7 @@ Coloring
   
     A third method of coloring the arrows is to assign explicit RGB color values to the ``Vector Color`` property of the particles.
     This approach gives you full control over the color of each individual arrow. You can set the ``Vector Color`` property
-    using the :ref:`particles.modifiers.color_coding` or :ref:`particles.modifiers.compute_property` modifiers, for example.
+    using the :ref:`particles.modifiers.compute_property` or :ref:`particles.modifiers.color_coding` modifiers, for example.
 
 Transparency
   The degree of semi-transparency of the arrows. 

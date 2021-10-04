@@ -3,8 +3,8 @@
 Voronoi analysis
 ----------------
 
-.. image:: /images/modifiers/voronoi_analysis_panel.png
-  :width: 35%
+.. image:: /images/modifiers/voronoi_analysis_panel.jpg
+  :width: 30%
   :align: right
 
 This analysis modifier calculates the Voronoi tessellation of the simulation box, taking the particle positions as Voronoi cell centers.

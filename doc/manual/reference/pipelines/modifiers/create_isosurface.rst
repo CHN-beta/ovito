@@ -24,10 +24,10 @@ voxel grids into the program. You can also apply the isosurface modifier to a dy
 
 Note that you can apply this modifier several times in a pipeline to create multiple surfaces at different iso-levels.
 
-The option :guilabel:`Transfer field values to surface` lets the modifier copy all field quantities defined on the voxel grid over to the isosurface's vertices.
-This includes any secondary field quantities in addition to the selected primary field quantity for which the isosurface is being constructed, and which is constant and equal to the iso-level value on the
-entire surface. Subsequently, OVITO's :ref:`particles.modifiers.color_coding` modifier may be used to color the isosurface based on a secondary 
-field quantity. The locally varying values for a secondary field quantity on the surface are computed at each mesh vertex using trilinear interpolation from the voxel grid values. 
+The option :guilabel:`Transfer field values to surface` lets the modifier copy all field quantities defined on the input voxel grid over to the isosurface's mesh vertices.
+This includes any secondary field quantities in addition to the selected primary field quantity for which the isosurface is being constructed, and which is constant and equal to the iso-level value across the
+entire surface. The color mapping mode of the :ref:`visual_elements.surface_mesh` visual element allows you to locally color the isosurface based on a secondary 
+field quantity. The property values at each isosurface output vertex are computed from the input voxel cell values using trilinear interpolation. 
 
 .. seealso::
   

@@ -54,17 +54,19 @@ The total surface area of the resulting manifold is displayed by the modifier in
 output as a :ref:`global attribute <usage.global_attributes>` named ``ConstructSurfaceMesh.surface_area``.
 Note that the surface area is given in squared units of length as used by the original simulation dataset.
 
-OVITO has the capability to associate local information with the surface mesh, which gets inherited from nearby particles during the construction process. 
+OVITO has the capability to associate local quantities with the surface mesh, which are inherited from nearby particles during the construction process. 
 If the option :guilabel:`Transfer particle properties to surface` is turned on, existing attributes of the input particles located at the surface, 
 for example their ``Color`` property, will be copied over to the vertices of the constructed 
 :ref:`surface mesh <scene_objects.surface_mesh>`. The per-particle values will be available as  
-mesh vertex properties, and you can subsequently use tools like the :ref:`particles.modifiers.color_coding` modifier to 
-further manipulate the surface mesh, independently of the underlying particles.
+mesh vertex properties, and you can subsequently use the color mapping mode of the :ref:`visual_elements.surface_mesh` visual element to
+visualize the variations of some quantity of interest across the surface.
 
-Note that, in case of the Gaussian density method, only continuous particle properties of data type ``Float`` will be transferred 
-to the surface. Discrete integer properties will be ignored, because the algorithm has to blend the property values of several particles
-to compute the value at each output mesh vertex. In case of the alpha-shape method, all types of properties can be transferred, because there 
-is a one-to-one mapping between particles and mesh vertices.
+.. note::
+
+  In case of the Gaussian density method only continuous particle properties of data type ``Float`` will be transferred 
+  to the surface. Discrete integer properties will be left out, because the algorithm has to blend the property values from several particles
+  to compute the resulting field value at each mesh vertex. In case of the alpha-shape method, in contrast, all types of properties can be 
+  transferred, because there is a one-to-one mapping between particles and mesh vertices and no blending is performed.
 
 .. image:: /images/modifiers/construct_surface_mesh_distance_calculation.png
   :width: 40%

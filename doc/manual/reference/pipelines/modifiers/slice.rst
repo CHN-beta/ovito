@@ -7,8 +7,8 @@ Slice
   :width: 30%
   :align: right
 
-This modifier either deletes or selects all elements on one side of an infinite cutting plane.
-Alternatively, the modifier can cut out a slab of a given thickness from the structure.
+This modifier deletes (or selects) all elements on one side of an infinite cutting plane.
+Alternatively, the modifier can cut out a slab of a given thickness from the structure:
 
 .. figure:: /images/modifiers/slice_example_input.png
   :figwidth: 20%
@@ -25,6 +25,14 @@ Alternatively, the modifier can cut out a slab of a given thickness from the str
 
   Output (slab width > 0)
 
+When applied to a :ref:`voxel grid <scene_objects.voxel_grid>`, the slice modifier allows you to extract a 
+planar cross-section from the volumetric field data:
+
+.. image:: /images/visual_elements/voxel_grid_example.png
+  :width: 30%
+
+.. image:: /images/visual_elements/voxel_grid_example_crosssection.png
+  :width: 30%
 
 Parameters
 """"""""""

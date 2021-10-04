@@ -145,7 +145,12 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
 	connect(createTrajectoryButton, &QPushButton::clicked, this, &GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory);
 
 	// Open a sub-editor for the trajectory vis element.
-	new SubObjectParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
+	SubObjectParameterUI* trajectoryVisSubEditorUI = new SubObjectParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
+
+	// Whenever the pipeline output of the modifier changes, update visibility of the visual element for the trajectory lines.
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this,trajectoryVisSubEditorUI]() {
+		trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<TrajectoryObject>() != nullptr);
+	});
 }
 
 /******************************************************************************

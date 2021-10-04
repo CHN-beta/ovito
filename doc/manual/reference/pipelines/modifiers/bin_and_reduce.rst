@@ -34,7 +34,7 @@ employ the :ref:`particles.modifiers.create_isosurface` modifier to render isosu
 
 When creating two- or three-dimensional grids, you can also
 export the computed grid data to a text file using OVITO's :ref:`file export <usage.export>` function.
-Select ``VTK Voxel Grid`` as output format.
+Select `VTK Voxel Grid` as output format.
 
 Parameters
 """"""""""

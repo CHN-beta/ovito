@@ -16,53 +16,55 @@ The modifier considers the currently present particle positions as the current c
 The reference particle positions are by default taken from frame 0 of the loaded animation sequence (option :guilabel:`Upstream pipeline`).
 Alternatively, the modifier supports loading the reference particle positions from a separate data file (option :guilabel:`External file`).
 
-Modifier output
-"""""""""""""""
+Modifier outputs
+""""""""""""""""
 
-The modifier stores the calculated displacement vectors in a new particle property named ``Displacement``.
-This particle property supports visualization of the data using graphical arrows.
-To show the arrows in the viewports, you have to activate the associated :ref:`vector display <visual_elements.vectors>`.
-Alternatively, you can use the :ref:`particles.modifiers.color_coding` modifier to
-visualize the displacements using a varying particle color. This can be done for one of the three components of the
-displacement vectors or their magnitudes, which the modifier
-outputs as an additional particle property named ``Displacement Magnitude``.
+The modifier outputs the calculated displacement vectors as a new particle property named ``Displacement`` (XYZ).
+This particle property supports visualization of the vectors using arrow glyphs.
+To show the arrows in the viewports, you need to turn on the associated :ref:`vector display <visual_elements.vectors>`.
+Alternatively, you can add a :ref:`particles.modifiers.color_coding` modifier to the pipeline to
+visualize the displacements by means of varying particle colors. The modifier
+additionally outputs the ``Displacement Magnitude`` particle property for this purpose, which describes the 
+displacements in terms of scalar values.
 
 Reference positions
 """""""""""""""""""
 
 By default, the modifier obtains the reference particle positions from the currently loaded
-simulation sequence by evaluating the data pipeline at animation time 0. This default mode
+simulation trajectory by evaluating the data pipeline at animation timestep 0. This default mode
 is denoted as :guilabel:`Constant reference configuration` in the user interface.
 If desired, OVITO allows you to pick an animation frame other than 0 as reference.
-
 
 Alternatively, you can let OVITO calculate incremental displacements using
 the option :guilabel:`Relative to current frame`. In this mode, a sliding reference
 configuration is used, based on a relative time offset with respect to the current configuration.
 Negative offsets correspond to a reference configuration preceding the current configuration
 in time. An offset of -1, for example, lets OVITO use the animation frame immediately preceding
-the current frame as reference. Note that, in this case, displacements cannot be calculated at
-frame 0, because there is no preceding frame.
-
+the current frame as reference. Note that, in this case, displacement calculation fails at
+frame 0, because there exists no preceding frame.
 
 If you want to load the reference particle positions from a separate file instead of taking
-them from the currently loaded dataset, you can select :guilabel:`External file` as data source.
+them from the currently loaded trajectory, you can select :guilabel:`External file` as data source.
 Activating this option will show an additional panel :guilabel:`Reference: External file` allowing you to
 pick the file containing the initial particle positions.
 
 Particle identities
 """""""""""""""""""
 
-In order to calculate displacement vectors, OVITO needs to build a one-to-one mapping between the particles in the reference
-and the current configuration. If the particles possess a property named ``Particle Identifier``,
-then OVITO will use this identity information to generate the mapping. In such a case, it is okay if the storage order of particles
-in the input file(s) changes with time. However, if particles do not possess unique identifiers, then the modifier requires that
+In order to calculate displacement vectors OVITO needs to establish a one-to-one mapping between the particles in the reference
+and the current configuration. If the particles have a property named ``Particle Identifier``,
+then OVITO will use these identitiers to generate the one-to-one mapping. In other words, if the particles possess unique identifier, then 
+OVITO is able to handle changes in the storage order of particles. However, if particles do not possess unique identifiers, then the modifier requires that
 the reference configuration contains exactly the same number of particles as the current configuration
-and it assumes that they are stored in the same order. This assumption is not always true as some simulation
-codes reorder particles during a simulation run for performance reasons. If you forget to dump the particle IDs or atom IDs
-in addition to the positions during a simulation, you should be aware that OVITO may compute wrong displacement vectors because of
-an invalid default particle mapping. You can use the :ref:`data_inspector`
-to check for the presence of the ``Particle Identifier`` property after file import.
+and it assumes that the storage order is the same in both configuration. This assumption is not always correct as some simulation
+codes reorder particles during a simulation run for performance reasons. 
+
+.. caution::
+
+  If you forget to dump particle/atom IDs during your simulation, 
+  you should be aware that OVITO may compute wrong displacement vectors if the particle storage order changes. 
+  Some simulation file format enforce a constant storage order and some do not (e.g. the LAMMPS file formats).
+  Use the :ref:`data_inspector` to check whether the ``Particle Identifier`` property exists after file import.
 
 Affine mapping of the simulation cell
 """""""""""""""""""""""""""""""""""""

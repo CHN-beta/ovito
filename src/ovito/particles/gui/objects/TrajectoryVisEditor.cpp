@@ -42,7 +42,7 @@ SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
 void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("Trajectory lines"), rolloutParams, "manual:visual_elements.trajectory_lines");
+	QWidget* rollout = createRollout(tr("Trajectory display"), rolloutParams, "manual:visual_elements.trajectory_lines");
 
     // Create the rollout contents.
 	QGridLayout* layout = new QGridLayout(rollout);
@@ -66,7 +66,7 @@ void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	// Coloring mode.
 	layout->addWidget(new QLabel(tr("Line coloring:")), 2, 0, 1, 3);
 	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(TrajectoryVis::coloringMode));
-	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform color:")), 3, 1);
+	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::UniformColoring, tr("Uniform:")), 3, 1);
 	layout->addWidget(_coloringModeUI->addRadioButton(TrajectoryVis::PseudoColoring, tr("Color mapping")), 4, 1, 1, 2);
 
 	// Line uniform color.

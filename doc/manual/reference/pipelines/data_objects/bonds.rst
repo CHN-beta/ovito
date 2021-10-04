@@ -36,7 +36,7 @@ and :ref:`particles.modifiers.delete_selected_particles` are available to manipu
 .. _usage.bond_properties.special:
 
 Special bond properties
------------------------
+"""""""""""""""""""""""
 
 Certain bond properties play a special role in OVITO, because their values control the visual
 appearance of the bonds as well as other aspects. The following table lists these properties and describes their respective functions:

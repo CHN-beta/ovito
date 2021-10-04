@@ -3,38 +3,46 @@
 Voxel grid
 ----------
 
-.. image:: /images/visual_elements/voxel_grid_panel.png
+.. image:: /images/visual_elements/voxel_grid_panel.jpg
   :width: 30%
   :align: right
 
 This type of :ref:`visual element <visual_elements>` controls the visual appearance of 
 :ref:`voxel grid <scene_objects.voxel_grid>` data objects, which are structured grids made of 
-2- or 3-dimensional cells (voxels), each associated with one or more numeric values.
+2- or 3-dimensional cells (voxels), each being associated with numeric property values.
 
-.. image:: /images/visual_elements/voxel_grid_example.png
-  :width: 30%
-  :align: right
+.. figure:: /images/visual_elements/voxel_grid_example.png
+  :figwidth: 32%
 
-This visual element renders the voxel grid as a solid object showing just the grid cells on the outer 
-boundaries of the domain. Note that, by default, the voxel cells will all appear gray, because they do not have a 
-color assigned to them yet. You can use the :ref:`particles.modifiers.color_coding` modifier
-to given them a color and visualize a numeric field quantity associated with the grid cells as in this example.
+  Discrete cell values
 
-.. image:: /images/visual_elements/voxel_grid_example_interpolated.png
-  :width: 30%
-  :align: right
+.. figure:: /images/visual_elements/voxel_grid_example_interpolated.png
+  :figwidth: 32%
+
+  Color interpolation on
+
+The color mapping function of the visual element visualizes the selected scalar cell property
+using a pseudo-color map. Alternatively, it's possible to control each voxel cell's RGB color explicitly
+by setting the ``Color`` property of the :ref:`voxel grid <scene_objects.voxel_grid>` data object
+using modifiers in the pipelines.
+
+A three-dimensional voxel grid is rendered as a solid box, showing just the values of the grid cells located on the 
+outer boundaries of the domain. To visualize the interior values of the three-dimensional voxel grid, you can 
+use the :ref:`particles.modifiers.slice` modifier to extract a two-dimensional cross-section
+or use the :ref:`particles.modifiers.create_isosurface` modifier to compute an isosurface 
+of the scalar field.
 
 Parameters
 """"""""""
 
-Transparency
-  The degree of semi-transparency to use when rendering the grid surfaces.
+Surface transparency
+  The degree of semi-transparency of the grid surfaces.
 
-Highlight edges
+Show grid lines
   Activates the rendering of wireframe lines along the edges of the grid cells.
 
-Interpolate colors
-  Will smoothly interpolate between the discrete colors of adjacent cells.
+Color interpolation
+  Smoothly interpolate between the discrete colors of adjacent cells.
 
 .. seealso::
 

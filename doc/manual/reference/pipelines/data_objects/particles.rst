@@ -20,7 +20,7 @@ exist in the output of the data pipeline.
 .. _usage.particle_properties.special:
 
 Special particle properties
----------------------------
+"""""""""""""""""""""""""""
 
 Certain particle properties play a special role in OVITO, because their values control the visual
 appearance of the particles as well as other aspects. The following table lists these properties and describes their respective functions:
