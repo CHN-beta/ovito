@@ -421,7 +421,7 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 /******************************************************************************
 * Is called before parsing of a dataset reference in a multi-block VTM file begins.
 ******************************************************************************/
-void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInfo& blockInfo, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
+void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
 {
 	// Pass the list of particle shape files to be loaded to the VTP particle importer, which will take care
 	// of loading the files.

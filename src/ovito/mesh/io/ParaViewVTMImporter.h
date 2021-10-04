@@ -64,8 +64,8 @@ public:
 	/// \brief Is called for every dataset referenced in a multi-block VTM file.
 	virtual Future<> loadDataset(const ParaViewVTMBlockInfo& blockInfo, const FileHandle& referencedFile, const FileSourceImporter::LoadOperationRequest& loadRequest) { return {}; }
 
-	/// \brief Is called before parsing of a dataset reference in a multi-block VTM file begins.
-	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) {}
+	/// \brief Is called before parsing of a dataset referenced in a multi-block VTM file begins.
+	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) {}
 
 	/// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
 	virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) {}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,6 +91,11 @@ private:
 		/// Scans the data file and builds a list of source frames.
 		virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
 	};
+
+private:
+
+	/// The delegate importer responsible for parsing the datasets referenced in the PVD file.
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, childImporter, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 }	// End of namespace

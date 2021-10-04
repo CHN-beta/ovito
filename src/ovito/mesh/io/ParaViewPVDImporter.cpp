@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,6 +32,7 @@
 namespace Ovito { namespace Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewPVDImporter);
+DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -117,7 +118,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequest& request)
 {
 	// Detect format of the referenced file and create an importer for it.
-	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.executionContext, request.fileHandle);
+	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.executionContext, request.fileHandle, childImporter());
 
 	// This works only for FileSourceImporters.
 	// Files formats handled by other kinds of importers will be skipped.
@@ -129,6 +130,9 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
 	double timestep;
 	OVITO_STATIC_ASSERT(sizeof(request.frame.parserData) == sizeof(timestep));
 	std::memcpy(&timestep, &request.frame.parserData, sizeof(timestep));
+
+	// Keep a reference to the child importer.
+	_childImporter.set(this, PROPERTY_FIELD(childImporter), fsImporter);
 
 	// Delegate file parsing to sub-importer.
 	return fsImporter->loadFrame(request).then([timestep, dataSource = request.dataSource](PipelineFlowState state) {

@@ -124,7 +124,7 @@ public:
 	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets) override;
 
 	/// Is called before parsing of a dataset reference in a multi-block VTM file begins.
-	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, const FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
+	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;
 
 private:
 

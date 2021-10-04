@@ -206,7 +206,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		// Set up the load request submitted to the FileSourceImporter.
 		request.dataBlockPrefix = blockInfo.blockPath.back();
 		request.blockInfo = blockInfo;
-		request.appendData = (blockInfo.multiBlockIndex != 0); // Append data (instead of replace) when loading subsequent partial blocks of a multi-block dataset.
+		request.appendData = (blockInfo.multiBlockIndex != 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a multi-block dataset.
 
 		// Retrieve the data file.
 		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockInfo.location).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {

@@ -25,7 +25,6 @@
 // Inputs:
 in vec4 position;
 in vec3 normal;
-in vec4 color; // Overriden by per-instance color
 in vec4 instance_tm_row1;
 in vec4 instance_tm_row2;
 in vec4 instance_tm_row3;

@@ -246,7 +246,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			OVITO_ASSERT(property->size() == numberOfCells);
 			// If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then 
 			// the loaded property arrays can simply be added to the mesh faces.
-			// Otherwise, if we are loading subsequent parts of the split mesh, 
+			// Otherwise, if we are loading subsequent parts of the distributed mesh, 
 			// then the loaded property values must be copied into the correct subrange of the existing
 			// face properties.
 			if(!loadRequest().appendData) {
