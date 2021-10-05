@@ -38,14 +38,14 @@ IMPLEMENT_OVITO_CLASS(BondsVis);
 IMPLEMENT_OVITO_CLASS(BondPickInfo);
 DEFINE_PROPERTY_FIELD(BondsVis, bondWidth);
 DEFINE_PROPERTY_FIELD(BondsVis, bondColor);
-DEFINE_PROPERTY_FIELD(BondsVis, useParticleColors);
 DEFINE_PROPERTY_FIELD(BondsVis, shadingMode);
 DEFINE_PROPERTY_FIELD(BondsVis, renderingQuality);
-SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Default bond width");
-SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Default bond color");
-SET_PROPERTY_FIELD_LABEL(BondsVis, useParticleColors, "Use particle colors");
+DEFINE_PROPERTY_FIELD(BondsVis, coloringMode);
+SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Bond width");
+SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Uniform bond color");
 SET_PROPERTY_FIELD_LABEL(BondsVis, shadingMode, "Shading mode");
-SET_PROPERTY_FIELD_LABEL(BondsVis, renderingQuality, "RenderingQuality");
+SET_PROPERTY_FIELD_LABEL(BondsVis, renderingQuality, "Rendering quality");
+SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
@@ -54,9 +54,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 BondsVis::BondsVis(DataSet* dataset) : DataVis(dataset),
 	_bondWidth(0.4),
 	_bondColor(0.6, 0.6, 0.6),
-	_useParticleColors(true),
 	_shadingMode(NormalShading),
-	_renderingQuality(CylinderPrimitive::HighQuality)
+	_renderingQuality(CylinderPrimitive::HighQuality),
+	_coloringMode(ParticleBasedColoring)
 {
 }
 
@@ -152,7 +152,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 	const PropertyObject* bondPeriodicImageProperty = bonds->getProperty(BondsObject::PeriodicImageProperty);
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
 	const SimulationCellObject* simulationCell = flowState.getObject<SimulationCellObject>();
-	const PropertyObject* bondTypeProperty = bonds->getProperty(BondsObject::TypeProperty);
+	const PropertyObject* bondTypeProperty = (coloringMode() == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
 	const PropertyObject* bondColorProperty = bonds->getProperty(BondsObject::ColorProperty);
 	const PropertyObject* bondSelectionProperty = renderer->isInteractive() ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
 	const PropertyObject* transparencyProperty = bonds->getProperty(BondsObject::TransparencyProperty);
@@ -162,7 +162,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 	const PropertyObject* particleRadiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
 	const PropertyObject* particleColorProperty = nullptr;
 	const PropertyObject* particleTypeProperty = nullptr;
-	if(useParticleColors() && particleVis) {
+	if(coloringMode() == ParticleBasedColoring && particleVis) {
 		particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
 		particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
 	}
@@ -187,8 +187,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		ConstDataObjectRef,		// Bond transparency
 		ConstDataObjectRef,		// Simulation cell
 		FloatType,				// Bond width
-		Color,					// Bond color
-		bool,					// Use particle colors
+		Color,					// Bond uniform color
+		ColoringMode,			// Bond coloring mode
 		ShadingMode,			// Bond shading mode
 		CylinderPrimitive::RenderingQuality // Bond rendering quality
 	>;
@@ -215,7 +215,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			simulationCell,
 			bondWidth(),
 			bondColor(),
-			useParticleColors(),
+			coloringMode(),
 			shadingMode(),
 			renderingQuality()));
 
@@ -254,11 +254,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			if(particleRadii && particleRadii.size() != particleCount) 
 				particleRadii.reset();
 
-			if(!useParticleColors())
-				particleVis = nullptr;
-
 			// Determine half-bond colors.
-			std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), useParticleColors(), false);
+			std::vector<Color> colors = halfBondColors(particles, renderer->isInteractive(), coloringMode(), false);
 			OVITO_ASSERT(colors.size() == bondPositions1.size());
 
 			size_t cylinderIndex = 0;
@@ -359,7 +356,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 * Returns an array with two colors per full bond, because the two half-bonds
 * may have different colors.
 ******************************************************************************/
-std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const
+std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
 {
 	OVITO_ASSERT(particles != nullptr);
 	particles->verifyIntegrity();
@@ -370,14 +367,14 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
 	// Get bond-related properties which determine the bond coloring.
 	ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
 	ConstPropertyAccess<Color> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
-	const PropertyObject* bondTypeProperty = bonds->getProperty(BondsObject::TypeProperty);
+	const PropertyObject* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
 	ConstPropertyAccess<int> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
 
 	// Get particle-related properties and the vis element.
 	const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
 	ConstPropertyAccess<Color> particleColorProperty;
 	const PropertyObject* particleTypeProperty = nullptr;
-	if(useParticleColors && particleVis) {
+	if(coloringMode == ParticleBasedColoring && particleVis) {
 		particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
 		particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
 	}
@@ -392,7 +389,7 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
 			*bc++ = c;
 		}
 	}
-	else if(useParticleColors && particleVis) {
+	else if(coloringMode == ParticleBasedColoring && particleVis) {
 		// Derive bond colors from particle colors.
 		size_t particleCount = particles->elementCount();
 		ConstPropertyAccessAndRef<Color> particleColors = particleVis->particleColors(particles, false);

@@ -3,29 +3,34 @@
 Bonds
 -----
 
-.. image:: /images/visual_elements/bonds_panel.png
+.. image:: /images/visual_elements/bonds_panel.jpg
   :width: 30%
   :align: right
 
 This :ref:`visual element <visual_elements>` renders bonds between pairs of particles.
-:ref:`Bonds <scene_objects.bonds>` can either be loaded from the imported simulation file, or they can be created within OVITO, e.g. using the
-:ref:`particles.modifiers.create_bonds` modifier.
+:ref:`Bonds <scene_objects.bonds>` are either loaded from the simulation file as part of the model or they can be created within OVITO by adding the
+:ref:`particles.modifiers.create_bonds` modifier to the data pipeline. Alternatively, the :ref:`particles.modifiers.voronoi_analysis` modifier
+is able to generate bonds between nearest neighbor particles without a distance criterion.
 
 Parameters
 """"""""""
 
-Shading mode
-  Switches between a three-dimensional display mode, where bonds are rendered as cylinders, and a flat
-  representation, where bonds are rendered as lines.  
-
 Bond width
-  Controls the display width of bonds (both cylinders and lines).  
+  Controls the width of bonds cylinders or lines (in simulation units of length).
 
-Bond color  
-  The rendering color of bonds. This color parameter is only used if the option :guilabel:`Use particle colors` is turned off.  
+Flat shading
+  Switches to a flat line representation instead of three-dimensional cylinders.
 
-Use particle colors  
-  If active, bonds are rendered in the same colors as the particles they connect.  
+Coloring mode
+  Selects how the colors of the bonds are determined. 
+  You can choose between (i) a uniform color used for all bonds, (ii) a colors reflecting each :ref:`bond's type <scene_objects.bonds>`,
+  and (iii) adopting the colors from the particles connected by the bonds.
+
+  .. hint:: 
+  
+    A fourth method of coloring the bonds is to assign explicit RGB color values to the ``Color`` property of the bonds.
+    This approach gives you full control over the color of each individual bond. You can set the ``Color`` bond property
+    using the :ref:`particles.modifiers.compute_property` or :ref:`particles.modifiers.color_coding` modifiers, for example.
 
 .. seealso::
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,6 +53,14 @@ public:
 	};
 	Q_ENUM(ShadingMode);
 
+	/// The coloring modes supported by the vis element.
+	enum ColoringMode {
+		UniformColoring,
+		ByTypeColoring,
+		ParticleBasedColoring
+	};
+	Q_ENUMS(ColoringMode);	
+
 	/// Constructor.
 	Q_INVOKABLE BondsVis(DataSet* dataset);
 
@@ -67,7 +75,7 @@ public:
 
 	/// Determines the display colors of half-bonds.
 	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, bool useParticleColors, bool ignoreBondColorProperty) const;
+	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
 public:
 
@@ -76,20 +84,20 @@ public:
 
 protected:
 
-	/// Controls the display width of bonds.
+	/// Display width of bonds.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, bondWidth, setBondWidth, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the color of the bonds.
+	/// Uniform display color of the bonds.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, bondColor, setBondColor, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls whether bonds colors are derived from particle colors.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, useParticleColors, setUseParticleColors, PROPERTY_FIELD_MEMORIZE);
-
-	/// Controls the shading mode for bonds.
+	/// Shading mode for bond rendering.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
-	/// Controls the rendering quality mode for bonds.
+	/// Rendering quality mode for bonds.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
+
+	/// Determines how the bonds are colored.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
 };
 
 /**

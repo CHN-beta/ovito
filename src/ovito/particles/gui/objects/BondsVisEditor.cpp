@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,8 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
 #include "BondsVisEditor.h"
 
 namespace Ovito { namespace Particles {
@@ -45,38 +47,59 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	QGridLayout* layout = new QGridLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
-
-	// Shading mode.
-	VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode));
-	shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
-	shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
-	layout->addWidget(new QLabel(tr("Shading mode:")), 0, 0);
-	layout->addWidget(shadingModeUI->comboBox(), 0, 1);
-
-#if 0
-	// Rendering quality.
-	VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(BondsVis::renderingQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)CylinderPrimitive::LowQuality));
-	renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)CylinderPrimitive::MediumQuality));
-	renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)CylinderPrimitive::HighQuality));
-	layout->addWidget(new QLabel(tr("Rendering quality:")), 1, 0);
-	layout->addWidget(renderingQualityUI->comboBox(), 1, 1);
-#endif
+	layout->setColumnStretch(2, 1);
+	layout->setColumnMinimumWidth(0, 24);
 
 	// Bond width.
 	FloatParameterUI* bondWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(BondsVis::bondWidth));
-	layout->addWidget(bondWidthUI->label(), 1, 0);
-	layout->addLayout(bondWidthUI->createFieldLayout(), 1, 1);
+	layout->addWidget(bondWidthUI->label(), 0, 0, 1, 2);
+	layout->addLayout(bondWidthUI->createFieldLayout(), 0, 2);
 
-	// Bond color.
-	ColorParameterUI* bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
-	layout->addWidget(bondColorUI->label(), 2, 0);
-	layout->addWidget(bondColorUI->colorPicker(), 2, 1);
+	// Shading mode.
+	IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
+	shadingModeUI->checkBox()->setText(tr("Flat shading"));
+	layout->addWidget(shadingModeUI->checkBox(), 1, 2);
 
-	// Use particle colors.
-	BooleanParameterUI* useParticleColorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(BondsVis::useParticleColors));
-	layout->addWidget(useParticleColorsUI->checkBox(), 3, 1);
+	// Coloring mode.
+	layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
+	_coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(BondsVis::coloringMode));
+	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
+	
+	// Uniform color.
+	_bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
+	layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
+
+	// By bond type coloring mode.
+	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ByTypeColoring, tr("Bond types")), 4, 1, 1, 2);
+
+	// By particle coloring mode.
+	layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::ParticleBasedColoring, tr("Use particle colors")), 5, 1, 1, 2);
+
+	// Whenever the pipeline input of the vis element changes, update the list of available coloring options.
+	connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateColoringOptions);
+
+	// Update the coloring controls when a parameter of the vis element has been changed.
+	connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);	
+}
+
+/******************************************************************************
+* Updates the coloring controls shown in the UI.
+******************************************************************************/
+void BondsVisEditor::updateColoringOptions()
+{
+	// Retrieve the BondsObject this vis element is associated with.
+	DataOORef<const BondsObject> bonds = dynamic_object_cast<const BondsObject>(getVisDataObject());
+
+	// Do the bonds have explicit RGB colors assigned ("Color" property exists)?
+	bool hasExplicitColors = (bonds && bonds->getProperty(BondsObject::ColorProperty));
+
+	BondsVis::ColoringMode coloringMode = editObject() ? static_object_cast<BondsVis>(editObject())->coloringMode() : BondsVis::UniformColoring;
+
+	_bondColorUI->setEnabled(editObject() && !hasExplicitColors && coloringMode == BondsVis::UniformColoring);
+
+	_coloringModeUI->buttonGroup()->button(BondsVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
+	_coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(BondsObject::TypeProperty));
+	_coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
 }
 
 }	// End of namespace

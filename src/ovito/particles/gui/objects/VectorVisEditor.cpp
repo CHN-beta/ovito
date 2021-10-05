@@ -52,7 +52,7 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
 	layout->setColumnStretch(2, 1);
-	layout->setColumnMinimumWidth(1, 24);
+	layout->setColumnMinimumWidth(0, 24);
 	int row = 0;
 
 	// Scaling factor.

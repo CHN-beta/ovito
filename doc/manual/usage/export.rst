@@ -67,7 +67,7 @@ Supported output file formats
     - :ref:`particles <scene_objects.particles>`
   * - GSD/HOOMD
     - Binary format for molecular dynamics data used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, :ref:`bonds <scene_objects.bonds>`, global attributes
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, :ref:`global attributes <usage.global_attributes>`
   * - VTK
     - Generic text-based data format used by the ParaView software.
     - :ref:`surface meshes <scene_objects.surface_mesh>`, :ref:`voxel grids <scene_objects.voxel_grid>`, :ref:`dislocations <scene_objects.dislocations>`
