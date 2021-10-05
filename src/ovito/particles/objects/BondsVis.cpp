@@ -558,5 +558,21 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 	return str;
 }
 
+/******************************************************************************
+* Allows the object to parse the serialized contents of a property field in a custom way.
+******************************************************************************/
+bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField)
+{
+	// For backward compatibility with OVITO 3.5.4:
+	// Parse the "useParticleColors" field, which has been replaced by the "coloringMode" parameter field in later versions.
+	if(serializedField.definingClass == &BondsVis::OOClass() && serializedField.identifier == "useParticleColors") {
+		bool useParticleColors;
+		stream >> useParticleColors;
+		setColoringMode(useParticleColors ? ParticleBasedColoring : ByTypeColoring);
+		return true;
+	}
+	return DataVis::loadPropertyFieldFromStream(stream, serializedField);
+}
+
 }	// End of namespace
 }	// End of namespace

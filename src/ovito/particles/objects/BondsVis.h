@@ -44,6 +44,9 @@ class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 	OVITO_CLASS(BondsVis)
 	Q_CLASSINFO("DisplayName", "Bonds");
 
+    Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality)
+
 public:
 
 	/// The shading modes supported by the bonds vis element.
@@ -77,10 +80,10 @@ public:
 	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
 	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
-public:
+protected:
 
-    Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
-    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality)
+	/// Allows the object to parse the serialized contents of a property field in a custom way.
+	virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) override;
 
 protected:
 
