@@ -278,11 +278,13 @@ void SceneNode::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget
 		OVITO_ASSERT(child->parentNode() == this);
 		child->_parentNode = nullptr;
 
-		// Invalidate cached world bounding box of this parent node.
-		invalidateBoundingBox();
+		if(!isAboutToBeDeleted()) {
+			// Invalidate cached world bounding box of this parent node.
+			invalidateBoundingBox();
 
-		// The animation length might have changed when an object has been removed from the scene.
-		notifyDependents(ReferenceEvent::AnimationFramesChanged);
+			// The animation length might have changed when an object has been removed from the scene.
+			notifyDependents(ReferenceEvent::AnimationFramesChanged);
+		}
 	}
 	RefTarget::referenceRemoved(field, oldTarget, listIndex);
 }

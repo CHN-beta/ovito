@@ -113,7 +113,7 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
 	/// The PipelineSceneNode providing global attributes that can be reference in the text.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, sourceNode, setSourceNode, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourceNode, setSourceNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// Controls the formatting of floating-point variable values referenced in the text string.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

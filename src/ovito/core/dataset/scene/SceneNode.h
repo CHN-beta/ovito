@@ -279,13 +279,13 @@ private:
 
 	/// Stores the target node this scene node is bound to using a look
 	/// at controller or null if this scene node is not bound to a target node.
-	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, lookatTargetNode, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// The child nodes of this node.
 	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Viewports in which this node should NOT be rendered. Can be used to control the visibility in different viewports. 
-	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, hiddenInViewports, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
+	DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, hiddenInViewports, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// This node's cached world transformation matrix.
 	/// It contains the transformation of the parent node.

@@ -208,6 +208,9 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
 				return false;
 		}
 		if(queryEvent.dependent() == this) {
+#ifdef OVITO_DEBUG
+			qDebug() << "CheckIsReferencedByEvent: source=" << source << "sender=" << event.sender() << "dependent:" << this << "onlyStrongReferences:" << queryEvent.onlyStrongReferences(); 
+#endif
 			queryEvent.setIsReferenced();
 			return false;
 		}

@@ -57,7 +57,7 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
 		OVITO_ASSERT(owner->isRefTarget());
 		static_object_cast<RefTarget>(owner)->notifyDependents(eventType);
 	}
-	else if(descriptor.shouldGenerateChangeEvent()) {
+	else if(descriptor.shouldGenerateChangeEvent() && !owner->isAboutToBeDeleted()) {
 		OVITO_ASSERT(owner->isRefTarget());
 		static_object_cast<RefTarget>(owner)->notifyTargetChanged(&descriptor);
 	}
@@ -389,7 +389,7 @@ template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, c
 	private:
 
 		/// The target that has been removed from the vector reference field.
-	    pointer _target;
+	    pointer _target{};
 
 		/// The position at which the target has been removed from the vector reference field.
 		size_type _index;

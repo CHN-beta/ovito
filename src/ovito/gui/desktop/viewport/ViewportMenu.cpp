@@ -121,7 +121,8 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 		QAction* action = visibilityMenu->addAction(node->objectTitle());
 		action->setData(QVariant::fromValue(OORef<OvitoObject>(node)));
 		action->setCheckable(true);
-		action->setChecked(!node->isHiddenInViewport(viewport, false));
+		action->setChecked(!node->isHiddenInViewport(viewport, false) && node != viewport->viewNode());
+		action->setEnabled(node != viewport->viewNode());
 		connect(action, &QAction::toggled, this, &ViewportMenu::onPipelineVisibility);
 	}
 	visibilityMenu->setEnabled(!visibilityMenu->isEmpty());

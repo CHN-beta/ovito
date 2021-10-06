@@ -43,6 +43,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TextLabelOverlayEditor);
+DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourceNode);
 SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 
 /******************************************************************************
@@ -61,29 +62,29 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	layout->setColumnStretch(2, 1);
 	int row = 0;
 
-	PopupUpdateComboBox* nodeComboBox = new PopupUpdateComboBox();
-	connect(nodeComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
+	_nodeComboBox = new PopupUpdateComboBox();
+	connect(_nodeComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
 
-	CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", nodeComboBox,
+	CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", _nodeComboBox,
 			// updateWidgetFunction:
-			[nodeComboBox](const QVariant& value) {
-				nodeComboBox->clear();
+			[this](const QVariant& value) {
+				_nodeComboBox->clear();
 				PipelineSceneNode* node = dynamic_object_cast<PipelineSceneNode>(value.value<PipelineSceneNode*>());
 				if(node) {
-					nodeComboBox->addItem(node->objectTitle(), QVariant::fromValue(node));
+					_nodeComboBox->addItem(node->objectTitle(), QVariant::fromValue(node));
 				}
 				else {
-					nodeComboBox->addItem(tr("<none>"));
+					_nodeComboBox->addItem(tr("<none>"));
 				}
-				nodeComboBox->setCurrentIndex(0);
+				_nodeComboBox->setCurrentIndex(0);
 			},
 			// updatePropertyFunction:
-			[nodeComboBox]() {
-				return nodeComboBox->currentData();
+			[this]() {
+				return _nodeComboBox->currentData();
 			},
 			// resetUIFunction:
 			{});
-	connect(nodeComboBox, QOverload<int>::of(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
+	connect(_nodeComboBox, QOverload<int>::of(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
 	layout->addWidget(new QLabel(tr("Data source:")), row, 0);
 	layout->addWidget(sourcePUI->widget(), row++, 1, 1, 2);
 
@@ -149,7 +150,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     _attributeNamesList->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
 	variablesLayout->addWidget(_attributeNamesList);
 
-	// Update input variables list if another modifier has been loaded into the editor.
+	// Update input variables list if another overlay is loaded into the editor.
 	connect(this, &TextLabelOverlayEditor::contentsReplaced, this, &TextLabelOverlayEditor::updateEditorFields);
 }
 
@@ -158,8 +159,14 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 ******************************************************************************/
 bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && (event.type() == ReferenceEvent::TargetChanged || event.type() == ReferenceEvent::PreliminaryStateAvailable)) {
+	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == &PROPERTY_FIELD(TextLabelOverlay::sourceNode)) {
+		updateEditorFields();
+	}
+	else if(source == sourceNode() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
 		updateEditorFieldsLater(this);
+	}
+	else if(source == sourceNode() && event.type() == ReferenceEvent::TitleChanged) {
+		updateSourcesList();
 	}
 	return PropertiesEditor::referenceEvent(source, event);
 }
@@ -169,19 +176,17 @@ bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEv
 ******************************************************************************/
 void TextLabelOverlayEditor::updateSourcesList()
 {
-	QComboBox* combobox = static_cast<QComboBox*>(sender());
-
-	combobox->clear();
+	_nodeComboBox->clear();
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
 		// Enumerate all pipelines in the scene.
 		overlay->dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-			combobox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
+			_nodeComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
 			return true;
 		});
-		combobox->setCurrentIndex(combobox->findData(QVariant::fromValue(overlay->sourceNode())));
+		_nodeComboBox->setCurrentIndex(_nodeComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
 	}
-	if(combobox->count() == 0) 
-		combobox->addItem(tr("<none>"));
+	if(_nodeComboBox->count() == 0) 
+		_nodeComboBox->addItem(tr("<none>"));
 }
 
 /******************************************************************************
@@ -191,8 +196,9 @@ void TextLabelOverlayEditor::updateEditorFields()
 {
 	QString str;
 	QStringList variableNames;
+	PipelineSceneNode* node = nullptr;
 	if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
-		if(PipelineSceneNode* node = overlay->sourceNode()) {
+		if(node = overlay->sourceNode()) {
 			const PipelineFlowState& flowState = node->evaluatePipelineSynchronous(false);
 			str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
 			if(flowState.data()) {
@@ -204,6 +210,7 @@ void TextLabelOverlayEditor::updateEditorFields()
 			str.append(QStringLiteral("</ul></p><p></p>"));
 		}
 	}
+	setSourceNode(node);
 
 	_attributeNamesList->setText(str);
 	_attributeNamesList->updateGeometry();

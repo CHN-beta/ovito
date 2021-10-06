@@ -205,7 +205,7 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field
 		if(!isBeingLoaded())
 			notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}
-	else if(field == PROPERTY_FIELD(input) && !isBeingLoaded()) {
+	else if(field == PROPERTY_FIELD(input) && !isBeingLoaded() && !isAboutToBeDeleted()) {
 		// Reset all caches when the data input is replaced.
 		pipelineCache().invalidate(TimeInterval::empty(), true);
 		// Update the status of the Modifier when ModifierApplication is inserted/removed into pipeline.

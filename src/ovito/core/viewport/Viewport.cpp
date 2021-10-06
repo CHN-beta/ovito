@@ -386,7 +386,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	if(event.type() == ReferenceEvent::TargetChanged) {
 		if(source == viewNode()) {
 			// Adopt camera information from view node.
-			if(viewType() == VIEW_SCENENODE && !isBeingLoaded()) {
+			if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->isAboutToBeDeleted()) {
 				// Get camera transformation and settings (FOV etc.).
 				TimePoint time = dataset()->animationSettings()->time();
 				TimeInterval iv;

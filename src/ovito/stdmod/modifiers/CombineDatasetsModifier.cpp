@@ -179,7 +179,7 @@ bool CombineDatasetsModifier::referenceEvent(RefTarget* source, const ReferenceE
 ******************************************************************************/
 void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded()) {
+	if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded() && !isAboutToBeDeleted()) {
 		// The animation length might have changed when the secondary source has been replaced.
 		notifyDependents(ReferenceEvent::AnimationFramesChanged);
 	}

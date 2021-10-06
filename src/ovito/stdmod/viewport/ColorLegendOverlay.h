@@ -118,10 +118,10 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, label2, setLabel2);
 
 	/// The ColorCodingModifier for which to display the legend.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ColorCodingModifier>, modifier, setModifier, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// The selected PropertyColorMapping for which to display the legend.
-	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PropertyColorMapping>, colorMapping, setColorMapping, PROPERTY_FIELD_NO_SUB_ANIM);
+	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PropertyColorMapping>, colorMapping, setColorMapping, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
 	/// Controls the formatting of the value labels in the color legend.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

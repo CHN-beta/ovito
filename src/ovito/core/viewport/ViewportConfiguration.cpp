@@ -69,7 +69,7 @@ void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& fie
 		Q_EMIT maximizedViewportChanged(maximizedViewport());
 	}
 	else if(field == PROPERTY_FIELD(layoutRootCell)) {
-		if(!isBeingLoaded())
+		if(!isBeingLoaded() && !isAboutToBeDeleted())
 			updateListOfViewports();
 	}
 	RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -81,7 +81,7 @@ void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& fie
 bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TargetChanged) {
-		if(source == layoutRootCell() && !isBeingLoaded()) {
+		if(source == layoutRootCell() && !isBeingLoaded() && !isAboutToBeDeleted()) {
 			updateListOfViewports();
 			Q_EMIT viewportLayoutChanged();
 		}

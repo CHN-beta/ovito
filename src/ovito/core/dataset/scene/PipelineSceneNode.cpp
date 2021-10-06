@@ -245,7 +245,7 @@ void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, 
 		invalidatePipelineCache(TimeInterval::empty(), false);
 
 		// The animation length and the title of the pipeline might have changed.
-		if(!isBeingLoaded())
+		if(!isBeingLoaded() && !isAboutToBeDeleted())
 			notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
 		// Determine the new source object of the pipeline.
