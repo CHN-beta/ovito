@@ -73,6 +73,10 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 				ex.reportError();
 			}
 		}
+		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
+			// If this importer is a child of another importer, forward the reload request to the parent importer.
+			parentImporter->requestReload(refetchFiles, frame);
+		}
 	});
 }
 
@@ -92,6 +96,10 @@ void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 			catch(const Exception& ex) {
 				ex.reportError();
 			}
+		}
+		else if(FileSourceImporter* parentImporter = dynamic_object_cast<FileSourceImporter>(dependent)) {
+			// If this importer is a child of another importer, forward the update request to the parent importer.
+			parentImporter->requestFramesUpdate(refetchCurrentFile);
 		}
 	});
 }

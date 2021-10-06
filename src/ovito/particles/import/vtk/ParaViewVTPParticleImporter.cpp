@@ -404,8 +404,17 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 /******************************************************************************
 * Is called once before the datasets referenced in a multi-block VTM file will be loaded.
 ******************************************************************************/
-void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets)
+void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
 {
+	// Resize particles object to zero elements in the existing pipeline state.
+	// This is mainly done to remove the existing particles in those animation frames in which the VTM file has empty data blocks.
+	for(const DataObject* obj : request.state.data()->objects()) {
+		if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(obj)) {
+			PropertyContainer* mutableContainer = request.state.mutableData()->makeMutable(container);
+			mutableContainer->setElementCount(0);
+		}
+	}
+
 	// Remove those datasets from the multi-block structure that represent particle shapes.
 	// Keep a list of these removed datasets for later to load them together with the particles dataset.
 	blockDatasets.erase(std::remove_if(blockDatasets.begin(), blockDatasets.end(), [this](const auto& blockInfo) {

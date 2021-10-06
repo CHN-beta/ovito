@@ -30,6 +30,8 @@
 
 namespace Ovito { namespace Mesh {
 
+class ParaViewVTMImporter; // defined below
+
 /**
  * \brief Describes a single data file referenced by a VTM file. 
  */
@@ -59,7 +61,7 @@ class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
 public:
 
 	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets) {}
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) {}
 
 	/// \brief Is called for every dataset referenced in a multi-block VTM file.
 	virtual Future<> loadDataset(const ParaViewVTMBlockInfo& blockInfo, const FileHandle& referencedFile, const FileSourceImporter::LoadOperationRequest& loadRequest) { return {}; }
@@ -99,8 +101,8 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 
 public:
 
-	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTMImporter(DataSet *dataset) : FileSourceImporter(dataset) {}
+	/// Constructor.
+	Q_INVOKABLE ParaViewVTMImporter(DataSet *dataset) : FileSourceImporter(dataset), _uniteMeshes(false) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTM"); }
@@ -108,10 +110,20 @@ public:
 	/// Loads the data for the given frame from the external file.
 	virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
 
+protected:
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+
 private:
 
 	/// Parses the given VTM file and returns the list of referenced data files.
 	static std::vector<ParaViewVTMBlockInfo> loadVTMFile(const FileHandle& fileHandle);
+
+private:
+
+	/// Controls whether all surface meshes are merged into a single mesh during import.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, uniteMeshes, setUniteMeshes, PROPERTY_FIELD_MEMORIZE);
 };
 
 }	// End of namespace

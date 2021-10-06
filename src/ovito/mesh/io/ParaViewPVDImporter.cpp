@@ -92,7 +92,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 				double timestep = xml.attributes().value("timestep").toDouble();
 
 				Frame frame(std::move(url));
-				OVITO_STATIC_ASSERT(sizeof(frame.parserData) == sizeof(timestep));
+				OVITO_STATIC_ASSERT(sizeof(frame.parserData) >= sizeof(timestep));
 				std::memcpy(&frame.parserData, &timestep, sizeof(timestep));
 				frame.label = tr("Timestep %1").arg(xml.attributes().value("timestep"));
 				frames.push_back(std::move(frame));
@@ -128,7 +128,7 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
 
 	// Fetch 'timestep' attribute from PVD file.
 	double timestep;
-	OVITO_STATIC_ASSERT(sizeof(request.frame.parserData) == sizeof(timestep));
+	OVITO_STATIC_ASSERT(sizeof(request.frame.parserData) >= sizeof(timestep));
 	std::memcpy(&timestep, &request.frame.parserData, sizeof(timestep));
 
 	// Keep a reference to the child importer.

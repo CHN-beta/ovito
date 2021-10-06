@@ -143,7 +143,7 @@ protected:
 		bool _recenterCell = false;
 	};
 
-	/// \brief Is called when the value of a property of this object has changed.
+	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
 
 	/// Is called when importing multiple files of different formats.

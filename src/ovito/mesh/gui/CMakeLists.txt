@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,6 +26,7 @@ OVITO_STANDARD_PLUGIN(MeshGui
 		tri/TriMeshVisEditor.cpp
 		surface/SurfaceMeshVisEditor.cpp
 		surface/SurfaceMeshInspectionApplet.cpp
+		io/ParaViewVTMImporterEditor.cpp
 		resources/mesh_gui.qrc
 	PLUGIN_DEPENDENCIES Mesh StdObjGui
 	GUI_PLUGIN

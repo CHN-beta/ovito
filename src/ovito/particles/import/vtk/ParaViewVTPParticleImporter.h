@@ -121,7 +121,7 @@ public:
 	Q_INVOKABLE ParticlesParaViewVTMFileFilter() = default;
 
 	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets) override;
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 
 	/// Is called before parsing of a dataset reference in a multi-block VTM file begins.
 	virtual void configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer) override;

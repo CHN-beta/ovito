@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -33,8 +34,10 @@
 
 namespace Ovito { namespace Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
 IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
+IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
+DEFINE_PROPERTY_FIELD(ParaViewVTMImporter, uniteMeshes);
+SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes during import");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -177,16 +180,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		std::vector<OORef<ParaViewVTMFileFilter>> filters;
 	};
 
-	// Resize property containers to zero elements in the existing pipeline state.
-	// This is mainly done to remove the existing particles in those animation frames in which the VTM file 
-	// has empty data blocks.
+	// Copy the pipeline request into an extended data structure, which can be modified.
 	ExtendedLoadRequest modifiedRequest(request);
-	for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
-		if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(obj)) {
-			PropertyContainer* mutableContainer = modifiedRequest.state.mutableData()->makeMutable(container);
-			mutableContainer->setElementCount(0);
-		}
-	}
 
 	// Load the VTM file, which contains the list of referenced data files.
 	std::vector<ParaViewVTMBlockInfo> blockDatasets = loadVTMFile(request.fileHandle);
@@ -197,7 +192,48 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		modifiedRequest.filters.push_back(static_object_cast<ParaViewVTMFileFilter>(clazz->createInstance()));
 
 		// Let the plugin filter objects preprocess the multi-block structure before the referenced data files get loaded.
-		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets);
+		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets, modifiedRequest, *this);
+	}
+
+	// Special handling of meshes that are grouped in the "Meshes" block of the VTM file.
+	// This is specific to VTM files written by the Aspherix code.
+	if(uniteMeshes()) {
+		// Count the total number of mesh data files referenced by the VTM file.
+		int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& blockInfo) {
+			return blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Meshes");
+		});
+		// Make all mesh data files a part of the same block. This will tell the VTP mesh file reader 
+		// to combine all mesh parts into a single SurfaceMesh object.
+		int index = 0;
+		for(ParaViewVTMBlockInfo& blockInfo : blockDatasets) {
+			if(blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Meshes")) {
+				blockInfo.multiBlockIndex = index++;
+				blockInfo.multiBlockCount = numMeshFiles;
+				// Discard original block identifier and give the united mesh a standard identifier.
+				blockInfo.blockPath[1] = QStringLiteral("combined");
+			}
+		}
+		// Remove all other surface meshes from the data collection which might have been left over from a previous load operation.
+		std::vector<const DataObject*> meshesToDiscard;
+		for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
+			if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(obj)) {
+				if(mesh->identifier() != QStringLiteral("combined"))
+					meshesToDiscard.push_back(mesh);
+			}
+		}
+		for(const DataObject* obj : meshesToDiscard)
+			modifiedRequest.state.mutableData()->removeObject(obj);
+	}
+	else {
+		// When loading separate meshes, remove the combined mesh from the data collection, which might have been left over from a previous load operation.
+		for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
+			if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(obj)) {
+				if(mesh->identifier() == QStringLiteral("combined")) {
+					modifiedRequest.state.mutableData()->removeObject(mesh);
+					break;
+				}
+			}
+		}
 	}
 
 	// Load each dataset referenced by the VTM file. 
@@ -293,6 +329,20 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		// Return just the PipelineFlowState to the caller.
 		return std::move(request.state);
 	});
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ParaViewVTMImporter::propertyChanged(const PropertyFieldDescriptor& field)
+{
+	FileSourceImporter::propertyChanged(field);
+
+	if(field == PROPERTY_FIELD(uniteMeshes)) {
+		// Reload input file(s) when this option is changed by the user.
+		// There is no need to refetch the data file(s) from the remote location though. Reparsing the cached files is sufficient.
+		requestReload();
+	}
 }
 
 }	// End of namespace

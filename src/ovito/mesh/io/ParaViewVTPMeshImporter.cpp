@@ -73,6 +73,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 
 	// Create the destination mesh object.
 	QString meshIdentifier = loadRequest().dataBlockPrefix;
+	if(meshIdentifier.isEmpty()) meshIdentifier = "mesh";
 	SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
 	if(!meshObj) {
 		meshObj = state().createObject<SurfaceMesh>(dataSource(), executionContext());
@@ -81,10 +82,15 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 		if(vis) {
 			vis->setShowCap(false);
 			vis->setSmoothShading(true);
+			vis->setSurfaceIsClosed(false);
 		}
-		if(!meshIdentifier.isEmpty()) {
-			meshObj->setTitle(tr("Mesh: %1").arg(meshIdentifier));
-			if(vis) vis->setTitle(tr("Mesh: %1").arg(meshIdentifier));
+		if(!loadRequest().dataBlockPrefix.isEmpty()) {
+			meshObj->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
+			if(vis) vis->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
+		}
+		else {
+			meshObj->setTitle(tr("Mesh"));
+			if(vis) vis->setTitle(tr("Mesh"));
 		}
 	}
 	SurfaceMeshAccess mesh(meshObj);
