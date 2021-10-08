@@ -27,9 +27,11 @@ their visual appearance, for example the surface transparency, can be configured
 :ref:`visual element <visual_elements.surface_mesh>` named :guilabel:`Polyhedra`, which appears in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` 
 after the modifier has created the coordination polyhedra.
 
-Properties of the input particles forming the vertices of the generated polyhedron mesh become available as local properties 
-of the mesh vertices. Thus, you have the option to visualize a scalar particle property on the polyhedra surfaces 
-by making use of the color mapping function of the :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
+Properties of the input particles become available as local properties of the generated polyhedral mesh. 
+Each polyhedron forms a separate *region* of the mesh and is associated with the properties of the central particle. 
+Furthermore, each vertex of the polyhedral mesh is associated with the properties of the neighbor particle is was created from.
+This gives you the possibility to visualize these particle properties on the polyhedra surfaces by making use of the color mapping function 
+of the :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
 
 .. seealso::
 

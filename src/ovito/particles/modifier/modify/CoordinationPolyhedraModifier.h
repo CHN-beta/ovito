@@ -83,13 +83,11 @@ private:
 
 		/// Constructor.
 		ComputePolyhedraEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
-				ConstPropertyPtr selection, ConstPropertyPtr particleTypes, ConstPropertyPtr particleIdentifiers,
+				ConstPropertyPtr selection, 
 				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
 			Engine(dataSource, executionContext),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
-			_particleTypes(std::move(particleTypes)),
-			_particleIdentifiers(std::move(particleIdentifiers)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
 			_mesh(std::move(mesh)),
@@ -111,8 +109,6 @@ private:
 
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _selection;
-		ConstPropertyPtr _particleTypes;
-		ConstPropertyPtr _particleIdentifiers;
 		ConstPropertyPtr _bondTopology;
 		ConstPropertyPtr _bondPeriodicImages;
 
@@ -126,7 +122,7 @@ private:
 	/// The vis element for rendering the polyhedra.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
-	/// Controls whether property values should be copied over from the input particles to the generated mesh vertices.
+	/// Controls whether property values should be copied over from the input particles to the generated mesh vertices and mesh regions.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 };
 
