@@ -41,14 +41,12 @@ namespace Ovito { namespace CrystalAnalysis {
 class GrainSegmentationEngine1 : public AsynchronousModifier::Engine
 {
 public:
-
 	class Graph
 	{
 	public:
 		size_t next = 0;
 		std::map<size_t, FloatType> wnode;
 		std::map<size_t, std::map<size_t, FloatType>> adj;
-		std::map<size_t, std::map<size_t, FloatType>> deleted_adj;
 
 		size_t num_nodes() const {
 			return adj.size();
@@ -123,22 +121,8 @@ public:
 				adj[v].erase(u);
 			}
 
-			//adj.erase(u);
-			//wnode.erase(u);
-			deleted_adj[u] = adj[u];
 			adj.erase(u);
-		}
-
-		void reinstate_node(size_t u) {
-
-			adj[u] = deleted_adj[u];
-			deleted_adj.erase(u);
-
-			for (auto const& x: adj[u]) {
-				size_t v = x.first;
-				FloatType w = x.second;
-				(adj[v])[u] += w;
-			}
+			//wnode.erase(u);
 		}
 
 		size_t contract_edge(size_t a, size_t b) {
@@ -159,31 +143,6 @@ public:
 			adj[a].erase(b);
 			wnode[a] += wnode[b];
 			remove_node(b);
-			return a;
-		}
-
-		size_t reinstate_edge(size_t a, size_t b) {
-			// TODO: investigate whether component sizes must obey > relation
-
-			for (auto const& x: deleted_adj[b]) {
-				size_t v = x.first;
-				FloatType w = x.second;
-				if (v == a) continue;
-
-				(adj[a])[v] -= w;
-				(adj[v])[a] -= w;
-
-				// remove edge if weight is approximately zero;
-				FloatType minWeight = calculateGraphWeight(_misorientationThreshold);
-				if ((adj[a])[v] < minWeight / 2)
-					adj[a].erase(v);
-
-				if ((adj[v])[a] < minWeight / 2)
-					adj[v].erase(a);
-			}
-
-			wnode[a] -= wnode[b];
-			reinstate_node(b);
 			return a;
 		}
 	};
@@ -598,7 +557,7 @@ private:
 	/// The minimum number of atoms a grain must have.
 	size_t _minGrainAtomCount;
 
-	/// Contrals the adoption of orphan atoms after the grains have been formed.
+	/// Controls the adoption of orphan atoms after the grains have been formed.
 	bool _adoptOrphanAtoms;
 };
 
