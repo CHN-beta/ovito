@@ -38,7 +38,7 @@ SET_TARGET_PROPERTIES(MinimumWeightMatchingCentrosymmetry PROPERTIES OUTPUT_NAME
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(MinimumWeightMatchingCentrosymmetry INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYTHON_PACKAGE)
+IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
 	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
 	SET_PROPERTY(TARGET MinimumWeightMatchingCentrosymmetry PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()

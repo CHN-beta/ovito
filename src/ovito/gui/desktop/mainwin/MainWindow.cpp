@@ -47,7 +47,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetContainer(this)
+MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #if defined(OVITO_EXPIRATION_DATE)
@@ -519,7 +519,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 			if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
 				if(url.isLocalFile()) {
 					if(datasetContainer().askForSaveChanges())
-						datasetContainer().fileLoad(url.toLocalFile());
+						datasetContainer().loadDataset(url.toLocalFile());
 					return;
 				}
 			}
@@ -561,6 +561,16 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 void MainWindow::clearStatusBarMessage() 
 {
 	_statusBar->clearMessage();
+}
+
+/******************************************************************************
+* Creates a frame buffer of the requested size and displays it as a window in the user interface.
+******************************************************************************/
+std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height) 
+{ 
+	std::shared_ptr<FrameBuffer> fb = frameBufferWindow()->createFrameBuffer(width, height);
+	frameBufferWindow()->showAndActivateWindow();
+	return fb;
 }
 
 }	// End of namespace

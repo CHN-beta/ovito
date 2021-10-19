@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_GUIBASE_EXPORT ViewportInputManager : public QObject
 public:
 
 	/// \brief Constructor.
-	ViewportInputManager(QObject* parent, DataSetContainer& datasetContainer, MainWindowInterface* mainWindow);
+	ViewportInputManager(QObject* parent, DataSetContainer& datasetContainer, UserInterface* gui);
 
 	/// Destructor.
 	virtual ~ViewportInputManager();
@@ -48,8 +48,8 @@ public:
 	/// Returns the dataset container this input manager is associated with,
 	DataSetContainer& datasetContainer() { return _datasetContainer; }
 
-	/// Returns the main window this input manager belongs to (if any).
-	MainWindowInterface* mainWindow() const { return _mainWindow; }
+	/// Returns the abstract user interface this input manager belongs to.
+	UserInterface* gui() const { return _gui; }
 
 	/// \brief Returns the currently active ViewportInputMode that handles the mouse events in viewports.
 	/// \return The mode that is responsible for mouse event handling. Can be \c NULL when the stack is empty.
@@ -115,8 +115,8 @@ private:
 	/// The dataset container this input manager is associated with,
 	DataSetContainer& _datasetContainer;
 
-	/// Pointer to the main window this input manager belongs to (if any).
-	MainWindowInterface* _mainWindow;
+	/// Pointer to the abstract user interface this input manager belongs to.
+	UserInterface* _gui;
 
 	/// Stack of input modes. The topmost entry is the active one.
 	std::vector<ViewportInputMode*> _inputModeStack;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,62 +28,64 @@
 namespace Ovito {
 
 /**
- * \brief The main window of the application.
+ * \brief Abstract interface to the graphical user interface of the application.
  *
- * Note that is is possible to open multiple main windows per
- * application instance to edit multiple datasets simultaneously.
+ * Note that is is possible to open multiple GUI windows per process.
  */
-class OVITO_GUIBASE_EXPORT MainWindowInterface
+class OVITO_GUIBASE_EXPORT UserInterface
 {
 public:
 
 	/// Constructor.
-	explicit MainWindowInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
+	explicit UserInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
 
-	/// Returns the container that keeps a reference to the current dataset.
+	/// Returns the container managing the current dataset.
 	DataSetContainer& datasetContainer() { return _datasetContainer; }
 
-	/// Sets the window's viewport input manager.
+	/// Sets the viewport input manager of the user interface.
 	void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
 
-	/// Returns the window's viewport input manager.
+	/// Returns the viewport input manager of the user interface.
 	ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() {}
 	
-	/// Displays a message string in the window's status bar.
+	/// Displays a message string in the status bar.
 	virtual void showStatusBarMessage(const QString& message, int timeout = 0) {}
 
-	/// Hides any messages currently displayed in the window's status bar.
+	/// Hides any messages currently displayed in the status bar.
 	virtual void clearStatusBarMessage() {}
 
-	/// Closes the main window (and shuts down application if this is the last open window).
-	virtual void closeMainWindow() {}
+	/// Closes the user interface (and shuts down application if there are no more windows open).
+	virtual void shutdown() {}
 
-	/// Returns the window's action manager.
+	/// Returns the manager of the user interface actions.
 	ActionManager* actionManager() const { return _actionManager; }
 
 	/// Queries the system's information and graphics capabilities.
 	QString generateSystemReport();
 
-	/// \brief Shows the online manual and opens the given help page.
+	/// Shows the online manual and opens the given help page.
 	static void openHelpTopic(const QString& page);
+
+	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
 
 protected:
 
-	/// Assigns an ActionManager to this window.
+	/// Assigns an ActionManager.
 	void setActionManager(ActionManager* manager) { _actionManager = manager; }
 
 private:
 
-	/// This object manages the DataSet currently being edited in the window.
+	/// Container managing the DataSet currently being edited in this user interface.
 	DataSetContainer& _datasetContainer;
 
-	/// The associated viewport input manager.
+	/// Viewport input manager of the user interface.
 	ViewportInputManager* _viewportInputManager = nullptr;
 
-	/// The action manager assigned to this window.
+	/// Actions of the user interface.
 	ActionManager* _actionManager = nullptr;
 };
 

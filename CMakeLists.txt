@@ -65,9 +65,9 @@ INCLUDE(cmake/Plugins.cmake)
 
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
-OPTION(OVITO_BUILD_GUI "Build the graphical user interface." "ON")
-OPTION(OVITO_QML_GUI "Build the new graphical user interface, which is based on Qt QML." "OFF")
-OPTION(OVITO_BUILD_MONOLITHIC "Build a monolithic executable, statically linking all plugins." "OFF")
+OPTION(OVITO_BUILD_APP "Build the OVITO desktop application." "ON")
+OPTION(OVITO_QML_GUI "Use an alternative (experimental) graphical user interface, which is based on Qt's QML module instead of Widgets." "OFF")
+OPTION(OVITO_BUILD_MONOLITHIC "Build the application as a monolithic executable, statically linking in all plugins." "OFF")
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
 OPTION(OVITO_RUN_CLANG_TIDY "Run the clang-tidy tool to check code." "OFF")
@@ -76,13 +76,20 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
+
+# Decide which version of the Qt framework to use. Ovito supports Qt5 (>=5.12) and Qt6 (>=6.2). 
 SET(OVITO_QT_MAJOR_VERSION "Qt5" CACHE STRING "The major version of the Qt framework to use (Qt5 or Qt6).")
 SET_PROPERTY(CACHE OVITO_QT_MAJOR_VERSION PROPERTY STRINGS Qt5 Qt6)
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt5")
+	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 5.12)
+ELSE()
+	SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
+ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_STDMOD "Build the standard modifiers plugin." "ON")
-OPTION(OVITO_BUILD_PLUGIN_PARTICLES "Build the plugin for particle and bond data." "ON")
+OPTION(OVITO_BUILD_PLUGIN_PARTICLES "Build the plugin for particle-related functions." "ON")
 OPTION(OVITO_BUILD_PLUGIN_MESH "Build the Mesh plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GRID "Build the Grid plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_CRYSTALANALYSIS "Build the CrystalAnalysis plugin." "ON")
@@ -94,10 +101,10 @@ OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "OFF")
 
 # Experimental features:
-OPTION(OVITO_BUILD_PLUGIN_VR "Build the virtual reality plugin (experimental)." "OFF")
+OPTION(OVITO_BUILD_PLUGIN_VR "Build the virtual reality plugin (experimental - currently in a non-working state!)." "OFF")
 
 # This is a global list of plugin targets that will be built.
-# It will get populated by the OVITO_PLUGIN macro.
+# It will get populated by the OVITO_PLUGIN function.
 SET(OVITO_PLUGINS_LIST "")
 
 # Set the default component name for the installer.
@@ -137,7 +144,7 @@ ENDIF()
 SET(MACOSX_BUNDLE_NAME "Ovito")
 SET(MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_NAME}")
 
-IF(NOT OVITO_BUILD_PYTHON_PACKAGE)
+IF(NOT OVITO_BUILD_PYPI)
 	IF(UNIX AND NOT APPLE)
 		# The directory where the main executable goes to.
 		SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
@@ -218,7 +225,7 @@ IF(NOT OVITO_BUILD_PYTHON_PACKAGE)
 		ENDIF()
 	ENDIF()
 ELSE()
-	# For Python-only (PyPI wheel) builds:
+	# For PyPI wheel builds:
 
 	# The directory where the main executable goes to.
 	SET(OVITO_RELATIVE_BINARY_DIRECTORY "ovito")
@@ -287,7 +294,7 @@ ELSE()
 	ENDIF()
 ENDIF()
 
-# Make prerequisites available.
+# Helper functions for finding and deploying third-party prerequisites.
 INCLUDE(cmake/Prerequisites.cmake)
 
 # Determine the command for running the clang-tidy tool.
@@ -296,10 +303,10 @@ IF(OVITO_RUN_CLANG_TIDY AND NOT CMAKE_VERSION VERSION_LESS "3.6")
 	SET(OVITO_CLANG_TIDY_CMD "${CLANG_TIDY_EXE}") # List of checks will be read from the .clang-tidy file.
 ENDIF()
 
-# Generate all the build targets.
+# Generate the build targets that are part of Ovito.
 ADD_SUBDIRECTORY(src)
 
-# This allows external CMake projects to inject their customization code into the OVITO project:
+# This allows external CMake projects to inject their customization code into the CMake project:
 IF(OVITO_CMAKE_FILE_INJECTION_PROJECT)
 	INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PROJECT}")
 ENDIF()

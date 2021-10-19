@@ -187,6 +187,25 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 	_glsurface = _glcontext->surface();
 	OVITO_ASSERT(_glsurface != nullptr);
 
+	// Check OpenGL version.
+	if(_glcontext->format().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (_glcontext->format().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && _glcontext->format().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
+		throwException(tr(
+				"The OpenGL implementation available on this system does not support OpenGL version %4.%5 or newer.\n\n"
+				"Ovito requires modern graphics hardware to accelerate 3d rendering. You current system configuration is not compatible with Ovito.\n\n"
+				"To avoid this error message, please install the newest graphics driver, or upgrade your graphics card.\n\n"
+				"The currently installed OpenGL graphics driver reports the following information:\n\n"
+				"OpenGL Vendor: %1\n"
+				"OpenGL Renderer: %2\n"
+				"OpenGL Version: %3\n\n"
+				"Ovito requires OpenGL version %4.%5 or higher.")
+				.arg(QString(OpenGLSceneRenderer::openGLVendor()))
+				.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+				.arg(QString(OpenGLSceneRenderer::openGLVersion()))
+				.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
+				.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
+				);
+	}
+
 	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -275,6 +294,10 @@ void OpenGLSceneRenderer::initializeGLState()
 				setClearColor(renderSettings()->backgroundColor());
 		}
     }
+	else {
+		if(renderSettings() && !isPicking())
+			setClearColor(ColorA(renderSettings()->backgroundColor(), 0));
+	}
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
 

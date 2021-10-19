@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "ViewportInputManager.h"
@@ -32,10 +32,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the viewport input manager.
 ******************************************************************************/
-ViewportInputManager::ViewportInputManager(QObject* parent, DataSetContainer& datasetContainer, MainWindowInterface* mainWindow) : 
+ViewportInputManager::ViewportInputManager(QObject* parent, DataSetContainer& datasetContainer, UserInterface* gui) : 
 	QObject(parent),
 	_datasetContainer(datasetContainer),
-	_mainWindow(mainWindow)
+	_gui(gui)
 {
 	_zoomMode = new ZoomMode(this);
 	_panMode = new PanMode(this);

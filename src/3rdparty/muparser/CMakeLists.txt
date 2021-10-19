@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -19,6 +19,9 @@
 #  governing rights and limitations.
 #
 #######################################################################################
+
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Build library.
 ADD_LIBRARY(muParser
@@ -62,7 +65,7 @@ ENDIF()
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(muParser INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYTHON_PACKAGE)
+IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
 	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
 	SET_PROPERTY(TARGET muParser PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()

@@ -58,7 +58,8 @@
 ******************************************************************************/
 namespace Ovito {
 
-    class MainWindowInterface;
+    class UserInterface;
+    class BaseViewportWindow;
     class ActionManager;
     class ViewportModeAction;
     class ViewportInputManager;

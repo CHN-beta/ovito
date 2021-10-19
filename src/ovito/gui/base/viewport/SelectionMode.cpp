@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
@@ -74,8 +74,8 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
 ******************************************************************************/
 void SelectionMode::deactivated(bool temporary)
 {
-	if(inputManager()->mainWindow())
-		inputManager()->mainWindow()->clearStatusBarMessage();
+	if(inputManager()->gui())
+		inputManager()->gui()->clearStatusBarMessage();
 	_viewport = nullptr;
 	ViewportInputMode::deactivated(temporary);
 }
@@ -92,13 +92,13 @@ void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* 
 	// Display a description of the object under the mouse cursor in the status bar and in a tooltip window.
 	if(pickResult.isValid() && pickResult.pickInfo()) {
 		QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
-		if(inputManager()->mainWindow())
-			inputManager()->mainWindow()->showStatusBarMessage(infoText);
+		if(inputManager()->gui())
+			inputManager()->gui()->showStatusBarMessage(infoText);
 		vpwin->showToolTip(infoText, getMousePosition(event));
 	}
 	else {
-		if(inputManager()->mainWindow())
-			inputManager()->mainWindow()->clearStatusBarMessage();
+		if(inputManager()->gui())
+			inputManager()->gui()->clearStatusBarMessage();
 		vpwin->hideToolTip();
 	}
 

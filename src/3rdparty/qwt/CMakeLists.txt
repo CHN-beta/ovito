@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -19,6 +19,9 @@
 #  governing rights and limitations.
 #
 #######################################################################################
+
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets PrintSupport Concurrent REQUIRED)
 
 # Build the library.
 SET(QWT_SOURCE_FILES
@@ -134,6 +137,11 @@ TARGET_LINK_LIBRARIES(Qwt PUBLIC
 	${OVITO_QT_MAJOR_VERSION}::PrintSupport 
 	${OVITO_QT_MAJOR_VERSION}::Concurrent)
 
+# Tell CMake to run Qt moc on source files added to the target.
+SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTOMOC ON)
+# Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
+SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTORCC ON)
+	
 # Some compile time flags for Qwt.
 TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL QWT_MAKEDLL)
 TARGET_COMPILE_DEFINITIONS(Qwt PUBLIC QWT_DLL)

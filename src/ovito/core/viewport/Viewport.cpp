@@ -172,6 +172,11 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
 			}
 		}
 	}
+	else {
+		if(type == VIEW_PERSPECTIVE && fieldOfView() >= FloatType(90*FLOATTYPE_PI/180)) {
+			setFieldOfView(DEFAULT_PERSPECTIVE_FIELD_OF_VIEW);
+		}
+	}
 
 	_viewType.set(this, PROPERTY_FIELD(viewType), type);
 }

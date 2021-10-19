@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,6 @@
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -78,7 +77,7 @@ void XFormMode::deactivated(bool temporary)
 ******************************************************************************/
 void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 {
-	MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow());
+	MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui());
 	CoordinateDisplayWidget* coordDisplay = mainWindow ? mainWindow->coordinateDisplay() : nullptr;
 
 	if(selection) {
@@ -107,7 +106,7 @@ void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TransformationChanged) {
-		if(MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow()))
+		if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui()))
 			updateCoordinateDisplay(mainWindow->coordinateDisplay());
 	}
 }
@@ -117,7 +116,7 @@ void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void XFormMode::onTimeChanged(TimePoint time)
 {
-	if(MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow()))
+	if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui()))
 		updateCoordinateDisplay(mainWindow->coordinateDisplay());
 }
 
@@ -177,7 +176,7 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 		// Take the current mouse cursor position to make the input mode
 		// look more responsive. The cursor position recorded when the mouse event was
 		// generates may be too old.
-		_currentPoint = static_cast<WidgetViewportWindow*>(viewport()->window())->widget()->mapFromGlobal(QCursor::pos());
+		_currentPoint = vpwin->getCurrentMousePos();
 
 		viewport()->dataset()->undoStack().resetCurrentCompoundOperation();
 		doXForm();
@@ -330,9 +329,10 @@ void MoveMode::onAnimateTransformationButton()
 		if(prs_ctrl) {
 			KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->positionController());
 			if(ctrl) {
-				MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow());
-				AnimationKeyEditorDialog dlg(ctrl, &PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, mainWindow);
-				dlg.exec();
+				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
+					AnimationKeyEditorDialog dlg(ctrl, &PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, mainWindow);
+					dlg.exec();
+				}
 			}
 		}
 	}
@@ -430,13 +430,14 @@ void RotateMode::onCoordinateValueEntered(int component, FloatType value)
 	if(_selectedNode.target()) {
 		Controller* ctrl = _selectedNode.target()->transformationController();
 		if(ctrl) {
-			TimeInterval iv;
-			DataSet* dataset = _selectedNode.target()->dataset();
-			MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow());
-			CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
-			Vector3 euler = coordDisplay->getValues();
-			Rotation rotation = Rotation::fromEuler(Vector3(euler[2], euler[1], euler[0]), Matrix3::szyx);
-			ctrl->setRotationValue(dataset->animationSettings()->time(), rotation, true);
+			if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
+				TimeInterval iv;
+				DataSet* dataset = _selectedNode.target()->dataset();
+				CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
+				Vector3 euler = coordDisplay->getValues();
+				Rotation rotation = Rotation::fromEuler(Vector3(euler[2], euler[1], euler[0]), Matrix3::szyx);
+				ctrl->setRotationValue(dataset->animationSettings()->time(), rotation, true);
+			}
 		}
 	}
 }
@@ -452,9 +453,10 @@ void RotateMode::onAnimateTransformationButton()
 		if(prs_ctrl) {
 			KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->rotationController());
 			if(ctrl) {
-				MainWindow* mainWindow = static_cast<MainWindow*>(inputManager()->mainWindow());
-				AnimationKeyEditorDialog dlg(ctrl, &PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, mainWindow);
-				dlg.exec();
+				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
+					AnimationKeyEditorDialog dlg(ctrl, &PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, mainWindow);
+					dlg.exec();
+				}
 			}
 		}
 	}

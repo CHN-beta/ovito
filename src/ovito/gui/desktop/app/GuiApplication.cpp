@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,26 @@
 #include <ovito/core/app/ApplicationService.h>
 #include "GuiApplication.h"
 
+// Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
+// Following the Qt documentation, this needs to be placed outside of any C++ namespace.
+static void registerQtResources()
+{
+#ifdef OVITO_BUILD_MONOLITHIC
+	Q_INIT_RESOURCE(guibase);
+	Q_INIT_RESOURCE(gui);
+#endif
+}
+
 namespace Ovito {
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+GuiApplication::GuiApplication()
+{
+	// Register Qt resources.
+	::registerQtResources();
+}
 
 /******************************************************************************
 * Defines the program's command line parameters.
@@ -38,7 +57,7 @@ void GuiApplication::registerCommandLineParameters(QCommandLineParser& parser)
 {
 	StandaloneApplication::registerCommandLineParameters(parser);
 
-	parser.addOption(QCommandLineOption(QStringList{{"nogui"}}, tr("Run in console mode without showing the graphical user interface.")));
+	parser.addOption(QCommandLineOption(QStringList{{"nogui"}}, tr("Run in console mode without displaying a graphical user interface.")));
 	parser.addOption(QCommandLineOption(QStringList{{"noviewports"}}, tr("Do not create any viewports (for debugging purposes only).")));
 }
 
@@ -192,14 +211,12 @@ bool GuiApplication::startupApplication()
 ******************************************************************************/
 void GuiApplication::postStartupInitialization()
 {
-	GuiDataSetContainer* container = static_object_cast<GuiDataSetContainer>(datasetContainer());
-
 	// Load session state file specified on the command line.
 	if(!cmdLineParser().positionalArguments().empty()) {
 		QString startupFilename = cmdLineParser().positionalArguments().front();
 		if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
 			try {
-				container->fileLoad(startupFilename);
+				datasetContainer()->loadDataset(startupFilename);
 			}
 			catch(const Exception& ex) {
 				ex.reportError();
@@ -208,8 +225,8 @@ void GuiApplication::postStartupInitialization()
 	}
 
 	// Create an empty dataset if nothing has been loaded.
-	if(container->currentSet() == nullptr)
-		container->fileNew();
+	if(datasetContainer()->currentSet() == nullptr)
+		datasetContainer()->newDataset();
 
 	// Import data file(s) specified on the command line.
 	if(!cmdLineParser().positionalArguments().empty()) {
@@ -225,7 +242,10 @@ void GuiApplication::postStartupInitialization()
 			if(!importUrls.empty()) {
 				if(numSessionFiles)
 					throw Exception(tr("Detected multiple command line arguments: Cannot open a session state file and a simulation data file at the same time."));
-				container->importFiles(std::move(importUrls));
+				if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(datasetContainer()))
+					guiContainer->importFiles(std::move(importUrls));
+				else
+					throw Exception(tr("Cannot import data files from the command line when running in console mode."));
 			}
 			if(numSessionFiles > 1)
 				throw Exception(tr("Detected multiple command line arguments: Cannot open multiple session state files at the same time."));
@@ -233,8 +253,8 @@ void GuiApplication::postStartupInitialization()
 		catch(const Exception& ex) {
 			ex.reportError();
 		}
-		if(container->currentSet())
-			container->currentSet()->undoStack().setClean();
+		if(datasetContainer()->currentSet())
+			datasetContainer()->currentSet()->undoStack().setClean();
 	}
 
 	StandaloneApplication::postStartupInitialization();
@@ -247,14 +267,13 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 {
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
-		GuiDataSetContainer* container = static_object_cast<GuiDataSetContainer>(datasetContainer());
 		try {
 			if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-				container->fileLoad(openEvent->file());
+				datasetContainer()->loadDataset(openEvent->file());
 			}
-			else {
-				container->importFiles({openEvent->url()});
-				container->currentSet()->undoStack().setClean();
+			else if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(datasetContainer())) {
+				guiContainer->importFiles({openEvent->url()});
+				guiContainer->currentSet()->undoStack().setClean();
 			}
 		}
 		catch(const Exception& ex) {

@@ -115,7 +115,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		MainWindow* mainWin = new MainWindow();
 		mainWin->show();
 		mainWin->restoreLayout();
-		mainWin->datasetContainer().fileNew();
+		mainWin->datasetContainer().newDataset();
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -150,7 +150,7 @@ void WidgetActionManager::on_FileOpen_triggered()
 		// Remember directory for the next time...
 		settings.setValue("last_directory", QFileInfo(filename).absolutePath());
 
-		mainWindow()->datasetContainer().fileLoad(filename);
+		mainWindow()->datasetContainer().loadDataset(filename);
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

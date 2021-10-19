@@ -34,101 +34,9 @@ IMPLEMENT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset) 
+PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : OffscreenInteractiveOpenGLSceneRenderer(dataset) 
 {
 	setPicking(true);
-}
-
-/******************************************************************************
-* This method is called just before renderFrame() is called.
-******************************************************************************/
-void PickingOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
-{
-	// Get the viewport's window.
-	ViewportWindowInterface* vpWindow = vp->window();
-	if(!vpWindow)
-		throwException(tr("Viewport window has not been created."));
-	if(!vpWindow->isVisible())
-		throwException(tr("Viewport window is not visible."));
-
-	// Before making our GL context current, remember the old context that
-	// is currently active so we can restore it after we are done.
-	_oldContext = QOpenGLContext::currentContext();
-	_oldSurface = _oldContext ? _oldContext->surface() : nullptr;
-
-	// Get OpenGL context associated with the viewport window.
-	vpWindow->makeOpenGLContextCurrent();
-	QOpenGLContext* context = QOpenGLContext::currentContext();
-	if(!context || !context->isValid())
-		throwException(tr("OpenGL context for viewport window has not been created."));
-
-	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
-    initializeOpenGLFunctions();
-	
-	// Size of the viewport window in physical pixels.
-	QSize size = vpWindow->viewportWindowDeviceSize();
-
-	if(!context->isOpenGLES() || !context->hasExtension("WEBGL_depth_texture")) {
-		// Create OpenGL framebuffer.
-		QOpenGLFramebufferObjectFormat framebufferFormat;
-		framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-		_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size.width(), size.height(), framebufferFormat);
-
-		// Clear OpenGL error state and verify validity of framebuffer.
-		while(context->functions()->glGetError() != GL_NO_ERROR);
-		if(!_framebufferObject->isValid())
-			throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
-
-		// Bind OpenGL framebuffer.
-		if(!_framebufferObject->bind())
-			throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
-	}
-	else {
-		// When running in a web browser environment which supports the WEBGL_depth_texture extension,
-		// create a custom framebuffer with attached color and and depth textures. 
-
-		// Create a texture for storing the color buffer.
-		glGenTextures(2, _framebufferTexturesGLES);
-		glBindTexture(GL_TEXTURE_2D, _framebufferTexturesGLES[0]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// Create a texture for storing the depth buffer.
-		glBindTexture(GL_TEXTURE_2D, _framebufferTexturesGLES[1]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, size.width(), size.height(), 0, GL_DEPTH_STENCIL, 0x84FA /*=GL_UNSIGNED_INT_24_8_WEBGL*/, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// Cleanup
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		// Create a framebuffer and associate the textures with it.
-		glGenFramebuffers(1, &_framebufferObjectGLES);
-		glBindFramebuffer(GL_FRAMEBUFFER, _framebufferObjectGLES);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _framebufferTexturesGLES[0], 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, _framebufferTexturesGLES[1], 0);
-
-		// Check framebuffer status.
-		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			throwException(tr("Failed to create OpenGL framebuffer for picking offscreen rendering."));
-	}
-
-	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect);
-}
-
-/******************************************************************************
-* Puts the GL context into its default initial state before rendering
-* a frame begins.
-******************************************************************************/
-void PickingOpenGLSceneRenderer::initializeGLState()
-{
-	OpenGLSceneRenderer::initializeGLState();
-	OVITO_ASSERT(viewport() && viewport()->window());
 }
 
 /******************************************************************************
@@ -140,27 +48,15 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 	reset();
 
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
+	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
 		return false;
 
-	// Clear OpenGL error state, so we start fresh for the glReadPixels() call below.
-	while(this->glGetError() != GL_NO_ERROR);
-
-	if(_framebufferObject) {
+	if(framebufferObject()) {
 		// Fetch rendered image from the OpenGL framebuffer.
-		QSize size = _framebufferObject->size();
+		QSize size = framebufferObject()->size();
 
 #ifndef Q_OS_WASM
-		// First, read color buffer.
-		_image = QImage(size, QImage::Format_ARGB32);
-		// Try GL_BGRA pixel format first. If not supported, use GL_RGBA instead and convert back to GL_BGRA.
-		this->glReadPixels(0, 0, size.width(), size.height(), 0x80E1 /*GL_BGRA*/, GL_UNSIGNED_BYTE, _image.bits());
-		if(this->glGetError() != GL_NO_ERROR) {
-			OVITO_CHECK_OPENGL(this, this->glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE, _image.bits()));
-			_image = std::move(_image).rgbSwapped();
-		}
-
-		// Now acquire OpenGL depth buffer data.
+		// Acquire OpenGL depth buffer data.
 		// The depth information is used to compute the XYZ coordinate of the point under the mouse cursor.
 		_depthBufferBits = glformat().depthBufferSize();
 		if(_depthBufferBits == 16) {
@@ -185,37 +81,21 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 			glReadPixels(0, 0, size.width(), size.height(), GL_DEPTH_COMPONENT, GL_FLOAT, _depthBuffer.get());
 			_depthBufferBits = 0;
 		}
-#else
-		_image = _framebufferObject->toImage(false);
 #endif
 	}
 	else {
-		// Read color buffer contents, which is used for object picking.
-		glFlush();
-		QSize size = viewport()->window()->viewportWindowDeviceSize();
-		QImage image(size, QImage::Format_ARGB32);
-		OVITO_CHECK_OPENGL(this, this->glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits()));
-		_image = std::move(image).rgbSwapped();
-
-		// Detach textures from framebuffer.
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-
-		// Delete texture-backed framebuffer object.
-		glDeleteFramebuffers(1, &_framebufferObjectGLES);
-		_framebufferObjectGLES = 0;
-
-		// Create and bind OpenGL framebuffer.
+		// Create a temporary OpenGL framebuffer.
 		QOpenGLFramebufferObjectFormat framebufferFormat;
-		_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size.width(), size.height(), framebufferFormat);
+		QSize size = viewport()->window()->viewportWindowDeviceSize();
+		QOpenGLFramebufferObject framebufferObject(size, framebufferFormat);
 
 		// Clear OpenGL error state and verify validity of framebuffer.
 		while(this->glGetError() != GL_NO_ERROR);
-		if(!_framebufferObject->isValid())
+		if(!framebufferObject.isValid())
 			throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
 		// Bind OpenGL framebuffer.
-		if(!_framebufferObject->bind())
+		if(!framebufferObject.bind())
 			throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
 		// Reset OpenGL context state.
@@ -225,11 +105,11 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 		this->glDisable(GL_DEPTH_TEST);
 
 		// Transfer depth buffer to the color buffer so that the pixel data can be read.
-		// WebGL1 doesn't allow to read the data of a depth texture directly.
+		// WebGL1 doesn't allow direct reading the data of a depth texture.
 		OpenGLDepthTextureBlitter blitter;
 		blitter.create();
 		blitter.bind();
-		blitter.blit(_framebufferTexturesGLES[1]);
+		blitter.blit(depthTextureId());
 		blitter.release();
 
 		// Read depth buffer contents from the color attachment of the framebuffer.
@@ -237,8 +117,6 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 		_depthBufferBits = 24;
 		_depthBuffer = std::make_unique<quint8[]>(size.width() * size.height() * sizeof(GLuint));
 		OVITO_CHECK_OPENGL(this, this->glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE, _depthBuffer.get()));
-
-		_framebufferObject.reset();
 	}
 
 	return true;
@@ -250,33 +128,8 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
 {
 	endPickObject();
-	if(_framebufferObject) {
-		_framebufferObject.reset();
-	}
-	else {
-		// Go back to using the default framebuffer.
-		QOpenGLFramebufferObject::bindDefault();
-		
-		// Delete framebuffer object.
-		glDeleteFramebuffers(1, &_framebufferObjectGLES);
-		_framebufferObjectGLES = 0;
 
-		// Delete color and depth textures used for offscreen rendering.
-		glGenTextures(2, _framebufferTexturesGLES);
-		_framebufferTexturesGLES[0] = _framebufferTexturesGLES[1] = 0;
-	}
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
-
-	// Reactivate old GL context.
-	if(_oldSurface && _oldContext) {
-		_oldContext->makeCurrent(_oldSurface);
-	}
-	else {
-		QOpenGLContext* context = QOpenGLContext::currentContext();
-		if(context) context->doneCurrent();
-	}
-	_oldContext = nullptr;
-	_oldSurface = nullptr;
+	OffscreenInteractiveOpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
 }
 
 /******************************************************************************
@@ -292,7 +145,7 @@ void PickingOpenGLSceneRenderer::reset()
 	// This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
 	_nextAvailablePickingID = 0xEF000000;
 #endif
-	_image = QImage();
+	discardFramebufferImage();
 }
 
 /******************************************************************************
@@ -342,10 +195,10 @@ void PickingOpenGLSceneRenderer::endPickObject()
 ******************************************************************************/
 std::tuple<const PickingOpenGLSceneRenderer::ObjectRecord*, quint32> PickingOpenGLSceneRenderer::objectAtLocation(const QPoint& pos) const
 {
-	if(!_image.isNull()) {
-		if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
-			QPoint mirroredPos(pos.x(), _image.height() - 1 - pos.y());
-			QRgb pixel = _image.pixel(mirroredPos);
+	if(!framebufferImage().isNull()) {
+		if(pos.x() >= 0 && pos.x() < framebufferImage().width() && pos.y() >= 0 && pos.y() < framebufferImage().height()) {
+			QPoint mirroredPos(pos.x(), framebufferImage().height() - 1 - pos.y());
+			QRgb pixel = framebufferImage().pixel(mirroredPos);
 			quint32 red = qRed(pixel);
 			quint32 green = qGreen(pixel);
 			quint32 blue = qBlue(pixel);
@@ -391,12 +244,12 @@ const PickingOpenGLSceneRenderer::ObjectRecord* PickingOpenGLSceneRenderer::look
 ******************************************************************************/
 FloatType PickingOpenGLSceneRenderer::depthAtPixel(const QPoint& pos) const
 {
-	if(!_image.isNull() && _depthBuffer) {
-		int w = _image.width();
-		int h = _image.height();
+	if(!framebufferImage().isNull() && _depthBuffer) {
+		int w = framebufferImage().width();
+		int h = framebufferImage().height();
 		if(pos.x() >= 0 && pos.x() < w && pos.y() >= 0 && pos.y() < h) {
-			QPoint mirroredPos(pos.x(), _image.height() - 1 - pos.y());
-			if(_image.pixel(mirroredPos) != 0) {
+			QPoint mirroredPos(pos.x(), framebufferImage().height() - 1 - pos.y());
+			if(framebufferImage().pixel(mirroredPos) != 0) {
 				if(_depthBufferBits == 16) {
 					GLushort bval = reinterpret_cast<const GLushort*>(_depthBuffer.get())[(mirroredPos.y()) * w + pos.x()];
 					return (FloatType)bval / FloatType(65535.0);
@@ -425,9 +278,10 @@ Point3 PickingOpenGLSceneRenderer::worldPositionFromLocation(const QPoint& pos) 
 {
 	FloatType zvalue = depthAtPixel(pos);
 	if(zvalue != 0) {
+		OVITO_ASSERT(!framebufferImage().isNull());
 		Point3 ndc(
-				(FloatType)pos.x() / _image.width() * FloatType(2) - FloatType(1),
-				1.0 - (FloatType)pos.y() / _image.height() * FloatType(2),
+				(FloatType)pos.x() / framebufferImage().width() * FloatType(2) - FloatType(1),
+				1.0 - (FloatType)pos.y() / framebufferImage().height() * FloatType(2),
 				zvalue * FloatType(2) - FloatType(1));
 		Point3 worldPos = projParams().inverseViewMatrix * (projParams().inverseProjectionMatrix * ndc);
 		return worldPos;

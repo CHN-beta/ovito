@@ -26,7 +26,7 @@
 # Controls the generation of the user manual.
 OPTION(OVITO_BUILD_DOCUMENTATION "Build the user manual" "OFF")
 
-IF(OVITO_BUILD_GUI)
+IF(OVITO_BUILD_APP)
 	# Create destination directories.
 	FILE(MAKE_DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual")
 	FILE(MAKE_DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html")

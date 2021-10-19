@@ -49,17 +49,11 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		// Get the current viewport configuration.
 		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
 
-		// Get frame buffer and window.
-		FrameBufferWindow* frameBufferWindow = mainWindow()->frameBufferWindow();
-
-		// Allocate and resize frame buffer and frame buffer window if necessary.
-		std::shared_ptr<FrameBuffer> frameBuffer = frameBufferWindow->createFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
-
-		// Show and activate frame buffer window.
-		frameBufferWindow->showAndActivateWindow();
+		// Allocate and resize frame buffer and display the frame buffer window.
+		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow()->createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
 		// Show progress dialog.
-		ProgressDialog progressDialog(frameBufferWindow, dataset()->taskManager(), tr("Rendering"));
+		ProgressDialog progressDialog(mainWindow()->frameBufferWindow(), dataset()->taskManager(), tr("Rendering"));
 
 		// Display modal progress dialog immediately (not after a time delay) to prevent the user from 
 		// pressing the render button a second time.

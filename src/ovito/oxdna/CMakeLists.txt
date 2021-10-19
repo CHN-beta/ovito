@@ -29,10 +29,8 @@ OVITO_STANDARD_PLUGIN(oxDNA
 )
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_GUI)
-	IF(NOT OVITO_QML_GUI)
-		ADD_SUBDIRECTORY(gui)
-	ENDIF()
+IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
+	ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

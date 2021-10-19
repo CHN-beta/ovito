@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
@@ -98,7 +97,7 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 			// Take the current mouse cursor position to make the input mode
 			// look more responsive. The cursor position recorded when the mouse event was
 			// generates may be too old.
-			_currentPoint = static_cast<WidgetViewportWindow*>(viewport()->window())->widget()->mapFromGlobal(QCursor::pos());
+			_currentPoint = vpwin->getCurrentMousePos();
 
 			// Reset the layer's position first before moving it again below.
 			viewport()->dataset()->undoStack().resetCurrentCompoundOperation();

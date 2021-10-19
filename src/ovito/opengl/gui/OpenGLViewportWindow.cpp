@@ -20,11 +20,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include "OpenGLViewportWindow.h"
@@ -36,9 +37,9 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(OpenGLViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget) : 
+OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget) : 
 		QOpenGLWidget(parentWidget),
-		WidgetViewportWindow(mainWindow, inputManager, vp)
+		BaseViewportWindow(gui, inputManager, vp)
 {
 	setMouseTracking(true);
 	setFocusPolicy(Qt::StrongFocus);
@@ -214,8 +215,8 @@ void OpenGLViewportWindow::paintGL()
 					.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
 				);
 			QCoreApplication::removePostedEvents(nullptr, 0);
-			if(mainWindow())
-				mainWindow()->closeMainWindow();
+			if(gui())
+				gui()->shutdown();
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();
@@ -253,8 +254,8 @@ void OpenGLViewportWindow::paintGL()
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);
-			if(mainWindow())
-				mainWindow()->closeMainWindow();
+			if(gui())
+				gui()->shutdown();
 			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 
 namespace Ovito { 
-	class MainWindowInterface;   // Note: This class is defined in another plugin module.
+	class UserInterface;   // Note: This class is defined in another plugin module.
 }
 
 namespace Ovito {
@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ViewportWindowInterface
 public:
 
 	/// Constructor which associates this window with the given viewport instance.
-	ViewportWindowInterface(MainWindowInterface* mainWindow, Viewport* vp);
+	ViewportWindowInterface(UserInterface* gui, Viewport* vp);
 
 	/// Destructor.
 	~ViewportWindowInterface();
@@ -51,11 +51,11 @@ public:
 	/// Returns the viewport associated with this window.
 	Viewport* viewport() const { return _viewport; }
 
-	/// Sets the main window hosting this viewport.
-	void setMainWindow(MainWindowInterface* mainWindow) { _mainWindow = mainWindow; }
+	/// Sets the user interface hosting this viewport.
+	void setGui(UserInterface* gui) { _gui = gui; }
 
-	/// Returns the main window hosting this viewport window.
-	MainWindowInterface* mainWindow() const { return _mainWindow; }
+	/// Returns the user interface hosting this viewport window.
+	UserInterface* gui() const { return _gui; }
 
     /// Puts an update request event for this window on the event loop.
 	virtual void renderLater() = 0;
@@ -104,6 +104,17 @@ public:
 	/// Sets the mouse cursor shape for the window. 
 	virtual void setCursor(const QCursor& cursor) {}
 
+	/// Returns the current position of the mouse cursor relative to the viewport window.
+	virtual QPoint getCurrentMousePos() = 0;
+
+public:
+
+	/// Registry for viewport window implementations.
+	using Registry = QVarLengthArray<const QMetaObject*, 3>;
+
+	/// Returns the global registry, which allows enumerating all installed viewport window implementations.
+	static Registry& registry();
+
 protected:
 
 	/// Render the axis tripod symbol in the corner of the viewport that indicates
@@ -118,8 +129,8 @@ protected:
 
 private:
 
-	/// Pointer to the main window hosting this viewport window.
-	MainWindowInterface* _mainWindow;
+	/// Pointer to the abstract user interface hosting this viewport window.
+	UserInterface* _gui;
 
 	/// The viewport associated with this window.
 	Viewport* _viewport;
@@ -141,5 +152,10 @@ private:
 	/// The primitive for rendering the frame around the visible viewport area.
 	std::shared_ptr<ImagePrimitive> _renderFrameOverlay;
 };
+
+/// This macro registers a viewport window implementation in ViewportWindowInterface::registry() at compile time.
+#define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
+	static const int __registration##WindowClass = (Ovito::ViewportWindowInterface::registry().push_back(&WindowClass::staticMetaObject), 0);
+
 
 }	// End of namespace

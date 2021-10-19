@@ -20,6 +20,9 @@
 #
 #######################################################################################
 
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
+
 SET(SourceFiles
 	objects/VoxelGrid.cpp
 	objects/VoxelGridVis.cpp
@@ -49,10 +52,8 @@ OVITO_STANDARD_PLUGIN(Grid
 )
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_GUI)
-	IF(NOT OVITO_QML_GUI)
-		ADD_SUBDIRECTORY(gui)
-	ENDIF()
+IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
+	ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

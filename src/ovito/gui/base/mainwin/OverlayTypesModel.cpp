@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -82,7 +82,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OverlayTypesModel::OverlayTypesModel(QObject* parent, MainWindowInterface* mainWindow, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _overlayListModel(overlayListModel)
+OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface* gui, OverlayListModel* overlayListModel) : QAbstractListModel(parent), _gui(gui), _overlayListModel(overlayListModel)
 {
 	// Enumerate all built-in viewport layer classes.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(ViewportOverlay::OOClass())) {
@@ -92,8 +92,8 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, MainWindowInterface* mainW
 		_actions.push_back(action);
 
 		// Register it with the global ActionManager.
-		_mainWindow->actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+		gui->actionManager()->addAction(action);
+		OVITO_ASSERT(action->parent() == gui->actionManager());
 
 		// Handle the insertion action.
 		connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
@@ -117,8 +117,8 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, MainWindowInterface* mainW
 			_actions.push_back(action);
 
 			// Register it with the global ActionManager.
-			_mainWindow->actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+			gui->actionManager()->addAction(action);
+			OVITO_ASSERT(action->parent() == gui->actionManager());
 
 			// Handle the action.
 			connect(action, &QAction::triggered, this, &OverlayTypesModel::insertViewportLayer);
@@ -188,7 +188,7 @@ void OverlayTypesModel::insertViewportLayer()
 	OVITO_ASSERT(action);
 
 	// Get the current dataset and viewport.
-	DataSet* dataset = _mainWindow->datasetContainer().currentSet();
+	DataSet* dataset = _gui->datasetContainer().currentSet();
 	Viewport* vp = _overlayListModel->selectedViewport();
 	if(!vp) return;
 

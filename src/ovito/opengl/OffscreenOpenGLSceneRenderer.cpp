@@ -52,13 +52,13 @@ OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(DataSet* dataset) : O
 ******************************************************************************/
 void OffscreenOpenGLSceneRenderer::createOffscreenSurface() 
 { 
+	// Surface creation can only be performed in the main thread.
 	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
+	OVITO_ASSERT(!_offscreenContext);
 	
 	if(!_offscreenSurface)
 		_offscreenSurface = new QOffscreenSurface(nullptr, this);
-	if(_offscreenContext)
-		_offscreenSurface->setFormat(_offscreenContext->format());
-	else if(QOpenGLContext::globalShareContext())
+	if(QOpenGLContext::globalShareContext())
 		_offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
 	else
 		_offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
@@ -66,7 +66,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 }
 
 /******************************************************************************
-* Prepares the renderer for rendering and sets the data set that is being rendered.
+* Prepares the renderer for rendering and sets the dataset that is being rendered.
 ******************************************************************************/
 bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
@@ -80,13 +80,13 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 
 	// Create a OpenGL context for rendering to an offscreen buffer.
 	_offscreenContext = std::make_unique<QOpenGLContext>();
-	// The context should share its resources with the one of the viewport renderers (only when operating in the same thread).
+	// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
 	if(QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
 		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
 	if(!_offscreenContext->create())
 		throwException(tr("Failed to create OpenGL context for rendering."));
 
-	// Check offscreen surface (creation must happen in the main thread).
+	// Check offscreen surface (creation must have happened in the main thread).
 	OVITO_ASSERT(_offscreenSurface);
 	if(!_offscreenSurface->isValid())
 		throwException(tr("Failed to create offscreen rendering surface."));
@@ -95,28 +95,6 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	// Make the context current.
 	if(!_offscreenContext->makeCurrent(_offscreenSurface))
 		throwException(tr("Failed to make OpenGL context current."));
-
-	// Check OpenGL version.
-	if(_offscreenContext->format().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (_offscreenContext->format().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && _offscreenContext->format().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-		throwException(tr(
-				"The OpenGL implementation available on this system does not support OpenGL version %4.%5 or newer.\n\n"
-				"Ovito requires modern graphics hardware to accelerate 3d rendering. You current system configuration is not compatible with Ovito.\n\n"
-				"To avoid this error message, please install the newest graphics driver, or upgrade your graphics card.\n\n"
-				"The currently installed OpenGL graphics driver reports the following information:\n\n"
-				"OpenGL Vendor: %1\n"
-				"OpenGL Renderer: %2\n"
-				"OpenGL Version: %3\n\n"
-				"Ovito requires OpenGL version %4.%5 or higher.")
-				.arg(QString(OpenGLSceneRenderer::openGLVendor()))
-				.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
-				.arg(QString(OpenGLSceneRenderer::openGLVersion()))
-				.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
-				.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-				);
-	}
-
-	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
-    initializeOpenGLFunctions();
 
 	// Determine internal framebuffer size including supersampling.
 	_framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());
@@ -154,20 +132,6 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	shiftedViewportRect.moveTo(0,0);
 
 	OpenGLSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect);
-}
-
-/******************************************************************************
-* Puts the GL context into its default initial state before rendering
-* a frame begins.
-******************************************************************************/
-void OffscreenOpenGLSceneRenderer::initializeGLState()
-{
-	OpenGLSceneRenderer::initializeGLState();
-
-	if(renderSettings())
-		setClearColor(ColorA(renderSettings()->backgroundColor(), 0));
-	else
-		setClearColor(ColorA(0, 0, 0, 0));
 }
 
 /******************************************************************************

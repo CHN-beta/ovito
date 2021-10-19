@@ -42,7 +42,7 @@ public:
 	WidgetActionManager(QObject* parent, MainWindow* mainWindow);
 
 	/// Returns the main window this action manager belongs to.
-	MainWindow* mainWindow() const { return static_cast<MainWindow*>(ActionManager::mainWindow()); }
+	MainWindow* mainWindow() const { return static_cast<MainWindow*>(ActionManager::gui()); }
 
 private Q_SLOTS:
 

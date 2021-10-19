@@ -34,6 +34,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 		OpenGLShaderHelper.cpp
 		OpenGLSceneRenderer.cpp
 		OffscreenOpenGLSceneRenderer.cpp
+		OffscreenInteractiveOpenGLSceneRenderer.cpp
 		PickingOpenGLSceneRenderer.cpp
 		OpenGLDepthTextureBlitter.cpp
 		resources/opengl.qrc
@@ -69,10 +70,8 @@ IF(NOT OVITO_QML_GUI AND NOT OVITO_BUILD_CONDA)
 ENDIF()
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_GUI)
-	IF(NOT OVITO_QML_GUI)
-		ADD_SUBDIRECTORY(gui)
-	ENDIF()
+IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
+	ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

@@ -25,7 +25,7 @@
 
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/gui/qml/dataset/WasmDataSetContainer.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
 

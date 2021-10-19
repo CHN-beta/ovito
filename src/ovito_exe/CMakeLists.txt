@@ -20,6 +20,9 @@
 #
 #######################################################################################
 
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
+
 # Include the resource in the Win32 executable.
 IF(WIN32)
 	SET(WINDOWS_RESOURCES resources/ovito.rc)
@@ -50,6 +53,7 @@ IF(NOT OVITO_QML_GUI)
 		${OVITO_QT_MAJOR_VERSION}::Core 
 		${OVITO_QT_MAJOR_VERSION}::Gui)
 ELSE()
+	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickControls2Impl QuickLayouts QuickTemplates2 LabsQmlModels Svg REQUIRED)
 	TARGET_LINK_LIBRARIES(Ovito PRIVATE 
 		${OVITO_QT_MAJOR_VERSION}::Core 
 		${OVITO_QT_MAJOR_VERSION}::Gui 

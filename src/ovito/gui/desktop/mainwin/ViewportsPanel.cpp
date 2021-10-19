@@ -22,8 +22,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/desktop/viewport/ViewportMenu.h>
+#include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportSettings.h>
@@ -62,6 +62,31 @@ ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
 }
 
 /******************************************************************************
+* Factory method which creates a new viewport window widget. Depending on the 
+* user's settings this can be either a OpenGL or a Vulkan window.
+******************************************************************************/
+BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent)
+{
+	// Select the viewport window implementation to use.
+	QSettings settings;
+	const QMetaObject* viewportImplementation = nullptr;
+	for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
+		if(qstrcmp(metaType->className(), "Ovito::OpenGLViewportWindow") == 0) {
+			viewportImplementation = metaType;
+		}
+		else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Vulkan") {
+			viewportImplementation = metaType;
+			break;
+		}
+	}
+
+	if(viewportImplementation)
+		return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(ViewportInputManager*, inputManager), Q_ARG(UserInterface*, mainWindow), Q_ARG(QWidget*, parent)));
+
+	return nullptr;
+}
+
+/******************************************************************************
 * Returns the widget that is associated with the given viewport.
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
@@ -71,11 +96,13 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 	// Create the viewport window if it hasn't been created for this viewport yet.
 	if(!vp->window() && !_graphicsInitializationErrorOccurred) {
 		try {
-			WidgetViewportWindow* viewportWindow = WidgetViewportWindow::createViewportWindow(vp, _mainWindow->viewportInputManager(), _mainWindow, this);
+			BaseViewportWindow* viewportWindow = createViewportWindow(vp, _mainWindow->viewportInputManager(), _mainWindow, this);
 			if(!viewportWindow || !viewportWindow->widget())
 				vp->throwException(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
 			if(_viewportConfig->activeViewport() == vp)
 				viewportWindow->widget()->setFocus();
+			// Show a context menu when the user clicks the viewport caption.
+			connect(vp, &Viewport::contextMenuRequested, this, &ViewportsPanel::onViewportMenuRequested);
 		}
 		catch(const Exception& ex) {
 			_graphicsInitializationErrorOccurred = true;
@@ -84,10 +111,30 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 		}
 	}
 
-	if(WidgetViewportWindow* window = static_cast<WidgetViewportWindow*>(vp->window()))
+	if(BaseViewportWindow* window = dynamic_cast<BaseViewportWindow*>(vp->window()))
 		return window->widget();
 
 	return nullptr;
+}
+
+/******************************************************************************
+* Displays the context menu for a viewport window.
+******************************************************************************/
+void ViewportsPanel::onViewportMenuRequested(const QPoint& pos)
+{
+	// Get the viewport that emitted the signal.
+	Viewport* viewport = qobject_cast<Viewport*>(sender());
+	OVITO_ASSERT(viewport);
+
+	// Get the viewport's window.
+	BaseViewportWindow* vpwin = dynamic_cast<BaseViewportWindow*>(viewport->window());
+	OVITO_ASSERT(vpwin && vpwin->widget() && vpwin->widget()->parentWidget() == this);
+
+	// Create the context menu for the viewport.
+	ViewportMenu contextMenu(viewport, vpwin->widget());
+
+	// Show menu.
+	contextMenu.show(pos);
 }
 
 /******************************************************************************
@@ -269,13 +316,15 @@ void ViewportsPanel::layoutViewports()
 		// If there is a maximized viewport, hide all other viewport windows.
 		for(Viewport* viewport : viewports) {
 			if(QWidget* widget = viewportWidget(viewport)) {
-				widget->setVisible(maximizedViewport == viewport);
-				if(maximizedViewport == viewport) {
-					// Fill the entire panel with the maximized viewport window.
-					QRect r = rect().adjusted(_windowInset, _windowInset, -_windowInset, -_windowInset);
-					if(widget->geometry() != r) {
-						widget->setGeometry(r);
-						update();
+				if(widget->parentWidget() == this) {
+					widget->setVisible(maximizedViewport == viewport);
+					if(maximizedViewport == viewport) {
+						// Fill the entire panel with the maximized viewport window.
+						QRect r = rect().adjusted(_windowInset, _windowInset, -_windowInset, -_windowInset);
+						if(widget->geometry() != r) {
+							widget->setGeometry(r);
+							update();
+						}
 					}
 				}
 			}

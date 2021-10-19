@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 
 namespace Ovito {
 
@@ -35,7 +35,7 @@ namespace Ovito {
  * Note that is is possible to open multiple main windows per
  * application instance to edit multiple datasets simultaneously.
  */
-class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public MainWindowInterface
+class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterface
 {
 	Q_OBJECT
 
@@ -69,10 +69,13 @@ public:
 	virtual void setViewportInputFocus() override;
 
 	/// Closes the main window (and shuts down application if this is the last open window).
-	virtual void closeMainWindow() override { QMainWindow::close(); }
+	virtual void shutdown() override { QMainWindow::close(); }
 
 	/// Returns the frame buffer window showing the rendered image.
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
+
+	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height) override;
 
 	/// Returns the recommended size for this window.
 	virtual QSize sizeHint() const override { return QSize(1024,768); }

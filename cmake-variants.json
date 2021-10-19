@@ -24,7 +24,7 @@
                 "long": "Builds the desktop version of OVITO",
                 "settings": {
                     "OVITO_QML_GUI" : "OFF",
-                    "OVITO_BUILD_GUI" : "ON",
+                    "OVITO_BUILD_APP" : "ON",
                     "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "ON",
                     "OVITO_BUILD_PLUGIN_GALAMOST" : "ON",
                     "OVITO_BUILD_PLUGIN_CRYSTALANALYSIS" : "ON",
@@ -38,7 +38,7 @@
                 "long": "Builds the browser version of OVITO",
                 "settings": {
                     "OVITO_QML_GUI" : "ON",
-                    "OVITO_BUILD_GUI" : "OFF",
+                    "OVITO_BUILD_APP" : "OFF",
                     "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "OFF",
                     "OVITO_BUILD_PLUGIN_GALAMOST" : "OFF",
                     "OVITO_BUILD_PLUGIN_CRYSTALANALYSIS" : "OFF",

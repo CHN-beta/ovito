@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/vulkan/gui/ViewportVulkanSceneRenderer.h>
 #include <ovito/vulkan/gui/PickingVulkanSceneRenderer.h>
 
@@ -35,14 +35,14 @@ namespace Ovito {
 /**
  * \brief A viewport window implementation that is based on Vulkan.
  */
-class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QWindow, public WidgetViewportWindow
+class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QWindow, public BaseViewportWindow
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VulkanViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
+	Q_INVOKABLE VulkanViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget);
 
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() override { return _widget; }
@@ -81,6 +81,9 @@ public:
 		_widget->deleteLater();
 		this->deleteLater();
 	}
+
+	/// Returns the current position of the mouse cursor relative to the viewport window.
+	virtual QPoint getCurrentMousePos() override { return _widget->mapFromGlobal(QCursor::pos()); }
 
 	/// Returns whether the viewport window is currently visible on screen.
 	virtual bool isVisible() const override { return _widget->isVisible(); }
@@ -140,26 +143,26 @@ protected:
 	virtual void exposeEvent(QExposeEvent* event) override;
 
 	/// Handles double click events.
-	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseDoubleClickEvent(event); }
+	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { BaseViewportWindow::mouseDoubleClickEvent(event); }
 
 	/// Handles mouse press events.
-	virtual void mousePressEvent(QMouseEvent* event) override { WidgetViewportWindow::mousePressEvent(event); }
+	virtual void mousePressEvent(QMouseEvent* event) override { BaseViewportWindow::mousePressEvent(event); }
 
 	/// Handles mouse release events.
-	virtual void mouseReleaseEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseReleaseEvent(event); }
+	virtual void mouseReleaseEvent(QMouseEvent* event) override { BaseViewportWindow::mouseReleaseEvent(event); }
 
 	/// Handles mouse move events.
-	virtual void mouseMoveEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseMoveEvent(event); }
+	virtual void mouseMoveEvent(QMouseEvent* event) override { BaseViewportWindow::mouseMoveEvent(event); }
 
 	/// Handles mouse wheel events.
-	virtual void wheelEvent(QWheelEvent* event) override { WidgetViewportWindow::wheelEvent(event); }
+	virtual void wheelEvent(QWheelEvent* event) override { BaseViewportWindow::wheelEvent(event); }
 
 	/// Is called when the widgets looses the input focus.
-	virtual void focusOutEvent(QFocusEvent* event) override { WidgetViewportWindow::focusOutEvent(event); }
+	virtual void focusOutEvent(QFocusEvent* event) override { BaseViewportWindow::focusOutEvent(event); }
 
 	/// Handles key-press events.
 	virtual void keyPressEvent(QKeyEvent* event) override { 
-		WidgetViewportWindow::keyPressEvent(event); 
+		BaseViewportWindow::keyPressEvent(event); 
 		QWindow::keyPressEvent(event);
 	}
 

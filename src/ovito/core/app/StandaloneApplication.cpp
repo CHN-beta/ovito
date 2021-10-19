@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -211,8 +211,8 @@ bool StandaloneApplication::processCommandLineParameters()
 int StandaloneApplication::runApplication()
 {
 	// When the application is shutting down, we should cancel all pending tasks.
-	if(_datasetContainer)
-		connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, &_datasetContainer->taskManager(), &TaskManager::cancelAll);
+	if(datasetContainer())
+		connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, &datasetContainer()->taskManager(), &TaskManager::cancelAll);
 
 	if(guiMode()) {
 		// Enter the main event loop.
@@ -222,8 +222,8 @@ int StandaloneApplication::runApplication()
 		// Deliver all events that have been posted during the initialization.
 		QCoreApplication::processEvents();
 		// Wait for all background tasks to finish before quitting.
-		if(_datasetContainer)
-			_datasetContainer->taskManager().waitForAll();
+		if(datasetContainer())
+			datasetContainer()->taskManager().waitForAll();
 		return _exitCode;
 	}
 }

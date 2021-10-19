@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -19,6 +19,9 @@
 #  governing rights and limitations.
 #
 #######################################################################################
+
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
 	tri/TriMeshObject.cpp
@@ -71,7 +74,7 @@ FOREACH(file ${GLUSourceFiles})
 ENDFOREACH()
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_GUI)
+IF(OVITO_BUILD_APP)
 	IF(NOT OVITO_QML_GUI)
 		ADD_SUBDIRECTORY(gui)
 	ELSE()

@@ -31,6 +31,8 @@
 
 namespace Ovito {
 
+class MainWindowInterface; // defined in MainWindowInterface.h
+
 /**
  * \brief Manages the DataSet being edited.
  */
@@ -56,6 +58,19 @@ public:
 	///
 	/// Use the task manager to start and control background jobs.
 	TaskManager& taskManager() { return _taskManager; }
+
+	/// \brief Returns the graphical user interface this dataset container is associated with.
+	virtual UserInterface* guiInterface() { return nullptr; }
+
+	/// \brief Creates an empty dataset and makes it the current dataset.
+	/// \return \c true if the operation was completed; \c false if the operation has been canceled by the user.
+	/// \throw Exception on error.
+	bool newDataset();
+
+	/// \brief Loads the given session state file and makes it the current dataset.
+	/// \return \c true if the file has been successfully loaded; \c false if the operation has been canceled by the user.
+	/// \throw Exception on error.
+	bool loadDataset(const QString& filename);
 
 Q_SIGNALS:
 

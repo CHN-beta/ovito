@@ -89,11 +89,13 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 
 	# Link to OVITO's desktop GUI module when the plugin provides a GUI.
 	IF(${ARG_GUI_PLUGIN})
-		IF(OVITO_BUILD_GUI)
+		IF(OVITO_BUILD_APP)
 			TARGET_LINK_LIBRARIES(${target_name} PUBLIC Gui)
 			IF(NOT OVITO_QML_GUI)
+				FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
 				TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Widgets)
 			ELSE()
+				FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickTemplates2 REQUIRED)
 				TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Qml ${OVITO_QT_MAJOR_VERSION}::Quick ${OVITO_QT_MAJOR_VERSION}::QuickControls2 ${OVITO_QT_MAJOR_VERSION}::QuickTemplates2)
 			ENDIF()
 		ELSE()
@@ -102,6 +104,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	ENDIF()
 
 	# Link to Qt libs.
+	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
 	TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OVITO_QT_MAJOR_VERSION}::Core ${OVITO_QT_MAJOR_VERSION}::Gui)
 
 	# Link to other third-party libraries needed by this specific plugin.
@@ -135,6 +138,11 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 		SET_TARGET_PROPERTIES(${target_name} PROPERTIES PREFIX "" SUFFIX "${OVITO_PLUGIN_LIBRARY_SUFFIX}")
 	ENDIF()
 
+	# Tell CMake to run Qt moc on source files added to the target.
+	SET_TARGET_PROPERTIES(${target_name} PROPERTIES AUTOMOC ON)
+	# Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
+	SET_TARGET_PROPERTIES(${target_name} PROPERTIES AUTORCC ON)
+
 	# Define macro for symbol export from shared library.
 	STRING(TOUPPER "${target_name}" _uppercase_plugin_name)
 	IF(BUILD_SHARED_LIBS)
@@ -164,7 +172,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 		ENDIF()
 	ENDIF()
 
-	IF(NOT OVITO_BUILD_PYTHON_PACKAGE)
+	IF(NOT OVITO_BUILD_PYPI)
 		IF(APPLE)
 			IF(NOT OVITO_BUILD_CONDA)
 				SET_TARGET_PROPERTIES(${target_name} PROPERTIES INSTALL_RPATH "@loader_path/;@executable_path/;@loader_path/../MacOS/;@executable_path/../Frameworks/")
@@ -180,7 +188,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 		ENDIF()
 	ELSE()
 		IF(APPLE)
-			# Use @loader_path on macOS when building the Python modules only.
+			# Use @loader_path on macOS when building the Python package.
 			SET_TARGET_PROPERTIES(${target_name} PROPERTIES INSTALL_RPATH "@loader_path/")
 		ELSEIF(UNIX)
 			# Look for other shared libraries in the same directory.

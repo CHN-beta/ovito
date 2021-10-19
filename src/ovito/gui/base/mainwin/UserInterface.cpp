@@ -23,16 +23,25 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
-#include "MainWindowInterface.h"
+#include <ovito/core/rendering/FrameBuffer.h>
+#include "UserInterface.h"
 
 #include <QOperatingSystemVersion>
 
 namespace Ovito {
 
 /******************************************************************************
+* Creates a frame buffer of the requested size and displays it as a window in the user interface.
+******************************************************************************/
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height) 
+{ 
+	return std::make_shared<FrameBuffer>(width, height);
+}
+
+/******************************************************************************
 * Queries the system's information and graphics capabilities.
 ******************************************************************************/
-QString MainWindowInterface::generateSystemReport()
+QString UserInterface::generateSystemReport()
 {
 	QString text;
 	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
@@ -75,7 +84,7 @@ QString MainWindowInterface::generateSystemReport()
 /******************************************************************************
 * Shows the online manual and opens the given help page.
 ******************************************************************************/
-void MainWindowInterface::openHelpTopic(const QString& helpTopicId)
+void UserInterface::openHelpTopic(const QString& helpTopicId)
 {
 	// Determine the filesystem path where OVITO's documentation files are installed.
 #ifndef Q_OS_WASM

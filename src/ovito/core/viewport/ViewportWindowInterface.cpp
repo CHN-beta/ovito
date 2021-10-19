@@ -31,10 +31,19 @@
 namespace Ovito {
 
 /******************************************************************************
+* Returns the global viewport window class registry.
+******************************************************************************/
+ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
+{
+	static Registry singleton;
+	return singleton;
+}
+
+/******************************************************************************
 * Constructor which associates this window with the given viewport instance.
 ******************************************************************************/
-ViewportWindowInterface::ViewportWindowInterface(MainWindowInterface* mainWindow, Viewport* vp) : 
-	_mainWindow(mainWindow),
+ViewportWindowInterface::ViewportWindowInterface(UserInterface* gui, Viewport* vp) : 
+	_gui(gui),
 	_viewport(vp)
 {
 	// Associate the viewport with this window.

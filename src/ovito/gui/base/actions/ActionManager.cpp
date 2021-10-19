@@ -29,7 +29,7 @@
 #include <ovito/gui/base/viewport/NavigationModes.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "ActionManager.h"
 
@@ -38,13 +38,13 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the ActionManager.
 ******************************************************************************/
-ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) : QAbstractListModel(parent), _mainWindow(mainWindow)
+ActionManager::ActionManager(QObject* parent, UserInterface* gui) : QAbstractListModel(parent), _gui(gui)
 {
 	// Actions need to be updated whenever a new dataset is loaded or the current selection changes.
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
+	connect(&gui->datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
+	connect(&gui->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
+	connect(&gui->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
+	connect(&gui->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
 
 	createCommandAction(ACTION_QUIT, tr("Quit"), ":/guibase/actions/file/file_quit.bw.svg", tr("Quit the application."));
 	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), ":/guibase/actions/file/file_open.bw.svg", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -83,7 +83,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS, tr("Zoom Selection Extents"), ":/guibase/actions/viewport/zoom_selection_extents.png", tr("Zoom active viewport to show the selected objects."));
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), ":/guibase/actions/viewport/zoom_selection_extents.png", tr("Zoom all viewports to show the selected objects."));
 
-	ViewportInputManager* vpInputManager = mainWindow->viewportInputManager();
+	ViewportInputManager* vpInputManager = gui->viewportInputManager();
 	createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), ":/guibase/actions/viewport/mode_zoom.bw.svg", tr("Activate zoom mode."));
 	createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), ":/guibase/actions/viewport/mode_pan.bw.svg", tr("Activate pan mode to shift the region visible in the viewports."));
 	createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), ":/guibase/actions/viewport/mode_orbit.bw.svg", tr("Activate orbit mode to rotate the camera around the scene."));
@@ -121,7 +121,7 @@ ActionManager::ActionManager(QObject* parent, MainWindowInterface* mainWindow) :
 ******************************************************************************/
 DataSet* ActionManager::dataset() const
 {
-	return mainWindow()->datasetContainer().currentSet();
+	return gui()->datasetContainer().currentSet();
 }
 
 void ActionManager::onDataSetChanged(DataSet* newDataSet)
@@ -299,7 +299,7 @@ QAction* ActionManager::createCommandAction(const QString& id, const QString& ti
 ******************************************************************************/
 QAction* ActionManager::createViewportModeAction(const QString& id, ViewportInputMode* inputHandler, const QString& title, const char* iconPath, const QString& statusTip, const QKeySequence& shortcut)
 {
-	QAction* action = new ViewportModeAction(mainWindow(), title, this, inputHandler);
+	QAction* action = new ViewportModeAction(gui(), title, this, inputHandler);
 	action->setObjectName(id);
 	if(!shortcut.isEmpty())
 		action->setShortcut(shortcut);

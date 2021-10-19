@@ -20,6 +20,9 @@
 #
 #######################################################################################
 
+# Find the required Qt modules.
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets Network REQUIRED)
+
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Gui
 	SOURCES
@@ -113,7 +116,6 @@ OVITO_STANDARD_PLUGIN(Gui
 		rendering/RenderSettingsEditor.cpp
 		rendering/StandardSceneRendererEditor.cpp
 		viewport/ViewportMenu.cpp
-		viewport/WidgetViewportWindow.cpp
 		viewport/input/XFormModes.cpp
 		viewport/overlays/CoordinateTripodOverlayEditor.cpp
 		viewport/overlays/TextLabelOverlayEditor.cpp
@@ -131,11 +133,6 @@ OVITO_STANDARD_PLUGIN(Gui
 	PRECOMPILED_HEADERS
 		GUI.h
 )
-
-IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-	# QOpenGLWidget class has been moved to the OpenGLWidgets module in Qt 6.
-	TARGET_LINK_LIBRARIES(Gui PUBLIC ${OVITO_QT_MAJOR_VERSION}::OpenGLWidgets)
-ENDIF()
 
 # Inject copyright notice text into the source code.
 SET_PROPERTY(SOURCE actions/FileActions.cpp

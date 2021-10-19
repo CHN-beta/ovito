@@ -24,29 +24,25 @@
 
 
 #include <ovito/core/Core.h>
-#include "OpenGLSceneRenderer.h"
+#include <ovito/opengl/OpenGLSceneRenderer.h>
 
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
-#include <QOpenGLFramebufferObject>
+#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
 
 /**
- * \brief OpenGL renderer that renders into an offscreen framebuffer instead of the interactive viewports.
+ * \brief A viewport renderer used by interactive viewport windows.
  */
-class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLSceneRenderer : public OpenGLSceneRenderer
+class OVITO_OPENGLRENDERER_EXPORT OffscreenInteractiveOpenGLSceneRenderer : public OpenGLSceneRenderer
 {
 	Q_OBJECT
-	OVITO_CLASS(OffscreenOpenGLSceneRenderer)
+	OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer)
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OffscreenOpenGLSceneRenderer(DataSet* dataset);
-
-	/// Prepares the renderer for rendering and sets the data set that is being rendered.
-	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
+	explicit OffscreenInteractiveOpenGLSceneRenderer(DataSet* dataset);
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
@@ -57,30 +53,39 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) override;
 
-	/// Is called after rendering has finished.
-	virtual void endRender() override;
+protected:
+
+	/// Returns the image that was read from the OpenGL framebuffer after rendering.
+	const QImage& framebufferImage() const { return _image; }
+
+	/// Throws away the stored framebuffer snapshot.
+	void discardFramebufferImage() { _image = QImage(); }
+
+	/// Returns the OpenGL offscreen framebuffer used on desktop OpenGL platforms.
+	QOpenGLFramebufferObject* framebufferObject() const { return _framebufferObject.get(); }
+
+	/// Returns the OpenGL texture used as depth buffer (only on OpenGGL ES1 platform).
+	GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
 
 private:
 
-	/// Creates the QOffscreenSurface in the main thread.
-	void createOffscreenSurface();
-
-private:
-
-	/// The offscreen surface used to render into an image buffer using OpenGL.
-	QOffscreenSurface* _offscreenSurface = nullptr;
-
-	/// The temporary OpenGL rendering context.
-	std::unique_ptr<QOpenGLContext> _offscreenContext;
-
-	/// The OpenGL framebuffer.
+	/// The OpenGL offscreen framebuffer used on desktop OpenGL platform.
 	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
 
-	/// The resolution of the offscreen framebuffer.
-	QSize _framebufferSize;
+	/// The color and depth texture used for the offscreen framebuffer on GLES platforms.
+	GLuint _framebufferTexturesGLES[2] = { 0, 0 };
 
-	/// The monotonically increasing identifier of the last frame that was rendered.
-	OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;
+	/// The OpenGL framebuffer object used for offscreen rendering on GLES platforms.
+	GLuint _framebufferObjectGLES = 0;
+
+	/// The image read from the OpenGL framebuffer.
+	QImage _image;
+
+	/// Used to restore previous OpenGL context that was active before rendering.
+	QPointer<QOpenGLContext> _oldContext;
+
+	/// Used to restore previous OpenGL context that was active before rendering.
+	QSurface* _oldSurface;
 };
 
 }	// End of namespace

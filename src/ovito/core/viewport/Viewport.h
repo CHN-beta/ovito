@@ -253,6 +253,9 @@ Q_SIGNALS:
 	/// This signal is emitted whenever any of the UI properties of the viewport change.
 	void viewportChanged();
 
+	/// This signal is emitted when the user has requested a context menu on the viewport widget.
+	void contextMenuRequested(const QPoint& pos);
+
 protected:
 
 	/// Is called when the value of a property field of this object has changed.

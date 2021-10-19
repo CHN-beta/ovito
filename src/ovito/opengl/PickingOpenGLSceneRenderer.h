@@ -24,17 +24,14 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
-
-#include <QOpenGLFramebufferObject> 
-#include <QOpenGLFramebufferObjectFormat>
+#include <ovito/opengl/OffscreenInteractiveOpenGLSceneRenderer.h>
 
 namespace Ovito {
 
 /**
  * \brief A viewport renderer used for object picking.
  */
-class OVITO_OPENGLRENDERER_EXPORT PickingOpenGLSceneRenderer : public OpenGLSceneRenderer
+class OVITO_OPENGLRENDERER_EXPORT PickingOpenGLSceneRenderer : public OffscreenInteractiveOpenGLSceneRenderer
 {
 	Q_OBJECT
 	OVITO_CLASS(PickingOpenGLSceneRenderer)
@@ -52,9 +49,6 @@ public:
 
 	/// Constructor.
 	explicit PickingOpenGLSceneRenderer(DataSet* dataset);
-
-	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
@@ -81,7 +75,7 @@ public:
 	Point3 worldPositionFromLocation(const QPoint& pos) const;
 
 	/// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
-	bool isRefreshRequired() const { return _image.isNull(); }
+	bool isRefreshRequired() const { return framebufferImage().isNull(); }
 
 	/// Resets the picking buffer and clears the stored object records.
 	void reset();
@@ -89,21 +83,7 @@ public:
 	/// Returns the Z-value at the given window position.
 	FloatType depthAtPixel(const QPoint& pos) const;
 
-protected:
-
-	/// Puts the GL context into its default initial state before rendering a frame begins.
-	virtual void initializeGLState() override;
-
 private:
-
-	/// The OpenGL framebuffer.
-	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
-
-	/// The color and depth texture used for the offscreen framebuffer on GLES platforms.
-	GLuint _framebufferTexturesGLES[2] = { 0, 0 };
-
-	/// The OpenGL framebuffer object used for offscreen rendering on GLES platforms.
-	GLuint _framebufferObjectGLES = 0;
 
 	/// The next available object ID.
 	ObjectRecord _currentObject;
@@ -114,20 +94,11 @@ private:
 	/// The list of registered objects.
 	std::vector<ObjectRecord> _objects;
 
-	/// The image containing the object information.
-	QImage _image;
-
 	/// The depth buffer data.
 	std::unique_ptr<quint8[]> _depthBuffer;
 
 	/// The number of depth buffer bits per pixel.
 	int _depthBufferBits;
-
-	/// Used to restore previous OpenGL context that was active.
-	QPointer<QOpenGLContext> _oldContext;
-
-	/// Used to restore previous OpenGL context that was active.
-	QSurface* _oldSurface;
 };
 
 }	// End of namespace

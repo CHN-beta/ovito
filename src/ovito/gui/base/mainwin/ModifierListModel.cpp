@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -128,13 +128,13 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierListModel::ModifierListModel(QObject* parent, MainWindowInterface* mainWindow, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _mainWindow(mainWindow), _pipelineListModel(pipelineListModel)
+ModifierListModel::ModifierListModel(QObject* parent, UserInterface* gui, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _gui(gui), _pipelineListModel(pipelineListModel)
 {
 	// Register this instance.
 	_allModels.push_back(this);
 
 	// Update the state of this model's actions whenever the ActionManager requests it.
-	connect(_mainWindow->actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
+	connect(gui->actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
 
 	// Enumerate all built-in modifier classes.
 	for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
@@ -149,8 +149,8 @@ ModifierListModel::ModifierListModel(QObject* parent, MainWindowInterface* mainW
 		_allActions.push_back(action);
 
 		// Register it with the global ActionManager.
-		_mainWindow->actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+		gui->actionManager()->addAction(action);
+		OVITO_ASSERT(action->parent() == gui->actionManager());
 
 		// Handle the insertion action.
 		connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
@@ -184,8 +184,8 @@ ModifierListModel::ModifierListModel(QObject* parent, MainWindowInterface* mainW
 		_actionsPerCategory.back().push_back(action);
 
 		// Register it with the global ActionManager.
-		_mainWindow->actionManager()->addAction(action);
-		OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+		gui->actionManager()->addAction(action);
+		OVITO_ASSERT(action->parent() == gui->actionManager());
 
 		// Handle the action.
 		connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
@@ -227,8 +227,8 @@ ModifierListModel::ModifierListModel(QObject* parent, MainWindowInterface* mainW
 			_actionsPerCategory.back().push_back(action);
 
 			// Register it with the global ActionManager.
-			_mainWindow->actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+			gui->actionManager()->addAction(action);
+			OVITO_ASSERT(action->parent() == gui->actionManager());
 
 			// Handle the action.
 			connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
@@ -415,7 +415,7 @@ void ModifierListModel::insertModifier()
 	OVITO_ASSERT(action);
 
 	// Get the current dataset.
-	DataSet* dataset = _mainWindow->datasetContainer().currentSet();
+	DataSet* dataset = _gui->datasetContainer().currentSet();
 
 	// Instantiate the new modifier(s) and insert them into the pipeline.
 	UndoableTransaction::handleExceptions(dataset->undoStack(), tr("Insert modifier"), [&]() {
@@ -503,7 +503,7 @@ void ModifierListModel::refreshModifierTemplates()
 			_allActions.erase(iter);
 			if(!_useCategories)
 				endRemoveRows();
-			_mainWindow->actionManager()->deleteAction(action);
+			_gui->actionManager()->deleteAction(action);
 		}
 		templateActions.clear();
 		if(_useCategories)
@@ -523,8 +523,8 @@ void ModifierListModel::refreshModifierTemplates()
 			templateActions.push_back(action);
 
 			// Register it with the global ActionManager.
-			_mainWindow->actionManager()->addAction(action);
-			OVITO_ASSERT(action->parent() == _mainWindow->actionManager());
+			_gui->actionManager()->addAction(action);
+			OVITO_ASSERT(action->parent() == _gui->actionManager());
 
 			// Handle the action.
 			connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);

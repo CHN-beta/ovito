@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -20,7 +20,7 @@
 #
 #######################################################################################
 
-IF(OVITO_BUILD_GUI AND NOT OVITO_QML_GUI)
+IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
     ADD_SUBDIRECTORY(qwt)
 ENDIF()
 IF(OVITO_BUILD_PLUGIN_STDOBJ OR OVITO_BUILD_PLUGIN_PARTICLES)

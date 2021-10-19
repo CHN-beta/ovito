@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,22 +44,15 @@ public:
 	/// \brief Returns the window this dataset container is linked to (may be NULL).
 	MainWindow* mainWindow() const { return _mainWindow; }
 
+	/// \brief Returns the graphical user interface this dataset container is associated with.
+	virtual UserInterface* guiInterface() override;
+
 	/// \brief Imports a set of files into the current dataset.
 	/// \param urls The locations of the files to import.
 	/// \param importerType The FileImporter type to use. If NULL, the file format will be auto-detected.
 	/// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
 	/// \throw Exception on error.
 	bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr);
-
-	/// \brief Creates an empty dataset and makes it the current dataset.
-	/// \return \c true if the operation was completed; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool fileNew();
-
-	/// \brief Loads the given file and makes it the current dataset.
-	/// \return \c true if the file has been successfully loaded; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool fileLoad(const QString& filename);
 
 	/// \brief Save the current dataset.
 	/// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
@@ -102,7 +95,7 @@ private:
 	/// Is called when scene of the current dataset is ready to be displayed.
 	void sceneBecameReady();
 
-	/// The window this dataset container is linked to (may be NULL).
+	/// The window this dataset container is linked to (may be null).
 	MainWindow* _mainWindow;
 
 	/// Indicates whether we are already waiting for the scene to become ready.

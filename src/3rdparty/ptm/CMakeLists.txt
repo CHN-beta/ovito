@@ -70,7 +70,7 @@ IF(MSVC)
 	TARGET_COMPILE_OPTIONS(PolyhedralTemplateMatching PRIVATE "/wd4267" "/wd4244")
 ENDIF()
 
-IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYTHON_PACKAGE)
+IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
 	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
 	SET_PROPERTY(TARGET PolyhedralTemplateMatching PROPERTY POSITION_INDEPENDENT_CODE ON)
 ENDIF()

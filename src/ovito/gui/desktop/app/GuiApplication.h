@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,6 +40,9 @@ public:
 
 	/// Returns the one and only instance of this class.
 	inline static GuiApplication* instance() { return static_cast<GuiApplication*>(Application::instance()); }
+
+	/// Constructor.
+	GuiApplication();
 
 	/// Create the global instance of the right QCoreApplication derived class.
 	virtual void createQtApplication(int& argc, char** argv) override;

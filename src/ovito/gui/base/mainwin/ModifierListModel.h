@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,7 +84,7 @@ class OVITO_GUIBASE_EXPORT ModifierListModel : public QAbstractListModel
 public:
 
 	/// Constructor.
-	ModifierListModel(QObject* parent, MainWindowInterface* mainWindow, PipelineListModel* pipelineListModel);
+	ModifierListModel(QObject* parent, UserInterface* gui, PipelineListModel* pipelineListModel);
 
 	/// Destructor.
 	virtual ~ModifierListModel() { _allModels.removeOne(this); }
@@ -158,8 +158,8 @@ private:
 	/// The list of modifier categories.
 	std::vector<QString> _categoryNames;
 
-	/// The context main window.
-	MainWindowInterface* _mainWindow;
+	/// The abstract user interface.
+	UserInterface* _gui;
 
 	/// The model representing the current data pipeline.
 	PipelineListModel* _pipelineListModel;

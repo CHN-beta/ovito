@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,6 +58,14 @@ GuiDataSetContainer::GuiDataSetContainer(MainWindow* mainWindow) : DataSetContai
 			}
 		});
 	}
+}
+
+/******************************************************************************
+* Returns the graphical user interface this dataset container is associated with.
+******************************************************************************/
+UserInterface* GuiDataSetContainer::guiInterface() 
+{ 
+	return _mainWindow; 
 }
 
 /******************************************************************************
@@ -208,64 +216,6 @@ bool GuiDataSetContainer::askForSaveChanges()
 }
 
 /******************************************************************************
-* Creates an empty dataset and makes it the current dataset.
-******************************************************************************/
-bool GuiDataSetContainer::fileNew()
-{
-	OORef<DataSet> newSet = new DataSet();
-	newSet->initializeObject(Application::instance()->executionContext());
-	setCurrentSet(std::move(newSet));
-	return true;
-}
-
-/******************************************************************************
-* Loads the given state file.
-******************************************************************************/
-bool GuiDataSetContainer::fileLoad(const QString& filename)
-{
-	// Make path absolute.
-	QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
-
-	// Load dataset from file.
-	OORef<DataSet> dataSet;
-	try {
-
-		QFile fileStream(absoluteFilepath);
-		if(!fileStream.open(QIODevice::ReadOnly))
-			throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()), this);
-
-		QDataStream dataStream(&fileStream);
-		ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));
-
-		// Issue a warning when the floating-point precision of the input file does not match
-		// the precision used in this build.
-		if(stream.floatingPointPrecision() > sizeof(FloatType)) {
-			if(mainWindow()) {
-				QString msg = tr("The session state file has been written with a version of this program that uses %1-bit floating-point precision. "
-					   "The version of this program that you are currently using only supports %2-bit precision numbers. "
-					   "The precision of all numbers stored in the input file will be truncated during loading.").arg(stream.floatingPointPrecision()*8).arg(sizeof(FloatType)*8);
-				QMessageBox::warning(mainWindow(), tr("Floating-point precision mismatch"), msg);
-			}
-		}
-
-		dataSet = stream.loadObject<DataSet>();
-		stream.close();
-
-		if(!dataSet)
-			throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath), this);
-	}
-	catch(Exception& ex) {
-		// Provide a local context for the error.
-		ex.setContext(this);
-		throw ex;
-	}
-	OVITO_CHECK_OBJECT_POINTER(dataSet);
-	dataSet->setFilePath(absoluteFilepath);
-	setCurrentSet(dataSet);
-	return true;
-}
-
-/******************************************************************************
 * Imports a given file into the scene.
 ******************************************************************************/
 bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType)
@@ -309,16 +259,18 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 	});
 
 	// Display the optional UI (which is provided by the corresponding FileImporterEditor class) for each importer.
-	for(const auto& item : urlImporters) {
-		const QUrl& url = item.first;
-		const OORef<FileImporter>& importer = item.second;
-		for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-			OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
-			if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-				OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
-				if(editor) {
-					if(!editor->inspectNewFile(importer, url, mainWindow()))
-						return false;
+	if(mainWindow()) {
+		for(const auto& item : urlImporters) {
+			const QUrl& url = item.first;
+			const OORef<FileImporter>& importer = item.second;
+			for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+				OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
+				if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
+					OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
+					if(editor) {
+						if(!editor->inspectNewFile(importer, url, mainWindow()))
+							return false;
+					}
 				}
 			}
 		}

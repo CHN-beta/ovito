@@ -35,8 +35,8 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget) : 
-		WidgetViewportWindow(mainWindow, inputManager, viewport)
+VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget) : 
+		BaseViewportWindow(gui, inputManager, viewport)
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
 	// Share the same device with by all viewport windows.
@@ -767,8 +767,8 @@ void VulkanViewportWindow::beginFrame()
                 viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
 
                 QCoreApplication::removePostedEvents(nullptr, 0);
-                if(mainWindow())
-                    mainWindow()->closeMainWindow();
+                if(gui())
+                    gui()->shutdown();
                 ex.reportError(true);
                 QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
                 QCoreApplication::exit();

@@ -44,11 +44,7 @@ class OVITO_GUI_EXPORT WasmApplication : public StandaloneApplication
 public:
 
 	/// Constructor.
-	WasmApplication() {
-		// Always enable GUI mode when running in the web browser.
-		_consoleMode = false;
-		_headlessMode = false;
-	}
+	WasmApplication();
 
 	/// Create the global instance of the right QCoreApplication derived class.
 	virtual void createQtApplication(int& argc, char** argv) override;

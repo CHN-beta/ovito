@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,7 +66,7 @@ class OVITO_GUIBASE_EXPORT OverlayTypesModel : public QAbstractListModel
 public:
 
 	/// Constructor.
-	OverlayTypesModel(QObject* parent, MainWindowInterface* mainWindow, OverlayListModel* overlayListModel);
+	OverlayTypesModel(QObject* parent, UserInterface* gui, OverlayListModel* overlayListModel);
 
 	/// Returns the number of rows in the model.
 	virtual int rowCount(const QModelIndex& parent) const override;
@@ -93,8 +93,8 @@ private:
 	/// The list of viewport layer actions.
 	std::vector<OverlayAction*> _actions;
 
-	/// The context main window.
-	MainWindowInterface* _mainWindow;
+	/// The abstract user interface.
+	UserInterface* _gui;
 
 	/// The model representing the viewport layers of the active viewport.
 	OverlayListModel* _overlayListModel;

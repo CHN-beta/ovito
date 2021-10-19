@@ -97,23 +97,25 @@ ViewportMenu::ViewportMenu(Viewport* viewport, QWidget* viewportWidget) : QMenu(
 
 	addSeparator();
 
-	QMenu* layoutMenu = addMenu(tr("Window Layout"));
-	layoutMenu->setEnabled(viewport != viewport->dataset()->viewportConfig()->maximizedViewport());
-	_layoutCell = viewport->layoutCell();
-	OVITO_ASSERT(_layoutCell && _layoutCell->splitDirection() == ViewportLayoutCell::None && _layoutCell->children().empty());
+	if(ViewportLayoutCell* layoutCell = viewport->layoutCell()) {
+		QMenu* layoutMenu = addMenu(tr("Window Layout"));
+		layoutMenu->setEnabled(viewport != viewport->dataset()->viewportConfig()->maximizedViewport());
+		_layoutCell = layoutCell;
+		OVITO_ASSERT(layoutCell->splitDirection() == ViewportLayoutCell::None && layoutCell->children().empty());
 
-	// Actions that duplicate the viewport by splitting the layout cell.
-	action = layoutMenu->addAction(tr("Split Horizontal"));
-	connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Horizontal); });
-	action = layoutMenu->addAction(tr("Split Vertical"));
-	connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Vertical); });
+		// Actions that duplicate the viewport by splitting the layout cell.
+		action = layoutMenu->addAction(tr("Split Horizontal"));
+		connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Horizontal); });
+		action = layoutMenu->addAction(tr("Split Vertical"));
+		connect(action, &QAction::triggered, this, [&]() { onSplitViewport(ViewportLayoutCell::Vertical); });
 
-	layoutMenu->addSeparator();
+		layoutMenu->addSeparator();
 
-	// Action that deletes the viewport from the layout.
-	action = layoutMenu->addAction(tr("Remove Viewport"));
-	action->setEnabled(_layoutCell && _layoutCell->parentCell() != nullptr);
-	connect(action, &QAction::triggered, this, &ViewportMenu::onDeleteViewport);
+		// Action that deletes the viewport from the layout.
+		action = layoutMenu->addAction(tr("Remove Viewport"));
+		action->setEnabled(layoutCell->parentCell() != nullptr);
+		connect(action, &QAction::triggered, this, &ViewportMenu::onDeleteViewport);
+	}
 
 	// Pipeline visibility
 	QMenu* visibilityMenu = addMenu(tr("Pipeline Visibility"));

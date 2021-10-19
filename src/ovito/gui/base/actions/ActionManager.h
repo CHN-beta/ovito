@@ -175,10 +175,10 @@ public:
 	};
 
 	/// Constructor.
-	ActionManager(QObject* parent, MainWindowInterface* mainWindow);
+	ActionManager(QObject* parent, UserInterface* gui);
 
-	/// Returns the main window this action manager belongs to.
-	MainWindowInterface* mainWindow() const { return _mainWindow; }
+	/// Returns the user interface this action manager belongs to.
+	UserInterface* gui() const { return _gui; }
 
 	/// Returns dataset currently being edited in the main window.
 	DataSet* dataset() const;
@@ -279,7 +279,7 @@ protected:
 private:
 
 	/// The main window that owns this action manager.
-	MainWindowInterface* _mainWindow;
+	UserInterface* _gui;
 
 	/// The list of registered actions.
 	QVector<QAction*> _actions;

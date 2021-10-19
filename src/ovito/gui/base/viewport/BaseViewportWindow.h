@@ -23,34 +23,20 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 
 namespace Ovito {
 
 /**
- * \brief Abstract interface for QWidget-based viewport window implementations.
+ * \brief Generic base class for viewport windows.
  */
-class OVITO_GUI_EXPORT WidgetViewportWindow : public ViewportWindowInterface
+class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindowInterface
 {
 public:
 
-	/// Registry for viewport window implementations.
-	using Registry = QVarLengthArray<const QMetaObject*, 2>;
-
-	/// Returns the global registry, which allows enumerating all installed viewport window implementations.
-	static Registry& registry();
-
-	/// Factory method which creates a new viewport window widget. Depending on the user's settings this can be either a OpenGL or a Vulkan window.
-	static WidgetViewportWindow* createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent);
-
-public:
-
 	/// Constructor.
-	WidgetViewportWindow(MainWindowInterface* mainWindow, ViewportInputManager* inputManager, Viewport* vp);
-
-	/// Returns the QWidget that is associated with this viewport window.
-	virtual QWidget* widget() = 0;
+	BaseViewportWindow(UserInterface* gui, ViewportInputManager* inputManager, Viewport* vp);
 
 	/// Returns the input manager handling mouse events of the viewport (if any).
 	ViewportInputManager* inputManager() const;
@@ -58,18 +44,20 @@ public:
 	/// Returns the list of gizmos to render in the viewport.
 	virtual const std::vector<ViewportGizmo*>& viewportGizmos() override;
 
-	/// Sets the mouse cursor shape for the window. 
-	virtual void setCursor(const QCursor& cursor) override { widget()->setCursor(cursor); }
-
 	/// Renders custom GUI elements in the viewport on top of the scene.
 	virtual void renderGui(SceneRenderer* renderer) override;
 
-	/// \brief Displays the context menu for the viewport.
-	/// \param pos The position in where the context menu should be displayed.
-	void showViewportMenu(const QPoint& pos = QPoint(0,0));
+	/// Returns the QWidget that is associated with this viewport window.
+	virtual QWidget* widget() { return nullptr; }
 
 	/// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
 	const QRectF& contextMenuArea() const { return _contextMenuArea; }
+
+	/// Returns whether the viewport title is shown in the user interface.
+	bool isViewportTitleVisible() const { return _showViewportTitle; }
+
+	/// Sets whether the viewport title is shown in the user interface.
+	void setViewportTitleVisible(bool visible) { _showViewportTitle = visible; }
 
 protected:
 
@@ -108,11 +96,10 @@ private:
 
 	/// Indicates that the mouse cursor is currently positioned inside the
 	/// viewport area that activates the viewport context menu.
-	bool _cursorInContextMenuArea = false;	
-};
+	bool _cursorInContextMenuArea = false;
 
-/// This macro registers a widget-based viewport window implementation.
-#define OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(WindowClass) \
-	static const int __registration##WindowClass = (Ovito::WidgetViewportWindow::registry().push_back(&WindowClass::staticMetaObject), 0);
+	/// Controls the visibility of the viewport title in the user interface.
+	bool _showViewportTitle = true;
+};
 
 }	// End of namespace

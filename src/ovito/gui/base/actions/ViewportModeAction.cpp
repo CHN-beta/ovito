@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/MainWindowInterface.h>
+#include <ovito/gui/base/mainwin/UserInterface.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include "ViewportModeAction.h"
 
@@ -30,8 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the action object.
 ******************************************************************************/
-ViewportModeAction::ViewportModeAction(MainWindowInterface* mainWindow, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
-	: QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*mainWindow->viewportInputManager())
+ViewportModeAction::ViewportModeAction(UserInterface* gui, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
+	: QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*gui->viewportInputManager())
 {
 	OVITO_CHECK_POINTER(inputMode);
 
@@ -52,8 +52,8 @@ void ViewportModeAction::onActionToggled(bool checked)
 	if(checked && !_inputMode->isActive()) {
 		_viewportInputManager.pushInputMode(_inputMode);
 		// Give viewport windows the input focus.
-		if(_viewportInputManager.mainWindow())
-			_viewportInputManager.mainWindow()->setViewportInputFocus();
+		if(_viewportInputManager.gui())
+			_viewportInputManager.gui()->setViewportInputFocus();
 	}
 	else if(!checked) {
 		if(_viewportInputManager.activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {

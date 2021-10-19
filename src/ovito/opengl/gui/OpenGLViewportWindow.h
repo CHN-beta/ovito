@@ -23,8 +23,8 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 
 #include <QOpenGLWidget>
@@ -34,14 +34,14 @@ namespace Ovito {
 /**
  * \brief The internal render window/widget used by the Viewport class.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget, public WidgetViewportWindow
+class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget, public BaseViewportWindow
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parentWidget);
+	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget);
 
 	/// Destructor.
 	virtual ~OpenGLViewportWindow();
@@ -80,6 +80,12 @@ public:
 		deleteLater();
 	}
 
+	/// Sets the mouse cursor shape for the window. 
+	virtual void setCursor(const QCursor& cursor) override { widget()->setCursor(cursor); }
+
+	/// Returns the current position of the mouse cursor relative to the viewport window.
+	virtual QPoint getCurrentMousePos() override { return widget()->mapFromGlobal(QCursor::pos()); }
+
 	/// Makes the OpenGL context used by the viewport window for rendering the current context.
 	virtual void makeOpenGLContextCurrent() override { makeCurrent(); }
 
@@ -104,29 +110,29 @@ protected:
 	virtual void hideEvent(QHideEvent* event) override;
 
 	/// Is called when the mouse cursor leaves the widget.
-	virtual void leaveEvent(QEvent* event) override { WidgetViewportWindow::leaveEvent(event); }
+	virtual void leaveEvent(QEvent* event) override { BaseViewportWindow::leaveEvent(event); }
 
 	/// Handles double click events.
-	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseDoubleClickEvent(event); }
+	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { BaseViewportWindow::mouseDoubleClickEvent(event); }
 
 	/// Handles mouse press events.
-	virtual void mousePressEvent(QMouseEvent* event) override { WidgetViewportWindow::mousePressEvent(event); }
+	virtual void mousePressEvent(QMouseEvent* event) override { BaseViewportWindow::mousePressEvent(event); }
 
 	/// Handles mouse release events.
-	virtual void mouseReleaseEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseReleaseEvent(event); }
+	virtual void mouseReleaseEvent(QMouseEvent* event) override { BaseViewportWindow::mouseReleaseEvent(event); }
 
 	/// Handles mouse move events.
-	virtual void mouseMoveEvent(QMouseEvent* event) override { WidgetViewportWindow::mouseMoveEvent(event); }
+	virtual void mouseMoveEvent(QMouseEvent* event) override { BaseViewportWindow::mouseMoveEvent(event); }
 
 	/// Handles mouse wheel events.
-	virtual void wheelEvent(QWheelEvent* event) override { WidgetViewportWindow::wheelEvent(event); }
+	virtual void wheelEvent(QWheelEvent* event) override { BaseViewportWindow::wheelEvent(event); }
 
 	/// Is called when the widgets looses the input focus.
-	virtual void focusOutEvent(QFocusEvent* event) override { WidgetViewportWindow::focusOutEvent(event); }
+	virtual void focusOutEvent(QFocusEvent* event) override { BaseViewportWindow::focusOutEvent(event); }
 
 	/// Handles key-press events.
 	virtual void keyPressEvent(QKeyEvent* event) override { 
-		WidgetViewportWindow::keyPressEvent(event); 
+		BaseViewportWindow::keyPressEvent(event); 
 		QOpenGLWidget::keyPressEvent(event);
 	}
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,6 +41,10 @@ public:
 	/// Constructs the viewport panel.
 	ViewportsPanel(MainWindow* parent);
 
+	/// Factory method which creates a new viewport window widget. Depending on the 
+	/// user's settings this can be either a OpenGL or a Vulkan window.
+	static BaseViewportWindow* createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent);
+
 	/// Returns the widget that is associated with the given viewport.
 	QWidget* viewportWidget(Viewport* vp);
 
@@ -79,6 +83,9 @@ protected:
 	virtual bool event(QEvent* event) override;
 
 private Q_SLOTS:
+
+	/// Displays the context menu for a viewport window.
+	void onViewportMenuRequested(const QPoint& pos);
 
 	/// This is called when a new viewport configuration has been loaded.
 	void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);

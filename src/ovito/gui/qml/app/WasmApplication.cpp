@@ -74,7 +74,33 @@
 	extern void ovito_static_plugin_Particles();
 #endif
 
+// Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
+// Following the Qt documentation, this needs to be placed outside of any C++ namespace.
+static void registerQtResources()
+{
+#ifdef OVITO_BUILD_MONOLITHIC
+	Q_INIT_RESOURCE(guibase);
+	Q_INIT_RESOURCE(gui);
+	Q_INIT_RESOURCE(stdobjgui);
+	Q_INIT_RESOURCE(stdmodgui);
+	Q_INIT_RESOURCE(particlesgui);
+#endif
+}
+
 namespace Ovito {
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+WasmApplication::WasmApplication()
+{
+	// Register Qt resources.
+	::registerQtResources();
+
+	// Always enable GUI mode when running in the web browser.
+	_consoleMode = false;
+	_headlessMode = false;
+}
 
 /******************************************************************************
 * Returns a pointer to the main dataset container.
