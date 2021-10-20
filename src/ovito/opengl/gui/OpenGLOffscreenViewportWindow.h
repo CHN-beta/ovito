@@ -27,70 +27,65 @@
 #include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 
-#include <QOpenGLWidget>
-
 namespace Ovito {
 
 /**
  * \brief The internal render window/widget used by the Viewport class.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget, public BaseViewportWindow
+class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLOffscreenViewportWindow : public QObject, public BaseViewportWindow
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget);
+	OpenGLOffscreenViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, const QSize& initialSize, std::function<void(QImage)> imageCallback);
 
 	/// Destructor.
-	virtual ~OpenGLViewportWindow();
-
-	/// Returns the QWidget that is associated with this viewport window.
-	virtual QWidget* widget() override { return this; }
+	virtual ~OpenGLOffscreenViewportWindow();
 
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
-    /// \brief Puts an update request event for this window on the event loop.
+    /// Puts an update request event for this window on the event loop.
 	virtual void renderLater() override;
 
 	/// If an update request is pending for this viewport window, immediately
 	/// processes it and redraw the window contents.
 	virtual void processViewportUpdate() override;
 
+	/// Returns the size of the window in device pixels.
+	QSize size() const { return _framebufferObject->size(); }
+
+	/// Changes the size of the offscreen window.
+	void setSize(const QSize& size);
+
 	/// Returns the current size of the viewport window (in device pixels).
-	virtual QSize viewportWindowDeviceSize() override {
-		return size() * devicePixelRatio();
-	}
+	virtual QSize viewportWindowDeviceSize() override { return size(); }
 
 	/// Returns the current size of the viewport window (in device-independent pixels).
 	virtual QSize viewportWindowDeviceIndependentSize() override {
-		return size();
+		return size() / devicePixelRatio();
 	}
 
 	/// Returns the device pixel ratio of the viewport window's canvas.
-	virtual qreal devicePixelRatio() override {
-		return QOpenGLWidget::devicePixelRatioF();
-	}
+	virtual qreal devicePixelRatio() override { return 1.0; }
 
 	/// Lets the viewport window delete itself.
 	/// This is called by the Viewport class destructor.
-	virtual void destroyViewportWindow() override {
-		deleteLater();
-	}
+	virtual void destroyViewportWindow() override {}
 
 	/// Sets the mouse cursor shape for the window. 
-	virtual void setCursor(const QCursor& cursor) override { widget()->setCursor(cursor); }
+	virtual void setCursor(const QCursor& cursor) override {}
 
 	/// Returns the current position of the mouse cursor relative to the viewport window.
-	virtual QPoint getCurrentMousePos() override { return widget()->mapFromGlobal(QCursor::pos()); }
+	virtual QPoint getCurrentMousePos() override { return {}; }
 
 	/// Makes the OpenGL context used by the viewport window for rendering the current context.
-	virtual void makeOpenGLContextCurrent() override { makeCurrent(); }
+	virtual void makeOpenGLContextCurrent() override { _offscreenContext.makeCurrent(_offscreenSurface); }
 
 	/// Returns whether the viewport window is currently visible on screen.
-	virtual bool isVisible() const override { return QOpenGLWidget::isVisible(); }
+	virtual bool isVisible() const override { return true; }
 
 	/// Returns the renderer generating an offscreen image of the scene used for object picking.
 	PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
@@ -100,57 +95,39 @@ public:
 
 protected:
 
-	/// Is called whenever the widget needs to be painted.
-	virtual void paintGL() override;
-
-	/// Is called when the viewport becomes visible.
-	virtual void showEvent(QShowEvent* event) override;
-
-	/// Is called when the viewport becomes hidden.
-	virtual void hideEvent(QHideEvent* event) override;
-
-	/// Is called when the mouse cursor leaves the widget.
-	virtual void leaveEvent(QEvent* event) override { BaseViewportWindow::leaveEvent(event); }
-
-	/// Handles double click events.
-	virtual void mouseDoubleClickEvent(QMouseEvent* event) override { BaseViewportWindow::mouseDoubleClickEvent(event); }
-
-	/// Handles mouse press events.
-	virtual void mousePressEvent(QMouseEvent* event) override { BaseViewportWindow::mousePressEvent(event); }
-
-	/// Handles mouse release events.
-	virtual void mouseReleaseEvent(QMouseEvent* event) override { BaseViewportWindow::mouseReleaseEvent(event); }
-
-	/// Handles mouse move events.
-	virtual void mouseMoveEvent(QMouseEvent* event) override { BaseViewportWindow::mouseMoveEvent(event); }
-
-	/// Handles mouse wheel events.
-	virtual void wheelEvent(QWheelEvent* event) override { BaseViewportWindow::wheelEvent(event); }
-
-	/// Is called when the widgets looses the input focus.
-	virtual void focusOutEvent(QFocusEvent* event) override { BaseViewportWindow::focusOutEvent(event); }
-
-	/// Handles key-press events.
-	virtual void keyPressEvent(QKeyEvent* event) override { 
-		BaseViewportWindow::keyPressEvent(event); 
-		QOpenGLWidget::keyPressEvent(event);
-	}
+	/// Handles timer events of the object.
+	virtual void timerEvent(QTimerEvent* event) override;
 
 private:
 
 	/// Releases the renderer resources held by the viewport's surface and picking renderers. 
 	void releaseResources();
 
-private:
+	/// Renders the contents of the viewport window.
+	void renderViewport();
 
-	/// A flag that indicates that a viewport update has been requested.
-	bool _updateRequested = false;
+private:
 
 	/// This is the renderer of the interactive viewport.
 	OORef<OpenGLSceneRenderer> _viewportRenderer;
 
 	/// This renderer generates an offscreen rendering of the scene that allows picking of objects.
 	OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+
+	/// The offscreen surface used to render into an image buffer using OpenGL.
+	QOffscreenSurface* _offscreenSurface = nullptr;
+
+	/// The OpenGL rendering context.
+	QOpenGLContext _offscreenContext;
+
+	/// The OpenGL offscreen framebuffer.
+	std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
+
+	/// Timer used for scheduling windows refreshs.
+	QBasicTimer _repaintTimer;
+
+	/// The callback function registered by the client which is called each time the windows renders a new image.
+	std::function<void(QImage)> _imageCallback;
 };
 
 }	// End of namespace

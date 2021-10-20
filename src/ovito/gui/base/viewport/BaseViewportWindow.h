@@ -59,8 +59,6 @@ public:
 	/// Sets whether the viewport title is shown in the user interface.
 	void setViewportTitleVisible(bool visible) { _showViewportTitle = visible; }
 
-protected:
-
 	/// Is called when the mouse cursor leaves the widget.
 	void leaveEvent(QEvent* event);
 

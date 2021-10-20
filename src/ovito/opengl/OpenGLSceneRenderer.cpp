@@ -118,7 +118,8 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	QOpenGLContext tempContext;
 	QOffscreenSurface offscreenSurface;
 	std::unique_ptr<QWindow> window;
-	if(QOpenGLContext::currentContext() == nullptr) {
+	QOpenGLContext* currentContext = QOpenGLContext::currentContext();
+	if(!currentContext) {
 		if(!tempContext.create())
 			throw Exception(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
 								"Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
@@ -141,14 +142,15 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 				throw Exception(tr("Failed to make OpenGL context current on offscreen rendering surface. Cannot query OpenGL information."));
 		}
 		OVITO_ASSERT(QOpenGLContext::currentContext() == &tempContext);
+		currentContext = &tempContext;
 	}
 
-	_openGLVendor = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_VENDOR));
-	_openGLRenderer = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_RENDERER));
-	_openGLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_VERSION));
-	_openGLSLVersion = reinterpret_cast<const char*>(tempContext.functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
-	_openglSurfaceFormat = QOpenGLContext::currentContext()->format();
-	_openglExtensions = tempContext.extensions();
+	_openGLVendor = reinterpret_cast<const char*>(currentContext->functions()->glGetString(GL_VENDOR));
+	_openGLRenderer = reinterpret_cast<const char*>(currentContext->functions()->glGetString(GL_RENDERER));
+	_openGLVersion = reinterpret_cast<const char*>(currentContext->functions()->glGetString(GL_VERSION));
+	_openGLSLVersion = reinterpret_cast<const char*>(currentContext->functions()->glGetString(GL_SHADING_LANGUAGE_VERSION));
+	_openglSurfaceFormat = currentContext->format();
+	_openglExtensions = currentContext->extensions();
 	_openGLSupportsGeometryShaders = QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry);
 }
 

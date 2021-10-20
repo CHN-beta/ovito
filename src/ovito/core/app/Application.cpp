@@ -238,15 +238,20 @@ bool Application::initialize()
 	QMetaType::registerConverter<AffineTransformation, QMatrix4x4>();
 	QMetaType::registerConverter<QMatrix4x4, AffineTransformation>();
 
-	// Enable OpenGL context sharing globally.
-	QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+	// Note: Setting the AA_ShareOpenGLContexts and AA_UseDesktopOpenGL flags is only valid BEFORE
+	// the global Qt application object is created. When running in a Python interpreter environment, a Qt
+	// application object may have already been created externally before the ovito module is loaded.
+	if(QCoreApplication::startingUp()) {
+		// Enable OpenGL context sharing globally.
+		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #if 1
-	// Always use desktop OpenGL (avoid ANGLE on Windows):
-	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+		// Always use desktop OpenGL (avoid ANGLE on Windows):
+		QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 #else
-	// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
-	QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+		// Use ANGLE OpenGL-to-DirectX translation layer on Windows:
+		QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
 #endif
+	}
 
 	// Specify default OpenGL surface format.
 	QSurfaceFormat format;

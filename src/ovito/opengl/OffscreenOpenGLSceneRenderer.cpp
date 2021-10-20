@@ -81,7 +81,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	// Create a OpenGL context for rendering to an offscreen buffer.
 	_offscreenContext = std::make_unique<QOpenGLContext>();
 	// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
-	if(QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
+	if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
 		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
 	if(!_offscreenContext->create())
 		throwException(tr("Failed to create OpenGL context for rendering."));
@@ -217,7 +217,7 @@ void OffscreenOpenGLSceneRenderer::endRender()
 		_offscreenContext->doneCurrent();
 	_framebufferObject.reset();
 	_offscreenContext.reset();
-	// Keep offscreen surface alive an re-use it in subsequent render passes until the renderer is deleted.
+	// Keep offscreen surface alive and re-use it in subsequent render passes until the renderer is deleted.
 }
 
 }	// End of namespace

@@ -113,6 +113,9 @@ private:
 
 	/// Icon representing a pipeline scene node.
 	QIcon _pipelineSceneNodeIcon;
+
+	/// Font for rendering selected scene nodes.
+	QFont _selectedNodeFont;
 };
 
 }	// End of namespace

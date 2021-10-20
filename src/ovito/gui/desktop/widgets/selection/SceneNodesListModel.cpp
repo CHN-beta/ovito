@@ -51,6 +51,9 @@ SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, Act
 	// Listen for events of the other scene nodes.
 	connect(&_nodeListener, &VectorRefTargetListener<SceneNode>::notificationEvent, this, &SceneNodesListModel::onNodeNotificationEvent);
 
+	// Font for rendering currently selected scene nodes.
+	_selectedNodeFont.setBold(true);
+
 	_sectionHeaderBackgroundBrush = QBrush(Qt::lightGray, Qt::Dense4Pattern);
 	_sectionHeaderForegroundBrush = QBrush(Qt::blue);
 
@@ -105,6 +108,13 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
 		int actionIndex = index.row() - firstActionIndex();
 		if(actionIndex >= 0 && actionIndex < _pipelineActions.size())
 			return QVariant::fromValue(_pipelineActions[actionIndex]);
+	}
+	else if(role == Qt::FontRole) {
+		int pipelineIndex = index.row() - firstSceneNodeIndex();
+		if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+			if(_nodeListener.targets()[pipelineIndex]->isSelected())
+				return _selectedNodeFont;
+		}
 	}
 	else if(role == Qt::DecorationRole) {
 		int pipelineIndex = index.row() - firstSceneNodeIndex();
@@ -171,6 +181,7 @@ void SceneNodesListModel::onDataSetChanged(DataSet* newDataSet)
 		});
 	}
 	endResetModel();
+	onSceneSelectionChanged();
 }
 
 /******************************************************************************
@@ -205,24 +216,23 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 	if(event.type() == ReferenceEvent::ReferenceAdded) {
 		const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
 		if(refEvent.field() == &PROPERTY_FIELD(SceneNode::children)) {
-			if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {
-				
+			if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {				
 				// Extend the list model by one entry.
 				if(sceneNodes().empty()) {
 					_nodeListener.push_back(node);
-					Q_EMIT dataChanged(createIndex(0, 0, node), createIndex(0, 0, node));
+					Q_EMIT dataChanged(createIndex(1, 0, node), createIndex(1, 0, node));
 				}
 				else {
-					beginInsertRows(QModelIndex(), sceneNodes().size(), sceneNodes().size());
+					beginInsertRows(QModelIndex(), sceneNodes().size() + 1, sceneNodes().size() + 1);
 					_nodeListener.push_back(node);
-					endInsertRows();					
+					endInsertRows();
 				}
 
 				// Add the children of the node too.
 				node->visitChildren([this](SceneNode* node) -> bool {
 					// Extend the list model by one entry.
 					OVITO_ASSERT(!sceneNodes().empty());
-					beginInsertRows(QModelIndex(), sceneNodes().size(), sceneNodes().size());
+					beginInsertRows(QModelIndex(), sceneNodes().size() + 1, sceneNodes().size() + 1);
 					_nodeListener.push_back(node);
 					endInsertRows();
 					return true;

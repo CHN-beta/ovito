@@ -117,7 +117,13 @@ ENDFUNCTION()
 FUNCTION(deploy_qt_framework_files)
 
 	# Gather all indirect dependencies of the main executable including all plugins.
-	get_all_target_dependencies(ovito_dependency_libraries Ovito)
+	IF(OVITO_BUILD_APP)
+		get_all_target_dependencies(ovito_dependency_libraries Ovito)
+	ENDIF()
+	# When building just the Python bindings, get the dependencies from this target.
+	IF(OVITO_BUILD_MONOLITHIC AND OVITO_BUILD_PYPI)
+		get_all_target_dependencies(ovito_dependency_libraries ovito_bindings)
+	ENDIF()
 
 	# Filter dependency list to find all Qt framework modules (targets starting with Qt5:: or Qt6::).
 	FOREACH(lib ${ovito_dependency_libraries})
