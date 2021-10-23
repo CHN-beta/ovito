@@ -43,21 +43,8 @@ IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-GuiDataSetContainer::GuiDataSetContainer(MainWindow* mainWindow) : DataSetContainer(),
-	_mainWindow(mainWindow)
+GuiDataSetContainer::GuiDataSetContainer(MainWindow* mainWindow) : _mainWindow(mainWindow)
 {
-	// Prepare scene for display whenever a new dataset becomes active.
-	if(Application::instance()->guiMode()) {
-		connect(this, &DataSetContainer::dataSetChanged, this, [this](DataSet* dataset) {
-			if(dataset) {
-				_sceneReadyScheduled = true;
-				Q_EMIT scenePreparationBegin();
-				_sceneReadyFuture = dataset->whenSceneReady().then(dataset->executor(), [this]() {
-					sceneBecameReady();
-				});
-			}
-		});
-	}
 }
 
 /******************************************************************************
@@ -66,46 +53,6 @@ GuiDataSetContainer::GuiDataSetContainer(MainWindow* mainWindow) : DataSetContai
 UserInterface* GuiDataSetContainer::guiInterface() 
 { 
 	return _mainWindow; 
-}
-
-/******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
-******************************************************************************/
-bool GuiDataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(source == currentSet()) {
-		if(Application::instance()->guiMode()) {
-			if(event.type() == ReferenceEvent::TargetChanged) {
-				// Update viewports as soon as the scene becomes ready.
-				if(!_sceneReadyScheduled) {
-					_sceneReadyScheduled = true;
-					Q_EMIT scenePreparationBegin();
-					_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
-						sceneBecameReady();
-					});
-				}
-			}
-			else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
-				// Update viewports when a new preliminiary state from one of the data pipelines
-				// becomes available (unless we are playing an animation).
-				if(!currentSet()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
-					currentSet()->viewportConfig()->updateViewports();
-			}
-		}
-	}
-	return DataSetContainer::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when scene of the current dataset is ready to be displayed.
-******************************************************************************/
-void GuiDataSetContainer::sceneBecameReady()
-{
-	_sceneReadyScheduled = false;
-	_sceneReadyFuture.reset();
-	if(currentSet())
-		currentSet()->viewportConfig()->updateViewports();
-	Q_EMIT scenePreparationEnd();
 }
 
 /******************************************************************************

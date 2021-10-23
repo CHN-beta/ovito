@@ -124,10 +124,19 @@ Q_SIGNALS:
 	/// \brief This signal is emitted whenever the modification status (clean state) of the active dataset changes.
 	void modificationStatusChanged(bool isClean);
 
+	/// \brief Is emitted whenever the scene of the current dataset has been changed and is being made ready for rendering.
+	void scenePreparationBegin();
+
+	/// \brief Is emitted whenever the scene of the current dataset became ready for rendering.
+	void scenePreparationEnd();
+
 protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 protected Q_SLOTS:
 
@@ -144,6 +153,15 @@ private:
 
 	/// The list of running compute tasks.
 	TaskManager _taskManager;
+
+	/// Is called when scene of the current dataset is ready to be displayed.
+	void sceneBecameReady();
+
+	/// Indicates whether we are already waiting for the scene to become ready.
+	bool _sceneReadyScheduled = false;
+
+	/// The task that makes the scene ready for interactive rendering in the viewports.
+	SharedFuture<> _sceneReadyFuture;
 
 	QMetaObject::Connection _selectionSetReplacedConnection;
 	QMetaObject::Connection _selectionSetChangedConnection;

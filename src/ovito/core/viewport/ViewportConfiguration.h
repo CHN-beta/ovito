@@ -93,7 +93,7 @@ public:
 	Point3 orbitCenter(Viewport* vp);
 
 	/// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
-	/// This method is currently used in the implementation of the Viewport.create_widget() Python method.
+	/// This method is currently used in the implementation of the Viewport.create_qt_widget() Python method.
 	void registerViewport(Viewport* vp) { _viewports.push_back(this, PROPERTY_FIELD(viewports), vp); }
 
 	/// Determines the effective rectangles for all the viewports in the layout hierarchy.

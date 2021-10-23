@@ -69,7 +69,10 @@ public:
 	}
 
 	/// Returns the device pixel ratio of the viewport window's canvas.
-	virtual qreal devicePixelRatio() override { return 1.0; }
+	virtual qreal devicePixelRatio() override { return _devicePixelRatio; }
+
+	/// Changes the device pixel ratio of the viewport window's canvas.
+	void setDevicePixelRatio(qreal ratio) { _devicePixelRatio = ratio; }
 
 	/// Lets the viewport window delete itself.
 	/// This is called by the Viewport class destructor.
@@ -128,6 +131,9 @@ private:
 
 	/// The callback function registered by the client which is called each time the windows renders a new image.
 	std::function<void(QImage)> _imageCallback;
+
+	/// The device pixel ratio of the rendering buffer.
+	qreal _devicePixelRatio = 1.0;
 };
 
 }	// End of namespace

@@ -93,6 +93,16 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor& field, R
 		Q_EMIT dataSetChanged(currentSet());
 
 		if(currentSet()) {
+
+			// Prepare scene for display whenever a new dataset becomes active.
+			if(Application::instance()->guiMode()) {
+				_sceneReadyScheduled = true;
+				Q_EMIT scenePreparationBegin();
+				_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
+					sceneBecameReady();
+				});
+			}
+
 			Q_EMIT viewportConfigReplaced(currentSet()->viewportConfig());
 			Q_EMIT animationSettingsReplaced(currentSet()->animationSettings());
 			Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
@@ -112,6 +122,46 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor& field, R
 		}
 	}
 	RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(source == currentSet()) {
+		if(Application::instance()->guiMode()) {
+			if(event.type() == ReferenceEvent::TargetChanged) {
+				// Update viewports as soon as the scene becomes ready.
+				if(!_sceneReadyScheduled) {
+					_sceneReadyScheduled = true;
+					Q_EMIT scenePreparationBegin();
+					_sceneReadyFuture = currentSet()->whenSceneReady().then(currentSet()->executor(), [this]() {
+						sceneBecameReady();
+					});
+				}
+			}
+			else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
+				// Update viewports when a new preliminiary state from one of the data pipelines
+				// becomes available (unless we are playing an animation).
+				if(!currentSet()->animationSettings()->arePreliminaryViewportUpdatesSuspended())
+					currentSet()->viewportConfig()->updateViewports();
+			}
+		}
+	}
+	return RefMaker::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Is called when scene of the current dataset is ready to be displayed.
+******************************************************************************/
+void DataSetContainer::sceneBecameReady()
+{
+	_sceneReadyScheduled = false;
+	_sceneReadyFuture.reset();
+	if(currentSet())
+		currentSet()->viewportConfig()->updateViewports();
+	Q_EMIT scenePreparationEnd();
 }
 
 /******************************************************************************

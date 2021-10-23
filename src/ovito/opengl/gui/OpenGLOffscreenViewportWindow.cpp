@@ -81,10 +81,6 @@ OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, Viewp
 	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
 
-	// Make sure the window is destroyed before the application quits.
-	// That's because releasing OpenGL resources is only possible while the application is alive.
-	connect(qApp, &QCoreApplication::aboutToQuit, this, &QObject::deleteLater);
-
 	// Render the window for the first time.
 	renderLater();
 }
@@ -212,7 +208,6 @@ ViewportPickResult OpenGLOffscreenViewportWindow::pick(const QPointF& pos)
 	}
 	return result;
 }
-
 
 /******************************************************************************
 * Is called whenever the widget needs to be painted.

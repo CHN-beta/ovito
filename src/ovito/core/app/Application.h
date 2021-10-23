@@ -70,6 +70,9 @@ public:
 	/// \brief Returns whether the application runs in headless mode (without an X server on Linux and no OpenGL support).
 	bool headlessMode() const { return _headlessMode; }
 
+	/// \brief Switches between graphical and console mode.
+	void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
+
 	/// \brief When in console mode, this specifies the exit code that will be returned by the application on shutdown.
 	void setExitCode(int code) { _exitCode = code; }
 
