@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,9 +52,9 @@ public:
 	///         \c true on success.
 	/// \throw Exception on error.
 	bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
-				 ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray,
-				 ConstPropertyAccess<Quaternion> orientationsArray,
-				 ConstPropertyAccess<qlonglong> correspondencesArray,
+				 ConstPropertyPtr structuresArray,
+				 ConstPropertyPtr orientationsArray,
+				 ConstPropertyPtr correspondencesArray,
 				 Task* task);
 
 	/// Stores information about a single neighbor of the central particle.
@@ -118,9 +118,9 @@ public:
 
 private:
 	bool _all_properties;
-	ConstPropertyAccess<PTMAlgorithm::StructureType> _structuresArray;
-	ConstPropertyAccess<Quaternion> _orientationsArray;
-	ConstPropertyAccess<qlonglong> _correspondencesArray;
+	ConstPropertyPtr _structuresArray;
+	ConstPropertyPtr _orientationsArray;
+	ConstPropertyPtr _correspondencesArray;
 };
 
 }	// End of namespace

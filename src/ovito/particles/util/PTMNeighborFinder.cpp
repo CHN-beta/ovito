@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,9 +42,9 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 * Prepares the neighbor finder.
 ******************************************************************************/
 bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
-								ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray,
-								ConstPropertyAccess<Quaternion> orientationsArray,
-								ConstPropertyAccess<qlonglong> correspondencesArray,
+								ConstPropertyPtr structuresArray,
+								ConstPropertyPtr orientationsArray,
+								ConstPropertyPtr correspondencesArray,
 								Task* task)
 {
 	// Initialize the internal NearestNeighborFinder.
@@ -67,8 +67,11 @@ bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const Sim
 ******************************************************************************/
 void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::optional<Quaternion> targetOrientation)
 {
-	_structureType = _finder._structuresArray[particleIndex];
-	_orientation = _finder._orientationsArray[particleIndex];
+	ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
+	ConstPropertyAccess<Quaternion> orientationsArray(_finder._orientationsArray);
+
+	_structureType = structuresArray[particleIndex];
+	_orientation = orientationsArray[particleIndex];
 	_rmsd = std::numeric_limits<FloatType>::infinity();
 
 	int ptm_type = PTMAlgorithm::ovito_to_ptm_structure_type(_structureType);
@@ -117,9 +120,9 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::option
 
 		if(_finder._all_properties && _structureType != PTMAlgorithm::OTHER) {
 			n.disorientation = PTMAlgorithm::calculate_disorientation(_structureType,
-																		_finder._structuresArray[n.index],
+																		structuresArray[n.index],
 																		_orientation,
-																		_finder._orientationsArray[n.index]);
+																		orientationsArray[n.index]);
 		}
 		else {
 			n.disorientation = std::numeric_limits<FloatType>::max();
@@ -132,6 +135,8 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, boost::option
 
 void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
 {
+	ConstPropertyAccess<qlonglong> correspondencesArray(_finder._correspondencesArray);
+
 	// Let the internal NearestNeighborFinder determine the list of nearest particles.
 	NeighborQuery neighborQuery(_finder);
 	neighborQuery.findNeighbors(particleIndex);
@@ -152,7 +157,7 @@ void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
 		numNeighbors = ptm_num_nbrs[ptm_type];
 
 		ptm_decode_correspondences(ptm_type,
-									_finder._correspondencesArray[particleIndex],
+									correspondencesArray[particleIndex],
 									_env.correspondences,
 									&_templateIndex);
 	}
