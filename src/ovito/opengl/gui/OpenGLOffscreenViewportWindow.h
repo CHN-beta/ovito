@@ -96,6 +96,9 @@ public:
 	/// Determines the object that is located under the given mouse cursor position.
 	virtual ViewportPickResult pick(const QPointF& pos) override;
 
+	/// Controls whether processViewportUpdate() causes an immediate repaint or not.
+	void setImmediateViewportUpdatesEnabled(bool enabled) { _immediateViewportUpdatesEnabled = enabled; }
+
 protected:
 
 	/// Handles timer events of the object.
@@ -134,6 +137,9 @@ private:
 
 	/// The device pixel ratio of the rendering buffer.
 	qreal _devicePixelRatio = 1.0;
+
+	/// Controls whether processViewportUpdate() causes an immediate repaint or not.
+	bool _immediateViewportUpdatesEnabled = true;
 };
 
 }	// End of namespace

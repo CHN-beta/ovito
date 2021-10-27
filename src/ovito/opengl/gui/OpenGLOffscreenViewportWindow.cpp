@@ -47,7 +47,7 @@ OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, Viewp
 	if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
 		_offscreenContext.setShareContext(QOpenGLContext::globalShareContext());
 	if(!_offscreenContext.create())
-		throw Exception(tr("Failed to create OpenGL context for rendering."));
+		throw Exception(tr("Failed to create OpenGL context for offscreen rendering. Please make sure OVITO is able to access the OpenGL graphics interface. On Linux systems, a running display manager may be necessary for it."));
 	
 	// Create an offscreen rendering surface.
 	_offscreenSurface = new QOffscreenSurface(nullptr, this);
@@ -126,7 +126,7 @@ void OpenGLOffscreenViewportWindow::renderLater()
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::processViewportUpdate()
 {
-	if(_repaintTimer.isActive()) {
+	if(_immediateViewportUpdatesEnabled && _repaintTimer.isActive()) {
 		OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::processUpdateRequest()", "Recursive viewport repaint detected.");
 		renderViewport();
