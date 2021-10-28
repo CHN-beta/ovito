@@ -332,19 +332,11 @@ void ModifierTemplatesPage::onImportTemplates()
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-bool ModifierTemplatesPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ModifierTemplatesPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
 {
-	try {
-		if(_dirtyFlag) {
-			ModifierTemplates::get()->commit();
-			_dirtyFlag = false;
-		}
-		return true;
-	}
-	catch(Exception& ex) {
-		ex.setContext(_settingsDialog);
-		ex.reportError(true);
-		return false;
+	if(_dirtyFlag) {
+		ModifierTemplates::get()->commit();
+		_dirtyFlag = false;
 	}
 }
 

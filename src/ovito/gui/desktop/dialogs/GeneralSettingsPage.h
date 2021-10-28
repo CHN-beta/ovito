@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,9 +44,11 @@ public:
 	/// \brief Creates the widget.
 	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
+	/// \brief Lets the settings page validate the values entered by the user before saving them.
+	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+
 	/// \brief Lets the settings page to save all values entered by the user.
-	/// \param settingsDialog The settings dialog box.
-	virtual bool saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const override { return 1; }

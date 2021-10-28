@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -152,14 +152,50 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	layout1->addStretch();
 }
 
+
+/******************************************************************************
+* Lets the settings page validate the values entered by the user before saving them.
+******************************************************************************/
+bool GeneralSettingsPage::validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+{
+	QSettings settings;
+
+	// Check if user has selected a different 3D graphics API than before.
+	bool recreateViewportWindows = false;
+	bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
+	bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
+	if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
+		// Warn the user that some Vulkan implementations may be incompatible with Ovito and can 
+		// render the application unusable.
+		QMessageBox msgBox(settingsDialog);
+		msgBox.setIcon(QMessageBox::Question);
+		msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
+		msgBox.setInformativeText(tr(
+					"In rare cases, Vulkan graphics drivers can be incompatible with OVITO. This concerns especially very old graphics chip models. "
+					"In such a case, OVITO may only display a black window and become entirely unusable.\n\n"
+					"It may then be necessary to deactivate the Vulkan renderer of OVITO again. If OVITO is no longer usable, this must be done manually "
+					"by resetting the program settings to factory defaults. Please refer to the user manual to see where OVITO stores its program settings and how to reset them.\n\n"
+					"Click OK to continue and activate the Vulkan renderer now."));
+		msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel | QMessageBox::Help);
+		msgBox.setDefaultButton(QMessageBox::Ok);
+		int ret = msgBox.exec();
+		if(ret != QMessageBox::Ok) {
+			if(ret == QMessageBox::Help) {
+				settingsDialog->onHelp();
+			}
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
 {
 	QSettings settings;
-	settings.setValue("file/use_qt_dialog", _useQtFileDialog->isChecked());
-	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
 
 	// Check if user has selected a different 3D graphics API than before.
 	bool recreateViewportWindows = false;
@@ -190,11 +226,13 @@ bool GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 		}
 	}
 
+	settings.setValue("file/use_qt_dialog", _useQtFileDialog->isChecked());
+	ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
+
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
 	settings.setValue("updates/transmit_id", _enableUsageStatistics->isChecked());
 #endif
-	return true;
 }
 
 }	// End of namespace

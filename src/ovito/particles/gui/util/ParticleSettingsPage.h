@@ -46,7 +46,7 @@ public:
 
 	/// \brief Lets the settings page to save all values entered by the user.
 	/// \param settingsDialog The settings dialog box.
-	virtual bool saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
 	/// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
 	virtual int pageSortingKey() const override { return 4; }

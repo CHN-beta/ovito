@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ public:
 	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page to save all values entered by the user.
-	virtual bool saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
+	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;
 
 	/// \brief Lets the settings page restore the original values of changed settings when the user presses the Cancel button.
 	virtual void restoreValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) override;

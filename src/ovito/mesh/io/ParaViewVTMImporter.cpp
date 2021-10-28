@@ -37,7 +37,7 @@ namespace Ovito { namespace Mesh {
 IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
 DEFINE_PROPERTY_FIELD(ParaViewVTMImporter, uniteMeshes);
-SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes during import");
+SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -198,7 +198,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	// Special handling of meshes that are grouped in the "Meshes" block of the VTM file.
 	// This is specific to VTM files written by the Aspherix code.
 	if(uniteMeshes()) {
-		// Count the total number of mesh data files referenced by the VTM file.
+		// Count the total number of mesh data files referenced in the "Meshes" sections of the VTM file.
 		int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& blockInfo) {
 			return blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Meshes");
 		});

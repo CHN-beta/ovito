@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,10 +50,14 @@ public:
 	/// \param tabWidget The QTabWidget into which the method should insert the settings page.
 	virtual void insertSettingsDialogPage(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) = 0;
 
-	/// \brief Lets the settings page to save all values entered by the user.
+	/// \brief Lets the settings page validate the values entered by the user before saving them.
 	/// \param settingsDialog The settings dialog box.
 	/// \return true if the settings are valid; false if settings need to be corrected by the user and the dialog should not be closed.
-	virtual bool saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) { return true; }
+	virtual bool validateValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) { return true; }
+
+	/// \brief Lets the settings page to save all values entered by the user.
+	/// \param settingsDialog The settings dialog box.
+	virtual void saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget) {}
 
 	/// \brief Lets the settings page restore the original values of changed settings.
 	/// \param settingsDialog The settings dialog box.
@@ -81,7 +85,7 @@ public:
 	///                  settings page should be activated initially.
 	ApplicationSettingsDialog(QWidget* parent, OvitoClassPtr startPage = nullptr);
 
-protected Q_SLOTS:
+public Q_SLOTS:
 
 	/// This is called when the user has pressed the OK button of the settings dialog.
 	/// Validates and saves all settings made by the user and closes the dialog box.

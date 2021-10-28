@@ -95,7 +95,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-bool ViewportSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ViewportSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
 {
 	// Update settings.
 	_settings.setUpDirection((ViewportSettings::UpDirection)_upDirectionGroup->checkedId());
@@ -120,8 +120,6 @@ bool ViewportSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog,
 
 	// Store current settings.
 	ViewportSettings::setSettings(_settings);
-
-	return true;
 }
 
 }	// End of namespace

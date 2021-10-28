@@ -202,7 +202,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 /******************************************************************************
 * Lets the page save all changed settings.
 ******************************************************************************/
-bool ParticleSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
+void ParticleSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, QTabWidget* tabWidget)
 {
 	// Remove outdated settings branch from old OVITO versions.
 	QSettings settings;
@@ -248,8 +248,6 @@ bool ParticleSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog,
 		QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
 		ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), typeName, color);
 	}
-
-	return true;
 }
 
 /******************************************************************************

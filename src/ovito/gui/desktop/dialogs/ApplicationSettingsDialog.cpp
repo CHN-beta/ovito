@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -86,11 +86,16 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(QWidget* parent, OvitoClass
 void ApplicationSettingsDialog::onOk()
 {
 	try {
-		// Let all pages save their settings.
+		// Let all pages validate the changes the user made to the settings.
 		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
-			if(!page->saveValues(this, _tabWidget)) {
+			if(!page->validateValues(this, _tabWidget)) {
 				return;
 			}
+		}
+
+		// Let all pages save their settings.
+		for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
+			page->saveValues(this, _tabWidget);
 		}
 
 		// Close dialog box.
