@@ -107,9 +107,6 @@ OPTION(OVITO_BUILD_PLUGIN_VR "Build the virtual reality plugin (experimental - c
 # It will get populated by the OVITO_PLUGIN function.
 SET(OVITO_PLUGINS_LIST "")
 
-# Set the default component name for the installer.
-SET(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "Ovito")
-
 # Enable software testing framework.
 ENABLE_TESTING()
 
