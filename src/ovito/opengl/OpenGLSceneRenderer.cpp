@@ -743,7 +743,10 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 				}
 				else {
 					line.replace("fragColor", "gl_FragColor");
-					line.replace("texture(", "texture2D(");
+					if(!line.contains("texture1D"))
+						line.replace("texture(", "texture2D(");
+					else
+						line.replace("texture(", "texture1D(");
 					line.replace("shadeSurfaceColor(flat_normal_fs", 
 						!isGLES ? "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))"
 						: "shadeSurfaceColor(normalize(cross(dFdx(tex_coords), dFdy(tex_coords)))");

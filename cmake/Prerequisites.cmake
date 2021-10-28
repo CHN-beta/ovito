@@ -25,15 +25,17 @@
 # On Unix/Linux based platforms it takes care of installing symbolic links as well.
 FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 	IF(WIN32 OR OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI)
+		# Replace backslashes in the path with regular slashes.
+		STRING(REGEX REPLACE "\\\\" "/" _shared_lib ${shared_lib}) 
 		# Make sure the destination directory exists.
 		SET(_abs_dest_dir "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}")
 		FILE(MAKE_DIRECTORY "${_abs_dest_dir}")
 		# Strip version number from shared lib filename.
-		GET_FILENAME_COMPONENT(shared_lib_ext "${shared_lib}" EXT)
-		STRING(REPLACE ${shared_lib_ext} "" shared_lib_new "${shared_lib}")
-		FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${shared_lib}" "${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
+		GET_FILENAME_COMPONENT(shared_lib_ext "${_shared_lib}" EXT)
+		STRING(REPLACE ${shared_lib_ext} "" shared_lib_new "${_shared_lib}")
+		FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${_shared_lib}" "${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
 		IF(NOT lib_versions)
-			MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${shared_lib} (globbing patterns: ${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
+			MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
 		ENDIF()
 		# Find all variants of the shared library name, including symbolic links.
 		UNSET(lib_files)

@@ -142,7 +142,7 @@ void main()
 	// which is stored in the R component of the input color.
 	if(color_range_min != color_range_max) {
 		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
-		color.rgb = texture(color_map, pseudocolor_value).rgb;
+		color.rgb = texture(color_map, pseudocolor_value).rgb; // texture1D
 	}
 
 	// Perform surface shading calculation.

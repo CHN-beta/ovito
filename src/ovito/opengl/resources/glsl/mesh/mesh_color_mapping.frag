@@ -39,7 +39,7 @@ out vec4 fragColor;
 void main()
 {
     if(selected_face_fs == 0.0) {
-        vec3 color = texture(color_map, pseudocolor_fs).xyz;
+        vec3 color = texture(color_map, pseudocolor_fs).xyz; // texture1D
         fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(color, opacity));
     }
     else {
