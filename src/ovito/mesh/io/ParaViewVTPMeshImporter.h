@@ -69,6 +69,14 @@ public:
 		return std::make_shared<FrameLoader>(request);
 	}
 
+	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO data buffer.
+	static void parseVTKDataArray(DataBuffer* buffer, size_t beginIndex, size_t endIndex, int vectorComponent, QXmlStreamReader& xml, const std::function<size_t(size_t)>& indexMapping = {});
+
+	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO data buffer.
+	static void parseVTKDataArray(DataBuffer* buffer, int vectorComponent, QXmlStreamReader& xml) {
+		parseVTKDataArray(buffer, 0, buffer->size(), vectorComponent, xml);
+	}
+
 private:
 
 	/// The format-specific task object that is responsible for reading an input file in a separate thread.

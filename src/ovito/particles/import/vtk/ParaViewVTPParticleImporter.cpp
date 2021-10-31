@@ -24,10 +24,10 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/grid/io/ParaViewVTIGridImporter.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
@@ -139,7 +139,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 				if(xml.name().compare(QLatin1String("DataArray")) == 0) {
 					int vectorComponent = -1;
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
-						ParaViewVTIGridImporter::parseVTKDataArray(property, baseParticleIndex, property->size(), vectorComponent, xml);
+						ParaViewVTPMeshImporter::parseVTKDataArray(property, baseParticleIndex, property->size(), vectorComponent, xml);
 						if(xml.hasError() || isCanceled())
 							break;
 
@@ -409,9 +409,9 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 	// Resize particles object to zero elements in the existing pipeline state.
 	// This is mainly done to remove the existing particles in those animation frames in which the VTM file has empty data blocks.
 	for(const DataObject* obj : request.state.data()->objects()) {
-		if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(obj)) {
-			PropertyContainer* mutableContainer = request.state.mutableData()->makeMutable(container);
-			mutableContainer->setElementCount(0);
+		if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(obj)) {
+			ParticlesObject* mutableParticles = request.state.mutableData()->makeMutable(particles);
+			mutableParticles->setElementCount(0);
 		}
 	}
 

@@ -23,46 +23,47 @@
 #pragma once
 
 
-#include <ovito/grid/Grid.h>
+#include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Grid {
+namespace Ovito { namespace Mesh {
 
 /**
- * \brief File parser for reading a VoxelGrid from a ParaView VTI (ImageData) file.
+ * \brief File parser for reading the simulation cell geometry from a ParaView VTU (UnstructuredGrid) file as written by the Aspherix simulation code.
  */
-class OVITO_GRID_EXPORT ParaViewVTIGridImporter : public FileSourceImporter
+class OVITO_MESH_EXPORT ParaViewVTUSimulationCellImporter : public FileSourceImporter
 {
 	/// Defines a metaclass specialization for this importer type.
 	class OOMetaClass : public FileSourceImporter::OOMetaClass
 	{
 	public:
+
 		/// Inherit standard constructor from base meta class.
 		using FileSourceImporter::OOMetaClass::OOMetaClass;
 
 		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.vti"); }
+		virtual QString fileFilter() const override { return QStringLiteral("*.vtu"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTI ImageData File"); }
+		virtual QString fileFilterDescription() const override { return tr("Aspherix VTU Simulation Cell Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};
 
-	OVITO_CLASS_META(ParaViewVTIGridImporter, OOMetaClass)
+	OVITO_CLASS_META(ParaViewVTUSimulationCellImporter, OOMetaClass)
 	Q_OBJECT
 
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTIGridImporter(DataSet *dataset) : FileSourceImporter(dataset) {}
+	Q_INVOKABLE ParaViewVTUSimulationCellImporter(DataSet *dataset) : FileSourceImporter(dataset) {}
 
 	/// Returns the title of this object.
-	virtual QString objectTitle() const override { return tr("VTI"); }
+	virtual QString objectTitle() const override { return tr("VTU"); }
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -83,11 +84,6 @@ private:
 
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
-
-	private:
-
-		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml, int& vectorComponent);
 	};
 };
 

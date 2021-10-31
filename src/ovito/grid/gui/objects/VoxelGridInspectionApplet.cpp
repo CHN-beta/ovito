@@ -70,21 +70,23 @@ void VoxelGridInspectionApplet::onCurrentContainerChanged(const DataObject* data
 	// Update the displayed information.
 	if(const VoxelGrid* grid = static_object_cast<VoxelGrid>(dataObject)) {
 		QString text = tr("<p><b>Grid cells:</b> ");
-		if(grid->domain()->is2D() && grid->shape()[2] <= 1)
+		if(grid->domain() && grid->domain()->is2D() && grid->shape()[2] <= 1)
 			text += tr("%1 x %2</p>").arg(grid->shape()[0]).arg(grid->shape()[1]);
 		else
 			text += tr("%1 x %2 x %3</p>").arg(grid->shape()[0]).arg(grid->shape()[1]).arg(grid->shape()[2]);
-		const Vector3& v1 = grid->domain()->cellVector1();
-		const Vector3& v2 = grid->domain()->cellVector2();
-		const Vector3& v3 = grid->domain()->cellVector3();
-		const Point3& origin = grid->domain()->cellOrigin();
-		text += tr("<p><b>Grid vector 1:</b> (%1 %2 %3)</p>").arg(v1.x()).arg(v1.y()).arg(v1.z());
-		text += tr("<p><b>Grid vector 2:</b> (%1 %2 %3)</p>").arg(v2.x()).arg(v2.y()).arg(v2.z());
-		if(grid->domain()->is2D() && grid->shape()[2] <= 1)
-			text += tr("<p><b>Grid vector 3:</b> -</p>");
-		else
-			text += tr("<p><b>Grid vector 3:</b> (%1 %2 %3)</p>").arg(v3.x()).arg(v3.y()).arg(v3.z());
-		text += tr("<p><b>Grid origin:</b> (%1 %2 %3)</p>").arg(origin.x()).arg(origin.y()).arg(origin.z());
+		if(grid->domain()) {
+			const Vector3& v1 = grid->domain()->cellVector1();
+			const Vector3& v2 = grid->domain()->cellVector2();
+			const Vector3& v3 = grid->domain()->cellVector3();
+			const Point3& origin = grid->domain()->cellOrigin();
+			text += tr("<p><b>Grid vector 1:</b> (%1 %2 %3)</p>").arg(v1.x()).arg(v1.y()).arg(v1.z());
+			text += tr("<p><b>Grid vector 2:</b> (%1 %2 %3)</p>").arg(v2.x()).arg(v2.y()).arg(v2.z());
+			if(grid->domain()->is2D() && grid->shape()[2] <= 1)
+				text += tr("<p><b>Grid vector 3:</b> -</p>");
+			else
+				text += tr("<p><b>Grid vector 3:</b> (%1 %2 %3)</p>").arg(v3.x()).arg(v3.y()).arg(v3.z());
+			text += tr("<p><b>Grid origin:</b> (%1 %2 %3)</p>").arg(origin.x()).arg(origin.y()).arg(origin.z());
+		}
 		_gridInfoLabel->setText(text);
 	}
 	else {
@@ -99,7 +101,7 @@ QVariant VoxelGridInspectionApplet::headerColumnText(int section)
 { 
 	if(const VoxelGrid* grid = static_object_cast<VoxelGrid>(selectedContainerObject())) {
 		std::array<size_t, 3> coords = grid->voxelCoords(section);
-		if(grid->domain()->is2D() && grid->shape()[2] <= 1) {
+		if(grid->domain() && grid->domain()->is2D() && grid->shape()[2] <= 1) {
 			return QStringLiteral("(%1, %2)").arg(coords[0]).arg(coords[1]);
 		}
 		else {

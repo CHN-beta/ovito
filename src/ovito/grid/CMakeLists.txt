@@ -30,6 +30,7 @@ SET(SourceFiles
 	modifier/MarchingCubes.cpp
 	io/VTKVoxelGridExporter.cpp
 	io/ParaViewVTIGridImporter.cpp
+	io/ParaViewVTSGridImporter.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)
