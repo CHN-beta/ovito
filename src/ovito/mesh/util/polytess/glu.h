@@ -35,6 +35,29 @@
 extern "C" {
 #endif
 
+/* BeginMode */
+#ifndef GL_POINTS
+#define GL_POINTS                         0x0000
+#endif
+#ifndef GL_PGL_LINESOINTS
+#define GL_LINES                          0x0001
+#endif
+#ifndef GL_LINE_LOOP
+#define GL_LINE_LOOP                      0x0002
+#endif
+#ifndef GL_LINE_STRIP
+#define GL_LINE_STRIP                     0x0003
+#endif
+#ifndef GL_TRIANGLES
+#define GL_TRIANGLES                      0x0004
+#endif
+#ifndef GL_TRIANGLE_STRIP
+#define GL_TRIANGLE_STRIP                 0x0005
+#endif
+#ifndef GL_TRIANGLE_FAN
+#define GL_TRIANGLE_FAN                   0x0006
+#endif
+
 /*************************************************************/
 
 /* Boolean */

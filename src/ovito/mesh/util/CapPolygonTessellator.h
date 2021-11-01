@@ -27,8 +27,6 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "polytess/glu.h"
 
-#include <qopengl.h>
-
 namespace Ovito { namespace Mesh {
 
 /**
