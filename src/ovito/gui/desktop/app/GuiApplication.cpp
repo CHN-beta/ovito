@@ -83,7 +83,7 @@ bool GuiApplication::processCommandLineParameters()
 		if(!qEnvironmentVariableIsEmpty("DISPLAY")) {
 			_headlessMode = false;
 		}
-#elif defined(Q_OS_OSX)
+#elif defined(Q_OS_MACOS)
 		// Don't let Qt move the app to the foreground when running in console mode.
 		::setenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1", 1);
 		_headlessMode = false;
@@ -101,9 +101,6 @@ bool GuiApplication::processCommandLineParameters()
 ******************************************************************************/
 void GuiApplication::createQtApplication(int& argc, char** argv)
 {
-	// OVITO prefers the "C" locale over the system's default locale.
-	QLocale::setDefault(QLocale::c());
-
 	// Verify that the OpenGLSceneRenderer class has registered the right default surface format.
 	OVITO_ASSERT(QSurfaceFormat::defaultFormat().depthBufferSize() == 24 && QSurfaceFormat::defaultFormat().stencilBufferSize() == 1);
 
@@ -111,6 +108,9 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 		StandaloneApplication::createQtApplication(argc, argv);
 	}
 	else {
+		// OVITO prefers the "C" locale over the system's default locale.
+		QLocale::setDefault(QLocale::c());
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		// Enable high-resolution toolbar icons on hi-dpi screens.
 		QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);

@@ -307,10 +307,10 @@ void Application::createQtApplication(int& argc, char** argv)
 
 		// On Linux, use the 'minimal' QPA platform plugin instead of the standard XCB plugin when no X server is available.
 		// Still create a Qt GUI application object, because otherwise we cannot use (offscreen) font rendering functions.
-		qputenv("QT_QPA_PLATFORM", "minimal");
+		if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "minimal");
 		// Enable rudimentary font rendering support, which is implemented by the 'minimal' platform plugin:
-		qputenv("QT_DEBUG_BACKINGSTORE", "1");
-		qputenv("QT_QPA_FONTDIR", fontPath.c_str());
+		if(!qEnvironmentVariableIsSet("QT_DEBUG_BACKINGSTORE")) qputenv("QT_DEBUG_BACKINGSTORE", "1");
+		if(!qEnvironmentVariableIsSet("QT_QPA_FONTDIR")) qputenv("QT_QPA_FONTDIR", fontPath.c_str());
 
 		new QGuiApplication(argc, argv);
 #elif defined(Q_OS_MAC)
