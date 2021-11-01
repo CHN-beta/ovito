@@ -312,6 +312,11 @@ void Application::createQtApplication(int& argc, char** argv)
 		if(!qEnvironmentVariableIsSet("QT_DEBUG_BACKINGSTORE")) qputenv("QT_DEBUG_BACKINGSTORE", "1");
 		if(!qEnvironmentVariableIsSet("QT_QPA_FONTDIR")) qputenv("QT_QPA_FONTDIR", fontPath.c_str());
 
+		// Disable OpenGL context sharing, because we cannot create GL contexts when using the 'minimal' QPA plugin.
+		// If AA_ShareOpenGLContexts is set, the QGuiApplication constructor tries to create an OpenGL context, which fails with a warning message:
+		// "This plugin does not support createPlatformOpenGLContext!".
+		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, false);
+
 		new QGuiApplication(argc, argv);
 #elif defined(Q_OS_MAC)
 		new QGuiApplication(argc, argv);
