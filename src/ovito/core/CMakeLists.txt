@@ -333,12 +333,16 @@ IF(Libssh_FOUND AND NOT EMSCRIPTEN)
 			OVITO_INSTALL_SHARED_LIB("${lib}" ".")
 		ENDFOREACH()
 
-		# Also install libcrypto needed by libssh.
-		FIND_LIBRARY(LIB_CRYPTO_LOCATION NAMES libcrypto.so PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
-		IF(NOT LIB_CRYPTO_LOCATION)
-			MESSAGE(FATAL_ERROR "Could not find shared library libcrypto.so, which is required by libssh, in system path.")
-		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${LIB_CRYPTO_LOCATION}" ".")
+		# Install OpenSSL (libcrypto) needed by libssh.
+		#
+		# NOTE: This was changed in OVITO 3.6.0. We no longer ship OpenSSL with OVITO for Linux, because it leads to conflicts
+		# on some Linux distributions. Rather fall back to using the system version of OpenSSL, which should exist on most machines.
+		#
+		# FIND_LIBRARY(LIB_CRYPTO_LOCATION NAMES libcrypto.so PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+		# IF(NOT LIB_CRYPTO_LOCATION)
+		#	MESSAGE(FATAL_ERROR "Could not find shared library libcrypto.so, which is required by libssh, in system path.")
+		#ENDIF()
+		#OVITO_INSTALL_SHARED_LIB("${LIB_CRYPTO_LOCATION}" ".")
 
 	ENDIF()
 ENDIF()

@@ -41,5 +41,5 @@ The following commands have been used to build them::
 macOS
 """""
 
-OVITO for macOS includes a binary version of libssh 0.8.9 that has been automatically generated with `MacPorts <https://www.macports.org>`__.
+OVITO for macOS includes a binary version of libssh 0.8.9 that has been built with `MacPorts <https://www.macports.org>`__: ``port install -s libssh``
 See the corresponding `Portfile <https://github.com/macports/macports-ports/blob/master/devel/libssh/Portfile>`__.
