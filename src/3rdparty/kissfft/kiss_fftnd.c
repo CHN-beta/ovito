@@ -65,6 +65,8 @@ kiss_fftnd_cfg kiss_fftnd_alloc(const int *dims,int ndims,int inverse_fft,void*m
         st->states[i] = kiss_fft_alloc (st->dims[i], inverse_fft, ptr,&len);
         ptr += len;
     }
+    // NOTE: Disabled the following sanity check to enable memory allocations > 2^31 bytes on 64-bit systems.
+#if 0
     /*
 Hi there!
 
@@ -85,6 +87,7 @@ The below code might give you some warm fuzzies and help convince you.
                 "################################################################################\n"
                );
     }
+#endif
     return st;
 }
 

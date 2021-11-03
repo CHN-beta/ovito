@@ -21,7 +21,7 @@ Installation instructions
 =========================
 
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.5.0-x86_64.tar.xz`.
+    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.6.0-x86_64.tar.xz`.
     This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
@@ -36,7 +36,7 @@ Installation instructions
 .. _installation.remote:
 
 Running on remote machines
-================================
+==========================
     
 Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct 
 access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages 
@@ -96,3 +96,11 @@ preinstalled on fresh Linux systems. **Solution:** Install the required librarie
   sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
 Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
+
+OVITO requires the OpenSSL system libraries (version 1.1.*). If they are not present, starting :command:`ovito` will fail with the error::
+
+  error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
+
+**Solution:** Please install the OpenSSL 1.1 libraries using the package manager of your Linux distribution. OVITO depends on the 
+presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
+you should install the `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__ package.
