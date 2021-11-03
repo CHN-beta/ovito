@@ -47,7 +47,7 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("Aspherix VTP Particle File"); }
+		virtual QString fileFilterDescription() const override { return tr("Aspherix Particles Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

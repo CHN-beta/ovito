@@ -138,6 +138,20 @@ const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objec
 }
 
 /******************************************************************************
+* Finds all objects of the given type in the list of data objects stored in this
+* flow state.
+******************************************************************************/
+std::vector<const DataObject*> DataCollection::getObjects(const DataObject::OOMetaClass& objectClass) const
+{
+	std::vector<const DataObject*> list;
+	for(const DataObject* obj : objects()) {
+		if(objectClass.isMember(obj))
+			list.push_back(obj);
+	}
+	return list;
+}
+
+/******************************************************************************
 * Throws an exception if the input does not contain a data object of the given type.
 ******************************************************************************/
 const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& objectClass) const

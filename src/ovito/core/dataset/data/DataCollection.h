@@ -79,6 +79,9 @@ public:
 		return static_object_cast<DataObjectClass>(getObject(DataObjectClass::OOClass()));
 	}
 
+	/// \brief Finds all objects of the given type in the list of data objects stored in this flow state.
+	std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const;
+
 	/// \brief Determines if an object of the given type is in this flow state.
 	template<class DataObjectClass>
 	bool containsObject() const {

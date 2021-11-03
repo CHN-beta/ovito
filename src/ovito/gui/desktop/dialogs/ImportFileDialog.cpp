@@ -33,14 +33,17 @@ namespace Ovito {
 ImportFileDialog::ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, DataSet* dataset, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass) :
 	HistoryFileDialog(dialogClass, parent, caption), _importerTypes(importerTypes)
 {
-	// Build filter string.
-	for(auto importerClass : _importerTypes) {
-		_filterStrings << QString("%1 (%2)").arg(importerClass->fileFilterDescription(), importerClass->fileFilter());
-	}
-	if(_filterStrings.isEmpty()) {
+	if(_importerTypes.empty()) {
 		dataset->throwException(tr("There are no importer plugins installed."));
 	}
 
+	// Build filter string.
+	for(auto importerClass : _importerTypes) {
+		// Skip importers that want to remain hidden from the user.
+		if(importerClass->fileFilterDescription().isEmpty())
+			continue;
+		_filterStrings << QString("%1 (%2)").arg(importerClass->fileFilterDescription(), importerClass->fileFilter());
+	}
 	_filterStrings.prepend(tr("<Auto-detect file format> (*)"));
 
 	setNameFilters(_filterStrings);

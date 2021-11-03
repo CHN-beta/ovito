@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -78,8 +77,8 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 	std::vector<ParaViewVTMBlockInfo> datasetList;
 	// The current branch in the block hierarchy.
 	QStringList blockBranch;
-	// The current index within a multi-block piece.
-	int multiBlockIndex = 0;
+	// Indicates that we are currently inside a <piece> element.
+	bool isPiece = false;
 
 	// Parse the elements of the XML file.
 	while(!xml.atEnd()) {
@@ -92,9 +91,6 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 				// Do nothing. Parse child elements.
 			}
 			else if(xml.name().compare(QStringLiteral("Block")) == 0) {
-				// This is the start of a new block.
-				multiBlockIndex = 0;
-
 				// Get value of 'name' attribute.
 				blockBranch.push_back(xml.attributes().value("name").toString());
 
@@ -102,7 +98,8 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 			}
 			else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
 				// This is the start of a new piece.
-				multiBlockIndex = 0;
+				OVITO_ASSERT(!isPiece);
+				isPiece = true;
 
 				// Get value of 'name' attribute.
 				blockBranch.push_back(xml.attributes().value("name").toString());
@@ -111,32 +108,28 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 			}
 			else if(xml.name().compare(QStringLiteral("DataSet")) == 0) {
 
-				// Get value of 'file' attribute.
-				QString file = xml.attributes().value("file").toString();
-				if(!file.isEmpty()) {
-					// The current path in the block hierarchy:
-					QStringList path = blockBranch;
+				// The current path in the block hierarchy:
+				ParaViewVTMBlockInfo blockInfo;
+				blockInfo.blockPath = blockBranch;
 
+				if(!isPiece) {
+					// Add dataset leaf name to block path.
 					auto name = xml.attributes().value("name");
 					if(!name.isEmpty())
-						path.append(name.toString());
-
-					// Resolve file path and record the URL, which will be loaded later.
-					datasetList.push_back({ std::move(path), fileHandle.sourceUrl().resolved(QUrl(file)), multiBlockIndex });
-
-					// If this dataset is part of a piece, update the total number of partial datasets that form the piece.
-					if(multiBlockIndex >= 1) {
-						std::for_each(datasetList.end() - (multiBlockIndex+1), datasetList.end(), [&](ParaViewVTMBlockInfo& blockInfo) {
-							blockInfo.multiBlockCount = multiBlockIndex + 1;
-						});
-					}
-
-					// Increment index if this dataset is part of a piece-wise block.
-					if(!name.isEmpty())
-						multiBlockIndex = 0;
-					else
-						multiBlockIndex++;
+						blockInfo.blockPath.append(name.toString());
 				}
+				else {
+					// Parse piece index.
+					blockInfo.pieceIndex = xml.attributes().value("index").toInt();
+				}
+
+				// Parse value of 'file' attribute if present.
+				QString file = xml.attributes().value("file").toString();
+				// Resolve file path and record the URL, which will be loaded later.
+				if(!file.isEmpty())
+					blockInfo.location = fileHandle.sourceUrl().resolved(QUrl(file));
+
+				datasetList.push_back(std::move(blockInfo));
 
 				xml.skipCurrentElement();
 			}
@@ -145,9 +138,19 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 			}
 		}
 		if(xml.tokenType() == QXmlStreamReader::EndElement) {
-			if(xml.name().compare(QStringLiteral("Block")) == 0 || xml.name().compare(QStringLiteral("Piece")) == 0) {
-				multiBlockIndex = 0;
+			if(xml.name().compare(QStringLiteral("Block")) == 0) {
 				blockBranch.pop_back();
+			}
+			else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
+				OVITO_ASSERT(isPiece);
+				// Determine the range of blocks that are part of the current piece-wise dataset.
+				auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) { return block.blockPath != blockBranch; });
+				int pieceCount = std::distance(datasetList.rbegin(), iter);
+				OVITO_ASSERT(pieceCount > 0 && pieceCount <= datasetList.size());
+				// Update the pirceCount field of all partial blocks belonging to the current piece-wise dataset. 
+				std::for_each(datasetList.rbegin(), iter, [&](ParaViewVTMBlockInfo& block) { OVITO_ASSERT(block.pieceIndex >= 0 && block.pieceIndex < pieceCount); block.pieceCount = pieceCount; });
+				blockBranch.pop_back();
+				isPiece = false;
 			}
 			else if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
 				break;
@@ -174,7 +177,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	struct ExtendedLoadRequest : public LoadOperationRequest {
 		/// Constructor.
 		ExtendedLoadRequest(const LoadOperationRequest& other) : LoadOperationRequest(other) {}
-		/// The multi-block record of the current dataset being loaded.
+		/// The current dataset being loaded from the multi-block structure.
 		ParaViewVTMBlockInfo blockInfo;
 		/// Plugin filters processing the datasets referenced by the VTM file.
 		std::vector<OORef<ParaViewVTMFileFilter>> filters;
@@ -195,54 +198,17 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		modifiedRequest.filters.back()->preprocessDatasets(blockDatasets, modifiedRequest, *this);
 	}
 
-	// Special handling of meshes that are grouped in the "Meshes" block of the VTM file.
-	// This is specific to VTM files written by the Aspherix code.
-	if(uniteMeshes()) {
-		// Count the total number of mesh data files referenced in the "Meshes" sections of the VTM file.
-		int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& blockInfo) {
-			return blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Meshes");
-		});
-		// Make all mesh data files a part of the same block. This will tell the VTP mesh file reader 
-		// to combine all mesh parts into a single SurfaceMesh object.
-		int index = 0;
-		for(ParaViewVTMBlockInfo& blockInfo : blockDatasets) {
-			if(blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Meshes")) {
-				blockInfo.multiBlockIndex = index++;
-				blockInfo.multiBlockCount = numMeshFiles;
-				// Discard original block identifier and give the united mesh a standard identifier.
-				blockInfo.blockPath[1] = QStringLiteral("combined");
-			}
-		}
-		// Remove all other surface meshes from the data collection which might have been left over from a previous load operation.
-		std::vector<const DataObject*> meshesToDiscard;
-		for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
-			if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(obj)) {
-				if(mesh->identifier() != QStringLiteral("combined"))
-					meshesToDiscard.push_back(mesh);
-			}
-		}
-		for(const DataObject* obj : meshesToDiscard)
-			modifiedRequest.state.mutableData()->removeObject(obj);
-	}
-	else {
-		// When loading separate meshes, remove the combined mesh from the data collection, which might have been left over from a previous load operation.
-		for(const DataObject* obj : modifiedRequest.state.data()->objects()) {
-			if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(obj)) {
-				if(mesh->identifier() == QStringLiteral("combined")) {
-					modifiedRequest.state.mutableData()->removeObject(mesh);
-					break;
-				}
-			}
-		}
-	}
-
 	// Load each dataset referenced by the VTM file. 
 	Future<ExtendedLoadRequest> future = for_each(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
+
+		// We can skip empty datasets which are not associated with a VTK file.
+		if(blockInfo.location.isEmpty())
+			return Future<>::createImmediateEmpty();
 
 		// Set up the load request submitted to the FileSourceImporter.
 		request.dataBlockPrefix = blockInfo.blockPath.back();
 		request.blockInfo = blockInfo;
-		request.appendData = (blockInfo.multiBlockIndex != 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a multi-block dataset.
+		request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
 		// Retrieve the data file.
 		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockInfo.location).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
@@ -260,8 +226,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// which consists of detecting the file's format and delegating the file parsing to the corresponding FileSourceImporter class.
 
 				// Detect file format and create an importer for it.
-				// This currently works only for FileSourceImporters.
-				// Files handled by other kinds of importers will be skipped.
+				// This currently works only for FileSourceImporters. Files handled by other kinds of importers will be skipped.
+				// VTK dataset blocks using a file format not supported by OVITO are silently ignored.
 				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataset, request.executionContext, file));
 				if(!importer)
 					return Future<>::createImmediateEmpty();
@@ -289,8 +255,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 						// Concatenate status strings for the data blocks loaded so far.
 						QString statusString = lastStatus.text();
 						if(!request.state.status().text().isEmpty()) {
-							// Append only the status text of the last partial dataset when loading a split block.
-							if(request.blockInfo.multiBlockIndex == request.blockInfo.multiBlockCount - 1) {
+							// Append only the status text of the last partial dataset when loading a partial dataset.
+							if(request.blockInfo.pieceIndex < 0 || request.blockInfo.pieceIndex == request.blockInfo.pieceCount - 1) {
 								if(!statusString.isEmpty() && !statusString.endsWith(QChar('\n'))) statusString += QChar('\n');
 								statusString += request.state.status().text();
 							}

@@ -30,6 +30,7 @@
 namespace Ovito { namespace Grid {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTSGridImporter);
+IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -232,7 +233,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
 			xml.skipCurrentElement();
 		}
-		else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
+		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0) {
 			// Ignore contents of the <PointData> element.
 			xml.skipCurrentElement();
 		}
@@ -255,6 +256,20 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
 	// Call base implementation.
 	StandardFrameLoader::loadFile();
+}
+
+/******************************************************************************
+* Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+******************************************************************************/
+void GridParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
+{
+	// Clear existing voxel grid objects by resizing them to zero elements.
+	// This is mainly done to hide the grids in those animation frames in which the VTM file contains no corresponding data blocks.
+	for(const DataObject* grid : request.state.getObjects(VoxelGrid::OOClass())) {
+		VoxelGrid* mutableGrid = static_object_cast<VoxelGrid>(request.state.mutableData()->makeMutable(grid));
+		mutableGrid->setElementCount(0);
+		mutableGrid->setShape({0,0,0});
+	}
 }
 
 }	// End of namespace

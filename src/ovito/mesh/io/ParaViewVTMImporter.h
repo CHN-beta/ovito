@@ -37,17 +37,17 @@ class ParaViewVTMImporter; // defined below
  */
 struct OVITO_MESH_EXPORT ParaViewVTMBlockInfo
 {
-	/// The path to the block in the hierarchy of nested data blocks within the VTM file.
+	/// The named path to the block in the hierarchy of nested data blocks within the VTM file.
 	QStringList blockPath;
 
-	/// The URL of the referenced data file.
+	/// The URL of the referenced data file (may be empty).
 	QUrl location;
 
-	/// The index of this partial dataset which is part of a multi-block structure.
-	int multiBlockIndex = 0;
+	/// The index of this partial dataset if it is part of a piece-wise (parallel) dataset structure; otherwise -1.
+	int pieceIndex = -1;
 
-	/// The total number of partial datasets.
-	int multiBlockCount = 1;
+	/// The total number of partial datasets that are part of the same parallel dataset.
+	int pieceCount = 0;
 };
 
 /**
@@ -90,7 +90,7 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtm"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView Multi-Block VTM Files"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView Multi-Block Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

@@ -29,6 +29,7 @@
 namespace Ovito { namespace Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPMeshImporter);
+IMPLEMENT_OVITO_CLASS(MeshParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -229,7 +230,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				}
 			}
 		}
-		else if(xml.name().compare(QStringLiteral("Verts")) == 0 || xml.name().compare(QStringLiteral("Lines")) == 0 || xml.name().compare(QStringLiteral("Strips")) == 0) {
+		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("Verts")) == 0 || xml.name().compare(QStringLiteral("Lines")) == 0 || xml.name().compare(QStringLiteral("Strips")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}
@@ -530,6 +531,62 @@ void ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, size_t begin
 	else {
 		OVITO_ASSERT(false);
 		buffer->fillZero();
+	}
+}
+
+/******************************************************************************
+* Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+******************************************************************************/
+void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
+{
+	// Special handling of meshes that are grouped in the "Meshes" block of an Aspherix VTM file.
+	// This is specific bheavior for VTM files written by the Aspherix code.
+	if(vtmImporter.uniteMeshes()) {
+		// Count the total number of mesh data files referenced in the "Meshes" sections of the VTM file.
+		int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& block) {
+			return block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes");
+		});
+
+		// Special handling of legacy Aspherix files, which didn't have the "Meshes" group block.
+		bool isLegacyAspherixFormat = false;
+		if(numMeshFiles == 0) {
+			for(const ParaViewVTMBlockInfo& block : blockDatasets) {
+				// Verify that this VTM file was indeed written by Aspherix by looking for the mandatory "Particle" block.
+				if(block.blockPath.size() == 1 && block.blockPath[0] == QStringLiteral("Particles"))
+					isLegacyAspherixFormat = true;
+				else if(block.blockPath.size() == 1 && !block.location.isEmpty() && block.location.fileName().endsWith(".vtp"))
+					numMeshFiles++;
+			}
+		}
+
+		// Make all mesh data files a part of the same block. This will tell the VTP mesh file reader 
+		// to combine all mesh parts into a single SurfaceMesh object.
+		int index = 0;
+		for(ParaViewVTMBlockInfo& block : blockDatasets) {
+			if((!isLegacyAspherixFormat && block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes")) 
+				|| (isLegacyAspherixFormat && block.blockPath.size() == 1 && block.blockPath[0] != QStringLiteral("Particles") && !block.location.isEmpty() && block.location.fileName().endsWith(".vtp"))) {
+				block.pieceIndex = index++;
+				block.pieceCount = numMeshFiles;
+				// Discard original block identifier and give the united mesh a standard identifier.
+				block.blockPath[isLegacyAspherixFormat ? 0 : 1] = QStringLiteral("combined");
+			}
+		}
+		// Remove all other surface meshes from the data collection which might have been left over from a previous load operation.
+		std::vector<const DataObject*> meshesToDiscard;
+		for(const DataObject* obj : request.state.data()->objects()) {
+			if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(obj)) {
+				if(mesh->identifier() != QStringLiteral("combined"))
+					meshesToDiscard.push_back(mesh);
+			}
+		}
+		for(const DataObject* obj : meshesToDiscard)
+			request.state.mutableData()->removeObject(obj);
+	}
+	else {
+		// When loading separate meshes, remove the combined mesh from the data collection, which might have been left over from a previous load operation.
+		ConstDataObjectPath path = request.state.getObject<SurfaceMesh>(QStringLiteral("combined"));
+		if(path.size() == 1)
+			request.state.mutableData()->removeObject(path.leaf());
 	}
 }
 

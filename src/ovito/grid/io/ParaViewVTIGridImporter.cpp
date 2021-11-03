@@ -176,10 +176,6 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 
 			// Continue with parsing child elements.
 		}
-		else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
-			// Ignore contents of the <PointData> element.
-			xml.skipCurrentElement();
-		}
 		else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
 			// Parse <DataArray> child elements.
 			while(xml.readNextStartElement() && !isCanceled()) {
@@ -195,6 +191,10 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
 				}
 			}
+		}
+		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0) {
+			// Ignore contents of the <PointData> element.
+			xml.skipCurrentElement();
 		}
 		else {
 			xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));

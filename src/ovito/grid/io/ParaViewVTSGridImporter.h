@@ -26,6 +26,7 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
+#include <ovito/mesh/io/ParaViewVTMImporter.h>
 
 #include <QXmlStreamReader>
 
@@ -84,6 +85,24 @@ private:
 		/// Reads the frame data from the external file.
 		virtual void loadFile() override;
 	};
+};
+
+/**
+ * \brief Plugin filter used to customize the loading of VTM files referencing a ParaView VTS file.
+ *        This filter is needed to correctly load VTM/VTS file combinations written by the Aspherix simulation code.
+ */
+class GridParaViewVTMFileFilter : public ParaViewVTMFileFilter
+{
+	Q_OBJECT
+	OVITO_CLASS(GridParaViewVTMFileFilter)
+
+public:
+
+	/// Constructor.
+	Q_INVOKABLE GridParaViewVTMFileFilter() = default;
+
+	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 };
 
 }	// End of namespace

@@ -115,7 +115,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 
 			xml.skipCurrentElement();
 		}
-		else if(xml.name().compare(QStringLiteral("PointData")) == 0 || xml.name().compare(QStringLiteral("CellData")) == 0 || xml.name().compare(QStringLiteral("Cells")) == 0 || xml.name().compare(QStringLiteral("DataArray")) == 0) {
+		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0 || xml.name().compare(QStringLiteral("CellData")) == 0 || xml.name().compare(QStringLiteral("Cells")) == 0 || xml.name().compare(QStringLiteral("DataArray")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}

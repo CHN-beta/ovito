@@ -115,6 +115,11 @@ public:
 		return data() ? data()->getObject(objectClass) : nullptr;
 	}
 
+	/// \brief Finds all objects of the given type in the list of data objects stored in this flow state.
+	std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const {
+		return data() ? data()->getObjects(objectClass) : std::vector<const DataObject*>{};
+	}
+
 	/// \brief Finds an object of the given type in the list of data objects stored in this flow state.
 	template<class DataObjectClass>
 	const DataObjectClass* getObject() const {

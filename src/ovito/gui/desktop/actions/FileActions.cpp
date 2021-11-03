@@ -250,6 +250,9 @@ void WidgetActionManager::on_FileExport_triggered()
 		return a->fileFilterDescription() < b->fileFilterDescription();
 	});
 	for(const FileExporterClass* exporterClass : exporterTypes) {
+		// Skip exporters that want to remain hidden from the user.
+		if(exporterClass->fileFilterDescription().isEmpty())
+			continue;
 #ifndef Q_OS_WIN
 		filterStrings << QStringLiteral("%1 (%2)").arg(exporterClass->fileFilterDescription(), exporterClass->fileFilter());
 #else

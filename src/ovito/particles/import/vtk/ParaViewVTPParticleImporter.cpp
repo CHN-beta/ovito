@@ -169,7 +169,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 				}
 			}
 		}
-		else if(xml.name().compare(QLatin1String("CellData")) == 0 || xml.name().compare(QLatin1String("Lines")) == 0 || xml.name().compare(QLatin1String("Strips")) == 0 || xml.name().compare(QLatin1String("Polys")) == 0) {
+		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QLatin1String("CellData")) == 0 || xml.name().compare(QLatin1String("Lines")) == 0 || xml.name().compare(QLatin1String("Strips")) == 0 || xml.name().compare(QLatin1String("Polys")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
 		}
@@ -415,12 +415,14 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 		}
 	}
 
-	// Remove those datasets from the multi-block structure that represent particle shapes.
+	// The following is specific to VTM files written by the Aspherix code. 
+
+	// Remove those datasets from the multi-block structure that represent Aspherix particle shapes (group block "Convex shapes").
 	// Keep a list of these removed datasets for later to load them together with the particles dataset.
-	blockDatasets.erase(std::remove_if(blockDatasets.begin(), blockDatasets.end(), [this](const auto& blockInfo) {
-		if(blockInfo.blockPath.size() == 2 && blockInfo.blockPath[0] == QStringLiteral("Convex shapes")) {
+	blockDatasets.erase(boost::remove_if(blockDatasets, [this](const auto& block) {
+		if(block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Convex shapes")) {
 			// Store the particle type name and the URL of the type's shape file in the internal list.
-			_particleShapeFiles.emplace_back(blockInfo.blockPath[1], std::move(blockInfo.location));
+			_particleShapeFiles.emplace_back(block.blockPath[1], std::move(block.location));
 			return true;
 		}
 		return false;

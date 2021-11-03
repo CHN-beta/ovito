@@ -26,6 +26,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
+#include <ovito/mesh/io/ParaViewVTMImporter.h>
 
 #include <QXmlStreamReader>
 
@@ -47,7 +48,7 @@ class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
 		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
 
 		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("ParaView VTP PolyData Mesh Files"); }
+		virtual QString fileFilterDescription() const override { return tr("ParaView PolyData Mesh Files"); }
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
@@ -95,6 +96,24 @@ private:
 		/// Reads a <DataArray> element and returns it as an OVITO property.
 		PropertyPtr parseDataArray(QXmlStreamReader& xml, int convertToDataType = 0);
 	};
+};
+
+/**
+ * \brief Plugin filter used to customize the loading of VTM files referencing one or more ParaView VTP mesh files.
+ *        This filter is needed to correctly load VTM/VTP file combinations written by the Aspherix simulation code.
+ */
+class MeshParaViewVTMFileFilter : public ParaViewVTMFileFilter
+{
+	Q_OBJECT
+	OVITO_CLASS(MeshParaViewVTMFileFilter)
+
+public:
+
+	/// Constructor.
+	Q_INVOKABLE MeshParaViewVTMFileFilter() = default;
+
+	/// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 };
 
 }	// End of namespace
