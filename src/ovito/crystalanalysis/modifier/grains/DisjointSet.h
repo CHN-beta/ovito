@@ -46,13 +46,14 @@ public:
 	size_t find(size_t index) {
 
 		// Find root and make root as parent of i (path compression)
-		size_t parent = parents[index];
-		while(parent != parents[parent]) {
-			parent = parents[parent];
+		size_t x = parents[index];
+		while(x != parents[x]) {
+			parents[x] = parents[parents[x]];
+			x = parents[x];
 		}
 
-		parents[index] = parent;
-		return parent;
+		parents[index] = x;
+		return x;
 	}
 
 	// "Union" part of Union-Find.
