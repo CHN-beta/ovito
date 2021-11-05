@@ -139,7 +139,8 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 				if(xml.name().compare(QLatin1String("DataArray")) == 0) {
 					int vectorComponent = -1;
 					if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
-						ParaViewVTPMeshImporter::parseVTKDataArray(property, baseParticleIndex, property->size(), vectorComponent, xml);
+						if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseParticleIndex))
+							break;
 						if(xml.hasError() || isCanceled())
 							break;
 
@@ -210,7 +211,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 			PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, preserveExistingData, executionContext());
 			Quaternion* q = orientations.begin() + baseParticleIndex;
 			for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
-				*q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor);
+				*q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-9));
 			}
 			if(isCanceled())
 				return;
@@ -334,18 +335,22 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	OVITO_ASSERT(dataset()->undoStack().isRecordingThread() == false);
 
 	// According to Aspherix convention, particle type -1 has no shape.
-	if(particleType->numericId() < 0 || particleType->numericId() >= _particleShapeFiles.size())
+	if(particleType->numericId() < 0)
+		return;
+
+	// Determine the VTM block(s) that contain(s) the type's mesh geometry.
+	if(particleType->numericId() >= _particleShapeFiles.size())
 		return;
 
 	// Adopt the particle type name from the VTM file.
-	particleType->setName(_particleShapeFiles[particleType->numericId()].first);
+	particleType->setName(_particleShapeFiles[particleType->numericId()].blockPath[1]);
 
 	// Set radius of particle type to 1.0 to always get correct scaling of shape geometry.
 	particleType->setRadius(1.0);
 
 	// Fetch the shape geometry file, then continue in main thread.
 	// Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
-	const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].second;
+	const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].location;
 	Future<PipelineFlowState> stateFuture = Application::instance()->fileManager()->fetchUrl(*taskManager(), geometryFileUrl).then(particleType->executor(executionContext()), [particleType,dataSource=dataSource()](const FileHandle& fileHandle) {
 
 		// Detect geometry file format and create an importer for it.
@@ -395,7 +400,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	particleType->setShapeMesh(meshObj.take());
 	particleType->setShape(ParticlesVis::Mesh);
 
-	// Aspherix particle geometries seem no to have a consistent face winding order. 
+	// Aspherix particle geometries seem not to have a consistent face winding order. 
 	// Need to turn edge highlighting and backface culling off by default.
 	particleType->setShapeBackfaceCullingEnabled(false);
 	particleType->setHighlightShapeEdges(false);
@@ -420,9 +425,9 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 	// Remove those datasets from the multi-block structure that represent Aspherix particle shapes (group block "Convex shapes").
 	// Keep a list of these removed datasets for later to load them together with the particles dataset.
 	blockDatasets.erase(boost::remove_if(blockDatasets, [this](const auto& block) {
-		if(block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Convex shapes")) {
+		if(block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Convex shapes") && block.pieceIndex == -1) {
 			// Store the particle type name and the URL of the type's shape file in the internal list.
-			_particleShapeFiles.emplace_back(block.blockPath[1], std::move(block.location));
+			_particleShapeFiles.emplace_back(std::move(block));
 			return true;
 		}
 		return false;

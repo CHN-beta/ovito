@@ -71,12 +71,7 @@ public:
 	}
 
 	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO data buffer.
-	static void parseVTKDataArray(DataBuffer* buffer, size_t beginIndex, size_t endIndex, int vectorComponent, QXmlStreamReader& xml, const std::function<size_t(size_t)>& indexMapping = {});
-
-	/// Reads a <DataArray> element from a VTK file and stores it in the given OVITO data buffer.
-	static void parseVTKDataArray(DataBuffer* buffer, int vectorComponent, QXmlStreamReader& xml) {
-		parseVTKDataArray(buffer, 0, buffer->size(), vectorComponent, xml);
-	}
+	static bool parseVTKDataArray(DataBuffer* buffer, QXmlStreamReader& xml, int vectorComponent = -1, size_t destBaseIndex = 0);
 
 private:
 

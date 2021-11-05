@@ -70,7 +70,7 @@ public:
 	}
 
 	/// Stores the list of particle type names and corresponding shape file URLs to be loaded.
-	void setParticleShapeFileList(std::vector<std::pair<QString, QUrl>> particleShapeFiles) {
+	void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo> particleShapeFiles) {
 		_particleShapeFiles = std::move(particleShapeFiles);
 	}
 
@@ -82,7 +82,7 @@ private:
 	public:
 
 		/// Constructor.
-		FrameLoader(const LoadOperationRequest& request, std::vector<std::pair<QString, QUrl>> particleShapeFiles) 
+		FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles) 
 			: ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
 
 	protected:
@@ -98,12 +98,12 @@ private:
 
 		/// The list of particle type names and corresponding files containing the particle shapes.
 		/// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
-		std::vector<std::pair<QString, QUrl>> _particleShapeFiles;
+		std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 	};
 
 	/// The list of particle type names and corresponding files containing the particle shapes.
 	/// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
-	std::vector<std::pair<QString, QUrl>> _particleShapeFiles;
+	std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 
 /**
@@ -129,7 +129,7 @@ public:
 private:
 
 	/// The list of shape files for particle types. 
-	std::vector<std::pair<QString, QUrl>> _particleShapeFiles;
+	std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 
 }	// End of namespace

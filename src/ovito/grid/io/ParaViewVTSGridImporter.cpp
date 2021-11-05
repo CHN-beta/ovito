@@ -165,28 +165,17 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 			while(xml.readNextStartElement() && !isCanceled()) {
 				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 
-					// Check value of the 'type' attribute.
+					// Use the 'type' attribute to decide which data type to use for the OVITO property array.
 					QString dataTypeName = xml.attributes().value("type").toString();
-					int dataType;
-					if(dataTypeName == "Float32") {
-						OVITO_STATIC_ASSERT(sizeof(float) == 4);
+					int dataType = DataBuffer::Float;
+					if(dataTypeName == "Float32" || dataTypeName == "Float64") {
 						dataType = DataBuffer::Float;
 					}
-					else if(dataTypeName == "Float64") {
-						OVITO_STATIC_ASSERT(sizeof(double) == 8);
-						dataType = DataBuffer::Float;
-					}
-					else if(dataTypeName == "Int32") {
-						OVITO_STATIC_ASSERT(sizeof(qint32) == 4);
+					else if(dataTypeName == "Int32" || dataTypeName == "UInt32") {
 						dataType = DataBuffer::Int;
 					}
-					else if(dataTypeName == "Int64") {
-						OVITO_STATIC_ASSERT(sizeof(qint64) == 8);
+					else if(dataTypeName == "Int64" || dataTypeName == "UInt64") {
 						dataType = DataBuffer::Int64;
-					}
-					else {
-						xml.raiseError(tr("Current implementation supports only data arrays of type 'Int32', 'Int64', 'Float32' and 'Float64'. Please ask the OVITO developers to extend the capabilities of the file parser."));
-						break;
 					}
 
 					// Parse number of array components.
@@ -199,8 +188,8 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 					PropertyObject* property = gridObj->createProperty(name.toString(), dataType, numComponents, 0, false);
 					
 					// Parse values from XML file.
-					size_t pieceCount = pieceExtent.size(0) * pieceExtent.size(1) * pieceExtent.size(2);
-					ParaViewVTPMeshImporter::parseVTKDataArray(property, 0, pieceCount, -1, xml);
+					if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))
+						break;
 
 					if(xml.tokenType() != QXmlStreamReader::EndElement)
 						xml.skipCurrentElement();
@@ -218,7 +207,8 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 			// Load the VTK point coordinates into a Nx3 buffer of floats.
 			size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
 			DataBufferPtr buffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numberOfPoints, DataBuffer::Float, 3, 0, false);
-			ParaViewVTPMeshImporter::parseVTKDataArray(buffer, -1, xml);
+			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
+				break;
 
 			// Derive domain geometry from spacing between grid points.
 			ConstDataBufferAccess<Point3> points(buffer);

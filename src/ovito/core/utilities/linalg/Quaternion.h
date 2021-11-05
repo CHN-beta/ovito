@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -115,7 +115,7 @@ public:
 	/// \param tm A rotation matrix.
 	///
 	/// It is assumed that \a tm is a pure rotation matrix.
-	explicit QuaternionT(const Matrix_3<T>& tm);
+	explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = T(FLOATTYPE_EPSILON));
 
 	/// Casts the quanternion to another component type \a U.
 	template<typename U>
@@ -267,8 +267,8 @@ public:
 		T q1dot = q1.dot(q1);
 		T q2dot = q2.dot(q2);
 		if(q1dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON) && q2dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)) {
-			T q1norm = sqrt(q1dot);
-			T q2norm = sqrt(q2dot);
+			T q1norm = std::sqrt(q1dot);
+			T q2norm = std::sqrt(q2dot);
 			return interpolate(
 				QuaternionT(q1[0] / q1norm, q1[1] / q1norm, q1[2] / q1norm, q1[3] / q1norm),
 				QuaternionT(q2[0] / q2norm, q2[1] / q2norm, q2[2] / q2norm, q2[3] / q2norm),
@@ -317,10 +317,10 @@ namespace Ovito {
 
 // Initializes the quaternion from a rotation matrix.
 template<typename T>
-inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm)
+inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
 {
 	// Make sure this is a pure rotation matrix.
-    OVITO_ASSERT_MSG(tm.isRotationMatrix(), "Quaternion constructor" , "Quaternion::Quaternion(const Matrix3& tm) accepts only pure rotation matrices.");
+    OVITO_ASSERT_MSG(tm.isRotationMatrix(epsilon), "Quaternion constructor" , "Quaternion::Quaternion(const Matrix3& tm) accepts only pure rotation matrices.");
 
 	// Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
     // article "Quaternion Calculus and Fast Animation".
@@ -349,7 +349,7 @@ inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm)
 	}
 
 	// Since we represent a rotation, make sure we are unit length.
-	OVITO_ASSERT(std::abs(dot(*this)-T(1)) <= T(FLOATTYPE_EPSILON));
+	OVITO_ASSERT(std::abs(dot(*this) - T(1)) <= epsilon);
 }
 
 /// \brief Multiplies two quaternions.

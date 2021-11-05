@@ -182,13 +182,15 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 					int vectorComponent = -1;
 					if(PropertyObject* property = createGridPropertyForDataArray(gridObj, xml, vectorComponent)) {
-						ParaViewVTPMeshImporter::parseVTKDataArray(property, vectorComponent, xml);
+						if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent))
+							break;
 					}
 					if(xml.tokenType() != QXmlStreamReader::EndElement)
 						xml.skipCurrentElement();
 				}
 				else {
 					xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+					break;
 				}
 			}
 		}

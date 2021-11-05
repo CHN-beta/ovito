@@ -98,7 +98,8 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 
 			// Load the VTK data array into a Nx3 buffer of floats.
 			DataBufferPtr buffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numberOfPoints, DataBuffer::Float, 3, 0, false);
-			ParaViewVTPMeshImporter::parseVTKDataArray(buffer, -1, xml);
+			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
+				break;
 
 			// Compute bounding box of points.
 			Box3 bbox;
