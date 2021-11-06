@@ -347,7 +347,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 }
 
 template<typename F>
-inline void tokenizeString(const QString& str, F&& f) 
+static inline void tokenizeString(const QString& str, F&& f) 
 {
 	// Split string at whitespace characters.
 	QStringView textView(str);
@@ -469,7 +469,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 		size_t nvalues = 0;
 		if(dataType == "Float32") {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
+			tokenizeString(text, [&](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
 #else
 			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
 #endif
@@ -480,7 +480,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { float64Array.push_back(sv.toDouble()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toDouble(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float64Array.push_back(c.toDouble(sv)); });
 #endif
 			rawDataPtr = float64Array.data();
 			nvalues = float64Array.size();
@@ -489,7 +489,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int32Array.push_back(sv.toInt()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toInt(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int32Array.push_back(c.toInt(sv)); });
 #endif
 			rawDataPtr = int32Array.data();
 			nvalues = int32Array.size();
@@ -498,7 +498,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int32Array.push_back(sv.toUInt()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toUInt(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int32Array.push_back(c.toUInt(sv)); });
 #endif
 			rawDataPtr = int32Array.data();
 			nvalues = int32Array.size();
@@ -507,7 +507,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int64Array.push_back(sv.toLongLong()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toLongLong(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int64Array.push_back(c.toLongLong(sv)); });
 #endif
 			rawDataPtr = int64Array.data();
 			nvalues = int64Array.size();
@@ -516,7 +516,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int64Array.push_back(sv.toULongLong()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toULongLong(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int64Array.push_back(c.toULongLong(sv)); });
 #endif
 			rawDataPtr = int64Array.data();
 			nvalues = int64Array.size();
@@ -525,7 +525,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int16Array.push_back(sv.toShort()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toShort(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int16Array.push_back(c.toShort(sv)); });
 #endif
 			rawDataPtr = int16Array.data();
 			nvalues = int16Array.size();
@@ -534,7 +534,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
 			tokenizeString(text, [&](QStringView sv) { int8Array.push_back(sv.toShort()); });
 #else
-			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toShort(sv)); });
+			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { int8Array.push_back(c.toShort(sv)); });
 #endif
 			rawDataPtr = int8Array.data();
 			nvalues = int8Array.size();
