@@ -469,7 +469,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 		size_t nvalues = 0;
 		if(dataType == "Float32") {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 2)
-			tokenizeString(text, [&](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
+			tokenizeString(text, [&](QStringView sv) { float32Array.push_back(sv.toFloat(sv)); });
 #else
 			tokenizeString(text, [&,c=QLocale::c()](QStringView sv) { float32Array.push_back(c.toFloat(sv)); });
 #endif
