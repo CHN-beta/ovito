@@ -244,7 +244,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 	}
 
 	// Report number of particles to the user.
-	QString statusString = tr("Number of particles: %1").arg(particles()->elementCount());
+	QString statusString = tr("Particles: %1").arg(particles()->elementCount());
 	state().setStatus(std::move(statusString));
 
 	// Call base implementation to finalize the loaded particle data.
@@ -417,6 +417,8 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 		if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(obj)) {
 			ParticlesObject* mutableParticles = request.state.mutableData()->makeMutable(particles);
 			mutableParticles->setElementCount(0);
+			if(mutableParticles->bonds())
+				mutableParticles->makeBondsMutable()->setElementCount(0);
 		}
 	}
 

@@ -160,6 +160,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 	// Obtain particle-related properties and the vis element.
 	const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
 	const PropertyObject* particleRadiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
+	const PropertyObject* particleTransparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
 	const PropertyObject* particleColorProperty = nullptr;
 	const PropertyObject* particleTypeProperty = nullptr;
 	if(coloringMode() == ParticleBasedColoring && particleVis) {
@@ -219,8 +220,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			shadingMode(),
 			renderingQuality()));
 
-	// Make sure the primitive for the nodal vertices gets created if particles display is turned off.
-	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false);
+	// Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
+	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
 	if(renderNodalVertices && !visCache.vertices && visCache.cylinders)
 		visCache.cylinders.reset();
 

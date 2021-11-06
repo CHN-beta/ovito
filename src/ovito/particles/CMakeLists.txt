@@ -89,6 +89,7 @@ SET(SourceFiles
 	import/gromacs/GroImporter.cpp
 	import/gromacs/XTCImporter.cpp
 	import/vtk/ParaViewVTPParticleImporter.cpp
+	import/vtk/ParaViewVTPBondsImporter.cpp
 	export/ParticleExporter.cpp
 	export/FileColumnParticleExporter.cpp
 	export/vasp/POSCARExporter.cpp
