@@ -147,7 +147,7 @@ OVITO can read the following file formats:
     - :ref:`triangle meshes <scene_objects.triangle_mesh>`
              
   * - STL 
-    - Another popular format for storing triangle mesh geometry (see `here <https://en.wikipedia.org/wiki/STL_(file_format)>`__). Note that OVITO supports only STL files in ASCII format.  
+    - Another popular format for storing triangle mesh geometry (see `here <https://en.wikipedia.org/wiki/STL_(file_format)>`__). 
     - :ref:`triangle meshes <scene_objects.triangle_mesh>`
              
   * - PARCAS 
