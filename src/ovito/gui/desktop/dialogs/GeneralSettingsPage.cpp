@@ -130,23 +130,13 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	layout1->addWidget(updateGroupBox);
 	layout2 = new QGridLayout(updateGroupBox);
 
-	_enableUpdateChecks = new QCheckBox(tr("Auto-refresh news page from web server"), updateGroupBox);
+	_enableUpdateChecks = new QCheckBox(tr("Periodically check ovito.org website for program updates (and display notice when available)"), updateGroupBox);
 	_enableUpdateChecks->setToolTip(tr(
-			"<p>The news page is fetched from <i>www.ovito.org</i> and displayed on each program startup. "
-			"It contains information about new program updates when they become available.</p>"));
+			"<p>The news page is fetched from <i>www.ovito.org</i> on each program startup. "
+			"It displays information about new program releases as soon as they become available.</p>"));
 	layout2->addWidget(_enableUpdateChecks, 0, 0);
-	_enableUsageStatistics = new QCheckBox(tr("Send unique installation ID to web server"), updateGroupBox);
-	_enableUsageStatistics->setToolTip(tr(
-			"<p>Every installation of OVITO has a unique identifier, which is generated on first program start. "
-			"This option enables the transmission of the anonymous identifier to the web server to help the developers collect "
-			"program usage statistics.</p>"));
-	layout2->addWidget(_enableUsageStatistics, 1, 0);
 
 	_enableUpdateChecks->setChecked(settings.value("updates/check_for_updates", true).toBool());
-	_enableUsageStatistics->setChecked(settings.value("updates/transmit_id", true).toBool());
-
-	connect(_enableUpdateChecks, &QCheckBox::toggled, _enableUsageStatistics, &QCheckBox::setEnabled);
-	_enableUsageStatistics->setEnabled(_enableUpdateChecks->isChecked());
 #endif
 
 	layout1->addStretch();
@@ -231,7 +221,6 @@ void GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
-	settings.setValue("updates/transmit_id", _enableUsageStatistics->isChecked());
 #endif
 }
 

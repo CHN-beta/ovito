@@ -61,7 +61,6 @@ private:
 	QComboBox* _vulkanDevices;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
-	QCheckBox* _enableUsageStatistics;
 #endif
 };
 

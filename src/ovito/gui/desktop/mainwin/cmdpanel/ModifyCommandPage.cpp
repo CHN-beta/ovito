@@ -303,30 +303,6 @@ void ModifyCommandPage::createAboutPanel()
 
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	if(settings.value("updates/check_for_updates", true).toBool()) {
-		constexpr int INSTALLATION_ID_LENGTH = 18;
-
-		// Retrieve/generate unique installation id.
-		QByteArray id;
-		if(settings.value("updates/transmit_id", true).toBool()) {
-			if(settings.contains("installation/id")) {
-				id = QByteArray::fromHex(settings.value("installation/id").toString().toLatin1());
-				if(id == QByteArray(INSTALLATION_ID_LENGTH, '\0') || id.size() != INSTALLATION_ID_LENGTH)
-					id.clear();
-			}
-			if(id.isEmpty()) {
-				// Generate a new unique ID.
-				id.fill('0', INSTALLATION_ID_LENGTH);
-				std::random_device rdev;
-				std::uniform_int_distribution<> rdist(0, 0xFF);
-				for(auto& c : id)
-					c = (char)rdist(rdev);
-				settings.setValue("installation/id", QVariant::fromValue(QString::fromLatin1(id.toHex())));
-			}
-		}
-		else {
-			id.fill(0, INSTALLATION_ID_LENGTH);
-		}
-
 		QString operatingSystemString;
 #if defined(Q_OS_MACOS)
 		operatingSystemString = QStringLiteral("macosx");
@@ -346,12 +322,11 @@ void ModifyCommandPage::createAboutPanel()
 #endif
 
 		// Fetch newest web page from web server.
-		QString urlString = QString("https://www.ovito.org/appnews/v%1.%2.%3/%4?ovito=%5&OS=%6%7")
+		QString urlString = QString("https://www.ovito.org/appnews/v%1.%2.%3/%4?ovito=000000000000000000&OS=%5%6")
 				.arg(Application::applicationVersionMajor())
 				.arg(Application::applicationVersionMinor())
 				.arg(Application::applicationVersionRevision())
 				.arg(programEdition)
-				.arg(QString(id.toHex()))
 				.arg(operatingSystemString)
 				.arg(QT_POINTER_SIZE*8);
 		QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
