@@ -116,6 +116,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	SurfaceMeshAccess::vertex_index vertexBaseIndex = SurfaceMeshAccess::InvalidIndex;
 	SurfaceMeshAccess::face_index faceBaseIndex = SurfaceMeshAccess::InvalidIndex;
 	std::vector<PropertyPtr> cellDataArrays;
+	std::vector<PropertyPtr> pointDataArrays;
 
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
@@ -144,14 +145,6 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			// Create geometry elements.
 			vertexBaseIndex = mesh.createVertices(numberOfPoints);
 			// Continue by parsing child elements.
-		}
-		else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
-			// Parse child elements.
-			while(xml.readNextStartElement() && !isCanceled()) {
-				PropertyPtr property = parseDataArray(xml);
-				if(!property)
-					break;
-			}
 		}
 		else if(xml.name().compare(QStringLiteral("Points")) == 0) {
 			// Parse child <DataArray> element containing the point coordinates.
@@ -231,6 +224,20 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				}
 			}
 		}
+		else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
+			// Parse child elements.
+			while(xml.readNextStartElement() && !isCanceled()) {
+				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
+					if(PropertyPtr property = parseDataArray(xml))
+						pointDataArrays.push_back(std::move(property));
+					else
+						break;
+				}
+				else {
+					xml.skipCurrentElement();
+				}
+			}
+		}
 		else if(xml.name().compare(QStringLiteral("FieldData")) == 0 || xml.name().compare(QStringLiteral("Verts")) == 0 || xml.name().compare(QStringLiteral("Lines")) == 0 || xml.name().compare(QStringLiteral("Strips")) == 0) {
 			// Do nothing. Ignore element contents.
 			xml.skipCurrentElement();
@@ -269,6 +276,29 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 				if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
 					existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
 				}
+			}
+		}
+	}
+
+	// Add point data arrays to the mesh vertices.
+	for(auto& property : pointDataArrays) {
+		OVITO_ASSERT(property->size() == numberOfPoints);
+		// If it is the first partial dataset we are loading, or if we are loading the mesh in once piece, then 
+		// the loaded property arrays can simply be added to the mesh vertices.
+		// Otherwise, if we are loading subsequent parts of the distributed mesh, 
+		// then the loaded property values must be copied into the correct subrange of the existing
+		// vertex properties.
+		if(!loadRequest().appendData) {
+			OVITO_ASSERT(property->size() == mesh.vertexCount());
+			OVITO_ASSERT(vertexBaseIndex == 0);
+			mesh.addVertexProperty(std::move(property));
+		}
+		else {
+			PropertyObject* existingProperty = property->type() != SurfaceMeshVertices::UserProperty 
+				? mesh.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type())) 
+				: mesh.mutableVertexProperty(property->name());
+			if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
+				existingProperty->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
 			}
 		}
 	}

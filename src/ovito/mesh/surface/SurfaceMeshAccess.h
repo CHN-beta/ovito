@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -504,6 +504,16 @@ public:
     /// Returns one of the standard vertex properties (or null if the property is not defined).
     const PropertyObject* vertexProperty(SurfaceMeshVertices::Type ptype) const {
         return _vertices.getProperty(ptype);
+    }
+
+    /// Returns one of the standard vertex properties (or null if the property is not defined).
+    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype) {
+        return mutableVertices().getMutableProperty(ptype);
+    }
+
+    /// Returns a user vertex property (or null if the property is not defined).
+    PropertyObject* mutableVertexProperty(const QString& name) {
+        return mutableVertices().getMutableProperty(name);
     }
 
     /// Returns one of the standard face properties (or null if the property is not defined).
