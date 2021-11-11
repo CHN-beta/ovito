@@ -111,13 +111,13 @@ Q_SIGNALS:
 protected:
 
 	/// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
-	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
-	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) override;
+	virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// This method is invoked after the change of the selection set is complete. It emits the selectionChangeComplete() signal.
 	Q_INVOKABLE void onSelectionChangeCompleted();

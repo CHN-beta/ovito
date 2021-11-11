@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentE
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField), _comboBox(new QComboBox())
 {
 	connect(comboBox(), (void (QComboBox::*)(int))&QComboBox::activated, this, &VariantComboBoxParameterUI::updatePropertyValue);
@@ -85,7 +85,7 @@ void VariantComboBoxParameterUI::updateUI()
             }
         }
         else if(isPropertyFieldUI()) {
-            val = editObject()->getPropertyFieldValue(*propertyField());
+            val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT_MSG(val.isValid(), "VariantComboBoxParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
         }
         else return;
@@ -125,7 +125,7 @@ void VariantComboBoxParameterUI::updatePropertyValue()
                 }
             }
             else if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(*propertyField(), newValue);
+                editor()->changePropertyFieldValue(propertyField(), newValue);
             }
 
 			Q_EMIT valueEntered();

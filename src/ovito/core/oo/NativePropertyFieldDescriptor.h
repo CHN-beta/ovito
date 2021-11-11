@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,9 +46,9 @@ public:
 	// property field. Do not use this class directly but use the
 	// SET_PROPERTY_FIELD_UNITS macro instead.
 	struct PropertyFieldUnitsSetter : public NumericalParameterDescriptor {
-		PropertyFieldUnitsSetter(NativePropertyFieldDescriptor& propfield, const QMetaObject* parameterUnitType, FloatType minValue = FLOATTYPE_MIN, FloatType maxValue = FLOATTYPE_MAX) {
-			OVITO_ASSERT(propfield._parameterInfo == nullptr);
-			propfield._parameterInfo = this;
+		PropertyFieldUnitsSetter(NativePropertyFieldDescriptor* propfield, const QMetaObject* parameterUnitType, FloatType minValue = FLOATTYPE_MIN, FloatType maxValue = FLOATTYPE_MAX) {
+			OVITO_ASSERT(propfield->_parameterInfo == nullptr);
+			propfield->_parameterInfo = this;
 			this->unitType = parameterUnitType;
 			this->minValue = minValue;
 			this->maxValue = maxValue;
@@ -59,9 +59,9 @@ public:
 	// property field. Do not use this class directly but use the
 	// SET_PROPERTY_FIELD_LABEL macro instead.
 	struct PropertyFieldDisplayNameSetter {
-		PropertyFieldDisplayNameSetter(NativePropertyFieldDescriptor& propfield, const QString& label) {
-			OVITO_ASSERT(propfield._displayName.isEmpty());
-			propfield._displayName = label;
+		PropertyFieldDisplayNameSetter(NativePropertyFieldDescriptor* propfield, const QString& label) {
+			OVITO_ASSERT(propfield->_displayName.isEmpty());
+			propfield->_displayName = label;
 		}
 	};
 
@@ -69,9 +69,9 @@ public:
 	// for a property field every time its value changes. Do not use this class directly but use the
 	// SET_PROPERTY_FIELD_CHANGE_EVENT macro instead.
 	struct PropertyFieldChangeEventSetter {
-		PropertyFieldChangeEventSetter(NativePropertyFieldDescriptor& propfield, ReferenceEvent::Type eventType) {
-			OVITO_ASSERT(propfield._extraChangeEventType == 0);
-			propfield._extraChangeEventType = eventType;
+		PropertyFieldChangeEventSetter(NativePropertyFieldDescriptor* propfield, ReferenceEvent::Type eventType) {
+			OVITO_ASSERT(propfield->_extraChangeEventType == 0);
+			propfield->_extraChangeEventType = eventType;
 		}
 	};
 };
@@ -136,7 +136,7 @@ public:
 		using __##name##_target_object_type = Ovito::ReferenceField<type>::target_object_type; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static inline Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { return name##__propdescr_instance; } \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { return &name##__propdescr_instance; } \
 		Ovito::ReferenceField<type> _##name; \
 		inline decltype(std::declval<Ovito::ReferenceField<type>>().get()) name() const { return _##name.get(); } \
 	private:
@@ -174,7 +174,7 @@ public:
 		using __##name##_target_object_type = Ovito::VectorReferenceField<type>::target_object_type; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { return name##__propdescr_instance; } \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { return &name##__propdescr_instance; } \
 		Ovito::VectorReferenceField<type> _##name; \
 		inline decltype(std::declval<Ovito::VectorReferenceField<type>>().targets()) name() const { return _##name.targets(); } \
 	private:
@@ -251,8 +251,8 @@ public:
 		enum { __##name##_flags = flags }; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { \
-			return name##__propdescr_instance; \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
+			return &name##__propdescr_instance; \
 		} \
 		Ovito::PropertyField<type> _##name; \
 		const type& name() const { return _##name; } \
@@ -292,7 +292,9 @@ public:
 #define DECLARE_MODIFIABLE_PROPERTY_FIELD(type, name, setterName) \
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, name, setterName, PROPERTY_FIELD_NO_FLAGS)
 
-/// Adds a property field to a class definition which is not serializble .
+/***************** Runtime property fields *******************/
+
+/// Adds a property field to a class definition which is not serializable.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
@@ -312,8 +314,8 @@ public:
 		enum { __##name##_flags = flags }; \
 		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
 	public: \
-		static Ovito::NativePropertyFieldDescriptor& PROPERTY_FIELD(name) { \
-			return name##__propdescr_instance; \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
+			return &name##__propdescr_instance; \
 		} \
 		Ovito::RuntimePropertyField<type> _##name; \
 		const type& name() const { return _##name; } \
@@ -327,5 +329,57 @@ public:
 /// The third parameter is the name of the setter method to be created for this property field.
 #define DECLARE_RUNTIME_PROPERTY_FIELD(type, name, setterName) \
 	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, name, setterName, PROPERTY_FIELD_NO_FLAGS)
+
+
+/***************** Shadow property fields *******************/
+
+/// This macros returns a reference to the PropertyFieldDescriptor of a shadow property field.
+#define SHADOW_PROPERTY_FIELD(RefMakerClassPlusStorageFieldName) \
+		RefMakerClassPlusStorageFieldName##__shadow__propdescr()
+		
+/// Adds the capability to take a snapshot to an existing property field of a class.
+/// A shadow property field is created by this macro, which holds a copy of the original property field value.
+#define DECLARE_SHADOW_PROPERTY_FIELD(name) \
+	private: \
+		static void __save_propfield_##name##__shadow(const RefMaker* obj, SaveStream& stream) { \
+			static_cast<const ovito_class*>(obj)->_##name##__shadow.saveToStream(stream); \
+		} \
+		static void __load_propfield_##name##__shadow(RefMaker* obj, LoadStream& stream) { \
+			static_cast<ovito_class*>(obj)->_##name##__shadow.loadFromStream(stream); \
+		} \
+		static void __copy_propfield_##name##__shadow(RefMaker* obj, const RefMaker* other) { \
+			if(static_cast<const ovito_class*>(other)->_##name##__shadow.hasSnapshot()) \
+				static_cast<ovito_class*>(obj)->_##name##__shadow.takeSnapshot(static_cast<const ovito_class*>(other)->_##name##__shadow.get()); \
+		} \
+		static void __take_snapshot_propfield_##name##__shadow(RefMaker* obj) { \
+			static_cast<ovito_class*>(obj)->_##name##__shadow.takeSnapshot(static_cast<const ovito_class*>(obj)->_##name.get()); \
+		} \
+		static void __restore_snapshot_propfield_##name##__shadow(const RefMaker* source, RefMaker* target) { \
+			if(static_cast<const ovito_class*>(source)->_##name##__shadow.hasSnapshot()) \
+				static_cast<ovito_class*>(target)->_##name.set(target, PROPERTY_FIELD(name), static_cast<const ovito_class*>(source)->_##name##__shadow.get()); \
+		} \
+		enum { __##name##__shadow_flags = PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE }; \
+		static Ovito::NativePropertyFieldDescriptor name##__shadow__propdescr_instance; \
+	public: \
+		static inline Ovito::NativePropertyFieldDescriptor* SHADOW_PROPERTY_FIELD(name) { \
+			return &name##__shadow__propdescr_instance; \
+		} \
+		Ovito::ShadowPropertyField<decltype(_##name)::property_type> _##name##__shadow; \
+	private:
+
+#define DEFINE_SHADOW_PROPERTY_FIELD(classname, fieldname) \
+	Ovito::NativePropertyFieldDescriptor classname::fieldname##__shadow__propdescr_instance( \
+			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
+			#fieldname "__shadow", \
+			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##__shadow_flags), \
+			&classname::__copy_propfield_##fieldname##__shadow, \
+			nullptr, \
+			nullptr, \
+			&classname::__save_propfield_##fieldname##__shadow, \
+			&classname::__load_propfield_##fieldname##__shadow, \
+			&classname::__take_snapshot_propfield_##fieldname##__shadow, \
+			&classname::__restore_snapshot_propfield_##fieldname##__shadow \
+		);
+
 
 }	// End of namespace

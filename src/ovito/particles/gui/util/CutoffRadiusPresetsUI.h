@@ -55,7 +55,7 @@ class OVITO_PARTICLESGUI_EXPORT CutoffRadiusPresetsUI : public PropertyParameter
 public:
 
 	/// Constructor for a PropertyField property.
-	CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~CutoffRadiusPresetsUI();

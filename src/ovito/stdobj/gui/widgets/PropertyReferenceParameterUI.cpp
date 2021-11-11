@@ -54,7 +54,7 @@ PropertyReferenceParameterUI::PropertyReferenceParameterUI(PropertiesEditor* par
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyReferenceParameterUI::PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty) :
+PropertyReferenceParameterUI::PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty) :
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new PropertySelectionComboBox(containerClass)),
 	_componentsMode(componentsMode),
@@ -144,7 +144,7 @@ PropertyReference PropertyReferenceParameterUI::getPropertyReference()
 			return val.value<PropertyReference>();
 		}
 		else if(isPropertyFieldUI()) {
-			QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+			QVariant val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", QString("The property field of object class %1 is not of type PropertyReference.").arg(editObject()->metaObject()->className()).toLocal8Bit().constData());
 			return val.value<PropertyReference>();
 		}
@@ -288,11 +288,11 @@ void PropertyReferenceParameterUI::updatePropertyValue()
 			else if(isPropertyFieldUI()) {
 
 				// Check if new value differs from old value.
-				QVariant oldval = editObject()->getPropertyFieldValue(*propertyField());
+				QVariant oldval = editObject()->getPropertyFieldValue(propertyField());
 				if(pref == oldval.value<PropertyReference>())
 					return;
 
-				editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(pref));
+				editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(pref));
 			}
 			else return;
 

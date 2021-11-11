@@ -106,7 +106,7 @@ void PolyhedralTemplateMatchingModifier::initializeObject(ExecutionContext execu
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(rmsdCutoff)) {
 		// Immediately update viewports when RMSD cutoff has been changed by the user.

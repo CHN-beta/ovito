@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -130,7 +130,7 @@ IMPLEMENT_OVITO_CLASS(CutoffRadiusPresetsUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	_comboBox = new QComboBox();
@@ -196,7 +196,7 @@ void CutoffRadiusPresetsUI::onSelect(int index)
 	if(r != 0) {
 		if(editObject() && propertyField()) {
 			undoableTransaction(tr("Change cutoff radius"), [this, r]() {
-				editObject()->setPropertyFieldValue(*propertyField(), r);
+				editObject()->setPropertyFieldValue(propertyField(), r);
 			});
 			Q_EMIT valueEntered();
 		}

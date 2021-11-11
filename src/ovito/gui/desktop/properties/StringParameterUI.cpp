@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const char*
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField), _textBox(nullptr)
 {
 	// Create UI widget.
@@ -118,7 +118,7 @@ void StringParameterUI::updateUI()
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid());
 		}
 		if(qobject_cast<QLineEdit*>(textBox()))
@@ -167,7 +167,7 @@ void StringParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), text);
+				editor()->changePropertyFieldValue(propertyField(), text);
 			}
 			Q_EMIT valueEntered();
 		});

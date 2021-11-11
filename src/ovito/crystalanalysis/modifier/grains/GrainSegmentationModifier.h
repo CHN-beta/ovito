@@ -78,7 +78,7 @@ public:
 protected:
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
 	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;

@@ -284,7 +284,7 @@ Q_SIGNALS:
 protected:
 
 	/// \brief Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// This method is called when the pipeline scene node for the FileSource is created.
 	/// It can be overwritten by importer subclasses to customize the initial pipeline, add modifiers, etc.

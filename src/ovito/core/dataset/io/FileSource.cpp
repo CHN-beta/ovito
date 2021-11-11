@@ -621,7 +621,7 @@ QString FileSource::objectTitle() const
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void FileSource::propertyChanged(const PropertyFieldDescriptor& field)
+void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(playbackSpeedNumerator) ||
 			field == PROPERTY_FIELD(playbackSpeedDenominator) ||

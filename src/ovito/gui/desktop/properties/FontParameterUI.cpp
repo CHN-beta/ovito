@@ -33,10 +33,10 @@ IMPLEMENT_OVITO_CLASS(FontParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField)
+FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 	: PropertyParameterUI(parentEditor, propField)
 {
-	_label = new QLabel(propField.displayName() + ":");
+	_label = new QLabel(propField->displayName() + ":");
 	_fontPicker = new QPushButton();
 	connect(_fontPicker.data(), &QPushButton::clicked, this, &FontParameterUI::onButtonClicked);
 }
@@ -77,7 +77,7 @@ void FontParameterUI::updateUI()
 {
 	if(editObject() && fontPicker()) {
 		if(isPropertyFieldUI()) {
-			QVariant currentValue = editObject()->getPropertyFieldValue(*propertyField());
+			QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(currentValue.isValid());
 			if(currentValue.canConvert<QFont>())
 				fontPicker()->setText(currentValue.value<QFont>().family());
@@ -108,7 +108,7 @@ void FontParameterUI::setEnabled(bool enabled)
 void FontParameterUI::onButtonClicked()
 {
 	if(fontPicker() && editObject() && isPropertyFieldUI()) {
-		QVariant currentValue = editObject()->getPropertyFieldValue(*propertyField());
+		QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
 		OVITO_ASSERT(currentValue.isValid());
 		QFont currentFont;
 		if(currentValue.canConvert<QFont>())
@@ -117,7 +117,7 @@ void FontParameterUI::onButtonClicked()
 		QFont font = FontSelectionDialog::getFont(&ok, currentFont, fontPicker()->window());
 		if(ok && font != currentFont) {
 			undoableTransaction(tr("Change font"), [this, &font]() {
-				editor()->changePropertyFieldValue(*propertyField(), QVariant::fromValue(font));
+				editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue(font));
 				Q_EMIT valueEntered();
 			});
 		}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const char* p
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	NumericalParameterUI(parentEditor, propField, &FloatParameterUnit::staticMetaObject)
 {
 }
@@ -63,7 +63,7 @@ void FloatParameterUI::updatePropertyValue()
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			editor()->changePropertyFieldValue(*propertyField(), spinner()->floatValue());
+			editor()->changePropertyFieldValue(propertyField(), spinner()->floatValue());
 		}
 		Q_EMIT valueEntered();
 	}
@@ -90,7 +90,7 @@ void FloatParameterUI::updateUI()
 					}
 				}
 				else if(isPropertyFieldUI()) {
-					val = editObject()->getPropertyFieldValue(*propertyField());
+					val = editObject()->getPropertyFieldValue(propertyField());
 					OVITO_ASSERT(val.isValid());
 				}
 				spinner()->setFloatValue(val.value<FloatType>());

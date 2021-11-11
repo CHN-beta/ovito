@@ -259,19 +259,19 @@ Q_SIGNALS:
 protected:
 
 	/// Is called when the value of a property field of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Is called when a RefTarget referenced by this object has generated an event.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been added to a VectorReferenceField.
-	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
 
 	/// Is called when a RefTarget has been removed from a VectorReferenceField.
-	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) override;
+	virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
 protected:
 

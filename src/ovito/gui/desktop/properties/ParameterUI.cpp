@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ ParameterUI::ParameterUI(PropertiesEditor* parent) : RefMaker(nullptr)
 * Constructor for a Qt property.
 ******************************************************************************/
 PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* propertyName) :
-	ParameterUI(parent), _propertyName(propertyName), _propField(nullptr)
+	ParameterUI(parent), _propertyName(propertyName)
 {
 	OVITO_ASSERT(propertyName);
 }
@@ -68,11 +68,11 @@ PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* p
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor& propField) :
-	ParameterUI(parent), _propertyName(nullptr), _propField(&propField)
+PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField) :
+	ParameterUI(parent), _propField(propField)
 {
 	// If requested, save parameter value to application's settings store each time the user changes it.
-	if(propField.flags().testFlag(PROPERTY_FIELD_MEMORIZE))
+	if(propField->flags().testFlag(PROPERTY_FIELD_MEMORIZE))
 		connect(this, &PropertyParameterUI::valueEntered, this, &PropertyParameterUI::memorizeDefaultParameterValue);
 }
 
@@ -86,7 +86,7 @@ bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent
 			if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
 				// The parameter value object stored in the reference field of the edited object
 				// has been replaced by another one, so update our own reference to the parameter value object.
-				if(editObject()->getReferenceFieldTarget(*propertyField()) != parameterObject())
+				if(editObject()->getReferenceFieldTarget(propertyField()) != parameterObject())
 					resetUI();
 			}
 		}
@@ -111,10 +111,10 @@ void PropertyParameterUI::resetUI()
 {
 	if(editObject() && isReferenceFieldUI()) {
 		OVITO_CHECK_OBJECT_POINTER(editObject());
-		OVITO_ASSERT(editObject() == NULL || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
+		OVITO_ASSERT(editObject() == nullptr || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
 
 		// Bind this parameter UI to the parameter object of the new edited object.
-		setParameterObject(editObject()->getReferenceFieldTarget(*propertyField()));
+		setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
 	}
 	else {
 		setParameterObject(nullptr);

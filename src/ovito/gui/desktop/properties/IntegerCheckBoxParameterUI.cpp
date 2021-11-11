@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,14 +48,14 @@ IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentE
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, int uncheckedValue, int checkedValue) :
+IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue) :
 	PropertyParameterUI(parentEditor, propField),
 	_uncheckedValue(uncheckedValue),
 	_checkedValue(checkedValue)
 {
 	OVITO_ASSERT(uncheckedValue != checkedValue);
 	// Create UI widget.
-	_checkBox = new QCheckBox(propField.displayName());
+	_checkBox = new QCheckBox(propField->displayName());
 	connect(_checkBox.data(), &QCheckBox::clicked, this, &IntegerCheckBoxParameterUI::updatePropertyValue);
 }
 
@@ -113,7 +113,7 @@ void IntegerCheckBoxParameterUI::updateUI()
 				value = val.toInt();
 			}
 			else if(isPropertyFieldUI()) {
-				QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+				QVariant val = editObject()->getPropertyFieldValue(propertyField());
 				OVITO_ASSERT(val.isValid());
 				value = val.toInt();
 			}
@@ -158,7 +158,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), value);
+				editor()->changePropertyFieldValue(propertyField(), value);
 			}
 			Q_EMIT valueEntered();
 		});

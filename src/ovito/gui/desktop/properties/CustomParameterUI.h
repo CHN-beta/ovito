@@ -45,7 +45,7 @@ public:
 			const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());
 
 	/// Constructor for a PropertyField property.
-	CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QWidget* widget,
+	CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
 			const std::function<void(const QVariant&)>& updateWidgetFunction,
 			const std::function<QVariant()>& updatePropertyFunction,
 			const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());

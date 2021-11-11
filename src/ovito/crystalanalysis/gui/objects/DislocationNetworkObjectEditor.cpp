@@ -49,7 +49,7 @@ void DislocationNetworkObjectEditor::createUI(const RolloutInsertionParameters& 
 	class CustomRefTargetListParameterUI : public RefTargetListParameterUI {
 	public:
 
-		CustomRefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams)
+		CustomRefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams)
 			: RefTargetListParameterUI(parentEditor, refField, rolloutParams, &MicrostructurePhaseEditor::OOClass()) {}
 
 	protected:

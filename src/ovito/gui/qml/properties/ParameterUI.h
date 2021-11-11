@@ -117,7 +117,7 @@ Q_SIGNALS:
 protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// This method is called when a reference target changes.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;

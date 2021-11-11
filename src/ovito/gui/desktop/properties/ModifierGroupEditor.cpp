@@ -41,7 +41,7 @@ void ModifierGroupEditor::createUI(const RolloutInsertionParameters& rolloutPara
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ModifierGroupEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ModifierGroupEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 	if(field == PROPERTY_FIELD(editObject)) {

@@ -421,7 +421,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(viewNode)) {
 		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
@@ -444,7 +444,7 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField.
 ******************************************************************************/
-void Viewport::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void Viewport::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
 		updateViewport();
@@ -455,7 +455,7 @@ void Viewport::referenceInserted(const PropertyFieldDescriptor& field, RefTarget
 /******************************************************************************
 * Is called when a RefTarget has been removed from a VectorReferenceField.
 ******************************************************************************/
-void Viewport::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void Viewport::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(overlays) || field == PROPERTY_FIELD(underlays)) {
 		updateViewport();
@@ -466,7 +466,7 @@ void Viewport::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget*
 /******************************************************************************
 * Is called when the value of a property field of this object has changed.
 ******************************************************************************/
-void Viewport::propertyChanged(const PropertyFieldDescriptor& field)
+void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	RefTarget::propertyChanged(field);
 	if(field == PROPERTY_FIELD(viewType)) {

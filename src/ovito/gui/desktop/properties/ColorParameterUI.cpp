@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,10 +34,10 @@ IMPLEMENT_OVITO_CLASS(ColorParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField)
+ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 	: PropertyParameterUI(parentEditor, propField)
 {
-	_label = new QLabel(propField.displayName() + ":");
+	_label = new QLabel(propField->displayName() + ":");
 	_colorPicker = new ColorPickerWidget();
 	_colorPicker->setObjectName("colorButton");
 	connect(_colorPicker.data(), &ColorPickerWidget::colorChanged, this, &ColorParameterUI::onColorPickerChanged);
@@ -89,7 +89,7 @@ void ColorParameterUI::updateUI()
 				colorPicker()->setColor(ctrl->currentColorValue());
 		}
 		else if(isPropertyFieldUI()) {
-			QVariant currentValue = editObject()->getPropertyFieldValue(*propertyField());
+			QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(currentValue.isValid());
 			if(currentValue.canConvert<Color>()) {
 				colorPicker()->setColor(currentValue.value<Color>());
@@ -128,7 +128,7 @@ void ColorParameterUI::onColorPickerChanged()
 					ctrl->setCurrentColorValue(colorPicker()->color());
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
+				editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
 			}
 			Q_EMIT valueEntered();
 		});

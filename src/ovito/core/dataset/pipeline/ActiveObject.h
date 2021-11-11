@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ Q_SIGNALS:
 protected:
 
 	/// Is called when the value of a non-animatable property field of this RefMaker has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 #ifdef OVITO_QML_GUI
 	/// Sends an event to all dependents of this RefTarget.
@@ -111,9 +111,11 @@ private:
 
 	/// Controls whether the object is currently enabled.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+	DECLARE_SHADOW_PROPERTY_FIELD(isEnabled);
 
 	/// The user-defined title of this object.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+	DECLARE_SHADOW_PROPERTY_FIELD(title);
 
 	/// The current status of this object.
 	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);

@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(GSDImporter, roundingResolution, IntegerParam
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void GSDImporter::propertyChanged(const PropertyFieldDescriptor& field)
+void GSDImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	ParticleImporter::propertyChanged(field);
 

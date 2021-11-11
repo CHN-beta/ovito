@@ -42,7 +42,7 @@ public:
 	BooleanActionParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QAction* action);
 
 	/// Constructor for a PropertyField property.
-	BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QAction* action);
+	BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QAction* action);
 
 	/// This returns the action associated with this parameter UI.
 	QAction* action() const { return _action; }

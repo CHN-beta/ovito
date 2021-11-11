@@ -49,6 +49,12 @@ DEFINE_PROPERTY_FIELD(SurfaceMeshVis, colorMappingMode);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, capTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceColorMapping);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, capColor);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, showCap);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColor, "Surface color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capColor, "Cap color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, showCap, "Show cap polygons");
@@ -99,7 +105,7 @@ void SurfaceMeshVis::initializeObject(ExecutionContext executionContext)
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor& field)
+void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(smoothShading) || field == PROPERTY_FIELD(reverseOrientation) || field == PROPERTY_FIELD(colorMappingMode)) {
 		// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
@@ -125,7 +131,7 @@ void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor& field)
 bool SurfaceMeshVis::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(source == surfaceColorMapping() && event.type() == ReferenceEvent::TargetChanged) {
-		if(static_cast<const TargetChangedEvent&>(event).field() == &PROPERTY_FIELD(PropertyColorMapping::sourceProperty)) {
+		if(static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(PropertyColorMapping::sourceProperty)) {
 			// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
 			invalidateTransformedObjects();
 		}
@@ -136,7 +142,7 @@ bool SurfaceMeshVis::referenceEvent(RefTarget* source, const ReferenceEvent& eve
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void SurfaceMeshVis::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void SurfaceMeshVis::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(surfaceColorMapping)) {
 		// This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.

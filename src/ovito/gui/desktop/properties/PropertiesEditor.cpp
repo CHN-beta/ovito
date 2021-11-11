@@ -183,7 +183,7 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(editObject)) {
 		setDataset(editObject() ? editObject()->dataset() : nullptr);
@@ -200,7 +200,7 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor& field, R
 /******************************************************************************
 * Changes the value of a non-animatable property field of the object being edited.
 ******************************************************************************/
-void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue)
+void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue)
 {
 	if(editObject())
 		editObject()->setPropertyFieldValue(field, newValue);

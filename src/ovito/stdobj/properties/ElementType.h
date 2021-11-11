@@ -90,14 +90,17 @@ protected:
 
 	/// The human-readable name assigned to this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, name, setName);
+	DECLARE_SHADOW_PROPERTY_FIELD(name);
 
 	/// Stores the visualization color of the type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(color);
 
 	/// Stores whether this type is "enabled" or "disabled".
 	/// This makes only sense in some sorts of types. For example, structure identification modifiers
 	/// use this field to determine which structural types they should look for.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enabled, setEnabled);
+	DECLARE_SHADOW_PROPERTY_FIELD(enabled);
 
 	/// Stores a reference to the property object this element type belongs to.
 	DECLARE_PROPERTY_FIELD(PropertyReference, ownerProperty);

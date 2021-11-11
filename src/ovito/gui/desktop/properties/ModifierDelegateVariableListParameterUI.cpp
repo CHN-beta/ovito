@@ -110,20 +110,20 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
 	if(source == editObject()) {
 		if(event.type() == ReferenceEvent::ReferenceAdded) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
+			if(refevent.field() == PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
 				_delegates.insert(this, PROPERTY_FIELD(delegates), refevent.index(), static_object_cast<ModifierDelegate>(refevent.newTarget()));
 			}
 		}
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
+			if(refevent.field() == PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
 				OVITO_ASSERT(refevent.oldTarget() == delegates()[refevent.index()]);
 				_delegates.remove(this, PROPERTY_FIELD(delegates), refevent.index());
 			}
 		}
 		else if(event.type() == ReferenceEvent::ReferenceChanged) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refevent.field() == &PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
+			if(refevent.field() == PROPERTY_FIELD(MultiDelegatingModifier::delegates)) {
 				_delegates.set(this, PROPERTY_FIELD(delegates), refevent.index(), static_object_cast<ModifierDelegate>(refevent.newTarget()));
 			}
 		}
@@ -138,7 +138,7 @@ bool ModifierDelegateVariableListParameterUI::referenceEvent(RefTarget* source, 
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
 		QHBoxLayout* sublayout = new QHBoxLayout();
@@ -169,7 +169,7 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
 /******************************************************************************
 * Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
 		QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
@@ -190,7 +190,7 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 /******************************************************************************
 * Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
 		QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());

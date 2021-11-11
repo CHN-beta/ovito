@@ -88,7 +88,7 @@ void ColorCodingModifier::initializeObject(ExecutionContext executionContext)
 		QSettings settings;
 		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
 		settings.beginGroup(ColorCodingModifier::OOClass().name());
-		QString typeString = settings.value(PROPERTY_FIELD(colorGradient).identifier()).toString();
+		QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
 		if(!typeString.isEmpty()) {
 			try {
 				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
@@ -150,7 +150,7 @@ void ColorCodingModifier::initializeModifier(TimePoint time, ModifierApplication
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	// Whenever the delegate of this modifier is being replaced, update the source property reference.
 	if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {

@@ -229,15 +229,15 @@ void AnimationTrackBar::findControllers(RefTarget* target)
 		if(field->isReferenceField() && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			hasSubAnimatables = true;
 			if(!field->isVector()) {
-				if(RefTarget* subTarget = target->getReferenceFieldTarget(*field)) {
+				if(RefTarget* subTarget = target->getReferenceFieldTarget(field)) {
 					findControllers(subTarget);
 					addController(subTarget, target, field);
 				}
 			}
 			else {
-				int count = target->getVectorReferenceFieldSize(*field);
+				int count = target->getVectorReferenceFieldSize(field);
 				for(int i = 0; i < count; i++) {
-					if(RefTarget* subTarget = target->getVectorReferenceFieldTarget(*field, i)) {
+					if(RefTarget* subTarget = target->getVectorReferenceFieldTarget(field, i)) {
 						findControllers(subTarget);
 						addController(subTarget, target, field);
 					}

@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(PropertyContainerParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainerParameterUI::PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+PropertyContainerParameterUI::PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField),
 	_comboBox(new QComboBox())
 {
@@ -78,7 +78,7 @@ void PropertyContainerParameterUI::updateUI()
 	if(comboBox() && editObject()) {
 
 		// Get the current property class.
-		QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+		QVariant val = editObject()->getPropertyFieldValue(propertyField());
 		OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyContainerReference>(), "PropertyContainerParameterUI::updateUI()", QString("The property field of object class %1 is not of type <PropertyContainerClassPtr> or <PropertyContainerReference>.").arg(editObject()->metaObject()->className()).toLocal8Bit().constData());
 		PropertyContainerReference selectedPropertyContainer = val.value<PropertyContainerReference>();
 
@@ -163,11 +163,11 @@ void PropertyContainerParameterUI::updatePropertyValue()
 			PropertyContainerReference containerRef = comboBox()->currentData().value<PropertyContainerReference>();
 
 			// Check if new value differs from old value.
-			QVariant oldval = editObject()->getPropertyFieldValue(*propertyField());
+			QVariant oldval = editObject()->getPropertyFieldValue(propertyField());
 			if(containerRef == oldval.value<PropertyContainerReference>())
 				return;
 
-			editObject()->setPropertyFieldValue(*propertyField(), QVariant::fromValue(containerRef));
+			editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(containerRef));
 
 			Q_EMIT valueEntered();
 		});

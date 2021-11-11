@@ -106,7 +106,7 @@ void HistogramModifier::initializeModifier(TimePoint time, ModifierApplication* 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void HistogramModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier changes, update the source property reference accordingly.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {

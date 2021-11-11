@@ -31,6 +31,8 @@ IMPLEMENT_OVITO_CLASS(ActiveObject);
 DEFINE_PROPERTY_FIELD(ActiveObject, isEnabled);
 DEFINE_PROPERTY_FIELD(ActiveObject, title);
 DEFINE_PROPERTY_FIELD(ActiveObject, status);
+DEFINE_SHADOW_PROPERTY_FIELD(ActiveObject, isEnabled);
+DEFINE_SHADOW_PROPERTY_FIELD(ActiveObject, title);
 SET_PROPERTY_FIELD_LABEL(ActiveObject, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ActiveObject, title, "Name");
 SET_PROPERTY_FIELD_LABEL(ActiveObject, status, "Status");
@@ -47,7 +49,7 @@ ActiveObject::ActiveObject(DataSet* dataset) : RefTarget(dataset), _isEnabled(tr
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
-void ActiveObject::propertyChanged(const PropertyFieldDescriptor& field)
+void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)
 {
     // If the object is disabled, clear its status.
 	if(field == PROPERTY_FIELD(isEnabled) && !isEnabled()) {

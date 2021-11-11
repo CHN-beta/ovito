@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -109,6 +109,21 @@ protected:
 		/// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
 		void correctOffcenterCell();
 
+		/// Indicates that the particles data object was newly created by this file reader.
+		bool areParticlesNewlyCreated() const { return _areParticlesNewlyCreated; }
+
+		/// Indicates that the bonds data object was newly created by this file reader.
+		bool areBondsNewlyCreated() const { return _areBondsNewlyCreated; }
+
+		/// Indicates that the angles data object was newly created by this file reader.
+		bool areAnglesNewlyCreated() const { return _areAnglesNewlyCreated; }
+
+		/// Indicates that the dihedrals data object was newly created by this file reader.
+		bool areDihedralsNewlyCreated() const { return _areDihedralsNewlyCreated; }
+
+		/// Indicates that the impropers data object was newly created by this file reader.
+		bool areImpropersNewlyCreated() const { return _areImpropersNewlyCreated; }
+
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.
@@ -141,10 +156,25 @@ protected:
 
 		/// Controls the dynamic centering of the simulation cell during import.
 		bool _recenterCell = false;
+
+		/// Indicates that the particles data object was newly created by this file reader.
+		bool _areParticlesNewlyCreated = false;
+
+		/// Indicates that the bonds data object was newly created by this file reader.
+		bool _areBondsNewlyCreated = false;
+
+		/// Indicates that the angles data object was newly created by this file reader.
+		bool _areAnglesNewlyCreated = false;
+
+		/// Indicates that the dihedrals data object was newly created by this file reader.
+		bool _areDihedralsNewlyCreated = false;
+
+		/// Indicates that the impropers data object was newly created by this file reader.
+		bool _areImpropersNewlyCreated = false;
 	};
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Is called when importing multiple files of different formats.
 	virtual bool importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline) override;

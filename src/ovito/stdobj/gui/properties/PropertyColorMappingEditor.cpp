@@ -195,7 +195,7 @@ void PropertyColorMappingEditor::updateColorGradient()
 bool PropertyColorMappingEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(PropertyColorMapping::colorGradient)) {
+		if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(PropertyColorMapping::colorGradient)) {
 			updateColorGradient();
 		}
 	}
@@ -256,7 +256,7 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 				QSettings settings;
 				settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
 				settings.beginGroup(PropertyColorMapping::OOClass().name());
-				settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient).identifier(),
+				settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient)->identifier(),
 						QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
 			}
 		});

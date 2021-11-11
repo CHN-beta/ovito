@@ -44,7 +44,7 @@ public:
 	NumericalParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText = QString());
 
 	/// Constructor for a PropertyField or ReferenceField property.
-	NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, const QMetaObject* defaultParameterUnitType);
+	NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType);
 
 	/// Destructor.
 	virtual ~NumericalParameterUI();

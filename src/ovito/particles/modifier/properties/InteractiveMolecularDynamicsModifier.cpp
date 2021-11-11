@@ -344,7 +344,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
-void InteractiveMolecularDynamicsModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void InteractiveMolecularDynamicsModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(transmissionInterval)) {
 		if(_socket.state() == QAbstractSocket::ConnectedState && _isConnected) {

@@ -75,7 +75,7 @@ bool AsynchronousModifierApplication::referenceEvent(RefTarget* source, const Re
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void AsynchronousModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void AsynchronousModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	// Throw away cached results when the modifier is being detached from this ModifierApplication.
 	if(field == PROPERTY_FIELD(modifier)) {

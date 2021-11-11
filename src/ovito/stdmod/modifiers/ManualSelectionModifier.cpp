@@ -63,7 +63,7 @@ void ManualSelectionModifier::initializeModifier(TimePoint time, ModifierApplica
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the subject of this modifier is changed, reset the selection.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {

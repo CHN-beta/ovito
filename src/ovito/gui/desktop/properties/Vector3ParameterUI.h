@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ public:
 	Vector3ParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t vectorComponent, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField or ReferenceField property.
-	Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent);
+	Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent);
 
 	/// This method updates the displayed value of the parameter UI.
 	virtual void updateUI() override;

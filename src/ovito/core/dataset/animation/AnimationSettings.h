@@ -277,7 +277,7 @@ private Q_SLOTS:
 protected:
 
 	/// \brief Is called when the value of a non-animatable property field of this RefMaker has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// \brief Saves the class' contents to an output stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;

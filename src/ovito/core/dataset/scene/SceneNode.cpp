@@ -219,7 +219,7 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * From RefMaker.
 ******************************************************************************/
-void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void SceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(transformationController)) {
 		// TM controller has changed -> rebuild world tm cache.
@@ -248,7 +248,7 @@ void SceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarge
 /******************************************************************************
 * From RefMaker.
 ******************************************************************************/
-void SceneNode::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void SceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(children)) {
 		// A new child node has been added.
@@ -270,7 +270,7 @@ void SceneNode::referenceInserted(const PropertyFieldDescriptor& field, RefTarge
 /******************************************************************************
 * From RefMaker.
 ******************************************************************************/
-void SceneNode::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void SceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(children)) {
 		// A child node has been removed.

@@ -278,8 +278,8 @@ void RenderSettingsEditor::onSizePresetActivated(int index)
 		undoableTransaction(tr("Change output dimensions"), [settings, index]() {
 			settings->setOutputImageWidth(imageSizePresets[index-2][0]);
 			settings->setOutputImageHeight(imageSizePresets[index-2][1]);
-			PROPERTY_FIELD(RenderSettings::outputImageWidth).memorizeDefaultValue(settings);
-			PROPERTY_FIELD(RenderSettings::outputImageHeight).memorizeDefaultValue(settings);
+			PROPERTY_FIELD(RenderSettings::outputImageWidth)->memorizeDefaultValue(settings);
+			PROPERTY_FIELD(RenderSettings::outputImageHeight)->memorizeDefaultValue(settings);
 		});
 	}
 	_sizePresetsBox->setCurrentIndex(0);
@@ -398,7 +398,7 @@ bool RenderSettingsEditor::referenceEvent(RefTarget* source, const ReferenceEven
 /******************************************************************************
 * Gets called when the data provider of the pipeline has been replaced.
 ******************************************************************************/
-void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void RenderSettingsEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(activeViewport)) {
 		_viewportPreviewModeBox->setEnabled(activeViewport() != nullptr);

@@ -84,7 +84,7 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
 

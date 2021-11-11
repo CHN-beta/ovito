@@ -106,14 +106,8 @@ VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer
 void VoxelGrid::initializeObject(ExecutionContext executionContext)
 {
 	// Create and attach a default visualization element for rendering the grid.
-	if(!visElement()) {
-		OORef<VoxelGridVis> gridVis = OORef<VoxelGridVis>::create(dataset(), executionContext);
-		// Do not render the grid by default.
-		gridVis->setEnabled(false);
-		// Use the grid's title also as the vis element's title.
-		gridVis->setTitle(title());
-		setVisElement(std::move(gridVis));
-	}
+	if(!visElement())
+		setVisElement(OORef<VoxelGridVis>::create(dataset(), executionContext));
 
 	PropertyContainer::initializeObject(executionContext);
 }

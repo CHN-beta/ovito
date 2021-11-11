@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,7 @@ PipelineFlowState CachingPipelineObject::evaluateSynchronous(TimePoint time)
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
-void CachingPipelineObject::propertyChanged(const PropertyFieldDescriptor& field)
+void CachingPipelineObject::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(pipelineTrajectoryCachingEnabled)) {
 		pipelineCache().setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
@@ -84,7 +84,7 @@ void CachingPipelineObject::propertyChanged(const PropertyFieldDescriptor& field
 		// Send target changed event to trigger a new pipeline evaluation, which is 
 		// needed to start the precomputation process.
 		if(pipelineTrajectoryCachingEnabled())
-			notifyTargetChanged(&PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
+			notifyTargetChanged(PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
 	}
 
 	PipelineObject::propertyChanged(field);

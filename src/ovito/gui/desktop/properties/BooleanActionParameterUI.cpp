@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEdito
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QAction* action) :
+BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QAction* action) :
 	PropertyParameterUI(parentEditor, propField), _action(action)
 {
 	OVITO_ASSERT(isPropertyFieldUI());
@@ -81,7 +81,7 @@ void BooleanActionParameterUI::updateUI()
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid());
 		}
 		action()->setChecked(val.toBool());
@@ -112,7 +112,7 @@ void BooleanActionParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), action()->isChecked());
+				editor()->changePropertyFieldValue(propertyField(), action()->isChecked());
 			}
 			Q_EMIT valueEntered();
 		});

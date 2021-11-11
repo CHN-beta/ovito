@@ -41,7 +41,7 @@ IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const cha
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 		NumericalParameterUI(parentEditor, propField, &IntegerParameterUnit::staticMetaObject)
 {
 }
@@ -63,7 +63,7 @@ void IntegerParameterUI::updatePropertyValue()
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			editor()->changePropertyFieldValue(*propertyField(), spinner()->intValue());
+			editor()->changePropertyFieldValue(propertyField(), spinner()->intValue());
 		}
 		Q_EMIT valueEntered();
 	}
@@ -90,7 +90,7 @@ void IntegerParameterUI::updateUI()
 					}
 				}
 				else if(isPropertyFieldUI()) {
-					val = editObject()->getPropertyFieldValue(*propertyField());
+					val = editObject()->getPropertyFieldValue(propertyField());
 					OVITO_ASSERT(val.isValid());
 				}
 				spinner()->setIntValue(val.toInt());

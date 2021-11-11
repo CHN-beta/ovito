@@ -361,8 +361,12 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
-	if(!voxelGrid)
+	if(!voxelGrid) {
 		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext(), tr("Charge density"));
+		voxelGrid->visElement()->setEnabled(false);
+		voxelGrid->visElement()->setTitle(voxelGrid->title());
+		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+	}
 	voxelGrid->setDomain(simulationCell());
 	voxelGrid->setIdentifier(QStringLiteral("charge-density"));
 	voxelGrid->setShape(gridSize);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,15 +35,13 @@ namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellVis);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
-DEFINE_PROPERTY_FIELD(SimulationCellVis, defaultCellLineWidth);
+DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, renderCellEnabled);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, cellColor);
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, cellLineWidth, "Line width");
-SET_PROPERTY_FIELD_LABEL(SimulationCellVis, defaultCellLineWidth, "Default line width");
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, renderCellEnabled, "Visible in rendered images");
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, cellColor, "Line color");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, cellLineWidth, WorldParameterUnit, 0);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, defaultCellLineWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
 * Constructor.
@@ -51,7 +49,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, defaultCellLineWidth, Wo
 SimulationCellVis::SimulationCellVis(DataSet* dataset) : DataVis(dataset),
 	_renderCellEnabled(true),
 	_cellLineWidth(0.0),
-	_defaultCellLineWidth(0.0),
 	_cellColor(0, 0, 0)
 {
 }

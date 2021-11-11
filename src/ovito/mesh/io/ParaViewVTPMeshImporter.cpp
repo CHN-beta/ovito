@@ -84,6 +84,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 			vis->setShowCap(false);
 			vis->setSmoothShading(true);
 			vis->setSurfaceIsClosed(false);
+			vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading)});
 		}
 		if(!loadRequest().dataBlockPrefix.isEmpty()) {
 			meshObj->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));

@@ -717,6 +717,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset, executionContext);
 		vis->setObjectTitle(tr("Displacements"));
 		vis->setEnabled(false);
+		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
 		property->addVisElement(std::move(vis));
 	}
 	else if(type == ParticlesObject::ForceProperty) {
@@ -725,6 +726,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);
 		vis->setArrowPosition(VectorVis::Base);
+		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
 		property->addVisElement(std::move(vis));
 	}
 	else if(type == ParticlesObject::DipoleOrientationProperty) {
@@ -733,6 +735,7 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);
 		vis->setArrowPosition(VectorVis::Center);
+		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
 		property->addVisElement(std::move(vis));
 	}
 

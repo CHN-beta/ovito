@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -212,7 +212,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 	for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
 		if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 			if(!field->isVector()) {
-				if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(*field))) {
+				if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(field))) {
 					OVITO_ASSERT(self->hasReferenceTo(subObject));
 					dataPath.push_back(subObject);
 					subObject->updateEditableProxies(state, dataPath);
@@ -223,9 +223,9 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 			}
 			else {
 				// Note: Making a copy of the vector, because 'self' may get replaced or deleted at any time!
-				int count = self->getVectorReferenceFieldSize(*field);
+				int count = self->getVectorReferenceFieldSize(field);
 				for(int i = 0; i < count; i++) {
-					if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(*field, i))) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(field, i))) {
 						dataPath.push_back(subObject);
 						subObject->updateEditableProxies(state, dataPath);
 						dataPath.pop_back();

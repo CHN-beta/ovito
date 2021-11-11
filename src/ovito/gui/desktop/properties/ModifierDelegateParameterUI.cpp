@@ -76,8 +76,8 @@ void ModifierDelegateParameterUI::resetUI()
 bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
-			(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(DelegatingModifier::delegate) ||
-			static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
+			(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(DelegatingModifier::delegate) ||
+			static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
 		// The modifier has been assigned a new delegate -> update list of delegates
 		updateUI();
 	}

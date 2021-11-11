@@ -186,8 +186,11 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
-	if(!voxelGrid)
+	if(!voxelGrid) {
 		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext());
+		voxelGrid->visElement()->setEnabled(false);
+		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
+	}
 	voxelGrid->setDomain(simulationCell());
 	voxelGrid->setIdentifier(QStringLiteral("imported"));
 	voxelGrid->setShape(gridSize);

@@ -300,7 +300,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void ParaViewVTMImporter::propertyChanged(const PropertyFieldDescriptor& field)
+void ParaViewVTMImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	FileSourceImporter::propertyChanged(field);
 

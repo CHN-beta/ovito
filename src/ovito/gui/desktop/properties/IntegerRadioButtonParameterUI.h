@@ -43,7 +43,7 @@ public:
 	IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// This returns the radio button group managed by this ParameterUI.
 	QButtonGroup* buttonGroup() const { return _buttonGroup; }

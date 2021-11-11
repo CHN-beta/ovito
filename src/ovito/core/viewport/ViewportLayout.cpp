@@ -81,7 +81,7 @@ void ViewportLayoutCell::removeChild(int index)
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void ViewportLayoutCell::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void ViewportLayoutCell::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(children) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
 		auto weights = childWeights();
@@ -96,7 +96,7 @@ void ViewportLayoutCell::referenceInserted(const PropertyFieldDescriptor& field,
 /******************************************************************************
 * Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void ViewportLayoutCell::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void ViewportLayoutCell::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(children) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {
 		auto weights = childWeights();

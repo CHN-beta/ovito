@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT RefTargetListParameterUI : public ParameterUI
 public:
 
 	/// Constructor.
-	RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField,
+	RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField,
 			const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
 
 	/// Destructor.
@@ -48,7 +48,7 @@ public:
 
 	/// The reference field that specifies the vector reference field of the edited object that
 	/// is bound to this parameter UI.
-	const PropertyFieldDescriptor& referenceField() const { return _refField; }
+	const PropertyFieldDescriptor* referenceField() const { return _refField; }
 
 	/// This returns the list view managed by this ParameterUI.
 	QListView* listWidget(int listWidgetHeight = 92);
@@ -174,7 +174,7 @@ protected:
 
 	/// The reference field that specifies the parameter of the edited object that
 	/// is bound to this parameter UI.
-	const PropertyFieldDescriptor& _refField;
+	const PropertyFieldDescriptor* _refField;
 
 	/// The view widget.
 	QPointer<QAbstractItemView> _viewWidget;

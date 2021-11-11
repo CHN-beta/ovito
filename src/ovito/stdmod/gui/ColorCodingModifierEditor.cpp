@@ -230,12 +230,12 @@ void ColorCodingModifierEditor::updateColorGradient()
 bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(ColorCodingModifier::colorGradient)) {
+		if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::colorGradient)) {
 			updateColorGradient();
 		}
 	}
 	else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) {
+		if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) {
 			ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
 			if(mod->autoAdjustRange() == false && dataset()->undoStack().isRecording()) {
 				// When the user turns off the auto-adjust option, adopt the current automatic range
@@ -353,7 +353,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 				QSettings settings;
 				settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
 				settings.beginGroup(ColorCodingModifier::OOClass().name());
-				settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
+				settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient)->identifier(),
 						QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
 			}
 		});

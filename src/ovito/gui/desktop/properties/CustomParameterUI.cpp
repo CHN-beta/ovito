@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const char*
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, QWidget* widget,
+CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
 		const std::function<void(const QVariant&)>& updateWidgetFunction,
 		const std::function<QVariant()>& updatePropertyFunction,
 		const std::function<void(RefTarget*)>& resetUIFunction) :
@@ -90,7 +90,7 @@ void CustomParameterUI::updateUI()
 				editObject()->throwException(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 		}
 		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT_MSG(val.isValid(), "CustomParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
 		}
 		else return;
@@ -126,7 +126,7 @@ void CustomParameterUI::updatePropertyValue()
                 }
             }
             else if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(*propertyField(), newValue);
+                editor()->changePropertyFieldValue(propertyField(), newValue);
             }
 
 			Q_EMIT valueEntered();

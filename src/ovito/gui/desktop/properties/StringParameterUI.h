@@ -41,7 +41,7 @@ public:
 	StringParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~StringParameterUI();

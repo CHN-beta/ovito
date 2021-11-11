@@ -76,7 +76,7 @@ void SelectionSet::remove(SceneNode* node)
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void SelectionSet::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void SelectionSet::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(nodes)) {
 		Q_EMIT selectionChanged(this);
@@ -91,7 +91,7 @@ void SelectionSet::referenceInserted(const PropertyFieldDescriptor& field, RefTa
 /******************************************************************************
 * Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void SelectionSet::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void SelectionSet::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(nodes)) {
 		Q_EMIT selectionChanged(this);
@@ -106,7 +106,7 @@ void SelectionSet::referenceRemoved(const PropertyFieldDescriptor& field, RefTar
 /******************************************************************************
 * Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void SelectionSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void SelectionSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(nodes)) {
 		Q_EMIT selectionChanged(this);

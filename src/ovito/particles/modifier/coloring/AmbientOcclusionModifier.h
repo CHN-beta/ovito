@@ -83,7 +83,7 @@ public:
 		/// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
 		virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 			// Avoid a recomputation if the user changes just the intensity parameter.
-			if(event.field() == &PROPERTY_FIELD(intensity))
+			if(event.field() == PROPERTY_FIELD(intensity))
 				return true;
 			return Engine::modifierChanged(event);
 		}

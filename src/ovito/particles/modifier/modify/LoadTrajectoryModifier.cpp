@@ -415,7 +415,7 @@ bool LoadTrajectoryModifier::referenceEvent(RefTarget* source, const ReferenceEv
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(trajectorySource) && !isBeingLoaded() && !isAboutToBeDeleted()) {
 		// The animation length might have changed when the trajectory source has been replaced.

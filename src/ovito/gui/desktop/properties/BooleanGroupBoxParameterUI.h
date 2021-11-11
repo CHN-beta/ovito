@@ -43,7 +43,7 @@ public:
 	BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& label);
 
 	/// Constructor for a PropertyField property.
-	BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor, which releases all GUI controls.
 	virtual ~BooleanGroupBoxParameterUI();

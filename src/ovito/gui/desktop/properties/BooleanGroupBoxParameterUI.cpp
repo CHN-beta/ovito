@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,11 +50,11 @@ BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentE
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.
-	_groupBox = new QGroupBox(propField.displayName());
+	_groupBox = new QGroupBox(propField->displayName());
 	_groupBox->setCheckable(true);
 	_childContainer = new QWidget(_groupBox);
 	QVBoxLayout* layout = new QVBoxLayout(_groupBox);
@@ -108,7 +108,7 @@ void BooleanGroupBoxParameterUI::updateUI()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				val = editObject()->getPropertyFieldValue(*propertyField());
+				val = editObject()->getPropertyFieldValue(propertyField());
 				OVITO_ASSERT(val.isValid());
 			}
 			groupBox()->setChecked(val.toBool());
@@ -145,7 +145,7 @@ void BooleanGroupBoxParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), groupBox()->isChecked());
+				editor()->changePropertyFieldValue(propertyField(), groupBox()->isChecked());
 			}
 			Q_EMIT valueEntered();
 		});

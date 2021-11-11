@@ -121,6 +121,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 			}
 			// Let downstream pipeline now that its input has changed.
 			notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+			notifyTargetChanged();
 		}
 		else {
 			// When the data collection was change by a script, then we simply invalidate the pipeline cache

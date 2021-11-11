@@ -59,7 +59,7 @@ protected:
 	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
@@ -84,7 +84,7 @@ private:
 		/// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
 		virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 			// Avoid a recomputation if the user changes just the RMSD cutoff parameter.
-			if(event.field() == &PROPERTY_FIELD(rmsdCutoff))
+			if(event.field() == PROPERTY_FIELD(rmsdCutoff))
 				return true;
 			return StructureIdentificationEngine::modifierChanged(event);
 		}

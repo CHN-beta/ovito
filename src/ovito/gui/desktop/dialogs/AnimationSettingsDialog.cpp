@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -166,11 +166,11 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 void AnimationSettingsDialog::onOk()
 {
 	if(ticksPerFrameModified)
-		PROPERTY_FIELD(AnimationSettings::ticksPerFrame).memorizeDefaultValue(_animSettings);
+		PROPERTY_FIELD(AnimationSettings::ticksPerFrame)->memorizeDefaultValue(_animSettings);
 	if(playbackSpeedModified)
-		PROPERTY_FIELD(AnimationSettings::playbackSpeed).memorizeDefaultValue(_animSettings);
+		PROPERTY_FIELD(AnimationSettings::playbackSpeed)->memorizeDefaultValue(_animSettings);
 	if(loopPlaybackModified)
-		PROPERTY_FIELD(AnimationSettings::loopPlayback).memorizeDefaultValue(_animSettings);
+		PROPERTY_FIELD(AnimationSettings::loopPlayback)->memorizeDefaultValue(_animSettings);
 
 	commit();
 	accept();

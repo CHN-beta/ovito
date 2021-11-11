@@ -196,7 +196,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 				if(vis->isEnabled()) {
 					for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
 						if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
-							if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(*field))) {
+							if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
 								if(mapping->sourceProperty()) {
 									// Prepend property color mappings to the front of the list.
 									_sourcesComboBox->insertItem(0, tr("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));

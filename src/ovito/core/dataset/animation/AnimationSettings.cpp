@@ -55,7 +55,7 @@ AnimationSettings::AnimationSettings(DataSet* dataset) : RefTarget(dataset),
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
-void AnimationSettings::propertyChanged(const PropertyFieldDescriptor& field)
+void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(time))
 		onTimeChanged();

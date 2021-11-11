@@ -112,7 +112,7 @@ void ScatterPlotModifier::initializeModifier(TimePoint time, ModifierApplication
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier is changed, update the source property references.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {

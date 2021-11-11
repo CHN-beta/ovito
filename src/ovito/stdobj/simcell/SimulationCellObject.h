@@ -273,7 +273,7 @@ public:
 protected:
 
 	/// Is called when the value of a non-animatable field of this object changes.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 
@@ -290,13 +290,17 @@ private:
 
 	/// Specifies periodic boundary condition in the X direction.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcX, setPbcX);
+	DECLARE_SHADOW_PROPERTY_FIELD(pbcX);
 	/// Specifies periodic boundary condition in the Y direction.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcY, setPbcY);
+	DECLARE_SHADOW_PROPERTY_FIELD(pbcY);
 	/// Specifies periodic boundary condition in the Z direction.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcZ, setPbcZ);
+	DECLARE_SHADOW_PROPERTY_FIELD(pbcZ);
 
 	/// Stores the dimensionality of the system.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, is2D, setIs2D);
+	DECLARE_SHADOW_PROPERTY_FIELD(is2D);
 
 	/// This is a special flag used by the Python bindings to indicate that
 	/// this simulation cell has been temporarily put into a writable state.

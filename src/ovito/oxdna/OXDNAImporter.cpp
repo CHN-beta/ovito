@@ -161,7 +161,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 		throw Exception(tr("Invalid number of nucleotides or strands in line %1 of oxDNA topology file: %2").arg(topoStream.lineNumber()).arg(topoStream.lineString().trimmed()));
 	setParticleCount(numNucleotidesLong);
 
-	// Create a special visual element for rendering the nuclotides.
+	// Create a special visual element for rendering the nucleotides.
 	if(!dynamic_object_cast<NucleotidesVis>(particles()->visElement()))
 		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset(), executionContext()));
 

@@ -36,6 +36,10 @@ DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcX);
 DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcY);
 DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcZ);
 DEFINE_PROPERTY_FIELD(SimulationCellObject, is2D);
+DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcX);
+DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcY);
+DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcZ);
+DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, is2D);
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, cellMatrix, "Cell matrix");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcX, "Periodic boundary conditions (X)");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcY, "Periodic boundary conditions (Y)");
@@ -83,7 +87,7 @@ void SimulationCellObject::computeInverseMatrix() const
 /******************************************************************************
 * Is called when the value of a non-animatable field of this object changes.
 ******************************************************************************/
-void SimulationCellObject::propertyChanged(const PropertyFieldDescriptor& field)
+void SimulationCellObject::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(cellMatrix) || field == PROPERTY_FIELD(is2D)) {
 		invalidateReciprocalCellMatrix();
@@ -113,7 +117,7 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
 		// Box size changes of the actual simulation cell are adopted by the proxy cell object.
 		proxy->setCellMatrix(cellMatrix());
 
-		// Changes made by the user to the PBC flags or dimensionality setting of the proxy cell object will be adopted by the actual simulation cell object.
+		// Changes made by the user to the PBC flags or dimensionality setting of the proxy cell object are adopted by the actual simulation cell object.
 		if(pbcFlags() != proxy->pbcFlags() || is2D() != proxy->is2D()) {
 			// Make this data object mutable first.
 			SimulationCellObject* self = static_object_cast<SimulationCellObject>(state.makeMutableInplace(dataPath));

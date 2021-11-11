@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEdito
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t _row, size_t _column)
+AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t _row, size_t _column)
 	: FloatParameterUI(parentEditor, propField), row(_row), column(_column)
 {
 	OVITO_ASSERT_MSG(row >= 0 && row < 3, "AffineTransformationParameterUI constructor", "The row must be in the range 0-2.");
@@ -67,13 +67,13 @@ void AffineTransformationParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				QVariant currentValue = editObject()->getPropertyFieldValue(*propertyField());
+				QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
 				if(currentValue.canConvert<AffineTransformation>()) {
 					AffineTransformation val = currentValue.value<AffineTransformation>();
 					val(row, column) = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editor()->changePropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(propertyField(), currentValue);
 			}
 			Q_EMIT valueEntered();
 		}
@@ -98,7 +98,7 @@ void AffineTransformationParameterUI::updateUI()
 			}
 		}
 		else if(isPropertyFieldUI()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid() && (val.canConvert<AffineTransformation>()));
 		}
 		else return;

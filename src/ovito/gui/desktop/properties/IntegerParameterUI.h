@@ -42,7 +42,7 @@ public:
 	IntegerParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField property.
-	IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Gets the minimum value to be entered.
 	/// This value is in native controller units.

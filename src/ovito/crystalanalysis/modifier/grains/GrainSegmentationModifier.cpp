@@ -94,7 +94,7 @@ bool GrainSegmentationModifier::OOMetaClass::isApplicableTo(const DataCollection
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(mergingThreshold) || field == PROPERTY_FIELD(minGrainAtomCount) || field == PROPERTY_FIELD(colorParticlesByGrain) || field == PROPERTY_FIELD(orphanAdoption)) {
 		// Immediately update viewports if parameters are changed by the user that don't require a full recalculation.

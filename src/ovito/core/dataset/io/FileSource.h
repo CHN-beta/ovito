@@ -117,7 +117,7 @@ protected:
 	virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;

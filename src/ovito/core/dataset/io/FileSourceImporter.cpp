@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(FileSourceImporter, isMultiTimestepFile, "File contains
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor& field)
+void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	FileImporter::propertyChanged(field);
 

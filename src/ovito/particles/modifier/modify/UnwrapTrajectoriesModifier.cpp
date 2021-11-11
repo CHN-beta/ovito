@@ -159,7 +159,7 @@ bool UnwrapTrajectoriesModifierApplication::referenceEvent(RefTarget* source, co
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(input)) {
 		invalidateUnwrapData();

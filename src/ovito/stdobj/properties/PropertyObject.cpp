@@ -80,7 +80,7 @@ void PropertyObject::setName(const QString& newName)
 
 	_name = newName;
 	setIdentifier(newName);
-	notifyTargetChanged(&PROPERTY_FIELD(title));
+	notifyTargetChanged(PROPERTY_FIELD(title));
 }
 
 /******************************************************************************

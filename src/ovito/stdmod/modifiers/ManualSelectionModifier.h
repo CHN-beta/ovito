@@ -78,7 +78,7 @@ public:
 protected:
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Returns the selection set object stored in the ModifierApplication, or, if it does not exist, creates one when requested.
 	ElementSelectionSet* getSelectionSet(ModifierApplication* modApp, bool createIfNotExist);

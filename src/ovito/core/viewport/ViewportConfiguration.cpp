@@ -60,7 +60,7 @@ ViewportConfiguration::ViewportConfiguration(DataSet* dataset) : RefTarget(datas
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(activeViewport)) {
 		Q_EMIT activeViewportChanged(activeViewport());
@@ -92,7 +92,7 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void ViewportConfiguration::propertyChanged(const PropertyFieldDescriptor& field)
+void ViewportConfiguration::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(orbitCenterMode) || field == PROPERTY_FIELD(userOrbitCenter)) {
 		Q_EMIT cameraOrbitCenterChanged();

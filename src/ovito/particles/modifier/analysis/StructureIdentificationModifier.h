@@ -70,7 +70,7 @@ public:
 		/// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
 		virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 			// Avoid a recomputation if the user toggles just the color-by-type option.
-			if(event.field() == &PROPERTY_FIELD(colorByType))
+			if(event.field() == PROPERTY_FIELD(colorByType))
 				return true;
 			return Engine::modifierChanged(event);
 		}

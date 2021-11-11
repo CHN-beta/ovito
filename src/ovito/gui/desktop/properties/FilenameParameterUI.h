@@ -42,7 +42,7 @@ public:
 	FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~FilenameParameterUI();

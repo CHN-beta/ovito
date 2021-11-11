@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,7 +91,9 @@ public:
 			QVariant (*propertyStorageReadFunc)(const RefMaker*),
 			void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
 			void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
-			void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&));
+			void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&),
+			void (*propertyStorageTakeSnapshotFunc)(RefMaker*) = nullptr,
+			void (*propertyStorageRestoreSnapshotFunc)(const RefMaker*, RefMaker*) = nullptr);
 
 	/// Constructor	for a property field that stores a single reference to a RefTarget.
 	PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
@@ -152,12 +154,6 @@ public:
 	/// Returns the flags that control the behavior of the property field.
 	PropertyFieldFlags flags() const { return _flags; }
 
-	/// Compares two property fields.
-	bool operator==(const PropertyFieldDescriptor& other) const { return (this == &other); }
-
-	/// Compares two property fields.
-	bool operator!=(const PropertyFieldDescriptor& other) const { return (this != &other); }
-
 	/// Saves the current value of a property field in the application's settings store.
 	void memorizeDefaultValue(RefMaker* object) const;
 
@@ -197,6 +193,12 @@ protected:
 	/// Stores a pointer to the function that loads the property field's value from a stream.
 	void (*_propertyStorageLoadFunc)(RefMaker*, LoadStream&) = nullptr;
 
+	/// Pointer to a function that copies the current value of an object parameter to the shadow field.
+	void (*_propertyStorageTakeSnapshotFunc)(RefMaker*) = nullptr;
+
+	/// Pointer to a function that copies the stored reference value from the shadow field back into the property field of another instance.
+	void (*_propertyStorageRestoreSnapshotFunc)(const RefMaker*, RefMaker*) = nullptr;
+
 	/// Accessor function returning the referenced target object for a RefMaker instance.
 	RefTarget* (*_singleReferenceReadFunc)(const RefMaker*) = nullptr;
 
@@ -221,8 +223,7 @@ protected:
 	/// Accessor function insertings a target object into a vector reference field.
 	void (*_vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>) = nullptr;
 
-	/// The human-readable name of this property field. It will be used
-	/// as label text in the user interface.
+	/// The human-readable name of this property field. It is used as label text in the user interface.
 	QString _displayName;
 
 	/// Provides further information about numerical parameters of objects.

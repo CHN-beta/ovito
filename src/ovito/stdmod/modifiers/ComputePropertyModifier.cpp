@@ -120,7 +120,7 @@ QStringList ComputePropertyModifier::propertyComponentNames() const
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isAboutToBeDeleted() && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
 		setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
@@ -354,7 +354,7 @@ QStringList ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariabl
 bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event) 
 {
 	// Do not recompute results if just the 'useMultilineFields' option is toggled by the user.
-	if(event.field() == &PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields)) 
+	if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields)) 
 		return true; // This return value tells the system to hold on to the cached engine object.
 
 	return AsynchronousModifier::Engine::modifierChanged(event);

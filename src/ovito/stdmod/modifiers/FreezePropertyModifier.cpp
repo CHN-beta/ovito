@@ -82,7 +82,7 @@ void FreezePropertyModifier::initializeModifier(TimePoint time, ModifierApplicat
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier changes, update the property references accordingly.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {

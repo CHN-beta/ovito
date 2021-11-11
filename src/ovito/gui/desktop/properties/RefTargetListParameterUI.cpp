@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,10 +31,11 @@ DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-RefTargetListParameterUI::RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
+RefTargetListParameterUI::RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
 	: ParameterUI(parentEditor), _refField(refField), _rolloutParams(rolloutParams), _defaultEditorClass(defaultEditorClass)
 {
-	OVITO_ASSERT_MSG(refField.isVector(), "RefTargetListParameterUI constructor", "The reference field bound to this parameter UI must be a vector reference field.");
+	OVITO_ASSERT(refField);
+	OVITO_ASSERT_MSG(refField->isVector(), "RefTargetListParameterUI constructor", "The reference field bound to this parameter UI must be a vector reference field.");
 
 	_model = new ListViewModel(this);
 
@@ -249,7 +250,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 	if(source == editObject()) {
 		if(event.type() == ReferenceEvent::ReferenceAdded) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refevent.field() == &referenceField()) {
+			if(refevent.field() == referenceField()) {
 				int rowIndex;
 				if(refevent.index() < _targetToRow.size())
 					rowIndex = _targetToRow[refevent.index()];
@@ -288,7 +289,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 		else if(event.type() == ReferenceEvent::ReferenceRemoved) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
 			OVITO_ASSERT(false);
-			if(refevent.field() == &referenceField()) {
+			if(refevent.field() == referenceField()) {
 				int rowIndex = _targetToRow[refevent.index()];
 				if(refevent.oldTarget())
 					_model->beginRemove(rowIndex);
@@ -323,7 +324,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
 		}
 		else if(event.type() == ReferenceEvent::ReferenceChanged) {
 			const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-			if(refevent.field() == &referenceField()) {
+			if(refevent.field() == referenceField()) {
 				OVITO_ASSERT(refevent.newTarget() != nullptr && refevent.oldTarget() != nullptr);
 				_targets.set(this, PROPERTY_FIELD(targets), refevent.index(), refevent.newTarget());
 				// Update a single item.

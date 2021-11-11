@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ public:
 	VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~VariantComboBoxParameterUI();

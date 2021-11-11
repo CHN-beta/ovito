@@ -177,7 +177,7 @@ bool CombineDatasetsModifier::referenceEvent(RefTarget* source, const ReferenceE
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded() && !isAboutToBeDeleted()) {
 		// The animation length might have changed when the secondary source has been replaced.

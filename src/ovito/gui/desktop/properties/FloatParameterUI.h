@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ public:
 	FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText = QString(), const QMetaObject* parameterUnitType = nullptr);
 
 	/// Constructor for a PropertyField property.
-	FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Gets the minimum value to be entered.
 	/// This value is in native controller units.

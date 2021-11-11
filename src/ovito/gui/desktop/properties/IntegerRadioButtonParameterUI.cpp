@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* p
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
@@ -120,7 +120,7 @@ void IntegerRadioButtonParameterUI::updateUI()
 				id = val.toInt();
 			}
 			else if(isPropertyFieldUI()) {
-				QVariant val = editObject()->getPropertyFieldValue(*propertyField());
+				QVariant val = editObject()->getPropertyFieldValue(propertyField());
 				OVITO_ASSERT(val.isValid());
 				id = val.toInt();
 			}
@@ -174,7 +174,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
 					}
 				}
 				else if(isPropertyFieldUI()) {
-					editor()->changePropertyFieldValue(*propertyField(), id);
+					editor()->changePropertyFieldValue(propertyField(), id);
 				}
 				Q_EMIT valueEntered();
 			});

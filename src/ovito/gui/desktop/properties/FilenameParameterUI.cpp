@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const c
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.
@@ -88,7 +88,7 @@ void FilenameParameterUI::updateUI()
 			}
 		}
 		else if(propertyField()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid());
 		}
 

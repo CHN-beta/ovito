@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -134,15 +134,15 @@ public:
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
 				if(!field->isVector()) {
-					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(*field))) {
+					if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(field))) {
 						if(fn(subObject))
 							return true;
 					}
 				}
 				else {
-					int count = getVectorReferenceFieldSize(*field);
+					int count = getVectorReferenceFieldSize(field);
 					for(int i = 0; i < count; i++) {
-						if(const DataObject* subObject = static_object_cast<DataObject>(getVectorReferenceFieldTarget(*field, i))) {
+						if(const DataObject* subObject = static_object_cast<DataObject>(getVectorReferenceFieldTarget(field, i))) {
 							if(fn(subObject))
 								return true;
 						}

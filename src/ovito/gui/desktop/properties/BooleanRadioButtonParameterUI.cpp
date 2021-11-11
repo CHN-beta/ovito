@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* p
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	_buttonGroup = new QButtonGroup(this);
@@ -108,7 +108,7 @@ void BooleanRadioButtonParameterUI::updateUI()
 			}
 		}
 		else if(propertyField()) {
-			val = editObject()->getPropertyFieldValue(*propertyField());
+			val = editObject()->getPropertyFieldValue(propertyField());
 			OVITO_ASSERT(val.isValid());
 		}
 		bool state = val.toBool();
@@ -147,7 +147,7 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 					oldval = editObject()->property(propertyName());
 				}
 				else if(propertyField()) {
-					oldval = editObject()->getPropertyFieldValue(*propertyField());
+					oldval = editObject()->getPropertyFieldValue(propertyField());
 				}
 				if((bool)id != oldval.toBool()) {
 					if(propertyName()) {
@@ -156,7 +156,7 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
 						}
 					}
 					else if(propertyField()) {
-						editor()->changePropertyFieldValue(*propertyField(), (bool)id);
+						editor()->changePropertyFieldValue(propertyField(), (bool)id);
 					}
 					Q_EMIT valueEntered();
 				}

@@ -135,24 +135,24 @@ private:
 		virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 
 			// Avoid a full recomputation if one of the plotting-related parameters of the modifier change.
-			if(event.field() == &PROPERTY_FIELD(fixRealSpaceXAxisRange) ||
-					event.field() == &PROPERTY_FIELD(fixRealSpaceYAxisRange) ||
-					event.field() == &PROPERTY_FIELD(realSpaceXAxisRangeStart) ||
-					event.field() == &PROPERTY_FIELD(realSpaceXAxisRangeEnd) ||
-					event.field() == &PROPERTY_FIELD(realSpaceYAxisRangeStart) ||
-					event.field() == &PROPERTY_FIELD(realSpaceYAxisRangeEnd) ||
-					event.field() == &PROPERTY_FIELD(fixReciprocalSpaceXAxisRange) ||
-					event.field() == &PROPERTY_FIELD(fixReciprocalSpaceYAxisRange) ||
-					event.field() == &PROPERTY_FIELD(reciprocalSpaceXAxisRangeStart) ||
-					event.field() == &PROPERTY_FIELD(reciprocalSpaceXAxisRangeEnd) ||
-					event.field() == &PROPERTY_FIELD(reciprocalSpaceYAxisRangeStart) ||
-					event.field() == &PROPERTY_FIELD(reciprocalSpaceYAxisRangeEnd) ||
-					event.field() == &PROPERTY_FIELD(normalizeRealSpace) ||
-					event.field() == &PROPERTY_FIELD(normalizeRealSpaceByRDF) ||
-					event.field() == &PROPERTY_FIELD(normalizeRealSpaceByCovariance) ||
-					event.field() == &PROPERTY_FIELD(normalizeReciprocalSpace) ||
-					event.field() == &PROPERTY_FIELD(typeOfRealSpacePlot) ||
-					event.field() == &PROPERTY_FIELD(typeOfReciprocalSpacePlot))
+			if(event.field() == PROPERTY_FIELD(fixRealSpaceXAxisRange) ||
+					event.field() == PROPERTY_FIELD(fixRealSpaceYAxisRange) ||
+					event.field() == PROPERTY_FIELD(realSpaceXAxisRangeStart) ||
+					event.field() == PROPERTY_FIELD(realSpaceXAxisRangeEnd) ||
+					event.field() == PROPERTY_FIELD(realSpaceYAxisRangeStart) ||
+					event.field() == PROPERTY_FIELD(realSpaceYAxisRangeEnd) ||
+					event.field() == PROPERTY_FIELD(fixReciprocalSpaceXAxisRange) ||
+					event.field() == PROPERTY_FIELD(fixReciprocalSpaceYAxisRange) ||
+					event.field() == PROPERTY_FIELD(reciprocalSpaceXAxisRangeStart) ||
+					event.field() == PROPERTY_FIELD(reciprocalSpaceXAxisRangeEnd) ||
+					event.field() == PROPERTY_FIELD(reciprocalSpaceYAxisRangeStart) ||
+					event.field() == PROPERTY_FIELD(reciprocalSpaceYAxisRangeEnd) ||
+					event.field() == PROPERTY_FIELD(normalizeRealSpace) ||
+					event.field() == PROPERTY_FIELD(normalizeRealSpaceByRDF) ||
+					event.field() == PROPERTY_FIELD(normalizeRealSpaceByCovariance) ||
+					event.field() == PROPERTY_FIELD(normalizeReciprocalSpace) ||
+					event.field() == PROPERTY_FIELD(typeOfRealSpacePlot) ||
+					event.field() == PROPERTY_FIELD(typeOfReciprocalSpacePlot))
 				return true;
 
 			return Engine::modifierChanged(event);

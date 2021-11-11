@@ -159,7 +159,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 ******************************************************************************/
 bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == &PROPERTY_FIELD(TextLabelOverlay::sourceNode)) {
+	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::sourceNode)) {
 		updateEditorFields();
 	}
 	else if(source == sourceNode() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {

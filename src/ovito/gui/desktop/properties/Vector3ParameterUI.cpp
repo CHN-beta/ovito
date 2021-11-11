@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,15 +41,15 @@ Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const cha
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, size_t vectorComponent)
+Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent)
 	: FloatParameterUI(parentEditor, propField), _component(vectorComponent)
 {
 	OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
 
 	switch(_component) {
-		case 0: label()->setText(propField.displayName() + " (X):"); break;
-		case 1: label()->setText(propField.displayName() + " (Y):"); break;
-		case 2: label()->setText(propField.displayName() + " (Z):"); break;
+		case 0: label()->setText(propField->displayName() + " (X):"); break;
+		case 1: label()->setText(propField->displayName() + " (Y):"); break;
+		case 2: label()->setText(propField->displayName() + " (Z):"); break;
 	}
 }
 
@@ -85,7 +85,7 @@ void Vector3ParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				QVariant currentValue = editObject()->getPropertyFieldValue(*propertyField());
+				QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
 				if(currentValue.canConvert<Vector3>()) {
 					Vector3 val = currentValue.value<Vector3>();
 					val[_component] = spinner()->floatValue();
@@ -96,7 +96,7 @@ void Vector3ParameterUI::updatePropertyValue()
 					val[_component] = spinner()->floatValue();
 					currentValue.setValue(val);
 				}
-				editor()->changePropertyFieldValue(*propertyField(), currentValue);
+				editor()->changePropertyFieldValue(propertyField(), currentValue);
 			}
 
 			Q_EMIT valueEntered();
@@ -128,7 +128,7 @@ void Vector3ParameterUI::updateUI()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				val = editObject()->getPropertyFieldValue(*propertyField());
+				val = editObject()->getPropertyFieldValue(propertyField());
 				OVITO_ASSERT(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()));
 			}
 			else return;

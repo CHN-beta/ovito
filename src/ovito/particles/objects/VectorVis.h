@@ -103,21 +103,27 @@ protected:
 
 	/// Reverses of the arrow pointing direction.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
+	DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
 
 	/// Controls how the arrows are positioned relative to the particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(arrowPosition);
 
 	/// The uniform display color of the arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(arrowColor);
 
 	/// The width of the arrows in world units.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(arrowWidth);
 
 	/// The scaling factor applied to the vectors.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(scalingFactor);
 
 	/// The shading mode for arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(shadingMode);
 
 	/// The rendering quality mode for arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);

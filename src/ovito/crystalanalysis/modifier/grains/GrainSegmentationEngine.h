@@ -318,10 +318,10 @@ public:
 	virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 
 		// Avoid a recomputation if a parameters changes that does not affect this algorithm stage.
-		if(event.field() == &PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain)
-				|| event.field() == &PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold) 
-				|| event.field() == &PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount)
-				|| event.field() == &PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption))
+		if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain)
+				|| event.field() == PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold) 
+				|| event.field() == PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount)
+				|| event.field() == PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption))
 			return true;
 
 		return AsynchronousModifier::Engine::modifierChanged(event);
@@ -534,7 +534,7 @@ public:
 	virtual bool modifierChanged(const PropertyFieldEvent& event) override {
 
 		// Avoid a recomputation if a parameters changes that does not affect the algorithm's results.
-		if(event.field() == &PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain))
+		if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain))
 			return true; // Indicate that the stored results are not affected by the parameter change.
 
 		return Engine::modifierChanged(event);

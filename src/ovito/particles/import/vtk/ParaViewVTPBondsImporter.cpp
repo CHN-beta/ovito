@@ -105,12 +105,6 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 		throw Exception(tr("Failed to open VTP file: %1").arg(device->errorString()));
 	QXmlStreamReader xml(device.get());
 
-	// Change title of the bonds visual element. But only do it the very first time the bonds object is created.
-	if(!particles()->bonds() && bonds()->visElement()) {
-		bonds()->visElement()->setTitle(tr("Particle-particle contacts"));
-		bonds()->visElement()->setEnabled(false);
-	}
-
 	// Append bonds to existing bonds object when requested by the caller.
 	// This may be the case when loading a multi-block dataset specified in a VTM file.
 	size_t baseBondIndex = 0;
@@ -192,6 +186,14 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 	if(isCanceled())
 		return;
 	
+	// Change title of the bonds visual element. But only do it the very first time the bonds object is created.
+	if(areBondsNewlyCreated() && bonds()->visElement()) {
+		bonds()->visElement()->setTitle(tr("Particle-particle contacts"));
+		bonds()->visElement()->setEnabled(false);
+		// Take a snapshot of the object's parameter values, which serves as reference to detect future changes made by the user.
+		bonds()->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+	}
+
 	// Report number of bonds to the user.
 	QString statusString = tr("Particle-particle contacts: %1").arg(bonds()->elementCount());
 	state().setStatus(std::move(statusString));

@@ -43,7 +43,7 @@ public:
 	BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
 
 	/// Constructor for a PropertyField property.
-	BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~BooleanRadioButtonParameterUI();

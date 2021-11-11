@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,13 +32,16 @@ namespace Ovito { namespace StdObj {
 
 IMPLEMENT_OVITO_CLASS(ElementType);
 DEFINE_PROPERTY_FIELD(ElementType, numericId);
-DEFINE_PROPERTY_FIELD(ElementType, color);
 DEFINE_PROPERTY_FIELD(ElementType, name);
+DEFINE_PROPERTY_FIELD(ElementType, color);
 DEFINE_PROPERTY_FIELD(ElementType, enabled);
 DEFINE_PROPERTY_FIELD(ElementType, ownerProperty);
+DEFINE_SHADOW_PROPERTY_FIELD(ElementType, name);
+DEFINE_SHADOW_PROPERTY_FIELD(ElementType, color);
+DEFINE_SHADOW_PROPERTY_FIELD(ElementType, enabled);
 SET_PROPERTY_FIELD_LABEL(ElementType, numericId, "Id");
-SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");
 SET_PROPERTY_FIELD_LABEL(ElementType, name, "Name");
+SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");
 SET_PROPERTY_FIELD_LABEL(ElementType, enabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 
@@ -62,6 +65,7 @@ void ElementType::initializeType(const PropertyReference& property, ExecutionCon
 	// Remember the kind of typed property this type belongs to.
 	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
 
+	// Assign a standard color to this element type.
 	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), executionContext));
 }
 

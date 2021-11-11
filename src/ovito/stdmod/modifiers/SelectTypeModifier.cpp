@@ -80,7 +80,7 @@ void SelectTypeModifier::initializeModifier(TimePoint time, ModifierApplication*
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {

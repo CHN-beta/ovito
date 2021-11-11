@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,7 +88,7 @@ protected:
 	/// \note When this method is overridden in sub-classes then the base implementation of this method
 	///       should always be called from the new implementation to allow the base classes to handle
 	///       messages for their specific reference fields.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) {
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) {
 #ifdef OVITO_QML_GUI
 		Q_EMIT referenceReplacedSignal();
 #endif
@@ -109,7 +109,7 @@ protected:
 	///
 	/// \sa VectorReferenceField::push_back()
 	/// \sa referenceRemoved()
-	virtual void referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex) {}
+	virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) {}
 
 	/// \brief Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
 	/// \param field Specifies the reference field of this RefMaker from which an entry has been removed.
@@ -126,7 +126,7 @@ protected:
 	///
 	/// \sa VectorReferenceField::remove()
 	/// \sa referenceInserted()
-	virtual void referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex) {}
+	virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) {}
 
 	/// \brief Processes a notification event from a RefTarget referenced by this RefMaker.
 	/// \param source Specifies the RefTarget referenced by this RefMaker that delivered the event.
@@ -144,7 +144,7 @@ protected:
 	/// \note When this method is overridden in sub-classes then the base implementation of this method
 	///       should always be called from the new implementation to allow the base classes to handle
 	///       messages for their specific property fields.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) {
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) {
 #ifdef OVITO_QML_GUI
 		Q_EMIT propertyValueChangedSignal();
 #endif
@@ -167,7 +167,7 @@ protected:
 	/// If it is a VectorReferenceField then all references are removed.
 	///
 	/// \undoable
-	void clearReferenceField(const PropertyFieldDescriptor& field);
+	void clearReferenceField(const PropertyFieldDescriptor* field);
 
 	/// \brief Clears all references held by this RefMarker.
 	///
@@ -247,52 +247,52 @@ public:
 	/// \return The current value of the property field.
 	/// \sa OvitoClass::firstPropertyField()
 	/// \sa OvitoClass::findPropertyField()
-	QVariant getPropertyFieldValue(const PropertyFieldDescriptor& field) const;
+	QVariant getPropertyFieldValue(const PropertyFieldDescriptor* field) const;
 
 	/// \brief Sets the value stored in a non-animatable property field of this RefMaker object.
 	/// \param field The descriptor of a property field defined by this RefMaker derived class.
 	/// \param newValue The value to be assigned to the property. The QVariant data type must match the property data type.
 	/// \sa OvitoClass::firstPropertyField()
 	/// \sa OvitoClass::findPropertyField()
-	void setPropertyFieldValue(const PropertyFieldDescriptor& field, const QVariant& newValue);
+	void setPropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);
 
 	/// \brief Copies the value stored in a non-animatable property field of from another RefMaker instance to this RefMaker object.
 	/// \param field The descriptor of a property field defined by this RefMaker derived class.
 	/// \param other The source object. Must be of the same class type as this instance.
-	void copyPropertyFieldValue(const PropertyFieldDescriptor& field, const RefMaker& other);
+	void copyPropertyFieldValue(const PropertyFieldDescriptor* field, const RefMaker& other);
 
 	/// \brief Returns the target object a reference field of this RefMaker is pointing to.
 	/// \param field The descriptor of a reference property field defined by this RefMaker derived class.
 	/// \return The current value of the reference field.
-	RefTarget* getReferenceFieldTarget(const PropertyFieldDescriptor& field) const;
+	RefTarget* getReferenceFieldTarget(const PropertyFieldDescriptor* field) const;
 
 	/// \brief Returns the number of target objects in a vector reference field of this RefMaker.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
 	/// \return The length of the vector.
-	int getVectorReferenceFieldSize(const PropertyFieldDescriptor& field) const;
+	int getVectorReferenceFieldSize(const PropertyFieldDescriptor* field) const;
 
 	/// \brief Returns the i-th target object from a vector reference field of this RefMaker.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
 	/// \param index The index into the reference target list of the field.
 	/// \return The referenced target object.
-	RefTarget* getVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index) const;
+	RefTarget* getVectorReferenceFieldTarget(const PropertyFieldDescriptor* field, int index) const;
 
 	/// \brief Replaces the i-th object from a vector reference field of this RefMaker with a different target.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
 	/// \param index The index into the reference target list of the field.
 	/// \param target The new target to replace the old one with.
-	void setVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index, const RefTarget* target);
+	void setVectorReferenceFieldTarget(const PropertyFieldDescriptor* field, int index, const RefTarget* target);
 
 	/// \brief Removes the i-th target object from a vector reference field of this RefMaker.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
 	/// \param index The index into the reference target list of the field.
-	void removeVectorReferenceFieldTarget(const PropertyFieldDescriptor& field, int index);
+	void removeVectorReferenceFieldTarget(const PropertyFieldDescriptor* field, int index);
 
 	/// \brief Determines if an object is among the targets of a vector reference field of this RefMaker.
 	/// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
 	/// \param target The object to look for in the reference field.
 	/// \return True if the object is found in the list of referenced targets.
-	bool vectorReferenceFieldContains(const PropertyFieldDescriptor& field, const RefTarget* target) const;
+	bool vectorReferenceFieldContains(const PropertyFieldDescriptor* field, const RefTarget* target) const;
 
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
@@ -305,6 +305,12 @@ public:
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 	virtual void initializeObject(ExecutionContext executionContext);
+
+	/// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
+	void freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields);
+
+	/// Copies the stored reference values of this object's parameters over to the given object (which must be of the same type).
+	void copyInitialParametersToObject(RefMaker* obj) const;
 
 	////////////////////////////// Dependencies //////////////////////////////////
 

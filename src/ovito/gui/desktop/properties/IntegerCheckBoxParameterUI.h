@@ -43,7 +43,7 @@ public:
 	IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel, int uncheckedValue, int checkedValue);
 
 	/// Constructor for a PropertyField property.
-	IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, int uncheckedValue, int checkedValue);
+	IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue);
 
 	/// Destructor.
 	virtual ~IntegerCheckBoxParameterUI();

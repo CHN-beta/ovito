@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,11 +45,11 @@ BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const cha
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField) :
+BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
 	PropertyParameterUI(parentEditor, propField)
 {
 	// Create UI widget.
-	_checkBox = new QCheckBox(propField.displayName());
+	_checkBox = new QCheckBox(propField->displayName());
 	connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
 }
 
@@ -102,7 +102,7 @@ void BooleanParameterUI::updateUI()
 				}
 			}
 			else if(propertyField()) {
-				val = editObject()->getPropertyFieldValue(*propertyField());
+				val = editObject()->getPropertyFieldValue(propertyField());
 				OVITO_ASSERT(val.isValid());
 			}
 			checkBox()->setChecked(val.toBool());
@@ -139,7 +139,7 @@ void BooleanParameterUI::updatePropertyValue()
 				}
 			}
 			else if(isPropertyFieldUI()) {
-				editor()->changePropertyFieldValue(*propertyField(), checkBox()->isChecked());
+				editor()->changePropertyFieldValue(propertyField(), checkBox()->isChecked());
 			}
 			Q_EMIT valueEntered();
 		});

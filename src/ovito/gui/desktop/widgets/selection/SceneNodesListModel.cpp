@@ -215,7 +215,7 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
 	// Whenever a new node is being inserted into the scene, add it to our internal list.
 	if(event.type() == ReferenceEvent::ReferenceAdded) {
 		const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
-		if(refEvent.field() == &PROPERTY_FIELD(SceneNode::children)) {
+		if(refEvent.field() == PROPERTY_FIELD(SceneNode::children)) {
 			if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {				
 				// Extend the list model by one entry.
 				if(sceneNodes().empty()) {

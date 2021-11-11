@@ -218,7 +218,7 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 
 				// Trigger a pipeline re-evaluation.
 				// Note: We have to call notifyTargetChanged() here, because the visElements field is flagged as PROPERTY_FIELD_NO_CHANGE_MESSAGE.
-				notifyTargetChanged(&PROPERTY_FIELD(visElements));
+				notifyTargetChanged(PROPERTY_FIELD(visElements));
 			}
 			else {
 				// Trigger an immediate viewport repaint without pipeline re-evaluation.
@@ -238,7 +238,7 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
 /******************************************************************************
 * Gets called when the data provider of the pipeline has been replaced.
 ******************************************************************************/
-void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void PipelineSceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(dataProvider)) {
 		// Reset caches when the pipeline data source is replaced.
@@ -462,7 +462,7 @@ void PipelineSceneNode::deleteNode()
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void PipelineSceneNode::referenceInserted(const PropertyFieldDescriptor& field, RefTarget* newTarget, int listIndex)
+void PipelineSceneNode::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(replacementVisElements)) {
 		// Reset pipeline cache if a new replacement for a visual element is assigned.
@@ -474,7 +474,7 @@ void PipelineSceneNode::referenceInserted(const PropertyFieldDescriptor& field, 
 /******************************************************************************
 * Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
 ******************************************************************************/
-void PipelineSceneNode::referenceRemoved(const PropertyFieldDescriptor& field, RefTarget* oldTarget, int listIndex)
+void PipelineSceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(replacedVisElements) && !isAboutToBeDeleted()) {
 		// If an upstream vis element is being removed from the list, because the weakly referenced vis element is being deleted,
@@ -492,7 +492,7 @@ void PipelineSceneNode::referenceRemoved(const PropertyFieldDescriptor& field, R
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
-void PipelineSceneNode::propertyChanged(const PropertyFieldDescriptor& field)
+void PipelineSceneNode::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	if(field == PROPERTY_FIELD(pipelineTrajectoryCachingEnabled)) {
 		_pipelineRenderingCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
@@ -500,7 +500,7 @@ void PipelineSceneNode::propertyChanged(const PropertyFieldDescriptor& field)
 		// Send target changed event to trigger a new pipeline evaluation, which is 
 		// needed to start the precomputation process.
 		if(pipelineTrajectoryCachingEnabled())
-			notifyTargetChanged(&PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
+			notifyTargetChanged(PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
 	}
 
 	SceneNode::propertyChanged(field);

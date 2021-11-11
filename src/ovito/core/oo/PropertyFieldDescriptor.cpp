@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,13 +35,17 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
 	QVariant (*propertyStorageReadFunc)(const RefMaker*),
 	void (*propertyStorageWriteFunc)(RefMaker*, const QVariant&),
 	void (*propertyStorageSaveFunc)(const RefMaker*, SaveStream&),
-	void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&))
+	void (*propertyStorageLoadFunc)(RefMaker*, LoadStream&),
+	void (*propertyStorageTakeSnapshotFunc)(RefMaker*),
+	void (*propertyStorageRestoreSnapshotFunc)(const RefMaker*, RefMaker*))
 	: _definingClassDescriptor(definingClass), _identifier(identifier), _flags(flags),
 		_propertyStorageCopyFunc(propertyStorageCopyFunc),
 		_propertyStorageReadFunc(propertyStorageReadFunc),
 		_propertyStorageWriteFunc(propertyStorageWriteFunc),
 		_propertyStorageSaveFunc(propertyStorageSaveFunc),
-		_propertyStorageLoadFunc(propertyStorageLoadFunc)
+		_propertyStorageLoadFunc(propertyStorageLoadFunc),
+		_propertyStorageTakeSnapshotFunc(propertyStorageTakeSnapshotFunc),
+		_propertyStorageRestoreSnapshotFunc(propertyStorageRestoreSnapshotFunc)
 {
 	OVITO_ASSERT(_identifier != nullptr);
 	OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
@@ -113,7 +117,7 @@ void PropertyFieldDescriptor::memorizeDefaultValue(RefMaker* object) const
 	QSettings settings;
 	settings.beginGroup(object->getOOClass().plugin()->pluginId());
 	settings.beginGroup(object->getOOClass().name());
-	QVariant v = object->getPropertyFieldValue(*this);
+	QVariant v = object->getPropertyFieldValue(this);
 	// Workaround for bug in Qt 5.7.0: QVariants of type float do not get correctly stored
 	// by QSettings (at least on macOS), because QVariant::Float is not an official type.
 	if(getQVariantTypeId(v) == QMetaType::Float)
@@ -135,7 +139,7 @@ bool PropertyFieldDescriptor::loadDefaultValue(RefMaker* object) const
 	QVariant v = settings.value(identifier());
 	if(!v.isNull()) {
 		//qDebug() << "Loading default value for parameter" << identifier() << "of class" << definingClass()->name() << ":" << v;
-		object->setPropertyFieldValue(*this, v);
+		object->setPropertyFieldValue(this, v);
 		return true;
 	}
 #endif

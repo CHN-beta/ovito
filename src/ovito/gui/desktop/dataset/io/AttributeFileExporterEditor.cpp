@@ -97,7 +97,7 @@ void AttributeFileExporterEditor::createUI(const RolloutInsertionParameters& rol
 bool AttributeFileExporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-		if(static_cast<const ReferenceFieldEvent&>(event).field() == &PROPERTY_FIELD(FileExporter::nodeToExport)) {
+		if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::nodeToExport)) {
 			updateAttributesList();
 		}
 	}

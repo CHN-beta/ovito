@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,6 +45,9 @@ public:
 	/// Returns true if the file reader has already loaded a simulation cell definition.
 	bool hasSimulationCell() const { return _simulationCell != nullptr; }
 
+	/// Indicates that the simulation cell object was newly created by this file reader.
+	bool isSimulationCellNewlyCreated() const { return _isSimulationCellNewlyCreated; }
+
 	/// Registers a new numeric element type with the given ID and an optional name string.
 	const ElementType* addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {});
 
@@ -72,8 +75,8 @@ private:
 	/// The simulation cell object.
 	SimulationCellObject* _simulationCell = nullptr;
 
-	/// The simulation cell object if it was newly created by the importer.
-	SimulationCellObject* _simulationCellNewlyCreated = nullptr;
+	/// Indicates that the simulation cell object was newly created by this file reader.
+	bool _isSimulationCellNewlyCreated = false;
 };
 
 }	// End of namespace

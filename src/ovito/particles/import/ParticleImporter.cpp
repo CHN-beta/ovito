@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_LABEL(ParticleImporter, recenterCell, "Center simulation box 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
-void ParticleImporter::propertyChanged(const PropertyFieldDescriptor& field)
+void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
 	FileSourceImporter::propertyChanged(field);
 
@@ -69,6 +69,7 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 		_particles = state().getMutableObject<ParticlesObject>();
 		if(!_particles) {
 			_particles = state().createObject<ParticlesObject>(dataSource(), executionContext());
+			_areParticlesNewlyCreated = true;
 		}
 	}
 	return _particles;
@@ -87,6 +88,7 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 			particles()->setBonds(DataOORef<BondsObject>::create(dataset(), executionContext()));
 			_bonds = particles()->makeBondsMutable();
 			_bonds->setDataSource(dataSource());
+			_areBondsNewlyCreated = true;
 		}
 	}
 	return _bonds;
@@ -105,6 +107,7 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 			particles()->setAngles(DataOORef<AnglesObject>::create(dataset(), executionContext()));
 			_angles = particles()->makeAnglesMutable();
 			_angles->setDataSource(dataSource());
+			_areAnglesNewlyCreated = true;
 		}
 	}
 	return _angles;
@@ -123,6 +126,7 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset(), executionContext()));
 			_dihedrals = particles()->makeDihedralsMutable();
 			_dihedrals->setDataSource(dataSource());
+			_areDihedralsNewlyCreated = true;
 		}
 	}
 	return _dihedrals;
@@ -141,6 +145,7 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset(), executionContext()));
 			_impropers = particles()->makeImpropersMutable();
 			_impropers->setDataSource(dataSource());
+			_areImpropersNewlyCreated = true;
 		}
 	}
 	return _impropers;

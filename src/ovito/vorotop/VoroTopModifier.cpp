@@ -568,7 +568,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 /******************************************************************************
  * Is called when the value of a property of this object has changed.
  ******************************************************************************/
-void VoroTopModifier::propertyChanged(const PropertyFieldDescriptor& field)
+void VoroTopModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
     StructureIdentificationModifier::propertyChanged(field);
 

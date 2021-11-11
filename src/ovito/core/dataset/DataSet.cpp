@@ -218,7 +218,7 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
-void DataSet::referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
 	if(field == PROPERTY_FIELD(viewportConfig)) {
 		Q_EMIT viewportConfigReplaced(viewportConfig());

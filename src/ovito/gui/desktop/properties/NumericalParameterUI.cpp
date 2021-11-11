@@ -44,14 +44,14 @@ NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
-NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, const QMetaObject* defaultParameterUnitType) :
+NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType) :
 	PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
 {
 	// Look up the ParameterUnit type for this parameter.
-	if(propField.numericalParameterInfo() && propField.numericalParameterInfo()->unitType)
-		_parameterUnitType = propField.numericalParameterInfo()->unitType;
+	if(propField->numericalParameterInfo() && propField->numericalParameterInfo()->unitType)
+		_parameterUnitType = propField->numericalParameterInfo()->unitType;
 
-	initUIControls(propField.displayName() + ":");
+	initUIControls(propField->displayName() + ":");
 }
 
 /******************************************************************************

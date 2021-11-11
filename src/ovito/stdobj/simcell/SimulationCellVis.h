@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,9 +63,7 @@ protected:
 
 	/// Controls the line width used to render the simulation cell.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, cellLineWidth, setCellLineWidth);
-
-	/// The original default line width prescribed by the file importer during import.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, defaultCellLineWidth, setDefaultCellLineWidth);
+	DECLARE_SHADOW_PROPERTY_FIELD(cellLineWidth);
 
 	/// Controls whether the simulation cell is visible.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderCellEnabled, setRenderCellEnabled);

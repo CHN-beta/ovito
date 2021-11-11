@@ -87,10 +87,10 @@ protected:
 	virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) override;
 
 	/// Is called when the value of a property of this object has changed.
-	virtual void propertyChanged(const PropertyFieldDescriptor& field) override;
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Is called when the value of a reference field of this RefMaker changes.
-	virtual void referenceReplaced(const PropertyFieldDescriptor& field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// This method is called when a reference target changes.
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
@@ -190,21 +190,27 @@ private:
 
 	/// Controls the display color of the surface mesh.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, surfaceColor, setSurfaceColor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(surfaceColor);
 
 	/// Controls the display color of the cap mesh.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, capColor, setCapColor, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(capColor);
 
 	/// Controls whether the cap mesh is rendered.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, showCap, setShowCap, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(showCap);
 
 	/// Controls whether the surface mesh is rendered using smooth shading.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, smoothShading, setSmoothShading);
+	DECLARE_SHADOW_PROPERTY_FIELD(smoothShading);
 
 	/// Controls whether the mesh' orientation is flipped.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseOrientation, setReverseOrientation);
+	DECLARE_SHADOW_PROPERTY_FIELD(reverseOrientation);
 
 	/// Controls whether the polygonal edges of the mesh should be highlighted.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
+	DECLARE_SHADOW_PROPERTY_FIELD(highlightEdges);
 
 	/// Controls the transparency of the surface mesh.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, surfaceTransparencyController, setSurfaceTransparencyController);

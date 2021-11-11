@@ -53,7 +53,7 @@ public:
 	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
 	/// Constructor.
-	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+	PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
 	/// Destructor.
 	virtual ~PropertyReferenceParameterUI();

@@ -178,27 +178,34 @@ private:
 
 	/// The radius used for rendering particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+	DECLARE_SHADOW_PROPERTY_FIELD(radius);
 
 	/// The van der Waals radius of this particle type, which is used for generating bonds between particles.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwRadius, setVdwRadius);
+	DECLARE_SHADOW_PROPERTY_FIELD(vdwRadius);
 
 	/// The visualization shape for particles of this type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape, shape, setShape);
+	DECLARE_SHADOW_PROPERTY_FIELD(shape);
 
 	/// An optional user-defined shape used for rendering particles of this type.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriMeshObject>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
 	/// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(highlightShapeEdges);
 
 	/// Activates the culling of back-facing faces of the user-defined shape assigned to this particle type.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_SHADOW_PROPERTY_FIELD(shapeBackfaceCullingEnabled);
 
 	/// Use the mesh colors intead of particle colors when rendering the user-defined shape.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, shapeUseMeshColor, setShapeUseMeshColor);
+	DECLARE_SHADOW_PROPERTY_FIELD(shapeUseMeshColor);
 
 	/// The mass of this particle type (maybe zero if not set).
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mass, setMass);
+	DECLARE_SHADOW_PROPERTY_FIELD(mass);
 
 private:
 

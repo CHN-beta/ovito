@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(SubObjectParameterUI);
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
-SubObjectParameterUI::SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& refField, const RolloutInsertionParameters& rolloutParams)
+SubObjectParameterUI::SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams)
 	: PropertyParameterUI(parentEditor, refField), _rolloutParams(rolloutParams)
 {
 }

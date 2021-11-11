@@ -167,7 +167,7 @@ public:
 	/// \brief Constructor for a PropertyField or ReferenceField.
 	/// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
 	/// \param propField The property or reference field.
-	PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor& propField);
+	PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField);
 
 	/// \brief Destructor.
 	virtual ~PropertyParameterUI() { clearAllReferences(); }
@@ -230,10 +230,10 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, parameterObject, setParameterObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
 	/// The property or reference field being edited or NULL if bound to a Qt property.
-	const PropertyFieldDescriptor* _propField;
+	const PropertyFieldDescriptor* _propField = nullptr;
 
 	/// The name of the Qt property being edited or NULL.
-	const char* _propertyName;
+	const char* _propertyName = nullptr;
 };
 
 }	// End of namespace

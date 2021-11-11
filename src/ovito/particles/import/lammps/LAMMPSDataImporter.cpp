@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -343,8 +343,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				}
 
 				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
-				if(mass != 0 && mass != type->mass())
-					static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(mass);
+				if(mass != 0 && mass != type->mass()) {
+					ParticleType* mutableType = typeProperty->makeMutable(type);
+					mutableType->setMass(mass);
+					// Log in type name assigned by the file reader as default value for the element type.
+					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+					mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
+				}
 			}
 		}
 		else if(keyword.startsWith("Pair Coeffs")) {

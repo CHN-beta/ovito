@@ -60,7 +60,7 @@ void PropertyColorMapping::initializeObject(ExecutionContext executionContext)
 		QSettings settings;
 		settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
 		settings.beginGroup(PropertyColorMapping::OOClass().name());
-		QString typeString = settings.value(PROPERTY_FIELD(colorGradient).identifier()).toString();
+		QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
 		if(!typeString.isEmpty()) {
 			try {
 				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);

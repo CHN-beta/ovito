@@ -279,8 +279,12 @@ void XSFImporter::FrameLoader::loadFile()
 
 			// Create the voxel grid data object.
 			voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridId);
-			if(!voxelGrid)
+			if(!voxelGrid) {
 				voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext(), gridId);
+				voxelGrid->visElement()->setEnabled(false);
+				voxelGrid->visElement()->setTitle(voxelGrid->title());
+				voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+			}
 			voxelGrid->setDomain(simulationCell());
 			voxelGrid->setIdentifier(gridId);
 		}

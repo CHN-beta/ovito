@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ SimulationCellObject* StandardFrameLoader::simulationCell()
 		_simulationCell = state().getMutableObject<SimulationCellObject>();
 		if(!_simulationCell) {
 			_simulationCell = state().createObject<SimulationCellObject>(dataSource(), executionContext(), AffineTransformation::Zero(), true, true, true, false);
-			_simulationCellNewlyCreated = _simulationCell;
+			_isSimulationCellNewlyCreated = true;
 		}
 	}
 	return _simulationCell;
@@ -69,25 +69,42 @@ const ElementType* StandardFrameLoader::addNumericType(const PropertyContainerCl
 	elementType->initializeObject(executionContext());
 	elementType->initializeType(PropertyReference(&containerClass, typedProperty), executionContext());
 
+	// Log in type name assigned by the file reader as default value for the element type.
+	// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+	elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
+
+	// Add the new element type to the type list managed by the property.
 	return typedProperty->addElementType(std::move(elementType));
 }
 
 /******************************************************************************
-* Finalizes the particle data loaded by a sub-class.
+* Finalizes the data loaded by a sub-class.
 ******************************************************************************/
 void StandardFrameLoader::loadFile()
 {
-	if(_simulationCellNewlyCreated) {
+	// Only initialize the vis element once, when it was newly created.
+	if(isSimulationCellNewlyCreated()) {
 		// Set up the vis element for the simulation cell.
-		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(_simulationCellNewlyCreated->visElement())) {
+		if(SimulationCellVis* cellVis = dynamic_object_cast<SimulationCellVis>(simulationCell()->visElement())) {
 			// Choose an appropriate line width that depends on the cell's size.
 			FloatType cellDiameter = (
-					_simulationCellNewlyCreated->cellMatrix().column(0) +
-					_simulationCellNewlyCreated->cellMatrix().column(1) +
-					_simulationCellNewlyCreated->cellMatrix().column(2)).length();
-			cellVis->setDefaultCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
-			cellVis->setCellLineWidth(cellVis->defaultCellLineWidth());
+					simulationCell()->cellMatrix().column(0) +
+					simulationCell()->cellMatrix().column(1) +
+					simulationCell()->cellMatrix().column(2)).length();
+			cellVis->setCellLineWidth(std::max(cellDiameter * FloatType(1.4e-3), FloatType(1e-8)));
+			// Take a snapshot of the object's parameter values, which serves as reference to detect future changes made by the user.
+			cellVis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SimulationCellVis::cellLineWidth)});
 		}
+	}
+
+	// Log in 2d/3d flag and PBC flags set by the file reader as default values for the simulation cell.
+	// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+	if(_simulationCell) {
+		_simulationCell->freezeInitialParameterValues({
+			SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcX), 
+			SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcY), 
+			SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcZ), 
+			SHADOW_PROPERTY_FIELD(SimulationCellObject::is2D)});
 	}
 }
 

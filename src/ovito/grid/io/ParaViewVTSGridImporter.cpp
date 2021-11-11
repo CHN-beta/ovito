@@ -77,7 +77,6 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 		gridObj = state().createObject<VoxelGrid>(dataSource(), executionContext());
 		gridObj->setIdentifier(gridIdentifier);
 		VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
-		if(vis) vis->setEnabled(true);
 		if(!gridIdentifier.isEmpty()) {
 			gridObj->setTitle(QStringLiteral("%1: %2").arg(gridObj->objectTitle()).arg(gridIdentifier));
 			if(vis) vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(gridIdentifier));

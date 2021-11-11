@@ -42,7 +42,7 @@ public:
 	BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel);
 
 	/// Constructor for a PropertyField property.
-	BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~BooleanParameterUI();

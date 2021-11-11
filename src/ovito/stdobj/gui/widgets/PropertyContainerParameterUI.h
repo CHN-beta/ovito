@@ -39,7 +39,7 @@ class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParam
 public:
 
 	/// Constructor.
-	PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor& propField);
+	PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
 	/// Destructor.
 	virtual ~PropertyContainerParameterUI();

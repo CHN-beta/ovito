@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -191,12 +191,12 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 			}
 			else {
 				// Remove any preexisting references from the field of the cloned object.
-				clone->clearReferenceField(*field);
+				clone->clearReferenceField(field);
 
 				// Clone all reference targets in the source vector.
-				int count = getVectorReferenceFieldSize(*field);
+				int count = getVectorReferenceFieldSize(field);
 				for(int i = 0; i < count; i++) {
-					const RefTarget* originalTarget = getVectorReferenceFieldTarget(*field, i);
+					const RefTarget* originalTarget = getVectorReferenceFieldTarget(field, i);
 					OORef<RefTarget> clonedReference;
 					// Clone reference target.
 					if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
@@ -214,7 +214,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 		}
 		else {
 			// Just copy stored value for property fields.
-			clone->copyPropertyFieldValue(*field, *this);
+			clone->copyPropertyFieldValue(field, *this);
 		}
 	}
 
