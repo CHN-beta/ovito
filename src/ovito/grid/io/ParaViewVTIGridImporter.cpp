@@ -78,7 +78,11 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 		VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
 		if(!gridIdentifier.isEmpty()) {
 			gridObj->setTitle(QStringLiteral("%1: %2").arg(gridObj->objectTitle()).arg(gridIdentifier));
-			if(vis) vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(gridIdentifier));
+			gridObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(PropertyContainer::title)});
+			if(vis) {
+				vis->setTitle(QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(gridIdentifier));
+				vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title)});
+			}
 		}
 	}
 

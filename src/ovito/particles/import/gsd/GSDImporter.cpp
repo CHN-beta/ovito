@@ -395,6 +395,7 @@ void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shape
 	mutableType->setShapeMesh(shapeObject);
 	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
 	mutableType->setRadius(1.0);
+	mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius), SHADOW_PROPERTY_FIELD(ParticleType::shape)});
 }
 
 /******************************************************************************

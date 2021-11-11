@@ -34,6 +34,7 @@ IMPLEMENT_OVITO_CLASS(PropertyContainer);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyContainer, properties);
 DEFINE_PROPERTY_FIELD(PropertyContainer, elementCount);
 DEFINE_PROPERTY_FIELD(PropertyContainer, title);
+DEFINE_SHADOW_PROPERTY_FIELD(PropertyContainer, title);
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, properties, "Properties");
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, elementCount, "Element count");
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, title, "Title");
@@ -46,6 +47,8 @@ PropertyContainer::PropertyContainer(DataSet* dataset, const QString& title) : D
 	_elementCount(0),
 	_title(title)
 {
+	if(!title.isEmpty())
+		freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(PropertyContainer::title)});
 }
 
 /******************************************************************************

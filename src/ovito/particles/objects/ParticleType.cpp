@@ -76,11 +76,22 @@ void ParticleType::initializeType(const PropertyReference& property, ExecutionCo
 	ElementType::initializeType(property, executionContext);
 
 	// Load standard display radius.
-	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, DisplayRadius));
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting, DisplayRadius));
+	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
+	if(executionContext != ExecutionContext::Scripting)
+		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, DisplayRadius));
+	
 	// Load standard van der Waals radius.
-	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, VanDerWaalsRadius));
+	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting, VanDerWaalsRadius));
+	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
+	if(executionContext != ExecutionContext::Scripting)
+		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, VanDerWaalsRadius));
+	
 	// Load standard mass.
-	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext));
+	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting));
+	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
+	if(executionContext != ExecutionContext::Scripting)
+		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************

@@ -66,7 +66,10 @@ void ElementType::initializeType(const PropertyReference& property, ExecutionCon
 	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
 
 	// Assign a standard color to this element type.
-	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), executionContext));
+	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), ExecutionContext::Scripting));
+	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
+	if(executionContext != ExecutionContext::Scripting)
+		setColor(getDefaultColor(property, nameOrNumericId(), numericId(), executionContext));
 }
 
 /******************************************************************************

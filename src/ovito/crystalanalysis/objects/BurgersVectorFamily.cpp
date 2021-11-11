@@ -29,6 +29,7 @@ namespace Ovito { namespace CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(BurgersVectorFamily);
 DEFINE_PROPERTY_FIELD(BurgersVectorFamily, burgersVector);
+DEFINE_SHADOW_PROPERTY_FIELD(BurgersVectorFamily, burgersVector);
 SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 
 /******************************************************************************

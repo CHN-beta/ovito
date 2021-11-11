@@ -48,6 +48,7 @@ private:
 
 	/// This prototype Burgers vector of this family.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, burgersVector, setBurgersVector);
+	DECLARE_SHADOW_PROPERTY_FIELD(burgersVector);
 };
 
 }	// End of namespace

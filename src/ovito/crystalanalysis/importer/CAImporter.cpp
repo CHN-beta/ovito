@@ -432,6 +432,7 @@ void CAImporter::FrameLoader::loadFile()
 				vis->setReverseOrientation(true);
 				vis->setCapTransparency(0.5);
 				vis->setObjectTitle(tr("Defect mesh"));
+				vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(SurfaceMeshVis::showCap), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::smoothShading), SHADOW_PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation)});
 			}
 			defectSurface.reset(defectSurfaceObj);
 			defectSurface.clearMesh();
@@ -544,6 +545,7 @@ void CAImporter::FrameLoader::loadFile()
 			pattern->setDimensionality(patterns[i].type);
 			pattern->setNumericId(patterns[i].id);
 			pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
+			pattern->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(MicrostructurePhase::shortName), SHADOW_PROPERTY_FIELD(MicrostructurePhase::dimensionality), SHADOW_PROPERTY_FIELD(MicrostructurePhase::crystalSymmetryClass)});
 			dislocationNetwork->addCrystalStructure(pattern);
 
 			// Add Burgers vector families.
@@ -552,6 +554,7 @@ void CAImporter::FrameLoader::loadFile()
 				family->setColor(patterns[i].burgersVectorFamilies[j].color);
 				family->setName(patterns[i].burgersVectorFamilies[j].name);
 				family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
+				family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
 				pattern->addBurgersVectorFamily(family);
 			}
 

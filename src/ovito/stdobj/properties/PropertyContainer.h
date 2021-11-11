@@ -191,6 +191,7 @@ private:
 
 	/// The assigned title of the data object, which is displayed in the user interface.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+	DECLARE_SHADOW_PROPERTY_FIELD(title);
 };
 
 /// Encapsulates a reference to a PropertyContainer in a PipelineFlowState.

@@ -91,12 +91,15 @@ private:
 
 	/// The shortened title of this phase.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, shortName, setShortName);
+	DECLARE_SHADOW_PROPERTY_FIELD(shortName);
 
 	/// The dimensionality type of the phase.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(Dimensionality, dimensionality, setDimensionality);
+	DECLARE_SHADOW_PROPERTY_FIELD(dimensionality);
 
 	/// The type of crystal symmetry of the phase if it is crystalline.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(CrystalSymmetryClass, crystalSymmetryClass, setCrystalSymmetryClass);
+	DECLARE_SHADOW_PROPERTY_FIELD(crystalSymmetryClass);
 
 	/// List of Burgers vector families defined for the phase if it is crystalline.
 	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
