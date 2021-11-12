@@ -697,7 +697,7 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
 		// to combine all mesh parts into a single SurfaceMesh object.
 		int index = 0;
 		for(ParaViewVTMBlockInfo& block : blockDatasets) {
-			if((!isLegacyAspherixFormat && block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes")) 
+			if((!isLegacyAspherixFormat && block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes") && !block.location.isEmpty()) 
 				|| (isLegacyAspherixFormat && block.blockPath.size() == 1 && block.blockPath[0] != QStringLiteral("Particles") && !block.location.isEmpty() && block.location.fileName().endsWith(".vtp"))) {
 				block.pieceIndex = index++;
 				block.pieceCount = numMeshFiles;
