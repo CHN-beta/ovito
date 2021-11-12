@@ -144,11 +144,22 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 			else if(xml.name().compare(QStringLiteral("Piece")) == 0) {
 				OVITO_ASSERT(isPiece);
 				// Determine the range of blocks that are part of the current piece-wise dataset.
-				auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) { return block.blockPath != blockBranch; });
-				int pieceCount = std::distance(datasetList.rbegin(), iter);
-				OVITO_ASSERT(pieceCount > 0 && pieceCount <= datasetList.size());
-				// Update the pirceCount field of all partial blocks belonging to the current piece-wise dataset. 
-				std::for_each(datasetList.rbegin(), iter, [&](ParaViewVTMBlockInfo& block) { OVITO_ASSERT(block.pieceIndex >= 0 && block.pieceIndex < pieceCount); block.pieceCount = pieceCount; });
+				// Also count the number of block pieces that are not empty.
+				int pieceCount = 0;
+				auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) { 
+					if(block.blockPath != blockBranch) return true;
+					if(!block.location.isEmpty()) pieceCount++;
+					return false;
+				});
+				OVITO_ASSERT(pieceCount <= datasetList.size());
+				// Update the pieceCount field of all partial blocks belonging to the current piece-wise dataset. 
+				int pieceIndex = pieceCount;
+				std::for_each(datasetList.rbegin(), iter, [&](ParaViewVTMBlockInfo& block) {
+					block.pieceCount = pieceCount;
+					if(!block.location.isEmpty()) block.pieceIndex = --pieceIndex;
+					else block.pieceIndex = -1;
+				});
+				OVITO_ASSERT(pieceIndex == 0);
 				blockBranch.pop_back();
 				isPiece = false;
 			}

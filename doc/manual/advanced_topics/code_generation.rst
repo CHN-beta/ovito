@@ -28,7 +28,7 @@ This option is useful if you are going to use the generated Python script for au
 Supported features
 """"""""""""""""""
 
-The code generator can generate Python statements for the following aspects of the visualization scene:
+The code generator can generate Python code for the following aspects of a visualization scene:
   
   * Data file import (all arguments of the :py:func:`ovito.io.import_file` function)
   * Visual elements
@@ -37,12 +37,10 @@ The code generator can generate Python statements for the following aspects of t
   * Viewport camera setup
   * Rendering engine configuration
   * Image/animation render settings
+  * Manual modifications you make to the imported model in the GUI, e.g. changing the colors/radii of particle types
 
 The following aspects are *not* covered by the code generator yet:
 
-  * Direct modifications you make to imported data objects in the GUI, e.g. the colors and radii of particle types
   * Data export to an output file
   * Key-frame based parameter animations
-
-Thus, you have may have to amend the generated script with corresponding code statements yourself to 
-take care of these things. See the sections :ref:`file_output_overview` and :py:attr:`ParticleType.radius <ovito.data.ParticleType.radius>` in the OVITO Python API documentation on how to do that.
+  * Multiple pipelines in one scene or branched pipelines
