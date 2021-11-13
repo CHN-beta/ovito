@@ -334,7 +334,8 @@ int ptm_index(ptm_local_handle_t local_handle,
 
 	ptm::convexhull_t ch;
 	double ch_points[PTM_MAX_INPUT_POINTS][3];
-	ptm_atomicenv_t env, dmn_env, grp_env;	// TODO: initialize num
+	ptm_atomicenv_t env, dmn_env, grp_env;
+	env.num = dmn_env.num = grp_env.num = 0;
 
 	if (flags & (PTM_CHECK_SC | PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO | PTM_CHECK_BCC)) {
 
