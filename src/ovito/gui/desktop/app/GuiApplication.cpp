@@ -224,9 +224,26 @@ void GuiApplication::postStartupInitialization()
 		}
 	}
 
+	// If no .ovito state file was specified on the command line, load 
+	// the user's default state from the standard location.
+	if(datasetContainer()->currentSet() == nullptr && guiMode()) {
+		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
+		if(!defaultsFilePath.isEmpty()) {
+			try {
+				datasetContainer()->loadDataset(defaultsFilePath);
+				datasetContainer()->currentSet()->setFilePath({});
+			}
+			catch(Exception& ex) {
+				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
+				ex.reportError();
+			}
+		}
+	}
+
 	// Create an empty dataset if nothing has been loaded.
-	if(datasetContainer()->currentSet() == nullptr)
+	if(datasetContainer()->currentSet() == nullptr) {
 		datasetContainer()->newDataset();
+	}
 
 	// Import data file(s) specified on the command line.
 	if(!cmdLineParser().positionalArguments().empty()) {

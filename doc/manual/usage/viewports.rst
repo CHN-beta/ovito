@@ -3,10 +3,10 @@
 Viewport windows
 ================
 
-The viewport windows of OVITO show different views of the three-dimensional scene.
-You can switch between the default two-by-two grid layout and a single viewport that fills the entire main window.
-The caption in the upper left corner of each viewport and the axis tripod in the lower left corner
-indicate the orientation of the virtual camera.
+The interactive viewport windows of OVITO show the three-dimensional visualization scene from different angles.
+The text caption in the upper left corner and the axis tripod in the lower left corner of each viewport
+indicate the orientation of the virtual camera. If you don't like the standard 2-by-2 viewport layout, 
+you can :ref:`tailor the layout <viewport_layouts>` to your specific needs.
 
 .. _usage.viewports.navigation:
 

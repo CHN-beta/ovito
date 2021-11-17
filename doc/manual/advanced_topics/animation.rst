@@ -1,7 +1,7 @@
 .. _usage.animation:
 
-Animating parameters and the camera
-===================================
+Parameter and camera animations
+===============================
 .. 
    <titleabbrev>Animations</titleabbrev>
 

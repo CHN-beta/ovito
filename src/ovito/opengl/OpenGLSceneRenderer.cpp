@@ -348,8 +348,10 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
 		// Render additional content that is only visible in the interactive viewports.
-		renderInteractiveContent();
-		OVITO_REPORT_OPENGL_ERRORS(this);
+		if(viewport() && isInteractive()) {
+			renderInteractiveContent();
+			OVITO_REPORT_OPENGL_ERRORS(this);
+		}
 
 		// Render translucent objects in a second pass.
 		rebindVAO();

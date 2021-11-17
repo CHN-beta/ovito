@@ -47,11 +47,11 @@ public:
 		EDGE1 = (1<<0),	//< First edge visible
 		EDGE2 = (1<<1),	//< Second edge visible
 		EDGE3 = (1<<2),	//< Third edge visible
+		IS_SELECTED = (1<<3), //< Face selection state
         EDGES12 = EDGE1 | EDGE2,	//< First and second edge visible
 		EDGES23 = EDGE2 | EDGE3,	//< Second and third edge visible
 		EDGES13 = EDGE1 | EDGE3,	//< First and third edge visible
-		EDGES123 = EDGE1 | EDGE2 | EDGE3,	//< All edges Visible
-		IS_SELECTED //< Face selection state
+		EDGES123 = EDGE1 | EDGE2 | EDGE3	//< All edges visible
 	};
 	Q_DECLARE_FLAGS(MeshFaceFlags, MeshFaceFlag);
 

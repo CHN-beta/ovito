@@ -61,46 +61,63 @@ OVITO's functionality in script-based workflows. Please refer to :ref:`this sect
 Troubleshooting
 ===============
 
-If you run into any problems during the installation of OVITO, you can contact us via our `online support forum <https://www.ovito.org/forum/>`_. 
-The OVITO team will be happy to help you.
+If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_. 
+The OVITO team will be happy to help you. The most commonly encountered installation issues are described here: 
 
 Linux
 -----
 
-Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
+.. error::
 
-  ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
-           cannot open shared object file: No such file or directory
+  Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
 
-This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
-extracting the OVITO installation archive on a computer other than the target machine. 
-**Solution:** Reinstall OVITO by extracting the installation archive on the target machine. 
-Do *not* transfer the program directory tree between different computers after it has been extracted.
+    ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
+             cannot open shared object file: No such file or directory
 
-Furthermore, you may see the the following error when running :command:`ovito` on a Linux machine::
+  This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
+  extracting the OVITO installation archive on a computer other than the target machine. 
 
-  qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
-  This application failed to start because no Qt platform plugin could be initialized. 
-  Reinstalling the application may fix this problem.
-  Available platform plugins are: minimal, offscreen, vnc, xcb.
+.. admonition:: Solution
+  
+  Reinstall OVITO by extracting the installation archive on the target machine. 
+  Do *not* transfer the program directory tree between different computers after it has been extracted.
 
-In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be 
-preinstalled on fresh Linux systems. **Solution:** Install the required libraries using the system's package manager::
+.. error::
 
-  # On Ubuntu/Debian systems:
-  sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-                       libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
-                       libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
+  You may see the the following error when running :command:`ovito` on a Linux machine::
+
+    qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+    This application failed to start because no Qt platform plugin could be initialized. 
+    Reinstalling the application may fix this problem.
+    Available platform plugins are: minimal, offscreen, vnc, xcb.
+
+  In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be 
+  preinstalled on fresh Linux systems. 
+
+.. admonition:: Solution
+
+  Install the required libraries using the system's package manager:
+
+  .. code-block:: shell
+
+    # On Ubuntu/Debian systems:
+    sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+                         libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
+                         libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
                    
-  # On CentOS/RHEL systems:
-  sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
+    # On CentOS/RHEL systems:
+    sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
-Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
+  Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
 
-OVITO requires the OpenSSL system libraries (version 1.1.*). If they are not present, starting :command:`ovito` will fail with the error::
+.. error::
 
-  error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
+  OVITO depends on the OpenSSL libraries (version 1.1.*). If they are not present on your system, starting :command:`ovito` will typically fail with the error::
 
-**Solution:** Please install the OpenSSL 1.1 libraries using the package manager of your Linux distribution. OVITO depends on the 
-presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
-you should install the `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__ package.
+    error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
+
+.. admonition:: Solution
+
+  Please install the OpenSSL 1.1.x libraries using the package manager of your Linux distribution. OVITO depends on the 
+  presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
+  you should install the package `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__.

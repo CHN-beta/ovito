@@ -49,12 +49,16 @@ Output image size
   Note that you can activate the :ref:`preview mode <usage.viewports.menu>` for an interactive viewport window to
   see exactly which rectangular area of the viewport will be visible in the final output image.
 
+Preview visible region
+  This option activates preview mode for the current viewport window, which means it will display a rectangular 
+  frame indicating the area that will be visible in the rendered output image. 
+  The aspect ratio of the rectangular guide is determined by the output image width and height.
+
 Render all viewports |ovito-pro|
   Activate this option to generate a composed output image with multiple side-by-side views of your 3d scene. 
-  The arrangement of the views is determined by the current layout of the interactive viewport panels. 
+  The arrangement of the views is determined by the current :ref:`layout of the interactive viewport windows <viewport_layouts>`. 
   Note that you can modify the number, size and layout of the viewports by dragging the vertical and horizontal lines separating
-  the viewport windows. Right-click on one of the separator lines to open a popup menu providing further layout functions, or
-  use the :ref:`viewport menu <usage.viewports.menu>`.
+  the viewport windows.
 
 Save to file
   This option tells OVITO to save the rendered image or movie to disk in addition to displaying it

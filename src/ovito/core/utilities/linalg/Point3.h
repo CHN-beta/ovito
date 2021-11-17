@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -348,10 +348,8 @@ using Point3I = Point_3<int>;
 }	// End of namespace
 
 // Specialize STL templates for Point_3.
-namespace std {
-	template<typename T> struct tuple_size<Ovito::Point_3<T>> : std::integral_constant<std::size_t, 3> {};
-	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Point_3<T>> { using type = T; };
-};
+template<typename T> struct std::tuple_size<Ovito::Point_3<T>> : std::integral_constant<std::size_t, 3> {};
+template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Point_3<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Point3);
 Q_DECLARE_METATYPE(Ovito::Point3I);

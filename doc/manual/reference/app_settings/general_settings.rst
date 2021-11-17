@@ -32,7 +32,7 @@ Graphics hardware interface
   and should work well on most systems. Vulkan is the more modern programming interface, and some graphics drivers
   may still exhibit compatibility problems. Please inform the OVITO developers about any such problems.
   
-  The Vulkan interface provides the advantage of leeting you explicitly select the graphics
+  The Vulkan interface provides the advantage of letting you explicitly select the graphics
   device to be used by OVITO when the system contains several GPUs and/or integrated graphics processors. For the OpenGL interface, in contrast,
   you have to make the device selection on the `operating system or graphics driver level <https://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/select-gpu-to-use-by-specific-applications/eb671f52-5c24-428d-a7a0-02a36e91ee2f>`__.
 

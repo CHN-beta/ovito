@@ -166,7 +166,7 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
                     }
 
                     // Override color of faces that are selected.
-                    if(face->isSelected() && renderer->isInteractive()) {
+                    if(face->isSelected() && renderer->isInteractive() && !renderer->isPicking()) {
                         if(!renderWithPseudoColorMapping)
                             rv->color = ColorAT<float>(faceSelectionColor());
                         else
@@ -263,6 +263,8 @@ void OpenGLMeshPrimitive::render(OpenGLSceneRenderer* renderer)
         }
     }
     else {
+        OVITO_ASSERT(!renderer->isPicking());
+        
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 1, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", uniformColor().a());

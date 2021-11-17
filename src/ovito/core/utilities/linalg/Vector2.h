@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -368,10 +368,8 @@ using Vector2I = Vector_2<int>;
 }	// End of namespace
 
 // Specialize STL templates for Vector_2.
-namespace std {
-	template<typename T> struct tuple_size<Ovito::Vector_2<T>> : std::integral_constant<std::size_t, 2> {};
-	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Vector_2<T>> { using type = T; };
-};
+template<typename T> struct std::tuple_size<Ovito::Vector_2<T>> : std::integral_constant<std::size_t, 2> {};
+template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_2<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector2);
 Q_DECLARE_METATYPE(Ovito::Vector2I);

@@ -8,19 +8,19 @@ Semi-transparent particles
    :align: right
 
 Particles can be made semi-transparent by setting their ``Transparency`` :ref:`particle property <usage.particle_properties.special>`.
-A ``Transparency`` value of 0.0 lets a particle appear fully opaque, while any value in the range 0.0-1.0 renders the particle translucent.
+A value of 0.0 lets a particle appear fully opaque (the default), while values in the range 0.0 -- 1.0 render a particle translucent.
 
-The easiest way to set the ``Transparency`` property is the :ref:`particles.modifiers.compute_property` modifier.
+The easiest way to set the ``Transparency`` property to a value is inserting the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
 Simply enter the desired transparency value into the expression field and the :ref:`particles.modifiers.compute_property` 
 modifier will assign that value to all particles.
 
-Sometimes you want to make only a subset of the particles semi-transparent. For this, first select the particles, 
-then apply the :ref:`particles.modifiers.compute_property` modifier. 
-Activate its :guilabel:`Compute only for selected particles` option to restrict the assignment of the 
-``Transparency`` value to the currently selected particles only. Unselected particles will keep their transparency values (0 by default).
+Setting the transparency selectively
+""""""""""""""""""""""""""""""""""""
 
-For demonstration purposes, in the example shown on the right, the :ref:`particles.modifiers.compute_property` 
-modifier was used to set the ``Transparency`` property according to a simple math formula: ``ReducedPosition.X``.
-Thus, instead of assigning a uniform transparency value to all particles, each particle's value is computed
-individually from its X position divided by the simulation cell size, 
-which varies between 0 to 1 from one side of the simulation box to the other.
+You may want to make only a subset of the particles semi-transparent. To do this, first select the particles to be made semi-transparent, 
+then apply the :ref:`particles.modifiers.compute_property` modifier. Activate its :guilabel:`Compute only for selected particles` option to restrict the assignment of the 
+new ``Transparency`` value only to the currently selected particles. Unselected particles will keep their transparency values (0.0 by default).
+
+In the example picture on this page, the :ref:`particles.modifiers.compute_property` 
+modifier was used to set the ``Transparency`` property based on a simple math formula: ``ReducedPosition.X``.
+Thus, instead of assigning a uniform transparency value to all particles, each particle's value depends on its local X coordinate.

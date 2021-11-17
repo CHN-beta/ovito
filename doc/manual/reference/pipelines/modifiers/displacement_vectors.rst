@@ -53,7 +53,7 @@ Particle identities
 
 In order to calculate displacement vectors OVITO needs to establish a one-to-one mapping between the particles in the reference
 and the current configuration. If the particles have a property named ``Particle Identifier``,
-then OVITO will use these identitiers to generate the one-to-one mapping. In other words, if the particles possess unique identifier, then 
+then OVITO will use these identifiers to generate the one-to-one mapping. In other words, if the particles possess unique identifier, then 
 OVITO is able to handle changes in the storage order of particles. However, if particles do not possess unique identifiers, then the modifier requires that
 the reference configuration contains exactly the same number of particles as the current configuration
 and it assumes that the storage order is the same in both configuration. This assumption is not always correct as some simulation

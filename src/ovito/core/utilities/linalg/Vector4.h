@@ -366,10 +366,8 @@ using Vector4I = Vector_4<int>;
 }	// End of namespace
 
 // Specialize STL templates for Vector_4.
-namespace std {
-	template<typename T> struct tuple_size<Ovito::Vector_4<T>> : std::integral_constant<std::size_t, 4> {};
-	template<std::size_t I, typename T> struct tuple_element<I, Ovito::Vector_4<T>> { using type = T; };
-};
+template<typename T> struct std::tuple_size<Ovito::Vector_4<T>> : std::integral_constant<std::size_t, 4> {};
+template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_4<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector4);
 Q_DECLARE_METATYPE(Ovito::Vector4I);

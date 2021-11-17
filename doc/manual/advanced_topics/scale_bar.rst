@@ -1,7 +1,7 @@
 .. _howto.scale_bar:
 
-Adding a scale bar to a viewport
-================================
+Adding a scale bar to a viewport |ovito-pro|
+============================================
 
 .. image:: /images/viewport_layers/python_script_scale_bar_example.*
   :width: 35%
