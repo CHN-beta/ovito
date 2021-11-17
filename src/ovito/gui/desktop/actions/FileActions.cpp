@@ -115,7 +115,23 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		MainWindow* mainWin = new MainWindow();
 		mainWin->show();
 		mainWin->restoreLayout();
-		mainWin->datasetContainer().newDataset();
+
+		// Optionally load the user's default state from the standard location.
+		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
+		if(!defaultsFilePath.isEmpty()) {
+			try {
+				mainWin->datasetContainer().loadDataset(defaultsFilePath);
+				mainWin->datasetContainer().currentSet()->setFilePath({});
+			}
+			catch(Exception& ex) {
+				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
+				ex.reportError();
+			}
+		}
+
+		if(mainWin->datasetContainer().currentSet() == nullptr) {
+			mainWin->datasetContainer().newDataset();
+		}
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

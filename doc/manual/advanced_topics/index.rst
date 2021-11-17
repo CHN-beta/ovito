@@ -13,6 +13,7 @@ Advanced topics
   animation
   clone_pipeline
   remote_file_access
+  customize_init_state
   viewport_layouts
   code_generation
   scale_bar

@@ -4,15 +4,34 @@
 OVITO Pro
 =========
 
+There exist two variants of our software: **OVITO Basic** and **OVITO Pro**. 
+The two versions differ in terms of available program features and licensing conditions. 
+This user manual covers both editions of OVITO and the program features exclusively available in the *Pro* edition are 
+specifically marked with the following tag: |ovito-pro|
+
+Here is a (nearly complete) list of the program feature that are available in **OVITO Pro** but not in OVITO Basic:
+
 .. image:: /images/team/ovito_logo_128.*
-   :width: 10%
+   :width: 15%
    :align: right
 
-There exist two variants of our software: *OVITO Basic* and *OVITO Pro*. 
-The two versions differ in terms of available program features and licensing conditions. 
-Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ to learn more about the differences.
+- Instant :ref:`python_code_generation`,
+- :ref:`data_source.python_script` pipeline source,
+- :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters,
+- LAMMPS integration via :ref:`data_source.lammps_script` pipeline source,
+- :ref:`Tachyon <rendering.tachyon_renderer>` rendering engine,
+- :ref:`OSPRay <rendering.ospray_renderer>` rendering engine,
+- :ref:`particles.modifiers.bin_and_reduce` modifier,
+- :ref:`particles.modifiers.bond_analysis` modifier,
+- :ref:`particles.modifiers.color_by_type` modifier,
+- :ref:`particles.modifiers.construct_surface_mesh.regions` with the :ref:`particles.modifiers.construct_surface_mesh` modifier,
+- :ref:`particles.modifiers.time_averaging` modifier,
+- :ref:`particles.modifiers.time_series` modifier,
+- :ref:`viewport_layouts.rendering`,
+- Use of Miller indices in the :ref:`particles.modifiers.slice` modifier.
 
-This user manual covers both editions of OVITO. Program features exclusively available in the *Pro* edition are marked with the following tag: |ovito-pro|
+Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, the support services that we offer, and pricing information.
+By licensing OVITO Pro you support the development and maintenance of both editions of the our software and the :ref:`OVITO Python module <scripting_manual>`.
 
 .. _credits.ovito_pro_activation:
 

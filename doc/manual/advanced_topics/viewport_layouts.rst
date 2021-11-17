@@ -49,6 +49,8 @@ objects or models in different viewport windows of the layout.
 Read the introduction on :ref:`pipeline cloning <clone_pipeline>` to learn how to duplicate an existing pipeline
 in OVITO and change the visualization style or input dataset for the cloned pipeline. 
 
+.. _viewport_layouts.rendering:
+
 Rendering images or movies of a viewport layout |ovito-pro|
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -60,3 +62,8 @@ to include all panels of the current layout in the rendered output image or movi
 
 Additionally, switch on the option :guilabel:`Preview visible region` to display guides in all interactive viewport windows 
 indicating the visible portions that will be part of the final output layout. 
+
+.. tip::
+
+  If you want to permanently replace the standard 2-by-2 viewport layout of OVITO with your own layout, 
+  you can do it via :ref:`this customization mechanism <custom_initial_session_state>`.
