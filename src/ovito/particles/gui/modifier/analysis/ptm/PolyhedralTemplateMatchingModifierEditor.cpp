@@ -117,20 +117,12 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
 	layout1->addWidget(_rmsdPlotWidget);
 	connect(this, &PolyhedralTemplateMatchingModifierEditor::contentsReplaced, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
 
+	// Update data plot whenever the modifier has calculated new results.
+	connect(this, &PropertiesEditor::pipelineOutputChanged, this, &PolyhedralTemplateMatchingModifierEditor::plotHistogram);
+
 	// Status label.
 	layout1->addSpacing(10);
 	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
-}
-
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool PolyhedralTemplateMatchingModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-	if(source == modifierApplication() && event.type() == ReferenceEvent::PipelineCacheUpdated) {
-		plotHistogramLater(this);
-	}
-	return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

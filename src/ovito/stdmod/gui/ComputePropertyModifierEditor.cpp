@@ -128,7 +128,7 @@ bool ComputePropertyModifierEditor::referenceEvent(RefTarget* source, const Refe
 	if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
 		updateExpressionFieldsLater(this);
 	}
-	else if(source == modifierApplication() && event.type() == ReferenceEvent::ObjectStatusChanged) {
+	else if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
 		updateVariablesListLater(this);
 	}
 	return PropertiesEditor::referenceEvent(source, event);
