@@ -1142,7 +1142,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		else {
 			if(isBoxCornerInside3DRegion == -1) {
 				if(closedContours.empty()) {
-					if(boost::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> region = inputMeshData.locatePoint(cell()->cellOrigin(), 0, _faceSubset)) {
+					if(std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> region = inputMeshData.locatePoint(cell()->cellOrigin(), 0, _faceSubset)) {
 						if(hasRegions) {
 							if(region->first >= 0 && region->first < isFilledProperty.size()) {
 								isBoxCornerInside3DRegion = (bool)isFilledProperty[region->first];

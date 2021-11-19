@@ -175,7 +175,7 @@ private:
 	bool _pipelineUpdatePending = false;
 
 	/// This utility object is used to suppress preliminary viewport updates when playing an IMD trajectory.
-	boost::optional<PreliminaryViewportUpdatesSuspender> _preliminaryUpdateSuspender;
+	std::optional<PreliminaryViewportUpdatesSuspender> _preliminaryUpdateSuspender;
 };
 
 }	// End of namespace

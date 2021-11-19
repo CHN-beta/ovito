@@ -64,7 +64,7 @@ public:
 	PseudoColorMapping pseudoColorMapping() const;
 
 	/// Determines the min/max range of values stored in the given property array.
-	boost::optional<std::pair<FloatType, FloatType>> determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const;
+	std::optional<std::pair<FloatType, FloatType>> determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const;
 
 public Q_SLOTS:
 

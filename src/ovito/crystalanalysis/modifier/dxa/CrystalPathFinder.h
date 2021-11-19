@@ -57,7 +57,7 @@ public:
 	/// Finds an atom-to-atom path from atom 1 to atom 2 that lies entirely in the good crystal region.
 	/// If a path could be found, returns the corresponding ideal vector connecting the two
 	/// atoms in the ideal stress-free reference configuration.
-	boost::optional<ClusterVector> findPath(size_t atomIndex1, size_t atomIndex2);
+	std::optional<ClusterVector> findPath(size_t atomIndex1, size_t atomIndex2);
 
 private:
 

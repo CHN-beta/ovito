@@ -48,7 +48,7 @@ public:
 	virtual void setMesh(const TriMesh& mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
 		// Create a shallow copy of the mesh and store it in this buffer object.
 		_mesh = mesh;
-		_isMeshFullyOpaque = boost::none;
+		_isMeshFullyOpaque.reset();
 	}
 
 	/// \brief Returns the number of triangle faces stored in the buffer.
@@ -75,7 +75,7 @@ public:
 	/// Sets the rendering color to be used if the mesh doesn't have per-vertex colors.
 	virtual void setUniformColor(const ColorA& color) { 
 		_uniformColor = color; 
-		_isMeshFullyOpaque = boost::none;
+		_isMeshFullyOpaque.reset();
 	}
 
 	/// Returns the rendering color to be used if the mesh doesn't have per-vertex colors.
@@ -87,7 +87,7 @@ public:
 	/// Sets array of materials referenced by the materialIndex() field of the mesh faces.
 	virtual void setMaterialColors(std::vector<ColorA> colors) { 
 		_materialColors = std::move(colors); 
-		_isMeshFullyOpaque = boost::none;
+		_isMeshFullyOpaque.reset();
 	}
 
 	/// Returns the mapping from pseudo-color values at the mesh vertices to RGB colors.
@@ -109,7 +109,7 @@ public:
 		_perInstanceTMs = std::move(perInstanceTMs);
 		_perInstanceColors = std::move(perInstanceColors);
 		OVITO_ASSERT(useInstancedRendering());
-		_isMeshFullyOpaque = boost::none;
+		_isMeshFullyOpaque.reset();
 	}
 
 	/// Returns the list of transformation matrices when rendering multiple instances of the mesh is enabled.
@@ -135,7 +135,7 @@ private:
 	bool _cullFaces = false;
 
 	/// Indicates whether the mesh's colors are all fully opaque (alpha=1).
-	mutable boost::optional<bool> _isMeshFullyOpaque;
+	mutable std::optional<bool> _isMeshFullyOpaque;
 
 	/// The array of materials referenced by the materialIndex() field of the mesh faces.
 	std::vector<ColorA> _materialColors;

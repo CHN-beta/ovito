@@ -115,7 +115,7 @@ private:
 			do {
 				// Skip every other half-edge.
 				if(edge->oppositeEdge() == nullptr || edgeSense(_ppvec(edge->vertex1()->pos(), edge->vertex2()->pos()))) {
-					boost::optional<Vector3> placement = computePlacement(edge);
+					std::optional<Vector3> placement = computePlacement(edge);
 					FloatType cost = placement ? computeCost(edge, *placement) : -1;
 					_pqHandles.insert(std::make_pair(edge, _pq.push({ edge, cost })));
 				}
@@ -151,7 +151,7 @@ private:
 				break;
 
 			if(cost >= 0) {
-				boost::optional<Vector3> placement = computePlacement(edge);
+				std::optional<Vector3> placement = computePlacement(edge);
 				if(placement && isCollapseTopologicallyValid(edge, edge->vertex2()->pos() + *placement)) {
 					collapse(edge, *placement);
 					collapsedEdges++;
@@ -340,7 +340,7 @@ private:
 			}
 		}
 
-		boost::optional<Vector3> solve() const
+		std::optional<Vector3> solve() const
 		{
 			// It might happen that there were not enough alpha-compatible constraints.
 			// In that case there is simply no good vertex placement
@@ -355,7 +355,7 @@ private:
 	};
 
 
-	boost::optional<Vector3> computePlacement(Edge* edge) const
+	std::optional<Vector3> computePlacement(Edge* edge) const
 	{
 		Constraints constraints;
 		addVolumePreservationConstraints(edge, constraints);
@@ -628,7 +628,7 @@ private:
 		auto handle = _pqHandles.find(edge);
 		if(handle == _pqHandles.end())
 			return;
-		boost::optional<Vector3> placement = computePlacement(edge);
+		std::optional<Vector3> placement = computePlacement(edge);
 		(*handle->second).cost = placement ? computeCost(edge, *placement) : -1;
 		_pq.update(handle->second);
 	}

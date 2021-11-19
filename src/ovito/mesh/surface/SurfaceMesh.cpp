@@ -119,7 +119,7 @@ void SurfaceMesh::verifyMeshIntegrity() const
 * Determines which spatial region contains the given point in space.
 * Returns -1 if the point is exactly on a region boundary.
 ******************************************************************************/
-boost::optional<std::pair<SurfaceMesh::region_index, FloatType>> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
+std::optional<std::pair<SurfaceMesh::region_index, FloatType>> SurfaceMesh::locatePoint(const Point3& location, FloatType epsilon) const
 {
 	verifyMeshIntegrity();
 	return SurfaceMeshAccess(this).locatePoint(location, epsilon);

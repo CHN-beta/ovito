@@ -145,7 +145,7 @@ bool SurfaceMeshAccess::smoothMesh(int numIterations, Task& task, FloatType k_PB
 * Signed Distance Computation Using the Angle Weighted Pseudonormal
 * IEEE Transactions on Visualization and Computer Graphics 11 (2005), Page 243
 ******************************************************************************/
-boost::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMeshAccess::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
+std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMeshAccess::locatePoint(const Point3& location, FloatType epsilon, const boost::dynamic_bitset<>& faceSubset) const
 {
 	// Determine which vertex is closest to the test point.
 	FloatType closestDistanceSq = FLOATTYPE_MAX;

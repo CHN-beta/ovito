@@ -155,7 +155,7 @@ bool ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, Task& promi
 			if(cluster1->id == 0 || cluster2->id == 0) continue;
 
 			// Determine the ideal vector connecting the two atoms.
-			boost::optional<ClusterVector> idealVector = pathFinder.findPath(edge->vertex1, edge->vertex2);
+			std::optional<ClusterVector> idealVector = pathFinder.findPath(edge->vertex1, edge->vertex2);
 			if(!idealVector)
 				continue;
 

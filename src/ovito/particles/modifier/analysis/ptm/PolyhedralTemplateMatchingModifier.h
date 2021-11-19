@@ -111,7 +111,7 @@ private:
 
 		/// The internal PTM algorithm object.
 		/// Store it in an optional<> so that it can be released early in the cleanup() method.
-		boost::optional<PTMAlgorithm> _algorithm;
+		std::optional<PTMAlgorithm> _algorithm;
 
 		// Modifier outputs:
 		const PropertyPtr _rmsd;

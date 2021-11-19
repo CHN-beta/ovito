@@ -32,9 +32,6 @@
 
 namespace Ovito {
 
-/// The cursor shape shown while the mouse is positioned over an object.
-boost::optional<QCursor> SelectionMode::_hoverCursor;
-
 /******************************************************************************
 * Handles the mouse down event for the given viewport.
 ******************************************************************************/

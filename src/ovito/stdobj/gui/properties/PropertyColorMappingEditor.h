@@ -63,7 +63,7 @@ private:
 	QIcon iconFromColorMap(ColorCodingGradient* map);
 
 	/// Determines the min/max range of values in the selected input property.
-	boost::optional<std::pair<FloatType, FloatType>> determineValueRange() const;
+	std::optional<std::pair<FloatType, FloatType>> determineValueRange() const;
 
 	/// Determine the property value corresponding to the given relative position in the range interval.
 	FloatType computeRangeValue(FloatType t) const;

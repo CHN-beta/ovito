@@ -637,7 +637,7 @@ void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Poi
 ******************************************************************************/
 bool MeshPrimitive::isFullyOpaque() const
 { 
-	if(_isMeshFullyOpaque == boost::none) {
+	if(_isMeshFullyOpaque.has_value() == false) {
 		if(_perInstanceColors)
 			_isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });		
 		else if(mesh().hasVertexColors())

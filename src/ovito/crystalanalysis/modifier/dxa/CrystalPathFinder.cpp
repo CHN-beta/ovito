@@ -29,7 +29,7 @@ namespace Ovito { namespace CrystalAnalysis {
 * Finds an atom-to-atom path from atom 1 to atom 2 that lies entirely in the
 * good crystal region.
 ******************************************************************************/
-boost::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size_t atomIndex2)
+std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size_t atomIndex2)
 {
 	OVITO_ASSERT(atomIndex1 != atomIndex2);
 
@@ -41,7 +41,7 @@ boost::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, si
 		qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex1, atomIndex2);
 		if(neighborIndex != -1) {
 			const Vector3& refv = structureAnalysis().neighborLatticeVector(atomIndex1, neighborIndex);
-			return boost::optional<ClusterVector>(ClusterVector(refv, cluster1));
+			return std::optional<ClusterVector>(ClusterVector(refv, cluster1));
 		}
 	}
 
@@ -50,12 +50,12 @@ boost::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, si
 		qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex2, atomIndex1);
 		if(neighborIndex != -1) {
 			const Vector3& refv = structureAnalysis().neighborLatticeVector(atomIndex2, neighborIndex);
-			return boost::optional<ClusterVector>(ClusterVector(-refv, cluster2));
+			return std::optional<ClusterVector>(ClusterVector(-refv, cluster2));
 		}
 	}
 
 	if(_maxPathLength == 1)
-		return boost::optional<ClusterVector>();
+		return std::optional<ClusterVector>();
 
 	_nodePool.clear(true);
 
@@ -67,7 +67,7 @@ boost::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, si
 
 	// Process items from queue until it becomes empty or the destination atom has been reached.
 	PathNode* end_of_queue = &start;
-	boost::optional<ClusterVector> result;
+	std::optional<ClusterVector> result;
 	for(PathNode* current = &start; current != nullptr && !result; current = current->nextToProcess) {
 		size_t currentAtom = current->atomIndex;
 		OVITO_ASSERT(currentAtom != atomIndex2);

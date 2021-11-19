@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,15 +56,14 @@ public:
 	virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
 	/// \brief Returns the cursor that is used by OVITO's viewports to indicate a selection.
-	static QCursor selectionCursor() {
-		if(!_hoverCursor)
+	static QCursor& selectionCursor() {
 #ifndef Q_OS_WASM
-			_hoverCursor = QCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_select.png")));
+		static QCursor hoverCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_select.png")));
 #else
-			// WebAssembly platform does not support custom cursor shapes. Have to use one of the built-in shapes.
-			_hoverCursor = QCursor(Qt::CrossCursor);
+		// WebAssembly platform does not support custom cursor shapes. Have to use one of the built-in shapes.
+		static QCursor hoverCursor(Qt::CrossCursor);
 #endif
-		return _hoverCursor.get();
+		return hoverCursor;
 	}
 
 protected:
@@ -80,9 +79,6 @@ protected:
 
 	/// The current viewport we are working in.
 	Viewport* _viewport = nullptr;
-
-	/// The cursor shown while the mouse cursor is over an object.
-	static boost::optional<QCursor> _hoverCursor;
 };
 
 }	// End of namespace

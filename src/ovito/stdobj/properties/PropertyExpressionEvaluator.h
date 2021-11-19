@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,8 +29,6 @@
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 #include <muparser/muParser.h>
-#include <boost/utility.hpp>
-#include <boost/optional.hpp>
 
 namespace Ovito { namespace StdObj {
 
@@ -178,11 +176,15 @@ protected:
 public:
 
 	/// One instance of this class is created per thread.
-	class OVITO_STDOBJ_EXPORT Worker : boost::noncopyable {
+	class OVITO_STDOBJ_EXPORT Worker {
 	public:
 
 		/// Initializes the worker instance.
 		Worker(PropertyExpressionEvaluator& evaluator);
+
+		// Make class noncopyable.
+		Worker(const Worker&) = delete;
+		Worker& operator=(const Worker&) = delete;
 
 		/// Evaluates the expression for a specific data element and a specific vector component.
 		double evaluate(size_t elementIndex, size_t component);

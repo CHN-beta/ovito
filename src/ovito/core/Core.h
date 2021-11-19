@@ -114,7 +114,6 @@
 * Boost Library
 ******************************************************************************/
 #include <boost/dynamic_bitset.hpp>
-#include <boost/optional/optional.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/algorithm/cxx11/all_of.hpp>

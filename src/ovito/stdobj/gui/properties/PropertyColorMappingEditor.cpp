@@ -205,7 +205,7 @@ bool PropertyColorMappingEditor::referenceEvent(RefTarget* source, const Referen
 /******************************************************************************
 * Determines the min/max range of values in the selected input property.
 ******************************************************************************/
-boost::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineValueRange() const
+std::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineValueRange() const
 {
 	// Get the color mapping object.
 	PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
@@ -280,7 +280,7 @@ void PropertyColorMappingEditor::onAdjustRange()
 {
 	undoableTransaction(tr("Adjust range"), [&]() {
 		if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
-			if(boost::optional<std::pair<FloatType, FloatType>> range = determineValueRange()) {
+			if(std::optional<std::pair<FloatType, FloatType>> range = determineValueRange()) {
 				mapping->setStartValue(range->first);
 				mapping->setEndValue(range->second);
 			}

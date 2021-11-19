@@ -605,7 +605,7 @@ QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 sub
 
 	if(voxelGrid()->domain()) {
 
-		auto locateFaceOnSide = [&](size_t dim1, size_t dim2, size_t dim3, bool oppositeSide) -> boost::optional<std::array<size_t, 3>> {
+		auto locateFaceOnSide = [&](size_t dim1, size_t dim2, size_t dim3, bool oppositeSide) -> std::optional<std::array<size_t, 3>> {
 			const VoxelGrid::GridDimensions& gridDims = voxelGrid()->shape();
 			size_t ntri = gridDims[dim1] * gridDims[dim2] * _trianglesPerCell;
 			if(subobjectId < ntri) {
@@ -616,7 +616,7 @@ QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 sub
 				return coords;
 			}
 			subobjectId -= ntri;
-			return boost::none;
+			return std::nullopt;
 		};
 
 		// Determine the grid cell the mouse cursor is pointing at.

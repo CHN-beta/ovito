@@ -92,7 +92,7 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 /******************************************************************************
 * Determines the min/max range of values stored in the given property array.
 ******************************************************************************/
-boost::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
+std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
 {
 	OVITO_ASSERT(pseudoColorProperty);
 	OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());
