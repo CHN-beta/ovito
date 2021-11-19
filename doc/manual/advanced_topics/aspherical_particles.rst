@@ -9,6 +9,12 @@ Non-spherical particle shapes
    
    Ellipsoidal particles
 
+.. figure:: /images/howtos/particles_usershape_example.jpg
+   :figwidth: 25%
+   :align: right
+
+   User-defined particle shapes
+
 OVITO has built-in support for a range of different particles shapes aside from the standard spherical shape.
 Furthermore, it supports user-defined particle shapes, which are specified in terms of polyhedral meshes:
 
@@ -30,7 +36,7 @@ or on a per particle type basis in the :ref:`Particle types <scene_objects.parti
 Size and orientation of particles are controlled by properties
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-By assigning values to the following particle properties in OVITO, you can control the orientation and the dimensions and size of 
+By assigning values to the following particle properties in OVITO, you can control the orientation and the dimensions or size of 
 each particle individually:
 
    - ``Radius`` (scalar)
@@ -38,9 +44,9 @@ each particle individually:
    - ``Orientation`` (X, Y, Z, W)
    - ``Superquadric Roundness`` (Phi, Theta)
 
-The property assignment can happen directly during import of your data file into OVITO by mapping corresponding
-file columns to the right target properties in OVITO. Furthermore, you can subsequently assign values as needed by inserting
-the :ref:`particles.modifiers.compute_property` modifier into the a data pipeline later on.
+The property assignment can happen directly during import of your data file into OVITO by mapping values from corresponding
+file columns to the right target properties in OVITO. Furthermore, you can subsequently assign values to these properties as needed by inserting
+the :ref:`particles.modifiers.compute_property` modifier into the a data pipeline.
 
 The orientation of non-spherical particles is controlled by the ``Orientation`` particle property,
 which consists of four components :math:`\mathrm{q} = (x, y, z, w)` forming a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__. 
@@ -49,11 +55,11 @@ a rotation matrix.
 
 Note that OVITO employs a notation for quaternions that follows the `work of Ken Shoemake <https://www.ljll.math.upmc.fr/~frey/papers/scientific%20visualisation/Shoemake%20K.,%20Quaternions.pdf>`__.
 This convention may slightly differ from other notations you find in the literature (e.g. on `Wikipedia <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__).
-The four quaternion components :math:`(x, y, z, w)` in OVITO are sometimes interchanged and written as :math:`(q_r,q_i,q_j,q_k) = (w',x',y',z')` instead.
+The four quaternion components :math:`(x, y, z, w)` are sometimes interchanged and written as :math:`(q_r,q_i,q_j,q_k) = (w',x',y',z')` instead.
 Thus, during import of orientational data into OVITO, you may have to remap the four input components of the quaternions to the right target components.
 
-The ``Orientation`` and ``Aspherical Shape`` particle properties are typically read from data files written by some simulation code. The LAMMPS simulation code, for example, 
-allows you to output this information to a dump file using the following LAMMPS script commands:
+The ``Orientation`` and ``Aspherical Shape`` particle properties are typically loaded from data files written by some simulation code. The LAMMPS simulation code, for example, 
+allows you to output this per-particle information to a dump file using the following LAMMPS script commands:
 
 :: 
 
@@ -68,8 +74,8 @@ to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientatio
 when importing the dump file. 
 
 Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns need to be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
-in OVITO. Typically, you have to set up the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` after 
-opening the dump or xyz file.
+in OVITO if you are using one of the particle shapes described below where they play a role. 
+Typically, you have to set up the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` after opening the dump or xyz file.
 
 .. _howto.aspherical_particles.spheres:
 
@@ -87,7 +93,7 @@ The `sphere <https://en.wikipedia.org/wiki/Sphere>`__ particle shape is defined 
 The sphere radius :math:`r` is controlled by the per-particle property ``Radius``. If not present, the radius is determined by the 
 :ref:`particle type <scene_objects.particle_types>` or, globally, by the :ref:`Particles <visual_elements.particles>` visual element.
 
-The ``Position`` particle property specifies the translation of the equation above away from coordinate system origin, of course.
+The ``Position`` particle property specifies an additional translation of the spherical equation above away from coordinate system origin, of course.
 
 .. _howto.aspherical_particles.ellipsoids:
 
@@ -104,7 +110,7 @@ The `ellipsoid <https://en.wikipedia.org/wiki/Ellipsoid>`__ particle shape is de
 
 The length of the principal semi-axes :math:`a`, :math:`b`, :math:`c` of the ellipsoid are controlled by the per-particle property ``Aspherical Shape``,
 which has three components `X`, `Y`, and `Z` (all positive). If all three components of the property are zero for a particle,
-OVITO falls to :math:`a=b=c=r`, with :math:`r` being the spherical radius of the particle as defined above.
+OVITO falls back to :math:`a=b=c=r`, with :math:`r` being the spherical radius of the particle as defined above.
 
 .. _howto.aspherical_particles.superquadrics:
 
@@ -119,8 +125,8 @@ The shape of `superquadric <https://en.wikipedia.org/wiki/Superquadrics>`__ part
 
   :math:`{\displaystyle \left( {\left| \frac{x}{a} \right| ^{(2/\phi)}} + {\left| \frac{y}{b} \right| ^{(2/\phi)}} \right) ^{(\phi/\theta)} + {\left| \frac{z}{c} \right| ^{(2/\theta)}} = 1}`.
 
-Like ellipsoidal particles, the superquadric shape has three semi-axes :math:`a`, :math:`b`, :math:`c`, which are specified by setting 
-the ``Aspherical Shape`` particle property. The two parameters :math:`\phi` and :math:`\theta` are called the *east-west* and *north-south* exponents and determine 
+Like ellipsoidal particles, the superquadric shape has three semi-axes :math:`a`, :math:`b`, :math:`c`, which are specified by
+the ``Aspherical Shape`` particle property. The two parameters :math:`\phi` and :math:`\theta` are called *east-west* and *north-south* exponents and determine 
 the blockiness/roundness of the superquadric ellipsoid. Both must be strictly positive. The normal sphere (or ellipsoid) is reproduced by setting :math:`\phi = \theta = 1`.
 In OVITO, the values of :math:`\phi` and :math:`\theta` are specified by the ``Superquadric Roundness`` property, which is a vector particle property having two components.
 
@@ -133,7 +139,7 @@ Boxes
    :width: 25%
    :align: right
 
-The size of box-shaped particles is given by the semi-axes :math:`a`, :math:`b`, :math:`c`, which are multiplied by a fector of two to yield the edge lengths of the box along the 
+The size of box-shaped particles is given by the semi-axes :math:`a`, :math:`b`, :math:`c`, which are multiplied by a factor of two to yield the edge lengths of the box along the 
 Cartesian coordinate axes. In OVITO the semi-axes are determined by the particle property ``Aspherical Shape``, which has three components. 
 If not present, or if the components of ``Aspherical Shape`` are zero for a particle, OVITO falls back to using the ``Radius`` particle property and renders a cube.
 
@@ -142,7 +148,7 @@ If not present, or if the components of ``Aspherical Shape`` are zero for a part
 Cylinders
 """""""""
 
-The cylinderical shape is given by the radius :math:`r` and the height :math:`h` (in the local coordinate system of the cylinder). The natural orientation of the cylinder is along the positive z-axis,
+The cylindrical shape is given by the radius :math:`r` and the height :math:`h` (in the local coordinate system of the cylinder). The natural orientation of the cylinder is along the positive z-axis,
 with an optional rotation specified by the ``Orientation`` particle property. :math:`r` and :math:`h` are determined by the particle property components ``Aspherical Shape.X`` and ``Aspherical Shape.Z``. 
 The second vector component (`Y`) is ignored. If ``Aspherical Shape`` is not defined, OVITO will fall back to :math:`h = 2 r`, with :math:`r` taken from the ``Radius`` property instead.
 
@@ -170,7 +176,7 @@ and the ``Orientation`` particle property, if present, is ignored. In other word
 
 .. note::
 
-  Rendering of flat circles and squares is only possible with the :ref:`OpenGL renderer <rendering.opengl_renderer>` of OVITO. The :ref:`Tachyon <rendering.tachyon_renderer>` and :ref:`OSPRay <rendering.ospray_renderer>` renderers 
+  Rendering of flat circles and squares is only possible with the :ref:`OpenGL renderer <rendering.opengl_renderer>` of OVITO. The :ref:`Tachyon <rendering.tachyon_renderer>` and :ref:`OSPRay <rendering.ospray_renderer>` rendering engines 
   do not support this kind of particle shape.
 
 .. _howto.aspherical_particles.user_shapes:
