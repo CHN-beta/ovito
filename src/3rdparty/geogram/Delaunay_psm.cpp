@@ -7328,6 +7328,7 @@ namespace GEO {
 
 #ifdef GEO_COMPILER_MSVC	
         void os_install_signal_handlers() {
+#if 0
 
             // Install signal handlers
             signal(SIGSEGV, signal_handler);
@@ -7391,6 +7392,7 @@ namespace GEO {
             _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
             _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
             _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
         }
 #else
         void os_install_signal_handlers() {

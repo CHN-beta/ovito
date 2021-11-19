@@ -110,8 +110,8 @@ SET(OVITO_PLUGINS_LIST "")
 # Enable software testing framework.
 ENABLE_TESTING()
 
-# Activate C++14 language standard.
-SET(CMAKE_CXX_STANDARD 14)
+# Activate C++17 language standard.
+SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
