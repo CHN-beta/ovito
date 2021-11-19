@@ -26,7 +26,6 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 class QwtPlotZoneItem;
 
@@ -55,9 +54,6 @@ protected:
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-	/// This method is called when a reference target changes.
-	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
 private:
 
 	/// The graph widget to display the RMSD histogram.
@@ -65,9 +61,6 @@ private:
 
 	/// Marks the RMSD cutoff in the histogram plot.
 	QwtPlotZoneItem* _rmsdRangeIndicator;
-
-	/// For deferred invocation of the plot repaint function.
-	DeferredMethodInvocation<PolyhedralTemplateMatchingModifierEditor, &PolyhedralTemplateMatchingModifierEditor::plotHistogram> plotHistogramLater;
 };
 
 }	// End of namespace
