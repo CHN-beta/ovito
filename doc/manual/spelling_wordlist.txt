@@ -15,6 +15,7 @@ backend
 backends
 bcc
 bicrystal
+blockiness
 Bravais
 centrosymmetric
 centrosymmetry
@@ -151,6 +152,7 @@ reproducibility
 rescale
 rescaling
 rescan
+RGB
 runtime
 Rycroft
 Schlaefli
@@ -163,6 +165,7 @@ smoothen
 smoothens
 specular
 Spherocylinder
+spherocylinders
 spherocylindrical
 stepwise
 stretchability
@@ -173,6 +176,7 @@ sublattice
 submatrix
 submenu
 superquadric
+superquadrics
 supersampling
 Tachyon
 Taubin
