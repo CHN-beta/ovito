@@ -142,7 +142,7 @@ CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, con
 	HandledTypes.insert(ChemicalElement::Diamond,           qMakePair(QString("%1 (dia) - %2"), 0.5 * (1.0/sqrt(2.0) + sqrt(11)/4)));	// halfway between second and third nn shell
 
 	for(size_t i = 0; i < NumberOfChemicalElements; i++) {
-		QMap<ChemicalElement::CrystalStructure,QPair<QString,double> >::iterator e = HandledTypes.find(ChemicalElements[i].structure);
+		auto e = HandledTypes.find(ChemicalElements[i].structure);
 
 		if(e != HandledTypes.end()) {
 			FloatType r = ChemicalElements[i].latticeParameter * e.value().second;

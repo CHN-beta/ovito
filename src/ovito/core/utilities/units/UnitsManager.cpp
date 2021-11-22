@@ -48,9 +48,8 @@ ParameterUnit* UnitsManager::getUnit(const QMetaObject* parameterUnitClass)
 {
 	OVITO_CHECK_POINTER(parameterUnitClass);
 
-	auto iter = _units.find(parameterUnitClass);
-	if(iter != _units.end())
-		return iter->second;
+	if(auto item = _units.find(parameterUnitClass); item != _units.end())
+		return item->second;
 
 	// Create an instance of this class.
 	ParameterUnit* unit = qobject_cast<ParameterUnit*>(parameterUnitClass->newInstance(Q_ARG(QObject*, this), Q_ARG(DataSet*, _dataset)));

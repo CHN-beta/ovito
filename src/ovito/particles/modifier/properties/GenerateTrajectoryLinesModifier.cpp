@@ -216,8 +216,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 						idmap.insert(std::make_pair(id, index++));
 
 					for(auto id : selectedIdentifiers) {
-						auto entry = idmap.find(id);
-						if(entry != idmap.end()) {
+						if(auto entry = idmap.find(id); entry != idmap.end()) {
 							pointData.push_back(posProperty[entry->second]);
 							timeData.push_back(timeIndex);
 							idData.push_back(id);

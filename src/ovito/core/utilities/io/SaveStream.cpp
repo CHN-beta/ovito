@@ -147,9 +147,10 @@ void SaveStream::writePointer(void* pointer)
 ******************************************************************************/
 quint64 SaveStream::pointerID(void* pointer) const
 {
-	auto iter = _pointerMap.find(pointer);
-	if(iter == _pointerMap.end()) return 0;
-	return iter->second;
+	if(auto item = _pointerMap.find(pointer); item != _pointerMap.end())
+		return item->second;
+	else
+		return 0;
 }
 
 /******************************************************************************

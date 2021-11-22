@@ -252,8 +252,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
 				ConstPropertyAccess<int> typeData(typeProperty);
 				const int* t = typeData.cbegin();
 				for(Color& c : PropertyAccess<Color>(output.makeMutable())) {
-					auto it = colorMap.find(*t);
-					if(it != colorMap.end())
+					if(auto it = colorMap.find(*t); it != colorMap.end())
 						c = it->second;
 					else
 						c = defaultColor;
@@ -351,9 +350,8 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
 				ConstPropertyAccess<int> typeData(typeProperty);
 				PropertyAccess<FloatType> radiusArray(output.makeMutable());
 				boost::transform(typeData, radiusArray.begin(), [&](int t) {
-					auto it = radiusMap.find(t);
 					// Set particle radius only if the type's radius is non-zero.
-					if(it != radiusMap.end() && it->second != 0)
+					if(auto it = radiusMap.find(t); it != radiusMap.end() && it->second != 0)
 						return it->second;
 					else
 						return defaultRadius;

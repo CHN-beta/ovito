@@ -95,8 +95,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(TaskManager& taskManager, const Q
 		}
 
 		// Check if requested URL is already being loaded.
-		auto inProgressEntry = _pendingFiles.find(normalizedUrl);
-		if(inProgressEntry != _pendingFiles.end()) {
+		if(auto inProgressEntry = _pendingFiles.find(normalizedUrl); inProgressEntry != _pendingFiles.end()) {
 			SharedFuture<FileHandle> future = inProgressEntry->second.lock();
 			if(future.isValid())
 				return future;
@@ -169,9 +168,8 @@ void FileManager::fileFetched(QUrl url, QTemporaryFile* localFile)
 	QUrl normalizedUrl = normalizeUrl(std::move(url));
 	QMutexLocker lock(&mutex());
 
-	auto inProgressEntry = _pendingFiles.find(normalizedUrl);
-	if(inProgressEntry != _pendingFiles.end())
-		_pendingFiles.erase(inProgressEntry);
+	if(auto itemInProgress = _pendingFiles.find(normalizedUrl); itemInProgress != _pendingFiles.end())
+		_pendingFiles.erase(itemInProgress);
 
 	if(localFile) {
 		// Store downloaded file in local cache.

@@ -120,8 +120,7 @@ DislocationNetwork::DislocationNetwork(const Microstructure* microstructureObj) 
 				if(e != microstructure.oppositeEdge(currentEdge)) nextEdge = e;
 			}
 			if(armCount != 2) break;
-			auto edgeInfo = visitedEdges.find(nextEdge);
-			if(edgeInfo != visitedEdges.end()) {
+			if(auto edgeInfo = visitedEdges.find(nextEdge); edgeInfo != visitedEdges.end()) {
 				// It must be a closed loop.
 				if(edgeInfo->second != outputSegment->id + 1)
 					throw Exception("Invalid dislocation network topology.");

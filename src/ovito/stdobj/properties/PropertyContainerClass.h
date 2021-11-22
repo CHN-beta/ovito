@@ -92,9 +92,10 @@ public:
 
 	/// Returns the standard property type ID from a property name.
 	int standardPropertyTypeId(const QString& name) const {
-		auto iter = _standardPropertyIds.find(name);
-		if(iter == _standardPropertyIds.end()) return 0;
-		else return iter.value();
+		if(auto item = _standardPropertyIds.find(name); item != _standardPropertyIds.end())
+			return item.value();
+		else
+			return 0;
 	}
 
 	/// Returns the name of a standard property type.
@@ -139,9 +140,10 @@ public:
 
 	/// Returns the ElementType class that is used by the given typed property.
 	OvitoClassPtr typedPropertyElementClass(int typeId) const {
-		auto iter = _standardPropertyElementTypes.find(typeId);
-		if(iter == _standardPropertyElementTypes.end()) return {};
-		return iter->second;
+		if(auto iter = _standardPropertyElementTypes.find(typeId); iter != _standardPropertyElementTypes.end())
+			return iter->second;
+		else
+			return {};
 	}
 
 protected:

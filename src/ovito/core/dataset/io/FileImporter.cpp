@@ -72,8 +72,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Executi
 	// Check the format cache if we have already detected the format of the same file before.
 	const QString& fileIdentifier = file.localFilePath();
 	QMutexLocker locker(&formatDetectionCacheMutex);
-	auto entry = formatDetectionCache.find(fileIdentifier);
-	if(entry != formatDetectionCache.end()) {
+	if(auto entry = formatDetectionCache.find(fileIdentifier); entry != formatDetectionCache.end()) {
 		if(existingImporterHint && &existingImporterHint->getOOClass() == entry->second)
 			return existingImporterHint;
 		return static_object_cast<FileImporter>(entry->second->createInstance(dataset, executionContext));

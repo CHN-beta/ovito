@@ -234,8 +234,8 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
 		auto p = selectionArray1.begin() + (property1->size() - property2->size());
 		auto p_end = selectionArray1.end();
 		for(; p != p_end; ++p) {
-			auto iter = typeMap.find(*p);
-			if(iter != typeMap.end()) *p = iter->second;
+			if(auto item = typeMap.find(*p); item != typeMap.end()) 
+				*p = item->second;
 		}
 	}
 }

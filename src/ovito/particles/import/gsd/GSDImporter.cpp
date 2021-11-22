@@ -93,8 +93,10 @@ void GSDImporter::storeParticleShapeInCache(const QByteArray& jsonString, const 
 TriMeshPtr GSDImporter::lookupParticleShapeInCache(const QByteArray& jsonString) const
 {
 	QReadLocker locker(&_cacheSynchronization);
-	auto iter = _particleShapeCache.find(jsonString);
-	return (iter != _particleShapeCache.end()) ? iter.value() : TriMeshPtr();
+	if(auto iter = _particleShapeCache.find(jsonString); iter != _particleShapeCache.end())
+		return iter.value();
+	else
+		return {};
 }
 
 /******************************************************************************

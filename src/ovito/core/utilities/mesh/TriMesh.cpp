@@ -497,8 +497,7 @@ void TriMesh::determineEdgeVisibility(FloatType thresholdAngle)
 			int v2 = face.vertex((e+1)%3);
 			if(v2 < v1) {
 				// Look up the adjacent face for the current edge.
-				auto iter = edgeMap.find(std::make_pair(v2,v1));
-				if(iter != edgeMap.end()) {
+				if(auto iter = edgeMap.find(std::make_pair(v2,v1)); iter != edgeMap.end()) {
 					TriMeshFace& adjacentFace = this->face(iter->second);
 					// Always retain edges between two faces with different colors or not belonging to the same smoothing group.
 					if(adjacentFace.materialIndex() != face.materialIndex())

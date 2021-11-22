@@ -446,8 +446,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 {
 	/// Cache icons for color map types.
 	static std::map<OvitoClassPtr, QIcon> iconCache;
-	auto entry = iconCache.find(clazz);
-	if(entry != iconCache.end())
+	if(auto entry = iconCache.find(clazz); entry != iconCache.end())
 		return entry->second;
 
 	DataSet* dataset = mainWindow()->datasetContainer().currentSet();

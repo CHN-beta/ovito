@@ -516,8 +516,7 @@ private:
 						reorderFaceVertices(vertices);
 
 						// Look up the adjacent Delaunay cell.
-						auto neighborCell = _cellLookupMap.find(vertices);
-						if(neighborCell != _cellLookupMap.end()) {
+						if(auto neighborCell = _cellLookupMap.find(vertices); neighborCell != _cellLookupMap.end()) {
 							// Add adjacent cell to the deque if it has not been visited yet.
 							if(_tessellation.getUserField(neighborCell->second) == 0) {
 								toProcess.push_back(neighborCell->second);
@@ -582,8 +581,7 @@ private:
 					reorderFaceVertices(vertices);
 
 					// Find the primary tet whose face connects the same three particles.
-					auto neighborCell = _cellLookupMap.find(vertices);
-					if(neighborCell != _cellLookupMap.end()) {
+					if(auto neighborCell = _cellLookupMap.find(vertices); neighborCell != _cellLookupMap.end()) {
 						_tessellation.setUserField(cell, _tessellation.getUserField(neighborCell->second));
 					}
 				}
@@ -889,9 +887,8 @@ private:
 				faceVerts[i] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, vertexIndex));
 			}
 			reorderFaceVertices(faceVerts);
-			auto iter = _faceLookupMap.find(faceVerts);
-			if(iter != _faceLookupMap.end())
-				return iter->second;
+			if(auto item = _faceLookupMap.find(faceVerts); item != _faceLookupMap.end())
+				return item->second;
 			else
 				return SurfaceMeshAccess::InvalidIndex;
 		}

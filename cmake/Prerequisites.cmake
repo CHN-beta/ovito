@@ -98,6 +98,7 @@ ENDFUNCTION()
 FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 
 	# This special handling was adopted from __qt_internal_walk_libs() to avoid an error produced by older CMake versions:
+	MESSAGE("get_all_target_dependencies: TARGET=${TARGET}")
 	IF(${TARGET} STREQUAL "${OVITO_QT_MAJOR_VERSION}::EntryPoint")
         # We can't (and don't need to) process EntryPoint because it brings in $<TARGET_PROPERTY:prop>
         # genexes which get replaced with $<TARGET_PROPERTY:EntryPoint,prop> genexes in the code below

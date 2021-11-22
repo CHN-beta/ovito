@@ -439,8 +439,7 @@ std::vector<Color> BondsVis::halfBondColors(const ParticlesObject* particles, bo
 				ConstPropertyAccess<int> bondTypeData(bondTypeProperty);
 				const int* t = bondTypeData.cbegin();
 				for(auto c = output.begin(); c != output.end(); ++t) {
-					auto it = colorMap.find(*t);
-					if(it != colorMap.end()) {
+					if(auto it = colorMap.find(*t); it != colorMap.end()) {
 						*c++ = it->second;
 						*c++ = it->second;
 					}

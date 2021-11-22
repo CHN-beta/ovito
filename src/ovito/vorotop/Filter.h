@@ -55,9 +55,8 @@ public:
 	/// Looks up the structure type associated with the given Weinberg vector.
 	/// Return 0 if Weinberg vector is not in filter.
 	int findType(const WeinbergVector& wvector) const {
-		auto iter = _entries.find(wvector);
-		if(iter != _entries.end())
-			return iter->second;
+		if(auto item = _entries.find(wvector); item != _entries.end())
+			return item->second;
 		else
 			return 0;
 	}
