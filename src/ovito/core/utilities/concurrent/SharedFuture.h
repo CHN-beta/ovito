@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -220,7 +220,7 @@ void SharedFuture<R...>::force_then(Executor&& executor, bool defer, FC&& cont) 
 			return;
 
 		// Now it's time to execute the continuation function.
-		Ovito::detail::apply_cpp14(std::forward<FC>(cont), task->template getResults<tuple_type>());
+		std::apply(std::forward<FC>(cont), task->template getResults<tuple_type>());
 	});
 }
 

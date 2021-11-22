@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,24 +40,10 @@ namespace detail
 	template<typename... T>
 	struct is_future<SharedFuture<T...>> : std::true_type {};
 
-	/// Part of apply() implementation below.
-	template<typename F, class Tuple, std::size_t... I>
-	static constexpr decltype(auto) apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) {
-		return f(std::get<I>(std::forward<Tuple>(t))...);
-	}
-
-	/// C++14 implementation of std::apply(), which is only available in C++17.
-	template<typename F, class Tuple>
-	static constexpr decltype(auto) apply_cpp14(F&& f, Tuple&& t) {
-		return apply_impl(
-			std::forward<F>(f), std::forward<Tuple>(t),
-			std::make_index_sequence<std::tuple_size<std::decay_t<Tuple>>::value>{});
-	}
-
 	/// Determine the return type of a continuation function object.
 	template<typename FC, typename Args>
 	struct continuation_func_return_type {
-		using type = decltype(apply_cpp14(std::declval<FC>(), std::declval<Args>()));
+		using type = decltype(std::apply(std::declval<FC>(), std::declval<Args>()));
 	};
 
 	/// Determines if the return type of a continuation function object is 'void'.
