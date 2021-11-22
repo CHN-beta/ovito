@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for LAMMPS data files.
@@ -153,5 +153,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSAtomStyle>, atomSubStyles, setAtomSubStyles);
 };
 
-}	// End of namespace
 }	// End of namespace

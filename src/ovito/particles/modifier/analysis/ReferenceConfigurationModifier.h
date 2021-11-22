@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Base class for analysis modifiers that require a reference configuration.
@@ -201,5 +201,4 @@ public:
 	Q_INVOKABLE ReferenceConfigurationModifierApplication(DataSet* dataset) : AsynchronousModifierApplication(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

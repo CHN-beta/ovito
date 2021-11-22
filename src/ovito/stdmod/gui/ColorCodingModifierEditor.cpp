@@ -37,7 +37,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ColorCodingModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorCodingModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorCodingModifier, ColorCodingModifierEditor);
@@ -483,5 +483,4 @@ QIcon ColorCodingModifierEditor::iconFromColorMap(ColorCodingGradient* map)
 	return QIcon(QPixmap::fromImage(image));
 }
 
-}	// End of namespace
 }	// End of namespace

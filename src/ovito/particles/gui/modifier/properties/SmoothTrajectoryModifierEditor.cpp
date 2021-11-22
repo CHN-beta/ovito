@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "SmoothTrajectoryModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SmoothTrajectoryModifier, SmoothTrajectoryModifierEditor);
@@ -58,5 +58,4 @@ void SmoothTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& 
 	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 3, 0, 1, 2);
 }
 
-}	// End of namespace
 }	// End of namespace

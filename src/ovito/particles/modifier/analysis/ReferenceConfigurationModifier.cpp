@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ReferenceConfigurationModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifier);
 DEFINE_REFERENCE_FIELD(ReferenceConfigurationModifier, referenceConfiguration);
@@ -360,5 +360,4 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
 	return !isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

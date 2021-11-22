@@ -24,7 +24,7 @@
 #include "TrajectoryObject.h"
 #include "TrajectoryVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryObject);
 
@@ -136,5 +136,4 @@ void TrajectoryObject::initializeObject(ExecutionContext executionContext)
 	PropertyContainer::initializeObject(executionContext);
 }
 
-}	// End of namespace
 }	// End of namespace

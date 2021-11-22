@@ -29,7 +29,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(QuantumEspressoImporter);
 
@@ -311,5 +311,4 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

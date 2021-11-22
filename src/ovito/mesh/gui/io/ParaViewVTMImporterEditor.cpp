@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "ParaViewVTMImporterEditor.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParaViewVTMImporter, ParaViewVTMImporterEditor);
@@ -48,5 +48,4 @@ void ParaViewVTMImporterEditor::createUI(const RolloutInsertionParameters& rollo
 	layout->addWidget(uniteMeshesUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include "SimulationCellObjectEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellEditor);
 SET_OVITO_OBJECT_EDITOR(SimulationCellObject, SimulationCellEditor);
@@ -189,5 +189,4 @@ void SimulationCellEditor::updateSimulationBoxSize()
 	_pbczPUI->setEnabled(!cell->is2D());
 }
 
-}	// End of namespace
 }	// End of namespace

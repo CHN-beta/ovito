@@ -28,7 +28,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief File parser for ParaView data files (PVD).
@@ -98,5 +98,4 @@ private:
 	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, childImporter, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
 }	// End of namespace

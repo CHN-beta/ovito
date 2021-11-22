@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include "CombineDatasetsModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);
@@ -52,5 +52,4 @@ void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& r
 	new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
 }
 
-}	// End of namespace
 }	// End of namespace

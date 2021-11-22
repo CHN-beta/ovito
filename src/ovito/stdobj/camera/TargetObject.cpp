@@ -27,7 +27,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TargetObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(TargetObject);
 IMPLEMENT_OVITO_CLASS(TargetVis);
@@ -137,5 +137,4 @@ Box3 TargetVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 	return Box3(Point3::Origin(), Point3::Origin());
 }
 
-}	// End of namespace
 }	// End of namespace

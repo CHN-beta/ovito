@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "ScpChannel.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
@@ -128,5 +128,4 @@ void ScpChannel::processData()
     }
 }
 
-} // End of namespace
 } // End of namespace

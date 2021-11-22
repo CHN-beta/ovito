@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Stores trajectory lines of a particles dataset.
@@ -72,5 +72,4 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;		
 };
 
-}	// End of namespace
 }	// End of namespace

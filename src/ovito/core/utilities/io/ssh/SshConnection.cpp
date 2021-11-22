@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "SshConnection.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
@@ -757,5 +757,4 @@ void SshConnection::setKbiAnswers(QStringList answers)
     }
 }
 
-} // End of namespace
 } // End of namespace

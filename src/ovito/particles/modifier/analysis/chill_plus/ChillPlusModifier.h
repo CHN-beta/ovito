@@ -29,7 +29,7 @@
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier implements the Chill+ algorithm [Nguyen & Molinero, J. Phys. Chem. B 2015, 119, 9369-9376]
@@ -114,5 +114,4 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

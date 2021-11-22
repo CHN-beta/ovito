@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "PropertyReferenceParameterUI.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
@@ -301,5 +301,4 @@ void PropertyReferenceParameterUI::updatePropertyValue()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -30,7 +30,7 @@
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Defines the mapping of a column in an imported data file to a target property in OVITO.
@@ -287,7 +287,6 @@ private:
 	bool _readingTypeNamesFromSeparateColumns = false;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::InputColumnInfo);

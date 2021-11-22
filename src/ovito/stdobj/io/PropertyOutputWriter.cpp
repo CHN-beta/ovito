@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include "PropertyOutputWriter.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
  * Saves the mapping to the given stream.
@@ -163,5 +163,4 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
 	stream << '\n';
 }
 
-}	// End of namespace
 }	// End of namespace

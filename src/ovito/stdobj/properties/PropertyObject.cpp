@@ -25,7 +25,7 @@
 #include "PropertyObject.h"
 #include "PropertyAccess.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyObject);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyObject, elementTypes);
@@ -372,5 +372,4 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

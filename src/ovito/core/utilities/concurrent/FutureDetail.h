@@ -26,10 +26,7 @@
 #include <ovito/core/Core.h>
 #include <type_traits>
 
-namespace Ovito {
-
-namespace detail
-{
+namespace Ovito::detail {
 
 	template<class T>
 	struct is_future : std::false_type {};
@@ -83,7 +80,3 @@ namespace detail
 	};
 
 } // End of namespace
-
-}	// End of namespace
-
-

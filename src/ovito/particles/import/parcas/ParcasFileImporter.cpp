@@ -26,7 +26,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "ParcasFileImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParcasFileImporter);
 
@@ -308,5 +308,4 @@ void ParcasFileImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

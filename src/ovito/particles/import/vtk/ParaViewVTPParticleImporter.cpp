@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPParticleImporter);
 IMPLEMENT_OVITO_CLASS(ParticlesParaViewVTMFileFilter);
@@ -448,5 +448,4 @@ void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInf
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

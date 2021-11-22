@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "AcklandJonesModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
 
@@ -210,5 +210,4 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::applyResults(TimePoint ti
 	state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), modApp);
 }
 
-}	// End of namespace
 }	// End of namespace

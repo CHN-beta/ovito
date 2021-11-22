@@ -32,7 +32,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Data inspector page for particles.
@@ -145,5 +145,4 @@ private:
 	QTableWidget* _angleTable;
 };
 
-}	// End of namespace
 }	// End of namespace

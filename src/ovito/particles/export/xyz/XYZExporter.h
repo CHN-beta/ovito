@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../FileColumnParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Exporter that writes the particles to a LAMMPS data file.
@@ -78,5 +78,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(XYZSubFormat, subFormat, setSubFormat, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

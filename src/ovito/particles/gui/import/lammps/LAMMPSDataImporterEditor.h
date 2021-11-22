@@ -27,7 +27,7 @@
 #include <ovito/particles/import/lammps/LAMMPSDataImporter.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the LAMMPSDataImporter class.
@@ -82,5 +82,4 @@ private:
 	QDialogButtonBox* _buttonBox;
 };
 
-}	// End of namespace
 }	// End of namespace

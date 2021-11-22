@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "DLPOLYImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(DLPOLYImporter);
 
@@ -349,5 +349,4 @@ void DLPOLYImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

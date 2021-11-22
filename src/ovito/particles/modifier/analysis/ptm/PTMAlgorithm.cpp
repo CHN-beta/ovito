@@ -24,7 +24,7 @@
 #include "PTMAlgorithm.h"
 
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Creates the algorithm object.
@@ -212,5 +212,4 @@ int PTMAlgorithm::Kernel::cacheNeighbors(size_t particleIndex, uint64_t* res)
 	return ptm_preorder_neighbours(_handle, numNeighbors, points, res);
 }
 
-}	// End of namespace
 }	// End of namespace

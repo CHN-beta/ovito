@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for delegates of the SliceModifier, which perform the slice operation on different kinds of data.
@@ -154,5 +154,4 @@ protected:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

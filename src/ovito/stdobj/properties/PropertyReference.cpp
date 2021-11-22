@@ -26,7 +26,7 @@
 #include "PropertyReference.h"
 #include "PropertyContainer.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
 * Constructs a reference to a standard property.
@@ -179,5 +179,4 @@ const PropertyObject* PropertyReference::findInContainer(const PropertyContainer
 		return container->getProperty(name());
 }
 
-}	// End of namespace
 }	// End of namespace

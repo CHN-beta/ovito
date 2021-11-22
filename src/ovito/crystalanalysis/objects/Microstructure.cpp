@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "Microstructure.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(Microstructure);
 
@@ -163,5 +163,4 @@ void MicrostructureAccess::makeContinuousDislocationLines()
     }
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief User interface component for the DataTablePlotExporter class.
@@ -47,5 +47,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

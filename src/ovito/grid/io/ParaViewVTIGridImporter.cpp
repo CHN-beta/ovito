@@ -27,7 +27,7 @@
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include "ParaViewVTIGridImporter.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTIGridImporter);
 
@@ -234,5 +234,4 @@ PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataA
 	return gridObj->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);
 }
 
-}	// End of namespace
 }	// End of namespace

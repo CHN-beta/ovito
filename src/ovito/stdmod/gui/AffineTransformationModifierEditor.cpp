@@ -29,7 +29,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "AffineTransformationModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AffineTransformationModifier, AffineTransformationModifierEditor);
@@ -435,5 +435,4 @@ void AffineTransformationModifierEditor::onEnterRotation()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

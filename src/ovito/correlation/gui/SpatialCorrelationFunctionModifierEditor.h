@@ -32,7 +32,7 @@
 class QwtPlot;
 class QwtPlotCurve;
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * A properties editor for the SpatialCorrelationFunctionModifier class.
@@ -72,5 +72,4 @@ private:
     QwtPlotCurve* _neighCurve = nullptr;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/TrajectoryObject.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -65,5 +65,4 @@ public:
 	Q_INVOKABLE TrajectoryColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

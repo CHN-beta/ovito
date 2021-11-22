@@ -31,7 +31,7 @@
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include "ConstructSurfaceModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ConstructSurfaceModifier, ConstructSurfaceModifierEditor);
@@ -145,5 +145,4 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 	new SubObjectParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout).setTitle(tr("Surface display")));
 }
 
-}	// End of namespace
 }	// End of namespace

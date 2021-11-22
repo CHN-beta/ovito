@@ -32,7 +32,7 @@
 
 #include <QtEndian>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifier);
 DEFINE_PROPERTY_FIELD(InteractiveMolecularDynamicsModifier, hostName);
@@ -364,5 +364,4 @@ void InteractiveMolecularDynamicsModifier::propertyChanged(const PropertyFieldDe
 	Modifier::propertyChanged(field);
 }
 
-}	// End of namespace
 }	// End of namespace

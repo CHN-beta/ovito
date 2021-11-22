@@ -25,7 +25,7 @@
 #include "TriMeshObject.h"
 #include "TriMeshVis.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(TriMeshObject);
 DEFINE_PROPERTY_FIELD(TriMeshObject, mesh);
@@ -95,5 +95,4 @@ void TriMeshObject::loadFromStream(ObjectLoadStream& stream)
 	stream.closeChunk();
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -32,7 +32,7 @@
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include "SurfaceMeshVisEditor.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(SurfaceMeshVis, SurfaceMeshVisEditor);
@@ -174,5 +174,4 @@ void SurfaceMeshVisEditor::updateColoringOptions()
 }
 
 
-}	// End of namespace
 }	// End of namespace

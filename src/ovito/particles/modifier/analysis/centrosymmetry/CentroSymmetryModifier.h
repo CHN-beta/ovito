@@ -30,7 +30,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Calculates the centrosymmetry parameter (CSP) for particles.
@@ -133,5 +133,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CSPMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -38,7 +38,7 @@
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include "ParticleTypeEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ParticleType, ParticleTypeEditor);
@@ -303,5 +303,4 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 	return presetsMenuButton;
 }
 
-}	// End of namespace
 }	// End of namespace

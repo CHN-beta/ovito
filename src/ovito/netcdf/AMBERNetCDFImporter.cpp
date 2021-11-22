@@ -54,7 +54,7 @@
 #include <netcdf.h>
 #include <QtMath>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporter);
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, useCustomColumnMapping);
@@ -761,5 +761,4 @@ void AMBERNetCDFImporter::loadFromStream(ObjectLoadStream& stream)
 	stream.closeChunk();
 }
 
-}	// End of namespace
 }	// End of namespace

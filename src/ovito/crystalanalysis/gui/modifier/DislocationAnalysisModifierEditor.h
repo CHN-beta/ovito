@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * List box that displays the dislocation types.
@@ -116,5 +116,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

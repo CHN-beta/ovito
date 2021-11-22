@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPBondsImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPBondsImporter);
 IMPLEMENT_OVITO_CLASS(BondsParaViewVTMFileFilter);
@@ -271,5 +271,4 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

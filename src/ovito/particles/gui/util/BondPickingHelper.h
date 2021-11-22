@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/viewport/Viewport.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Utility class that supports the picking of bonds in the viewports.
@@ -54,5 +54,4 @@ public:
 	bool pickBond(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
 };
 
-}	// End of namespace
 }	// End of namespace

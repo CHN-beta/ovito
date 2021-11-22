@@ -24,7 +24,7 @@
 #include "DislocationNetworkObject.h"
 #include "DislocationVis.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationNetworkObject);
 DEFINE_PROPERTY_FIELD(DislocationNetworkObject, storage);
@@ -129,5 +129,4 @@ void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, C
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

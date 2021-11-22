@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "../ParticleImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for log files of the FHI-aims code.
@@ -107,5 +107,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

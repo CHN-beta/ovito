@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "ComputePropertyModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
@@ -379,5 +379,4 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(TimePo
 	container->createProperty(outputProperty());
 }
 
-}	// End of namespace
 }	// End of namespace

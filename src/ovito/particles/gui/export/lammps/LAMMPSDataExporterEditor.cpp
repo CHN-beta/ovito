@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "LAMMPSDataExporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDataExporter, LAMMPSDataExporterEditor);
@@ -132,5 +132,4 @@ void LAMMPSDataExporterEditor::hybridSubStyleSelected()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

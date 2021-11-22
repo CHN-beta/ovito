@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * A pipeline source generating a StandardCameraObject.
@@ -99,5 +99,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief A properties editor for the ColorLegendOverlay class.
@@ -62,5 +62,4 @@ private:
 	StringParameterUI* _valueFormatStringPUI;
 };
 
-}	// End of namespace
 }	// End of namespace

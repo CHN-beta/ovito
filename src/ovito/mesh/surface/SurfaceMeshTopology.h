@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <boost/iterator/counting_iterator.hpp>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * A polygonal mesh stored as a half-edge data structure.
@@ -439,5 +439,4 @@ private:
     std::vector<edge_index> _nextManifoldEdges;
 };
 
-}	// End of namespace
 }	// End of namespace

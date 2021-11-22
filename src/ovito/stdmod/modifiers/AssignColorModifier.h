@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for AssignColorModifier delegates that operate on different kinds of data.
@@ -117,5 +117,4 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
 };
 
-}	// End of namespace
 }	// End of namespace

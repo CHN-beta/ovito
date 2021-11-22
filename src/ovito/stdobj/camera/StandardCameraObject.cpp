@@ -32,7 +32,7 @@
 #include <ovito/core/app/Application.h>
 #include "StandardCameraObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraObject);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
@@ -378,5 +378,4 @@ Box3 CameraVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 	return Box3(Point3::Origin(), Point3::Origin());
 }
 
-}	// End of namespace
 }	// End of namespace

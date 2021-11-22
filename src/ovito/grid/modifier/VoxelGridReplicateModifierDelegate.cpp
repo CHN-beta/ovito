@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "VoxelGridReplicateModifierDelegate.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridReplicateModifierDelegate);
 
@@ -122,5 +122,4 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(Modifier* modifier, Pip
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

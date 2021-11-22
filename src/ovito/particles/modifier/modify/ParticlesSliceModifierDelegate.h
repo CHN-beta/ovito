@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -65,5 +65,4 @@ public:
 	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
 }	// End of namespace

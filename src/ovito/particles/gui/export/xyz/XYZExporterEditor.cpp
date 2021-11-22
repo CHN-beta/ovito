@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "XYZExporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XYZExporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZExporter, XYZExporterEditor);
@@ -60,5 +60,4 @@ void XYZExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));
 }
 
-}	// End of namespace
 }	// End of namespace

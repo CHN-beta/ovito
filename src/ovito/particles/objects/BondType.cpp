@@ -25,7 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "BondType.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(BondType);
 DEFINE_PROPERTY_FIELD(BondType, radius);
@@ -59,5 +59,4 @@ void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

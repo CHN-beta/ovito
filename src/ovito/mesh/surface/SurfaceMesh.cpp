@@ -26,7 +26,7 @@
 #include "SurfaceMeshVis.h"
 #include "SurfaceMeshAccess.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMesh);
 DEFINE_PROPERTY_FIELD(SurfaceMesh, spaceFillingRegion);
@@ -125,5 +125,4 @@ std::optional<std::pair<SurfaceMesh::region_index, FloatType>> SurfaceMesh::loca
 	return SurfaceMeshAccess(this).locatePoint(location, epsilon);
 }
 
-}	// End of namespace
 }	// End of namespace

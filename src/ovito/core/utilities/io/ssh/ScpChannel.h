@@ -25,7 +25,7 @@
 #include <ovito/core/Core.h>
 #include "ProcessChannel.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 class ScpChannel : public ProcessChannel
 {
@@ -82,5 +82,4 @@ private:
 };
 
 
-} // End of namespace
 } // End of namespace

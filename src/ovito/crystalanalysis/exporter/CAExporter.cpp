@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include "CAExporter.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(CAExporter);
 
@@ -272,5 +272,4 @@ bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& fil
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 #include "MicrostructurePhaseEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(MicrostructurePhaseEditor);
 SET_OVITO_OBJECT_EDITOR(MicrostructurePhase, MicrostructurePhaseEditor);
@@ -141,5 +141,4 @@ void MicrostructurePhaseEditor::onDoubleClickBurgersFamily(const QModelIndex& in
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

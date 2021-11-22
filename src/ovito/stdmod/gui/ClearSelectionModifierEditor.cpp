@@ -24,7 +24,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include "ClearSelectionModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ClearSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ClearSelectionModifier, ClearSelectionModifierEditor);
@@ -50,5 +50,4 @@ void ClearSelectionModifierEditor::createUI(const RolloutInsertionParameters& ro
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

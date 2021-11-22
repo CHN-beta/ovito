@@ -35,7 +35,7 @@
 #include <fstream>
 #endif
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /******************************************************************************
 * Constructor.
@@ -409,5 +409,4 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 		state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("Found %1 dislocation segments\nTotal line length: %2").arg(totalSegmentCount).arg(totalLineLength)));
 }
 
-}	// End of namespace
 }	// End of namespace

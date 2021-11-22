@@ -29,7 +29,7 @@
 #include <ovito/core/app/Application.h>
 #include "ParticlesSliceModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesSliceModifierDelegate);
 
@@ -140,5 +140,4 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	return PipelineStatus(PipelineStatus::Success, statusMessage);
 }
 
-}	// End of namespace
 }	// End of namespace

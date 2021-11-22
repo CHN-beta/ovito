@@ -27,7 +27,7 @@
 #include "GSDImporter.h"
 #include "gsd.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 template<typename T> inline gsd_type gsdDataType() { OVITO_ASSERT(false); return GSD_TYPE_UINT8; }
 template<> inline gsd_type gsdDataType<uint8_t>() { return GSD_TYPE_UINT8; }
@@ -479,5 +479,4 @@ private:
 	gsd_handle _handle;
 };
 
-}	// End of namespace
 }	// End of namespace

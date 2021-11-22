@@ -27,7 +27,7 @@
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the CentroSymmetryModifier class.
@@ -58,5 +58,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

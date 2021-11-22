@@ -24,7 +24,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "GrainSegmentationEngine.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 namespace {
 
@@ -148,6 +148,5 @@ public:
 	}
 };
 
-}	// End of namespace
 }	// End of namespace
 }	// End of namespace

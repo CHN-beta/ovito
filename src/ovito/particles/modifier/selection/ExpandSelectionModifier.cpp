@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ExpandSelectionModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ExpandSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, mode);
@@ -224,5 +224,4 @@ void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(TimePoint time
 	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(msg)));
 }
 
-}	// End of namespace
 }	// End of namespace

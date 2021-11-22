@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * File parser for GROMACS XTC trajectory files.
@@ -110,5 +110,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

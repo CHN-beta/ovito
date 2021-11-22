@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This utility class finds the neighbors of a particle whose local crystalline order has been determined
@@ -123,5 +123,4 @@ private:
 	ConstPropertyPtr _correspondencesArray;
 };
 
-}	// End of namespace
 }	// End of namespace

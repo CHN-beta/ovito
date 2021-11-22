@@ -30,7 +30,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 /**
  * A properties editor for the HistogramModifier class.
  */
@@ -63,5 +63,4 @@ private:
 	QwtPlotZoneItem* _selectionRangeIndicator;
 };
 
-}	// End of namespace
 }	// End of namespace

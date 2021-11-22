@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "SurfaceMeshTopology.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshTopology);
 
@@ -823,5 +823,4 @@ void SurfaceMeshTopology::splitEdge(edge_index edge, vertex_index vertex)
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -29,7 +29,7 @@
 
 class QwtPlotMarker;
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief A properties editor for the CreateIsosurfaceModifier class.
@@ -72,5 +72,4 @@ private:
 	bool _interactionInProgress = false;
 };
 
-}	// End of namespace
 }	// End of namespace

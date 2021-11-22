@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/mesh/tri/TriMeshObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Stores the properties of a particle type, e.g. name, color, and radius.
@@ -231,5 +231,4 @@ private:
 	static const std::array<PredefinedStructuralType, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 using namespace Ovito::StdMod;
 
@@ -77,5 +77,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
 }	// End of namespace

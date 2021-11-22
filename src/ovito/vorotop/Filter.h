@@ -25,7 +25,7 @@
 
 #include <ovito/vorotop/VoroTopPlugin.h>
 
-namespace Ovito { namespace VoroTop {
+namespace Ovito::VoroTop {
 
 /**
  * A filter is a specification of topological types, recorded with Weinberg codes.
@@ -85,5 +85,4 @@ private:
 	QString _filterDescription;
 };
 
-}	// End of namespace
 }	// End of namespace

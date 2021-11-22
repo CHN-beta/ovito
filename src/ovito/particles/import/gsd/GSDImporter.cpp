@@ -37,7 +37,7 @@
 #include <QJsonValue>
 #include <QJsonParseError>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GSDImporter);
 DEFINE_PROPERTY_FIELD(GSDImporter, roundingResolution);
@@ -930,5 +930,4 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
 	setParticleTypeShape(typeId, std::move(triMesh));
 }
 
-}	// End of namespace
 }	// End of namespace

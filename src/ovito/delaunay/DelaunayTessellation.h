@@ -29,7 +29,7 @@
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
 
-namespace Ovito { namespace Delaunay {
+namespace Ovito::Delaunay {
 
 using namespace Ovito::StdObj;
 
@@ -264,5 +264,4 @@ private:
 	const SimulationCellObject* _simCell = nullptr;
 };
 
-}	// End of namespace
 }	// End of namespace

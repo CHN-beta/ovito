@@ -34,7 +34,7 @@
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "VectorVisEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(VectorVisEditor);
 SET_OVITO_OBJECT_EDITOR(VectorVis, VectorVisEditor);
@@ -153,5 +153,4 @@ void VectorVisEditor::updateColoringOptions()
 	_coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
 }
 
-}	// End of namespace
 }	// End of namespace

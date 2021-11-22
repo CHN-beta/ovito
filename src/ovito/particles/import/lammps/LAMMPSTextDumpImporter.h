@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for text-based LAMMPS dump simulation files.
@@ -148,5 +148,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
 };
 
-}	// End of namespace
 }	// End of namespace

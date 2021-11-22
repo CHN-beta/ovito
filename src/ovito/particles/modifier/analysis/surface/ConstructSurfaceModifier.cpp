@@ -37,7 +37,7 @@
 
 #include <boost/range/numeric.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::Delaunay;
 
@@ -756,5 +756,4 @@ void ConstructSurfaceModifier::GaussianDensityEngine::applyResults(TimePoint tim
 	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Surface area: %1").arg(surfaceArea())));
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -29,7 +29,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the ScatterPlotModifier class.
@@ -66,5 +66,4 @@ private:
 	QwtPlotZoneItem* _selectionRangeIndicatorY;
 };
 
-}	// End of namespace
 }	// End of namespace

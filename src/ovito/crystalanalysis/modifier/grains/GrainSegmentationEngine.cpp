@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #endif
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 #ifndef Q_CC_MSVC
 constexpr int GrainSegmentationEngine1::MAX_DISORDERED_NEIGHBORS; // Definition is required by C++14 but not C++17 or later.
@@ -766,5 +766,4 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
 	return !isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

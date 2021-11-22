@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "GSDImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GSDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GSDImporter, GSDImporterEditor);
@@ -56,5 +56,4 @@ void GSDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->addLayout(resolutionUI->createFieldLayout(), 1, 1);
 }
 
-}	// End of namespace
 }	// End of namespace

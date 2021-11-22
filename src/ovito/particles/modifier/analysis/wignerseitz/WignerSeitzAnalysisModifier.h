@@ -29,7 +29,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Performs the Wigner-Seitz cell analysis to identify point defects in crystals.
@@ -147,5 +147,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputCurrentConfig, setOutputCurrentConfig, PROPERTY_FIELD_MEMORIZE)
 };
 
-}	// End of namespace
 }	// End of namespace

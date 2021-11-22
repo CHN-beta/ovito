@@ -24,7 +24,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "GrainSegmentationEngine.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /******************************************************************************
 * Clustering using pair sampling algorithm.
@@ -94,5 +94,4 @@ bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

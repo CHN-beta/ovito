@@ -30,7 +30,7 @@
 #include <3rdparty/gemmi/cif.hpp>
 #include <3rdparty/gemmi/smcif.hpp>	// for reading small molecules
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 namespace cif = gemmi::cif;
 
@@ -210,5 +210,4 @@ void CIFImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

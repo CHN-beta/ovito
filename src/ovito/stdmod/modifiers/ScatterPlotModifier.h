@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief This modifier computes a scatter plot for two properties.
@@ -112,5 +112,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

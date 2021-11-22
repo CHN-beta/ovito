@@ -27,7 +27,7 @@
 #include "DislocationTracer.h"
 #include "DislocationAnalysisEngine.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 // List of vertices that bound the six edges of a tetrahedron.
 static const int edgeVertices[6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
@@ -252,5 +252,4 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

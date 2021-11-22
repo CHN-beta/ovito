@@ -30,7 +30,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Extends the current particle selection by adding particles to the selection
@@ -204,5 +204,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numberOfIterations, setNumberOfIterations);
 };
 
-}	// End of namespace
 }	// End of namespace

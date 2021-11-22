@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "FreezePropertyModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(FreezePropertyModifier, FreezePropertyModifierEditor);
@@ -107,5 +107,4 @@ void FreezePropertyModifierEditor::onSourcePropertyChanged()
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

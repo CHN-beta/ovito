@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include "ParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleExporter);
 
@@ -110,5 +110,4 @@ bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QStrin
 	return exportData(state, frameNumber, time, filePath, std::move(operation));
 }
 
-}	// End of namespace
 }	// End of namespace

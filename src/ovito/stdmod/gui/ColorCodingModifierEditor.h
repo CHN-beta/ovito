@@ -28,7 +28,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the ColorCodingModifier class.
@@ -111,5 +111,4 @@ private:
 	FloatType _lastAutoRangeMaxValue;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -35,7 +35,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/data/DataObjectAccess.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * Utility class that provides efficient access to the data of a surface mesh object.
@@ -664,5 +664,4 @@ private:
     RegionsAccess _regions;     ///< Provides access to the region property container of the surface mesh.
 };
 
-}	// End of namespace
 }	// End of namespace

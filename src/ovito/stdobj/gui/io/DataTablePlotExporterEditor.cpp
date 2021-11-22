@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "DataTablePlotExporterEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTablePlotExporterEditor);
 SET_OVITO_OBJECT_EDITOR(DataTablePlotExporter, DataTablePlotExporterEditor);
@@ -60,5 +60,4 @@ void DataTablePlotExporterEditor::createUI(const RolloutInsertionParameters& rol
 	layout->addLayout(dpiUI->createFieldLayout(), 0, 4);
 }
 
-}	// End of namespace
 }	// End of namespace

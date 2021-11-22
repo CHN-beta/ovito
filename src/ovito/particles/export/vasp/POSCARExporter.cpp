@@ -27,7 +27,7 @@
 #include <ovito/core/app/Application.h>
 #include "POSCARExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(POSCARExporter);
 DEFINE_PROPERTY_FIELD(POSCARExporter, writeReducedCoordinates);
@@ -144,5 +144,4 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

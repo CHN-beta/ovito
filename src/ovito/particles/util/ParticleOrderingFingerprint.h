@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Helper class used to detect changes in the storage ordering of particles.
@@ -75,5 +75,4 @@ private:
 	ConstPropertyPtr _particleIdentifiers;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -30,7 +30,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief File parser for reading a SurfaceMesh from a ParaView VTP (PolyData) file.
@@ -111,5 +111,4 @@ public:
 	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 };
 
-}	// End of namespace
 }	// End of namespace

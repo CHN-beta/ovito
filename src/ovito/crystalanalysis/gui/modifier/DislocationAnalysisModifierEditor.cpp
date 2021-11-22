@@ -34,7 +34,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationAnalysisModifierEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationAnalysisModifier, DislocationAnalysisModifierEditor);
@@ -231,5 +231,4 @@ void DislocationTypeListParameterUI::onDoubleClickDislocationType(const QModelIn
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

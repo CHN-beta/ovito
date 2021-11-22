@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/CombineDatasetsModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -64,5 +64,4 @@ public:
 	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
-}	// End of namespace
 }	// End of namespace

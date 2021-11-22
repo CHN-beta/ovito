@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Selects data elements of one or more types.
@@ -79,5 +79,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>, selectedTypeNames, setSelectedTypeNames);
 };
 
-}	// End of namespace
 }	// End of namespace

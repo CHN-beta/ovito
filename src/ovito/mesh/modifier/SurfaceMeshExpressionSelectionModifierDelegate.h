@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/ExpressionSelectionModifier.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 using namespace Ovito::StdMod;
 
@@ -63,5 +63,4 @@ public:
 	Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(DataSet* dataset) : ExpressionSelectionModifierDelegate(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

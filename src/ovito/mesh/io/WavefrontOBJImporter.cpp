@@ -25,7 +25,7 @@
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include "WavefrontOBJImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(WavefrontOBJImporter);
 
@@ -228,5 +228,4 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
 	meshObj->setMesh(std::move(mesh));	
 }
 
-}	// End of namespace
 }	// End of namespace

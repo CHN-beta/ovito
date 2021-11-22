@@ -29,7 +29,7 @@
 #include <ovito/core/app/Application.h>
 #include "ParaViewPVDImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewPVDImporter);
 DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
@@ -142,5 +142,4 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include "DislocationNetworkObjectEditor.h"
 #include "MicrostructurePhaseEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationNetworkObjectEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationNetworkObject, DislocationNetworkObjectEditor);
@@ -114,5 +114,4 @@ void DislocationNetworkObjectEditor::onDoubleClickPattern(const QModelIndex& ind
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

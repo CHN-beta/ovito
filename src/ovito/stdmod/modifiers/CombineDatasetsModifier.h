@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for CombineDatasetsModifier delegates that operate on different kinds of data.
@@ -132,5 +132,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
-}	// End of namespace
 }	// End of namespace

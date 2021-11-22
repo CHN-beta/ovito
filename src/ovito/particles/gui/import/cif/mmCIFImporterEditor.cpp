@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "mmCIFImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(mmCIFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(mmCIFImporter, mmCIFImporterEditor);
@@ -57,5 +57,4 @@ void mmCIFImporterEditor::createUI(const RolloutInsertionParameters& rolloutPara
 	sublayout->addWidget(generateBondsUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

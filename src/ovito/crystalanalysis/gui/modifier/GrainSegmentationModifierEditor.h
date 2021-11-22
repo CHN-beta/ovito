@@ -30,7 +30,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * Properties editor for the GrainSegmentationModifier class.
@@ -70,5 +70,4 @@ private:
 	QwtPlotZoneItem* _logRangeIndicator;
 };
 
-}	// End of namespace
 }	// End of namespace

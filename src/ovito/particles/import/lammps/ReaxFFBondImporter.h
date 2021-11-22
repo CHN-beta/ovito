@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for ReaxFF trajectory files containing bond information as written by the LAMMPS 'fix reax/c/bonds' command.
@@ -109,5 +109,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

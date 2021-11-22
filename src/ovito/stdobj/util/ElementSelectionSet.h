@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/oo/RefTarget.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Stores a selection set of particles or other elements and provides corresponding modification functions.
@@ -113,5 +113,4 @@ private:
 	friend class ReplaceSelectionOperation;
 };
 
-}	// End of namespace
 }	// End of namespace

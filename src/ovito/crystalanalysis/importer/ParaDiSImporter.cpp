@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "ParaDiSImporter.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(ParaDiSImporter);
 
@@ -347,5 +347,4 @@ std::pair<QString, QVariant> ParaDiSImporter::FrameLoader::parseControlParameter
     return {};
 }
 
-}	// End of namespace
 }	// End of namespace

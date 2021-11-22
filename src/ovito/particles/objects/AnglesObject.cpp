@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "AnglesObject.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AnglesObject);
 
@@ -95,5 +95,4 @@ void AnglesObject::OOMetaClass::initialize()
 	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcList);
 }
 
-}	// End of namespace
 }	// End of namespace

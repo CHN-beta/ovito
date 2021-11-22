@@ -30,7 +30,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Base class for modifiers that assign a structure type to each particle.
@@ -174,5 +174,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorByType, setColorByType);
 };
 
-}	// End of namespace
 }	// End of namespace

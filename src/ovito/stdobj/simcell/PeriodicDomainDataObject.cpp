@@ -24,7 +24,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "PeriodicDomainDataObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PeriodicDomainDataObject);
 DEFINE_REFERENCE_FIELD(PeriodicDomainDataObject, domain);
@@ -52,5 +52,4 @@ QString PeriodicDomainDataObject::objectTitle() const
 	return DataObject::objectTitle();
 }
 
-}	// End of namespace
 }	// End of namespace

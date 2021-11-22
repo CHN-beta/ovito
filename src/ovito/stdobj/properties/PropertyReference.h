@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A generic reference to a property.
@@ -186,7 +186,6 @@ public:
 	}
 };
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyReference);

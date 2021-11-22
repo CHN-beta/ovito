@@ -27,7 +27,7 @@
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include "ParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using ParticlesOutputColumnMapping = TypedOutputColumnMapping<ParticlesObject>;
 
@@ -66,7 +66,6 @@ private:
 	ParticlesOutputColumnMapping _columnMapping;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Particles::ParticlesOutputColumnMapping);

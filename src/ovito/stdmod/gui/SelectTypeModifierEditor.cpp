@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "SelectTypeModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(SelectTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
@@ -214,5 +214,4 @@ void SelectTypeModifierEditor::ViewModel::refresh()
 	endResetModel();
 }
 
-}	// End of namespace
 }	// End of namespace

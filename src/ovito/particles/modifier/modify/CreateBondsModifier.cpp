@@ -34,7 +34,7 @@
 
 #include <boost/range/numeric.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CreateBondsModifier);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
@@ -458,5 +458,4 @@ bool CreateBondsModifier::applyCachedResultsSynchronous(TimePoint time, Modifier
 	return false;
 }
 
-}	// End of namespace
 }	// End of namespace

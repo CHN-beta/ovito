@@ -26,7 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Stores the geometry and boundary conditions of a simulation box.
@@ -307,5 +307,4 @@ private:
 	int _isWritableFromPython = 0;
 };
 
-}	// End of namespace
 }	// End of namespace

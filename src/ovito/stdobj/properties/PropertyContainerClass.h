@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A meta-class for property containers (i.e. classes derived from the PropertyContainer base class).
@@ -194,7 +194,6 @@ private:
 	boost::container::flat_map<int, OvitoClassPtr> _standardPropertyElementTypes;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerClassPtr);

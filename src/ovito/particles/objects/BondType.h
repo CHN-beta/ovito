@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Stores the properties of a bond type, e.g. name, color, and radius.
@@ -63,5 +63,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/core/app/Application.h>
 #include "WrapPeriodicImagesModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(WrapPeriodicImagesModifier);
 
@@ -100,5 +100,4 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

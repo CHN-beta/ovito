@@ -25,7 +25,7 @@
 #include <ovito/core/app/Application.h>
 #include "VTKVoxelGridExporter.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VTKVoxelGridExporter);
 
@@ -169,5 +169,4 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, TimePoint time, const QS
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

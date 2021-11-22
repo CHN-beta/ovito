@@ -28,7 +28,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for data files of the GALAMOST MD code.
@@ -90,5 +90,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

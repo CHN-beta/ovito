@@ -30,7 +30,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "NucleotidesVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(NucleotidesVis);
 DEFINE_PROPERTY_FIELD(NucleotidesVis, cylinderRadius);
@@ -353,5 +353,4 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	return {};
 }
 
-}	// End of namespace
 }	// End of namespace

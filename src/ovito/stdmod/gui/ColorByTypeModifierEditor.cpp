@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorByTypeModifier, ColorByTypeModifierEditor);
@@ -183,5 +183,4 @@ void ColorByTypeModifierEditor::ViewModel::refresh()
 	endResetModel();
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include "SurfaceMeshRegions.h"
 #include "SurfaceMeshTopology.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A closed mesh representing a surface, i.e. a two-dimensional manifold.
@@ -118,5 +118,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index, spaceFillingRegion, setSpaceFillingRegion);
 };
 
-}	// End of namespace
 }	// End of namespace

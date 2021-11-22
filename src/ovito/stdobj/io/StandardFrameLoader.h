@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Base class for file parsers that load property objects and/or simulation cell definitions.
@@ -79,5 +79,4 @@ private:
 	bool _isSimulationCellNewlyCreated = false;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A modifier that creates coordination polyhedra around atoms.
@@ -126,5 +126,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 };
 
-}	// End of namespace
 }	// End of namespace

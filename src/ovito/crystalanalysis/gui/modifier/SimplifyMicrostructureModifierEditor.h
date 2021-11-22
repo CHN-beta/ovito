@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * Properties editor for the SimplifyMicrostructureModifier class.
@@ -47,5 +47,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

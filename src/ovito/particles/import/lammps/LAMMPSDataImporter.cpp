@@ -32,7 +32,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "LAMMPSDataImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataImporter, atomStyle);
@@ -1203,5 +1203,4 @@ Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> LAMMPSDataImporter::inspectFile
 }
 
 
-}	// End of namespace
 }	// End of namespace

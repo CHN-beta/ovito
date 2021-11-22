@@ -24,7 +24,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include "VoxelGridColorCodingModifierDelegate.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridColorCodingModifierDelegate);
 
@@ -42,5 +42,4 @@ QVector<DataObjectReference> VoxelGridColorCodingModifierDelegate::OOMetaClass::
 	return objects;
 }
 
-}	// End of namespace
 }	// End of namespace

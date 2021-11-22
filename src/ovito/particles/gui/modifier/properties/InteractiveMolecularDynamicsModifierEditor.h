@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * A properties editor for the InteractiveMolecularDynamicsModifier class.
@@ -58,5 +58,4 @@ private:
 	QPushButton* _connectButton;
 };
 
-}	// End of namespace
 }	// End of namespace

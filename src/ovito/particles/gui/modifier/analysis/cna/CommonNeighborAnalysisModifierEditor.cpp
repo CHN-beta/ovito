@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "CommonNeighborAnalysisModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CommonNeighborAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CommonNeighborAnalysisModifier, CommonNeighborAnalysisModifierEditor);
@@ -98,5 +98,4 @@ void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParame
 	layout1->addWidget(label);
 }
 
-}	// End of namespace
 }	// End of namespace

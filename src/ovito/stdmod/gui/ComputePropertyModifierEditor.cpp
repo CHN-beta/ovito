@@ -37,7 +37,7 @@
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include "ComputePropertyModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ComputePropertyModifier, ComputePropertyModifierEditor);
@@ -241,5 +241,4 @@ void ComputePropertyModifierEditor::onExpressionEditingFinished()
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

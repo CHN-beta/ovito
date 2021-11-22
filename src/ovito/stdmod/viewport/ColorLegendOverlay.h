@@ -29,7 +29,7 @@
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief A viewport overlay that displays the color legend of a ColorCodingModifier.
@@ -145,5 +145,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, borderColor, setBorderColor, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

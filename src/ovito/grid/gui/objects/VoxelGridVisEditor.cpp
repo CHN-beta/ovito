@@ -29,7 +29,7 @@
 #include <ovito/grid/objects/VoxelGridVis.h>
 #include "VoxelGridVisEditor.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridVisEditor);
 SET_OVITO_OBJECT_EDITOR(VoxelGridVis, VoxelGridVisEditor);
@@ -81,5 +81,4 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

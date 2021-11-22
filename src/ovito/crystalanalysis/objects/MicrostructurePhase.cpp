@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "MicrostructurePhase.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(MicrostructurePhase);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, shortName);
@@ -167,5 +167,4 @@ void MicrostructurePhase::updateEditableProxies(PipelineFlowState& state, ConstD
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

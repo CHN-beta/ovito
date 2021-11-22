@@ -28,7 +28,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TrajectoryVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryVis);
 DEFINE_PROPERTY_FIELD(TrajectoryVis, lineWidth);
@@ -373,5 +373,4 @@ void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const
 	segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
 }
 
-}	// End of namespace
 }	// End of namespace

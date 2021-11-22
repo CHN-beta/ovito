@@ -24,7 +24,7 @@
 #include "VoxelGrid.h"
 #include "VoxelGridVis.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGrid);
 DEFINE_PROPERTY_FIELD(VoxelGrid, shape);
@@ -161,5 +161,4 @@ void VoxelGrid::verifyIntegrity() const
 		throwException(tr("Voxel grid has no simulation cell assigned."));
 }
 
-}	// End of namespace
 }	// End of namespace

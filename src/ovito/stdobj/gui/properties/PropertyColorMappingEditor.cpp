@@ -36,7 +36,7 @@
 #include <ovito/core/oo/OvitoClass.h>
 #include "PropertyColorMappingEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMappingEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyColorMapping, PropertyColorMappingEditor);
@@ -374,5 +374,4 @@ QIcon PropertyColorMappingEditor::iconFromColorMap(ColorCodingGradient* map)
 	return QIcon(QPixmap::fromImage(image));
 }
 
-}	// End of namespace
 }	// End of namespace

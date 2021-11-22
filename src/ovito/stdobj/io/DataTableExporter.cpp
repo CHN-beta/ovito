@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "DataTableExporter.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTableExporter);
 
@@ -171,5 +171,4 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

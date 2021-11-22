@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A properties editor for the SurfaceMeshVis class.
@@ -58,7 +58,6 @@ private:
 	SubObjectParameterUI* _colorMappingParamUI;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 

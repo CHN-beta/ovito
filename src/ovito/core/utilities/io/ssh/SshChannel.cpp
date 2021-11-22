@@ -24,7 +24,7 @@
 #include "SshChannel.h"
 #include "SshConnection.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
@@ -220,5 +220,4 @@ QString SshChannel::errorMessage() const
     return {};
 }
 
-} // End of namespace
 } // End of namespace

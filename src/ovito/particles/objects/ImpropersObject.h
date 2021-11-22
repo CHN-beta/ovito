@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This data object stores a list of molecular impropers, i.e. quadruplets of particles.
@@ -73,5 +73,4 @@ public:
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
 };
 
-}	// End of namespace
 }	// End of namespace

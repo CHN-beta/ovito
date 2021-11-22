@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/AssignColorModifier.h>
 #include "AssignColorModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(AssignColorModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AssignColorModifier, AssignColorModifierEditor);
@@ -61,5 +61,4 @@ void AssignColorModifierEditor::createUI(const RolloutInsertionParameters& rollo
 	layout->addWidget(keepSelectionPUI->checkBox(), 2, 0, 1, 2);
 }
 
-}	// End of namespace
 }	// End of namespace

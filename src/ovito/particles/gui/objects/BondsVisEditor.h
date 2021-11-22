@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the BondsVis class.
@@ -57,7 +57,6 @@ private:
 	ColorParameterUI* _bondColorUI;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 

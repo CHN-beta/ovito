@@ -29,7 +29,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "TrajectoryObject.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A visualization element for rendering particle trajectory lines.
@@ -100,5 +100,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
-}	// End of namespace
 }	// End of namespace

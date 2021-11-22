@@ -37,7 +37,7 @@
 #include <qwt/qwt_plot_picker.h>
 #include <qwt/qwt_picker_machine.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateIsosurfaceModifier, CreateIsosurfaceModifierEditor);
@@ -176,5 +176,4 @@ void CreateIsosurfaceModifierEditor::onPickerPoint(const QPointF& pt)
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

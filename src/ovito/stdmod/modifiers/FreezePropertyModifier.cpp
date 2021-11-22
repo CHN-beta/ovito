@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "FreezePropertyModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifier);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, sourceProperty);
@@ -276,5 +276,4 @@ bool FreezePropertyModifierApplication::referenceEvent(RefTarget* source, const 
 	return ModifierApplication::referenceEvent(source, event);
 }
 
-}	// End of namespace
 }	// End of namespace

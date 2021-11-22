@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "AmbientOcclusionModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AmbientOcclusionModifier, AmbientOcclusionModifierEditor);
@@ -72,5 +72,4 @@ void AmbientOcclusionModifierEditor::createUI(const RolloutInsertionParameters& 
 	layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
-}	// End of namespace
 }	// End of namespace

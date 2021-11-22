@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../ParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Exporter that outputs the particles to a FHI-aims file.
@@ -61,7 +61,6 @@ protected:
 	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation) override;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 

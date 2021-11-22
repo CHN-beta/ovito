@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/export/ParticleExporter.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 class GSDFile;	// Defined in GSDFile.h
 
@@ -81,5 +81,4 @@ private:
 	std::unique_ptr<GSDFile> _gsdFile;
 };
 
-}	// End of namespace
 }	// End of namespace

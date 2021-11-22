@@ -30,7 +30,7 @@
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
 #include <ovito/crystalanalysis/objects/Microstructure.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief This information record is attached to the dislocation segments by the DislocationVis when rendering
@@ -162,5 +162,4 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(LineColoringMode, lineColoringMode, setLineColoringMode);
 };
 
-}	// End of namespace
 }	// End of namespace

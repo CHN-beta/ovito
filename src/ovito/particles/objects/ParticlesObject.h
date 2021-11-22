@@ -32,7 +32,7 @@
 #include "ImpropersObject.h"
 #include "BondType.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This data object type is a container for particle properties.
@@ -216,7 +216,6 @@ using ParticlePropertyReference = TypedPropertyReference<ParticlesObject>;
  */
 using ParticleInputColumnMapping = TypedInputColumnMapping<ParticlesObject>;
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Particles::ParticlePropertyReference);

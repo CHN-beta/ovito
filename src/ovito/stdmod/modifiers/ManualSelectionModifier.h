@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * Modifiers that allows the user to select individual elements, e.g. particles or bonds, by hand.
@@ -104,5 +104,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ElementSelectionSet>, selectionSet, setSelectionSet, PROPERTY_FIELD_ALWAYS_CLONE);
 };
 
-}	// End of namespace
 }	// End of namespace

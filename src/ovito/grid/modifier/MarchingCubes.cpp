@@ -24,7 +24,7 @@
 #include "MarchingCubes.h"
 #include "MarchingCubesLookupTable.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /******************************************************************************
 * Constructor.
@@ -684,5 +684,4 @@ SurfaceMeshAccess::vertex_index MarchingCubes::createCenterVertex(int i, int j, 
     return _outputMesh.createVertex(p);
 }
 
-}	// End of namespace
 }	// End of namespace

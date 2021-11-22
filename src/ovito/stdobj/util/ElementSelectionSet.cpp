@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/UndoStack.h>
 #include "ElementSelectionSet.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(ElementSelectionSet);
 DEFINE_PROPERTY_FIELD(ElementSelectionSet, useIdentifiers);
@@ -381,5 +381,4 @@ PipelineStatus ElementSelectionSet::applySelection(PropertyAccess<int> outputSel
 	return PipelineStatus(PipelineStatus::Success, tr("%1 elements selected").arg(nselected));
 }
 
-}	// End of namespace
 }	// End of namespace

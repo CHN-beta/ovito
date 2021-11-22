@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A non-periodic triangle mesh that is generated from a periodic SurfaceMesh.
@@ -69,5 +69,4 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 
-}	// End of namespace
 }	// End of namespace

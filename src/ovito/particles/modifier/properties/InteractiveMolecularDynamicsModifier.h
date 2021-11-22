@@ -29,7 +29,7 @@
 
 #include <QTcpSocket>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a 
@@ -178,5 +178,4 @@ private:
 	std::optional<PreliminaryViewportUpdatesSuspender> _preliminaryUpdateSuspender;
 };
 
-}	// End of namespace
 }	// End of namespace

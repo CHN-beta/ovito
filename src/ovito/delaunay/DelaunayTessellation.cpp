@@ -27,7 +27,7 @@
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
 
-namespace Ovito { namespace Delaunay {
+namespace Ovito::Delaunay {
 
 /******************************************************************************
 * Generates the tessellation.
@@ -261,5 +261,4 @@ bool DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
 	return (num_x*num_x + num_y*num_y + num_z*num_z) / (4 * den * den) < alpha;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the ParticleType class.
@@ -52,5 +52,4 @@ private:
 	QToolButton* createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc);
 };
 
-}	// End of namespace
 }	// End of namespace

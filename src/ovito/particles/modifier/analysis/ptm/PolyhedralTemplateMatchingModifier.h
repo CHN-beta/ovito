@@ -29,7 +29,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include "PTMAlgorithm.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A modifier that uses the Polyhedral Template Matching (PTM) method to identify
@@ -148,5 +148,4 @@ private:
 	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, orderingTypes, setOrderingTypes);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "POSCARImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(POSCARImporter);
 
@@ -453,5 +453,4 @@ PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextRea
 	return fieldArray.buffer();
 }
 
-}	// End of namespace
 }	// End of namespace

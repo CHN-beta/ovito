@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for AtomEye CFG files.
@@ -96,5 +96,4 @@ protected:
 	static void generateAutomaticColumnMapping(ParticleInputColumnMapping& mapping, const QStringList& columnNames);
 };
 
-}	// End of namespace
 }	// End of namespace

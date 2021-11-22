@@ -25,7 +25,7 @@
 #include "SurfaceMeshVertices.h"
 #include "SurfaceMeshVis.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 
@@ -138,5 +138,4 @@ void SurfaceMeshVertices::initializeObject(ExecutionContext executionContext)
 	PropertyContainer::initializeObject(executionContext);
 }
 
-}	// End of namespace
 }	// End of namespace

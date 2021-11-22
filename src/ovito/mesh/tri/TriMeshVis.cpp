@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "TriMeshVis.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(TriMeshVis);
 DEFINE_PROPERTY_FIELD(TriMeshVis, color);
@@ -118,5 +118,4 @@ PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& pat
 	return {};
 }
 
-}	// End of namespace
 }	// End of namespace

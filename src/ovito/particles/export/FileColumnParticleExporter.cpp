@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "FileColumnParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 
@@ -56,5 +56,4 @@ void FileColumnParticleExporter::initializeObject(ExecutionContext executionCont
 #endif
 }
 
-}	// End of namespace
 }	// End of namespace

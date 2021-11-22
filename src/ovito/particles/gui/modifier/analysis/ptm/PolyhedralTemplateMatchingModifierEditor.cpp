@@ -32,7 +32,7 @@
 
 #include <qwt/qwt_plot_zoneitem.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor);
 SET_OVITO_OBJECT_EDITOR(PolyhedralTemplateMatchingModifier, PolyhedralTemplateMatchingModifierEditor);
@@ -149,5 +149,4 @@ void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

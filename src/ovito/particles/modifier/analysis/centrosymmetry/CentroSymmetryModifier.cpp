@@ -34,7 +34,7 @@
 #include <mwm_csp/mwm_csp.h>
 
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifier);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
@@ -197,5 +197,4 @@ void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(TimePoint time, 
 	state.addObjectWithUniqueId<DataTable>(_histogram);
 }
 
-}	// End of namespace
 }	// End of namespace

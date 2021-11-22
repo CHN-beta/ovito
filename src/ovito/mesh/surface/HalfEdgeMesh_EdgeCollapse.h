@@ -28,7 +28,7 @@
 
 #include <boost/heap/fibonacci_heap.hpp>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /// Default implementation of a functor that calculates the vector between to spatial points.
 struct DefaultPointPointVector
@@ -672,5 +672,4 @@ private:
 	static constexpr FloatType mcMaxDihedralAngleSin2 = FloatType(0.000304586490452); // =sin(1 degree)^2
 };
 
-}	// End of namespace
 }	// End of namespace

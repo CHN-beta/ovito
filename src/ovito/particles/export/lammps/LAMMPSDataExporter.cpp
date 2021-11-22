@@ -30,7 +30,7 @@
 #include <ovito/core/app/Application.h>
 #include "LAMMPSDataExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataExporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomStyle);
@@ -460,5 +460,4 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

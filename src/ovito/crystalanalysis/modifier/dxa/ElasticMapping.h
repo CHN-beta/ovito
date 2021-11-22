@@ -30,7 +30,7 @@
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include "StructureAnalysis.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 using namespace Ovito::Delaunay;
 
@@ -177,5 +177,4 @@ private:
 	std::vector<Cluster*> _vertexClusters;
 };
 
-}	// End of namespace
 }	// End of namespace

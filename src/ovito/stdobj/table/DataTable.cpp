@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "DataTable.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTable);
 DEFINE_PROPERTY_FIELD(DataTable, intervalStart);
@@ -136,5 +136,4 @@ ConstPropertyPtr DataTable::getXValues() const
 	return {};
 }
 
-}	// End of namespace
 }	// End of namespace

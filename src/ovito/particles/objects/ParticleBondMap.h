@@ -30,7 +30,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <utility>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * A helper data structure describing a single bond between two particles.
@@ -177,7 +177,6 @@ private:
 	std::vector<size_t> _nextBond;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 

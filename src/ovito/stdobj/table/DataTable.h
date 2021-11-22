@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A data object type that consists of a set of data columns, which are typically used to generate 2d data plots.
@@ -116,7 +116,6 @@ private:
  */
 using DataTablePropertyReference = TypedPropertyReference<DataTable>;
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::DataTablePropertyReference);

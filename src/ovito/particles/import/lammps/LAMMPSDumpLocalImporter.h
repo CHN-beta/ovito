@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for LAMMPS dump local files, which contain per-bond information.
@@ -125,5 +125,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping, columnMapping, setColumnMapping);
 };
 
-}	// End of namespace
 }	// End of namespace

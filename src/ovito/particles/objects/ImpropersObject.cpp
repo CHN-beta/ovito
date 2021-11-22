@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "ImpropersObject.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ImpropersObject);
 
@@ -95,5 +95,4 @@ void ImpropersObject::OOMetaClass::initialize()
 	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 
-}	// End of namespace
 }	// End of namespace

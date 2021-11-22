@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Dialog box that lets the user edit an InputColumnMapping.
@@ -84,5 +84,4 @@ protected:
 	QTextEdit* _fileExcerptField;
 };
 
-}	// End of namespace
 }	// End of namespace

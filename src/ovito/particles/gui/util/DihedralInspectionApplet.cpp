@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include "DihedralInspectionApplet.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(DihedralInspectionApplet);
 
@@ -57,5 +57,4 @@ QWidget* DihedralInspectionApplet::createWidget(MainWindow* mainWindow)
 	return panel;
 }
 
-}	// End of namespace
 }	// End of namespace

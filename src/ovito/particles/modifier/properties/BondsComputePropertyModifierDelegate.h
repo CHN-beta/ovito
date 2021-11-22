@@ -29,7 +29,7 @@
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -109,5 +109,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

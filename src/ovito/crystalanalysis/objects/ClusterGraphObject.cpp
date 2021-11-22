@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "ClusterGraphObject.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(ClusterGraphObject);
 DEFINE_PROPERTY_FIELD(ClusterGraphObject, storage);
@@ -35,5 +35,4 @@ ClusterGraphObject::ClusterGraphObject(DataSet* dataset) : DataObject(dataset)
 {
 }
 
-}	// End of namespace
 }	// End of namespace

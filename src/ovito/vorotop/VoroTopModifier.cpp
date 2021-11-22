@@ -34,7 +34,7 @@
 
 #include <voro++.hh>
 
-namespace Ovito { namespace VoroTop {
+namespace Ovito::VoroTop {
 
 IMPLEMENT_OVITO_CLASS(VoroTopModifier);
 DEFINE_PROPERTY_FIELD(VoroTopModifier, useRadii);
@@ -577,5 +577,4 @@ void VoroTopModifier::propertyChanged(const PropertyFieldDescriptor* field)
         _filter.reset();
 }
 
-}	// End of namespace
 }	// End of namespace

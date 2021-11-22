@@ -31,7 +31,7 @@
 #include <ovito/core/app/Application.h>
 #include "SmoothTrajectoryModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifier);
 DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, useMinimumImageConvention);
@@ -551,5 +551,4 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 	state1.intersectStateValidity(time);
 }
 
-}	// End of namespace
 }	// End of namespace

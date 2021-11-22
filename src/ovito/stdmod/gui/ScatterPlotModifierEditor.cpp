@@ -39,7 +39,7 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_color_map.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ScatterPlotModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ScatterPlotModifier, ScatterPlotModifierEditor);
@@ -251,5 +251,4 @@ void ScatterPlotModifierEditor::plotScatterPlot()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 struct Cluster;
 struct ClusterTransition;
@@ -235,5 +235,4 @@ struct OVITO_CRYSTALANALYSIS_EXPORT Cluster
 	}
 };
 
-}	// End of namespace
 }	// End of namespace

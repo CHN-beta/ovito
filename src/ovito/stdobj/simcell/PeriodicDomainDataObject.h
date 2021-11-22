@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Base class for geometry objects that are embedded in a spatial domain that may be periodic.
@@ -65,5 +65,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 };
 
-}	// End of namespace
 }	// End of namespace

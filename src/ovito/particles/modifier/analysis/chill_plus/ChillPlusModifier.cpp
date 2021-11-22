@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "ChillPlusModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ChillPlusModifier);
 DEFINE_PROPERTY_FIELD(ChillPlusModifier, cutoff);
@@ -223,5 +223,4 @@ std::pair<float, float> ChillPlusModifier::ChillPlusEngine::polar_asimuthal(cons
     return std::pair<float, float>(polar, asimuthal);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -39,7 +39,7 @@ class QwtPlotZoomer;
 class QwtPlotMagnifier;
 class QwtPlotPanner;
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A widget that plots the data of a DataTable.
@@ -161,5 +161,4 @@ private:
 	std::array<bool, QwtPlot::axisCnt> _axisAutoscaleEnabled{{true, true, true, true}};
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Describes the basic properties (unique ID, name & color) of a "type" of elements stored in a PropertyObject.
@@ -106,5 +106,4 @@ protected:
 	DECLARE_PROPERTY_FIELD(PropertyReference, ownerProperty);
 };
 
-}	// End of namespace
 }	// End of namespace

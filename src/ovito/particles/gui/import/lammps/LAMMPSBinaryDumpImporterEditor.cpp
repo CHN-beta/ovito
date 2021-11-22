@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "LAMMPSBinaryDumpImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSBinaryDumpImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSBinaryDumpImporter, LAMMPSBinaryDumpImporterEditor);
@@ -193,5 +193,4 @@ void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 
 #include <boost/range/algorithm_ext/is_sorted.hpp>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainer);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyContainer, properties);
@@ -440,5 +440,4 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

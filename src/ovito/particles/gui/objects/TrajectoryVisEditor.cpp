@@ -31,7 +31,7 @@
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "TrajectoryVisEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryVisEditor);
 SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
@@ -119,5 +119,4 @@ void TrajectoryVisEditor::updateColoringOptions()
 	_coloringModeUI->buttonGroup()->button(TrajectoryVis::UniformColoring)->setEnabled(trajectoryObject && !hasExplicitColors);
 }
 
-}	// End of namespace
 }	// End of namespace

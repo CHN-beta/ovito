@@ -31,7 +31,7 @@
 #include "VectorVis.h"
 #include "ParticlesVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(VectorVis);
 IMPLEMENT_OVITO_CLASS(VectorPickInfo);
@@ -377,5 +377,4 @@ QString VectorPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobj
 	return ParticlePickInfo::particleInfoString(*particles(), particleIndex);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -45,7 +45,7 @@
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "SliceModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(SliceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SliceModifier, SliceModifierEditor);
@@ -534,5 +534,4 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

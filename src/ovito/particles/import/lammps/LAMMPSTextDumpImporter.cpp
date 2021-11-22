@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSTextDumpImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSTextDumpImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSTextDumpImporter, useCustomColumnMapping);
@@ -530,5 +530,4 @@ Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(con
 		});
 }
 
-}	// End of namespace
 }	// End of namespace

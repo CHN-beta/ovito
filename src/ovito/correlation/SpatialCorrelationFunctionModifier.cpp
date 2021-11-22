@@ -34,7 +34,7 @@
 
 #include <kissfft/kiss_fftnd.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
@@ -848,5 +848,4 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults
 	state.addAttribute(QStringLiteral("CorrelationFunction.covariance"), QVariant::fromValue(covariance()), modApp);
 }
 
-}	// End of namespace
 }	// End of namespace

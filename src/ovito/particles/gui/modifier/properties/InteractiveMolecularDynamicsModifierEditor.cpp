@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "InteractiveMolecularDynamicsModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InteractiveMolecularDynamicsModifier, InteractiveMolecularDynamicsModifierEditor);
@@ -118,5 +118,4 @@ void InteractiveMolecularDynamicsModifierEditor::connectionStateChanged()
 	_serverPortUI->setEnabled(modifier && modifier->socket().state() == QAbstractSocket::UnconnectedState);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/core/app/Application.h>
 #include "InvertSelectionModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 
@@ -54,5 +54,4 @@ void InvertSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		s = !s;
 }
 
-}	// End of namespace
 }	// End of namespace

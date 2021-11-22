@@ -33,7 +33,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A visualization element for rendering bonds.
@@ -135,5 +135,4 @@ private:
 	DataOORef<const SimulationCellObject> _simulationCell;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -33,7 +33,7 @@
 #include "DisjointSet.h"
 #include "GrainSegmentationModifier.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
@@ -602,5 +602,4 @@ private:
 	bool _adoptOrphanAtoms;
 };
 
-}	// End of namespace
 }	// End of namespace

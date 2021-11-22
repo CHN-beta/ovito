@@ -27,7 +27,7 @@
 #include <ovito/stdobj/camera/StandardCameraSource.h>
 #include "StandardCameraSourceEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraSourceEditor);
 SET_OVITO_OBJECT_EDITOR(StandardCameraSource, StandardCameraSourceEditor);
@@ -82,5 +82,4 @@ void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& roll
 	layout->addWidget(typePUI->comboBox());
 }
 
-}	// End of namespace
 }	// End of namespace

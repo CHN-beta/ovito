@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * Properties editor for the ElasticStrainModifier class.
@@ -56,5 +56,4 @@ private:
 	FloatParameterUI* _caRatioUI;
 };
 
-}	// End of namespace
 }	// End of namespace

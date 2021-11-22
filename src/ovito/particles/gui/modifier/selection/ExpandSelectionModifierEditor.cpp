@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "ExpandSelectionModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ExpandSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ExpandSelectionModifier, ExpandSelectionModifierEditor);
@@ -98,5 +98,4 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
-}	// End of namespace
 }	// End of namespace

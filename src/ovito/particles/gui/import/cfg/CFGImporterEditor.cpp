@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "CFGImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CFGImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CFGImporter, CFGImporterEditor);
@@ -53,5 +53,4 @@ void CFGImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->addWidget(sortParticlesUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

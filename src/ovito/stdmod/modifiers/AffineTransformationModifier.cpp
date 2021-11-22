@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "AffineTransformationModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifier);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, transformationTM);
@@ -166,5 +166,4 @@ PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(Modifie
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

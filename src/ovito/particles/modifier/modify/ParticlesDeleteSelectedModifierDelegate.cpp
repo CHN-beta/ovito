@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ParticlesDeleteSelectedModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
 IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
@@ -153,5 +153,4 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(Modifier* modifier, Pi
 	return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }
 
-}	// End of namespace
 }	// End of namespace

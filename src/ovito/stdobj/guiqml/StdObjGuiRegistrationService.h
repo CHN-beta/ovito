@@ -25,7 +25,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/ApplicationService.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A service class that performs registration of QML types.
@@ -41,5 +41,4 @@ public:
 	Q_INVOKABLE StdObjGuiRegistrationService();
 };
 
-}	// End of namespace
 }	// End of namespace

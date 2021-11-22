@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CFGImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CFGImporter);
 
@@ -344,5 +344,4 @@ void CFGImporter::generateAutomaticColumnMapping(ParticleInputColumnMapping& col
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

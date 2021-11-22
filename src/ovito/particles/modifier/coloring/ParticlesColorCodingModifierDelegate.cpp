@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParticlesColorCodingModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesColorCodingModifierDelegate);
 IMPLEMENT_OVITO_CLASS(ParticleVectorsColorCodingModifierDelegate);
@@ -71,5 +71,4 @@ QVector<DataObjectReference> BondsColorCodingModifierDelegate::OOMetaClass::getA
     return {};
 }
 
-}	// End of namespace
 }	// End of namespace

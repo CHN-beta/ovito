@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "CreateBondsModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CreateBondsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
@@ -268,5 +268,4 @@ void CreateBondsModifierEditor::updateVanDerWaalsList()
 	_vdwTable->resizeColumnToContents(0);
 }
 
-}	// End of namespace
 }	// End of namespace

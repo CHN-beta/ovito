@@ -28,7 +28,7 @@
 #include "PropertyContainer.h"
 #include "PropertyObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * Utility class that provides efficient read-write access to the data of a 
@@ -446,5 +446,4 @@ private:
 	std::array<void*, CachedPropertyCount> _mutableCachedPointers;
 };
 
-}	// End of namespace
 }	// End of namespace

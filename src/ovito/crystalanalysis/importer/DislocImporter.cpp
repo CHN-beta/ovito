@@ -35,7 +35,7 @@
 #include <netcdf.h>
 #include <boost/functional/hash.hpp>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocImporter);
 
@@ -632,5 +632,4 @@ OORef<DataCollection> DislocImporter::DislocFrameData::handOver(const DataCollec
 }
 #endif
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief Data inspector page for dislocation lines.
@@ -176,5 +176,4 @@ private:
 	PickingMode* _pickingMode;
 };
 
-}	// End of namespace
 }	// End of namespace

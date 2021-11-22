@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief This parameter UI lets the user select a property.
@@ -144,5 +144,4 @@ protected:
 	std::function<bool(const PropertyObject*)> _propertyFilter;
 };
 
-}	// End of namespace
 }	// End of namespace

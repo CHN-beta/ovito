@@ -26,7 +26,7 @@
 #include <ovito/core/utilities/concurrent/Promise.h>
 #include "Filter.h"
 
-namespace Ovito { namespace VoroTop {
+namespace Ovito::VoroTop {
 
 /******************************************************************************
 * Loads the filter definition from the given input stream.
@@ -120,5 +120,4 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Task& opera
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

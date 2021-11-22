@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for the format used by the QUantum Espresso simulation code.
@@ -85,5 +85,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

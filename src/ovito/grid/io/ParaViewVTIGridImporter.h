@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief File parser for reading a VoxelGrid from a ParaView VTI (ImageData) file.
@@ -91,5 +91,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

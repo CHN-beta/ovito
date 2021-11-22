@@ -32,7 +32,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier builds clusters of particles.
@@ -220,5 +220,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByCluster, setColorParticlesByCluster, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

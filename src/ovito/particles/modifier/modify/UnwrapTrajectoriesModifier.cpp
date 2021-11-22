@@ -29,7 +29,7 @@
 #include <ovito/core/app/Application.h>
 #include "UnwrapTrajectoriesModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifier);
 
@@ -518,5 +518,4 @@ void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& str
 	stream.closeChunk();
 }
 
-}	// End of namespace
 }	// End of namespace

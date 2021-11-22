@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTUSimulationCellImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTUSimulationCellImporter);
 
@@ -135,5 +135,4 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 	StandardFrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

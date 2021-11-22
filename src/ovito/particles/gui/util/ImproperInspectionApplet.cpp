@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include "ImproperInspectionApplet.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ImproperInspectionApplet);
 
@@ -57,5 +57,4 @@ QWidget* ImproperInspectionApplet::createWidget(MainWindow* mainWindow)
 	return panel;
 }
 
-}	// End of namespace
 }	// End of namespace

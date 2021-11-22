@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the CFGImporter class.
@@ -47,5 +47,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

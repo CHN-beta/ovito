@@ -34,7 +34,7 @@
 #include "ParticlesObject.h"
 #include "ParticleBondMap.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(BondsObject);
 
@@ -552,5 +552,4 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
 	return PropertyContainerClass::viewportFenceSelection(fence, objectPath, node, projectionTM);
 }
 
-}	// End of namespace
 }	// End of namespace

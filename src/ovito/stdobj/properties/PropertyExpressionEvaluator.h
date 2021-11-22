@@ -30,7 +30,7 @@
 
 #include <muparser/muParser.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Helper class that evaluates one or more math expressions for every data element.
@@ -296,5 +296,4 @@ protected:
 	DataOORef<const SimulationCellObject> _simCell;
 };
 
-}	// End of namespace
 }	// End of namespace

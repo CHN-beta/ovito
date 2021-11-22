@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief UI component that allows the user to select a property object in a modifier's pipeline input.
@@ -182,5 +182,4 @@ protected:
 	PropertyParameterType _propertyParameterType = InputProperty;
 };
 
-}	// End of namespace
 }	// End of namespace

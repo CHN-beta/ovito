@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for IMD atom files.
@@ -90,5 +90,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

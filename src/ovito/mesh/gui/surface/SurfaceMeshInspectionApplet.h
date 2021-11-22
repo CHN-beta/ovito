@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 class SurfaceMeshInspectionApplet;  // defined below
 
@@ -142,5 +142,4 @@ private:
 	QAction* _switchToRegionsAction;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief This object stores a data grid made of voxels.
@@ -123,7 +123,6 @@ private:
 using VoxelPropertyReference = TypedPropertyReference<VoxelGrid>;
 
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Grid::VoxelPropertyReference);

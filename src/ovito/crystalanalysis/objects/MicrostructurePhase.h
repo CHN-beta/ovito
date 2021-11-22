@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include "BurgersVectorFamily.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief Data structure representing a phase (e.g. a crystal structure) in a Microstructure.
@@ -105,5 +105,4 @@ private:
 	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const BurgersVectorFamily>, burgersVectorFamilies, setBurgersVectorFamilies);
 };
 
-}	// End of namespace
 }	// End of namespace

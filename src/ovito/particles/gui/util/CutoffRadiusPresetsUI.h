@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 class OVITO_PARTICLESGUI_EXPORT ChemicalElement
 {
@@ -85,5 +85,4 @@ protected:
 	QPointer<QComboBox> _comboBox;
 };
 
-}	// End of namespace
 }	// End of namespace

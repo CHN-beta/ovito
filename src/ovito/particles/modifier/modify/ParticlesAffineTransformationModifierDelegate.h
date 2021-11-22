@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -103,5 +103,4 @@ private:
 	static bool isTransformableProperty(const PropertyObject* property);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include <QtEndian>
 #include <QRegularExpression>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSBinaryDumpImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSBinaryDumpImporter, columnMapping);
@@ -575,5 +575,4 @@ void LAMMPSBinaryDumpImporter::loadFromStream(ObjectLoadStream& stream)
 	stream.closeChunk();
 }
 
-}	// End of namespace
 }	// End of namespace

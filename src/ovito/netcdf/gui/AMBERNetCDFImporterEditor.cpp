@@ -48,7 +48,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "AMBERNetCDFImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
@@ -146,5 +146,4 @@ void AMBERNetCDFImporterEditor::onEditColumnMapping()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

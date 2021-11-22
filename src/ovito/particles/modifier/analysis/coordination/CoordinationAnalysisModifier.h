@@ -31,7 +31,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier computes the coordination number of each particle (i.e. the number of neighbors within a given cutoff radius).
@@ -161,5 +161,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
 };
 
-}	// End of namespace
 }	// End of namespace

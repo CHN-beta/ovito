@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "DislocationInspectionApplet.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationInspectionApplet);
 
@@ -274,5 +274,4 @@ void DislocationInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, Sce
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

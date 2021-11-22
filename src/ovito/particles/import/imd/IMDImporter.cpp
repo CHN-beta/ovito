@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "IMDImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(IMDImporter);
 
@@ -180,5 +180,4 @@ void IMDImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

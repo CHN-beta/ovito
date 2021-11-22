@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ColorLegendOverlay.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorLegendOverlay);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
@@ -525,5 +525,4 @@ void ColorLegendOverlay:: drawDiscreteColorMap(QPainter& painter, const QRectF& 
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

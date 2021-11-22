@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the SelectTypeModifier class.
@@ -97,5 +97,4 @@ private:
 	QTableView* _elementTypesBox;
 };
 
-}	// End of namespace
 }	// End of namespace

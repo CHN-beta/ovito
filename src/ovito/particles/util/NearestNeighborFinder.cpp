@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "NearestNeighborFinder.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 #define TREE_DEPTH_LIMIT 		17
 
@@ -219,5 +219,4 @@ void NearestNeighborFinder::splitLeafNode(TreeNode* node, int splitDim)
 	numLeafNodes++;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -34,7 +34,7 @@
 
 #include <complex>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier computes the spatial correlation function between two particle properties.
@@ -320,5 +320,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, reciprocalSpaceYAxisRangeEnd, setReciprocalSpaceYAxisRangeEnd);
 };
 
-}	// End of namespace
 }	// End of namespace

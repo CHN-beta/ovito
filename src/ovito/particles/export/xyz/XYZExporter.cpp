@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "XYZExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XYZExporter);
 DEFINE_PROPERTY_FIELD(XYZExporter, subFormat);
@@ -172,5 +172,4 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

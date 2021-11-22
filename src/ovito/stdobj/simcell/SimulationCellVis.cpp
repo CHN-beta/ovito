@@ -31,7 +31,7 @@
 #include "SimulationCellVis.h"
 #include "SimulationCellObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellVis);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
@@ -274,5 +274,4 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 	renderer->endPickObject();
 }
 
-}	// End of namespace
 }	// End of namespace

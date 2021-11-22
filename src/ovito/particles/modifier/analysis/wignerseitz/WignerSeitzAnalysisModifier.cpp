@@ -30,7 +30,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "WignerSeitzAnalysisModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(WignerSeitzAnalysisModifier);
 DEFINE_PROPERTY_FIELD(WignerSeitzAnalysisModifier, perTypeOccupancy);
@@ -301,5 +301,4 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(TimePo
 	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %1 vacancies and %2 interstitials").arg(vacancyCount()).arg(interstitialCount())));
 }
 
-}	// End of namespace
 }	// End of namespace

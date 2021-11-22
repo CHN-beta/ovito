@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "GSDExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GSDExporter);
 
@@ -310,5 +310,4 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
     return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

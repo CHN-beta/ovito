@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief A properties editor for the MicrostructurePhase class.
@@ -56,5 +56,4 @@ private:
 	RefTargetListParameterUI* familiesListUI;
 };
 
-}	// End of namespace
 }	// End of namespace

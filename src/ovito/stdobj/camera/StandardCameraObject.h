@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * The standard camera data object.
@@ -121,5 +121,4 @@ private:
 	ConstDataBufferPtr _cameraIconVertices;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for simulation files written by the Parcas MD code.
@@ -89,5 +89,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

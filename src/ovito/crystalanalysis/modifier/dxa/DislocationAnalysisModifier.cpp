@@ -33,7 +33,7 @@
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
@@ -244,5 +244,4 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 			lineCoarseningEnabled() ? linePointInterval() : 0);
 }
 
-}	// End of namespace
 }	// End of namespace

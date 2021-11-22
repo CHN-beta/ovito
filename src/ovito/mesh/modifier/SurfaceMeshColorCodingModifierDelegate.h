@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 using namespace Ovito::StdMod;
 
@@ -148,5 +148,4 @@ protected:
 	virtual int outputColorPropertyId() const override { return SurfaceMeshRegions::ColorProperty; }
 };
 
-}	// End of namespace
 }	// End of namespace

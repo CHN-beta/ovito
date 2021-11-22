@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include "SurfaceMeshInspectionApplet.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshInspectionApplet);
 
@@ -260,5 +260,4 @@ QWidget* SurfaceMeshRegionInspectionApplet::createWidget(MainWindow* mainWindow)
 	return panel;
 }
 
-}	// End of namespace
 }	// End of namespace

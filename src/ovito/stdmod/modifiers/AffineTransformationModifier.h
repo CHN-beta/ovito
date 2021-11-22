@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for AffineTransformationModifier delegates that operate on different kinds of data.
@@ -143,5 +143,4 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, translationReducedCoordinates, setTranslationReducedCoordinates);
 };
 
-}	// End of namespace
 }	// End of namespace

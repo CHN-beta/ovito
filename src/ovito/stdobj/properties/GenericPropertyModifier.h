@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Base class for modifiers that operate on properties and which have no
@@ -64,5 +64,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference, subject, setSubject);
 };
 
-}	// End of namespace
 }	// End of namespace

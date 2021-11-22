@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "HistogramModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(HistogramModifier);
 DEFINE_PROPERTY_FIELD(HistogramModifier, numberOfBins);
@@ -330,5 +330,4 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
 }
 
-}	// End of namespace
 }	// End of namespace

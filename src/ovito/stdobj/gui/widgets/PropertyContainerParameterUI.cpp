@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "PropertyContainerParameterUI.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainerParameterUI);
 
@@ -185,5 +185,4 @@ void PropertyContainerParameterUI::setEnabled(bool enabled)
 		comboBox()->setEnabled(editObject() && isEnabled());
 }
 
-}	// End of namespace
 }	// End of namespace

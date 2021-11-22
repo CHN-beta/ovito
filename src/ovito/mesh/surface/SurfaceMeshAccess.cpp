@@ -27,7 +27,7 @@
 #include "SurfaceMeshAccess.h"
 #include "SurfaceMesh.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 constexpr SurfaceMeshAccess::size_type SurfaceMeshAccess::InvalidIndex;
 
@@ -876,5 +876,4 @@ void SurfaceMeshAccess::deleteIsolatedVertices()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

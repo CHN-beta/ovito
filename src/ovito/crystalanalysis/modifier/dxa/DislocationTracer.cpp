@@ -25,7 +25,7 @@
 #include "DislocationTracer.h"
 #include "InterfaceMesh.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /******************************************************************************
 * Allocates a new BurgersCircuit instance.
@@ -1306,5 +1306,4 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
 	createAndTraceSegment(ClusterVector(burgersVector, baseCluster), forwardCircuit, maxCircuitLength);
 }
 
-}	// End of namespace
 }	// End of namespace

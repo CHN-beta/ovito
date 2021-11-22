@@ -29,7 +29,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CastepCellImporter);
 
@@ -202,5 +202,4 @@ void CastepCellImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

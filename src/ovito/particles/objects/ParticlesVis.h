@@ -31,7 +31,7 @@
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/dataset/data/DataVis.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A visualization element for rendering particles.
@@ -178,5 +178,4 @@ private:
 	ConstDataBufferPtr _subobjectToParticleMapping;
 };
 
-}	// End of namespace
 }	// End of namespace

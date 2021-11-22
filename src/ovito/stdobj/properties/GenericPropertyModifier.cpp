@@ -25,7 +25,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include "GenericPropertyModifier.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(GenericPropertyModifier);
 DEFINE_PROPERTY_FIELD(GenericPropertyModifier, subject);
@@ -60,5 +60,4 @@ bool GenericPropertyModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 	return input.containsObjectRecursive(PropertyContainer::OOClass());
 }
 
-}	// End of namespace
 }	// End of namespace

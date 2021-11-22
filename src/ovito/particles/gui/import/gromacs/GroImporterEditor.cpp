@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "GroImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GroImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
@@ -57,5 +57,4 @@ void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->addWidget(generateBondsUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

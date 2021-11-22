@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../FileColumnParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Exporter that writes the particles to an IMD file.
@@ -61,7 +61,6 @@ protected:
 	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation) override;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 

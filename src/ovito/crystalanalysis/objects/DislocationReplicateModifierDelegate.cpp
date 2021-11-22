@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationReplicateModifierDelegate.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationReplicateModifierDelegate);
 
@@ -118,5 +118,4 @@ PipelineStatus DislocationReplicateModifierDelegate::apply(Modifier* modifier, P
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GaussianCubeImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GaussianCubeImporter);
 
@@ -232,5 +232,4 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

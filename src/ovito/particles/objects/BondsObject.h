@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * The data type used for the 'Topology' bond property: two indices into the particles list.
@@ -157,7 +157,6 @@ using BondPropertyReference = TypedPropertyReference<BondsObject>;
  */
 using BondInputColumnMapping = TypedInputColumnMapping<BondsObject>;
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Particles::BondPropertyReference);

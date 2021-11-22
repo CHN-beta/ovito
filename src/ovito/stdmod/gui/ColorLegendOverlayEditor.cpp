@@ -41,7 +41,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include "ColorLegendOverlayEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorLegendOverlayEditor);
 SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
@@ -310,5 +310,4 @@ void ColorLegendOverlayEditor::colorSourceSelected()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

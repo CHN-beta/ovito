@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "SimulationCellVisEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellVisEditor);
 SET_OVITO_OBJECT_EDITOR(SimulationCellVis, SimulationCellVisEditor);
@@ -61,5 +61,4 @@ void SimulationCellVisEditor::createUI(const RolloutInsertionParameters& rollout
 	layout->addWidget(lineColorUI->colorPicker(), 2, 1);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include "ParaViewVTSGridImporter.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTSGridImporter);
 IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
@@ -265,5 +265,4 @@ void GridParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

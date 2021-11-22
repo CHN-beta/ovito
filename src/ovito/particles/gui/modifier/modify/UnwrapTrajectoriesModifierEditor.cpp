@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "UnwrapTrajectoriesModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierEditor);
@@ -48,5 +48,4 @@ void UnwrapTrajectoriesModifierEditor::createUI(const RolloutInsertionParameters
 	layout->addSpacing(6);
 }
 
-}	// End of namespace
 }	// End of namespace

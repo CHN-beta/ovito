@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/utilities/mesh/TriMesh.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A data object type that consist of a triangle mesh.
@@ -68,5 +68,4 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(TriMeshPtr, mesh, setMesh);
 };
 
-}	// End of namespace
 }	// End of namespace

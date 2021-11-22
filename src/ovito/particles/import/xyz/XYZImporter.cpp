@@ -33,7 +33,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "XYZImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XYZImporter);
 DEFINE_PROPERTY_FIELD(XYZImporter, autoRescaleCoordinates);
@@ -647,5 +647,4 @@ void XYZImporter::loadFromStream(ObjectLoadStream& stream)
 	stream.closeChunk();
 }
 
-}	// End of namespace
 }	// End of namespace

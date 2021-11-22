@@ -30,7 +30,7 @@
 #include <3rdparty/gemmi/cif.hpp>
 #include <3rdparty/gemmi/mmread.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 namespace cif = gemmi::cif;
 
@@ -263,5 +263,4 @@ void mmCIFImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

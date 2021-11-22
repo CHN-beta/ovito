@@ -35,7 +35,7 @@
 #include "SurfaceMesh.h"
 #include "RenderableSurfaceMesh.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVis);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
@@ -1441,5 +1441,4 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::isCornerInside2DRegion(const std::vec
 	return isInside;
 }
 
-}	// End of namespace
 }	// End of namespace

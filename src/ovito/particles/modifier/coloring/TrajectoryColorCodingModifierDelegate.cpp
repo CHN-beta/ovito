@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "TrajectoryColorCodingModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
 
@@ -39,5 +39,4 @@ QVector<DataObjectReference> TrajectoryColorCodingModifierDelegate::OOMetaClass:
 	return {};
 }
 
-}	// End of namespace
 }	// End of namespace

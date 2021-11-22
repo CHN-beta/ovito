@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "CAImporterEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(CAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CAImporter, CAImporterEditor);
@@ -61,5 +61,4 @@ void CAImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	layout->addWidget(multitimestepUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

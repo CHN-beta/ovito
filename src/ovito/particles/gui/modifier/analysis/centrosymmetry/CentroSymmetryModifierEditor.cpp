@@ -30,7 +30,7 @@
 #include <qwt/qwt_plot_zoneitem.h>
 #include "CentroSymmetryModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CentroSymmetryModifier, CentroSymmetryModifierEditor);
@@ -108,5 +108,4 @@ void CentroSymmetryModifierEditor::plotHistogram()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

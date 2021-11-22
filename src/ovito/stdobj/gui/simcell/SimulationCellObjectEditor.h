@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A properties editor for the SimulationCellObject class.
@@ -58,5 +58,4 @@ private:
 	QLineEdit* _cellVectorFields[4][3];
 };
 
-}	// End of namespace
 }	// End of namespace

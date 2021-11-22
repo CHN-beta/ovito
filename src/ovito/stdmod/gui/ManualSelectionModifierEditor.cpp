@@ -35,7 +35,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "ManualSelectionModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ManualSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ManualSelectionModifier, ManualSelectionModifierEditor);
@@ -409,5 +409,4 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

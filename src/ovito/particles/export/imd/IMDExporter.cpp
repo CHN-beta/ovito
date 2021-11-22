@@ -27,7 +27,7 @@
 #include <ovito/core/app/Application.h>
 #include "IMDExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(IMDExporter);
 
@@ -155,5 +155,4 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

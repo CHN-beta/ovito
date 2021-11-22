@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief This modifier inverts the selection status of each element.
@@ -48,5 +48,4 @@ public:
 	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
 };
 
-}	// End of namespace
 }	// End of namespace

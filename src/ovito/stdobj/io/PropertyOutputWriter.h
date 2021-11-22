@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief This class lists the properties to be written to an output file as data columns.
@@ -133,7 +133,6 @@ private:
 	TypedPropertyMode _typedPropertyMode;
 };
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::OutputColumnMapping);

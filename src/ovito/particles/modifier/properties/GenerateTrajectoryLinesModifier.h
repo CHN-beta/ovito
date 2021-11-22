@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Generates trajectory lines for particles.
@@ -126,5 +126,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectionApplet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Data inspector page for property-based data.
@@ -241,5 +241,4 @@ private:
 	QObjectCleanupHandler _cleanupHandler;
 };
 
-}	// End of namespace
 }	// End of namespace

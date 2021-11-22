@@ -28,7 +28,7 @@
 #include <ovito/core/rendering/PseudoColorMapping.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A transfer function that maps property values to display colors.
@@ -86,5 +86,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 };
 
-}	// End of namespace
 }	// End of namespace

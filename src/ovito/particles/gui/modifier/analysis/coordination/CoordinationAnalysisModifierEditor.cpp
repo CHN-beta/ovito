@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "CoordinationAnalysisModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CoordinationAnalysisModifier, CoordinationAnalysisModifierEditor);
@@ -118,5 +118,4 @@ void CoordinationAnalysisModifierEditor::plotRDF()
 	_rdfPlot->setTable(table);
 }
 
-}	// End of namespace
 }	// End of namespace

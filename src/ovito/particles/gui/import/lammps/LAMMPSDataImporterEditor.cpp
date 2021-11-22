@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "LAMMPSDataImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDataImporter, LAMMPSDataImporterEditor);
@@ -254,5 +254,4 @@ void LAMMPSAtomStyleDialog::onOk()
 	accept();
 }
 
-}	// End of namespace
 }	// End of namespace

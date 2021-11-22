@@ -26,7 +26,7 @@
 
 #include <qwt/qwt_plot_renderer.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTablePlotExporter);
 DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotWidth);
@@ -103,5 +103,4 @@ bool DataTablePlotExporter::exportFrame(int frameNumber, TimePoint time, const Q
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

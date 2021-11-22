@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include "NucleotidesVisEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(NucleotidesVisEditor);
 SET_OVITO_OBJECT_EDITOR(NucleotidesVis, NucleotidesVisEditor);
@@ -55,5 +55,4 @@ void NucleotidesVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->addLayout(cylinderRadiusUI->createFieldLayout(), 1, 1);
 }
 
-}	// End of namespace
 }	// End of namespace

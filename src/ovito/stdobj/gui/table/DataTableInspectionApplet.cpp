@@ -30,7 +30,7 @@
 #include <ovito/core/app/Application.h>
 #include "DataTableInspectionApplet.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
 
@@ -211,5 +211,4 @@ void DataTableInspectionApplet::exportDataToFile()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

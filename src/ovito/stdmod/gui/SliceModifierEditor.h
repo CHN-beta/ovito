@@ -29,7 +29,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 class PickPlanePointsInputMode;	// Defined below
 
@@ -126,5 +126,4 @@ private:
 	SliceModifierEditor* _editor;
 };
 
-}	// End of namespace
 }	// End of namespace

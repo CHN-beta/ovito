@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/BoundedPriorityQueue.h>
 #include <ovito/core/utilities/MemoryPool.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This utility class finds the *k* nearest neighbors of a particle or around some point in space.
@@ -327,5 +327,4 @@ private:
 	int maxTreeDepth = 1;
 };
 
-}	// End of namespace
 }	// End of namespace

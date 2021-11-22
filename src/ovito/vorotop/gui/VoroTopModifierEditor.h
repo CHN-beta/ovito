@@ -27,7 +27,7 @@
 #include <ovito/vorotop/VoroTopModifier.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace VoroTop {
+namespace Ovito::VoroTop {
 
 /**
  * A properties editor for the VoroTopModifier class.
@@ -53,5 +53,4 @@ private Q_SLOTS:
 	void onLoadFilter();
 };
 
-}	// End of namespace
 }	// End of namespace

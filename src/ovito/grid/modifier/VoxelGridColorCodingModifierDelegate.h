@@ -27,7 +27,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 using namespace Ovito::StdMod;
 
@@ -65,5 +65,4 @@ public:
 	Q_INVOKABLE VoxelGridColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

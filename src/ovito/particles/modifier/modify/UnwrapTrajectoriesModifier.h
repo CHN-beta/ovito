@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier unwraps the positions of particles that have crossed a periodic boundary
@@ -153,5 +153,4 @@ private:
 	std::array<int,3> _currentFlipState{{0,0,0}};
 };
 
-}	// End of namespace
 }	// End of namespace

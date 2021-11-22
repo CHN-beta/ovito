@@ -25,7 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ParticleType.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
@@ -420,5 +420,4 @@ FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, 
 	return 0;
 }
 
-}	// End of namespace
 }	// End of namespace

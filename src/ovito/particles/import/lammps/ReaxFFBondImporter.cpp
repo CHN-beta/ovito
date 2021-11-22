@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "ReaxFFBondImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ReaxFFBondImporter);
 
@@ -261,5 +261,4 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

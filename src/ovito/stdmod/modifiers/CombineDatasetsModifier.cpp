@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "CombineDatasetsModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(CombineDatasetsModifier);
 DEFINE_REFERENCE_FIELD(CombineDatasetsModifier, secondaryDataSource);
@@ -240,5 +240,4 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

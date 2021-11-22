@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include "InterfaceMesh.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * This is the central class for dislocation line tracing.
@@ -142,5 +142,4 @@ private:
 	std::mt19937 _rng;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "XTCImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XTCImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
@@ -53,5 +53,4 @@ void XTCImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->addWidget(recenterCellUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

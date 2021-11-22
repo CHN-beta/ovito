@@ -28,7 +28,7 @@
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Data inspector page for data tables and 2d data plots.
@@ -84,5 +84,4 @@ private:
 	QAction* _exportTableToFileAction;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for ColorCodingModifier delegates that operate on different kinds of data.
@@ -186,5 +186,4 @@ private:
 	friend class ColorCodingModifierDelegate;
 };
 
-}	// End of namespace
 }	// End of namespace

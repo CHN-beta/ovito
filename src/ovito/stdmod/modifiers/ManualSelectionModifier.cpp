@@ -28,7 +28,7 @@
 #include <ovito/core/app/Application.h>
 #include "ManualSelectionModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ManualSelectionModifier);
 
@@ -183,5 +183,4 @@ void ManualSelectionModifier::setSelection(ModifierApplication* modApp, const Pi
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

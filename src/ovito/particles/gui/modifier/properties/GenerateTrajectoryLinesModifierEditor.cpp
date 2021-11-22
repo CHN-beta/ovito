@@ -34,7 +34,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include "GenerateTrajectoryLinesModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierEditor);
@@ -167,5 +167,4 @@ void GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory()
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

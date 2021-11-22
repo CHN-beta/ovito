@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "VoxelGridComputePropertyModifierDelegate.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridComputePropertyModifierDelegate);
 
@@ -43,5 +43,4 @@ QVector<DataObjectReference> VoxelGridComputePropertyModifierDelegate::OOMetaCla
 	return objects;
 }
 
-}	// End of namespace
 }	// End of namespace

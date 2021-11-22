@@ -31,7 +31,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /*
  * Constructs a surface mesh from a particle system.
@@ -291,5 +291,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeSurfaceDistance, setComputeSurfaceDistance);
 };
 
-}	// End of namespace
 }	// End of namespace

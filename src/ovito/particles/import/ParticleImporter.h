@@ -28,7 +28,7 @@
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Base class for file parsers that read particle datasets.
@@ -191,5 +191,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, recenterCell, setRecenterCell);
 };
 
-}	// End of namespace
 }	// End of namespace

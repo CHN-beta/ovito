@@ -36,7 +36,7 @@
 
 #include <boost/range/numeric.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleImporter);
 DEFINE_PROPERTY_FIELD(ParticleImporter, sortParticles);
@@ -519,5 +519,4 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 	return FileSourceImporter::importFurtherFiles(std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline);
 }
 
-}	// End of namespace
 }	// End of namespace

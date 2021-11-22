@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Helper class that evaluates one or more math expressions for every particle.
@@ -79,5 +79,4 @@ private:
 	ConstPropertyAccessAndRef<ParticleIndexPair> _topologyArray;
 };
 
-}	// End of namespace
 }	// End of namespace

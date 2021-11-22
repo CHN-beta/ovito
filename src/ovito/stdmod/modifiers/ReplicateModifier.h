@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for ReplicateModifier delegates that operate on different kinds of data.
@@ -102,5 +102,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, uniqueIdentifiers, setUniqueIdentifiers);
 };
 
-}	// End of namespace
 }	// End of namespace

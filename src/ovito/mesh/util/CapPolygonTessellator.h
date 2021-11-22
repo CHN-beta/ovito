@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "polytess/glu.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief Helper class that can tessellate a set of non-convex polygons into triangles.
@@ -173,5 +173,4 @@ private:
 	bool _createOppositePolygon;
 };
 
-}	// End of namespace
 }	// End of namespace

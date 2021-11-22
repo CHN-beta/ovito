@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for CASTEP .md and .geom files.
@@ -109,5 +109,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

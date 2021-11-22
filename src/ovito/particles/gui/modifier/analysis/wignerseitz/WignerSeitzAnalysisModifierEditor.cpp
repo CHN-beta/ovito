@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "WignerSeitzAnalysisModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(WignerSeitzAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(WignerSeitzAnalysisModifier, WignerSeitzAnalysisModifierEditor);
@@ -180,5 +180,4 @@ void WignerSeitzAnalysisModifierEditor::onContentsChanged(RefTarget* editObject)
 }
 
 
-}	// End of namespace
 }	// End of namespace

@@ -35,7 +35,7 @@
 
 #include <3rdparty/qwt/qwt_plot_zoneitem.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(GrainSegmentationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEditor);
@@ -178,5 +178,4 @@ void GrainSegmentationModifierEditor::plotMerges()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

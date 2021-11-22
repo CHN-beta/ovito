@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "VoxelGridInspectionApplet.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridInspectionApplet);
 
@@ -111,5 +111,4 @@ QVariant VoxelGridInspectionApplet::headerColumnText(int section)
 	return section;
 }
 
-}	// End of namespace
 }	// End of namespace

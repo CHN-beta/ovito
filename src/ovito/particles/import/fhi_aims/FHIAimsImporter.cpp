@@ -29,7 +29,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(FHIAimsImporter);
 
@@ -163,5 +163,4 @@ void FHIAimsImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

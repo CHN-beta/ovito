@@ -32,7 +32,7 @@ namespace voro {
 	class voronoicell_neighbor;	// Defined by Voro++
 }
 
-namespace Ovito { namespace VoroTop {
+namespace Ovito::VoroTop {
 
 /**
  * \brief This analysis modifier performs the Voronoi topology analysis developed by Emanuel A. Lazar.
@@ -120,5 +120,4 @@ private:
 	std::shared_ptr<Filter> _filter;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/core/app/Application.h>
 #include "SurfaceMeshSliceModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
 
@@ -114,5 +114,4 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 	return PipelineStatus(PipelineStatus::Success, statusMessage);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include "ParticlesVisEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesVisEditor);
 SET_OVITO_OBJECT_EDITOR(ParticlesVis, ParticlesVisEditor);
@@ -76,5 +76,4 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	layout->addWidget(renderingQualityUI->comboBox(), 4, 1);
 }
 
-}	// End of namespace
 }	// End of namespace

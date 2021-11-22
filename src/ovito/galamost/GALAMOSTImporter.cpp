@@ -30,7 +30,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GALAMOSTImporter);
 
@@ -335,5 +335,4 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
 	return property;
 }
 
-}	// End of namespace
 }	// End of namespace

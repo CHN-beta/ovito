@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief Exporter that writes the data of a VoxelGrid object to a VTK file.
@@ -88,5 +88,4 @@ private:
 	std::unique_ptr<CompressedTextWriter> _outputStream;
 };
 
-}	// End of namespace
 }	// End of namespace

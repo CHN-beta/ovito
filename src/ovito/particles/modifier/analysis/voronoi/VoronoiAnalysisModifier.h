@@ -33,7 +33,7 @@
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This modifier computes the atomic volume and the Voronoi indices of particles.
@@ -197,5 +197,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, polyhedraVis, setPolyhedraVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}	// End of namespace
 }	// End of namespace

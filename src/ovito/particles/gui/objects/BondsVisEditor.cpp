@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
 #include "BondsVisEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(BondsVisEditor);
 SET_OVITO_OBJECT_EDITOR(BondsVis, BondsVisEditor);
@@ -102,5 +102,4 @@ void BondsVisEditor::updateColoringOptions()
 	_coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
 }
 
-}	// End of namespace
 }	// End of namespace

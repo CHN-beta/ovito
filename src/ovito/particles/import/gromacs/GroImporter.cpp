@@ -30,7 +30,7 @@
 
 #include <3rdparty/gemmi/elem.hpp>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GroImporter);
 
@@ -435,5 +435,4 @@ void GroImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

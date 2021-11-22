@@ -32,7 +32,7 @@
 #include "CreateIsosurfaceModifier.h"
 #include "MarchingCubes.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifier);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
@@ -375,5 +375,4 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 	return !task.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

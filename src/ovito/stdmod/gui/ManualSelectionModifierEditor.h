@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 /**
  * A properties editor for the ManualSelectionModifier class.
  */
@@ -69,5 +69,4 @@ protected Q_SLOTS:
 	void invertSelection();
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "SurfaceMeshColorCodingModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVerticesColorCodingModifierDelegate);
 IMPLEMENT_OVITO_CLASS(SurfaceMeshFacesColorCodingModifierDelegate);
@@ -75,5 +75,4 @@ QVector<DataObjectReference> SurfaceMeshRegionsColorCodingModifierDelegate::OOMe
 	return objects;
 }
 
-}	// End of namespace
 }	// End of namespace

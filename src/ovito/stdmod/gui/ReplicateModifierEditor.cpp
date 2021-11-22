@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
 #include "ReplicateModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);
@@ -78,5 +78,4 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 	topLayout->addWidget(delegatesPUI->listWidget());
 }
 
-}	// End of namespace
 }	// End of namespace

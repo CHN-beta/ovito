@@ -25,7 +25,7 @@
 #include <ovito/mesh/tri/TriMeshObject.h>
 #include "VTKFileImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(VTKFileImporter);
 
@@ -261,5 +261,4 @@ void VTKFileImporter::FrameLoader::expectKeyword(CompressedTextReader& stream, c
 		throw Exception(tr("Invalid or unsupported VTK file format. Expected token '%1' in line %2, but found '%3'.").arg(keyword).arg(stream.lineNumber()).arg(stream.lineString().trimmed()));
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include "Cluster.h"
 #include "ClusterGraph.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /// Two lattice space vectors are considered equal if they don't differ by more than this value.
 #define CA_LATTICE_VECTOR_EPSILON					Ovito::FloatType(1e-3)
@@ -113,5 +113,4 @@ inline std::ostream& operator<<(std::ostream& stream, const ClusterVector& v)
 	return stream << v.localVec() << "[cluster " << v.cluster()->id << "]";
 }
 
-}	// End of namespace
 }	// End of namespace

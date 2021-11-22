@@ -33,7 +33,7 @@
 #include "VoxelGridSliceModifierDelegate.h"
 #include "MarchingCubes.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridSliceModifierDelegate);
 DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
@@ -186,5 +186,4 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	return PipelineStatus(PipelineStatus::Success, statusMessage);
 }
 
-}	// End of namespace
 }	// End of namespace

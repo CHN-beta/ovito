@@ -35,7 +35,7 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A visualization element for rendering SurfaceMesh data objects.
@@ -278,5 +278,4 @@ private:
 	OORef<SurfaceMeshVis> _visElement;
 };
 
-}	// End of namespace
 }	// End of namespace

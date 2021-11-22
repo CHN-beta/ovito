@@ -29,7 +29,7 @@
 #include <xdrfile/xdrfile.h>
 #include <xdrfile/xdrfile_xtc.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XTCImporter);
 
@@ -177,5 +177,4 @@ void XTCImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

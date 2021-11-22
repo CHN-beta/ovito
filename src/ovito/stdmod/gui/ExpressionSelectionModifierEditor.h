@@ -26,7 +26,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the ExpressionSelectionModifier class.
@@ -60,5 +60,4 @@ private:
 	AutocompleteTextEdit* expressionEdit;
 };
 
-}	// End of namespace
 }	// End of namespace

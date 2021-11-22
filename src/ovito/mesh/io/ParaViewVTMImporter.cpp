@@ -31,7 +31,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParaViewVTMImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
@@ -322,5 +322,4 @@ void ParaViewVTMImporter::propertyChanged(const PropertyFieldDescriptor* field)
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

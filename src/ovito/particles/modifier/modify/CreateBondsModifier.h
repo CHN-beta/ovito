@@ -47,7 +47,7 @@
 	QT_END_NAMESPACE
 #endif
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A modifier that creates bonds between pairs of particles based on their distance.
@@ -221,5 +221,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoDisableBondDisplay, setAutoDisableBondDisplay, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 };
 
-}	// End of namespace
 }	// End of namespace

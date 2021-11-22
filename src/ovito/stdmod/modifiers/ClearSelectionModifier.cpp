@@ -25,7 +25,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ClearSelectionModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 
@@ -51,5 +51,4 @@ void ClearSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 		container->removeProperty(selProperty);
 }
 
-}	// End of namespace
 }	// End of namespace

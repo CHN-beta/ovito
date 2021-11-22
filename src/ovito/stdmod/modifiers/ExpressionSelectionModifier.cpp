@@ -33,7 +33,7 @@
 #include <ovito/core/app/Application.h>
 #include "ExpressionSelectionModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpressionSelectionModifier, expression);
@@ -122,5 +122,4 @@ std::unique_ptr<PropertyExpressionEvaluator> ExpressionSelectionModifierDelegate
 	return evaluator;
 }
 
-}	// End of namespace
 }	// End of namespace

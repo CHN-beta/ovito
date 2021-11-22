@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "LAMMPSDumpExporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDumpExporter, LAMMPSDumpExporterEditor);
@@ -51,5 +51,4 @@ void LAMMPSDumpExporterEditor::createUI(const RolloutInsertionParameters& rollou
 	FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));
 }
 
-}	// End of namespace
 }	// End of namespace

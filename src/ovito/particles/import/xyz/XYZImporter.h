@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for the text-based XYZ file format.
@@ -145,5 +145,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoRescaleCoordinates, setAutoRescaleCoordinates);
 };
 
-}	// End of namespace
 }	// End of namespace

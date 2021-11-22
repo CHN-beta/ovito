@@ -36,7 +36,7 @@
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_panner.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
 * Constructor.
@@ -328,5 +328,4 @@ void DataTablePlotWidget::updateDataPlot()
 	_zoomer->setZoomBase(false);
 }
 
-}	// End of namespace
 }	// End of namespace

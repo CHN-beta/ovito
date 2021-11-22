@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "FileColumnParticleExporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(FileColumnParticleExporterEditor);
 SET_OVITO_OBJECT_EDITOR(FileColumnParticleExporter, FileColumnParticleExporterEditor);
@@ -215,5 +215,4 @@ void FileColumnParticleExporterEditor::onParticlePropertyItemChanged()
 	settings.endGroup();
 }
 
-}	// End of namespace
 }	// End of namespace

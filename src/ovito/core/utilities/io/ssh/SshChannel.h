@@ -32,7 +32,7 @@
     #undef min
 #endif
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 class SshConnection;
 
@@ -111,5 +111,4 @@ protected:
     bool _ioInProgress = false;
 };
 
-} // End of namespace
 } // End of namespace

@@ -29,7 +29,7 @@
 #include <ovito/core/app/Application.h>
 #include "StructureIdentificationModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(StructureIdentificationModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(StructureIdentificationModifier, structureTypes);
@@ -214,5 +214,4 @@ QVector<qlonglong> StructureIdentificationModifier::getStructureCountsFromModifi
 }
 #endif
 
-}	// End of namespace
 }	// End of namespace

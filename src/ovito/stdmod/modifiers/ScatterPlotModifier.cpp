@@ -30,7 +30,7 @@
 #include <ovito/core/app/Application.h>
 #include "ScatterPlotModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ScatterPlotModifier);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectXAxisInRange);
@@ -240,5 +240,4 @@ void ScatterPlotModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
 }
 
-}	// End of namespace
 }	// End of namespace

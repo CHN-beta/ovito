@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSDumpLocalImporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpLocalImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDumpLocalImporter, columnMapping);
@@ -353,5 +353,4 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
 		});
 }
 
-}	// End of namespace
 }	// End of namespace

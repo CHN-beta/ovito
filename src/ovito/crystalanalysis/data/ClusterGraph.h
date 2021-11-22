@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/MemoryPool.h>
 #include "Cluster.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * This class stores the graph of clusters.
@@ -100,5 +100,4 @@ private:
 /// Typically, cluster graphs are shallow copied. That's why we use a shared_ptr to hold on to them.
 using ClusterGraphPtr = std::shared_ptr<ClusterGraph>;
 
-}	// End of namespace
 }	// End of namespace

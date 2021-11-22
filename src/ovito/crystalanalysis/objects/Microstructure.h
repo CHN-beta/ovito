@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * Helper data structure that encapsulates a microstructure consisting
@@ -144,5 +144,4 @@ public:
 	virtual QString objectTitle() const override { return tr("Microstructure"); }
 };
 
-}	// End of namespace
 }	// End of namespace

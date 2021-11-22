@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdmod/modifiers/AssignColorModifier.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 using namespace Ovito::StdMod;
 
@@ -149,5 +149,4 @@ protected:
 	virtual int outputColorPropertyId() const override { return BondsObject::ColorProperty; }
 };
 
-}	// End of namespace
 }	// End of namespace

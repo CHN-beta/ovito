@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for modifier delegates used by the ComputePropertyModifier class.
@@ -290,5 +290,4 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString, inputVariableTable, setInputVariableTable, PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -32,7 +32,7 @@
 #include "StandardCameraSource.h"
 #include "StandardCameraObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraSource);
 DEFINE_PROPERTY_FIELD(StandardCameraSource, isPerspective);
@@ -213,5 +213,4 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 	notifyTargetChanged();
 }
 
-}	// End of namespace
 }	// End of namespace

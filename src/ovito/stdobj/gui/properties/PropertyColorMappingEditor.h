@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/utilities/DeferredMethodInvocation.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * A properties editor for the PropertyColorMapping class.
@@ -108,5 +108,4 @@ private:
 	QPushButton* _reverseRangeBtn;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -30,7 +30,7 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 
-namespace Ovito { namespace Delaunay {
+namespace Ovito::Delaunay {
 
 using namespace Ovito::Mesh;
 
@@ -1118,5 +1118,4 @@ private:
 	SurfaceMeshAccess _convexHullMesh;
 };
 
-}	// End of namespace
 }	// End of namespace

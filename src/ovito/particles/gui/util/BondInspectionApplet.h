@@ -32,7 +32,7 @@
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 
 /**
@@ -107,5 +107,4 @@ private:
 	PickingMode* _pickingMode;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 class GrainSegmentationEngine;  // defined in GrainSegmentationEngine.h
 
@@ -110,5 +110,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByGrain, setColorParticlesByGrain, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

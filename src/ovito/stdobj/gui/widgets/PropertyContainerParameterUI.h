@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief UI component for selecting the PropertyContainer a Modifier should operate on.
@@ -92,5 +92,4 @@ protected:
 	std::function<bool(const PropertyContainer*)> _containerFilter;
 };
 
-}	// End of namespace
 }	// End of namespace

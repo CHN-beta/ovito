@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Assigns colors to data elements based on a typed property.
@@ -84,5 +84,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clearSelection, setClearSelection);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -29,8 +29,7 @@
 #include "ThreadSafeTask.h"
 #include "Promise.h"
 
-namespace Ovito {
-namespace detail {
+namespace Ovito::detail {
 
 /******************************************************************************
 * This shared state is returned by the Future::then() method.
@@ -181,5 +180,4 @@ private:
 	tuple_type _taskResults;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief Stores all face-related properties of a SurfaceMesh.
@@ -77,5 +77,4 @@ public:
 	}
 };
 
-}	// End of namespace
 }	// End of namespace

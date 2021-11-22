@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Injects the values of a property taken from a different animation time.
@@ -125,5 +125,4 @@ private:
 	TimeInterval _validityInterval;
 };
 
-}	// End of namespace
 }	// End of namespace

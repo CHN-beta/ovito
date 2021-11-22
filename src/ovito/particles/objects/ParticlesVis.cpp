@@ -32,7 +32,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "ParticlesVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesVis);
 IMPLEMENT_OVITO_CLASS(ParticlePickInfo);
@@ -1362,5 +1362,4 @@ QString ParticlePickInfo::particleInfoString(const ParticlesObject& particles, s
 	return str;
 }
 
-}	// End of namespace
 }	// End of namespace

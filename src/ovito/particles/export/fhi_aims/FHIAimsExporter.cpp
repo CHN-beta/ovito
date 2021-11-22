@@ -27,7 +27,7 @@
 #include <ovito/core/app/Application.h>
 #include "FHIAimsExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 
@@ -82,5 +82,4 @@ bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

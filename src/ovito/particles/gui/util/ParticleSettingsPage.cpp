@@ -24,7 +24,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include "ParticleSettingsPage.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleSettingsPage);
 
@@ -275,5 +275,4 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

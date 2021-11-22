@@ -30,7 +30,7 @@
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Calculates the per-particle displacement vectors based on a reference configuration.
@@ -109,5 +109,4 @@ private:
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<VectorVis>, vectorVis, setVectorVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

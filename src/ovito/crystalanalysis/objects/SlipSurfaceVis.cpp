@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "SlipSurfaceVis.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(SlipSurfaceVis);
 IMPLEMENT_OVITO_CLASS(SlipSurfacePickInfo);
@@ -156,5 +156,4 @@ QString SlipSurfacePickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
     return str;
 }
 
-}	// End of namespace
 }	// End of namespace

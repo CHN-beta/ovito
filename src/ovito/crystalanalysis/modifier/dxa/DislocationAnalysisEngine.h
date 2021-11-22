@@ -32,7 +32,7 @@
 #include "InterfaceMesh.h"
 #include "DislocationTracer.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 using namespace Ovito::Delaunay;
 
@@ -121,5 +121,4 @@ private:
 	FloatType _simCellVolume;
 };
 
-}	// End of namespace
 }	// End of namespace

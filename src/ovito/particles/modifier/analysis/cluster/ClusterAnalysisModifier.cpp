@@ -34,7 +34,7 @@
 #include <ovito/core/app/Application.h>
 #include "ClusterAnalysisModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, neighborMode);
@@ -576,5 +576,4 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(TimePoint time
 	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %n cluster(s).", "", numClusters())));
 }
 
-}	// End of namespace
 }	// End of namespace

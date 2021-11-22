@@ -29,7 +29,7 @@
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "StandardFrameLoader.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
 * Returns the simulation cell object, newly creating it first if necessary.
@@ -108,5 +108,4 @@ void StandardFrameLoader::loadFile()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

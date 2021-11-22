@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include "PropertySelectionComboBox.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
 * Returns the particle property that is currently selected in the combo box.
@@ -92,5 +92,4 @@ void PropertySelectionComboBox::focusOutEvent(QFocusEvent* event)
 	QComboBox::focusOutEvent(event);
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "PropertyInspectionApplet.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyInspectionApplet);
 
@@ -331,5 +331,4 @@ bool PropertyInspectionApplet::PropertyFilterModel::filterAcceptsRow(int source_
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

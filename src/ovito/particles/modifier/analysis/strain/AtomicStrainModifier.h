@@ -29,7 +29,7 @@
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Calculates the per-particle strain tensors based on a reference configuration.
@@ -159,5 +159,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectInvalidParticles, setSelectInvalidParticles);
 };
 
-}	// End of namespace
 }	// End of namespace

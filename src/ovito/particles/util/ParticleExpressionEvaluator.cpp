@@ -25,7 +25,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "ParticleExpressionEvaluator.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Initializes the list of input variables from the given input state.
@@ -134,5 +134,4 @@ QString BondExpressionEvaluator::inputVariableTable() const
 	return table;
 }
 
-}	// End of namespace
 }	// End of namespace

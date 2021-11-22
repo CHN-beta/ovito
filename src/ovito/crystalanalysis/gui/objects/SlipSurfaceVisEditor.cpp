@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include "SlipSurfaceVisEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(SlipSurfaceVisEditor);
 SET_OVITO_OBJECT_EDITOR(SlipSurfaceVis, SlipSurfaceVisEditor);
@@ -63,5 +63,4 @@ void SlipSurfaceVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 }
 
-}	// End of namespace
 }	// End of namespace

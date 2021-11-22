@@ -36,7 +36,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include "SliceModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(SliceModifierDelegate);
 IMPLEMENT_OVITO_CLASS(SliceModifier);
@@ -390,5 +390,4 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp)
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

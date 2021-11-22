@@ -25,7 +25,7 @@
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include "SurfaceMeshExpressionSelectionModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsExpressionSelectionModifierDelegate);
 
@@ -43,5 +43,4 @@ QVector<DataObjectReference> SurfaceMeshRegionsExpressionSelectionModifierDelega
 	return objects;
 }
 
-}	// End of namespace
 }	// End of namespace

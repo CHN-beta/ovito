@@ -28,7 +28,7 @@
 #include "SimulationCellObject.h"
 #include "SimulationCellVis.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellObject);
 DEFINE_PROPERTY_FIELD(SimulationCellObject, cellMatrix);
@@ -153,5 +153,4 @@ void SimulationCellObject::makeWritableFromPython()
 	_isWritableFromPython++;
 }
 
-}	// End of namespace
 }	// End of namespace

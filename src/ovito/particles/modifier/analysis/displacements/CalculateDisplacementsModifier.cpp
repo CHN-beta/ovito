@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "CalculateDisplacementsModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CalculateDisplacementsModifier);
 DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
@@ -184,5 +184,4 @@ void CalculateDisplacementsModifier::DisplacementEngine::applyResults(TimePoint 
 	particles->createProperty(displacementMagnitudes());
 }
 
-}	// End of namespace
 }	// End of namespace

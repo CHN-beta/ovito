@@ -30,7 +30,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "ColorByTypeModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifier);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
@@ -187,5 +187,4 @@ QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplicat
 }
 #endif
 
-}	// End of namespace
 }	// End of namespace

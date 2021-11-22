@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File parser for NetCDF simulation files.
@@ -172,5 +172,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
 };
 
-}	// End of namespace
 }	// End of namespace

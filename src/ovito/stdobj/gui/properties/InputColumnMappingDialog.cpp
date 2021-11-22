@@ -23,7 +23,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include "InputColumnMappingDialog.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 enum {
 	FILE_COLUMN_COLUMN = 0,
@@ -385,5 +385,4 @@ void InputColumnMappingDialog::onLoadPreset()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

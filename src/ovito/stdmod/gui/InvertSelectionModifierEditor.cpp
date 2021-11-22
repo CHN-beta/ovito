@@ -24,7 +24,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include "InvertSelectionModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(InvertSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InvertSelectionModifier, InvertSelectionModifierEditor);
@@ -50,5 +50,4 @@ void InvertSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -32,7 +32,7 @@
 #include "BondsVis.h"
 #include "ParticlesVis.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(BondsVis);
 IMPLEMENT_OVITO_CLASS(BondPickInfo);
@@ -574,5 +574,4 @@ bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMa
 	return DataVis::loadPropertyFieldFromStream(stream, serializedField);
 }
 
-}	// End of namespace
 }	// End of namespace

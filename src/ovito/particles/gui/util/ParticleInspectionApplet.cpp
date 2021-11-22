@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "ParticleInspectionApplet.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleInspectionApplet);
 
@@ -339,5 +339,4 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

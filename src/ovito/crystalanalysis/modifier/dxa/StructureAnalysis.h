@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /*
  * Determines the local structure of each atom.
@@ -225,5 +225,4 @@ private:
 	static LatticeStructure _latticeStructures[NUM_LATTICE_TYPES];
 };
 
-}	// End of namespace
 }	// End of namespace

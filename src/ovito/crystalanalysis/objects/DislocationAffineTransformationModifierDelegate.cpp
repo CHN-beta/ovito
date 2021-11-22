@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationAffineTransformationModifierDelegate.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationAffineTransformationModifierDelegate);
 
@@ -75,5 +75,4 @@ PipelineStatus DislocationAffineTransformationModifierDelegate::apply(Modifier* 
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

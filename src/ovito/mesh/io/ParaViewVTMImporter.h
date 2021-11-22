@@ -28,7 +28,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 class ParaViewVTMImporter; // defined below
 
@@ -126,5 +126,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, uniteMeshes, setUniteMeshes, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

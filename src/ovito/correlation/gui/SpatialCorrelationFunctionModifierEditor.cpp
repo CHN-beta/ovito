@@ -42,7 +42,7 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_scale_engine.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SpatialCorrelationFunctionModifier, SpatialCorrelationFunctionModifierEditor);
@@ -460,5 +460,4 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

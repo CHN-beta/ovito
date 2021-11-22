@@ -27,7 +27,7 @@
 #include "PropertyContainerClass.h"
 #include "PropertyContainer.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
 * Is called by the system after construction of the meta-class instance.
@@ -100,5 +100,4 @@ Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference
 	return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
 }
 
-}	// End of namespace
 }	// End of namespace

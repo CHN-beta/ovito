@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "SurfaceMeshReplicateModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
 
@@ -266,5 +266,4 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(Modifier* modifier, P
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

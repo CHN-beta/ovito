@@ -36,7 +36,7 @@
 
 #include <ptm/ptm_functions.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(GrainSegmentationModifier);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergeAlgorithm);
@@ -255,5 +255,4 @@ void GrainSegmentationEngine2::applyResults(TimePoint time, ModifierApplication*
 	state.setStatus(PipelineStatus(PipelineStatus::Success, GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains)));
 }
 
-}	// End of namespace
 }	// End of namespace

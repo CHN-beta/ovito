@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File reader for point-like particle data from a ParaView VTP (PolyData) file as written by the Aspherix simulation code.
@@ -132,5 +132,4 @@ private:
 	std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
 };
 
-}	// End of namespace
 }	// End of namespace

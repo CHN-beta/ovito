@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Calculates ambient occlusion lighting for particles.
@@ -131,5 +131,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, bufferResolution, setBufferResolution);
 };
 
-}	// End of namespace
 }	// End of namespace

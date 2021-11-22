@@ -26,7 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataVis.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief A visual element that renders a SimulationCellObject as a wireframe box.
@@ -72,5 +72,4 @@ protected:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, cellColor, setCellColor, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

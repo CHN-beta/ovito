@@ -27,7 +27,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief A non-periodic version of the dislocation lines that is generated from a periodic DislocationNetworkObject.
@@ -71,5 +71,4 @@ private:
 	DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph);
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/data/DataBufferAccess.h>
 #include "PropertyObject.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Helper class that provides read access to the data elements of a PropertyObject.
@@ -161,5 +161,4 @@ public:
 	PropertyAccessAndRef& operator=(PropertyAccessAndRef&& other) = default;
 };
 
-}	// End of namespace
 }	// End of namespace

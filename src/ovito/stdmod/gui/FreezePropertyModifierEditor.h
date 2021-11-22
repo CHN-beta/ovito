@@ -26,7 +26,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the FreezePropertyModifier class.
@@ -52,5 +52,4 @@ private Q_SLOTS:
 	void onSourcePropertyChanged();
 };
 
-}	// End of namespace
 }	// End of namespace

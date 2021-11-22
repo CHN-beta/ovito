@@ -30,7 +30,7 @@
 #include <ptm/ptm_polar.h>
 #include "AtomicStrainModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AtomicStrainModifier);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, cutoff);
@@ -372,5 +372,4 @@ void AtomicStrainModifier::AtomicStrainEngine::applyResults(TimePoint time, Modi
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Could not compute local deformation for %1 particles because of too few neighbors. Increase cutoff radius to include more neighbors.").arg(numInvalidParticles())));
 }
 
-}	// End of namespace
 }	// End of namespace

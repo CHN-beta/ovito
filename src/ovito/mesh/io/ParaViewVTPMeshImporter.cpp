@@ -26,7 +26,7 @@
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include "ParaViewVTPMeshImporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPMeshImporter);
 IMPLEMENT_OVITO_CLASS(MeshParaViewVTMFileFilter);
@@ -724,5 +724,4 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

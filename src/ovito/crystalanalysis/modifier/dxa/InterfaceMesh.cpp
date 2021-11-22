@@ -28,7 +28,7 @@
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 using namespace Ovito::Delaunay;
 
@@ -279,5 +279,4 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

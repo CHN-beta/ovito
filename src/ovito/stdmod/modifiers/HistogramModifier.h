@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/table/DataTable.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief This modifier computes a value histogram for a property.
@@ -112,5 +112,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedElements, setOnlySelectedElements);
 };
 
-}	// End of namespace
 }	// End of namespace

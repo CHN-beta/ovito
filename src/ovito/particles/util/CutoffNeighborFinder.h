@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This utility class finds all neighbor particles within a cutoff radius of a central particle.
@@ -181,5 +181,4 @@ private:
 	std::vector<Vector3I> stencil;
 };
 
-}	// End of namespace
 }	// End of namespace

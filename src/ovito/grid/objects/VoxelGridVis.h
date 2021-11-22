@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief A visualization element for rendering VoxelGrid data objects.
@@ -114,5 +114,4 @@ private:
 	size_t _trianglesPerCell;
 };
 
-}	// End of namespace
 }	// End of namespace

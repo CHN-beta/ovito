@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "PropertyExpressionEvaluator.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /// List of characters allowed in variable names.
 mu::string_type PropertyExpressionEvaluator::_validVariableNameChars(_T("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.@"));
@@ -436,5 +436,4 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
 	return str;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include <ovito/core/app/Application.h>
 #include "AssignColorModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(AssignColorModifierDelegate);
 
@@ -119,5 +119,4 @@ PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFl
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "CutoffNeighborFinder.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Initialization function.
@@ -308,5 +308,4 @@ void CutoffNeighborFinder::Query::next()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

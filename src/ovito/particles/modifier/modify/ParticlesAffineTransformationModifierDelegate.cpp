@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ParticlesAffineTransformationModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesAffineTransformationModifierDelegate);
 IMPLEMENT_OVITO_CLASS(VectorParticlePropertiesAffineTransformationModifierDelegate);
@@ -152,5 +152,4 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

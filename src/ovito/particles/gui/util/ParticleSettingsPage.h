@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * Page of the application settings dialog, which hosts particle-related options.
@@ -63,5 +63,4 @@ private:
 	QTreeWidgetItem* _structureTypesItem;
 };
 
-}	// End of namespace
 }	// End of namespace

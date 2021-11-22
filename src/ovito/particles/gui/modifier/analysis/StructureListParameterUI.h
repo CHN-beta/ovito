@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * List box that displays the structure types.
@@ -96,5 +96,4 @@ private:
 	ConstPropertyPtr _structureCounts;
 };
 
-}	// End of namespace
 }	// End of namespace

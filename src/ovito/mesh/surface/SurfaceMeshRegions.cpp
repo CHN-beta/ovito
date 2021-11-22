@@ -25,7 +25,7 @@
 #include "SurfaceMeshRegions.h"
 #include "SurfaceMeshVis.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 
@@ -138,5 +138,4 @@ QString SurfaceMeshRegions::OOMetaClass::formatDataObjectPath(const ConstDataObj
 	return str;
 }
 
-}	// End of namespace
 }	// End of namespace

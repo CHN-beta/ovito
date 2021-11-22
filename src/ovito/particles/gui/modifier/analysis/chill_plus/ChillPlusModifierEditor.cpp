@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "ChillPlusModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ChillPlusModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ChillPlusModifier, ChillPlusModifierEditor);
@@ -76,5 +76,4 @@ void ChillPlusModifierEditor::createUI(const RolloutInsertionParameters& rollout
 	layout1->addWidget(label);
 }
 
-}	// End of namespace
 }	// End of namespace

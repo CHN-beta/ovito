@@ -29,7 +29,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the PolyhedralTemplateMatchingModifier class.
@@ -63,5 +63,4 @@ private:
 	QwtPlotZoneItem* _rmsdRangeIndicator;
 };
 
-}	// End of namespace
 }	// End of namespace

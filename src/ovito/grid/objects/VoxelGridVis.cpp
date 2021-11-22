@@ -29,7 +29,7 @@
 #include <ovito/core/utilities/mesh/TriMesh.h>
 #include "VoxelGridVis.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridVis);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
@@ -683,5 +683,4 @@ QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 sub
     return str;
 }
 
-}	// End of namespace
 }	// End of namespace

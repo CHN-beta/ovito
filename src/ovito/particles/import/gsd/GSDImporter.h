@@ -30,7 +30,7 @@
 
 #include <QReadWriteLock>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 class GSDFile;	// Defined in GSDFile.h
 
@@ -166,5 +166,4 @@ private:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

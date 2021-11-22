@@ -30,7 +30,7 @@
 #include <ovito/core/app/Application.h>
 #include "SelectTypeModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(SelectTypeModifier);
 DEFINE_PROPERTY_FIELD(SelectTypeModifier, sourceProperty);
@@ -214,5 +214,4 @@ void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const Q
 }
 #endif
 
-}	// End of namespace
 }	// End of namespace

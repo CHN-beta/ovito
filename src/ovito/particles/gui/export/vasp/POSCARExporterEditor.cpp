@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "POSCARExporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(POSCARExporterEditor);
 SET_OVITO_OBJECT_EDITOR(POSCARExporter, POSCARExporterEditor);
@@ -47,5 +47,4 @@ void POSCARExporterEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	layout->addWidget(reducedCoordsUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

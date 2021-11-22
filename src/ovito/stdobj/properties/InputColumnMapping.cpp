@@ -26,7 +26,7 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "InputColumnMapping.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /******************************************************************************
  * Maps a file column to a standard property unless there is already another 
@@ -493,5 +493,4 @@ void InputColumnReader::sortElementTypes()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "XYZImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XYZImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZImporter, XYZImporterEditor);
@@ -193,5 +193,4 @@ void XYZImporterEditor::onEditColumnMapping()
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

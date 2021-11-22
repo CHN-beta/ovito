@@ -35,7 +35,7 @@
     #undef min
 #endif
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 struct SshConnectionParameters
 {
@@ -305,5 +305,4 @@ private:
     friend class ProcessChannel;
 };
 
-} // End of namespace
 } // End of namespace

@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(ElementType);
 DEFINE_PROPERTY_FIELD(ElementType, numericId);
@@ -190,5 +190,4 @@ void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjec
 	DataObject::updateEditableProxies(state, dataPath);
 }
 
-}	// End of namespace
 }	// End of namespace

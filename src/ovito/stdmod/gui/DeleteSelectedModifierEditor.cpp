@@ -26,7 +26,7 @@
 #include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
 #include "DeleteSelectedModifierEditor.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
@@ -51,5 +51,4 @@ void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 }
 
-}	// End of namespace
 }	// End of namespace

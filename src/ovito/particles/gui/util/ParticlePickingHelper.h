@@ -30,7 +30,7 @@
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Utility class that supports the picking of particles in the viewports.
@@ -75,5 +75,4 @@ public:
 	void renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord);
 };
 
-}	// End of namespace
 }	// End of namespace

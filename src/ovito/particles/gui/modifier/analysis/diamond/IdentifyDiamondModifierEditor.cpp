@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "IdentifyDiamondModifierEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifierEditor);
 SET_OVITO_OBJECT_EDITOR(IdentifyDiamondModifier, IdentifyDiamondModifierEditor);
@@ -65,5 +65,4 @@ void IdentifyDiamondModifierEditor::createUI(const RolloutInsertionParameters& r
 	layout1->addWidget(label);
 }
 
-}	// End of namespace
 }	// End of namespace

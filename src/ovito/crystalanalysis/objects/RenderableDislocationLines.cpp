@@ -23,11 +23,10 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "RenderableDislocationLines.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(RenderableDislocationLines);
 DEFINE_PROPERTY_FIELD(RenderableDislocationLines, lineSegments);
 DEFINE_PROPERTY_FIELD(RenderableDislocationLines, clusterGraph);
 
-}	// End of namespace
 }	// End of namespace

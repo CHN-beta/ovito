@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Widget that allows the user to select a property from a list (or enter a custom property name).
@@ -113,5 +113,4 @@ private:
 	PropertyContainerClassPtr _containerClass;
 };
 
-}	// End of namespace
 }	// End of namespace

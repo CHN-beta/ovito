@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "ElementTypeEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(ElementTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ElementType, ElementTypeEditor);
@@ -117,5 +117,4 @@ void ElementTypeEditor::onSaveAsDefault()
 	mainWindow()->showStatusBarMessage(tr("Stored current color as default value for type '%1'.").arg(etype->nameOrNumericId()), 4000);
 }
 
-}	// End of namespace
 }	// End of namespace

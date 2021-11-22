@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * \brief Base class for ExpressionSelectionModifier delegates that operate on different kinds of data.
@@ -134,5 +134,4 @@ private:
 	QString _variableTable;
 };
 
-}	// End of namespace
 }	// End of namespace

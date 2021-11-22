@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * File parser GROMACS coordinates file in GROMOS-87 format.
@@ -115,5 +115,4 @@ private:
 	};	
 };
 
-}	// End of namespace
 }	// End of namespace

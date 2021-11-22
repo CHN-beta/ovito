@@ -33,7 +33,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A visualization element for rendering per-particle vector arrows.
@@ -178,5 +178,4 @@ private:
 	ConstPropertyPtr _vectorProperty;
 };
 
-}	// End of namespace
 }	// End of namespace

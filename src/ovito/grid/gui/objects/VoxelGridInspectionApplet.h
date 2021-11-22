@@ -27,7 +27,7 @@
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief Data inspector page for voxel grid objects.
@@ -65,5 +65,4 @@ private:
 	QLabel* _gridInfoLabel;
 };
 
-}	// End of namespace
 }	// End of namespace

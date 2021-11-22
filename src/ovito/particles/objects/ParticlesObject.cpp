@@ -43,7 +43,7 @@
 	void ovito_static_plugin_Particles() {}
 #endif
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesObject);
 DEFINE_REFERENCE_FIELD(ParticlesObject, bonds);
@@ -960,5 +960,4 @@ void ParticlesObject::OOMetaClass::validateInputColumnMapping(const InputColumnM
 		throw Exception(ParticlesObject::tr("Invalid file column mapping: At least one file column must be mapped to the '%1' particle property.").arg(standardPropertyName(ParticlesObject::PositionProperty)));
 }
 
-}	// End of namespace
 }	// End of namespace

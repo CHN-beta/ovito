@@ -33,7 +33,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifier);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, intensity);
@@ -286,5 +286,4 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(TimePoint ti
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

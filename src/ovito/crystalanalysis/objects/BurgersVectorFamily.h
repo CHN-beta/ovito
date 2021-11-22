@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief represents a dislocation type.
@@ -51,5 +51,4 @@ private:
 	DECLARE_SHADOW_PROPERTY_FIELD(burgersVector);
 };
 
-}	// End of namespace
 }	// End of namespace

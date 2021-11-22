@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "CoordinationAnalysisModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
@@ -265,5 +265,4 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(Time
 	table->setAxisLabelX(tr("Pair separation distance"));
 }
 
-}	// End of namespace
 }	// End of namespace

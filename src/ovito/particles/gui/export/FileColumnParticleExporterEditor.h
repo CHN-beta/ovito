@@ -29,7 +29,7 @@
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief User interface component for the FileColumnParticleExporter class.
@@ -71,5 +71,4 @@ private:
 	QListWidget* _columnMappingWidget;
 };
 
-}	// End of namespace
 }	// End of namespace

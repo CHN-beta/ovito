@@ -27,7 +27,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Exporter that writes the graphical plot of a data table to an image file.
@@ -90,5 +90,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, plotDPI, setPlotDPI, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

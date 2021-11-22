@@ -31,7 +31,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "ElasticStrainModifierEditor.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(ElasticStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ElasticStrainModifier, ElasticStrainModifierEditor);
@@ -115,5 +115,4 @@ void ElasticStrainModifierEditor::modifierChanged(RefTarget* editObject)
 			 modifier->inputCrystalStructure() == StructureAnalysis::LATTICE_HEX_DIAMOND));
 }
 
-}	// End of namespace
 }	// End of namespace

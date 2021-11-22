@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Exporter that writes a data table to a text output file.
@@ -88,5 +88,4 @@ private:
 	std::unique_ptr<CompressedTextWriter> _outputStream;
 };
 
-}	// End of namespace
 }	// End of namespace

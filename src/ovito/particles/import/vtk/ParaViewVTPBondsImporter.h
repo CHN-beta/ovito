@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief File reader for contact network data in ParaView VTP (vtkPolyData) files written by the Aspherix simulation code.
@@ -104,5 +104,4 @@ public:
 	virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) override;
 };
 
-}	// End of namespace
 }	// End of namespace

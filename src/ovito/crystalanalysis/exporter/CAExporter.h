@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief Exporter that exports dislocation lines to a Crystal Analysis Tool (CA) file.
@@ -99,5 +99,4 @@ private:
 	std::unique_ptr<CompressedTextWriter> _outputStream;
 };
 
-}	// End of namespace
 }	// End of namespace

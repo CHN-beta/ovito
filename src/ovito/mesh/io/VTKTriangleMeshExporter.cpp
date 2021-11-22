@@ -25,7 +25,7 @@
 #include <ovito/core/app/Application.h>
 #include "VTKTriangleMeshExporter.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
 
@@ -152,5 +152,4 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

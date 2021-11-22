@@ -25,7 +25,7 @@
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 #include "PTMNeighborFinder.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Creates the neighbor finder.
@@ -250,5 +250,4 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 	_rmsd = sqrt(_rmsd / centered.size());
 }
 
-}	// End of namespace
 }	// End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief Stores all vertex-related properties of a SurfaceMesh.
@@ -75,5 +75,4 @@ public:
 	virtual void initializeObject(ExecutionContext executionContext) override;	
 };
 
-}	// End of namespace
 }	// End of namespace

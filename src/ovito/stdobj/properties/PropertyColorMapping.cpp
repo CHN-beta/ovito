@@ -27,7 +27,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include "PropertyColorMapping.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMapping);
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
@@ -160,5 +160,4 @@ void PropertyColorMapping::setColorGradientType(const QString& typeName, Executi
 }
 #endif
 
-}	// End of namespace
 }	// End of namespace

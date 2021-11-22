@@ -24,7 +24,7 @@
 #include "ParticleBondMap.h"
 #include "ParticlesObject.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Initializes the helper class.
@@ -59,5 +59,4 @@ ParticleBondMap::ParticleBondMap(const BondsObject& bonds) :
 {
 }
 
-}	// End of namespace
 }	// End of namespace

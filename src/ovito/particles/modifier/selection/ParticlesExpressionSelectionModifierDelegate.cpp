@@ -26,7 +26,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include "ParticlesExpressionSelectionModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesExpressionSelectionModifierDelegate);
 IMPLEMENT_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
@@ -75,5 +75,4 @@ std::unique_ptr<PropertyExpressionEvaluator> BondsExpressionSelectionModifierDel
 	return evaluator;
 }
 
-}	// End of namespace
 }	// End of namespace

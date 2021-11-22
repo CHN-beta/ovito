@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../ParticleExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Exporter that writes the particles to a POSCAR file.
@@ -66,5 +66,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, writeReducedCoordinates, setWriteReducedCoordinates, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

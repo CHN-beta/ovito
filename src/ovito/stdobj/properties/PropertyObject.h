@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Stores a property data array.
@@ -265,7 +265,6 @@ using ConstPropertyPtr = DataOORef<const PropertyObject>;
 /// Encapsulates a complete data object reference to a PropertyObject in a data collection.
 using PropertyDataObjectReference = TypedDataObjectReference<PropertyObject>;
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyDataObjectReference);

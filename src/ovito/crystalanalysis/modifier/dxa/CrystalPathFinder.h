@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "StructureAnalysis.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * Utility class that can find the shortest connecting path between two atoms
@@ -97,5 +97,4 @@ private:
 	int _maxPathLength;
 };
 
-}	// End of namespace
 }	// End of namespace

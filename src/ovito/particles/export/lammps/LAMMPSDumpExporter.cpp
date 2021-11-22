@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "LAMMPSDumpExporter.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
 
@@ -167,5 +167,4 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

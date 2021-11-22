@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/particles/import/ParticleImporter.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 /**
  * \brief Importer for data files written by the ParaDiS discrete dislocation simulation code.
@@ -88,5 +88,4 @@ protected:
 	};
 };
 
-}	// End of namespace
 }	// End of namespace

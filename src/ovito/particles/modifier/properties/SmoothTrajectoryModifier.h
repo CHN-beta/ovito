@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Smoothly interpolates the particle positions by averaging multiple snapshots.
@@ -110,5 +110,4 @@ public:
 	Q_INVOKABLE InterpolateTrajectoryModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

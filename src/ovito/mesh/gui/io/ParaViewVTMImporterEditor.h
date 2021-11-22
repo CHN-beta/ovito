@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A properties editor for the ParaViewVTMImporter class.
@@ -47,5 +47,4 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 };
 
-}	// End of namespace
 }	// End of namespace

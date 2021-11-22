@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include "LoadTrajectoryModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LoadTrajectoryModifier);
 DEFINE_REFERENCE_FIELD(LoadTrajectoryModifier, trajectorySource);
@@ -424,5 +424,4 @@ void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor* fi
 	Modifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
-}	// End of namespace
 }	// End of namespace

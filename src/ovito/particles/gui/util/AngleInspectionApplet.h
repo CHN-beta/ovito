@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/AnglesObject.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 
 /**
@@ -51,5 +51,4 @@ public:
 	virtual QWidget* createWidget(MainWindow* mainWindow) override;
 };
 
-}	// End of namespace
 }	// End of namespace

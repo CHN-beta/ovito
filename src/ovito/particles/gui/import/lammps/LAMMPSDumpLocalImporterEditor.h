@@ -27,7 +27,7 @@
 #include <ovito/particles/import/lammps/LAMMPSDumpLocalImporter.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A properties editor for the LAMMPSDumpLocalImporter class.
@@ -59,5 +59,4 @@ protected Q_SLOTS:
 	void onEditColumnMapping();
 };
 
-}	// End of namespace
 }	// End of namespace

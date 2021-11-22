@@ -30,7 +30,7 @@
 #include <netcdf.h>
 #include <QtMath>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 const char NC_FRAME_STR[]         = "frame";
 const char NC_SPATIAL_STR[]       = "spatial";
@@ -367,5 +367,4 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 	return !operation.isCanceled();
 }
 
-}	// End of namespace
 }	// End of namespace

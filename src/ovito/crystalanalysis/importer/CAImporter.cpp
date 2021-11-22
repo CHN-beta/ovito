@@ -30,7 +30,7 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CAImporter.h"
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(CAImporter);
 
@@ -570,5 +570,4 @@ void CAImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

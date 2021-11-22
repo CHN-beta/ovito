@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "StructureListParameterUI.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(StructureListParameterUI);
 
@@ -181,5 +181,4 @@ void StructureListParameterUI::onDoubleClickStructureType(const QModelIndex& ind
 	});
 }
 
-}	// End of namespace
 }	// End of namespace

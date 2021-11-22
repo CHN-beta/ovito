@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 #include "PropertyObjectEditor.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyObjectEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyObject, PropertyObjectEditor);
@@ -103,5 +103,4 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 }
 
-}	// End of namespace
 }	// End of namespace

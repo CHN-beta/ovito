@@ -31,7 +31,7 @@
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include "BondPickingHelper.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /******************************************************************************
 * Finds the bond under the mouse cursor.
@@ -61,5 +61,4 @@ bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& c
 	return false;
 }
 
-}	// End of namespace
 }	// End of namespace

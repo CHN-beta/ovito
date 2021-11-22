@@ -26,7 +26,7 @@
 
 #include <QQmlEngine>
 
-namespace Ovito { namespace StdObj { 
+namespace Ovito::StdObj { 
 
 IMPLEMENT_OVITO_CLASS(StdObjGuiRegistrationService);
 
@@ -38,5 +38,4 @@ StdObjGuiRegistrationService::StdObjGuiRegistrationService()
 	qmlRegisterType<PropertyReferenceParameterUI>("org.ovito", 1, 0, "PropertyReferenceParameterUI");
 }
 
-}	// End of namespace
 }	// End of namespace

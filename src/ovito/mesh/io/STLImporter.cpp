@@ -28,7 +28,7 @@
 
 #include <QtEndian>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(STLImporter);
 
@@ -217,5 +217,4 @@ void STLImporter::FrameLoader::loadFile()
 	state().setStatus(tr("%1 vertices, %2 triangles").arg(meshObj->mesh()->vertexCount()).arg(meshObj->mesh()->faceCount()));
 }
 
-}	// End of namespace
 }	// End of namespace

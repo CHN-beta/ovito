@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/export/FileColumnParticleExporter.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief Exporter that writes the particles to an extended AMBER NetCDF file.
@@ -114,5 +114,4 @@ private:
 	size_t _frameCounter;
 };
 
-}	// End of namespace
 }	// End of namespace

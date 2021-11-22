@@ -27,7 +27,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 using namespace Ovito::StdMod;
 
@@ -65,5 +65,4 @@ public:
 	Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(DataSet* dataset) :  ComputePropertyModifierDelegate(dataset) {}
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -25,7 +25,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "VoxelGridAffineTransformationModifierDelegate.h"
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridAffineTransformationModifierDelegate);
 
@@ -64,5 +64,4 @@ PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(Modifier* mo
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

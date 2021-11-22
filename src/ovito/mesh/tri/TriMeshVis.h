@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 /**
  * \brief A visualization element for rendering TriMeshObject data objects.
@@ -72,5 +72,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
 };
 
-}	// End of namespace
 }	// End of namespace

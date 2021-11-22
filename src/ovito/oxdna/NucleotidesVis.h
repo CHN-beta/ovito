@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A visualization element for rendering DNA nucleotides.
@@ -66,5 +66,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cylinderRadius, setCylinderRadius, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

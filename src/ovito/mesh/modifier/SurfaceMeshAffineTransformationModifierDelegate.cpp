@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "SurfaceMeshAffineTransformationModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 
@@ -97,5 +97,4 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 	return PipelineStatus::Success;
 }
 
-}	// End of namespace
 }	// End of namespace

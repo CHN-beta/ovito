@@ -24,7 +24,7 @@
 #include "ProcessChannel.h"
 #include "SshConnection.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
@@ -313,5 +313,4 @@ int ProcessChannel::channelDataCallback(ssh_session session, ssh_channel channel
     return 0;
 }
 
-} // End of namespace
 } // End of namespace

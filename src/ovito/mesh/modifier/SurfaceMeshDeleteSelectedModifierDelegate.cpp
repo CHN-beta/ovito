@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
-namespace Ovito { namespace Mesh {
+namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
 
@@ -109,5 +109,4 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(Modifier*
 	return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }
 
-}	// End of namespace
 }	// End of namespace

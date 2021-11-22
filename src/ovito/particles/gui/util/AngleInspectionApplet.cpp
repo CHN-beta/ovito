@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include "AngleInspectionApplet.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AngleInspectionApplet);
 
@@ -57,5 +57,4 @@ QWidget* AngleInspectionApplet::createWidget(MainWindow* mainWindow)
 	return panel;
 }
 
-}	// End of namespace
 }	// End of namespace

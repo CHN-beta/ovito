@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ReplicateModifier.h"
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifier);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesX);
@@ -121,5 +121,4 @@ void ReplicateModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	}
 }
 
-}	// End of namespace
 }	// End of namespace

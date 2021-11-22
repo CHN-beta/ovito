@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief This data object stores a list of molecular dihedrals, i.e. quadruplets of particles.
@@ -78,5 +78,4 @@ public:
  */
 using ParticleIndexQuadruplet = std::array<qlonglong, 4>;
 
-}	// End of namespace
 }	// End of namespace

@@ -88,7 +88,7 @@ inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, in
 }
 }}
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(PDBImporter);
 
@@ -322,5 +322,4 @@ void PDBImporter::FrameLoader::loadFile()
 	ParticleImporter::FrameLoader::loadFile();
 }
 
-}	// End of namespace
 }	// End of namespace

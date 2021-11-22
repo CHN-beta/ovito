@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief A modifier that performs the common neighbor analysis (CNA) to identify
@@ -250,5 +250,4 @@ private:
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CNAMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 };
 
-}	// End of namespace
 }	// End of namespace

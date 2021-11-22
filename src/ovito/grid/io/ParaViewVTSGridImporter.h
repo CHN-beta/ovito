@@ -30,7 +30,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito { namespace Grid {
+namespace Ovito::Grid {
 
 /**
  * \brief File parser for reading a VoxelGrid from a ParaView VTS (StructuredGrid) file.
@@ -105,5 +105,4 @@ public:
 	virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 
-namespace Ovito { namespace CrystalAnalysis {
+namespace Ovito::CrystalAnalysis {
 
 class DisjointSet
 {
@@ -83,5 +83,4 @@ private:
 };
 
 
-}	// End of namespace
 }	// End of namespace

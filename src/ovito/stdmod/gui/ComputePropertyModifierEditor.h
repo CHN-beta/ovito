@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/core/utilities/DeferredMethodInvocation.h>
 
-namespace Ovito { namespace StdMod {
+namespace Ovito::StdMod {
 
 /**
  * A properties editor for the ComputePropertyModifier class.
@@ -75,5 +75,4 @@ private:
 	DeferredMethodInvocation<ComputePropertyModifierEditor, &ComputePropertyModifierEditor::updateVariablesList> updateVariablesListLater;
 };
 
-}	// End of namespace
 }	// End of namespace

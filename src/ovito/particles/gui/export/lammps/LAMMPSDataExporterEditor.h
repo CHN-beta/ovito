@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 /**
  * \brief User interface component for the LAMMPSDataExporter class.
@@ -59,5 +59,4 @@ private:
 	std::array<QComboBox*,3> _subStyleLists;
 };
 
-}	// End of namespace
 }	// End of namespace

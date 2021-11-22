@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "LsChannel.h"
 
-namespace Ovito { namespace Ssh {
+namespace Ovito::Ssh {
 
 /******************************************************************************
 * Constructor.
@@ -58,5 +58,4 @@ void LsChannel::processData()
     }
 }
 
-} // End of namespace
 } // End of namespace

@@ -33,7 +33,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "GenerateTrajectoryLinesModifier.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifier);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, onlySelectedParticles);
@@ -401,5 +401,4 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 	return true;
 }
 
-}	// End of namespace
 }	// End of namespace

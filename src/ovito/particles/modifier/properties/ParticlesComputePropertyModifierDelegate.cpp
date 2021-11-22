@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "ParticlesComputePropertyModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegate);
 DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, neighborExpressions);
@@ -339,5 +339,4 @@ void ParticlesComputePropertyModifierDelegate::Engine::applyResults(TimePoint ti
 	PropertyComputeEngine::applyResults(time, modApp, state);
 }
 
-}	// End of namespace
 }	// End of namespace

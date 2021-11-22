@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "ParcasFileImporterEditor.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParcasFileImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParcasFileImporter, ParcasFileImporterEditor);
@@ -53,5 +53,4 @@ void ParcasFileImporterEditor::createUI(const RolloutInsertionParameters& rollou
 	sublayout->addWidget(sortParticlesUI->checkBox());
 }
 
-}	// End of namespace
 }	// End of namespace

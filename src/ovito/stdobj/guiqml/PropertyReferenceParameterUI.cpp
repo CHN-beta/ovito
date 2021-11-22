@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "PropertyReferenceParameterUI.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
@@ -260,5 +260,4 @@ QVariant PropertyReferenceParameterUI::Model::data(const QModelIndex& index, int
 	return QVariant();
 }
 
-}	// End of namespace
 }	// End of namespace

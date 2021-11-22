@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * A simple helper object that serves as direction target for camera and light objects.
@@ -70,5 +70,4 @@ public:
 	virtual Box3 boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 };
 
-}	// End of namespace
 }	// End of namespace

@@ -31,7 +31,7 @@
 #include <ovito/core/app/Application.h>
 #include "ParticlesCombineDatasetsModifierDelegate.h"
 
-namespace Ovito { namespace Particles {
+namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
 
@@ -280,5 +280,4 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(Modifier* modifie
 	return PipelineStatus(secondaryState.status().type(), statusMessage);
 }
 
-}	// End of namespace
 }	// End of namespace

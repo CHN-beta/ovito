@@ -31,7 +31,7 @@
 #include "PropertyContainerClass.h"
 #include "PropertyReference.h"
 
-namespace Ovito { namespace StdObj {
+namespace Ovito::StdObj {
 
 /**
  * \brief Stores an array of properties.
@@ -197,7 +197,6 @@ private:
 /// Encapsulates a reference to a PropertyContainer in a PipelineFlowState.
 using PropertyContainerReference = TypedDataObjectReference<PropertyContainer>;
 
-}	// End of namespace
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerReference);
