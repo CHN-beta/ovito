@@ -52,7 +52,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 	QStringList arguments;
 	for(int i = 0; i < argc; i++) {
 		QString arg = QString::fromLocal8Bit(argv[i]);
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 		// When started from the macOS Finder, the OS may pass the 'process serial number' to the application.
 		// We are not interested in this command line parameter, so filter it out from the list.
 		if(arg.startsWith(QStringLiteral("-psn")))

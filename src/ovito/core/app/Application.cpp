@@ -318,7 +318,7 @@ void Application::createQtApplication(int& argc, char** argv)
 		QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, false);
 
 		new QGuiApplication(argc, argv);
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
 		new QGuiApplication(argc, argv);
 #else
 		new QCoreApplication(argc, argv);

@@ -109,7 +109,7 @@ void WidgetActionManager::setupCommandSearch()
 	QWidgetAction* commandQuickSearchAction = new QWidgetAction(this);
 	commandQuickSearchAction->setText(tr("Quick Command Search"));
 	commandQuickSearchAction->setObjectName(ACTION_COMMAND_QUICKSEARCH);
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 	commandQuickSearchAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
 #else
 	commandQuickSearchAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));

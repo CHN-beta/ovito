@@ -86,7 +86,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 				// Avoid triggering edit mode when user clicks the check box next to a list item.
 				QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 				int origin = visualRect(index).left();
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 				if(mouseEvent->pos().x() < origin + 50)
 #else
 				if(mouseEvent->pos().x() < origin + 60)
@@ -98,7 +98,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 				if(index.data(PipelineListModel::ItemTypeRole) == PipelineListItem::ModifierGroup) {
 					QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 					int origin = visualRect(index).left();
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 					if(mouseEvent->pos().x() >= origin + 25 && mouseEvent->pos().x() < origin + 50) {
 #else
 					if(mouseEvent->pos().x() >= origin + 30 && mouseEvent->pos().x() < origin + 60) {

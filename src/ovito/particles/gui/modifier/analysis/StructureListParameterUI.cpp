@@ -38,7 +38,7 @@ StructureListParameterUI::StructureListParameterUI(PropertiesEditor* parentEdito
 	: RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(StructureIdentificationModifier::structureTypes)),
 	  _showCheckBoxes(showCheckBoxes)
 {
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 	int tableWidgetHeight = 240;
 #else
 	int tableWidgetHeight = 300;

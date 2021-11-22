@@ -74,7 +74,7 @@ QSize ColorPickerWidget::sizeHint() const
     int w = 16;
 	int h = fontMetrics().xHeight();
 
-#if !defined(Q_OS_MAC)
+#if !defined(Q_OS_MACOS)
 	QStyleOptionButton opt;
 	opt.initFrom(this);
 	opt.features = QStyleOptionButton::Flat;

@@ -116,7 +116,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 		QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(Q_OS_MAC)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(Q_OS_MACOS)
 		QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif
 

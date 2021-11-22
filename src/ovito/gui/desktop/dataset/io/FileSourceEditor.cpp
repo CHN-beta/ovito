@@ -114,7 +114,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
 	_fileSeriesLabel = new QLabel();
 	QFont smallFont = _fileSeriesLabel->font();
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 	smallFont.setPointSize(std::max(6, smallFont.pointSize() - 3));
 #elif defined(Q_OS_LINUX)
 	smallFont.setPointSize(std::max(6, smallFont.pointSize() - 2));
