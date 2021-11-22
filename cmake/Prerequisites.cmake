@@ -111,7 +111,6 @@ FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 	IF(${TARGET} MATCHES "pybind11" OR ${TARGET} STREQUAL "documentation" OR ${TARGET} STREQUAL "scripting_documentation" OR ${TARGET} STREQUAL "scripting_documentation_prerun")
 		RETURN()
 	ENDIF()
-	MESSAGE("get_all_target_dependencies: TARGET=${TARGET}")
 
 	GET_TARGET_PROPERTY(IMPORTED ${TARGET} IMPORTED)
     IF(IMPORTED)

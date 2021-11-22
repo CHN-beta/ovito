@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,6 +53,7 @@
 #include <tuple>
 #include <numeric>
 #include <functional>
+#include <optional>
 
 /******************************************************************************
 * QT Library
