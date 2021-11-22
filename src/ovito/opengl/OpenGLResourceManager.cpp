@@ -65,21 +65,28 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 ******************************************************************************/
 QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame)
 {
-	OVITO_ASSERT(gradient);
-
     // Check if this color map has already been uploaded to the GPU.
 	RendererResourceKey<OpenGLResourceManager, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
     std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
 
     if(!texture) {
 		// Sample the color gradient to produce a row of RGB pixel data.
-		constexpr int resolution = 256;
-		std::vector<uint8_t> pixelData(resolution * 3);
-		for(int x = 0; x < resolution; x++) {
-			Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
-			pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
-			pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
-			pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+		int resolution;
+		std::vector<uint8_t> pixelData;
+
+		if(gradient) {
+			resolution = 256;
+			pixelData.resize(resolution * 3);
+			for(int x = 0; x < resolution; x++) {
+				Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+				pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
+				pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
+				pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+			}
+		}
+		else {
+			resolution = 1;
+			pixelData.resize(3, 255);
 		}
 
 		// Create the 1-d texture object.

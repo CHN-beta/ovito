@@ -75,6 +75,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             break;
 
         case ArrowShape:
+            OVITO_ASSERT(!renderWithPseudoColorMapping);
             if(shadingMode() == NormalShading) {
                 if(!renderer->isPicking())
 					shader.load("arrow_head", "cylinder/arrow_head.vert", "cylinder/arrow_head.frag");
@@ -237,7 +238,7 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             shader.bindBuffer(colorBuffer, "color2", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
 
         if(renderWithPseudoColorMapping) {
-            // Rendering  with pseudo-colors and a color mapping function.
+            // Rendering with pseudo-colors and a color mapping function.
             float minValue = pseudoColorMapping().minValue();
             float maxValue = pseudoColorMapping().maxValue();
             // Avoid division by zero due to degenerate value interval.
@@ -253,6 +254,15 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
             // This will turn pseudocolor mapping off in the fragment shader.
             shader.setUniformValue("color_range_min", 0.0f);
             shader.setUniformValue("color_range_max", 0.0f);
+
+#ifdef Q_OS_MACOS
+            // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about 
+            // no texture being bound when a sampler1D is defined in the fragment shader.
+            if(!renderer->isPicking() && shape() == CylinderShape) {
+                colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(nullptr, renderer->currentResourceFrame());
+                colorMapTexture->bind();
+            }
+#endif
         }
     }
 
