@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,13 +27,6 @@
 #include <ovito/core/utilities/MemoryPool.h>
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include "InterfaceMesh.h"
-
-#include <boost/random/mersenne_twister.hpp>
-#if BOOST_VERSION > 146000
-#include <boost/random/uniform_int_distribution.hpp>
-#else
-#include <boost/random/uniform_int.hpp>
-#endif
 
 namespace Ovito { namespace CrystalAnalysis {
 
@@ -145,13 +138,8 @@ private:
 	/// It can be re-used on the next allocation request.
 	BurgersCircuit* _unusedCircuit;
 
-#if BOOST_VERSION > 146000
 	/// Used to generate random numbers;
-	boost::random::mt19937 _rng;
-#else
-	/// Used to generate random numbers;
-	boost::mt19937 _rng;
-#endif
+	std::mt19937 _rng;
 };
 
 }	// End of namespace

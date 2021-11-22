@@ -31,8 +31,6 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-#include <boost/container/flat_map.hpp>
-
 namespace Ovito { namespace Particles {
 
 /**

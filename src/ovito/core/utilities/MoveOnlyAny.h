@@ -33,7 +33,7 @@
 #include <initializer_list>
 #include <type_traits>
 #include <typeinfo>
-#include <boost/any.hpp>
+#include <any>
 
 namespace Ovito {
 
@@ -306,7 +306,7 @@ inline _ValueType any_cast(any_moveonly& __any)
 	auto __p = any_cast<_Up>(&__any);
 	if(__p)
 		return static_cast<_ValueType>(*__p);
-	throw boost::bad_any_cast{};
+	throw std::bad_any_cast{};
 }
 
 template<typename _ValueType>
@@ -318,7 +318,7 @@ inline _ValueType any_cast(any_moveonly&& __any)
 	auto __p = any_cast<_Up>(&__any);
 	if (__p)
 		return static_cast<_ValueType>(std::move(*__p));
-	throw boost::bad_any_cast{};
+	throw std::bad_any_cast{};
 }
 
 template<typename _Tp>

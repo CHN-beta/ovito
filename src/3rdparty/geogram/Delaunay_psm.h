@@ -851,7 +851,7 @@ namespace GEO {
             }
 
             pointer allocate(
-                size_type nb_elt, ::std::allocator<void>::const_pointer hint = nullptr
+                size_type nb_elt, const void* hint = nullptr
             ) {
                 geo_argused(hint);
                 pointer result = static_cast<pointer>(
@@ -866,8 +866,7 @@ namespace GEO {
             }
 
             size_type max_size() const {
-                ::std::allocator<char> a;
-                return a.max_size() / sizeof(T);
+                return std::numeric_limits<size_t>::max() / sizeof(T);
             }
 
             void construct(pointer p, const_reference val) {

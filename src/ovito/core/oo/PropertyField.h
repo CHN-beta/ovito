@@ -172,7 +172,7 @@ private:
 	static inline std::enable_if_t<boost::has_equal_to<const T&>::value, bool>
 	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return oldValue == newValue; }
 
-	/// Helper function that tests if the new value is equal to the current value of the property field.
+	/// Fallback of the helper function above, which is used if the property field's data type has no comparison operator.
 	template<typename T = property_type>
 	static inline std::enable_if_t<!boost::has_equal_to<const T&>::value, bool>
 	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return false; }

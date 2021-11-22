@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,6 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "DelaunayTessellation.h"
 
-#include <boost/random/mersenne_twister.hpp>
-#if BOOST_VERSION > 146000
-#include <boost/random/uniform_real_distribution.hpp>
-#else
-#include <boost/random/uniform_real.hpp>
-#endif
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
 
@@ -59,18 +53,9 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 	double epsilon = 1e-10 * lengthScale;
 
 	// Set up random number generator to generate random perturbations.
-#if 0
-	std::minstd_rand rng;
+	std::mt19937 rng;
 	std::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-#else
-	#if BOOST_VERSION > 146000
-		boost::random::mt19937 rng;
-		boost::random::uniform_real_distribution displacement(-epsilon, epsilon);
-	#else
-		boost::mt19937 rng;
-		boost::uniform_real<> displacement(-epsilon, epsilon);
-	#endif
-#endif
+	// Use fixed seed value for the sake of reproducibility.
 	rng.seed(4);
 
 	_simCell = simCell;

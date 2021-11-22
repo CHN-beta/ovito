@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/MoveOnlyAny.h>
-#include <boost/any.hpp>
 
 namespace Ovito {
 

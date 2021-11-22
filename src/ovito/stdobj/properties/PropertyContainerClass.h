@@ -27,8 +27,6 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
-#include <boost/container/flat_map.hpp>
-
 namespace Ovito { namespace StdObj {
 
 /**

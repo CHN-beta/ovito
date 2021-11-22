@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,6 @@
 
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
-#include <boost/iterator/permutation_iterator.hpp>
 
 namespace Ovito { namespace Delaunay {
 
@@ -44,11 +43,7 @@ public:
 	typedef GEO::index_t size_type;
 	typedef GEO::index_t CellHandle;
 	typedef GEO::index_t VertexHandle;
-#if 1
 	typedef boost::counting_iterator<size_type> CellIterator;
-#else
-	typedef boost::permutation_iterator<boost::counting_iterator<size_type>, std::vector<int>::const_iterator> CellIterator;
-#endif
 
 	/// Data structure attached to each tessellation cell.
 	struct CellInfo {
