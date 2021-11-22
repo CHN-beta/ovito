@@ -98,7 +98,6 @@ ENDFUNCTION()
 FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 
 	# This special handling was adopted from __qt_internal_walk_libs() to avoid an error produced by older CMake versions:
-	MESSAGE("get_all_target_dependencies: TARGET=${TARGET}")
 	IF(${TARGET} STREQUAL "${OVITO_QT_MAJOR_VERSION}::EntryPoint")
         # We can't (and don't need to) process EntryPoint because it brings in $<TARGET_PROPERTY:prop>
         # genexes which get replaced with $<TARGET_PROPERTY:EntryPoint,prop> genexes in the code below
@@ -107,6 +106,12 @@ FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
         # debug because there's no mention that it's happening during a file(GENERATE) call.
         RETURN()
     ENDIF()
+
+	# Skip the following targets, because they cause problems when querying the LINK_LIBRARIES property below.
+	IF(${TARGET} MATCHES "pybind11" OR ${TARGET} STREQUAL "documentation" OR ${TARGET} STREQUAL "scripting_documentation" OR ${TARGET} STREQUAL "scripting_documentation_prerun")
+		RETURN()
+	ENDIF()
+	MESSAGE("get_all_target_dependencies: TARGET=${TARGET}")
 
 	GET_TARGET_PROPERTY(IMPORTED ${TARGET} IMPORTED)
     IF(IMPORTED)
