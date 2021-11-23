@@ -29,8 +29,8 @@
 
 
 #include <ovito/core/Core.h>
-#include <any>
 #include <typeinfo>
+#include "MoveOnlyAny.h"
 
 namespace Ovito {
 
@@ -47,16 +47,16 @@ public:
 	Value& get(Key&& key) {
 		// Check if the key exists in the cache.
 		for(auto& entry : _entries) {
-			if(std::get<0>(entry).type() == typeid(Key) && key == std::any_cast<const Key&>(std::get<0>(entry))) {
+			if(std::get<0>(entry).type() == typeid(Key) && key == any_cast<const Key&>(std::get<0>(entry))) {
 				// Mark this cache entry as recently accessed.
 				std::get<2>(entry) = true;
 				// Read out the value of the cache entry.
-				return std::any_cast<Value&>(std::get<1>(entry));
+				return any_cast<Value&>(std::get<1>(entry));
 			}
 		}
 		// Create a new entry if key doesn't exist yet.
 		_entries.emplace_back(std::forward<Key>(key), Value{}, true);
-		return std::any_cast<Value&>(std::get<1>(_entries.back()));
+		return any_cast<Value&>(std::get<1>(_entries.back()));
 	}
 
 	/// This removes entries from the cache that have not been accessed since the last call to discardUnusedObjects().
@@ -81,7 +81,7 @@ public:
 private:
 
 	/// The list of cached objects and their keys.
-	std::vector<std::tuple<std::any, std::any, bool>> _entries;
+	std::vector<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
 };
 
 }	// End of namespace

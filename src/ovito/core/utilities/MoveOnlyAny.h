@@ -33,7 +33,6 @@
 #include <initializer_list>
 #include <type_traits>
 #include <typeinfo>
-#include <any>
 
 namespace Ovito {
 
@@ -293,7 +292,7 @@ inline void swap(any_moveonly& __x, any_moveonly& __y) noexcept { __x.swap(__y);
  * @tparam  _ValueType  A reference or CopyConstructible type.
  * @param   __any       The object to access.
  * @return  The contained object.
- * @throw   bad_any_cast If <code>
+ * @throw   bad_cast If <code>
  *          __any.type() != typeid(remove_reference_t<_ValueType>)
  *          </code>
  */
@@ -306,7 +305,7 @@ inline _ValueType any_cast(any_moveonly& __any)
 	auto __p = any_cast<_Up>(&__any);
 	if(__p)
 		return static_cast<_ValueType>(*__p);
-	throw std::bad_any_cast{};
+	throw std::bad_cast{};
 }
 
 template<typename _ValueType>
@@ -318,7 +317,7 @@ inline _ValueType any_cast(any_moveonly&& __any)
 	auto __p = any_cast<_Up>(&__any);
 	if (__p)
 		return static_cast<_ValueType>(std::move(*__p));
-	throw std::bad_any_cast{};
+	throw std::bad_cast{};
 }
 
 template<typename _Tp>
