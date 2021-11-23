@@ -42,10 +42,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-#ifndef Q_CC_MSVC
-constexpr int GrainSegmentationEngine1::MAX_DISORDERED_NEIGHBORS; // Definition is required by C++14 but not C++17 or later.
-#endif
-
 /******************************************************************************
 * Constructor.
 ******************************************************************************/

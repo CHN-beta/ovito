@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <3rdparty/function2/function2.hpp>
+#include <function2/function2.hpp>
 #include "FutureDetail.h"
 
 namespace Ovito {

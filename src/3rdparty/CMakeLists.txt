@@ -20,6 +20,7 @@
 #
 #######################################################################################
 
+ADD_SUBDIRECTORY(function2)
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
     ADD_SUBDIRECTORY(qwt)
 ENDIF()

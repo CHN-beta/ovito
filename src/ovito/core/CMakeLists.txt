@@ -178,7 +178,7 @@ ENDIF()
 # Define library target.
 OVITO_STANDARD_PLUGIN(Core
 	SOURCES ${SourceFiles} resources/core.qrc
-	LIB_DEPENDENCIES Boost::boost
+	LIB_DEPENDENCIES Boost::boost function2::function2
 	PRECOMPILED_HEADERS Core.h
 )
 

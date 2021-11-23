@@ -12,8 +12,8 @@ The prerequisites for building OVITO from source are:
    ============================= ============================= ===================================================
    Tool/Package                  Requirement                   Notes
    ============================= ============================= ===================================================
-   C++ compiler                  required                      Compiler must support C++14 language standard (e.g. GNU g++ 4.8 or newer)
-   `CMake <http://cmake.org/>`_  required                      The build system used by OVITO (CMake 3.3 or newer required)
+   C++ compiler                  required                      Support for C++17 language standard is required
+   `CMake <http://cmake.org/>`_  required                      The build system used by OVITO (CMake 3.12 or newer required)
    `Git <http://git-scm.com/>`_  required                      The distributed version control system needed to retrieve the source code
    ============================= ============================= ===================================================
 
