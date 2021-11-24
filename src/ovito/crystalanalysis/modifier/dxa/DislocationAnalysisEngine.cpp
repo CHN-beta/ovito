@@ -352,7 +352,6 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 			dislocationLengths[family] = 0;
 			segmentCounts[family] = 0;
 			dislocationCrystalStructures[family] = defaultStructure;
-			qDebug() << "family:" << family->name();
 		}
 	}
 

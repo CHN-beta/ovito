@@ -239,8 +239,10 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 
 			// Allocate buffers for the nodal vertices.
 			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, positionProperty->size(), DataBuffer::Float, 3, 0, false) : nullptr;
+			DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, positionProperty->size(), DataBuffer::Float, 1, 0, false) : nullptr;
 			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Int, 1, 0, false) : nullptr;
 			boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
+			OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
 			// Cache some values.
 			ConstPropertyAccess<Point3> positions(positionProperty);
@@ -283,6 +285,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 					bondColors[cylinderIndex] = *color++;
 					if(nodalColors && !visitedParticles.test(particleIndex1)) {
 						nodalColors[particleIndex1] = bondColors[cylinderIndex];
+						if(nodalTransparencies)
+							nodalTransparencies[particleIndex1] = bondInputTransparency[bondIndex];
 						visitedParticles.set(particleIndex1);
 						nodalIndices.push_back(particleIndex1);
 					}
@@ -293,6 +297,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 					bondColors[cylinderIndex] = *color++;
 					if(nodalColors && !visitedParticles.test(particleIndex2)) {
 						nodalColors[particleIndex2] = bondColors[cylinderIndex];
+						if(nodalTransparencies)
+							nodalTransparencies[particleIndex2] = bondInputTransparency[bondIndex];
 						visitedParticles.set(particleIndex2);
 						nodalIndices.push_back(particleIndex2);
 					}
@@ -326,6 +332,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 				visCache.vertices->setUniformRadius(bondRadius);
 				visCache.vertices->setColors(nodalColors.take());
 				visCache.vertices->setIndices(nodalIndices.take());
+				visCache.vertices->setTransparencies(nodalTransparencies.take());
 			}
 		}
 	}
