@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -311,27 +311,56 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	dislocationsObj->setDomain(state.getObject<SimulationCellObject>());
 	dislocationsObj->setVisElement(modifier->dislocationVis());
 
+	// Output particle properties.
+	if(atomClusters()) {
+		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+		particles->createProperty(atomClusters());
+	}
+
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_OTHER)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_FCC)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HCP)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_BCC)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), modApp);
+
+	// Compute dislocation line statistics.
+	FloatType totalLineLength = generateDislocationStatistics(modApp, Application::instance()->executionContext(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
+	size_t totalSegmentCount = dislocationsObj->storage()->segments().size();	
+
+	if(totalSegmentCount == 0)
+		state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("No dislocations found")));
+	else
+		state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("Found %1 dislocation segments\nTotal line length: %2").arg(totalSegmentCount).arg(totalLineLength)));
+}
+
+/******************************************************************************
+* Computes statistical information on the identified dislocation lines and 
+* outputs it to the pipeline as data tables and global attributes.
+******************************************************************************/
+FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, ExecutionContext executionContext, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
+{
 	std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
 	std::map<const BurgersVectorFamily*,int> segmentCounts;
 	std::map<const BurgersVectorFamily*,const MicrostructurePhase*> dislocationCrystalStructures;
-	const MicrostructurePhase* defaultStructure = dislocationsObj->structureById(modifier->inputCrystalStructure());
-	const BurgersVectorFamily* defaultFamily = nullptr;
+
+	const BurgersVectorFamily* defaultFamily = nullptr;	
 	if(defaultStructure) {
 		defaultFamily = defaultStructure->defaultBurgersVectorFamily();
 		for(const BurgersVectorFamily* family : defaultStructure->burgersVectorFamilies()) {
 			dislocationLengths[family] = 0;
 			segmentCounts[family] = 0;
 			dislocationCrystalStructures[family] = defaultStructure;
+			qDebug() << "family:" << family->name();
 		}
 	}
 
 	// Classify, count and measure length of dislocation segments.
 	FloatType totalLineLength = 0;
-	int totalSegmentCount = 0;
 	for(const DislocationSegment* segment : dislocationsObj->storage()->segments()) {
 		FloatType len = segment->calculateLength();
 		totalLineLength += len;
-		totalSegmentCount++;
 
 		Cluster* cluster = segment->burgersVector.cluster();
 		OVITO_ASSERT(cluster != nullptr);
@@ -358,36 +387,39 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	int maxId = 0;
 	for(const auto& entry : dislocationLengths)
 		maxId = std::max(maxId, entry.first->numericId());
-	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Float, 1, 0, DislocationAnalysisModifier::tr("Total line length"), true, DataTable::YProperty);
+	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Float, 1, 0, DislocationAnalysisModifier::tr("Total line length"), true, DataTable::YProperty);
 	for(const auto& entry : dislocationLengths)
 		dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
+	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
 	boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
-	DataTable* lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), modApp, Application::instance()->executionContext(), DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+
+	DataTable* lengthTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
+	if(!lengthTableObj)
+		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, executionContext, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+	else
+		lengthTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationLengthsProperty.take(), dislocationTypeIds.take() }});
+	
 	PropertyObject* xProperty = lengthTableObj->expectMutableProperty(DataTable::XProperty);
+	OVITO_ASSERT(xProperty->elementTypes().empty());
 	for(const auto& entry : dislocationLengths)
 		xProperty->addElementType(entry.first);
 
 	// Output a data table with the dislocation segment counts.
-	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(modApp->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
+	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
 	for(const auto& entry : segmentCounts)
 		dislocationCountsProperty[entry.first->numericId()] = entry.second;
-	DataTable* countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), modApp, Application::instance()->executionContext(), DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+
+	DataTable* countTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
+	if(!countTableObj)
+		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, executionContext, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+	else
+		countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationCountsProperty.take() }});
 	countTableObj->insertProperty(0, xProperty);
 
-	// Output particle properties.
-	if(atomClusters()) {
-		ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
-		particles->createProperty(atomClusters());
-	}
-
-	state.addAttribute(QStringLiteral("DislocationAnalysis.total_line_length"), QVariant::fromValue(totalLineLength), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_OTHER)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_FCC)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HCP)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_BCC)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), modApp);
+	if(replaceDataObjects)
+		state.setAttribute(QStringLiteral("DislocationAnalysis.total_line_length"), QVariant::fromValue(totalLineLength), dataSource);
+	else
+		state.addAttribute(QStringLiteral("DislocationAnalysis.total_line_length"), QVariant::fromValue(totalLineLength), dataSource);
 
 	for(const auto& dlen : dislocationLengths) {
 		const MicrostructurePhase* structure = dislocationCrystalStructures[dlen.first];
@@ -399,14 +431,13 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 			bstr.replace(QChar(']'), QChar('>'));
 		}
 		else bstr = "other";
-		state.addAttribute(QStringLiteral("DislocationAnalysis.length.%1").arg(bstr), QVariant::fromValue(dlen.second), modApp);
+		if(replaceDataObjects)
+			state.setAttribute(QStringLiteral("DislocationAnalysis.length.%1").arg(bstr), QVariant::fromValue(dlen.second), dataSource);
+		else
+			state.addAttribute(QStringLiteral("DislocationAnalysis.length.%1").arg(bstr), QVariant::fromValue(dlen.second), dataSource);
 	}
-	state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), modApp);
 
-	if(totalSegmentCount == 0)
-		state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("No dislocations found")));
-	else
-		state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("Found %1 dislocation segments\nTotal line length: %2").arg(totalSegmentCount).arg(totalLineLength)));
+	return totalLineLength;
 }
 
 }	// End of namespace

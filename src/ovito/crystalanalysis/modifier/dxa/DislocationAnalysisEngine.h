@@ -88,6 +88,9 @@ public:
 	/// Returns the input particle property that stores the cluster assignment of atoms.
 	const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
+	/// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
+	static FloatType generateDislocationStatistics(const PipelineObject* dataSource, ExecutionContext executionContext, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
+
 private:
 
 	int _inputCrystalStructure;

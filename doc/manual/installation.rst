@@ -121,3 +121,6 @@ Linux
   Please install the OpenSSL 1.1.x libraries using the package manager of your Linux distribution. OVITO depends on the 
   presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
   you should install the package `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__.
+  On old Ubuntu 16.04 systems, the OpenSSL 1.1 libraries are not available through the package manager. In this case, please download an older OVITO package (e.g. version 3.5.4), because
+  past OVITO releases used to contain copies of the OpenSSL libraries. You can then copy the missing library files into the new program directory
+  to make them available to the current OVITO version.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
+#include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisEngine.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
@@ -509,8 +510,18 @@ void CAImporter::FrameLoader::loadFile()
 	if(defectSurface)
 		defectSurface.setCell(simulationCell());
 
-	// Insert cluster graph.
+	std::vector<size_t> structureCounts;
 	if(clusterGraph) {
+		
+		// Count how many atoms of each structure type exist by summing the cluster atom counts.
+		for(const Cluster* cluster : clusterGraph->clusters()) {
+			if(cluster->structure < 0) continue;
+			if(cluster->structure <= structureCounts.size())
+				structureCounts.resize(cluster->structure + 1, 0);
+			structureCounts[cluster->structure] += cluster->atomCount;
+		}
+	
+		// Insert cluster graph.
 		ClusterGraphObject* clusterGraphObj;
 		if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
 			clusterGraphObj = state().makeMutable(existingClusterGraphObj);
@@ -551,6 +562,7 @@ void CAImporter::FrameLoader::loadFile()
 			// Add Burgers vector families.
 			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
 				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());
+				family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
 				family->setColor(patterns[i].burgersVectorFamilies[j].color);
 				family->setName(patterns[i].burgersVectorFamilies[j].name);
 				family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
@@ -562,6 +574,16 @@ void CAImporter::FrameLoader::loadFile()
 			if(pattern->burgersVectorFamilies().empty())
 				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext()));
 		}
+
+		// Determine the main crystal structure of the system, which has the most atoms.
+		const MicrostructurePhase* mainStructure = nullptr;
+		if(!structureCounts.empty()) {
+			int maxStructure = std::distance(structureCounts.begin(), std::max_element(structureCounts.begin(), structureCounts.end()));
+			mainStructure = dislocationNetwork->structureById(maxStructure);
+		}
+
+		// Compute dislocation line statistics.
+		DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), executionContext(), state(), dislocationNetwork, true, mainStructure);
 	}
 
 	state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));
