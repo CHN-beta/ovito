@@ -22,6 +22,9 @@
 
 #include "../global_uniforms.glsl"
 
+// Uniforms:
+uniform int single_cylinder_cap;
+
 // Inputs:
 flat in vec4 color_fs;
 flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coordinates
@@ -58,7 +61,7 @@ void main()
 		else {
 			view_intersection_pnt -= t * ray_dir_norm;
 			float tfar = dot(cylinder_view_axis, ray_dir_norm);
-			if(tfar < 0.0) {
+			if(tfar < 0.0 && single_cylinder_cap == 0) {
 				view_intersection_pnt += tfar * ray_dir_norm;
 			}
 		}
@@ -98,7 +101,7 @@ void main()
 				if(anear < 0.0 && afar > 0.0) {
 					view_intersection_pnt += (anear / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 				}
-				else if(anear > 1.0 && afar < 1.0) {
+				else if(anear > 1.0 && afar < 1.0 && single_cylinder_cap == 0) {
 					view_intersection_pnt += ((anear - 1.0) / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 				}
 				else {

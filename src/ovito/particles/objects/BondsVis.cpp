@@ -221,7 +221,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			renderingQuality()));
 
 	// Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
-	bool renderNodalVertices = (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
+	bool renderNodalVertices = !transparencyProperty && (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
 	if(renderNodalVertices && !visCache.vertices && visCache.cylinders)
 		visCache.cylinders.reset();
 
@@ -271,9 +271,14 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 				size_t particleIndex2 = bonds[bondIndex][1];
 				if(particleIndex1 < particleCount && particleIndex2 < particleCount) {
 					Vector3 vec = positions[particleIndex2] - positions[particleIndex1];
+					bool isSplitBond = false;
 					if(bondPeriodicImageProperty) {
-						for(size_t k = 0; k < 3; k++)
-							if(int d = bondPeriodicImages[bondIndex][k]) vec += cell.column(k) * (FloatType)d;
+						for(size_t k = 0; k < 3; k++) {
+							if(int d = bondPeriodicImages[bondIndex][k]) {
+								vec += cell.column(k) * (FloatType)d;
+								isSplitBond = true;
+							}
+						}
 					}
 					FloatType t = 0.5;
 					FloatType blen = vec.length() * FloatType(2);
@@ -292,7 +297,10 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex1];
-					bondPositions2[cylinderIndex++] = positions[particleIndex1] + vec * t;
+					bondPositions2[cylinderIndex] = positions[particleIndex1] + vec * t;
+					if(isSplitBond)
+						swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
+					cylinderIndex++;
 
 					bondColors[cylinderIndex] = *color++;
 					if(nodalColors && !visitedParticles.test(particleIndex2)) {
@@ -304,7 +312,10 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 					}
 					if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
 					bondPositions1[cylinderIndex] = positions[particleIndex2];
-					bondPositions2[cylinderIndex++] = positions[particleIndex2] - vec * (FloatType(1) - t);
+					bondPositions2[cylinderIndex] = positions[particleIndex2] - vec * (FloatType(1) - t);
+					if(isSplitBond)
+						swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
+					cylinderIndex++;
 				}
 				else {
 					bondColors[cylinderIndex] = *color++;
@@ -320,6 +331,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			}
 
 			visCache.cylinders = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
+			visCache.cylinders->setRenderSingleCylinderCap(transparencyProperty != nullptr);
 			visCache.cylinders->setUniformRadius(bondRadius);
 			visCache.cylinders->setPositions(bondPositions1.take(), bondPositions2.take());
 			visCache.cylinders->setColors(bondColors.take());

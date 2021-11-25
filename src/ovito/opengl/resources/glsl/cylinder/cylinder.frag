@@ -27,6 +27,7 @@
 uniform float color_range_min;
 uniform float color_range_max;
 uniform sampler1D color_map;
+uniform int single_cylinder_cap;
 
 // Inputs:
 flat in vec4 color1_fs;
@@ -68,7 +69,7 @@ void main()
 			view_intersection_pnt -= t * ray_dir_norm;
 			surface_normal = -cylinder_view_axis;
 			float tfar = dot(cylinder_view_axis, ray_dir_norm);
-			if(tfar < 0.0) {
+			if(tfar < 0.0 && single_cylinder_cap == 0) {
 				view_intersection_pnt += tfar * ray_dir_norm;
 				surface_normal = cylinder_view_axis;
 				x = 1.0;
@@ -116,7 +117,7 @@ void main()
 					surface_normal = -cylinder_view_axis;
 					x = 0.0;
 				}
-				else if(anear > 1.0 && afar < 1.0) {
+				else if(anear > 1.0 && afar < 1.0 && single_cylinder_cap == 0) {
 					view_intersection_pnt += ((anear - 1.0) / (anear - afar) * 2.0 * s + 1e-6 * ln) * ray_dir_norm;
 					surface_normal = cylinder_view_axis;
 					x = 1.0;

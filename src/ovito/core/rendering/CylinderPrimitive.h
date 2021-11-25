@@ -87,6 +87,12 @@ public:
 		_uniformColor = color;
 	}
 
+	/// Returns whether only one of the two cylinder caps is rendered.
+	bool renderSingleCylinderCap() const { return _renderSingleCylinderCap; }
+
+	/// Controls whether only one of the two cylinder caps is rendered.
+	void setRenderSingleCylinderCap(bool singleCap) { _renderSingleCylinderCap = singleCap; }
+
 	/// Returns the buffer storing the base positions.
 	const ConstDataBufferPtr& basePositions() const { return _basePositions; }
 
@@ -151,6 +157,9 @@ private:
 
 	/// The mapping from pseudo-color values to RGB colors.
 	PseudoColorMapping _pseudoColorMapping;
+
+	/// Indicates that only one of the two cylinder caps should be rendered.
+	bool _renderSingleCylinderCap = false;
 
 	/// The color to be used if no per-primitive colors have been specified.
 	Color _uniformColor{1,1,1};

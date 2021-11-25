@@ -121,6 +121,10 @@ void OpenGLCylinderPrimitive::render(OpenGLSceneRenderer* renderer)
         shader.setUniformValue("view_dir_eye_pos", view_dir_eye_pos);
     }
 
+    if(shape() == CylinderShape && shadingMode() == NormalShading) {
+        shader.setUniformValue("single_cylinder_cap", (int)renderSingleCylinderCap());
+    }
+
     // Put base/head positions and radii into one combined GL buffer.
     // Radii are optional and may be substituted with a uniform radius value.
     RendererResourceKey<OpenGLCylinderPrimitive, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
