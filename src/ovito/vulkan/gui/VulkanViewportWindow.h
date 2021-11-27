@@ -50,7 +50,7 @@ public:
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
-    /// \brief Puts an update request event for this window on the event loop.
+    /// \brief Puts an update request for this window in the event loop.
 	virtual void renderLater() override;
 
 	/// If an update request is pending for this viewport window, immediately
@@ -193,7 +193,7 @@ private:
 
 private:
 
-	/// The container widget created for the QVulkanWindow.
+	/// The container widget created for the QWindow.
 	QWidget* _widget;
 
 	/// This is the renderer of the interactive viewport.

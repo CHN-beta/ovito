@@ -47,7 +47,7 @@ public:
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const override { return _viewportRenderer; }
 
-    /// Puts an update request event for this window on the event loop.
+    /// Puts an update request for this window in the event loop.
 	virtual void renderLater() override;
 
 	/// If an update request is pending for this viewport window, immediately

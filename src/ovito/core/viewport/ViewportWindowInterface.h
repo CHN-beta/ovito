@@ -57,7 +57,7 @@ public:
 	/// Returns the user interface hosting this viewport window.
 	UserInterface* gui() const { return _gui; }
 
-    /// Puts an update request event for this window on the event loop.
+    /// Puts an update request for this window in the event loop.
 	virtual void renderLater() = 0;
 
 	/// If an update request is pending for this viewport window, immediately
