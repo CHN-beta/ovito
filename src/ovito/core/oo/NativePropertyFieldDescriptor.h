@@ -248,8 +248,16 @@ public:
 		static void __copy_propfield_##name(RefMaker* obj, const RefMaker* other) { \
 			static_cast<ovito_class*>(obj)->_##name.set(obj, PROPERTY_FIELD(name), static_cast<const ovito_class*>(other)->_##name.get()); \
 		} \
-		enum { __##name##_flags = flags }; \
-		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
+		inline static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance{ \
+			const_cast<OOMetaClass*>(&OOClass()), \
+			#name, \
+			static_cast<Ovito::PropertyFieldFlags>(flags), \
+			&__copy_propfield_##name, \
+			&__read_propfield_##name, \
+			&__write_propfield_##name, \
+			&__save_propfield_##name, \
+			&__load_propfield_##name \
+		}; \
 	public: \
 		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
 			return &name##__propdescr_instance; \
@@ -257,18 +265,6 @@ public:
 		Ovito::PropertyField<type> _##name; \
 		const type& name() const { return _##name; } \
 	private:
-
-#define DEFINE_PROPERTY_FIELD(classname, fieldname) \
-	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
-			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
-			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##_flags), \
-			&classname::__copy_propfield_##fieldname, \
-			&classname::__read_propfield_##fieldname, \
-			&classname::__write_propfield_##fieldname, \
-			&classname::__save_propfield_##fieldname, \
-			&classname::__load_propfield_##fieldname \
-		);
 
 /// Adds a property field to a class definition.
 /// The first parameter specifies the data type of the property field.
@@ -311,8 +307,16 @@ public:
 		static void __copy_propfield_##name(RefMaker* obj, const RefMaker* other) { \
 			static_cast<ovito_class*>(obj)->_##name.set(obj, PROPERTY_FIELD(name), static_cast<const ovito_class*>(other)->_##name.get()); \
 		} \
-		enum { __##name##_flags = flags }; \
-		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
+		inline static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance{ \
+			const_cast<OOMetaClass*>(&OOClass()), \
+			#name, \
+			static_cast<Ovito::PropertyFieldFlags>(flags), \
+			&__copy_propfield_##name, \
+			&__read_propfield_##name, \
+			&__write_propfield_##name, \
+			&__save_propfield_##name, \
+			&__load_propfield_##name \
+		}; \
 	public: \
 		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
 			return &name##__propdescr_instance; \
@@ -358,28 +362,23 @@ public:
 			if(static_cast<const ovito_class*>(source)->_##name##__shadow.hasSnapshot()) \
 				static_cast<ovito_class*>(target)->_##name.set(target, PROPERTY_FIELD(name), static_cast<const ovito_class*>(source)->_##name##__shadow.get()); \
 		} \
-		enum { __##name##__shadow_flags = PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE }; \
-		static Ovito::NativePropertyFieldDescriptor name##__shadow__propdescr_instance; \
+		inline static Ovito::NativePropertyFieldDescriptor name##__shadow__propdescr_instance{ \
+			const_cast<OOMetaClass*>(&OOClass()), \
+			#name "__shadow", \
+			static_cast<Ovito::PropertyFieldFlags>(PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE), \
+			&__copy_propfield_##name##__shadow, \
+			nullptr, \
+			nullptr, \
+			&__save_propfield_##name##__shadow, \
+			&__load_propfield_##name##__shadow, \
+			&__take_snapshot_propfield_##name##__shadow, \
+			&__restore_snapshot_propfield_##name##__shadow \
+		}; \
 	public: \
 		static inline Ovito::NativePropertyFieldDescriptor* SHADOW_PROPERTY_FIELD(name) { \
 			return &name##__shadow__propdescr_instance; \
 		} \
 		Ovito::ShadowPropertyField<decltype(_##name)::property_type> _##name##__shadow; \
 	private:
-
-#define DEFINE_SHADOW_PROPERTY_FIELD(classname, fieldname) \
-	Ovito::NativePropertyFieldDescriptor classname::fieldname##__shadow__propdescr_instance( \
-			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
-			#fieldname "__shadow", \
-			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##__shadow_flags), \
-			&classname::__copy_propfield_##fieldname##__shadow, \
-			nullptr, \
-			nullptr, \
-			&classname::__save_propfield_##fieldname##__shadow, \
-			&classname::__load_propfield_##fieldname##__shadow, \
-			&classname::__take_snapshot_propfield_##fieldname##__shadow, \
-			&classname::__restore_snapshot_propfield_##fieldname##__shadow \
-		);
-
 
 }	// End of namespace

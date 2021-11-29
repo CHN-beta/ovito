@@ -31,12 +31,6 @@
 namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(ElasticStrainModifier);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, inputCrystalStructure);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateDeformationGradients);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateStrainTensors);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, latticeConstant);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, axialRatio);
-DEFINE_PROPERTY_FIELD(ElasticStrainModifier, pushStrainTensorsForward);
 SET_PROPERTY_FIELD_LABEL(ElasticStrainModifier, inputCrystalStructure, "Input crystal structure");
 SET_PROPERTY_FIELD_LABEL(ElasticStrainModifier, calculateDeformationGradients, "Output deformation gradient tensors");
 SET_PROPERTY_FIELD_LABEL(ElasticStrainModifier, calculateStrainTensors, "Output strain tensors");

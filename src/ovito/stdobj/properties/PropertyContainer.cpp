@@ -32,9 +32,6 @@ namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainer);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyContainer, properties);
-DEFINE_PROPERTY_FIELD(PropertyContainer, elementCount);
-DEFINE_PROPERTY_FIELD(PropertyContainer, title);
-DEFINE_SHADOW_PROPERTY_FIELD(PropertyContainer, title);
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, properties, "Properties");
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, elementCount, "Element count");
 SET_PROPERTY_FIELD_LABEL(PropertyContainer, title, "Title");

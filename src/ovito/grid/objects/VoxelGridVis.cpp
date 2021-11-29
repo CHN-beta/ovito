@@ -33,8 +33,6 @@ namespace Ovito::Grid {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridVis);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
-DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
-DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Surface transparency");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, highlightGridLines, "Show grid lines");

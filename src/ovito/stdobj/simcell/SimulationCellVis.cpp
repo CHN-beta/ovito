@@ -34,10 +34,6 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellVis);
-DEFINE_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
-DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
-DEFINE_PROPERTY_FIELD(SimulationCellVis, renderCellEnabled);
-DEFINE_PROPERTY_FIELD(SimulationCellVis, cellColor);
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, cellLineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, renderCellEnabled, "Visible in rendered images");
 SET_PROPERTY_FIELD_LABEL(SimulationCellVis, cellColor, "Line color");

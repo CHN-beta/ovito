@@ -26,7 +26,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AttributeDataObject);
-DEFINE_PROPERTY_FIELD(AttributeDataObject, value);
 SET_PROPERTY_FIELD_LABEL(AttributeDataObject, value, "Value");
 
 /******************************************************************************

@@ -26,7 +26,5 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TransformedDataObject);
-DEFINE_PROPERTY_FIELD(TransformedDataObject, sourceDataObject);
-DEFINE_PROPERTY_FIELD(TransformedDataObject, visElementRevision);
 
 }	// End of namespace

@@ -28,7 +28,6 @@
 namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(TriMeshObject);
-DEFINE_PROPERTY_FIELD(TriMeshObject, mesh);
 
 /******************************************************************************
 * Default constructor.

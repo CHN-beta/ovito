@@ -31,7 +31,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpLocalImporter);
-DEFINE_PROPERTY_FIELD(LAMMPSDumpLocalImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDumpLocalImporter, columnMapping, "File column mapping");
 
 /******************************************************************************

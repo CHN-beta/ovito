@@ -33,7 +33,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(NucleotidesVis);
-DEFINE_PROPERTY_FIELD(NucleotidesVis, cylinderRadius);
 SET_PROPERTY_FIELD_LABEL(NucleotidesVis, cylinderRadius, "Cylinder radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParameterUnit, 0);
 

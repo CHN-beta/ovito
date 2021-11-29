@@ -31,15 +31,6 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellObject);
-DEFINE_PROPERTY_FIELD(SimulationCellObject, cellMatrix);
-DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcX);
-DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcY);
-DEFINE_PROPERTY_FIELD(SimulationCellObject, pbcZ);
-DEFINE_PROPERTY_FIELD(SimulationCellObject, is2D);
-DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcX);
-DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcY);
-DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, pbcZ);
-DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellObject, is2D);
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, cellMatrix, "Cell matrix");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcX, "Periodic boundary conditions (X)");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcY, "Periodic boundary conditions (Y)");

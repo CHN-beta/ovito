@@ -31,11 +31,5 @@ IMPLEMENT_OVITO_CLASS(ConstVectorController);
 IMPLEMENT_OVITO_CLASS(ConstPositionController);
 IMPLEMENT_OVITO_CLASS(ConstRotationController);
 IMPLEMENT_OVITO_CLASS(ConstScalingController);
-DEFINE_PROPERTY_FIELD(ConstFloatController, value);
-DEFINE_PROPERTY_FIELD(ConstIntegerController, value);
-DEFINE_PROPERTY_FIELD(ConstVectorController, value);
-DEFINE_PROPERTY_FIELD(ConstPositionController, value);
-DEFINE_PROPERTY_FIELD(ConstRotationController, value);
-DEFINE_PROPERTY_FIELD(ConstScalingController, value);
 
 }	// End of namespace

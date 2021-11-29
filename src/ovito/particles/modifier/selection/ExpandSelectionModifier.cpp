@@ -35,10 +35,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ExpandSelectionModifier);
-DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, mode);
-DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, cutoffRange);
-DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, numNearestNeighbors);
-DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, numberOfIterations);
 SET_PROPERTY_FIELD_LABEL(ExpandSelectionModifier, mode, "Mode");
 SET_PROPERTY_FIELD_LABEL(ExpandSelectionModifier, cutoffRange, "Cutoff distance");
 SET_PROPERTY_FIELD_LABEL(ExpandSelectionModifier, numNearestNeighbors, "N");

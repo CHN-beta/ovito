@@ -39,8 +39,6 @@ DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, hiddenInViewports);
-DEFINE_PROPERTY_FIELD(SceneNode, nodeName);
-DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
 SET_PROPERTY_FIELD_LABEL(SceneNode, lookatTargetNode, "Target");
 SET_PROPERTY_FIELD_LABEL(SceneNode, children, "Children");

@@ -34,7 +34,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSBinaryDumpImporter);
-DEFINE_PROPERTY_FIELD(LAMMPSBinaryDumpImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(LAMMPSBinaryDumpImporter, columnMapping, "File column mapping");
 
 // Helper functions for converting binary floating-point representations used by

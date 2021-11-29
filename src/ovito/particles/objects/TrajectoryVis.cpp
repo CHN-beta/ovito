@@ -31,12 +31,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryVis);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, lineWidth);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, lineColor);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, shadingMode);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, showUpToCurrentTime);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, wrappedLines);
-DEFINE_PROPERTY_FIELD(TrajectoryVis, coloringMode);
 DEFINE_REFERENCE_FIELD(TrajectoryVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineColor, "Line color");

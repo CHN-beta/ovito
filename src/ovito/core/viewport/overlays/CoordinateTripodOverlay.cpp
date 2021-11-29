@@ -29,32 +29,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CoordinateTripodOverlay);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, alignment);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodSize);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, lineWidth);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, font);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, fontSize);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, offsetX);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, offsetY);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis1Enabled);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis2Enabled);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis3Enabled);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Enabled);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis1Label);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis2Label);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis3Label);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Label);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis1Dir);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis2Dir);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis3Dir);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Dir);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis1Color);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis2Color);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis3Color);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Color);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodStyle);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineColor);
-DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineEnabled);
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Size factor");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, lineWidth, "Line width");

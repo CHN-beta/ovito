@@ -66,11 +66,8 @@ public:
 	using ovito_class = OvitoObject;
 	using OOMetaClass = OvitoClass;
 
-	/// The type descriptor that every OvitoObject-derived class has.
-	static const OOMetaClass& OOClass() {
-		static const OOMetaClass descriptor(QStringLiteral("OvitoObject"), nullptr, "Core", &OvitoObject::staticMetaObject);
-		return descriptor;
-	}
+	/// Returns the type descriptor that every OvitoObject-derived class has.
+	static const OOMetaClass& OOClass();
 
 	/// \brief The default constructor. Sets the reference count to zero.
 	OvitoObject() = default;

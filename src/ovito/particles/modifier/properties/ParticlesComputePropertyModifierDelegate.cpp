@@ -32,9 +32,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegate);
-DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, neighborExpressions);
-DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, cutoff);
-DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, useMultilineFields);
 SET_PROPERTY_FIELD_LABEL(ParticlesComputePropertyModifierDelegate, neighborExpressions, "Neighbor expressions");
 SET_PROPERTY_FIELD_LABEL(ParticlesComputePropertyModifierDelegate, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(ParticlesComputePropertyModifierDelegate, useMultilineFields, "Expand field(s)");

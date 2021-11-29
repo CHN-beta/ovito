@@ -29,7 +29,6 @@
 namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMesh);
-DEFINE_PROPERTY_FIELD(SurfaceMesh, spaceFillingRegion);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, topology);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, vertices);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, faces);

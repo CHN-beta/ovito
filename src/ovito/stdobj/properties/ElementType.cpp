@@ -31,14 +31,6 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(ElementType);
-DEFINE_PROPERTY_FIELD(ElementType, numericId);
-DEFINE_PROPERTY_FIELD(ElementType, name);
-DEFINE_PROPERTY_FIELD(ElementType, color);
-DEFINE_PROPERTY_FIELD(ElementType, enabled);
-DEFINE_PROPERTY_FIELD(ElementType, ownerProperty);
-DEFINE_SHADOW_PROPERTY_FIELD(ElementType, name);
-DEFINE_SHADOW_PROPERTY_FIELD(ElementType, color);
-DEFINE_SHADOW_PROPERTY_FIELD(ElementType, enabled);
 SET_PROPERTY_FIELD_LABEL(ElementType, numericId, "Id");
 SET_PROPERTY_FIELD_LABEL(ElementType, name, "Name");
 SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");

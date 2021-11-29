@@ -28,21 +28,7 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
-DEFINE_PROPERTY_FIELD(ParticleType, radius);
-DEFINE_PROPERTY_FIELD(ParticleType, vdwRadius);
-DEFINE_PROPERTY_FIELD(ParticleType, shape);
 DEFINE_REFERENCE_FIELD(ParticleType, shapeMesh);
-DEFINE_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
-DEFINE_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
-DEFINE_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
-DEFINE_PROPERTY_FIELD(ParticleType, mass);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, radius);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, vdwRadius);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shape);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
-DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, mass);
 SET_PROPERTY_FIELD_LABEL(ParticleType, radius, "Display radius");
 SET_PROPERTY_FIELD_LABEL(ParticleType, vdwRadius, "Van der Waals radius");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shape, "Shape");

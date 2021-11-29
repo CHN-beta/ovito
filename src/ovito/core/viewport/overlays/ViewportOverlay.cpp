@@ -26,7 +26,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ViewportOverlay);
-DEFINE_PROPERTY_FIELD(ViewportOverlay, renderBehindScene);
 SET_PROPERTY_FIELD_LABEL(ViewportOverlay, renderBehindScene, "Draw behind scene");
 
 /******************************************************************************

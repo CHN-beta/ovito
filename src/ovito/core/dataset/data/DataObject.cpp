@@ -27,8 +27,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataObject);
-DEFINE_PROPERTY_FIELD(DataObject, identifier);
-DEFINE_PROPERTY_FIELD(DataObject, dataSource);
 DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
 DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");

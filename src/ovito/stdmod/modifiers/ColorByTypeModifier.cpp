@@ -33,9 +33,6 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifier);
-DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
-DEFINE_PROPERTY_FIELD(ColorByTypeModifier, colorOnlySelected);
-DEFINE_PROPERTY_FIELD(ColorByTypeModifier, clearSelection);
 SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, colorOnlySelected, "Color only selected elements");
 SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection");

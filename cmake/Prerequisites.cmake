@@ -242,6 +242,9 @@ FUNCTION(deploy_qt_framework_files)
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" "plugins/iconengines/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" "plugins/styles/")
+		IF(OVITO_BUILD_PLUGIN_QT3D)
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/renderers/openglrenderer${_qt_dll_suffix}.dll" "plugins/renderers/")
+		ENDIF()
 
 		# Install QML modules.
 	#	IF(OVITO_QML_GUI)

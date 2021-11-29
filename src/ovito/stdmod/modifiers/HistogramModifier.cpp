@@ -34,18 +34,6 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(HistogramModifier);
-DEFINE_PROPERTY_FIELD(HistogramModifier, numberOfBins);
-DEFINE_PROPERTY_FIELD(HistogramModifier, selectInRange);
-DEFINE_PROPERTY_FIELD(HistogramModifier, selectionRangeStart);
-DEFINE_PROPERTY_FIELD(HistogramModifier, selectionRangeEnd);
-DEFINE_PROPERTY_FIELD(HistogramModifier, fixXAxisRange);
-DEFINE_PROPERTY_FIELD(HistogramModifier, xAxisRangeStart);
-DEFINE_PROPERTY_FIELD(HistogramModifier, xAxisRangeEnd);
-DEFINE_PROPERTY_FIELD(HistogramModifier, fixYAxisRange);
-DEFINE_PROPERTY_FIELD(HistogramModifier, yAxisRangeStart);
-DEFINE_PROPERTY_FIELD(HistogramModifier, yAxisRangeEnd);
-DEFINE_PROPERTY_FIELD(HistogramModifier, sourceProperty);
-DEFINE_PROPERTY_FIELD(HistogramModifier, onlySelectedElements);
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectInRange, "Select value range");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectionRangeStart, "Selection range start");

@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt module.
-FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS 3DCore 3DRender REQUIRED)
+FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS 3DCore 3DRender 3DLogic 3DInput REQUIRED)
 
 # Define plugin module.
 OVITO_STANDARD_PLUGIN(Qt3DRenderer
@@ -30,6 +30,8 @@ OVITO_STANDARD_PLUGIN(Qt3DRenderer
 	LIB_DEPENDENCIES 
 		${OVITO_QT_MAJOR_VERSION}::3DCore
 		${OVITO_QT_MAJOR_VERSION}::3DRender
+		${OVITO_QT_MAJOR_VERSION}::3DLogic # Dependency of 3DCore/3DRender
+		${OVITO_QT_MAJOR_VERSION}::3DInput # Dependency of 3DCore/3DRender
 )
 
 # Build corresponding GUI plugin.

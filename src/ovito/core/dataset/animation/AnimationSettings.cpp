@@ -29,13 +29,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AnimationSettings);
-DEFINE_PROPERTY_FIELD(AnimationSettings, time);
-DEFINE_PROPERTY_FIELD(AnimationSettings, animationInterval);
-DEFINE_PROPERTY_FIELD(AnimationSettings, ticksPerFrame);
-DEFINE_PROPERTY_FIELD(AnimationSettings, playbackSpeed);
-DEFINE_PROPERTY_FIELD(AnimationSettings, loopPlayback);
-DEFINE_PROPERTY_FIELD(AnimationSettings, playbackEveryNthFrame);
-DEFINE_PROPERTY_FIELD(AnimationSettings, autoAdjustInterval);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, IntegerParameterUnit, 1);
 
 /******************************************************************************

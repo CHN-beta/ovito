@@ -36,16 +36,6 @@
 namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifier);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, maxTrialCircuitSize);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, circuitStretchability);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, outputInterfaceMesh);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, onlyPerfectDislocations);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, defectMeshSmoothingLevel);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingEnabled);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingLevel);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineCoarseningEnabled);
-DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, linePointInterval);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, defectMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, interfaceMeshVis);

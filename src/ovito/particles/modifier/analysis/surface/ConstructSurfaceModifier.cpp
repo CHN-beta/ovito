@@ -43,17 +43,6 @@ using namespace Ovito::Delaunay;
 
 IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifier);
 DEFINE_REFERENCE_FIELD(ConstructSurfaceModifier, surfaceMeshVis);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, smoothingLevel);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, probeSphereRadius);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, onlySelectedParticles);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, selectSurfaceParticles);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, transferParticleProperties);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, identifyRegions);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, method);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, gridResolution);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, radiusFactor);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, isoValue);
-DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, computeSurfaceDistance);
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, probeSphereRadius, "Probe sphere radius");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, onlySelectedParticles, "Use only selected input particles");

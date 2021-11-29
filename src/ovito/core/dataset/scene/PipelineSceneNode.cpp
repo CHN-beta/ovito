@@ -41,7 +41,6 @@ DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacementVisElements);
 DEFINE_REFERENCE_FIELD(PipelineSceneNode, pipelineSource);
-DEFINE_PROPERTY_FIELD(PipelineSceneNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, dataProvider, "Pipeline object");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineSource, "Pipeline source");

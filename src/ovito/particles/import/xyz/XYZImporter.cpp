@@ -36,8 +36,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(XYZImporter);
-DEFINE_PROPERTY_FIELD(XYZImporter, autoRescaleCoordinates);
-DEFINE_PROPERTY_FIELD(XYZImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(XYZImporter, autoRescaleCoordinates, "Detect reduced coordinates");
 SET_PROPERTY_FIELD_LABEL(XYZImporter, columnMapping, "File column mapping");
 

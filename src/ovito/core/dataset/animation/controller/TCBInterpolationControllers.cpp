@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,11 +27,6 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<FloatAnimationKey>);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeTo);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeFrom);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, tension);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, continuity);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, bias);
 
 IMPLEMENT_OVITO_CLASS(FloatTCBAnimationKey);
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, easeTo, "Ease to");
@@ -46,11 +41,6 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, continuity, FloatParame
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, bias, FloatParameterUnit, -1, 1);
 
 IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<PositionAnimationKey>);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeTo);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeFrom);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, tension);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, continuity);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, bias);
 
 IMPLEMENT_OVITO_CLASS(PositionTCBAnimationKey);
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, easeTo, "Ease to");

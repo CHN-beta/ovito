@@ -28,8 +28,6 @@ namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PeriodicDomainDataObject);
 DEFINE_REFERENCE_FIELD(PeriodicDomainDataObject, domain);
-DEFINE_PROPERTY_FIELD(PeriodicDomainDataObject, cuttingPlanes);
-DEFINE_PROPERTY_FIELD(PeriodicDomainDataObject, title);
 SET_PROPERTY_FIELD_LABEL(PeriodicDomainDataObject, domain, "Domain");
 SET_PROPERTY_FIELD_LABEL(PeriodicDomainDataObject, cuttingPlanes, "Cutting planes");
 SET_PROPERTY_FIELD_LABEL(PeriodicDomainDataObject, title, "Title");
