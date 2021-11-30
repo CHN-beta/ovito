@@ -50,5 +50,5 @@ void main()
     color_fs = color;
 
     // Pass UV quad coordinates to fragment shader.
-    uv_fs = quad[corner];
+    uv_fs = unit_quad_triangle_strip[corner];
 }
