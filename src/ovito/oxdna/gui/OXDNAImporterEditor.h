@@ -34,7 +34,6 @@ namespace Ovito::Particles {
  */
 class OXDNAImporterEditor : public FileImporterEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(OXDNAImporterEditor)
 
 public:

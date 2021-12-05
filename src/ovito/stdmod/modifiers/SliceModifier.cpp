@@ -38,8 +38,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(SliceModifierDelegate);
-IMPLEMENT_OVITO_CLASS(SliceModifier);
 DEFINE_REFERENCE_FIELD(SliceModifier, normalController);
 DEFINE_REFERENCE_FIELD(SliceModifier, distanceController);
 DEFINE_REFERENCE_FIELD(SliceModifier, widthController);

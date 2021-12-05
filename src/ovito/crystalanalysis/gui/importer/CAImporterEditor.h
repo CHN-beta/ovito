@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class CAImporterEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CAImporterEditor)
 
 public:

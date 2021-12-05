@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT AnglesObject : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(AnglesObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Angles");
 

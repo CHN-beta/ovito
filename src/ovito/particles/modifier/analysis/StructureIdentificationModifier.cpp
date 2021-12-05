@@ -31,7 +31,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(StructureIdentificationModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(StructureIdentificationModifier, structureTypes);
 SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, structureTypes, "Structure types");
 SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, onlySelectedParticles, "Use only selected particles");

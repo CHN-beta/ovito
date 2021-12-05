@@ -33,7 +33,6 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT CustomParameterUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(CustomParameterUI)
 
 public:

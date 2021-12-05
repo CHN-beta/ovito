@@ -33,7 +33,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifier);
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, computePartialRDF, "Compute partial RDFs");

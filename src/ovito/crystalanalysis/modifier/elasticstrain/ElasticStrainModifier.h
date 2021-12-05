@@ -34,7 +34,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdentificationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(ElasticStrainModifier)
 
 	Q_CLASSINFO("DisplayName", "Elastic strain calculation");

@@ -34,7 +34,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDataImporter);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataImporter, atomStyle, "LAMMPS atom style");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataImporter, atomSubStyles, "Hybrid sub-styles");
 

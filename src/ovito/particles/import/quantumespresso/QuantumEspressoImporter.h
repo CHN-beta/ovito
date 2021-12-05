@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT QuantumEspressoImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(QuantumEspressoImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

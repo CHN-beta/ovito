@@ -27,7 +27,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
 /******************************************************************************
 * Sets the property container from which the user can choose a property.

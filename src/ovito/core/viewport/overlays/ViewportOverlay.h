@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ViewportOverlay)
 
 protected:

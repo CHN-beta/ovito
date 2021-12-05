@@ -36,7 +36,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT SimulationCellObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(SimulationCellObject)
 
 public:

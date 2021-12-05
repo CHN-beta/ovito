@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AsynchronousModifierApplication : public ModifierApplication
 {
-	Q_OBJECT
 	OVITO_CLASS(AsynchronousModifierApplication)
 
 public:

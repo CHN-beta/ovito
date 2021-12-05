@@ -26,7 +26,6 @@
 
 namespace Ovito::Grid {
 
-IMPLEMENT_OVITO_CLASS(VoxelGrid);
 DEFINE_REFERENCE_FIELD(VoxelGrid, domain);
 SET_PROPERTY_FIELD_LABEL(VoxelGrid, shape, "Shape");
 SET_PROPERTY_FIELD_LABEL(VoxelGrid, domain, "Domain");

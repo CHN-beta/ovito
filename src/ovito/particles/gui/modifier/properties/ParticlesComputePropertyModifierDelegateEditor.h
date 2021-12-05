@@ -34,7 +34,6 @@ namespace Ovito::Particles {
  */
 class ParticlesComputePropertyModifierDelegateEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor)
 
 public:

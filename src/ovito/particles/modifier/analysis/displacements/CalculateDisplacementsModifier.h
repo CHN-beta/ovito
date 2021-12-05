@@ -37,7 +37,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceConfigurationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(CalculateDisplacementsModifier)
 
 	Q_CLASSINFO("DisplayName", "Displacement vectors");

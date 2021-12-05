@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ApplicationService : public OvitoObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ApplicationService)
 
 public:

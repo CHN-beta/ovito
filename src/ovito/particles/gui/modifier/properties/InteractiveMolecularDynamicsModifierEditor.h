@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class InteractiveMolecularDynamicsModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor)
 
 public:

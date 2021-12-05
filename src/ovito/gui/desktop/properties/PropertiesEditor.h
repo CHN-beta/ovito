@@ -39,7 +39,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT PropertiesEditor : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertiesEditor)
 
 public:

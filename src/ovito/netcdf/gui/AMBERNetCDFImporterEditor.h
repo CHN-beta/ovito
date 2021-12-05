@@ -34,7 +34,6 @@ namespace Ovito::Particles {
  */
 class AMBERNetCDFImporterEditor : public FileImporterEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(AMBERNetCDFImporterEditor)
 
 public:

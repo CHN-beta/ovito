@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,9 +33,8 @@ namespace Ovito {
 /**
  * An item of the OverlayListModel representing a ViewportOverlay attached to a Viewport.
  */
-class OverlayListItem : public RefMaker
+class OVITO_GUIBASE_EXPORT OverlayListItem : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(OverlayListItem)
 
 public:

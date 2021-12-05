@@ -38,7 +38,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT PropertyContainer : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS_META(PropertyContainer, PropertyContainerClass)
 
 public:

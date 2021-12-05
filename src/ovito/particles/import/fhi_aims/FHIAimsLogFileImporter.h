@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT FHIAimsLogFileImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(FHIAimsLogFileImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

@@ -25,7 +25,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DefaultPropertiesEditor);
 SET_OVITO_OBJECT_EDITOR(RefTarget, DefaultPropertiesEditor);
 
 /******************************************************************************

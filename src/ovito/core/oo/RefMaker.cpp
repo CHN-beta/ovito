@@ -34,7 +34,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RefMaker);
 
 /******************************************************************************
 * Constructor.

@@ -34,7 +34,6 @@ namespace Ovito::Mesh {
 class ParaViewVTMImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(ParaViewVTMImporterEditor)
-	Q_OBJECT
 
 public:
 

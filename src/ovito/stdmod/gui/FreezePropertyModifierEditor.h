@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class FreezePropertyModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(FreezePropertyModifierEditor)
 
 public:

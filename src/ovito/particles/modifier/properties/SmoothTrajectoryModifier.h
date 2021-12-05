@@ -47,7 +47,6 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SmoothTrajectoryModifier, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Smooth trajectory");
@@ -101,7 +100,6 @@ private:
  */
 class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public ModifierApplication
 {
-	Q_OBJECT
 	OVITO_CLASS(InterpolateTrajectoryModifierApplication)
 
 public:

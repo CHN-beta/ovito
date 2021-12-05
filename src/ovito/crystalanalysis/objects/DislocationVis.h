@@ -38,7 +38,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationPickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationPickInfo)
 
 public:
@@ -92,7 +91,6 @@ private:
  */
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationVis : public TransformingDataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationVis)
 
 	Q_CLASSINFO("DisplayName", "Dislocations");

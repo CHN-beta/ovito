@@ -29,7 +29,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(SimplifyMicrostructureModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SimplifyMicrostructureModifier, SimplifyMicrostructureModifierEditor);
 
 /******************************************************************************

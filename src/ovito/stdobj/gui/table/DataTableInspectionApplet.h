@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT DataTableInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(DataTableInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Data Tables");
 

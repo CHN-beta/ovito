@@ -38,7 +38,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 
 /******************************************************************************
 * Initializes the dataset manager.

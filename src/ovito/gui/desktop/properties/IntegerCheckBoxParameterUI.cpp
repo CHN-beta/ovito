@@ -29,7 +29,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IntegerCheckBoxParameterUI);
 
 /******************************************************************************
 * The constructor.

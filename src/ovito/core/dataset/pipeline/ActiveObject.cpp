@@ -27,7 +27,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ActiveObject);
 SET_PROPERTY_FIELD_LABEL(ActiveObject, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ActiveObject, title, "Name");
 SET_PROPERTY_FIELD_LABEL(ActiveObject, status, "Status");

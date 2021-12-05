@@ -27,7 +27,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 
 /******************************************************************************
 * Creates a storage object for standard vertex properties.

@@ -30,7 +30,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(XYZImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZImporter, XYZImporterEditor);
 
 /******************************************************************************

@@ -30,7 +30,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GeneralSettingsPage);
 
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.

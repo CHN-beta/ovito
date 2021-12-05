@@ -35,7 +35,6 @@ class ApplicationSettingsDialog;		// defined below.
  */
 class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public OvitoObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ApplicationSettingsDialogPage)
 
 protected:

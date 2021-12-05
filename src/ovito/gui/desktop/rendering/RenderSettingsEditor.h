@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class RenderSettingsEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(RenderSettingsEditor)
 
 public:

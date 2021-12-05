@@ -39,7 +39,6 @@ namespace Ovito::VoroTop {
  */
 class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(VoroTopModifier)
 
 	Q_CLASSINFO("DisplayName", "VoroTop analysis");

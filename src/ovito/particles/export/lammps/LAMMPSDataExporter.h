@@ -48,7 +48,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("LAMMPS Data File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(LAMMPSDataExporter, OOMetaClass)
 
 public:

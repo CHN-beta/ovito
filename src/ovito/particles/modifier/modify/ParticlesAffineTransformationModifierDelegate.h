@@ -50,7 +50,6 @@ class ParticlesAffineTransformationModifierDelegate : public AffineTransformatio
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesAffineTransformationModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Particles");
@@ -84,7 +83,6 @@ class VectorParticlePropertiesAffineTransformationModifierDelegate : public Affi
 		virtual QString pythonDataName() const override { return QStringLiteral("vector_properties"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Vector particle properties");

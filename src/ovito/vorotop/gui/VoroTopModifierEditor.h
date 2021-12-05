@@ -34,7 +34,6 @@ namespace Ovito::VoroTop {
  */
 class VoroTopModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(VoroTopModifierEditor)
 
 public:

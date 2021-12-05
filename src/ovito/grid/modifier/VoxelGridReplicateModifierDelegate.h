@@ -50,7 +50,6 @@ class VoxelGridReplicateModifierDelegate : public ReplicateModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VoxelGridReplicateModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Voxel grids");

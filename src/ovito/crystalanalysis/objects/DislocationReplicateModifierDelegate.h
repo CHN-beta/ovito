@@ -50,7 +50,6 @@ class DislocationReplicateModifierDelegate : public ReplicateModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("dislocations"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DislocationReplicateModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Dislocations");

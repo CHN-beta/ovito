@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class ClusterAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ClusterAnalysisModifierEditor)
 
 public:

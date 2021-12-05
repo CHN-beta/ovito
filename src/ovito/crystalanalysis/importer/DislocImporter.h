@@ -52,7 +52,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(DislocImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

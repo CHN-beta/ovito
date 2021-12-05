@@ -33,8 +33,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(VectorVis);
-IMPLEMENT_OVITO_CLASS(VectorPickInfo);
 DEFINE_REFERENCE_FIELD(VectorVis, transparencyController);
 DEFINE_REFERENCE_FIELD(VectorVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowColor, "Arrow color");

@@ -26,7 +26,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(TrajectoryObject);
 
 /******************************************************************************
 * Registers all standard properties with the property traits class.

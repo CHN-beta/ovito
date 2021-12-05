@@ -31,7 +31,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);

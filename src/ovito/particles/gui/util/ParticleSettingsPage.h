@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class ParticleSettingsPage : public ApplicationSettingsDialogPage
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticleSettingsPage)
 
 public:

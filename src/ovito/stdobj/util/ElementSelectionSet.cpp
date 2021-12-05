@@ -30,7 +30,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(ElementSelectionSet);
 
 /* Undo record that can restore an old selection state. */
 class ReplaceSelectionOperation : public UndoableOperation

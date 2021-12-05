@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class DeleteSelectedModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(DeleteSelectedModifierEditor)
 
 public:

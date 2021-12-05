@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class OVITO_OPENGLRENDERER_EXPORT OffscreenInteractiveOpenGLSceneRenderer : public OpenGLSceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer)
 
 public:

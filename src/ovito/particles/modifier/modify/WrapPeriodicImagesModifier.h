@@ -46,7 +46,6 @@ class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Wrap at periodic boundaries");

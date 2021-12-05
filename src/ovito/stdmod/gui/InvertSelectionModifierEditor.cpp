@@ -26,7 +26,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(InvertSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InvertSelectionModifier, InvertSelectionModifierEditor);
 
 /******************************************************************************

@@ -46,6 +46,10 @@ ENDIF()
 # The executable depends on the core module, of course.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
 
+# The OVITO_PLUGIN_NAME macro definition is neeed even though we are not compiling a plugin, 
+# because it is being used inside the OVITO_CLASS macro, which appears in many headers.
+TARGET_COMPILE_DEFINITIONS(Ovito PRIVATE "OVITO_PLUGIN_NAME=\"\"")
+
 # The executable depends on the gui module.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
 IF(NOT OVITO_QML_GUI)

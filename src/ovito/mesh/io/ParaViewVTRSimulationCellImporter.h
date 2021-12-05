@@ -55,7 +55,6 @@ class OVITO_MESH_EXPORT ParaViewVTRSimulationCellImporter : public FileSourceImp
 	};
 
 	OVITO_CLASS_META(ParaViewVTRSimulationCellImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

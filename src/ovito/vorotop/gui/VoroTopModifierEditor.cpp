@@ -31,7 +31,6 @@
 
 namespace Ovito::VoroTop {
 
-IMPLEMENT_OVITO_CLASS(VoroTopModifierEditor);
 SET_OVITO_OBJECT_EDITOR(VoroTopModifier, VoroTopModifierEditor);
 
 /******************************************************************************

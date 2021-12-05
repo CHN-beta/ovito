@@ -36,10 +36,8 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationAnalysisModifier, DislocationAnalysisModifierEditor);
 
-IMPLEMENT_OVITO_CLASS(DislocationTypeListParameterUI);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.

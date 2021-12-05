@@ -47,7 +47,6 @@ class OVITO_PARTICLES_EXPORT IMDExporter : public FileColumnParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("IMD File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(IMDExporter, OOMetaClass)
 
 public:

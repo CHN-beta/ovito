@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class ElementTypeEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ElementTypeEditor)
 
 public:

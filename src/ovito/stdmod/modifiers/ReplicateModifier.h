@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ReplicateModifierDelegate : public ModifierDelegate
 {
-	Q_OBJECT
 	OVITO_CLASS(ReplicateModifierDelegate)
 
 protected:
@@ -69,7 +68,6 @@ public:
 	Q_CLASSINFO("DisplayName", "Replicate");
 	Q_CLASSINFO("Description", "Duplicate the dataset to visualize periodic images of the system.");
 	Q_CLASSINFO("ModifierCategory", "Modification");
-	Q_OBJECT
 
 public:
 

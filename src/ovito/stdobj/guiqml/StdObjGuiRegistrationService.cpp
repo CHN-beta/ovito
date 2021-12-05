@@ -28,7 +28,6 @@
 
 namespace Ovito::StdObj { 
 
-IMPLEMENT_OVITO_CLASS(StdObjGuiRegistrationService);
 
 /******************************************************************************
 * Constructor.

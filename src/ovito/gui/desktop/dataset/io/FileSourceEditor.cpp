@@ -41,7 +41,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileSourceEditor);
 SET_OVITO_OBJECT_EDITOR(FileSource, FileSourceEditor);
 
 /******************************************************************************

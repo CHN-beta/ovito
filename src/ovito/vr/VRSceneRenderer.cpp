@@ -27,7 +27,6 @@
 
 namespace VRPlugin {
 
-IMPLEMENT_OVITO_CLASS(VRSceneRenderer);
 
 /******************************************************************************
 * This method is called just before renderFrame() is called.

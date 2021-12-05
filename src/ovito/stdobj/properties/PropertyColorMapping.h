@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyColorMapping)
 	Q_CLASSINFO("DisplayName", "Color mapping");
 

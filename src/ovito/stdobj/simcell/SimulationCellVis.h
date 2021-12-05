@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(SimulationCellVis)
 	Q_CLASSINFO("DisplayName", "Simulation cell");
 

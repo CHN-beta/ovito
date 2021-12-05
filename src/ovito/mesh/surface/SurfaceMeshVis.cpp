@@ -37,7 +37,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshVis);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, capTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceColorMapping);
@@ -55,7 +54,6 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, colorMappingMode, "Color mapping mode")
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, surfaceTransparencyController, PercentParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, capTransparencyController, PercentParameterUnit, 0, 1);
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshPickInfo);
 
 /******************************************************************************
 * Constructor.

@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ObjectStatusDisplay : public ParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(ObjectStatusDisplay)
 
 public:

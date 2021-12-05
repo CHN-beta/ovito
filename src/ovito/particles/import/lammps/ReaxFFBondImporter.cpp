@@ -30,7 +30,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ReaxFFBondImporter);
 
 /******************************************************************************
 * Checks if the given file has a format that can be read by this importer.

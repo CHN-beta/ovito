@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT PDBImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(PDBImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

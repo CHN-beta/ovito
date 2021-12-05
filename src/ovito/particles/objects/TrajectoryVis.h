@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT TrajectoryVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(TrajectoryVis)
 	Q_CLASSINFO("DisplayName", "Trajectory lines");
 

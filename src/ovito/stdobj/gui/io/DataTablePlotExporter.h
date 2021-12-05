@@ -48,7 +48,6 @@ class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("Data Plot File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DataTablePlotExporter, OOMetaClass)
 
 public:

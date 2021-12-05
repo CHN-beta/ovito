@@ -32,7 +32,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ColorLegendOverlay);
 DEFINE_REFERENCE_FIELD(ColorLegendOverlay, modifier);
 DEFINE_REFERENCE_FIELD(ColorLegendOverlay, colorMapping);
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, alignment, "Position");

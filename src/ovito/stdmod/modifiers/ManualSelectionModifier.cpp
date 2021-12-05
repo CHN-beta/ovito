@@ -29,9 +29,7 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModifier);
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModifierApplication);
 SET_MODIFIER_APPLICATION_TYPE(ManualSelectionModifier, ManualSelectionModifierApplication);
 DEFINE_REFERENCE_FIELD(ManualSelectionModifierApplication, selectionSet);
 SET_PROPERTY_FIELD_LABEL(ManualSelectionModifierApplication, selectionSet, "Element selection set");

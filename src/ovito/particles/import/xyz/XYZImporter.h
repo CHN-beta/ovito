@@ -54,7 +54,6 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(XYZImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

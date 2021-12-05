@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class GlobalAttributesInspectionApplet : public DataInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(GlobalAttributesInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Global Attributes");
 

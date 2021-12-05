@@ -51,7 +51,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsDeleteSelectedModifierDelegate : pu
 		virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshRegionsDeleteSelectedModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Mesh Regions");

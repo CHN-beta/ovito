@@ -36,7 +36,6 @@ using ParticlesOutputColumnMapping = TypedOutputColumnMapping<ParticlesObject>;
  */
 class OVITO_PARTICLES_EXPORT FileColumnParticleExporter : public ParticleExporter
 {
-	Q_OBJECT
 	OVITO_CLASS(FileColumnParticleExporter)
 
 protected:

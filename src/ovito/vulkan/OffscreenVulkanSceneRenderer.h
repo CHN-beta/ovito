@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(OffscreenVulkanSceneRenderer)
 
 public:

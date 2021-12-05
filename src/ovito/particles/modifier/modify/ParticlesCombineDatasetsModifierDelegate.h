@@ -50,7 +50,6 @@ class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public C
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesCombineDatasetsModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Particles");

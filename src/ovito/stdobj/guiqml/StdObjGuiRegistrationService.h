@@ -32,7 +32,6 @@ namespace Ovito::StdObj {
  */
 class StdObjGuiRegistrationService : public ApplicationService
 {
-	Q_OBJECT
 	OVITO_CLASS(StdObjGuiRegistrationService)
 
 public:

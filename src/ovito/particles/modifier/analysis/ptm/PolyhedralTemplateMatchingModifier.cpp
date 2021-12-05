@@ -35,7 +35,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(PolyhedralTemplateMatchingModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(PolyhedralTemplateMatchingModifier, orderingTypes);
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, rmsdCutoff, "RMSD cutoff");
 SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, outputRmsd, "Output RMSD values");

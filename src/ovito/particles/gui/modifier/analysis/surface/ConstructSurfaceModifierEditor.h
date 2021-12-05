@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class ConstructSurfaceModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ConstructSurfaceModifierEditor)
 
 public:

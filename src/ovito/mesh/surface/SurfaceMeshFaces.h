@@ -53,7 +53,6 @@ class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshFaces, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Mesh Faces");
 

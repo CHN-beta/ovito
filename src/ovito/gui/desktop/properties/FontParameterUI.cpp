@@ -28,7 +28,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FontParameterUI);
 
 /******************************************************************************
 * The constructor.

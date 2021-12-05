@@ -27,7 +27,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(BurgersVectorFamily);
 SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 
 /******************************************************************************

@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class FileSourceEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(FileSourceEditor)
 
 public:

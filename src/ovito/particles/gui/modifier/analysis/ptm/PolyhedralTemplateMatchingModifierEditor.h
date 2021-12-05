@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class PolyhedralTemplateMatchingModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor)
 
 public:

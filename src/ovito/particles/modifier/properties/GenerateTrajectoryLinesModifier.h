@@ -49,7 +49,6 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
 	Q_CLASSINFO("DisplayName", "Generate trajectory lines");
 	Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
@@ -113,7 +112,6 @@ private:
 class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public ModifierApplication
 {
 	OVITO_CLASS(GenerateTrajectoryLinesModifierApplication)
-	Q_OBJECT
 
 public:
 

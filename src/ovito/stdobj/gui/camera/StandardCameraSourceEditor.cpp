@@ -29,7 +29,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(StandardCameraSourceEditor);
 SET_OVITO_OBJECT_EDITOR(StandardCameraSource, StandardCameraSourceEditor);
 
 /******************************************************************************

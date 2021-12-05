@@ -38,7 +38,6 @@ class PickPlanePointsInputMode;	// Defined below
  */
 class SliceModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SliceModifierEditor)
 
 public:

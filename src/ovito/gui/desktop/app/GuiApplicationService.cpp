@@ -25,6 +25,5 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GuiApplicationService);
 
 }	// End of namespace

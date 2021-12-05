@@ -35,7 +35,6 @@ namespace Ovito::Particles {
 class LAMMPSBinaryDumpImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(LAMMPSBinaryDumpImporterEditor)
-	Q_OBJECT
 
 public:
 

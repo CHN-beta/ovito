@@ -35,7 +35,6 @@ using namespace Ovito;
  */
 class VRSettingsObject : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(VRSettingsObject)
 
 public:

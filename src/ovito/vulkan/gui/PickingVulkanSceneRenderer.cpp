@@ -28,7 +28,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PickingVulkanSceneRenderer);
 
 /******************************************************************************
 * Constructor.

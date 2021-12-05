@@ -36,7 +36,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT AssignColorModifierDelegate : public ModifierDelegate
 {
-	Q_OBJECT
 	OVITO_CLASS(AssignColorModifierDelegate)
 
 public:
@@ -87,7 +86,6 @@ public:
 	Q_CLASSINFO("DisplayName", "Assign color");
 	Q_CLASSINFO("Description", "Assign a color to the currently selected elements.");
 	Q_CLASSINFO("ModifierCategory", "Coloring");
-	Q_OBJECT
 
 public:
 

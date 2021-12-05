@@ -38,7 +38,6 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainDataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(SurfaceMesh)
 	Q_CLASSINFO("DisplayName", "Surface mesh");
 

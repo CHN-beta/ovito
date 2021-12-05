@@ -35,7 +35,6 @@ namespace Ovito::Particles {
  */
 class ImproperInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(ImproperInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Impropers");
 

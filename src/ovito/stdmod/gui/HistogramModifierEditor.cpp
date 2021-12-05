@@ -38,7 +38,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(HistogramModifierEditor);
 SET_OVITO_OBJECT_EDITOR(HistogramModifier, HistogramModifierEditor);
 
 /******************************************************************************

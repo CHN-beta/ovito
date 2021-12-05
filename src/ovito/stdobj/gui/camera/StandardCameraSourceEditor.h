@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class StandardCameraSourceEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(StandardCameraSourceEditor)
 
 public:

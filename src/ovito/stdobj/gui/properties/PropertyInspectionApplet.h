@@ -37,7 +37,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyInspectionApplet : public DataInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyInspectionApplet)
 
 public:

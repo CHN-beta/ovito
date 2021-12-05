@@ -49,7 +49,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT VTKDislocationsExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("VTK Dislocation Lines File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VTKDislocationsExporter, OOMetaClass)
 
 public:

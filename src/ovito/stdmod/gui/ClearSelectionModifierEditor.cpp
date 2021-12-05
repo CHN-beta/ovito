@@ -26,7 +26,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ClearSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ClearSelectionModifier, ClearSelectionModifierEditor);
 
 /******************************************************************************

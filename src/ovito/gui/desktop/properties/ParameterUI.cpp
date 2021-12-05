@@ -31,8 +31,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParameterUI);
-IMPLEMENT_OVITO_CLASS(PropertyParameterUI);
 DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 

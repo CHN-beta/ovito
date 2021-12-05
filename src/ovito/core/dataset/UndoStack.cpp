@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/core/oo/RefMaker.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "UndoStack.h"
+#include "UndoStackOperations.h"
 
 namespace Ovito {
 

@@ -61,7 +61,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(AnimationSettings)
 
 #ifdef OVITO_QML_GUI

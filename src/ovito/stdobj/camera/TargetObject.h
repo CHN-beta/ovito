@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(TargetObject)
 	Q_CLASSINFO("DisplayName", "Target");
 
@@ -54,7 +53,6 @@ public:
  */
 class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(TargetVis)
 	Q_CLASSINFO("DisplayName", "Target icon");
 

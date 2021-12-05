@@ -53,7 +53,6 @@ class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshRegions, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Mesh Regions");
 

@@ -37,9 +37,7 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ColorCodingModifierDelegate);
 
-IMPLEMENT_OVITO_CLASS(ColorCodingModifier);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, startValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, endValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, colorGradient);

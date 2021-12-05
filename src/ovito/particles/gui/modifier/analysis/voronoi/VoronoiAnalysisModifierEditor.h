@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class VoronoiAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(VoronoiAnalysisModifierEditor)
 
 public:

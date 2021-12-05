@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT RootSceneNode : public SceneNode
 {
-	Q_OBJECT
 	OVITO_CLASS(RootSceneNode)
 
 public:

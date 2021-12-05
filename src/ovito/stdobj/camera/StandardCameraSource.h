@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 {
-	Q_OBJECT
 	OVITO_CLASS(StandardCameraSource)
 	Q_CLASSINFO("DisplayName", "Camera");
 

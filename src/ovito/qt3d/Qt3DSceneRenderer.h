@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_QT3DRENDERER_EXPORT Qt3DSceneRenderer : public SceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(Qt3DSceneRenderer)
 
 public:

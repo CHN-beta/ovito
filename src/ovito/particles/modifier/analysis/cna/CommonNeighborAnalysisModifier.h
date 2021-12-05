@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT CommonNeighborAnalysisModifier : public StructureIdentificationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(CommonNeighborAnalysisModifier)
 
 	Q_CLASSINFO("DisplayName", "Common neighbor analysis");

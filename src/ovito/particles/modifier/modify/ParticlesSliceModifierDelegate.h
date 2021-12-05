@@ -51,7 +51,6 @@ class ParticlesSliceModifierDelegate : public SliceModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesSliceModifierDelegate, ParticlesSliceModifierDelegateClass)
 
 	Q_CLASSINFO("DisplayName", "Particles");

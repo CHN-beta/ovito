@@ -24,17 +24,17 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
-#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/stdobj/camera/TargetObject.h>
 #include "StandardCameraSource.h"
 #include "StandardCameraObject.h"
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(StandardCameraSource);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, fovController);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, zoomController);
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, isPerspective, "Perspective projection");

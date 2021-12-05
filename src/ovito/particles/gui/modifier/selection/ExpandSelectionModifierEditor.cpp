@@ -30,7 +30,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ExpandSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ExpandSelectionModifier, ExpandSelectionModifierEditor);
 
 /******************************************************************************

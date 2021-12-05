@@ -48,7 +48,6 @@ public:
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(PropertyObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Property");
 

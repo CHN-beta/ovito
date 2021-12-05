@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ColorCodingGradient : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(ColorCodingGradient)
 
 protected:
@@ -59,7 +58,6 @@ class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingHSVGradient)
 	Q_CLASSINFO("DisplayName", "Rainbow");
-	Q_OBJECT
 
 public:
 
@@ -82,7 +80,6 @@ class OVITO_CORE_EXPORT ColorCodingGrayscaleGradient : public ColorCodingGradien
 {
 	OVITO_CLASS(ColorCodingGrayscaleGradient)
 	Q_CLASSINFO("DisplayName", "Grayscale");
-	Q_OBJECT
 
 public:
 
@@ -105,7 +102,6 @@ class OVITO_CORE_EXPORT ColorCodingHotGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingHotGradient)
 	Q_CLASSINFO("DisplayName", "Hot");
-	Q_OBJECT
 
 public:
 
@@ -129,7 +125,6 @@ class OVITO_CORE_EXPORT ColorCodingJetGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingJetGradient)
 	Q_CLASSINFO("DisplayName", "Jet");
-	Q_OBJECT
 
 public:
 
@@ -156,7 +151,6 @@ class OVITO_CORE_EXPORT ColorCodingBlueWhiteRedGradient : public ColorCodingGrad
 {
 	OVITO_CLASS(ColorCodingBlueWhiteRedGradient)
 	Q_CLASSINFO("DisplayName", "Blue-White-Red");
-	Q_OBJECT
 
 public:
 
@@ -182,7 +176,6 @@ class OVITO_CORE_EXPORT ColorCodingViridisGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingViridisGradient)
 	Q_CLASSINFO("DisplayName", "Viridis");
-	Q_OBJECT
 
 public:
 
@@ -207,7 +200,6 @@ class OVITO_CORE_EXPORT ColorCodingMagmaGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingMagmaGradient)
 	Q_CLASSINFO("DisplayName", "Magma");
-	Q_OBJECT
 
 public:
 
@@ -232,7 +224,6 @@ class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingTableGradient)
 	Q_CLASSINFO("DisplayName", "User table");
-	Q_OBJECT
 
 public:
 
@@ -257,7 +248,6 @@ class OVITO_CORE_EXPORT ColorCodingImageGradient : public ColorCodingGradient
 {
 	OVITO_CLASS(ColorCodingImageGradient)
 	Q_CLASSINFO("DisplayName", "User image");
-	Q_OBJECT
 
 public:
 

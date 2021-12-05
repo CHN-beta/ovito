@@ -32,7 +32,6 @@ using namespace Ovito;
 
 class VRSceneRenderer : public OpenGLSceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(VRSceneRenderer)
 
 public:

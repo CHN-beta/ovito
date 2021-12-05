@@ -75,7 +75,6 @@ public:
  */
 class OVITO_CORE_EXPORT FileImporter : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS_META(FileImporter, FileImporterClass)
 
 protected:

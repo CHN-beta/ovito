@@ -35,7 +35,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifier);
 SET_PROPERTY_FIELD_LABEL(AmbientOcclusionModifier, intensity, "Shading intensity");
 SET_PROPERTY_FIELD_LABEL(AmbientOcclusionModifier, samplingCount, "Number of exposure samples");
 SET_PROPERTY_FIELD_LABEL(AmbientOcclusionModifier, bufferResolution, "Render buffer resolution");

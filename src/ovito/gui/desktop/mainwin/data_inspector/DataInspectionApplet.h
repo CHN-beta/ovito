@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT DataInspectionApplet : public OvitoObject
 {
-	Q_OBJECT
 	OVITO_CLASS(DataInspectionApplet)
 
 public:

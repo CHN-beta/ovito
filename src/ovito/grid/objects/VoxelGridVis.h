@@ -38,7 +38,6 @@ namespace Ovito::Grid {
  */
 class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(VoxelGridVis)
 	Q_CLASSINFO("DisplayName", "Voxel grid");
 
@@ -82,9 +81,8 @@ private:
  * \brief This data structure is attached to the geometry rendered by the VoxelGridVis 
  * in the viewports. It facilitates the picking of grid cells with the mouse.
  */
-class VoxelGridPickInfo : public ObjectPickInfo
+class OVITO_GRID_EXPORT VoxelGridPickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(VoxelGridPickInfo)
 
 public:

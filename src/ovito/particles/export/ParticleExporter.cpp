@@ -29,7 +29,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ParticleExporter);
 
 /******************************************************************************
 * Constructs a new instance of the class.

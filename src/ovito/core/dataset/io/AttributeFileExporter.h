@@ -48,7 +48,6 @@ class OVITO_CORE_EXPORT AttributeFileExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("Table of values"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(AttributeFileExporter, OOMetaClass)
 
 public:

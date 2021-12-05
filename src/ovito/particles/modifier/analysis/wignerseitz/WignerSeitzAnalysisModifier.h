@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfigurationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(WignerSeitzAnalysisModifier)
 
 	Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");

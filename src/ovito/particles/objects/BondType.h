@@ -35,7 +35,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT BondType : public ElementType
 {
-	Q_OBJECT
 	OVITO_CLASS(BondType)
 
 public:

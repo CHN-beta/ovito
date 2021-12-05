@@ -35,7 +35,6 @@ using namespace Ovito;
  */
 class StartVRAction : public GuiApplicationService
 {
-	Q_OBJECT
 	OVITO_CLASS(StartVRAction)
 
 public:

@@ -34,7 +34,6 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT IntegerCheckBoxParameterUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(IntegerCheckBoxParameterUI)
 
 public:

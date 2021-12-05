@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AbstractCameraObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(AbstractCameraObject)
 
 protected:

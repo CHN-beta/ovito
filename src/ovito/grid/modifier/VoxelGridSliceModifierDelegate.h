@@ -55,7 +55,6 @@ class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDel
 		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VoxelGridSliceModifierDelegate, VoxelGridSliceModifierDelegateClass)
 	Q_CLASSINFO("DisplayName", "Voxel grids");
 

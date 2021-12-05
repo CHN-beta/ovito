@@ -27,7 +27,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataBuffer);
 
 /******************************************************************************
 * Constructor creating an empty data array.

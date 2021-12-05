@@ -34,7 +34,6 @@ namespace Ovito::Particles {
  */
 class CreateBondsModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CreateBondsModifierEditor)
 
 public:

@@ -45,7 +45,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT Controller : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(Controller)
 
 public:

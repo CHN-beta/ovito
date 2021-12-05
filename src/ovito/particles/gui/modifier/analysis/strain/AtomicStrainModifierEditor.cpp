@@ -34,7 +34,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(AtomicStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AtomicStrainModifier, AtomicStrainModifierEditor);
 
 /******************************************************************************

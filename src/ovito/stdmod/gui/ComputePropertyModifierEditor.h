@@ -34,7 +34,6 @@ namespace Ovito::StdMod {
  */
 class ComputePropertyModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ComputePropertyModifierEditor)
 
 public:

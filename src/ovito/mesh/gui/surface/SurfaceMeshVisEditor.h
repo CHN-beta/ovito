@@ -33,7 +33,6 @@ namespace Ovito::Mesh {
  */
 class SurfaceMeshVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SurfaceMeshVisEditor)
 
 public:

@@ -35,7 +35,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(ManualSelectionModifier)
 
 	Q_CLASSINFO("DisplayName", "Manual selection");
@@ -90,7 +89,6 @@ protected:
  */
 class OVITO_STDMOD_EXPORT ManualSelectionModifierApplication : public ModifierApplication
 {
-	Q_OBJECT
 	OVITO_CLASS(ManualSelectionModifierApplication)
 
 public:

@@ -54,7 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesColorCodingModifierDelegate : publ
 		virtual QString pythonDataName() const override { return QStringLiteral("surface_vertices"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshVerticesColorCodingModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Mesh Vertices");
@@ -93,7 +92,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesColorCodingModifierDelegate : public 
 		virtual QString pythonDataName() const override { return QStringLiteral("surface_faces"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshFacesColorCodingModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Mesh Faces");
@@ -132,7 +130,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsColorCodingModifierDelegate : publi
 		virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshRegionsColorCodingModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Mesh Regions");

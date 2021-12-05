@@ -37,7 +37,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ChillPlusModifier : public StructureIdentificationModifier
 {
-    Q_OBJECT
     OVITO_CLASS(ChillPlusModifier)
 
     Q_CLASSINFO("DisplayName", "Chill+");

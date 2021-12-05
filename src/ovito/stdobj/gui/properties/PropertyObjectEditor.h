@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class PropertyObjectEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyObjectEditor)
 
 public:

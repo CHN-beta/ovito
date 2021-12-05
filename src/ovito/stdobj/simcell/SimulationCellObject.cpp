@@ -30,7 +30,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(SimulationCellObject);
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, cellMatrix, "Cell matrix");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcX, "Periodic boundary conditions (X)");
 SET_PROPERTY_FIELD_LABEL(SimulationCellObject, pbcY, "Periodic boundary conditions (Y)");

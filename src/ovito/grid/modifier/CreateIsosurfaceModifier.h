@@ -49,7 +49,6 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CreateIsosurfaceModifier, CreateIsosurfaceModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Create isosurface");

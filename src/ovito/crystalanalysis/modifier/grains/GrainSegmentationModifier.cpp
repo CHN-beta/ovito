@@ -38,7 +38,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(GrainSegmentationModifier);
 DEFINE_REFERENCE_FIELD(GrainSegmentationModifier, bondsVis);
 SET_PROPERTY_FIELD_LABEL(GrainSegmentationModifier, mergeAlgorithm, "Algorithm");
 SET_PROPERTY_FIELD_LABEL(GrainSegmentationModifier, handleCoherentInterfaces, "Handle coherent interfaces/stacking faults");

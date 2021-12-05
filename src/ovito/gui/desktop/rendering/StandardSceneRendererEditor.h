@@ -34,7 +34,6 @@ namespace Ovito {
 ******************************************************************************/
 class StandardSceneRendererEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(StandardSceneRendererEditor)
 
 public:

@@ -34,7 +34,6 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(RenderableSurfaceMesh)
 	Q_CLASSINFO("DisplayName", "Renderable surface mesh");
 

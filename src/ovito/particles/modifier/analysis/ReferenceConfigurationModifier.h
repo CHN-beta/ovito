@@ -48,7 +48,6 @@ class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifier : public Asynchronou
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ReferenceConfigurationModifier, ReferenceConfigurationModifierClass)
 
 public:
@@ -192,7 +191,6 @@ protected:
  */
 class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public AsynchronousModifierApplication
 {
-	Q_OBJECT
 	OVITO_CLASS(ReferenceConfigurationModifierApplication)
 
 public:

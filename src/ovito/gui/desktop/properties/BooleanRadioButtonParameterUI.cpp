@@ -26,7 +26,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BooleanRadioButtonParameterUI);
 
 /******************************************************************************
 * Constructor for a Qt property.

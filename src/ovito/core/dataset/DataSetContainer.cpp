@@ -36,7 +36,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataSetContainer);
 DEFINE_REFERENCE_FIELD(DataSetContainer, currentSet);
 
 /******************************************************************************

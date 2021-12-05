@@ -32,7 +32,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ClusterAnalysisModifier, ClusterAnalysisModifierEditor);
 
 /******************************************************************************

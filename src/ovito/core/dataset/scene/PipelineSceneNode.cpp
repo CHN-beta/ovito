@@ -29,13 +29,13 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/dataset/UndoStackOperations.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PipelineSceneNode);
 DEFINE_REFERENCE_FIELD(PipelineSceneNode, dataProvider);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);

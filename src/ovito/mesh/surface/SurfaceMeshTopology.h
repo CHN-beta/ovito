@@ -46,7 +46,6 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMeshTopology : public DataObject
 {
-    Q_OBJECT
 	OVITO_CLASS(SurfaceMeshTopology)
 	Q_CLASSINFO("DisplayName", "Surface mesh topology");
 

@@ -29,7 +29,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

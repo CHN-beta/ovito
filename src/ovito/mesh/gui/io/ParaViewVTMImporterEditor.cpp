@@ -27,7 +27,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTMImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParaViewVTMImporter, ParaViewVTMImporterEditor);
 
 /******************************************************************************

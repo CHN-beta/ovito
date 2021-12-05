@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class PickingVulkanSceneRenderer : public OffscreenVulkanSceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(PickingVulkanSceneRenderer)
 
 public:

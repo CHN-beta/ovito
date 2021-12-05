@@ -29,7 +29,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTRSimulationCellImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

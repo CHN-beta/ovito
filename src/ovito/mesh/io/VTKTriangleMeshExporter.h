@@ -50,7 +50,6 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("VTK Triangle Mesh File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VTKTriangleMeshExporter, OOMetaClass)
 
 public:

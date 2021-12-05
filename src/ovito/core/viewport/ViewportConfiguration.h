@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(ViewportConfiguration)
 
 #ifdef OVITO_QML_GUI

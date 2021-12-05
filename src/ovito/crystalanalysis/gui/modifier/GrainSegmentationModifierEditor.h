@@ -37,7 +37,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class GrainSegmentationModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(GrainSegmentationModifierEditor)
 
 public:

@@ -34,7 +34,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT PeriodicDomainDataObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(PeriodicDomainDataObject)
 
 public:

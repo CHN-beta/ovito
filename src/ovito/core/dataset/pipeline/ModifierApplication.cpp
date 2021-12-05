@@ -31,7 +31,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierApplication);
 DEFINE_REFERENCE_FIELD(ModifierApplication, modifier);
 DEFINE_REFERENCE_FIELD(ModifierApplication, input);
 DEFINE_REFERENCE_FIELD(ModifierApplication, modifierGroup);

@@ -38,7 +38,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT RefTargetListenerBase : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(RefTargetListenerBase)
 
 public:
@@ -107,7 +106,6 @@ public:
 class OVITO_CORE_EXPORT VectorRefTargetListenerBase : public RefMaker
 {
 	OVITO_CLASS(VectorRefTargetListenerBase)
-	Q_OBJECT
 
 public:
 

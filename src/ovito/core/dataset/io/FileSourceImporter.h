@@ -38,7 +38,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT FileSourceImporter : public FileImporter
 {
-	Q_OBJECT
 	OVITO_CLASS(FileSourceImporter)
 
 public:

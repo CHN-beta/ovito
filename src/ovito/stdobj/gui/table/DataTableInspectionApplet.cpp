@@ -32,7 +32,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

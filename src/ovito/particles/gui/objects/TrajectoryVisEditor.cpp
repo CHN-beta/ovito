@@ -33,7 +33,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(TrajectoryVisEditor);
 SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
 
 /******************************************************************************

@@ -111,7 +111,6 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(BondsObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Bonds");
 

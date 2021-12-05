@@ -35,7 +35,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticleImporter)
 
 public:

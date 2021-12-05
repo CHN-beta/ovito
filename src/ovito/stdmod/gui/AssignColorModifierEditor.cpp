@@ -29,7 +29,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(AssignColorModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AssignColorModifier, AssignColorModifierEditor);
 
 /******************************************************************************

@@ -50,7 +50,6 @@ class DislocationAffineTransformationModifierDelegate : public AffineTransformat
 		virtual QString pythonDataName() const override { return QStringLiteral("dislocations"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DislocationAffineTransformationModifierDelegate, OOMetaClass)
 	Q_CLASSINFO("DisplayName", "Dislocations");
 

@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class AssignColorModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(AssignColorModifierEditor)
 
 public:

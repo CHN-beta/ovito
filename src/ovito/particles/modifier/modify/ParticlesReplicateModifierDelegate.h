@@ -50,7 +50,6 @@ class ParticlesReplicateModifierDelegate : public ReplicateModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesReplicateModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Particles & bonds");

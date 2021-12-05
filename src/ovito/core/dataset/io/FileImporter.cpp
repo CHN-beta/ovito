@@ -32,7 +32,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileImporter);
 
 /******************************************************************************
 * Tries to detect the format of the given file.

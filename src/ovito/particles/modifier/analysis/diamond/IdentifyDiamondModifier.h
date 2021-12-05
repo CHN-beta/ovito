@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT IdentifyDiamondModifier : public StructureIdentificationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(IdentifyDiamondModifier)
 
 	Q_CLASSINFO("DisplayName", "Identify diamond structure");

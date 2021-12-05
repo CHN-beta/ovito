@@ -34,7 +34,7 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT TCBAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass)
+	OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass, "Core")
 
 public:
 
@@ -67,7 +67,6 @@ public:
  */
 class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnimationKey>
 {
-	Q_OBJECT
 	OVITO_CLASS(FloatTCBAnimationKey)
 
 public:
@@ -81,7 +80,6 @@ public:
  */
 class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<PositionAnimationKey>
 {
-	Q_OBJECT
 	OVITO_CLASS(PositionTCBAnimationKey)
 
 public:
@@ -131,7 +129,6 @@ public:
 class OVITO_CORE_EXPORT TCBPositionController
 	: public TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>
 {
-	Q_OBJECT
 	OVITO_CLASS(TCBPositionController)
 
 public:

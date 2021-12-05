@@ -47,7 +47,6 @@ class OVITO_PARTICLES_EXPORT POSCARExporter : public ParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("POSCAR File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(POSCARExporter, OOMetaClass)
 
 public:

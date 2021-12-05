@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT ImpropersObject : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ImpropersObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Impropers");
 

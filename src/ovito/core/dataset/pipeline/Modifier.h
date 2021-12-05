@@ -41,7 +41,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT Modifier : public RefTarget
 {
 	OVITO_CLASS_META(Modifier, ModifierClass)
-	Q_OBJECT
 
 protected:
 

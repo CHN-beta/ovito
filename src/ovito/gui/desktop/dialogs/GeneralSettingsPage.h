@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT GeneralSettingsPage : public ApplicationSettingsDialogPage
 {
-	Q_OBJECT
 	OVITO_CLASS(GeneralSettingsPage)
 
 public:

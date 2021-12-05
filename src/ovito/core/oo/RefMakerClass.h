@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,9 +74,8 @@ public:
 
 public:
 
-	/// Constructor.
-	RefMakerClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo) :
-		OvitoClass(name, superClass, pluginId, qtClassInfo) {}
+	/// Inherit standard constructor from base meta class.
+	using OvitoClass::OvitoClass;
 
 	/// Returns the list of property fields of the class, including those of all parent classes.
 	const std::vector<const PropertyFieldDescriptor*>& propertyFields() const { return _propertyFields; }

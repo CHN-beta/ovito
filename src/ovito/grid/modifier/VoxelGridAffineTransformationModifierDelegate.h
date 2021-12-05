@@ -50,7 +50,6 @@ class VoxelGridAffineTransformationModifierDelegate : public AffineTransformatio
 		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VoxelGridAffineTransformationModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Voxel grids");

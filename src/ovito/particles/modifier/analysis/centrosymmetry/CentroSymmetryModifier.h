@@ -49,7 +49,6 @@ class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public AsynchronousModifie
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CentroSymmetryModifier, CentroSymmetryModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Centrosymmetry parameter");

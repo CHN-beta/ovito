@@ -51,7 +51,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT ParaDiSImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(ParaDiSImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

@@ -35,7 +35,6 @@ namespace Ovito::Particles {
 class XYZImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(XYZImporterEditor)
-	Q_OBJECT
 
 public:
 

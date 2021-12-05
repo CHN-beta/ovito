@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT DataVis : public ActiveObject
 {
-	Q_OBJECT
 	OVITO_CLASS(DataVis)
 
 protected:

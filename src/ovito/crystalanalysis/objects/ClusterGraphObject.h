@@ -34,7 +34,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ClusterGraphObject)
 
 public:

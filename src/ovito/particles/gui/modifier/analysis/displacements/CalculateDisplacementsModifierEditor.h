@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class CalculateDisplacementsModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CalculateDisplacementsModifierEditor)
 
 public:

@@ -29,7 +29,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InteractiveMolecularDynamicsModifier, InteractiveMolecularDynamicsModifierEditor);
 
 /******************************************************************************

@@ -51,7 +51,6 @@ class OVITO_CORE_EXPORT LinearFloatController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<FloatAnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypeFloat>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearFloatController)
 
 public:
@@ -81,7 +80,6 @@ class OVITO_CORE_EXPORT LinearIntegerController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<IntegerAnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypeInt>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearIntegerController)
 
 public:
@@ -111,7 +109,6 @@ class OVITO_CORE_EXPORT LinearVectorController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<Vector3AnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypeVector3>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearVectorController)
 
 public:
@@ -139,7 +136,6 @@ class OVITO_CORE_EXPORT LinearPositionController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<PositionAnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypePosition>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearPositionController)
 
 public:
@@ -170,7 +166,6 @@ class OVITO_CORE_EXPORT LinearRotationController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<RotationAnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypeRotation>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearRotationController)
 
 public:
@@ -201,7 +196,6 @@ class OVITO_CORE_EXPORT LinearScalingController
 	  	  	  	  	  	  	  	  	  	LinearKeyInterpolator<ScalingAnimationKey>,
 	  	  	  	  	  	  	  	  	  	Controller::ControllerTypeScaling>
 {
-	Q_OBJECT
 	OVITO_CLASS(LinearScalingController)
 
 public:

@@ -35,7 +35,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(ColorByTypeModifier)
 
 #ifndef OVITO_BUILD_BASIC

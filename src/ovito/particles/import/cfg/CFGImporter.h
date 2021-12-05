@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT CFGImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(CFGImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

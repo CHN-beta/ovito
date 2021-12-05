@@ -39,7 +39,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT SceneNode : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(SceneNode)
 
 protected:

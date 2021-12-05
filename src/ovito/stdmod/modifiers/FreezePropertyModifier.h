@@ -36,7 +36,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(FreezePropertyModifier)
 	Q_CLASSINFO("DisplayName", "Freeze property");
 	Q_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
@@ -83,7 +82,6 @@ private:
 class OVITO_STDMOD_EXPORT FreezePropertyModifierApplication : public ModifierApplication
 {
 	OVITO_CLASS(FreezePropertyModifierApplication)
-	Q_OBJECT
 
 public:
 

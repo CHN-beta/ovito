@@ -31,7 +31,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(AffineTransformationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AffineTransformationModifier, AffineTransformationModifierEditor);
 
 /******************************************************************************

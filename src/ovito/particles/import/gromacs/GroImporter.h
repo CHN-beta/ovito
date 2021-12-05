@@ -55,7 +55,6 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(GroImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

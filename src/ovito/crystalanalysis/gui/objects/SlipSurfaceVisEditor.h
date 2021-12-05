@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class SlipSurfaceVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SlipSurfaceVisEditor)
 
 public:

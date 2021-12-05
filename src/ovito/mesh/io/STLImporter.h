@@ -54,7 +54,6 @@ class OVITO_MESH_EXPORT STLImporter : public FileSourceImporter
 		virtual bool supportsDataType(const DataObject::OOMetaClass& dataObjectType) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(STLImporter, OOMetaClass)
 
 public:

@@ -34,7 +34,6 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT IntegerRadioButtonParameterUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(IntegerRadioButtonParameterUI)
 
 public:

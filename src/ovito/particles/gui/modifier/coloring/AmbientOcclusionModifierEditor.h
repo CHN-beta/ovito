@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class AmbientOcclusionModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(AmbientOcclusionModifierEditor)
 
 public:

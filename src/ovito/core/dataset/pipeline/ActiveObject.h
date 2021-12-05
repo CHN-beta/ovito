@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(ActiveObject)
 
 #ifdef OVITO_QML_GUI

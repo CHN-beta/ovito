@@ -26,7 +26,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CustomParameterUI);
 
 /******************************************************************************
 * Constructor for a Qt property.

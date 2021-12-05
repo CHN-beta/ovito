@@ -35,7 +35,6 @@ namespace Ovito::Particles {
  */
 class DihedralInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(DihedralInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Dihedrals");
 

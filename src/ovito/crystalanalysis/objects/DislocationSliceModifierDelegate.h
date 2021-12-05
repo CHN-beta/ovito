@@ -50,7 +50,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public Sli
 		virtual QString pythonDataName() const override { return QStringLiteral("dislocations"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DislocationSliceModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Dislocation lines");

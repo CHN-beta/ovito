@@ -79,7 +79,6 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Particles");
 

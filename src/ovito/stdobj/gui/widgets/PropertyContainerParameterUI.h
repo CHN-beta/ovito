@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyContainerParameterUI)
 
 public:

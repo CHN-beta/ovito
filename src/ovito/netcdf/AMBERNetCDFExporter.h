@@ -48,7 +48,6 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFExporter : public FileColumnParticleE
 		virtual QString fileFilterDescription() const override { return tr("NetCDF/AMBER File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(AMBERNetCDFExporter, OOMetaClass)
 
 public:

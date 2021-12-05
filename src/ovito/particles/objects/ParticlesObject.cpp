@@ -45,7 +45,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ParticlesObject);
 DEFINE_REFERENCE_FIELD(ParticlesObject, bonds);
 DEFINE_REFERENCE_FIELD(ParticlesObject, angles);
 DEFINE_REFERENCE_FIELD(ParticlesObject, dihedrals);

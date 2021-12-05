@@ -54,7 +54,6 @@ class OVITO_MESH_EXPORT WavefrontOBJImporter : public FileSourceImporter
 		virtual bool supportsDataType(const DataObject::OOMetaClass& dataObjectType) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(WavefrontOBJImporter, OOMetaClass)
 
 public:

@@ -27,7 +27,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CachingPipelineObject);
 SET_PROPERTY_FIELD_LABEL(CachingPipelineObject, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 
 /******************************************************************************

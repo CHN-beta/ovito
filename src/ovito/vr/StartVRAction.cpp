@@ -29,7 +29,6 @@
 
 namespace VRPlugin {
 
-IMPLEMENT_OVITO_CLASS(StartVRAction);
 
 /******************************************************************************
 * Is called when a new main window is created.

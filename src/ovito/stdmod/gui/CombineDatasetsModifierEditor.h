@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class CombineDatasetsModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CombineDatasetsModifierEditor)
 
 public:

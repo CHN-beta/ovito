@@ -29,7 +29,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataObjectReferenceParameterUI);
 
 /******************************************************************************
 * Sets the class of data objects the user can choose from.

@@ -28,7 +28,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BasePipelineSource);
 DEFINE_REFERENCE_FIELD(BasePipelineSource, dataCollection);
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollection, "Data");
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame index");

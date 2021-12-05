@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class DefaultPropertiesEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(DefaultPropertiesEditor)
 
 public:

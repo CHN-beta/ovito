@@ -50,7 +50,6 @@ class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDel
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesDeleteSelectedModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Particles");
@@ -84,7 +83,6 @@ class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
 		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Bonds");

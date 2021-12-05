@@ -38,7 +38,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ParticlesVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticlesVis)
 	Q_CLASSINFO("DisplayName", "Particles");
 
@@ -141,7 +140,6 @@ private:
  */
 class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticlePickInfo)
 
 public:

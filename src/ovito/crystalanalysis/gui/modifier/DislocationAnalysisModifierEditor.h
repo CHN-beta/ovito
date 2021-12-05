@@ -36,7 +36,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationTypeListParameterUI : public RefTargetListParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationTypeListParameterUI)
 
 public:
@@ -102,7 +101,6 @@ private:
  */
 class DislocationAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationAnalysisModifierEditor)
 
 public:

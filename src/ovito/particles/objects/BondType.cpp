@@ -27,7 +27,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(BondType);
 SET_PROPERTY_FIELD_LABEL(BondType, radius, "Radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 

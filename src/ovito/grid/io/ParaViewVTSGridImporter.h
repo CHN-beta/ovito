@@ -55,7 +55,6 @@ class OVITO_GRID_EXPORT ParaViewVTSGridImporter : public FileSourceImporter
 	};
 
 	OVITO_CLASS_META(ParaViewVTSGridImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 
@@ -91,9 +90,8 @@ private:
  * \brief Plugin filter used to customize the loading of VTM files referencing a ParaView VTS file.
  *        This filter is needed to correctly load VTM/VTS file combinations written by the Aspherix simulation code.
  */
-class GridParaViewVTMFileFilter : public ParaViewVTMFileFilter
+class OVITO_GRID_EXPORT GridParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	Q_OBJECT
 	OVITO_CLASS(GridParaViewVTMFileFilter)
 
 public:

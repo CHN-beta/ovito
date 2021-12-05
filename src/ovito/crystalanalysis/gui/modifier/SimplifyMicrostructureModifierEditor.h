@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class SimplifyMicrostructureModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SimplifyMicrostructureModifierEditor)
 
 public:

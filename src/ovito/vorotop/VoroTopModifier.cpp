@@ -36,7 +36,6 @@
 
 namespace Ovito::VoroTop {
 
-IMPLEMENT_OVITO_CLASS(VoroTopModifier);
 SET_PROPERTY_FIELD_LABEL(VoroTopModifier, useRadii, "Use particle radii");
 SET_PROPERTY_FIELD_LABEL(VoroTopModifier, filterFile, "Filter file");
 

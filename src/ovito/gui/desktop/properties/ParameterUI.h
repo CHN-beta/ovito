@@ -40,7 +40,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ParameterUI : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(ParameterUI)
 
 public:
@@ -155,7 +154,6 @@ private:
 class OVITO_GUI_EXPORT PropertyParameterUI : public ParameterUI
 {
 	OVITO_CLASS(PropertyParameterUI)
-	Q_OBJECT
 
 public:
 

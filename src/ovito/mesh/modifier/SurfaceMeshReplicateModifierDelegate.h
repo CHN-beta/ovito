@@ -54,7 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshReplicateModifierDelegate : public Replica
 		virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshReplicateModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Surfaces");

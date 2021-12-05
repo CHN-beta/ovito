@@ -37,8 +37,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SceneRenderer);
-IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
 
 /******************************************************************************
 * Constructor.

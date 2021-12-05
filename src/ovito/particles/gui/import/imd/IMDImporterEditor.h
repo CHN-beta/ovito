@@ -34,7 +34,6 @@ namespace Ovito::Particles {
 class IMDImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(IMDImporterEditor)
-	Q_OBJECT
 
 public:
 

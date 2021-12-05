@@ -84,7 +84,6 @@ protected:
  */
 class PositionTCBAnimationKeyEditor : public TCBAnimationKeyEditor<PositionTCBAnimationKey>
 {
-	Q_OBJECT
 	OVITO_CLASS(PositionTCBAnimationKeyEditor)
 
 public:

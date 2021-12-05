@@ -55,7 +55,6 @@ struct OVITO_MESH_EXPORT ParaViewVTMBlockInfo
  */
 class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ParaViewVTMFileFilter)
 
 public:
@@ -97,7 +96,6 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 	};
 
 	OVITO_CLASS_META(ParaViewVTMImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

@@ -34,7 +34,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT CombineDatasetsModifierDelegate : public ModifierDelegate
 {
-	Q_OBJECT
 	OVITO_CLASS(CombineDatasetsModifierDelegate)
 
 protected:
@@ -63,7 +62,6 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return CombineDatasetsModifierDelegate::OOClass(); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CombineDatasetsModifier, CombineDatasetsModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Combine datasets");

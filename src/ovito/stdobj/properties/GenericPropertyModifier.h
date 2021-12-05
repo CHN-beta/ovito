@@ -47,7 +47,6 @@ class OVITO_STDOBJ_EXPORT GenericPropertyModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(GenericPropertyModifier, GenericPropertyModifierClass)
 
 protected:

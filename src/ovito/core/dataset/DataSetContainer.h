@@ -38,7 +38,6 @@ class MainWindowInterface; // defined in MainWindowInterface.h
  */
 class OVITO_CORE_EXPORT DataSetContainer : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(DataSetContainer)
 
 #ifdef OVITO_QML_GUI

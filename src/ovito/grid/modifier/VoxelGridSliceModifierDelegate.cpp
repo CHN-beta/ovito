@@ -35,7 +35,6 @@
 
 namespace Ovito::Grid {
 
-IMPLEMENT_OVITO_CLASS(VoxelGridSliceModifierDelegate);
 DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 
 /******************************************************************************

@@ -29,7 +29,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TriMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(TriMeshVis, TriMeshVisEditor);
 
 /******************************************************************************

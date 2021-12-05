@@ -35,7 +35,6 @@ namespace Ovito::Particles {
 class CentroSymmetryModifierEditor : public PropertiesEditor
 {
 	OVITO_CLASS(CentroSymmetryModifierEditor)
-	Q_OBJECT
 
 public:
 

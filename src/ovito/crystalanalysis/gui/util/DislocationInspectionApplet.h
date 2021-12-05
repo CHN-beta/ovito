@@ -38,7 +38,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationInspectionApplet : public DataInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Dislocations");
 

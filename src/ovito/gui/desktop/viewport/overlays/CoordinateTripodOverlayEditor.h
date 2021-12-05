@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class CoordinateTripodOverlayEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CoordinateTripodOverlayEditor)
 
 public:

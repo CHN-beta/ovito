@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,150 +67,6 @@ public:
 	/// The default implementation calls undo(). That means, undo() must be implemented such
 	/// that it works both ways.
 	virtual void redo() { undo(); }
-};
-
-/**
- * \brief This helper class records a change to an object's property.
- *
- * It stores the old value of the property, which will be restored on a call to undo().
- *
- * The user of this class has to specify the property getter and setter methods as
- * template parameters.
- */
-template<typename ValueType, typename ObjectType, typename GetterFunction, typename SetterFunction>
-class SimpleValueChangeOperation : public UndoableOperation
-{
-public:
-
-	/// \brief Constructor.
-	SimpleValueChangeOperation(ObjectType* obj, GetterFunction getterFunc, SetterFunction setterFunc) :
-		_obj(obj),
-		_oldValue((obj->*getterFunc)()),
-		_getterFunc(getterFunc),
-		_setterFunc(setterFunc) {}
-
-	/// \brief Restores the old property value.
-	virtual void undo() override {
-		// Swap old value and current property value.
-		ValueType temp = (_obj.get()->*_getterFunc)();
-		(_obj.get()->*_setterFunc)(_oldValue);
-		_oldValue = temp;
-	}
-
-	virtual QString displayName() const override {
-		return QStringLiteral("Set property of %1").arg(_obj->getOOClass().name());
-	}
-
-private:
-
-	/// The value getter function.
-	GetterFunction _getterFunc;
-
-	/// The value setter function.
-	SetterFunction _setterFunc;
-
-	/// The old value of the property.
-	ValueType _oldValue;
-
-	/// The object whose property was changed.
-	OORef<ObjectType> _obj;
-};
-
-/**
- * \brief This class records a change to a Qt property to a QObject derived class.
- *
- * This UndoableOperation can be used to record
- * a change to a Qt property of an object. The property must defined through the
- * standard Qt mechanism using the \c Q_PROPERTY macro.
- */
-class OVITO_CORE_EXPORT SimplePropertyChangeOperation : public UndoableOperation
-{
-public:
-
-	/// \brief Constructor.
-	/// \param obj The object whose property is being changed.
-	/// \param propName The identifier of the property that is changed. This is the identifier
-	///                 name given to the property in the \c Q_PROPERTY macro.
-	/// \note This class does not make a copy of the property name parameter.
-	///       So the caller should only pass constant string literals to this constructor.
-	SimplePropertyChangeOperation(OvitoObject* obj, const char* propName) :
-		_object(obj), _propertyName(propName)
-	{
-		// Make a copy of the current property value.
-		_oldValue = _object->property(_propertyName);
-		OVITO_ASSERT_MSG(_oldValue.isValid(), "SimplePropertyChangeOperation", "The object does not have a property with the given name.");
-	}
-
-	/// \brief Restores the old property value.
-	virtual void undo() override {
-		// Swap old value and current property value.
-		QVariant temp = _object->property(_propertyName);
-		_object->setProperty(_propertyName, _oldValue);
-		_oldValue = temp;
-	}
-
-	virtual QString displayName() const override {
-		return QStringLiteral("Set property %1 of %2").arg(_propertyName).arg(_object->getOOClass().name());
-	}
-
-private:
-
-	/// The object whose property has been changed.
-	OORef<OvitoObject> _object;
-
-	/// The name of the property that has been changed.
-	const char* _propertyName;
-
-	/// The old value of the property.
-	QVariant _oldValue;
-};
-
-/**
- * \brief This undo record simply generates a TargetChanged event for a RefTarget whenever an operation is undone.
- */
-class OVITO_CORE_EXPORT TargetChangedUndoOperation : public UndoableOperation
-{
-public:
-
-	/// \brief Constructor.
-	/// \param target The object that is being changed.
-	TargetChangedUndoOperation(RefTarget* target) : _target(target) {}
-
-	virtual void undo() override;
-	virtual void redo() override {}
-
-	virtual QString displayName() const override {
-		return QStringLiteral("Target changed undo operation");
-	}
-
-private:
-
-	/// The object that has been changed.
-	OORef<RefTarget> _target;
-};
-
-/**
- * \brief This undo record simply generates a TargetChanged event for a RefTarget whenever an operation is redone.
- */
-class OVITO_CORE_EXPORT TargetChangedRedoOperation : public UndoableOperation
-{
-public:
-
-	/// \brief Constructor.
-	/// \param target The object that is being changed.
-	TargetChangedRedoOperation(RefTarget* target) : _target(target) {}
-
-	virtual void undo() override {}
-	virtual void redo() override;
-
-	virtual QString displayName() const override {
-		return QStringLiteral("Target changed redo operation");
-	}
-
-private:
-
-	/// The object that has been changed.
-	OORef<RefTarget> _target;
 };
 
 /**
@@ -372,20 +228,6 @@ public:
 
 	/// \brief Prints a text representation of the undo stack to the console. This is for debugging purposes only.
 	void debugPrint();
-
-	/// Registers an undo record for changing a property of an object.
-	///
-	/// The setter method for a property of an object should call this function
-	/// to create an undo record that allows to restore the old property value.
-	/// Note that the function must be called by the setter method before the new
-	/// property value is stored, because this method will query the old property
-	/// value by calling the getter method.
-	template<typename ValueType, class ObjectType, typename GetterFunction, typename SetterFunction>
-	void undoablePropertyChange(ObjectType* obj, GetterFunction getterFunc, SetterFunction setterFunc) {
-		pushIfRecording<
-				SimpleValueChangeOperation<ValueType, ObjectType, GetterFunction, SetterFunction>
-			>(obj, getterFunc, setterFunc);
-	}
 
 public Q_SLOTS:
 

@@ -41,7 +41,6 @@ namespace Ovito::Particles {
 
 using namespace Ovito::Delaunay;
 
-IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifier);
 DEFINE_REFERENCE_FIELD(ConstructSurfaceModifier, surfaceMeshVis);
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_LABEL(ConstructSurfaceModifier, probeSphereRadius, "Probe sphere radius");

@@ -54,7 +54,6 @@ class OVITO_GRID_EXPORT VoxelGridColorCodingModifierDelegate : public ColorCodin
 		virtual QString pythonDataName() const override { return QStringLiteral("voxels"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VoxelGridColorCodingModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Voxel grids");

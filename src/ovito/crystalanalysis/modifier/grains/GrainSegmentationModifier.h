@@ -49,7 +49,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public Asynchrono
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Grain segmentation (experimental)");

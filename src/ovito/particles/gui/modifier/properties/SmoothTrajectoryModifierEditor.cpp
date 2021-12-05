@@ -29,7 +29,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SmoothTrajectoryModifier, SmoothTrajectoryModifierEditor);
 
 /******************************************************************************

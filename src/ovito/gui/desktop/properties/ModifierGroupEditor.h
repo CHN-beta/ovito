@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class ModifierGroupEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ModifierGroupEditor)
 
 public:

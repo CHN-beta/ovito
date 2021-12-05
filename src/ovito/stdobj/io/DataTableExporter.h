@@ -49,7 +49,6 @@ class OVITO_STDOBJ_EXPORT DataTableExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("Data Table Text File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DataTableExporter, OOMetaClass)
 
 public:

@@ -29,8 +29,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(TargetObject);
-IMPLEMENT_OVITO_CLASS(TargetVis);
 
 /******************************************************************************
 * Constructs a target object.

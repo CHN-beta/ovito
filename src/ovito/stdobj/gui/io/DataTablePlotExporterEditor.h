@@ -34,7 +34,6 @@ namespace Ovito::StdObj {
 class DataTablePlotExporterEditor : public PropertiesEditor
 {
 	OVITO_CLASS(DataTablePlotExporterEditor)
-	Q_OBJECT
 
 public:
 

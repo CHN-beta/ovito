@@ -56,7 +56,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporter);
 SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, useCustomColumnMapping, "Custom file column mapping");
 SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, customColumnMapping, "File column mapping");
 

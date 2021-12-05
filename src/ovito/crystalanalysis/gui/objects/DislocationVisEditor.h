@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationVisEditor)
 
 public:

@@ -34,7 +34,6 @@ namespace Ovito::Particles {
  */
 class CoordinationAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CoordinationAnalysisModifierEditor)
 
 public:

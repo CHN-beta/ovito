@@ -53,7 +53,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT DataSet : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(DataSet)
 
 #ifdef OVITO_QML_GUI

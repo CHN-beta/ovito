@@ -50,7 +50,6 @@ class OVITO_PARTICLES_EXPORT ConstructSurfaceModifier : public AsynchronousModif
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ConstructSurfaceModifier, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Construct surface mesh");

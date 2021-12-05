@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class DislocationNetworkObjectEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(DislocationNetworkObjectEditor)
 
 public:

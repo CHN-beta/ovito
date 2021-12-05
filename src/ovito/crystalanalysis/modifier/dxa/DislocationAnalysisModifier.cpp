@@ -33,7 +33,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifier);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, defectMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, interfaceMeshVis);

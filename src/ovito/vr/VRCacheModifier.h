@@ -35,7 +35,6 @@ using namespace Ovito;
  */
 class VRCacheModifier : public Modifier
 {
-	Q_OBJECT
 	OVITO_CLASS(VRCacheModifier)
 
 	Q_CLASSINFO("DisplayName", "VR Display Cache");

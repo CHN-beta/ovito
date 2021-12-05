@@ -34,7 +34,6 @@ namespace Ovito::Particles {
 class ParcasFileImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(ParcasFileImporterEditor)
-	Q_OBJECT
 
 public:
 

@@ -36,7 +36,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfaceVis : public SurfaceMeshVis
 {
-	Q_OBJECT
 	OVITO_CLASS(SlipSurfaceVis)
 
 	Q_CLASSINFO("DisplayName", "Slip surfaces");
@@ -88,7 +87,6 @@ protected:
  */
 class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfacePickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(SlipSurfacePickInfo)
 
 public:

@@ -40,7 +40,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT PRSTransformationController : public Controller
 {
-	Q_OBJECT
 	OVITO_CLASS(PRSTransformationController)
 
 public:

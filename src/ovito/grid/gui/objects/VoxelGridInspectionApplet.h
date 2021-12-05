@@ -34,7 +34,6 @@ namespace Ovito::Grid {
  */
 class VoxelGridInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(VoxelGridInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Voxel Grids");
 

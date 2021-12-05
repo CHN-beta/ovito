@@ -40,7 +40,6 @@ namespace Ovito::Particles {
  */
 class BondInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(BondInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Bonds");
 

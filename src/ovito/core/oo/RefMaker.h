@@ -50,7 +50,6 @@ public:
 class OVITO_CORE_EXPORT RefMaker : public OvitoObject
 {
 	OVITO_CLASS_META(RefMaker, RefMakerClass)
-	Q_OBJECT
 
 protected:
 

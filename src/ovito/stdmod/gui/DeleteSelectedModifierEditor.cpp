@@ -28,7 +28,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
 
 /******************************************************************************

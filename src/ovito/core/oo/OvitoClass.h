@@ -64,8 +64,11 @@ public:
 
 public:
 
-	/// \brief Constructor.
-	OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo);
+	/// \brief Constructor used for non-templated classes.
+	OvitoClass(const QString& name, OvitoClassPtr superClass, const QMetaObject* qtClassInfo);
+
+	/// \brief Constructor used for templated classes.
+	OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId);
 
 	/// \brief Returns the name of the C++ class described by this meta-class instance.
 	/// \return The name of the class (without namespace qualifier).
@@ -204,7 +207,7 @@ protected:
 	const char* _pluginId = nullptr;
 
 	/// The plugin that defined the class.
-	Plugin*	_plugin;
+	Plugin*	_plugin = nullptr;
 
 	/// An alias for the class name, which is used when looking up a class for a serialized object.
 	/// This can help to maintain backward file compatibility when renaming classes.
@@ -214,10 +217,10 @@ protected:
 	OvitoClassPtr _superClass;
 
 	/// Indicates whether the class is abstract.
-	bool _isAbstract;
+	bool _isAbstract = false;
 
 	/// The runtime-type information provided by Qt.
-	const QMetaObject* _qtClassInfo;
+	const QMetaObject* _qtClassInfo = nullptr;
 
 	/// The name of the C++ class.
 	const char* _pureClassName = nullptr;
@@ -255,45 +258,36 @@ public: \
 	virtual const Ovito::OvitoClass& getOOClass() const override { return OOClass(); } \
 	const OOMetaClass& getOOMetaClass() const { return static_cast<const OOMetaClass&>(getOOClass()); } \
 private: \
-	static const OOMetaClass __OOClass_instance;
+	inline static const OOMetaClass __OOClass_instance{ \
+		QStringLiteral(#classname), \
+		&ovito_parent_class::OOClass(), \
+		&classname::staticMetaObject};
 
 /// This macro must be included in the class definition of any OvitoObject-derived class.
-#define OVITO_CLASS(classname) \
+#define OVITO_CLASS(classname) Q_OBJECT \
+	Q_CLASSINFO("OvitoPluginId", OVITO_PLUGIN_NAME) \
 	OVITO_CLASS_INTERNAL(classname, ovito_class)
 
 /// This macro must be included in the class definition of a class template that inherits from a OvitoObject class.
-#define OVITO_CLASS_TEMPLATE(clazz, baseclazz) \
+#define OVITO_CLASS_TEMPLATE(classname, baseclassname, pluginid) \
 public: \
-	using OOMetaClass = typename baseclazz::OOMetaClass; \
-	using ovito_parent_class = baseclazz; \
-	using ovito_class = clazz; \
+	using OOMetaClass = typename baseclassname::OOMetaClass; \
+	using ovito_parent_class = baseclassname; \
+	using ovito_class = classname; \
 	static const OOMetaClass& OOClass() { return __OOClass_instance; } \
 	virtual const Ovito::OvitoClass& getOOClass() const override { return OOClass(); } \
 	const OOMetaClass& getOOMetaClass() const { return static_cast<const OOMetaClass&>(getOOClass()); } \
 private: \
-	static const OOMetaClass __OOClass_instance;
+	inline static const OOMetaClass __OOClass_instance{ \
+		QStringLiteral(#classname), \
+		&ovito_parent_class::OOClass(), \
+		pluginid};
 
 /// This macro is used instead of the default one above when the class should get its own metaclass type.
 #define OVITO_CLASS_META(classname, metaclassname) \
 	public: \
 		using OOMetaClass = metaclassname; \
 	OVITO_CLASS(classname)
-
-/// This macro must be included in the .cpp file for any OvitoObject-derived class.
-#define IMPLEMENT_OVITO_CLASS(classname) \
-	const classname::OOMetaClass classname::__OOClass_instance(\
-		QStringLiteral(#classname), \
-		&classname::ovito_parent_class::OOClass(), \
-		OVITO_PLUGIN_NAME, \
-		&classname::staticMetaObject);
-
-/// This macro must be included in the .cpp file for any OvitoObject-derived class template.
-#define IMPLEMENT_OVITO_CLASS_TEMPLATE(classname) \
-	template<> const classname::OOMetaClass classname::__OOClass_instance(\
-		QStringLiteral(#classname), \
-		&classname::ovito_parent_class::OOClass(), \
-		OVITO_PLUGIN_NAME, \
-		nullptr);
 
 }	// End of namespace
 

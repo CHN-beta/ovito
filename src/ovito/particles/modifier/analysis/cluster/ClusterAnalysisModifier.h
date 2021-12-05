@@ -51,7 +51,6 @@ class OVITO_PARTICLES_EXPORT ClusterAnalysisModifier : public AsynchronousModifi
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ClusterAnalysisModifier, ClusterAnalysisModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Cluster analysis");

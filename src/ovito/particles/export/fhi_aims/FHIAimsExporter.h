@@ -47,7 +47,6 @@ class OVITO_PARTICLES_EXPORT FHIAimsExporter : public ParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("FHI-aims File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(FHIAimsExporter, OOMetaClass)
 
 public:

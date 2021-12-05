@@ -27,7 +27,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

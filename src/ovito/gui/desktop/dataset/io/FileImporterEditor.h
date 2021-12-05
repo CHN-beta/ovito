@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT FileImporterEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(FileImporterEditor)
 
 public:

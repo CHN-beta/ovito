@@ -54,7 +54,6 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
 	};
 
 	OVITO_CLASS_META(ParaViewVTPParticleImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 
@@ -110,9 +109,8 @@ private:
  * \brief Plugin filter used to customize the loading of VTM files referencing a ParaView VTP file.
  *        This filter is needed to correctly load VTM/VTP file combinations written by the Aspherix simulation code.
  */
-class ParticlesParaViewVTMFileFilter : public ParaViewVTMFileFilter
+class OVITO_PARTICLES_EXPORT ParticlesParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticlesParaViewVTMFileFilter)
 
 public:

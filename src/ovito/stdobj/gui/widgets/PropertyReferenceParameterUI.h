@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyReferenceParameterUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyReferenceParameterUI)
 
 	Q_PROPERTY(QComboBox comboBox READ comboBox)

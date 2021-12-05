@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT AffineTransformationModifierDelegate : public ModifierDelegate
 {
-	Q_OBJECT
 	OVITO_CLASS(AffineTransformationModifierDelegate)
 
 protected:
@@ -64,7 +63,6 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
 
 	OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
 	Q_CLASSINFO("DisplayName", "Simulation cell");
-	Q_OBJECT
 
 public:
 
@@ -101,7 +99,6 @@ public:
 	Q_CLASSINFO("DisplayName", "Affine transformation");
 	Q_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
 	Q_CLASSINFO("ModifierCategory", "Modification");
-	Q_OBJECT
 
 public:
 

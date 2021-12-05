@@ -25,6 +25,5 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(RenderableDislocationLines);
 
 }	// End of namespace

@@ -47,7 +47,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(SliceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SliceModifier, SliceModifierEditor);
 
 /******************************************************************************

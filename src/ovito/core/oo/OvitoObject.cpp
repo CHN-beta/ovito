@@ -40,19 +40,6 @@ OvitoObject::~OvitoObject()
 #endif
 
 /******************************************************************************
-* The type descriptor that every OvitoObject-derived class has.
-******************************************************************************/
-const OvitoObject::OOMetaClass& OvitoObject::OOClass() 
-{
-	static const OOMetaClass __OOClass_instance{
-		QStringLiteral("OvitoObject"), 
-		nullptr, 
-		OVITO_PLUGIN_NAME, 
-		&OvitoObject::staticMetaObject};
-	return __OOClass_instance;
-}
-
-/******************************************************************************
 * Internal method that calls this object's aboutToBeDeleted() routine.
 * It is automatically called when the object's reference counter reaches zero.
 ******************************************************************************/

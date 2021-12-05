@@ -53,7 +53,6 @@ class ParticlesExpressionSelectionModifierDelegate : public ExpressionSelectionM
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesExpressionSelectionModifierDelegate, OOMetaClass)
 	Q_CLASSINFO("DisplayName", "Particles");
 
@@ -89,7 +88,6 @@ class BondsExpressionSelectionModifierDelegate : public ExpressionSelectionModif
 		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(BondsExpressionSelectionModifierDelegate, OOMetaClass)
 	Q_CLASSINFO("DisplayName", "Bonds");
 

@@ -167,7 +167,6 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);
 class OVITO_CORE_EXPORT TriMeshObject : public DataObject
 {
 	OVITO_CLASS(TriMeshObject)
-	Q_OBJECT
 
 public:
 

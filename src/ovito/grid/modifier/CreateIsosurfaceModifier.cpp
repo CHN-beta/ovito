@@ -34,7 +34,6 @@
 
 namespace Ovito::Grid {
 
-IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifier);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, isolevelController);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, surfaceMeshVis);
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, sourceProperty, "Source property");

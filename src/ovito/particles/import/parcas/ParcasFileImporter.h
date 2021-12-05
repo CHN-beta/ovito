@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT ParcasFileImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(ParcasFileImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

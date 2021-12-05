@@ -29,7 +29,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(POSCARExporter);
 SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduced coordinates");
 
 /******************************************************************************

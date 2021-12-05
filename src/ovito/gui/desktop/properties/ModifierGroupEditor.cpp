@@ -27,7 +27,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierGroupEditor);
 SET_OVITO_OBJECT_EDITOR(ModifierGroup, ModifierGroupEditor);
 
 /******************************************************************************

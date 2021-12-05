@@ -258,10 +258,10 @@ public:
 	using base_class::value_type;
 
 	/// Constructs an empty union of intervals.
-	TimeIntervalUnion() noexcept = default;
+	TimeIntervalUnion() = default;
 
 	/// Constructs a union that includes only the given animation time instant.
-	explicit TimeIntervalUnion(TimePoint time) noexcept : base_class{{ TimeInterval(time) }} {}
+	explicit TimeIntervalUnion(TimePoint time) : base_class{{ TimeInterval(time) }} {}
 
 	/// Add a time interval to the union.
 	void add(TimeInterval iv) {

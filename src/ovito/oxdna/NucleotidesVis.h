@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class OVITO_OXDNA_EXPORT NucleotidesVis : public ParticlesVis
 {
-	Q_OBJECT
 	OVITO_CLASS(NucleotidesVis)
 	Q_CLASSINFO("DisplayName", "Nucleotides");
 

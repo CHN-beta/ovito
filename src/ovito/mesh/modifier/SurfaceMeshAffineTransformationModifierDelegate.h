@@ -59,7 +59,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
 		virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshAffineTransformationModifierDelegate, SurfaceMeshAffineTransformationModifierDelegateClass)
 	Q_CLASSINFO("DisplayName", "Surfaces");
 

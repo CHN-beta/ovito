@@ -50,7 +50,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
 
 /******************************************************************************

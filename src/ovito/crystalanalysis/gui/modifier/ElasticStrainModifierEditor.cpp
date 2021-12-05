@@ -33,7 +33,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(ElasticStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ElasticStrainModifier, ElasticStrainModifierEditor);
 
 /******************************************************************************

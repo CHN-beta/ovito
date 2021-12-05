@@ -33,7 +33,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(LoadTrajectoryModifier);
 DEFINE_REFERENCE_FIELD(LoadTrajectoryModifier, trajectorySource);
 SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory source");
 

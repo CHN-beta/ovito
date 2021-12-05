@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class AffineTransformationModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(AffineTransformationModifierEditor)
 
 public:

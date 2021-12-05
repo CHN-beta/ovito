@@ -57,9 +57,18 @@ namespace Ovito {
 class OVITO_CORE_EXPORT OvitoObject : public QObject
 {
 	Q_OBJECT
+	Q_CLASSINFO("OvitoPluginId", "Core")
 
 	Q_PROPERTY(QString className READ className CONSTANT)
 	Q_PROPERTY(QString pluginId READ pluginId CONSTANT)
+
+private:
+
+	// The class descriptor instance.
+	static inline const OvitoClass __OOClass_instance{
+		QStringLiteral("OvitoObject"), 
+		nullptr, 
+		&staticMetaObject};
 
 public:
 
@@ -67,7 +76,7 @@ public:
 	using OOMetaClass = OvitoClass;
 
 	/// Returns the type descriptor that every OvitoObject-derived class has.
-	static const OOMetaClass& OOClass();
+	static const OvitoClass& OOClass() { return __OOClass_instance; }
 
 	/// \brief The default constructor. Sets the reference count to zero.
 	OvitoObject() = default;

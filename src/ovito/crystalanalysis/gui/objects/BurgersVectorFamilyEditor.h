@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class BurgersVectorFamilyEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(BurgersVectorFamilyEditor)
 
 public:

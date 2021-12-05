@@ -34,7 +34,6 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT ModifierDelegateFixedListParameterUI : public RefTargetListParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(ModifierDelegateFixedListParameterUI)
 
 public:

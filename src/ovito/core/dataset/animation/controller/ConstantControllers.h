@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ConstFloatController : public Controller
 {
-	Q_OBJECT
 	OVITO_CLASS(ConstFloatController)
 
 public:
@@ -68,7 +67,6 @@ private:
 class OVITO_CORE_EXPORT ConstIntegerController : public Controller
 {
 	OVITO_CLASS(ConstIntegerController)
-	Q_OBJECT
 
 public:
 
@@ -102,7 +100,6 @@ private:
 class OVITO_CORE_EXPORT ConstVectorController : public Controller
 {
 	OVITO_CLASS(ConstVectorController)
-	Q_OBJECT
 
 public:
 
@@ -136,7 +133,6 @@ private:
 class OVITO_CORE_EXPORT ConstPositionController : public Controller
 {
 	OVITO_CLASS(ConstPositionController)
-	Q_OBJECT
 
 public:
 
@@ -172,7 +168,6 @@ private:
 class OVITO_CORE_EXPORT ConstRotationController : public Controller
 {
 	OVITO_CLASS(ConstRotationController)
-	Q_OBJECT
 
 public:
 
@@ -208,7 +203,6 @@ private:
 class OVITO_CORE_EXPORT ConstScalingController : public Controller
 {
 	OVITO_CLASS(ConstScalingController)
-	Q_OBJECT
 
 public:
 

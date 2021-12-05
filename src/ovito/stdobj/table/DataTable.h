@@ -51,7 +51,6 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DataTable, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Data table");
 

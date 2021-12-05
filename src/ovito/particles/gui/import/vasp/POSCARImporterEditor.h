@@ -34,7 +34,6 @@ namespace Ovito::Particles {
 class POSCARImporterEditor : public FileImporterEditor
 {
 	OVITO_CLASS(POSCARImporterEditor)
-	Q_OBJECT
 
 public:
 

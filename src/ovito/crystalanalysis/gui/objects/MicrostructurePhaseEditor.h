@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class MicrostructurePhaseEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(MicrostructurePhaseEditor)
 
 public:

@@ -48,7 +48,6 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Unwrap trajectories");
@@ -72,7 +71,6 @@ public:
  */
 class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifierApplication : public ModifierApplication
 {
-	Q_OBJECT
 	OVITO_CLASS(UnwrapTrajectoriesModifierApplication)
 
 public:

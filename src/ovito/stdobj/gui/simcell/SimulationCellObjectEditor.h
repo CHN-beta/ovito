@@ -33,7 +33,6 @@ namespace Ovito::StdObj {
  */
 class SimulationCellEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SimulationCellEditor)
 
 public:

@@ -38,7 +38,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT DataCollection : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(DataCollection)
 
 public:

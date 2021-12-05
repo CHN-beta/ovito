@@ -33,7 +33,6 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT IntegerParameterUI : public NumericalParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(IntegerParameterUI)
 
 public:

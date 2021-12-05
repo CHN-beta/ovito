@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class CommonNeighborAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(CommonNeighborAnalysisModifierEditor)
 
 public:

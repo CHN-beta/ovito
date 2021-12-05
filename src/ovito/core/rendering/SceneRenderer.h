@@ -49,7 +49,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ObjectPickInfo : public OvitoObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ObjectPickInfo)
 
 protected:
@@ -69,7 +68,6 @@ public:
 class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 {
 	OVITO_CLASS(SceneRenderer)
-	Q_OBJECT
 
 public:
 

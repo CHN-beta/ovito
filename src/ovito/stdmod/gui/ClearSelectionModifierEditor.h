@@ -34,7 +34,6 @@ namespace Ovito::StdMod {
  */
 class ClearSelectionModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ClearSelectionModifierEditor)
 
 public:

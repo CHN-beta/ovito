@@ -52,7 +52,6 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(VoxelGrid, VoxelGridClass);
 	Q_CLASSINFO("DisplayName", "Voxel grid");
 

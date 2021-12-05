@@ -36,7 +36,6 @@ namespace Ovito::StdMod {
  */
 class ScatterPlotModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ScatterPlotModifierEditor)
 
 public:

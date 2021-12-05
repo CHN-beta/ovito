@@ -54,7 +54,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSBinaryDumpImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(LAMMPSBinaryDumpImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

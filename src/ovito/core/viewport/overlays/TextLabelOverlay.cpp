@@ -32,7 +32,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TextLabelOverlay);
 DEFINE_REFERENCE_FIELD(TextLabelOverlay, sourceNode);
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, font, "Font");

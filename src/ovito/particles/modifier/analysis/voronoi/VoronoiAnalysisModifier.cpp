@@ -36,7 +36,6 @@ namespace Ovito::Particles {
 
 constexpr int VoronoiAnalysisModifier::VoronoiAnalysisEngine::FaceOrderStorageLimit;
 
-IMPLEMENT_OVITO_CLASS(VoronoiAnalysisModifier);
 DEFINE_REFERENCE_FIELD(VoronoiAnalysisModifier, bondsVis);
 DEFINE_REFERENCE_FIELD(VoronoiAnalysisModifier, polyhedraVis);
 SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, onlySelected, "Use only selected particles");

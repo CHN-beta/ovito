@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class OVITO_GUIBASE_EXPORT PipelineListItem : public RefMaker
 {
-	Q_OBJECT
 	OVITO_CLASS(PipelineListItem)
 
 public:

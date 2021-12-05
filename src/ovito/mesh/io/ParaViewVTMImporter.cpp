@@ -33,8 +33,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
-IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
 SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes");
 
 /******************************************************************************

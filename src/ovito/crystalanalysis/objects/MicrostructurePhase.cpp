@@ -25,7 +25,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(MicrostructurePhase);
 DEFINE_VECTOR_REFERENCE_FIELD(MicrostructurePhase, burgersVectorFamilies);
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, shortName, "Short name");
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, dimensionality, "Dimensionality");

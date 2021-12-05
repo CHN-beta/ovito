@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT AtomicStrainModifier : public ReferenceConfigurationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(AtomicStrainModifier)
 
 	Q_CLASSINFO("DisplayName", "Atomic strain");

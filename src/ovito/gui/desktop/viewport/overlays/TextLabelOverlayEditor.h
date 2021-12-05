@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class TextLabelOverlayEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(TextLabelOverlayEditor)
 
 public:

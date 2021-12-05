@@ -49,7 +49,6 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
 		virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(StandardCameraObject, StandardCameraObjectClass)
 	Q_CLASSINFO("DisplayName", "Camera");
 	Q_CLASSINFO("ClassNameAlias", "CameraObject");	// For backward compatibility with OVITO 3.3.
@@ -100,7 +99,6 @@ private:
  */
 class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(CameraVis)
 	Q_CLASSINFO("DisplayName", "Camera icon");
 

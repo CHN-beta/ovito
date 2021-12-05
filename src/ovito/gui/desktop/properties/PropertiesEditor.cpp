@@ -29,7 +29,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertiesEditor);
 DEFINE_REFERENCE_FIELD(PropertiesEditor, editObject);
 
 /******************************************************************************

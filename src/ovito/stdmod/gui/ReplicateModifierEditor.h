@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class ReplicateModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ReplicateModifierEditor)
 
 public:

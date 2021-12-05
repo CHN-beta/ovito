@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT DataBuffer : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(DataBuffer);
 	Q_CLASSINFO("DisplayName", "Data buffer");
 

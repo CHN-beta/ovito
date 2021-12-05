@@ -31,15 +31,12 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifier);
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, expressions, "Expressions");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, outputProperty, "Output property");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute only for selected elements");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand field(s)");
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifierApplication);
 DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModifierApplication, cachedVisElements);
 SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableNames, ReferenceEvent::ObjectStatusChanged);
 SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableTable, ReferenceEvent::ObjectStatusChanged);

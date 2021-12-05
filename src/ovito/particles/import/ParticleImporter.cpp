@@ -38,7 +38,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ParticleImporter);
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, sortParticles, "Sort particles by ID");
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, generateBonds, "Generate bonds");
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, recenterCell, "Center simulation box on coordinate origin");

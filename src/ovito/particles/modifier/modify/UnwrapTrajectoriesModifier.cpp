@@ -31,9 +31,7 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifier);
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifierApplication);
 SET_MODIFIER_APPLICATION_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierApplication);
 
 /******************************************************************************

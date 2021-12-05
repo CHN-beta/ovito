@@ -39,7 +39,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ComputePropertyModifierDelegate : public ModifierDelegate
 {
-	Q_OBJECT
 	OVITO_CLASS(ComputePropertyModifierDelegate)
 
 #ifdef OVITO_QML_GUI
@@ -172,7 +171,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return ComputePropertyModifierDelegate::OOClass(); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ComputePropertyModifier, ComputePropertyModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Compute property");
@@ -263,7 +261,6 @@ protected:
 class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public AsynchronousModifierApplication
 {
 	OVITO_CLASS(ComputePropertyModifierApplication)
-	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(QString inputVariableTable READ inputVariableTable NOTIFY objectStatusChanged)

@@ -35,7 +35,6 @@ namespace Ovito::StdMod {
  */
 class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(ScatterPlotModifier)
 	Q_CLASSINFO("DisplayName", "Scatter plot");
 	Q_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");

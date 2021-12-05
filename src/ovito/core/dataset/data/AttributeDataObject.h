@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(AttributeDataObject)
 	Q_CLASSINFO("DisplayName", "Attribute");
 

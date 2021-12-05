@@ -35,7 +35,6 @@ namespace Ovito::Particles {
 class ChillPlusModifierEditor : public PropertiesEditor
 {
 	OVITO_CLASS(ChillPlusModifierEditor)
-	Q_OBJECT
 
 public:
 

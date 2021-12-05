@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT TransformedDataObject : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(TransformedDataObject)
 
 public:

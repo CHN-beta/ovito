@@ -48,7 +48,6 @@ class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public AsynchronousModif
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(AmbientOcclusionModifier, AmbientOcclusionModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Ambient occlusion");

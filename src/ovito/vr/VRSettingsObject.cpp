@@ -29,7 +29,6 @@
 
 namespace VRPlugin {
 
-IMPLEMENT_OVITO_CLASS(VRSettingsObject);
 SET_PROPERTY_FIELD_LABEL(VRSettingsObject, supersamplingEnabled, "Supersampling");
 SET_PROPERTY_FIELD_LABEL(VRSettingsObject, scaleFactor, "Scale factor");
 SET_PROPERTY_FIELD_LABEL(VRSettingsObject, translation, "Position");

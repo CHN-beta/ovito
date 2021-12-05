@@ -39,7 +39,6 @@ namespace Ovito::StdMod {
 class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 {
 	OVITO_CLASS(ColorCodingModifierDelegate)
-	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
@@ -92,7 +91,6 @@ public:
 	Q_CLASSINFO("DisplayName", "Color coding");
 	Q_CLASSINFO("Description", "Colors elements based on property values.");
 	Q_CLASSINFO("ModifierCategory", "Coloring");
-	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(Ovito::StdMod::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)

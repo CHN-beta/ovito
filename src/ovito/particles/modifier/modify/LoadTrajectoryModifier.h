@@ -46,7 +46,6 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(LoadTrajectoryModifier, LoadTrajectoryModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Load trajectory");

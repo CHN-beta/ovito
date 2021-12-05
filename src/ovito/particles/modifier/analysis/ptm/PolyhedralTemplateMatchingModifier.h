@@ -37,7 +37,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT PolyhedralTemplateMatchingModifier : public StructureIdentificationModifier
 {
-	Q_OBJECT
 	OVITO_CLASS(PolyhedralTemplateMatchingModifier)
 
 	Q_CLASSINFO("DisplayName", "Polyhedral template matching");

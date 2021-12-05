@@ -50,7 +50,6 @@ class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(TrajectoryObject, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Particle trajectories");
 

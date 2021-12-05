@@ -37,7 +37,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(DislocImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

@@ -34,7 +34,6 @@ namespace Ovito::Particles {
 class AcklandJonesModifierEditor : public PropertiesEditor
 {
 	OVITO_CLASS(AcklandJonesModifierEditor)
-	Q_OBJECT
 
 public:
 

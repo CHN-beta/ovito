@@ -30,7 +30,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDataExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDataExporter, LAMMPSDataExporterEditor);
 
 /******************************************************************************

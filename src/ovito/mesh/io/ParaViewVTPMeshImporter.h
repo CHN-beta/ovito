@@ -55,7 +55,6 @@ class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
 	};
 
 	OVITO_CLASS_META(ParaViewVTPMeshImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 
@@ -97,9 +96,8 @@ private:
  * \brief Plugin filter used to customize the loading of VTM files referencing one or more ParaView VTP mesh files.
  *        This filter is needed to correctly load VTM/VTP file combinations written by the Aspherix simulation code.
  */
-class MeshParaViewVTMFileFilter : public ParaViewVTMFileFilter
+class OVITO_MESH_EXPORT MeshParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	Q_OBJECT
 	OVITO_CLASS(MeshParaViewVTMFileFilter)
 
 public:

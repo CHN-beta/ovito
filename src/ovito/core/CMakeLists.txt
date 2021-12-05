@@ -183,6 +183,11 @@ OVITO_STANDARD_PLUGIN(Core
 	PRECOMPILED_HEADERS Core.h
 )
 
+# Disable Qt AUTOMOC processing of the header OvitoClass.h.
+# This is necessary, because the header contains the definition of the OVITO_CLASS macro, which 
+# is added to the AUTOMOC_MACRO_NAMES list.
+SET_PROPERTY(SOURCE oo/OvitoClass PROPERTY SKIP_AUTOMOC ON)
+
 IF(NOT EMSCRIPTEN)
 	# Qt Network module is used by the Core module, except in the wasm build.
 	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Network REQUIRED)

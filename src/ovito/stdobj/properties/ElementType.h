@@ -35,7 +35,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ElementType)
 
 #ifdef OVITO_QML_GUI

@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class ViewportVulkanSceneRenderer : public VulkanSceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(ViewportVulkanSceneRenderer)
 
 public:

@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 {
-	Q_OBJECT
 	OVITO_CLASS(StandardSceneRenderer)
 	Q_CLASSINFO("DisplayName", "OpenGL");
 	Q_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "

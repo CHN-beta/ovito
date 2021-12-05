@@ -49,7 +49,6 @@ class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public Asynchrono
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(StructureIdentificationModifier, StructureIdentificationModifierClass)
 
 public:

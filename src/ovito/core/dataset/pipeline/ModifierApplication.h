@@ -42,7 +42,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ModifierApplication : public CachingPipelineObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ModifierApplication)
 
 public:

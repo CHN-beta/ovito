@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class BondsVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(BondsVisEditor)
 
 public:

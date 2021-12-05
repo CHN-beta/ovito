@@ -34,11 +34,9 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(CombineDatasetsModifier);
 DEFINE_REFERENCE_FIELD(CombineDatasetsModifier, secondaryDataSource);
 SET_PROPERTY_FIELD_LABEL(CombineDatasetsModifier, secondaryDataSource, "Secondary source");
 
-IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierDelegate);
 
 /******************************************************************************
 * Constructs the modifier object.

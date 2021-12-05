@@ -41,7 +41,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJ_EXPORT ElementSelectionSet : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS(ElementSelectionSet)
 
 public:

@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class ColorLegendOverlayEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ColorLegendOverlayEditor)
 
 public:

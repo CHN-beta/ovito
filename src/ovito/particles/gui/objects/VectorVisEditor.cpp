@@ -36,7 +36,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(VectorVisEditor);
 SET_OVITO_OBJECT_EDITOR(VectorVis, VectorVisEditor);
 
 /******************************************************************************

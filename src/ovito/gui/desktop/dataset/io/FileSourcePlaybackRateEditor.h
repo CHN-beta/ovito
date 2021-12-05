@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class FileSourcePlaybackRateEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(FileSourcePlaybackRateEditor)
 
 public:

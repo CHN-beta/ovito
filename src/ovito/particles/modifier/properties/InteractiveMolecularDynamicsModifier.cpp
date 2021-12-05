@@ -35,7 +35,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifier);
 SET_PROPERTY_FIELD_LABEL(InteractiveMolecularDynamicsModifier, hostName, "Hostname");
 SET_PROPERTY_FIELD_LABEL(InteractiveMolecularDynamicsModifier, port, "Port");
 SET_PROPERTY_FIELD_LABEL(InteractiveMolecularDynamicsModifier, transmissionInterval, "Transmit every Nth timestep");

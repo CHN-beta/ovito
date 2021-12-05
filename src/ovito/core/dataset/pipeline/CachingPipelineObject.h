@@ -35,7 +35,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT CachingPipelineObject : public PipelineObject
 {
-	Q_OBJECT
 	OVITO_CLASS(CachingPipelineObject)
 
 public:

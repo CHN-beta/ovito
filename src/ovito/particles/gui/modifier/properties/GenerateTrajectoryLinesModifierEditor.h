@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class GenerateTrajectoryLinesModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)
 
 public:

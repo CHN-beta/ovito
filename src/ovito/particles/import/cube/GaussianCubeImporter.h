@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT GaussianCubeImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(GaussianCubeImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

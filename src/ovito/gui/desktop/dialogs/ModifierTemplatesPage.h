@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT ModifierTemplatesPage : public ApplicationSettingsDialogPage
 {
-	Q_OBJECT
 	OVITO_CLASS(ModifierTemplatesPage)
 
 public:

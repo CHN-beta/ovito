@@ -35,7 +35,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT MicrostructurePhase : public ElementType
 {
-	Q_OBJECT
 	OVITO_CLASS(MicrostructurePhase)
 
 public:

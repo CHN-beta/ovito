@@ -25,7 +25,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(ClusterGraphObject);
 
 /******************************************************************************
 * Constructs a cluster graph object.

@@ -53,7 +53,6 @@ class OVITO_MESH_EXPORT SurfaceMeshVertices : public PropertyContainer
 		virtual void initialize() override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshVertices, OOMetaClass);
 	Q_CLASSINFO("DisplayName", "Mesh Vertices");
 

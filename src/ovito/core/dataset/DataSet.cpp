@@ -39,7 +39,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, animationSettings);
 DEFINE_REFERENCE_FIELD(DataSet, sceneRoot);

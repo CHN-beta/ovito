@@ -30,8 +30,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
-IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

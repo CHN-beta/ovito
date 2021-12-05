@@ -34,7 +34,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT RenderableDislocationLines : public TransformedDataObject
 {
-	Q_OBJECT
 	OVITO_CLASS(RenderableDislocationLines)
 	Q_CLASSINFO("DisplayName", "Renderable dislocations");
 

@@ -35,7 +35,6 @@ using namespace Ovito;
  */
 class VRSettingsObjectEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(VRSettingsObjectEditor)
 
 public:

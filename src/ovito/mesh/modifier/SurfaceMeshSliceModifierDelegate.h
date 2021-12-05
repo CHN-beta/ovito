@@ -55,7 +55,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
 		virtual QString pythonDataName() const override { return QStringLiteral("surfaces"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshSliceModifierDelegate, SurfaceMeshSliceModifierDelegateClass)
 	Q_CLASSINFO("DisplayName", "Surfaces");
 

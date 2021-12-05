@@ -36,7 +36,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT KeyframeController : public Controller
 {
-	Q_OBJECT
 	OVITO_CLASS(KeyframeController)
 
 public:

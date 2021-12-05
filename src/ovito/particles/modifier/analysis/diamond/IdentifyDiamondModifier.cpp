@@ -31,7 +31,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

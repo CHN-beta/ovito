@@ -25,7 +25,5 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierDelegate);
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifier);
 
 }	// End of namespace

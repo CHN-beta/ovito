@@ -33,7 +33,6 @@ namespace Ovito::CrystalAnalysis {
  */
 class OVITO_CRYSTALANALYSIS_EXPORT BurgersVectorFamily : public ElementType
 {
-	Q_OBJECT
 	OVITO_CLASS(BurgersVectorFamily)
 
 public:

@@ -28,8 +28,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTPMeshImporter);
-IMPLEMENT_OVITO_CLASS(MeshParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

@@ -36,7 +36,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileSource);
 DEFINE_REFERENCE_FIELD(FileSource, importer);
 SET_PROPERTY_FIELD_LABEL(FileSource, importer, "File Importer");
 SET_PROPERTY_FIELD_LABEL(FileSource, sourceUrls, "Source location");

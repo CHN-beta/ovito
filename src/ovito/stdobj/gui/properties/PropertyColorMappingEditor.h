@@ -36,7 +36,6 @@ namespace Ovito::StdObj {
  */
 class OVITO_STDOBJGUI_EXPORT PropertyColorMappingEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(PropertyColorMappingEditor)
 
 public:

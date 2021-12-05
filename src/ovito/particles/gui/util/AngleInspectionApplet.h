@@ -35,7 +35,6 @@ namespace Ovito::Particles {
  */
 class AngleInspectionApplet : public PropertyInspectionApplet
 {
-	Q_OBJECT
 	OVITO_CLASS(AngleInspectionApplet)
 	Q_CLASSINFO("DisplayName", "Angles");
 

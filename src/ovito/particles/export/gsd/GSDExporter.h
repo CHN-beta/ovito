@@ -50,7 +50,6 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("GSD/HOOMD File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(GSDExporter, OOMetaClass)
 
 public:

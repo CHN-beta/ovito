@@ -34,7 +34,6 @@ namespace Ovito::StdMod {
 class OVITO_STDMOD_EXPORT DeleteSelectedModifierDelegate : public ModifierDelegate
 {
 	OVITO_CLASS(DeleteSelectedModifierDelegate)
-	Q_OBJECT
 
 protected:
 
@@ -59,7 +58,6 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 		virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return DeleteSelectedModifierDelegate::OOClass(); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DeleteSelectedModifier, DeleteSelectedModifierClass)
 	Q_CLASSINFO("DisplayName", "Delete selected");
 	Q_CLASSINFO("Description", "Remove all currently selected elements.");

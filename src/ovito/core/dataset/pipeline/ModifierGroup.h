@@ -34,7 +34,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
 {
-	Q_OBJECT
 	OVITO_CLASS(ModifierGroup)
 	Q_CLASSINFO("DisplayName", "Modifier group");
 

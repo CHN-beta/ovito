@@ -51,7 +51,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT CAExporter : public FileExporter
 		virtual QString fileFilterDescription() const override { return tr("Crystal Analysis File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CAExporter, OOMetaClass)
 
 public:

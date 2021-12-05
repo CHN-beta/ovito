@@ -37,7 +37,6 @@ namespace Ovito::Particles {
 class FileColumnParticleExporterEditor : public PropertiesEditor
 {
 	OVITO_CLASS(FileColumnParticleExporterEditor)
-	Q_OBJECT
 
 public:
 

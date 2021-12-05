@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class ExpandSelectionModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ExpandSelectionModifierEditor)
 
 public:

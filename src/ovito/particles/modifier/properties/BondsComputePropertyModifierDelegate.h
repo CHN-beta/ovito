@@ -56,7 +56,6 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
 		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Bonds");

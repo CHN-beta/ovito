@@ -32,7 +32,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(WignerSeitzAnalysisModifier);
 SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, perTypeOccupancy, "Compute per-type occupancies");
 SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, outputCurrentConfig, "Output current configuration");
 

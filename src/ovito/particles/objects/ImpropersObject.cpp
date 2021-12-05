@@ -26,7 +26,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ImpropersObject);
 
 /******************************************************************************
 * Constructor.

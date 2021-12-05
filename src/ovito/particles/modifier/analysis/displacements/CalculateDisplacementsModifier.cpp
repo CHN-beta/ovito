@@ -29,7 +29,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(CalculateDisplacementsModifier);
 DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 
 /******************************************************************************

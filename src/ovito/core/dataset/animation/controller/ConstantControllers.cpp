@@ -25,11 +25,5 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ConstFloatController);
-IMPLEMENT_OVITO_CLASS(ConstIntegerController);
-IMPLEMENT_OVITO_CLASS(ConstVectorController);
-IMPLEMENT_OVITO_CLASS(ConstPositionController);
-IMPLEMENT_OVITO_CLASS(ConstRotationController);
-IMPLEMENT_OVITO_CLASS(ConstScalingController);
 
 }	// End of namespace

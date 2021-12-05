@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,6 @@
 
 namespace Ovito::Grid {
 
-IMPLEMENT_OVITO_CLASS(VTKVoxelGridExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

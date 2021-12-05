@@ -38,7 +38,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT PipelineSceneNode : public SceneNode
 {
-	Q_OBJECT
 	OVITO_CLASS(PipelineSceneNode)
 
 public:

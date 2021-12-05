@@ -30,7 +30,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(PropertyInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widgets that are to be placed into the data

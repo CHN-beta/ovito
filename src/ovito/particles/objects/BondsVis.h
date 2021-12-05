@@ -40,7 +40,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(BondsVis)
 	Q_CLASSINFO("DisplayName", "Bonds");
 
@@ -109,7 +108,6 @@ protected:
  */
 class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(BondPickInfo)
 
 public:

@@ -35,7 +35,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT AnimationKey : public RefTarget
 {
 	OVITO_CLASS(AnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -62,7 +61,6 @@ private:
 class OVITO_CORE_EXPORT FloatAnimationKey : public AnimationKey
 {
 	OVITO_CLASS(FloatAnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -104,7 +102,6 @@ private:
 class OVITO_CORE_EXPORT IntegerAnimationKey : public AnimationKey
 {
 	OVITO_CLASS(IntegerAnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -146,7 +143,6 @@ private:
 class OVITO_CORE_EXPORT Vector3AnimationKey : public AnimationKey
 {
 	OVITO_CLASS(Vector3AnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -188,7 +184,6 @@ private:
 class OVITO_CORE_EXPORT PositionAnimationKey : public AnimationKey
 {
 	OVITO_CLASS(PositionAnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -230,7 +225,6 @@ private:
 class OVITO_CORE_EXPORT RotationAnimationKey : public AnimationKey
 {
 	OVITO_CLASS(RotationAnimationKey)
-	Q_OBJECT
 
 public:
 
@@ -272,7 +266,6 @@ private:
 class OVITO_CORE_EXPORT ScalingAnimationKey : public AnimationKey
 {
 	OVITO_CLASS(ScalingAnimationKey)
-	Q_OBJECT
 
 public:
 

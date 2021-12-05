@@ -49,7 +49,6 @@ extern const size_t NumberOfChemicalElements;
 
 class OVITO_PARTICLESGUI_EXPORT CutoffRadiusPresetsUI : public PropertyParameterUI
 {
-	Q_OBJECT
 	OVITO_CLASS(CutoffRadiusPresetsUI)
 
 public:

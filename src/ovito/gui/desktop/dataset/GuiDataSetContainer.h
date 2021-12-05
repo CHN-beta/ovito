@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT GuiDataSetContainer : public DataSetContainer
 {
-	Q_OBJECT
 	OVITO_CLASS(GuiDataSetContainer)
 
 public:

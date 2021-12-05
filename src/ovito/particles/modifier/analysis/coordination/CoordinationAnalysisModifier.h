@@ -50,7 +50,6 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public AsynchronousM
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CoordinationAnalysisModifier, CoordinationAnalysisModifierClass)
 
 	Q_CLASSINFO("ClassNameAlias", "CoordinationNumberModifier");

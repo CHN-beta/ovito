@@ -53,7 +53,6 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SpatialCorrelationFunctionModifier, OOMetaClass)
 
 	Q_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");

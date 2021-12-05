@@ -36,7 +36,6 @@ namespace Ovito::StdMod {
  */
 class HistogramModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(HistogramModifierEditor)
 
 public:

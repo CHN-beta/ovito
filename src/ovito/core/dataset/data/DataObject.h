@@ -50,7 +50,6 @@ public:
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(DataObject, OOMetaClass)
 
 protected:

@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class UnwrapTrajectoriesModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(UnwrapTrajectoriesModifierEditor)
 
 public:

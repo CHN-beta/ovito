@@ -29,7 +29,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(SlipSurfaceVisEditor);
 SET_OVITO_OBJECT_EDITOR(SlipSurfaceVis, SlipSurfaceVisEditor);
 
 /******************************************************************************

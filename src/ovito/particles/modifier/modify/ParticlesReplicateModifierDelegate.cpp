@@ -31,7 +31,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(ParticlesReplicateModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

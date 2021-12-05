@@ -57,7 +57,6 @@ public:
 		virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(OpenGLSceneRenderer, OOMetaClass)
 
 public:

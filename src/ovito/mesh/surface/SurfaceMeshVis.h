@@ -42,7 +42,6 @@ namespace Ovito::Mesh {
  */
 class OVITO_MESH_EXPORT SurfaceMeshVis : public TransformingDataVis
 {
-	Q_OBJECT
 	OVITO_CLASS(SurfaceMeshVis)
 	Q_CLASSINFO("DisplayName", "Surface mesh");
 
@@ -236,7 +235,6 @@ private:
  */
 class OVITO_MESH_EXPORT SurfaceMeshPickInfo : public ObjectPickInfo
 {
-	Q_OBJECT
 	OVITO_CLASS(SurfaceMeshPickInfo)
 
 public:

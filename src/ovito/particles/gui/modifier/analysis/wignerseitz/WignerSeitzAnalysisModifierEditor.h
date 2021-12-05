@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class WignerSeitzAnalysisModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(WignerSeitzAnalysisModifierEditor)
 
 public:

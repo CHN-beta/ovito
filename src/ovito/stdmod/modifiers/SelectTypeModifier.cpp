@@ -32,7 +32,6 @@
 
 namespace Ovito::StdMod {
 
-IMPLEMENT_OVITO_CLASS(SelectTypeModifier);
 SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeIDs, "Selected type IDs");
 SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeNames, "Selected type names");

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,18 +35,31 @@ namespace Ovito {
 OvitoClass* OvitoClass::_firstMetaClass = nullptr;
 
 /******************************************************************************
-* Constructor.
+* Constructor used for non-templated classes.
 ******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo) :
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const QMetaObject* qtClassInfo) :
 	_name(name),
 	_displayName(name),
-	_plugin(nullptr),
 	_superClass(superClass),
-	_isAbstract(false),
-	_pluginId(pluginId),
 	_qtClassInfo(qtClassInfo)
 {
-	OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
+	OVITO_ASSERT(superClass != nullptr || name == "OvitoObject");
+
+	// Insert into linked list of all object types.
+	_nextMetaclass = _firstMetaClass;
+	_firstMetaClass = this;
+}
+
+/******************************************************************************
+* Constructor used for templated classes.
+******************************************************************************/
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId) :
+	_name(name),
+	_displayName(name),
+	_superClass(superClass),
+	_pluginId(pluginId)
+{
+	OVITO_ASSERT(superClass != nullptr);
 
 	// Insert into linked list of all object types.
 	_nextMetaclass = _firstMetaClass;
@@ -71,20 +84,28 @@ void OvitoClass::initialize()
 			}
 		}
 
-		// Interpret Qt class info fields.
-		for(int i = qtMetaObject()->classInfoOffset(); i < qtMetaObject()->classInfoCount(); i++) {
-			if(qstrcmp(qtMetaObject()->classInfo(i).name(), "DisplayName") == 0) {
-				// Fetch display name assigned to the Qt object class.
-				setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(i).value()));
-			}
-			else if(qstrcmp(qtMetaObject()->classInfo(i).name(), "ClassNameAlias") == 0) {
-				// Load name alias assigned to the Qt object class.
-				setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(i).value()));
-			}
-		}
+		// Class must have been initialized without a plugin id.
+		OVITO_ASSERT(_pluginId == nullptr);
+
+		// Fetch display name assigned to the Qt object class.
+		if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
+			setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
+		
+		// Load name alias assigned to the Qt object class.
+		if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
+			setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
+
+		// Load plugin id.
+		if(int idx = qtMetaObject()->indexOfClassInfo("OvitoPluginId"); idx >= 0)
+			_pluginId = qtMetaObject()->classInfo(idx).value();
+		OVITO_ASSERT(_pluginId != nullptr);
 	}
 	else {
+		// Templated classes are always abstract.
 		setAbstract(true);
+
+		// Class must have been initialized with a plugin id.
+		OVITO_ASSERT(_pluginId != nullptr);
 	}
 }
 
@@ -93,11 +114,10 @@ void OvitoClass::initialize()
 ******************************************************************************/
 QString OvitoClass::descriptionString() const
 {
-	for(int i = qtMetaObject()->classInfoOffset(); i < qtMetaObject()->classInfoCount(); i++) {
-		if(qstrcmp(qtMetaObject()->classInfo(i).name(), "Description") == 0) {
-			return QString::fromUtf8(qtMetaObject()->classInfo(i).value());
-		}
-	}
+	OVITO_ASSERT(qtMetaObject());
+	int index = qtMetaObject()->indexOfClassInfo("Description");
+	if(index >= 0)
+		return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
 	return QString();
 }
 

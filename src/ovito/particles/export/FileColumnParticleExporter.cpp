@@ -26,7 +26,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 
 /******************************************************************************
 * Initializes the object's parameter fields with default values and loads 

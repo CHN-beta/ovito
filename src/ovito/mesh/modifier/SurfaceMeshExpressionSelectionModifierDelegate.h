@@ -53,7 +53,6 @@ class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionS
 		virtual QString pythonDataName() const override { return QStringLiteral("surface_regions"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
 	Q_CLASSINFO("DisplayName", "Mesh Regions");
 

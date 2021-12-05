@@ -47,7 +47,6 @@ class OVITO_PARTICLES_EXPORT XYZExporter : public FileColumnParticleExporter
 		virtual QString fileFilterDescription() const override { return tr("XYZ File"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(XYZExporter, OOMetaClass)
 
 public:

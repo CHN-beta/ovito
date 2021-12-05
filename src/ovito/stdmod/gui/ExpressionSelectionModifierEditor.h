@@ -33,7 +33,6 @@ namespace Ovito::StdMod {
  */
 class ExpressionSelectionModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(ExpressionSelectionModifierEditor)
 
 public:

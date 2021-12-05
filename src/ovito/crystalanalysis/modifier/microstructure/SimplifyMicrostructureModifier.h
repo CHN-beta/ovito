@@ -46,7 +46,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT SimplifyMicrostructureModifier : public Async
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(SimplifyMicrostructureModifier, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Simplify microstructure");

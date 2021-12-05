@@ -31,7 +31,6 @@
 
 namespace Ovito::Mesh {
 
-IMPLEMENT_OVITO_CLASS(ParaViewPVDImporter);
 DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
 
 /******************************************************************************

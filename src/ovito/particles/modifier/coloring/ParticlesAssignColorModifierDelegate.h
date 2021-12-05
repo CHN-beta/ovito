@@ -55,7 +55,6 @@ class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
 
 	Q_CLASSINFO("DisplayName", "Particles");
@@ -94,7 +93,6 @@ class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDel
 		virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Particle vectors");
@@ -133,7 +131,6 @@ class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
 
 	Q_CLASSINFO("DisplayName", "Bonds");

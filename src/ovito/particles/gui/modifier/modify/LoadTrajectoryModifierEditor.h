@@ -33,7 +33,6 @@ namespace Ovito::Particles {
  */
 class LoadTrajectoryModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(LoadTrajectoryModifierEditor)
 
 public:

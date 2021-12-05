@@ -33,7 +33,6 @@ namespace Ovito {
  */
 class TriMeshVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(TriMeshVisEditor)
 
 public:

@@ -31,7 +31,6 @@
 
 namespace Ovito::Particles {
 
-IMPLEMENT_OVITO_CLASS(QuantumEspressoImporter);
 
 /******************************************************************************
 * Determines if a character is a normal letter.

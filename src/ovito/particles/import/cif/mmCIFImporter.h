@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(mmCIFImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

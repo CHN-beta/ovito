@@ -31,7 +31,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(DislocationInspectionApplet);
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be

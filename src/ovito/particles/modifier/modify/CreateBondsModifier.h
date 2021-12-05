@@ -66,7 +66,6 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public AsynchronousModifier
 		virtual bool isApplicableTo(const DataCollection& input) const override;
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(CreateBondsModifier, CreateBondsModifierClass)
 
 	Q_CLASSINFO("DisplayName", "Create bonds");

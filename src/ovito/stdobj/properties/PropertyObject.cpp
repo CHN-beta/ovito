@@ -27,7 +27,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(PropertyObject);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyObject, elementTypes);
 SET_PROPERTY_FIELD_LABEL(PropertyObject, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");

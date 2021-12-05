@@ -61,7 +61,6 @@ public:
  */
 class OVITO_CORE_EXPORT FileExporter : public RefTarget
 {
-	Q_OBJECT
 	OVITO_CLASS_META(FileExporter, FileExporterClass)
 
 public:

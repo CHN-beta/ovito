@@ -73,7 +73,6 @@ public:
 
 	Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");	// For backward compatibility with OVITO 3.2.1.
 	OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
-	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
@@ -140,7 +139,6 @@ public:
 	};
 
 	OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
-	Q_OBJECT
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
@@ -202,7 +200,6 @@ public:
 	};
 
 	OVITO_CLASS_META(MultiDelegatingModifier, MultiDelegatingModifierClass)
-	Q_OBJECT
 
 public:
 

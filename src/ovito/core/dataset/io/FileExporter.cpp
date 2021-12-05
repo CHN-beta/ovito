@@ -33,7 +33,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileExporter);
 DEFINE_REFERENCE_FIELD(FileExporter, nodeToExport);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, exportAnimation, "Export animation");

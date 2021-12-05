@@ -54,7 +54,6 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
 	};
 
 	OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 
@@ -90,9 +89,8 @@ private:
 /**
  * \brief Plugin filter used to customize the loading of VTM files referencing a ParaView VTP file
  */
-class BondsParaViewVTMFileFilter : public ParaViewVTMFileFilter
+class OVITO_PARTICLES_EXPORT BondsParaViewVTMFileFilter : public ParaViewVTMFileFilter
 {
-	Q_OBJECT
 	OVITO_CLASS(BondsParaViewVTMFileFilter)
 
 public:

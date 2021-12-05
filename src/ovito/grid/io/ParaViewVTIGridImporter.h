@@ -54,7 +54,6 @@ class OVITO_GRID_EXPORT ParaViewVTIGridImporter : public FileSourceImporter
 	};
 
 	OVITO_CLASS_META(ParaViewVTIGridImporter, OOMetaClass)
-	Q_OBJECT
 
 public:
 

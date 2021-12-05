@@ -28,7 +28,6 @@
 
 namespace Ovito::StdObj {
 
-IMPLEMENT_OVITO_CLASS(PropertyObjectEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyObject, PropertyObjectEditor);
 
 /******************************************************************************

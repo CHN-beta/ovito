@@ -54,7 +54,6 @@ class TrajectoryColorCodingModifierDelegate : public ColorCodingModifierDelegate
 		virtual QString pythonDataName() const override { return QStringLiteral("trajectories"); }
 	};
 
-	Q_OBJECT
 	OVITO_CLASS_META(TrajectoryColorCodingModifierDelegate, OOMetaClass)
 
 	Q_CLASSINFO("DisplayName", "Trajectory lines");

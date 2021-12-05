@@ -34,7 +34,7 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT SplineAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass)
+	OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass, "Core")
 
 public:
 
@@ -66,7 +66,6 @@ public:
  */
 class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<FloatAnimationKey>
 {
-	Q_OBJECT
 	OVITO_CLASS(FloatSplineAnimationKey)
 
 public:
@@ -81,7 +80,6 @@ public:
  */
 class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<PositionAnimationKey>
 {
-	Q_OBJECT
 	OVITO_CLASS(PositionSplineAnimationKey)
 
 public:
@@ -158,7 +156,6 @@ class OVITO_CORE_EXPORT SplinePositionController
 	: public SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>
 {
 	OVITO_CLASS(SplinePositionController)
-	Q_OBJECT
 
 public:
 

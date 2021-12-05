@@ -32,7 +32,6 @@
 
 namespace Ovito::CrystalAnalysis {
 
-IMPLEMENT_OVITO_CLASS(CAExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

@@ -128,7 +128,6 @@ public:
  */
 class OVITO_CRYSTALANALYSIS_EXPORT Microstructure : public SurfaceMesh
 {
-	Q_OBJECT
 	OVITO_CLASS(Microstructure)
 
 public:

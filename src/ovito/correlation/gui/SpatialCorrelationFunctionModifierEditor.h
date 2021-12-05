@@ -39,7 +39,6 @@ namespace Ovito::Particles {
  */
 class SpatialCorrelationFunctionModifierEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
 
 public:

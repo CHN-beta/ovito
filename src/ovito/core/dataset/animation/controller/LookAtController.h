@@ -42,7 +42,6 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT LookAtController : public Controller
 {
-	Q_OBJECT
 	OVITO_CLASS(LookAtController)
 
 public:

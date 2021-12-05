@@ -33,7 +33,6 @@ namespace Ovito::Grid {
  */
 class VoxelGridVisEditor : public PropertiesEditor
 {
-	Q_OBJECT
 	OVITO_CLASS(VoxelGridVisEditor)
 
 public:

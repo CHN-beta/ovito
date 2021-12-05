@@ -36,7 +36,6 @@ namespace Ovito::Particles {
  */
 class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 {
-	Q_OBJECT
 	OVITO_CLASS(ParticleType)
 
 #ifdef OVITO_QML_GUI
